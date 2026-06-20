@@ -1,0 +1,29 @@
+{
+  "itemName": "TmEmailTemplatePreview",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailTemplatePreview Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTemplatePreview.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "TimeProvider",
+      "type": "TimeProvider",
+      "isRequired": false,
+      "default": "TimeProvider.System",
+      "description": "Optional variable data (JSON). When null, sample data is generated from the template."
+    },
+    {
+      "name": "VariablesJson",
+      "type": "string?",
+      "isRequired": true,
+      "description": "The document to preview.",
+      "editorRequired": true
+    }
+  ]
+}

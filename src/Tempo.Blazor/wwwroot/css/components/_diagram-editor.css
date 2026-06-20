@@ -454,43 +454,116 @@
     z-index: 1;
 }
 
-/* ── HTML overlay layer ──────────────────────────────────────────────────── */
-.tm-diagram-canvas__overlay {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 2;
+/* ── SVG pane pointer-events rules (4-pane model) ────────────────────────── */
+/* Panes live inside the unified <svg> (see TmDiagramCanvas.razor).
+   * bg-pane: background / grid / model-level group bounds (no interaction)
+   * scene-pane: edges + nodes foreignObject (interactive content)
+   * overlay-pane: selection outlines, drop-target highlights (visual only)
+   * decorator-pane: resize/rotate/connect handles, waypoints (interactive) */
+.tm-diagram-bg-pane { pointer-events: none; }
+.tm-diagram-scene-pane { pointer-events: auto; }
+.tm-diagram-overlay-pane { pointer-events: none; }
+.tm-diagram-decorator-pane { pointer-events: auto; }
+
+/* F6 — model-level group bounds. Rendered from Razor directly out of
+ * Document.Nodes grouped by GroupId as an SVG <rect> in .tm-diagram-bg-pane.
+ * No JS imperative path, no HTML div variant (the pre-F6 code lived in
+ * .tm-diagram-canvas__overlay as a CSS-positioned div; that path is gone).
+ * Purely decorative — pointer-events: none so drag/click fall through to the
+ * nodes underneath. */
+.tm-diagram-group-bounds {
+    fill: none;
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+    opacity: 0.4;
     pointer-events: none;
 }
 
-.tm-diagram-canvas__overlay .tm-diagram-transform-layer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform-origin: 0 0;
+/* ── HTML overlay (nodes foreignObject content) ──────────────────────────── */
+/* After F2, .tm-diagram-canvas__overlay + .tm-diagram-transform-layer live
+   Post-F3 each node is its own SVG <g class="tm-diagram-node"> with a
+   shape-sized <foreignObject class="tm-diagram-node__fo"> wrapping a single
+   <div class="tm-diagram-node__body"> that hosts the rich HTML content
+   (stencil sections, ports, connection points, handles). Because every
+   foreignObject is sized to the node itself, empty canvas areas are no
+   longer covered by HTML, so edge hit-paths and decorator handles under
+   empty space are hit-tested natively by the SVG — no more global
+   pointer-events plumbing is required. */
+.tm-diagram-node__fo {
+    overflow: visible;
+    /* Chromium's SVG hit-testing returns <foreignObject> as the hit target
+       even when later SVG siblings (circle.tm-diagram-port) are painted on
+       top of it. Explicitly disabling pointer-events on the foreignObject
+       lets the port circles receive mousedown correctly; HTML children
+       (labels, table cells, inputs) opt back in via .tm-diagram-node__body
+       below. */
+    pointer-events: none;
+}
+
+.tm-diagram-node__body {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    color: var(--tm-diagram-node-text, #111827);
+    user-select: none;
     pointer-events: auto;
 }
 
-/* ── Interaction layer ───────────────────────────────────────────────────── */
-.tm-diagram-canvas__interaction {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 3;
+/* ── F3.E — native SVG shape primitive ────────────────────────────────────
+ * Simple stencils (rectangle, rounded, ellipse, diamond, triangle, hexagon,
+ * parallelogram) emit a native SVG primitive (<rect>, <ellipse>, <polygon>)
+ * *behind* the node's <foreignObject>. The SVG element provides the visual
+ * fill + stroke; the HTML .tm-diagram-node__shape div inside the foreignObject
+ * then only lays out content (labels, sections, ports). We mark the body with
+ * data-native-shape="true" so the HTML shape's background/border are hidden,
+ * preventing double-painting. */
+.tm-diagram-node__shape-bg {
     pointer-events: none;
 }
 
-/* ── Selection outline ────────────────────────────────────────────────────── */
-.tm-diagram-selection-outline {
-    position: absolute;
-    border: 2px solid var(--tm-color-primary, #3b82f6);
-    border-radius: 4px;
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    clip-path: none !important;
+}
+
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape::before,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape::after {
+    display: none !important;
+}
+
+/* When a native SVG primitive is drawn, the inline <svg class="tm-diagram-node__svg-bg">
+ * fallback (rendered by TmDiagramStencilShape for BackgroundShape legacy paths)
+ * would double-paint the background. Hide it — the native primitive is the
+ * single source of truth for fill/stroke in F3.E. */
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__svg-bg {
+    display: none !important;
+}
+
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape[data-stencil-id^="archimate3."] .tm-diagram-node__svg-bg,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape[data-stencil-id^="tempo-flowchart."] .tm-diagram-node__svg-bg,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape[data-stencil-id^="tempo-erd."] .tm-diagram-node__svg-bg,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape[data-stencil-id^="c4."] .tm-diagram-node__svg-bg,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape[data-stencil-id^="cloud."] .tm-diagram-node__svg-bg,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape[data-stencil-id^="kubernetes."] .tm-diagram-node__svg-bg {
+    display: block !important;
+}
+
+/* ── Selection outline ──────────────────────────────────────────────────────
+ * Post-F3 the selection outline is an SVG <rect> injected into overlay-pane.
+ * It uses stroke instead of border and SVG drop-shadow filter instead of
+ * box-shadow. */
+rect.tm-diagram-selection-outline {
+    fill: none;
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 2;
+    rx: 4;
+    ry: 4;
     pointer-events: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), 0 0 8px rgba(59, 130, 246, 0.35);
+    filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.45));
 }
 
 /* ── Rubber band ─────────────────────────────────────────────────────────── */
@@ -502,10 +575,11 @@
 }
 
 /* ── Node styling ─────────────────────────────────────────────────────────── */
+/* Post-F3 `.tm-diagram-node` is an SVG <g> element. Position/rotation live in
+ * its `transform` attribute (translate + rotate around the node centre). The
+ * `cursor` property is valid on SVG and is inherited into the inner HTML body,
+ * so drag affordance still works over the node shape and labels. */
 .tm-diagram-node {
-    position: absolute;
-    box-sizing: border-box;
-    user-select: none;
     cursor: move;
 }
 
@@ -537,13 +611,26 @@
     opacity: 0.75;
 }
 
-.tm-diagram-node--drop-target {
+/* F6.4 — drop-target / outline-connect hints. Decision (Apr 2026): keep as a
+ * CSS class toggled on the node's outer <g class="tm-diagram-node"> with the
+ * style cascading to the inner `.tm-diagram-node__body` (inside foreignObject).
+ * Not migrated to a separate SVG <rect> in overlay-pane because:
+ *   - The CSS-outline approach already animates with the node transform (no
+ *     extra JS sync during drag required, unlike the selection outline).
+ *   - `outline-offset` + `border-radius` give a pixel-perfect inset match to
+ *     the node's rounded corners that a separate SVG <rect> would have to
+ *     measure per-stencil to match.
+ *   - JS classList.add/remove stays a single line; no <rect> lifecycle.
+ * The modifier class still lives on the `.tm-diagram-node` <g> so JS
+ * `classList.add/remove` can keep targeting the node itself — `outline` on
+ * SVG elements is patchy across browsers, so the body <div> does the paint. */
+.tm-diagram-node--drop-target .tm-diagram-node__body {
     outline: 2px solid var(--tm-color-primary, #3b82f6);
     outline-offset: 2px;
     border-radius: var(--tm-radius-sm, 4px);
 }
 
-.tm-diagram-node--outline-connect {
+.tm-diagram-node--outline-connect .tm-diagram-node__body {
     outline: 2px dashed var(--tm-color-success, #10b981);
     outline-offset: 3px;
     border-radius: var(--tm-radius-sm, 4px);
@@ -761,10 +848,17 @@
     flex-shrink: 0;
 }
 
-/* UML class nodes: list sections should not scroll or stretch — auto-height handles sizing */
-.tm-diagram-node__shape[data-stencil-id^="uml."] .tm-diagram-node__section--grow {
+/* UML class nodes: list sections should not scroll or stretch - auto-height handles sizing */
+.tm-diagram-node__shape[data-stencil-id^="uml."] .tm-diagram-node__section--grow,
+.tm-diagram-node__shape[data-stencil-id^="uml25."] .tm-diagram-node__section--grow {
     flex: 0 0 auto;
     overflow: visible;
+}
+
+.tm-diagram-node__shape[data-stencil-id^="uml25."] .tm-diagram-node__list-item {
+    min-height: 1.35em;
+    line-height: 1.3;
+    padding: 2px 0;
 }
 
 .tm-diagram-node__icon {
@@ -842,7 +936,7 @@
 }
 
 /* ── Search highlight ────────────────────────────────────────────────────── */
-.tm-diagram-node.tm-diagram-search-match {
+.tm-diagram-node.tm-diagram-search-match .tm-diagram-node__body {
     outline: 2px solid var(--tm-color-primary, #3b82f6);
     outline-offset: 2px;
     animation: tm-diagram-search-pulse 1.5s ease-in-out infinite;
@@ -865,30 +959,34 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 }
 
 /* ── Port styling ─────────────────────────────────────────────────────────── */
-.tm-diagram-port {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: var(--tm-color-surface, #ffffff);
-    border: 1.5px solid var(--tm-color-primary, #3b82f6);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
+/* Post-F3 ports are SVG <circle> elements directly inside the node's <g>
+ * (rendered after the <foreignObject>) so Chromium's SVG hit-testing can
+ * reliably route pointer events to them; HTML ports inside <foreignObject>
+ * do NOT receive mousedown in Chromium even with pointer-events:none on the
+ * foreignObject. Styling therefore uses SVG presentation attributes
+ * (fill/stroke) instead of CSS background/border. */
+circle.tm-diagram-port {
+    fill: var(--tm-color-surface, #ffffff);
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
     cursor: crosshair;
-    z-index: 10;
     opacity: 0;
-    transition: transform 120ms, background 120ms, opacity 120ms;
+    transition: opacity 120ms, r 120ms;
 }
 
-/* Ports visible on node hover, selected node, or during edge drawing */
-.tm-diagram-node:hover .tm-diagram-port,
-.tm-diagram-node--selected .tm-diagram-port,
-.tm-diagram-canvas--edge-drawing .tm-diagram-port {
+/* Ports visible on node hover, selected node, or during edge drawing.
+ * Post-F3 the node is an SVG <g class="tm-diagram-node">; the port <circle>
+ * is a direct child of that <g>. `:hover` on an SVG <g> fires when the
+ * cursor is over any of its shapes, so the same selectors still work. */
+.tm-diagram-node:hover circle.tm-diagram-port,
+.tm-diagram-node--selected circle.tm-diagram-port,
+.tm-diagram-canvas--edge-drawing circle.tm-diagram-port {
     opacity: 1;
 }
 
-.tm-diagram-port:hover {
-    background: var(--tm-color-primary, #3b82f6);
-    transform: translate(-50%, -50%) scale(1.2);
+circle.tm-diagram-port:hover {
+    fill: var(--tm-color-primary, #3b82f6);
+    r: 6;
 }
 
 /* ── Edge drawing ─────────────────────────────────────────────────────────── */
@@ -899,49 +997,43 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     pointer-events: none;
 }
 
-.tm-diagram-port--active {
-    background: var(--tm-color-primary, #3b82f6);
-    transform: translate(-50%, -50%) scale(1.3);
+circle.tm-diagram-port.tm-diagram-port--active {
+    fill: var(--tm-color-primary, #3b82f6);
+    r: 6.5;
 }
 
-.tm-diagram-port--target {
-    background: var(--tm-color-success, #10b981);
-    border-color: var(--tm-color-success, #10b981);
-    transform: translate(-50%, -50%) scale(1.5);
+circle.tm-diagram-port.tm-diagram-port--target {
+    fill: var(--tm-color-success, #10b981);
+    stroke: var(--tm-color-success, #10b981);
+    r: 7.5;
 }
 
-/* ── Connection points (draw.io style fixed constraint points) ────────────── */
-.tm-diagram-connection-point {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: var(--tm-color-surface, #ffffff);
-    border: 1.5px solid var(--tm-color-primary, #3b82f6);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
+/* ── Connection points (draw.io style fixed constraint points) ──────────────
+ * Also SVG <circle> post-F3 for the same hit-testing reason as ports. */
+circle.tm-diagram-connection-point {
+    fill: var(--tm-color-surface, #ffffff);
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
     cursor: crosshair;
-    z-index: 11;
     opacity: 0;
-    transition: transform 120ms, background 120ms, opacity 120ms;
-    pointer-events: auto;
+    transition: opacity 120ms, r 120ms;
 }
 
-/* Visible on node hover, selected node, or during edge drawing */
-.tm-diagram-node:hover .tm-diagram-connection-point,
-.tm-diagram-node--selected .tm-diagram-connection-point,
-.tm-diagram-canvas--edge-drawing .tm-diagram-connection-point {
+.tm-diagram-node:hover circle.tm-diagram-connection-point,
+.tm-diagram-node--selected circle.tm-diagram-connection-point,
+.tm-diagram-canvas--edge-drawing circle.tm-diagram-connection-point {
     opacity: 1;
 }
 
-.tm-diagram-connection-point:hover {
-    background: var(--tm-color-primary, #3b82f6);
-    transform: translate(-50%, -50%) scale(1.3);
+circle.tm-diagram-connection-point:hover {
+    fill: var(--tm-color-primary, #3b82f6);
+    r: 5;
 }
 
-.tm-diagram-connection-point--active {
-    background: var(--tm-color-primary, #3b82f6);
-    transform: translate(-50%, -50%) scale(1.4);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+circle.tm-diagram-connection-point.tm-diagram-connection-point--active {
+    fill: var(--tm-color-primary, #3b82f6);
+    r: 5.5;
+    filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.5));
 }
 
 /* ── Edge path ────────────────────────────────────────────────────────────── */
@@ -950,6 +1042,15 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     pointer-events: none;
     stroke-linejoin: round;
     stroke-linecap: round;
+}
+
+/* Arrowheads are purely decorative. They're drawn at the edge terminals —
+ * which, for edges attached to a node's port, land exactly on that port's
+ * position. Letting them capture pointer events would block port clicks for
+ * drawing new edges or reconnecting existing ones. The edge itself is
+ * selected via `.tm-diagram-edge-hit-path` (a wide transparent hit target). */
+.tm-diagram-arrowhead {
+    pointer-events: none;
 }
 
 .tm-diagram-edge-hit-path {
@@ -1256,26 +1357,20 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     resize: vertical;
 }
 
-/* ── Resize handles ──────────────────────────────────────────────────────── */
-.tm-diagram-resize-handle {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: var(--tm-color-surface, #ffffff);
-    border: 1.5px solid var(--tm-color-primary, #3b82f6);
-    border-radius: 2px;
-    z-index: 25;
-    cursor: pointer;
+/* ── Resize handles ──────────────────────────────────────────────────────── *
+ * Post-F5 handles are SVG <rect> in the decorator-pane, positioned in node-local
+ * coordinates on a <g class="tm-diagram-node-handles"> that mirrors the node's
+ * translate()+rotate() transform. SVG presentation attributes instead of CSS
+ * background/border. Cursor hint is applied inline per handle (direction
+ * depends on the handle role). */
+rect.tm-diagram-resize-handle {
+    fill: var(--tm-color-surface, #ffffff);
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
+    rx: 2;
+    ry: 2;
+    pointer-events: auto;
 }
-
-.tm-diagram-resize-handle--nw { top: -5px; left: -5px; cursor: nw-resize; }
-.tm-diagram-resize-handle--n  { top: -5px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
-.tm-diagram-resize-handle--ne { top: -5px; right: -5px; cursor: ne-resize; }
-.tm-diagram-resize-handle--e  { top: 50%; right: -5px; transform: translateY(-50%); cursor: e-resize; }
-.tm-diagram-resize-handle--se { bottom: -5px; right: -5px; cursor: se-resize; }
-.tm-diagram-resize-handle--s  { bottom: -5px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
-.tm-diagram-resize-handle--sw { bottom: -5px; left: -5px; cursor: sw-resize; }
-.tm-diagram-resize-handle--w  { top: 50%; left: -5px; transform: translateY(-50%); cursor: w-resize; }
 
 /* ── Read-only mode ──────────────────────────────────────────────────────── */
 .tm-diagram-editor--readonly .tm-diagram-node {
@@ -1320,11 +1415,33 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     width: 100%;
 }
 
+.tm-diagram-toolbox__search input:focus-visible {
+    outline: 2px solid var(--tm-color-primary, #2563eb);
+    outline-offset: 2px;
+}
+
 .tm-diagram-toolbox__no-results {
     padding: var(--tm-space-4, 16px);
     text-align: center;
     font-size: var(--tm-font-size-sm, 14px);
     color: var(--tm-color-text-muted, #6b7280);
+}
+
+.tm-diagram-toolbox__library {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-1, 4px);
+    margin-bottom: var(--tm-space-3, 12px);
+}
+
+.tm-diagram-toolbox__library-header {
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    padding: 0 var(--tm-space-2, 8px);
+    font-size: var(--tm-font-size-sm, 14px);
+    font-weight: 700;
+    color: var(--tm-color-text, #111827);
 }
 
 .tm-diagram-toolbox__category {
@@ -1340,7 +1457,7 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     font-size: var(--tm-font-size-xs, 12px);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.025em;
+    letter-spacing: 0;
     color: var(--tm-color-text-muted, #6b7280);
     background: transparent;
     border: none;
@@ -1350,6 +1467,12 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 }
 
 .tm-diagram-toolbox__category-header:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-toolbox__category-header:focus-visible {
+    outline: 2px solid var(--tm-color-primary, #2563eb);
+    outline-offset: 2px;
     background: var(--tm-color-surface-hover, #f3f4f6);
 }
 
@@ -1375,8 +1498,18 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     background: var(--tm-color-surface-hover, #f3f4f6);
 }
 
+.tm-diagram-toolbox__item:focus-visible {
+    outline: 2px solid var(--tm-color-primary, #2563eb);
+    outline-offset: 2px;
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
 .tm-diagram-toolbox__item:active {
     cursor: grabbing;
+}
+
+.tm-diagram-toolbox__item--edge .tm-diagram-toolbox__label {
+    color: var(--tm-color-text);
 }
 
 .tm-diagram-toolbox__preview {
@@ -1395,9 +1528,75 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     display: block;
 }
 
+.tm-diagram-toolbox__edge-preview {
+    color: var(--tm-color-primary);
+}
+
 .tm-diagram-toolbox__label {
     font-size: var(--tm-font-size-sm, 14px);
     color: var(--tm-color-text, #111827);
+}
+
+@media (max-width: 640px) {
+    .tm-diagram-editor__body {
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .tm-diagram-editor__toolbox-wrap {
+        width: 100%;
+        max-height: 280px;
+        border-right: none;
+        border-bottom: 1px solid var(--tm-color-border, #e5e7eb);
+        overflow-y: auto;
+    }
+
+    .tm-diagram-editor__right-stack {
+        display: none;
+    }
+
+    .tm-diagram-editor__canvas-wrap {
+        flex: 1 1 auto;
+        min-height: 320px;
+    }
+
+    .tm-diagram-toolbox__inner {
+        padding: var(--tm-space-2, 8px);
+    }
+
+    .tm-diagram-toolbox__title {
+        margin-bottom: var(--tm-space-2, 8px);
+    }
+
+    .tm-diagram-toolbox__search {
+        margin-bottom: var(--tm-space-2, 8px);
+    }
+
+    .tm-diagram-toolbox__library {
+        margin-bottom: var(--tm-space-2, 8px);
+    }
+
+    .tm-diagram-toolbox__library-header {
+        padding: 0;
+    }
+
+    .tm-diagram-toolbox__category-body {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
+        gap: var(--tm-space-1, 4px);
+        padding-left: 0;
+    }
+
+    .tm-diagram-toolbox__item {
+        min-width: 0;
+    }
+
+    .tm-diagram-toolbox__label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -1972,39 +2171,40 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 }
 /* Append to existing file */
 
-/* ── Rotate handle ─────────────────────────────────────────────────────── */
-.tm-diagram-rotate-handle {
-    position: absolute;
-    top: -38px;
-    left: calc(50% - 7px);
-    width: 14px;
-    height: 14px;
-    background: #fff;
-    border: 1.5px solid var(--tm-color-primary, #3b82f6);
-    border-radius: 50%;
+/* ── Rotate handle ─────────────────────────────────────────────────────── *
+ * Post-F5 — <circle class="tm-diagram-rotate-handle"> with a <line
+ * class="tm-diagram-rotate-handle-stem"> beneath it connecting the node's top
+ * edge. Both are native SVG in the decorator-pane's per-node <g>, so they
+ * inherit the node's rotation automatically. */
+circle.tm-diagram-rotate-handle {
+    fill: #fff;
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
     cursor: grab;
-    z-index: 20;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
+    pointer-events: auto;
 }
-.tm-diagram-rotate-handle:active {
+circle.tm-diagram-rotate-handle:active {
     cursor: grabbing;
 }
-.tm-diagram-rotate-handle::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    width: 1px;
-    height: 10px;
-    background: var(--tm-color-primary, #3b82f6);
-    transform: translateX(-50%);
+line.tm-diagram-rotate-handle-stem {
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1;
+    pointer-events: none;
 }
 
-/* ── Quick-connect arrows ──────────────────────────────────────────────── */
+/* ── Quick-connect arrows ──────────────────────────────────────────────── *
+ * Post-F5 — positioning is handled on the <foreignObject class="tm-diagram-
+ * connect-arrow-wrap"> via SVG x/y/width/height attributes (so it rotates with
+ * the node). The HTML <button> inside just fills the foreignObject; we keep
+ * it as HTML for a11y (real button semantics, keyboard focus, screen readers)
+ * — same approach as draw.io's mxConnectionHandler. */
+.tm-diagram-connect-arrow-wrap {
+    overflow: visible;
+}
 .tm-diagram-connect-arrow {
-    position: absolute;
-    width: 22px;
-    height: 22px;
+    width: 100%;
+    height: 100%;
     padding: 0;
     margin: 0;
     display: flex;
@@ -2014,8 +2214,7 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     border: 1.5px solid var(--tm-color-primary, #3b82f6);
     border-radius: 50%;
     cursor: pointer;
-    z-index: 20;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     transition: transform 0.12s, background 0.12s;
 }
 .tm-diagram-connect-arrow:hover {
@@ -2032,17 +2231,11 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     pointer-events: none;
 }
 
-/* Positioning */
-.tm-diagram-connect-arrow--n { top: -24px; left: calc(50% - 11px); }
+/* Rotate the "+" glyph to suggest the direction. Actual button placement is
+ * done by the wrapping <foreignObject> x/y attributes. */
 .tm-diagram-connect-arrow--n .tm-diagram-connect-arrow__icon { transform: rotate(-90deg); }
-
-.tm-diagram-connect-arrow--e { top: calc(50% - 11px); right: -24px; }
 .tm-diagram-connect-arrow--e .tm-diagram-connect-arrow__icon { transform: rotate(0deg); }
-
-.tm-diagram-connect-arrow--s { bottom: -24px; left: calc(50% - 11px); }
 .tm-diagram-connect-arrow--s .tm-diagram-connect-arrow__icon { transform: rotate(90deg); }
-
-.tm-diagram-connect-arrow--w { top: calc(50% - 11px); left: -24px; }
 .tm-diagram-connect-arrow--w .tm-diagram-connect-arrow__icon { transform: rotate(180deg); }
 
 /* ── Connect modal stencil grid ────────────────────────────────────────── */
@@ -2264,7 +2457,7 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    max-height: 60vh;
+    max-height: 70vh;
 }
 
 .tm-diagram-template-gallery__header {
@@ -2322,7 +2515,7 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 
 .tm-diagram-template-gallery__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 12px;
 }
 
@@ -2336,7 +2529,8 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 /* ── Template card ────────────────────────────────────────────────────────── */
 .tm-diagram-template-card {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    min-height: 96px;
     background: var(--tm-color-surface, #ffffff);
     border: 1px solid var(--tm-color-border, #e5e7eb);
     border-radius: var(--tm-radius-md, 6px);
@@ -2357,7 +2551,8 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 }
 
 .tm-diagram-template-card__thumb {
-    aspect-ratio: 4 / 3;
+    width: 112px;
+    min-width: 112px;
     background: var(--tm-color-surface-elevated, #f9fafb);
     display: flex;
     align-items: center;
@@ -2385,19 +2580,21 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 }
 
 .tm-diagram-template-card__info {
-    padding: 8px 10px;
+    min-width: 0;
+    padding: 10px 12px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    justify-content: center;
+    gap: 6px;
 }
 
 .tm-diagram-template-card__name {
     font-size: var(--tm-font-size-sm, 14px);
-    font-weight: 500;
+    line-height: 1.3;
+    font-weight: 600;
     color: var(--tm-color-text, #111827);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .tm-diagram-template-card__tags {

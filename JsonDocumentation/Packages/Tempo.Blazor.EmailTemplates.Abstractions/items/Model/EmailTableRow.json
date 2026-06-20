@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A single row of an .",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailTableRow.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Cells",
+      "kind": "Property",
+      "type": "IList<EmailTableCell>",
+      "description": "Gets the cells in this row."
+    },
+    {
+      "name": "IsHeader",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Gets or sets whether the row is a header row (rendered with bold cells)."
+    }
+  ],
+  "itemName": "EmailTableRow"
+}

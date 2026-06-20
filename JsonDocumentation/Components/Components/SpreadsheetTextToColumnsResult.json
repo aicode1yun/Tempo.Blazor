@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+  "description": "The outcome of the Text to Columns wizard: the split options and the per-output-column target formats chosen by the user.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/Dialogs/SpreadsheetTextToColumnsResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Formats",
+      "kind": "Property",
+      "type": "IReadOnlyList<SpreadsheetColumnFormat>",
+      "description": "The target format for each produced column (by index)."
+    },
+    {
+      "name": "Options",
+      "kind": "Property",
+      "type": "SpreadsheetSeparatorOptions",
+      "description": "The separator/split options."
+    }
+  ],
+  "itemName": "SpreadsheetTextToColumnsResult"
+}

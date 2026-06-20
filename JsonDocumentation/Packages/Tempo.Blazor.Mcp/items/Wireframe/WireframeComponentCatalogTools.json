@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "Public class defined by Tempo.Blazor.Mcp.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeComponentCatalogTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeComponentCatalogTools"
+}

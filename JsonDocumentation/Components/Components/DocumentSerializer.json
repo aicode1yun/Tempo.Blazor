@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Wysiwyg.Serialization",
+  "description": "Serializes between the WYSIWYG editing model and the persistence JSON model.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Wysiwyg/Serialization/DocumentSerializer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Deserialize",
+      "kind": "Method",
+      "type": "Wyg.DocumentModel",
+      "description": "Deserialize legacy JSON string to WYSIWYG model.",
+      "parameters": [
+        {
+          "name": "json",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "FromPersistenceModel",
+      "kind": "Method",
+      "type": "Wyg.DocumentModel",
+      "description": "Convert persistence model to WYSIWYG model.",
+      "parameters": [
+        {
+          "name": "persistence",
+          "type": "DocumentEditorDocument"
+        }
+      ]
+    },
+    {
+      "name": "Serialize",
+      "kind": "Method",
+      "type": "string",
+      "description": "Serialize WYSIWYG model to legacy JSON string.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "Wyg.DocumentModel"
+        }
+      ]
+    },
+    {
+      "name": "ToPersistenceModel",
+      "kind": "Method",
+      "type": "DocumentEditorDocument",
+      "description": "Convert WYSIWYG model to persistence model.",
+      "parameters": [
+        {
+          "name": "model",
+          "type": "Wyg.DocumentModel"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentSerializer"
+}

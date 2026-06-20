@@ -1,0 +1,130 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Special
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+
+<section class="tm-cbl"
+         aria-label="@Loc["Notion_ContentByLabel_Title"]"
+         @onclick="OnFocusedAsync">
+    <div class="tm-cbl__header">
+        <svg class="tm-cbl__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M2.5 4.5h5.25l1.25 1.5h4.5v5.5a1.5 1.5 0 0 1-1.5 1.5h-9a1.5 1.5 0 0 1-1.5-1.5v-5.5a1.5 1.5 0 0 1 1.5-1.5Z"
+                  stroke="currentColor" stroke-width="1.35" stroke-linejoin="round" />
+            <path d="M4 8h6M4 10.5h4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" />
+        </svg>
+        <div class="tm-cbl__title-group">
+            <span class="tm-cbl__title">@Loc["Notion_ContentByLabel_Title"]</span>
+            <span class="tm-cbl__summary">@SummaryText</span>
+        </div>
+    </div>
+
+    @if (!ReadOnly)
+    {
+        <div class="tm-cbl__config" aria-label="@Loc["Notion_ContentByLabel_Configure"]">
+            <div class="tm-cbl__chips">
+                @foreach (var label in _labels)
+                {
+                    <span class="tm-cbl__chip">
+                        <span class="tm-cbl__chip-text">@label</span>
+                        <button class="tm-cbl__chip-remove"
+                                type="button"
+                                title="@Loc["Notion_Labels_Remove"]"
+                                aria-label="@Loc["Notion_Labels_Remove"]"
+                                @onclick="() => RemoveLabelAsync(label)"
+                                @onclick:stopPropagation="true">
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                                <path d="M2 2l6 6M8 2L2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            </svg>
+                        </button>
+                    </span>
+                }
+            </div>
+
+            <div class="tm-cbl__controls">
+                <label class="tm-cbl__field">
+                    <span class="tm-cbl__field-label">@Loc["Notion_ContentByLabel_SelectLabels"]</span>
+                    <select class="tm-cbl__label-select"
+                            value="@_selectedLabel"
+                            disabled="@(!AvailableLabels.Any())"
+                            @onchange="HandleSelectedLabelChangedAsync">
+                        <option value="">@Loc["Notion_ContentByLabel_SelectLabels"]</option>
+                        @foreach (var label in AvailableLabels)
+                        {
+                            <option value="@label">@label</option>
+                        }
+                    </select>
+                </label>
+                <button class="tm-cbl__add-label"
+                        type="button"
+                        disabled="@string.IsNullOrWhiteSpace(_selectedLabel)"
+                        @onclick="AddSelectedLabelAsync">
+                    @Loc["Notion_ContentByLabel_AddLabel"]
+                </button>
+                <label class="tm-cbl__field tm-cbl__field--compact">
+                    <span class="tm-cbl__field-label">@Loc["Notion_ContentByLabel_MaxItems"]</span>
+                    <input class="tm-cbl__max"
+                           type="number"
+                           min="1"
+                           max="100"
+                           value="@_maxItems"
+                           @onchange="HandleMaxItemsChangedAsync" />
+                </label>
+                <label class="tm-cbl__field">
+                    <span class="tm-cbl__field-label">@Loc["Notion_ContentByLabel_SortBy"]</span>
+                    <select class="tm-cbl__sort"
+                            value="@_sortBy"
+                            @onchange="HandleSortChangedAsync">
+                        @foreach (var option in SortOptions)
+                        {
+                            <option value="@option">@SortLabel(option)</option>
+                        }
+                    </select>
+                </label>
+            </div>
+        </div>
+    }
+
+    @if (_loading)
+    {
+        <div class="tm-cbl__state" role="status">@Loc["Tm_Loading"]</div>
+    }
+    else if (_labels.Count == 0)
+    {
+        <div class="tm-cbl__state tm-cbl__state--prompt">@Loc["Notion_ContentByLabel_SelectLabels"]</div>
+    }
+    else if (_pages.Count == 0)
+    {
+        <div class="tm-cbl__empty">@Loc["Notion_ContentByLabel_Empty"]</div>
+    }
+    else
+    {
+        <div class="tm-cbl__pages" role="list">
+            @foreach (var page in _pages)
+            {
+                <button class="tm-cbl__page"
+                        type="button"
+                        role="listitem"
+                        title="@PageTitle(page)"
+                        @onclick="() => NavigateToPageAsync(page)"
+                        @onclick:stopPropagation="true">
+                    <span class="tm-cbl__page-icon" aria-hidden="true">@PageIcon(page)</span>
+                    <span class="tm-cbl__page-main">
+                        <span class="tm-cbl__page-title">@PageTitle(page)</span>
+                        @if (page.Labels.Count > 0)
+                        {
+                            <span class="tm-cbl__page-labels">
+                                @foreach (var label in page.Labels)
+                                {
+                                    <span class="tm-cbl__page-label">@label</span>
+                                }
+                            </span>
+                        }
+                    </span>
+                    <svg class="tm-cbl__page-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M5 3.5 8.5 7 5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+            }
+        </div>
+    }
+</section>

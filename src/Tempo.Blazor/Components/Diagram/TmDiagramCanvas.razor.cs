@@ -10,8 +10,11 @@ using Tempo.Blazor.Components.Diagram.Stencils;
 namespace Tempo.Blazor.Components.Diagram;
 
 /// <summary>
-/// Hybrid SVG + HTML diagram canvas. Renders <see cref="DiagramDocument"/> nodes and edges
-/// and communicates with <c>diagram-editor.js</c> for pan, zoom, drag, and selection.
+/// Unified SVG diagram canvas (draw.io‑inspired 4‑pane architecture:
+/// backgroundPane / drawPane / overlayPane / decoratorPane).
+/// Renders <see cref="DiagramDocument"/> nodes and edges as native SVG
+/// primitives and <see cref="foreignObject"/> labels, and communicates
+/// with <c>diagram-editor.js</c> for pan, zoom, drag, and selection.
 /// </summary>
 public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 {
@@ -177,6 +180,13 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     private double _viewportY;
     private double _viewportW = 3000;
     private double _viewportH = 2000;
+    // True once JS has sent its first OnViewportChanged callback; before that
+    // _viewport{X,Y,W,H} hold conservative defaults (0,0,3000,2000) so that
+    // viewport culling is effectively off. `GetViewport()` returns a zeroed
+    // viewport while _viewportInitialized is false so callers (e.g. toolbar
+    // insert commands running in bUnit without JS) can fall back to a sensible
+    // document-center placement.
+    private bool _viewportInitialized;
     private const double ViewportMargin = 200;
     private string? _editingEdgeLabelId;
     private string _editingLabelValue = "";
@@ -200,22 +210,35 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         // fit-to-view) and pushes updates via OnViewBoxChanged. Overwriting
         // _viewBox here on every parameter change would revert the live view
         // back to the full document rect and hide the actual rendered content.
+        //
+        // Since F2 there is no CSS transform:scale on <svg>; Page.Scale is
+        // folded directly into viewBox dimensions so the initial render honours
+        // the page zoom without a second CSS-level multiplier.
         if (!_jsInitialized && Document is not null)
         {
+            var scale = Math.Max(0.01, Document.ActivePage?.Scale ?? 1.0);
+            var inv = 1.0 / scale;
             if (ShowPageView)
             {
-                _viewBox = $"-{PageViewMargin.ToString("0.##", CultureInfo.InvariantCulture)} " +
-                           $"-{PageViewMargin.ToString("0.##", CultureInfo.InvariantCulture)} " +
-                           $"{(Document.Width + 2 * PageViewMargin).ToString("0.##", CultureInfo.InvariantCulture)} " +
-                           $"{(Document.Height + 2 * PageViewMargin).ToString("0.##", CultureInfo.InvariantCulture)}";
+                _viewBox = $"{(-PageViewMargin * inv).ToString("0.##", CultureInfo.InvariantCulture)} " +
+                           $"{(-PageViewMargin * inv).ToString("0.##", CultureInfo.InvariantCulture)} " +
+                           $"{((Document.Width + 2 * PageViewMargin) * inv).ToString("0.##", CultureInfo.InvariantCulture)} " +
+                           $"{((Document.Height + 2 * PageViewMargin) * inv).ToString("0.##", CultureInfo.InvariantCulture)}";
             }
             else
             {
-                _viewBox = $"0 0 {Document.Width.ToString("0.##", CultureInfo.InvariantCulture)} " +
-                           $"{Document.Height.ToString("0.##", CultureInfo.InvariantCulture)}";
+                _viewBox = $"0 0 {(Document.Width * inv).ToString("0.##", CultureInfo.InvariantCulture)} " +
+                           $"{(Document.Height * inv).ToString("0.##", CultureInfo.InvariantCulture)}";
             }
+            _lastAppliedPageScale = scale;
         }
     }
+
+    // Tracks the last Page.Scale value we've pushed into the JS viewBox so we can
+    // detect when the properties panel changes Page.Scale and forward it as a
+    // zoomTo() call. Kept in sync with Document.ActivePage.Scale after init and
+    // reseeded whenever OnParametersSet recomputes the initial viewBox.
+    private double _lastAppliedPageScale = 1.0;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -240,7 +263,18 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         }
         else if (_jsInitialized)
         {
-            await JS.InvokeVoidAsync("tmDiagramEditor.syncHtmlTransform", _containerRef);
+            // F2: syncHtmlTransform was removed — there is no HTML overlay.
+            // The unified SVG canvas uses viewBox for zoom/pan. We only forward
+            // Page.Scale changes (driven by the Properties panel) to JS zoomTo
+            // so the properties widget keeps its "page zoom" semantics.
+            var pageScale = Math.Max(0.01, Document?.ActivePage?.Scale ?? 1.0);
+            if (Math.Abs(pageScale - _lastAppliedPageScale) > 1e-4)
+            {
+                _lastAppliedPageScale = pageScale;
+                try { await JS.InvokeVoidAsync("tmDiagramEditor.zoomTo", _containerRef, pageScale); }
+                catch { /* JS may be mid-teardown */ }
+            }
+
             if (_currentSelectionIds.Length > 0)
             {
                 await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, _currentSelectionIds);
@@ -811,6 +845,33 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         var targetIds = _currentSelectionIds.Length > 0 ? _currentSelectionIds : ids;
         if (targetIds.Length == 0) return;
 
+        // If exactly one group node is selected, ungroup it instead of deleting
+        if (targetIds.Length == 1)
+        {
+            var groupNode = Document.Nodes.FirstOrDefault(n => n.Id == targetIds[0] && n.StencilId == "general.group");
+            if (groupNode is not null)
+            {
+                var anyLockedMember = Document.Nodes.Any(n => n.ParentGroupId == groupNode.Id && n.IsLocked);
+                if (!anyLockedMember)
+                {
+                    if (CommandStack is not null)
+                    {
+                        CommandStack.Push(new UngroupNodesCommand(Document, groupNode.Id));
+                    }
+                    else
+                    {
+                        new UngroupNodesCommand(Document, groupNode.Id).Execute();
+                    }
+
+                    _currentSelectionIds = [];
+                    await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, Array.Empty<string>());
+                    await OnSelectionChanged.InvokeAsync([]);
+                    await NotifyAndRender();
+                    return;
+                }
+            }
+        }
+
         var nodeIds = targetIds.Where(id => Document.Nodes.Any(n => n.Id == id && !IsNodeLocked(n))).ToArray();
         var edgeIds = targetIds.Where(id => Document.Edges.Any(e => e.Id == id)).ToArray();
 
@@ -1005,9 +1066,17 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         _viewportY = y;
         _viewportW = w;
         _viewportH = h;
+        _viewportInitialized = true;
         await ViewportChanged.InvokeAsync(new DiagramMinimapViewport(x, y, w, h));
         await InvokeAsync(StateHasChanged);
     }
+
+    /// <summary>Returns the current canvas viewport in document-space coordinates,
+    /// or a zeroed tuple if JS hasn't initialised it yet (e.g. in bUnit).</summary>
+    public (double X, double Y, double W, double H) GetViewport()
+        => _viewportInitialized
+            ? (_viewportX, _viewportY, _viewportW, _viewportH)
+            : (0, 0, 0, 0);
 
     private bool IsNodeVisible(DiagramNode node)
     {
@@ -1297,6 +1366,31 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         double[]? waypointsXY = null)
     {
         if (ReadOnly || Document is null) return;
+
+        if (GridSize > 0)
+        {
+            if (targetPointX is not null && targetPointY is not null)
+            {
+                targetPointX = Math.Round(targetPointX.Value / GridSize) * GridSize;
+                targetPointY = Math.Round(targetPointY.Value / GridSize) * GridSize;
+            }
+
+            if (sourcePointX is not null && sourcePointY is not null)
+            {
+                sourcePointX = Math.Round(sourcePointX.Value / GridSize) * GridSize;
+                sourcePointY = Math.Round(sourcePointY.Value / GridSize) * GridSize;
+            }
+
+            if (waypointsXY is not null)
+            {
+                for (var i = 0; i + 1 < waypointsXY.Length; i += 2)
+                {
+                    waypointsXY[i] = Math.Round(waypointsXY[i] / GridSize) * GridSize;
+                    waypointsXY[i + 1] = Math.Round(waypointsXY[i + 1] / GridSize) * GridSize;
+                }
+            }
+        }
+
         await OnEdgeCreated.InvokeAsync((sourceNodeId, sourcePortId, targetNodeId, targetPortId, sourceSide, sourceOffset, targetSide, targetOffset, targetEdgeId, targetEdgeT,
             sourceConstraintRx, sourceConstraintRy, sourceConstraintPerimeter,
             targetConstraintRx, targetConstraintRy, targetConstraintPerimeter,
@@ -1405,7 +1499,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             edge.ElbowOrientation = oldOrientation; // restore for command
 
             if (CommandStack is not null)
-                CommandStack.Push(new FlipEdgeCommand(edge, newOrientation, newWaypoints));
+                CommandStack.Push(new FlipElbowOrientationCommand(edge, newOrientation, newWaypoints));
             else
             {
                 edge.ElbowOrientation = newOrientation;
@@ -1653,21 +1747,18 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         switch (action)
         {
             case "flip":
-                if (edge.Routing == "elbow" && edge.Waypoints.Count > 0)
                 {
-                    var oldOrientation = edge.ElbowOrientation;
-                    var newOrientation = oldOrientation == "horizontal" ? "vertical" : "horizontal";
-                    edge.ElbowOrientation = newOrientation;
-                    var newWaypoints = await ComputeOrthogonalWaypointsAsync(edge);
-                    edge.ElbowOrientation = oldOrientation;
+                    // Reverse waypoints so the geometric path flows the other way.
+                    // For orthogonal/elbow/segment edges the waypoints will be recomputed
+                    // automatically the next time a connected node moves.
+                    var newWaypoints = edge.Waypoints.AsEnumerable().Reverse().Select(p => new DiagramPoint(p.X, p.Y)).ToList();
+
                     if (CommandStack is not null)
-                        CommandStack.Push(new FlipEdgeCommand(edge, newOrientation, newWaypoints));
+                        CommandStack.Push(new ReverseEdgeCommand(edge, newWaypoints));
                     else
                     {
-                        edge.ElbowOrientation = newOrientation;
-                        edge.Waypoints.Clear();
-                        foreach (var wp in newWaypoints)
-                            edge.Waypoints.Add(wp);
+                        var cmd = new ReverseEdgeCommand(edge, newWaypoints);
+                        cmd.Execute();
                     }
                 }
                 break;
@@ -2053,6 +2144,18 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         await JS.InvokeVoidAsync("tmDiagramEditor.updateCanvasSize", _containerRef, w, h);
     }
 
+    public async Task SetRulerUnit(string unit)
+    {
+        if (!_jsInitialized) return;
+        await JS.InvokeVoidAsync("tmDiagramEditor.setRulerUnit", _containerRef, unit);
+    }
+
+    public async Task SetPageScale(double scale)
+    {
+        if (!_jsInitialized) return;
+        await JS.InvokeVoidAsync("tmDiagramEditor.setPageScale", _containerRef, scale);
+    }
+
     public async Task ScrollTo(double centreX, double centreY)
     {
         if (!_jsInitialized) return;
@@ -2067,6 +2170,15 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         await JS.InvokeVoidAsync("tmDiagramEditor.zoomToRect", _containerRef, x, y, w, h, padding);
         if (ShowPageView)
             await JS.InvokeVoidAsync("tmDiagramEditor.addPageViewMargin", _containerRef, PageViewMargin);
+    }
+
+    /// <summary>Serializes the current viewport as a standalone SVG string.
+    /// Decorator and overlay panes (handles, selection outlines) are stripped.
+    /// Requires the canvas to be initialized.</summary>
+    public async Task<string?> ExportViewportAsSvgAsync()
+    {
+        if (!_jsInitialized) return null;
+        return await JS.InvokeAsync<string?>("tmDiagramEditor.exportViewportAsSvg", _containerRef);
     }
 
     public async Task FocusOnNode(string nodeId)
@@ -2108,6 +2220,9 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     }
 
     private static string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static string GetNodeDataString(DiagramNode node, string key)
+        => node.Data.TryGetValue(key, out var value) ? value?.ToString() ?? string.Empty : string.Empty;
 
     private (double X, double Y, string TextAnchor, string Baseline) ComputeCardinalityPosition(DiagramEdge edge, bool isSource)
     {
@@ -2740,5 +2855,18 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         public double Y { get; set; }
     }
 
-
+    /// <summary>Swaps source and target endpoints of an edge (used temporarily before ComputeOrthogonalWaypointsAsync).</summary>
+    private static void SwapEdgeEndpoints(DiagramEdge edge)
+    {
+        (edge.SourceNodeId, edge.TargetNodeId) = (edge.TargetNodeId, edge.SourceNodeId);
+        (edge.SourcePortId, edge.TargetPortId) = (edge.TargetPortId, edge.SourcePortId);
+        (edge.SourceEdgeId, edge.TargetEdgeId) = (edge.TargetEdgeId, edge.SourceEdgeId);
+        (edge.SourceEdgeT, edge.TargetEdgeT) = (edge.TargetEdgeT, edge.SourceEdgeT);
+        (edge.SourcePoint, edge.TargetPoint) = (edge.TargetPoint, edge.SourcePoint);
+        (edge.SourceConstraint, edge.TargetConstraint) = (edge.TargetConstraint, edge.SourceConstraint);
+        (edge.SourceSpacing, edge.TargetSpacing) = (edge.TargetSpacing, edge.SourceSpacing);
+        (edge.SourceCardinality, edge.TargetCardinality) = (edge.TargetCardinality, edge.SourceCardinality);
+        // StartArrow/EndArrow intentionally NOT swapped – they describe the physical
+        // start/end of the edge line, which is already reversed by swapping source/target.
+    }
 }

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Text alignment options for stencil sections.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencilTextStyle.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilTextAlign"
+}

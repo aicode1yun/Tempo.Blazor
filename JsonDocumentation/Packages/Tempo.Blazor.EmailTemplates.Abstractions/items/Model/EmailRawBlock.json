@@ -1,0 +1,18 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "Verbatim HTML/MJML passthrough (mj-raw). is emitted without escaping.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailRawBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Content",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the raw content emitted verbatim into the MJML output."
+    }
+  ],
+  "itemName": "EmailRawBlock"
+}

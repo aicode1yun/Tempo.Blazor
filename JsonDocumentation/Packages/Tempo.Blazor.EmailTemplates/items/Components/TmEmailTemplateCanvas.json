@@ -1,0 +1,52 @@
+{
+  "itemName": "TmEmailTemplateCanvas",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailTemplateCanvas Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTemplateCanvas.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "DragActive",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Raised after the document is mutated by a block/section/column action."
+    },
+    {
+      "name": "OnBlockDragStart",
+      "type": "EventCallback<Guid>",
+      "isRequired": false,
+      "description": "Raised when a block is dropped into a column at an index."
+    },
+    {
+      "name": "OnDocumentChanged",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the selection changes."
+    },
+    {
+      "name": "OnDropInColumn",
+      "type": "EventCallback<(Guid ColumnId, int Index)>",
+      "isRequired": false,
+      "description": "Whether a drag is in progress (shows drop zones between blocks)."
+    },
+    {
+      "name": "SelectedId",
+      "type": "Guid?",
+      "isRequired": true,
+      "description": "The document being displayed.",
+      "editorRequired": true
+    },
+    {
+      "name": "SelectedIdChanged",
+      "type": "EventCallback<Guid?>",
+      "isRequired": false,
+      "description": "The currently selected node id (block, column or section), if any."
+    }
+  ]
+}

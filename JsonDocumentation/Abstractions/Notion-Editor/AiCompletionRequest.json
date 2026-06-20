@@ -1,0 +1,42 @@
+{
+  "kind": "Record",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Request passed to a Notion AI completion provider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/AiCompletionRequest.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ContextHtml",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional HTML context selected from the editor or page."
+    },
+    {
+      "name": "Mode",
+      "kind": "Property",
+      "type": "AiImproveMode?",
+      "description": "Optional improvement mode associated with the request."
+    },
+    {
+      "name": "PageId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional Notion page identifier that scopes the request."
+    },
+    {
+      "name": "Prompt",
+      "kind": "Property",
+      "type": "string",
+      "description": "User prompt or instruction to complete."
+    },
+    {
+      "name": "TargetCulture",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional target culture for translation or localization requests."
+    }
+  ],
+  "itemName": "AiCompletionRequest"
+}

@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Formula",
+  "description": "Evaluates a AST against a .",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Formula/FormulaEvaluator.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Evaluate",
+      "kind": "Method",
+      "type": "object?",
+      "description": "Evaluates the given AST node.",
+      "parameters": [
+        {
+          "name": "node",
+          "type": "FormulaNode"
+        },
+        {
+          "name": "context",
+          "type": "FormulaContext"
+        }
+      ]
+    }
+  ],
+  "itemName": "FormulaEvaluator"
+}

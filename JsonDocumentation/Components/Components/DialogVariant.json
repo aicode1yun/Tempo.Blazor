@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Feedback",
+  "description": "Visual variant for the dialog indicating severity or purpose.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Feedback/ModalEnums.cs",
+  "documentationStatus": "generated",
+  "itemName": "DialogVariant"
+}

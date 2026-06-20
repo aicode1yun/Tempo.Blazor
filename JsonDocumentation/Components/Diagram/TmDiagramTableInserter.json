@@ -1,0 +1,14 @@
+{
+  "itemName": "TmDiagramTableInserter",
+  "kind": "Component",
+  "category": "Diagram",
+  "description": "TmDiagramTableInserter Blazor component in the Diagram category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Diagram",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/TmDiagramTableInserter.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Diagram"
+  ],
+  "parameters": []
+}

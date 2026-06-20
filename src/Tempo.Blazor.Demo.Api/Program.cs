@@ -2,7 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Tempo.Blazor.Components.Diagram.Services;
 using Tempo.Blazor.Demo.Api.Data;
 using Tempo.Blazor.Demo.Api.Endpoints;
+using Tempo.Blazor.Demo.Api.Hubs;
 using Tempo.Blazor.Demo.Api.Services;
+using Tempo.Blazor.DocumentEditor.Services;
+using Tempo.Blazor.EmailTemplates.Abstractions;
+using Tempo.Blazor.Mcp;
 using Tempo.Blazor.Models;
 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
@@ -18,7 +22,10 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
         "http://localhost:5010",
         "https://localhost:7106")
      .AllowAnyMethod()
-     .AllowAnyHeader()));
+     .AllowAnyHeader()
+     .AllowCredentials()));   // required for SignalR WebSocket handshake
+
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -30,13 +37,90 @@ builder.Services.AddSingleton<MockImageStore>();
 builder.Services.AddSingleton<MockViewStore>();
 builder.Services.AddSingleton<MockDropdownStore>();
 builder.Services.AddSingleton<MockScheduleStore>();
+builder.Services.AddSingleton<MockGanttStore>();
 builder.Services.AddSingleton<MockTokenStore>();
 builder.Services.AddSingleton<MockWireframeStore>();
 builder.Services.AddSingleton<MockNotionDataStore>();
 builder.Services.AddSingleton<MockNotionBlockStore>();
+builder.Services.AddSingleton<MockNotionBookmarkStore>();
+builder.Services.AddSingleton<DemoWorkItemStore>();
+builder.Services.AddSingleton<DemoNotionSearchService>();
+builder.Services.AddSingleton<DemoNotionImportExportProvider>();
+builder.Services.AddSingleton<MockNotionAnalyticsStore>();
+builder.Services.AddSingleton<MockNotionReactionStore>();
+builder.Services.AddSingleton<DemoNotionAuditProvider>();
+builder.Services.AddSingleton<DemoNotionBlogProvider>();
+builder.Services.AddSingleton<DemoNotionTemplateStore>();
+builder.Services.AddSingleton<DemoNotionNotificationStore>();
+builder.Services.AddSingleton<DemoNotionPermissionProvider>();
+builder.Services.AddSingleton<DemoNotionPublicShareProvider>();
+builder.Services.AddSingleton<DemoNotionWatchProvider>();
+builder.Services.AddSingleton<DemoNotionTaskProvider>();
+builder.Services.AddSingleton<DemoNotionHistoryStore>();
+builder.Services.AddSingleton<MockSpreadsheetDocumentStore>();
+builder.Services.AddSingleton<Tempo.Blazor.DocumentLibrary.ITempoDocumentChangePublisher,
+    Tempo.Blazor.Demo.Api.Services.HubTempoDocumentChangePublisher>();
+builder.Services.AddSingleton<DocumentLibraryStore>();
+builder.Services.AddSingleton<DocumentLibrarySeeder>();
+
+// Store-backed providers + MCP wireframe tools (the tools run inside this API over the same store).
+builder.Services.AddSingleton<Tempo.Blazor.DocumentLibrary.ITempoDocumentLibraryProvider,
+    Tempo.Blazor.Demo.Api.Services.StoreDocumentLibraryProvider>();
+builder.Services.AddSingleton<Tempo.Blazor.NotionEditor.Interfaces.IWireframeDocumentProvider,
+    Tempo.Blazor.Demo.Api.Services.StoreWireframeDocumentProvider>();
+builder.Services.AddTempoWireframeMcpTools();
+builder.Services.AddMcpServer()
+    .WithHttpTransport()
+    .WithRequestFilters(filters =>
+    {
+        filters.AddCallToolFilter(next => async (context, cancellationToken) =>
+        {
+            try
+            {
+                return await next(context, cancellationToken);
+            }
+            catch (Tempo.Blazor.DocumentLibrary.TempoDocumentConflictException ex)
+            {
+                return new ModelContextProtocol.Protocol.CallToolResult
+                {
+                    Content = [new ModelContextProtocol.Protocol.TextContentBlock
+                        { Text = Tempo.Blazor.Mcp.McpToolResults.Failure(Tempo.Blazor.Mcp.McpToolResults.Conflict, ex.Message) }],
+                    IsError = false
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ModelContextProtocol.Protocol.CallToolResult
+                {
+                    Content = [new ModelContextProtocol.Protocol.TextContentBlock
+                        { Text = Tempo.Blazor.Mcp.McpToolResults.Failure(Tempo.Blazor.Mcp.McpToolResults.Error, ex.Message) }],
+                    IsError = false
+                };
+            }
+        });
+    })
+    .WithToolsFromAssembly(typeof(Tempo.Blazor.Mcp.TempoWireframeMcp).Assembly);
+builder.Services.AddSingleton<MockNotionDatabaseStore>();
+builder.Services.AddSingleton<DemoDocumentEditorStore>();
+builder.Services.AddSingleton<DemoDocumentFormatProvider>();
+builder.Services.AddSingleton<DemoDocumentPdfExportProvider>();
+builder.Services.AddSingleton<DemoDocumentComparisonProvider>();
+builder.Services.AddSingleton<InMemoryDocumentCollaborationProvider>();
+builder.Services.AddSingleton<InMemoryDocumentSuggestionProvider>();
 builder.Services.AddSingleton<IDiagramExportService, DemoDiagramExportService>();
+builder.Services.AddSingleton<WireframeExportService>();
 builder.Services.AddScoped<DemoDiagramHistoryStore>();
 builder.Services.AddScoped<IDiagramHistoryStore>(sp => sp.GetRequiredService<DemoDiagramHistoryStore>());
+
+// Email templates: engine + validators + localization, demo store and SMTP delivery (smtp4dev).
+builder.Services.AddLocalization();
+builder.Services.AddTempoEmailTemplateEngine();
+builder.Services.AddSingleton<DemoEmailTemplateStore>();
+builder.Services.AddSingleton<Tempo.Blazor.EmailTemplates.Abstractions.Contracts.IEmailTemplateStore>(
+    sp => sp.GetRequiredService<DemoEmailTemplateStore>());
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+builder.Services.AddSingleton<ISmtpClientFactory, MailKitSmtpClientFactory>();
+builder.Services.AddSingleton<Tempo.Blazor.EmailTemplates.Abstractions.Contracts.IEmailSender, SmtpEmailSender>();
 
 var app = builder.Build();
 
@@ -50,12 +134,23 @@ app.MapImageEndpoints();
 app.MapViewEndpoints();
 app.MapDropdownEndpoints();
 app.MapScheduleEndpoints();
+app.MapGanttEndpoints();
 app.MapImportExportEndpoints();
 app.MapTokenEndpoints();
 app.MapWireframeEndpoints();
+app.MapWireframeExportEndpoints();
 app.MapDiagramExportEndpoints();
 app.MapDiagramHistoryEndpoints();
 app.MapNotionEditorEndpoints();
+app.MapDocumentLibraryEndpoints();
+app.Services.GetRequiredService<DocumentLibrarySeeder>().EnsureSeeded();
+app.MapDatabaseEndpoints();
+app.MapDocumentEditorEndpoints();
+app.MapEmailTemplateEndpoints();
+app.MapHub<DocumentEditorCollaborationHub>("/hubs/document-editor-collaboration");
+app.MapHub<NotionCollaborationHub>("/hubs/notion-collaboration");
+app.MapHub<TempoDocumentChangeHub>("/hubs/document-library");
+app.MapMcp("/mcp");
 
 using (var scope = app.Services.CreateScope())
 {

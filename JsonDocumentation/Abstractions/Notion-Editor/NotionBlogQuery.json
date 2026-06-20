@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Paging and publication filters for querying Notion blog posts.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionBlogQuery.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "IncludeDrafts",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Includes draft posts when true."
+    },
+    {
+      "name": "Skip",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of filtered posts to skip."
+    },
+    {
+      "name": "Take",
+      "kind": "Property",
+      "type": "int",
+      "description": "Maximum number of posts to return."
+    }
+  ],
+  "itemName": "NotionBlogQuery"
+}

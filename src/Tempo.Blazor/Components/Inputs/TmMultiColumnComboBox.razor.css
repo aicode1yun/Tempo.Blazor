@@ -1,0 +1,151 @@
+.tm-multi-column-combo-box {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 240px;
+    font-family: var(--tm-font-sans, ui-sans-serif, system-ui, sans-serif);
+}
+
+.tm-multi-column-combo-box--disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Trigger */
+.tm-multi-column-combo-box__trigger {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2, 0.5rem);
+    padding: var(--tm-space-2, 0.5rem) var(--tm-space-3, 0.75rem);
+    border: 1px solid var(--tm-border-color, #d1d5db);
+    border-radius: var(--tm-radius-md, 0.375rem);
+    background: var(--tm-surface, #ffffff);
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    min-height: 40px;
+}
+
+.tm-multi-column-combo-box__trigger:hover {
+    border-color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-multi-column-combo-box__trigger:focus-visible {
+    outline: 2px solid var(--tm-color-primary, #3b82f6);
+    outline-offset: 2px;
+}
+
+.tm-multi-column-combo-box__placeholder {
+    color: var(--tm-text-tertiary, #9ca3af);
+    flex: 1;
+}
+
+.tm-multi-column-combo-box__value {
+    color: var(--tm-text-primary, #111827);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-multi-column-combo-box__clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    color: var(--tm-text-tertiary, #9ca3af);
+    background: transparent;
+    border: none;
+    border-radius: var(--tm-radius-sm, 0.25rem);
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.tm-multi-column-combo-box__clear:hover {
+    color: var(--tm-color-danger, #ef4444);
+}
+
+.tm-multi-column-combo-box__arrow {
+    color: var(--tm-text-tertiary, #9ca3af);
+    transition: transform 0.2s ease;
+}
+
+.tm-multi-column-combo-box[aria-expanded="true"] .tm-multi-column-combo-box__arrow {
+    transform: rotate(180deg);
+}
+
+/* Dropdown */
+.tm-multi-column-combo-box__dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 50;
+    width: 100%;
+    min-width: 320px;
+    background: var(--tm-surface, #ffffff);
+    border: 1px solid var(--tm-border-color, #d1d5db);
+    border-radius: var(--tm-radius-md, 0.375rem);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.tm-multi-column-combo-box__filter {
+    padding: var(--tm-space-2, 0.5rem);
+    border-bottom: 1px solid var(--tm-border-color, #d1d5db);
+}
+
+.tm-multi-column-combo-box__grid-wrapper {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.tm-multi-column-combo-box__grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.tm-multi-column-combo-box__th {
+    position: sticky;
+    top: 0;
+    padding: var(--tm-space-2, 0.5rem) var(--tm-space-3, 0.75rem);
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--tm-text-secondary, #6b7280);
+    background: var(--tm-bg-subtle, #f9fafb);
+    border-bottom: 1px solid var(--tm-border-color, #d1d5db);
+    white-space: nowrap;
+}
+
+.tm-multi-column-combo-box__tr {
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.tm-multi-column-combo-box__tr:hover {
+    background: var(--tm-bg-hover, #f3f4f6);
+}
+
+.tm-multi-column-combo-box__tr--selected {
+    background: var(--tm-color-primary-subtle, #dbeafe);
+}
+
+.tm-multi-column-combo-box__tr--selected:hover {
+    background: var(--tm-color-primary-subtle, #dbeafe);
+}
+
+.tm-multi-column-combo-box__td {
+    padding: var(--tm-space-2, 0.5rem) var(--tm-space-3, 0.75rem);
+    color: var(--tm-text-primary, #111827);
+    border-bottom: 1px solid var(--tm-border-color, #f3f4f6);
+    white-space: nowrap;
+}
+
+.tm-multi-column-combo-box__empty {
+    padding: var(--tm-space-4, 1rem);
+    text-align: center;
+    color: var(--tm-text-tertiary, #9ca3af);
+}

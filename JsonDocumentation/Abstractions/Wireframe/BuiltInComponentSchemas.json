@@ -1,0 +1,17 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Provides entries for all built-in Tempo.Blazor components. This is the single source of truth for component metadata (types, categories, default dimensions, and property definitions). In the main Tempo.Blazor package, BuiltInWireframeComponentProvider reads props directly from this class so the two never diverge. API / MCP projects that reference only Tempo.Blazor.Abstractions can use this class directly — no Blazor rendering dependency.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/BuiltInComponentSchemas.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetSchemas",
+      "kind": "Method",
+      "type": "IEnumerable<WireframeComponentSchema>"
+    }
+  ],
+  "itemName": "BuiltInComponentSchemas"
+}

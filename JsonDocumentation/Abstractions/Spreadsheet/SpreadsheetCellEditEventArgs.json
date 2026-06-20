@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "description": "Event arguments fired when a cell enters or exits edit mode.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Events/SpreadsheetCellEditEventArgs.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CellRef",
+      "kind": "Property",
+      "type": "string",
+      "description": "The A1 reference of the cell being edited."
+    },
+    {
+      "name": "EditValue",
+      "kind": "Property",
+      "type": "string?",
+      "description": "The value being edited (available when IsEditing is true)."
+    },
+    {
+      "name": "IsEditing",
+      "kind": "Property",
+      "type": "bool",
+      "description": "True when the cell entered edit mode; false when editing was committed or cancelled."
+    },
+    {
+      "name": "Sheet",
+      "kind": "Property",
+      "type": "SpreadsheetSheet",
+      "description": "The affected sheet."
+    }
+  ],
+  "itemName": "SpreadsheetCellEditEventArgs"
+}

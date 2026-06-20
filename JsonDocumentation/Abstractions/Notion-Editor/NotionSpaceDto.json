@@ -1,0 +1,47 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionSpaceDto.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "HomePageId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "IconEmoji",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Key",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "NotionSpaceType"
+    }
+  ],
+  "itemName": "NotionSpaceDto"
+}

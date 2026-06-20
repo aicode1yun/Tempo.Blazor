@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Templating",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+  "description": "A single template syntax error with its source position.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/TemplateError.cs",
+  "documentationStatus": "generated",
+  "itemName": "TemplateError"
+}

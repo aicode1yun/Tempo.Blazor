@@ -1,0 +1,141 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Components.Files
+@using Tempo.Blazor.Components.Spreadsheet
+@using Tempo.Blazor.Components.Spreadsheet.Enums
+
+<div class="tm-notion-spreadsheet-block" @onfocus="HandleFocusAsync">
+
+    @if (_notFound)
+    {
+        <div class="tm-notion-tempo-block__not-found" role="status">
+            <span>@Loc["TmNotionBlock_DocumentNotFound"]</span>
+            @if (!ReadOnly)
+            {
+                <button type="button" class="tm-notion-tempo-block__remove"
+                        @onclick="HandleRemoveAsync">@Loc["TmNotionBlock_RemoveBlock"]</button>
+            }
+        </div>
+    }
+    else if (Content is null || Content.SpreadsheetDocumentId == Guid.Empty)
+    {
+        @if (!ReadOnly)
+        {
+            <div class="tm-notion-tempo-block__placeholder-actions">
+            <button class="tm-notion-media-upload-zone tm-notion-media-upload-zone--spreadsheet"
+                    type="button"
+                    aria-label="@Loc["TmNotionSpreadsheetBlock_Create"]"
+                    @onclick="CreateSpreadsheetAsync"
+                    disabled="@_creating">
+                @if (_creating)
+                {
+                    <span class="tm-notion-spreadsheet-block__spinner" aria-hidden="true"></span>
+                }
+                else
+                {
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect x="2" y="2" width="20" height="20" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M2 8h20M8 8v14M2 14h20" stroke="currentColor" stroke-width="1.2"/>
+                    </svg>
+                }
+                <span>@Loc["TmNotionSpreadsheetBlock_Create"]</span>
+            </button>
+            @if (Context.DocumentLibraryProvider is not null)
+            {
+                <button class="tm-notion-tempo-block__insert-existing"
+                        type="button"
+                        @onclick="() => _insertDialogOpen = true">
+                    @Loc["TmNotionBlock_InsertExisting"]
+                </button>
+            }
+            </div>
+        }
+        else
+        {
+            <div class="tm-notion-media-empty-placeholder"
+                 aria-label="@Loc["TmNotionSpreadsheetBlock_Create"]">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="2" y="2" width="20" height="20" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M2 8h20M8 8v14M2 14h20" stroke="currentColor" stroke-width="1.2"/>
+                </svg>
+            </div>
+        }
+    }
+    else
+    {
+        <figure class="tm-notion-spreadsheet-block__figure">
+
+            <div class="tm-notion-spreadsheet-block__embed-wrap"
+                 style="@_sizeStyle"
+                 @ref="_embedWrapRef">
+
+                @if (_loadingWorkbook)
+                {
+                    <div class="tm-notion-spreadsheet-block__loading" aria-busy="true">
+                        <span class="tm-notion-spreadsheet-block__spinner" aria-hidden="true"></span>
+                    </div>
+                }
+                else
+                {
+                    <TmSpreadsheet @key="_embedKey"
+                                   InitialWorkbook="_workbook"
+                                   Mode="SpreadsheetMode.Embedded"
+                                   Height="@EmbedHeight"
+                                   Width="100%"
+                                   Class="tm-notion-spreadsheet-block__spreadsheet" />
+
+                    @if (!ReadOnly)
+                    {
+                        @* Trvalý Edit button v pravém horním rohu — viditelný vždy, ne jen na hover *@
+                        <div class="tm-notion-spreadsheet-block__overlay">
+                            <button class="tm-notion-spreadsheet-block__edit-btn"
+                                    type="button"
+                                    aria-label="@Loc["TmNotionSpreadsheetBlock_Edit"]"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="OpenEditorAsync">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"
+                                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+                                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                                @Loc["TmNotionSpreadsheetBlock_Edit"]
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(Content.Caption) || !ReadOnly)
+            {
+                <figcaption class="tm-notion-spreadsheet-block__caption tm-notion-editable"
+                             contenteditable="@(!ReadOnly ? "true" : "false")"
+                             data-placeholder="@Loc["TmNotionSpreadsheetBlock_CaptionPlaceholder"]"
+                             @ref="_captionRef"
+                             @oninput="() => _captionDirty = true"
+                             @onblur="OnCaptionBlurAsync">
+                </figcaption>
+            }
+
+        </figure>
+    }
+
+    @if (_editorOpen && Content is not null && Content.SpreadsheetDocumentId != Guid.Empty)
+    {
+        <TmNotionSpreadsheetEditModal SpreadsheetDocumentId="Content.SpreadsheetDocumentId"
+                                      Provider="Context.SpreadsheetDocumentProvider"
+                                      OnSaved="HandleEditorSavedAsync"
+                                      OnDiscarded="HandleEditorDiscardedAsync" />
+    }
+
+    @if (Context.DocumentLibraryProvider is not null)
+    {
+        <TmDocumentOpenDialog Provider="Context.DocumentLibraryProvider"
+                              Kind="Tempo.Blazor.DocumentLibrary.TempoDocumentKind.Spreadsheet"
+                              ShowModeToggle="true"
+                              @bind-Open="_insertDialogOpen"
+                              OnSelected="HandleInsertSelectedAsync" />
+    }
+
+</div>

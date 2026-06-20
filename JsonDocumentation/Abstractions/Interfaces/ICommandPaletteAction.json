@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents an action available in TmCommandPalette (Ctrl+K).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ICommandPaletteAction.cs",
+  "documentationStatus": "generated",
+  "itemName": "ICommandPaletteAction"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Defines which side of a node a port sits on.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramPort.cs",
+  "documentationStatus": "generated",
+  "itemName": "PortSide"
+}

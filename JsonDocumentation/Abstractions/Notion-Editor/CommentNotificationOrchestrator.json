@@ -1,0 +1,124 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Helpers",
+  "description": "Generates notifications from comment workflow events.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Helpers/CommentNotificationOrchestrator.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "OnMentionAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Notifies mentioned users.",
+      "parameters": [
+        {
+          "name": "entry",
+          "type": "INotionCommentEntry"
+        },
+        {
+          "name": "mentionedUserIds",
+          "type": "IEnumerable<string>"
+        },
+        {
+          "name": "threadId",
+          "type": "string"
+        },
+        {
+          "name": "pageId",
+          "type": "string"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "OnNewReplyAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Notifies authors of parent entries when a new reply is added.",
+      "parameters": [
+        {
+          "name": "thread",
+          "type": "IBlockComment"
+        },
+        {
+          "name": "newEntry",
+          "type": "INotionCommentEntry"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "OnReactionAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Notifies the entry author when someone reacts.",
+      "parameters": [
+        {
+          "name": "entry",
+          "type": "INotionCommentEntry"
+        },
+        {
+          "name": "reactionEmoji",
+          "type": "string"
+        },
+        {
+          "name": "reactorUserId",
+          "type": "string"
+        },
+        {
+          "name": "reactorName",
+          "type": "string"
+        },
+        {
+          "name": "threadId",
+          "type": "string"
+        },
+        {
+          "name": "pageId",
+          "type": "string"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "OnThreadResolvedAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Notifies thread participants when a thread is resolved.",
+      "parameters": [
+        {
+          "name": "thread",
+          "type": "IBlockComment"
+        },
+        {
+          "name": "resolverUserId",
+          "type": "string"
+        },
+        {
+          "name": "resolverName",
+          "type": "string"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    }
+  ],
+  "itemName": "CommentNotificationOrchestrator"
+}

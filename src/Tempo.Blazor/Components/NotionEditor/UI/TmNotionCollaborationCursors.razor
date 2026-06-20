@@ -1,0 +1,30 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Models
+
+@if (_cursors.Count > 0)
+{
+    <div class="tm-collab-bar"
+         role="group"
+         aria-label="@Loc["TmNotionCollab_ActiveUsers"]">
+
+        @foreach (var (userId, cursor) in _cursors)
+        {
+            <div class="tm-collab-avatar"
+                 style="--collab-color: @GetColor(userId)"
+                 title="@cursor.DisplayName"
+                 aria-label="@cursor.DisplayName">
+                @if (!string.IsNullOrEmpty(cursor.AvatarUrl))
+                {
+                    <img src="@cursor.AvatarUrl"
+                         alt="@cursor.DisplayName"
+                         class="tm-collab-avatar__img" />
+                }
+                else
+                {
+                    <span class="tm-collab-avatar__initials">@GetInitials(cursor.DisplayName)</span>
+                }
+            </div>
+        }
+
+    </div>
+}

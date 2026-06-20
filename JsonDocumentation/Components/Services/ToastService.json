@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Injectable service for showing toast notifications. Register as Scoped in DI. Use in layout to render.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/ToastService.cs",
+  "documentationStatus": "generated",
+  "itemName": "ToastService"
+}

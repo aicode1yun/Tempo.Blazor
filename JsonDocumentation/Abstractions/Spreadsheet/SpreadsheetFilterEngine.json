@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "Pure engine that computes which rows an hides and the distinct values offered in a column's checkbox list. Column filters are combined with logical AND: a data row is hidden when any active column filter rejects its cell. Honours the typed cell values produced in phase 1 so number/date criteria compare correctly.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetFilterEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetFilterEngine"
+}

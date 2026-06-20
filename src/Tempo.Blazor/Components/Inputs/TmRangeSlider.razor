@@ -1,0 +1,38 @@
+@namespace Tempo.Blazor.Components.Inputs
+
+<div class="tm-range-slider @AdditionalCssClass" @ref="_containerRef">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="tm-range-slider__label">@Label</label>
+    }
+    <div class="tm-range-slider__track-container">
+        <div class="tm-range-slider__track">
+            <div class="tm-range-slider__fill" style="@GetFillStyle()"></div>
+        </div>
+        <input type="range"
+               class="tm-range-slider__input tm-range-slider__input--start"
+               min="@Min"
+               max="@Max"
+               step="@Step"
+               @bind-value:get="_currentStartValue"
+               @bind-value:set="SetStartValueAsync"
+               @bind-value:event="oninput"
+               disabled="@Disabled" />
+        <input type="range"
+               class="tm-range-slider__input tm-range-slider__input--end"
+               min="@Min"
+               max="@Max"
+               step="@Step"
+               @bind-value:get="_currentEndValue"
+               @bind-value:set="SetEndValueAsync"
+               @bind-value:event="oninput"
+               disabled="@Disabled" />
+    </div>
+    @if (ShowValue)
+    {
+        <div class="tm-range-slider__values">
+            <span>@_currentStartValue</span>
+            <span>@_currentEndValue</span>
+        </div>
+    }
+</div>

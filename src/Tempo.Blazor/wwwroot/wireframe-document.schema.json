@@ -85,6 +85,20 @@
           "type": "string",
           "description": "Optional group identifier."
         },
+        "isLocked": {
+          "type": "boolean",
+          "description": "When true, the element cannot be moved, resized, or deleted.",
+          "default": false
+        },
+        "rotation": {
+          "type": "number",
+          "description": "Rotation angle in degrees. 0 = no rotation.",
+          "default": 0
+        },
+        "layerId": {
+          "type": "string",
+          "description": "Optional layer identifier. When null, belongs to the default layer."
+        },
         "lockedBy": {
           "type": "string",
           "description": "Reserved for collaborative editing."

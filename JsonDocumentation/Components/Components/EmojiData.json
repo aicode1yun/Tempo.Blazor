@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "description": "Public class defined by Tempo.Blazor.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/UI/EmojiData.cs",
+  "documentationStatus": "generated",
+  "itemName": "EmojiData"
+}

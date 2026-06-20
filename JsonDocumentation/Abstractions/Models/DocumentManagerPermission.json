@@ -1,0 +1,72 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Defines access permissions for a document or folder in .",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentManagerPermission.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CanCopy",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the item can be copied."
+    },
+    {
+      "name": "CanCreateFolder",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the user can create sub-folders inside this folder."
+    },
+    {
+      "name": "CanDelete",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the item can be deleted."
+    },
+    {
+      "name": "CanDownload",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the item can be downloaded."
+    },
+    {
+      "name": "CanMove",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the item can be moved to another folder."
+    },
+    {
+      "name": "CanRead",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the item can be viewed."
+    },
+    {
+      "name": "CanRename",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the item can be renamed."
+    },
+    {
+      "name": "CanShare",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the item can be shared with others."
+    },
+    {
+      "name": "CanUpload",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the user can upload new files into this folder."
+    },
+    {
+      "name": "CanWrite",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the item can be modified (renamed, metadata edited)."
+    }
+  ],
+  "itemName": "DocumentManagerPermission"
+}

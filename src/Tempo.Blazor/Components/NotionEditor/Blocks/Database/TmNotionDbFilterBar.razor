@@ -1,0 +1,199 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+<div class="tm-dbfb">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <div class="tm-dbfb__header">
+        <span class="tm-dbfb__title">@Loc["TmNotionDbFilterBar_Title"]</span>
+        <button class="tm-dbfb__close" type="button"
+                aria-label="@Loc["TmNotionDbFilterBar_Close"]"
+                @onclick="() => OnClose.InvokeAsync()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+        </button>
+    </div>
+
+    @* ── Body ────────────────────────────────────────────────────────────── *@
+    @if (IsEmpty)
+    {
+        <p class="tm-dbfb__empty">@Loc["TmNotionDbFilterBar_Empty"]</p>
+    }
+    else
+    {
+        @if (_root.Conditions.Count + _root.NestedGroups.Count > 1)
+        {
+            <div class="tm-dbfb__where-row">
+                <span class="tm-dbfb__where-label">@Loc["TmNotionDbFilterBar_Where"]</span>
+                <div class="tm-dbfb__logic-toggle">
+                    <button class="tm-dbfb__logic-btn @(_root.Logic == FilterLogic.And ? "tm-dbfb__logic-btn--active" : "")"
+                            type="button"
+                            @onclick="() => SetRootLogicAsync(FilterLogic.And)">
+                        @Loc["TmNotionDbFilterBar_And"]
+                    </button>
+                    <button class="tm-dbfb__logic-btn @(_root.Logic == FilterLogic.Or ? "tm-dbfb__logic-btn--active" : "")"
+                            type="button"
+                            @onclick="() => SetRootLogicAsync(FilterLogic.Or)">
+                        @Loc["TmNotionDbFilterBar_Or"]
+                    </button>
+                </div>
+            </div>
+        }
+
+        @foreach (var cond in _root.Conditions)
+        {
+            @RenderCondition(_root, cond)
+        }
+
+        @foreach (var group in _root.NestedGroups)
+        {
+            @RenderGroup(group)
+        }
+    }
+
+    @* ── Footer ──────────────────────────────────────────────────────────── *@
+    @if (!ReadOnly)
+    {
+        <div class="tm-dbfb__footer">
+            <button class="tm-dbfb__add-btn" type="button" @onclick="() => AddConditionAsync(_root)">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                @Loc["TmNotionDbFilterBar_AddFilter"]
+            </button>
+            <button class="tm-dbfb__add-btn" type="button" @onclick="AddGroupAsync">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="2" y="3" width="20" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="2" y="11" width="20" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                @Loc["TmNotionDbFilterBar_AddGroup"]
+            </button>
+            @if (!IsEmpty)
+            {
+                <button class="tm-dbfb__clear-btn" type="button" @onclick="ClearAllAsync">
+                    @Loc["TmNotionDbFilterBar_ClearAll"]
+                </button>
+            }
+        </div>
+    }
+
+</div>
+
+@code {
+    private RenderFragment RenderCondition(FilterGroupModel group, FilterConditionModel cond)
+    {
+        var field = cond.FieldId.HasValue ? Fields.FirstOrDefault(f => f.Id == cond.FieldId.Value) : null;
+        var ops   = field is not null
+            ? GetOperatorsForField(field.Type)
+            : GetOperatorsForField(DatabaseFieldType.Text);
+        return @<div class="tm-dbfb__cond">
+            <select class="tm-dbfb__cond-select tm-dbfb__cond-select--field"
+                    disabled="@ReadOnly"
+                    @onchange="e => SetFieldAsync(cond, e.Value?.ToString())">
+                <option value="">@Loc["TmNotionDbFilterBar_SelectField"]</option>
+                @foreach (var f in Fields)
+                {
+                    <option value="@f.Id.ToString()" selected="@(cond.FieldId == f.Id)">@f.Name</option>
+                }
+            </select>
+            <select class="tm-dbfb__cond-select tm-dbfb__cond-select--op"
+                    disabled="@ReadOnly"
+                    @onchange="e => SetOperatorAsync(cond, e.Value?.ToString() ?? string.Empty)">
+                @foreach (var op in ops)
+                {
+                    <option value="@op.ToString()" selected="@(cond.Operator == op)">@OpLabel(op)</option>
+                }
+            </select>
+            @RenderValueInput(cond)
+            @if (!ReadOnly)
+            {
+                <button class="tm-dbfb__cond-remove" type="button"
+                        title="@Loc["TmNotionDbFilterBar_Remove"]"
+                        aria-label="@Loc["TmNotionDbFilterBar_Remove"]"
+                        @onclick="() => RemoveConditionAsync(group, cond)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            }
+        </div>;
+    }
+
+    private RenderFragment RenderGroup(FilterGroupModel group) =>
+    @<div class="tm-dbfb__group">
+        <div class="tm-dbfb__group-header">
+            <div class="tm-dbfb__logic-toggle">
+                <button class="tm-dbfb__logic-btn @(group.Logic == FilterLogic.And ? "tm-dbfb__logic-btn--active" : "")"
+                        type="button"
+                        disabled="@ReadOnly"
+                        @onclick="() => SetGroupLogicAsync(group, FilterLogic.And)">
+                    @Loc["TmNotionDbFilterBar_And"]
+                </button>
+                <button class="tm-dbfb__logic-btn @(group.Logic == FilterLogic.Or ? "tm-dbfb__logic-btn--active" : "")"
+                        type="button"
+                        disabled="@ReadOnly"
+                        @onclick="() => SetGroupLogicAsync(group, FilterLogic.Or)">
+                    @Loc["TmNotionDbFilterBar_Or"]
+                </button>
+            </div>
+            @if (!ReadOnly)
+            {
+                <button class="tm-dbfb__group-remove" type="button"
+                        title="@Loc["TmNotionDbFilterBar_RemoveGroup"]"
+                        aria-label="@Loc["TmNotionDbFilterBar_RemoveGroup"]"
+                        @onclick="() => RemoveGroupAsync(group)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            }
+        </div>
+        @foreach (var c in group.Conditions)
+        {
+            @RenderCondition(group, c)
+        }
+        @if (!ReadOnly)
+        {
+            <button class="tm-dbfb__add-btn tm-dbfb__add-btn--sm" type="button"
+                    @onclick="() => AddConditionAsync(group)">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                @Loc["TmNotionDbFilterBar_AddFilter"]
+            </button>
+        }
+    </div>;
+
+    private RenderFragment RenderValueInput(FilterConditionModel cond)
+    {
+        var kind = GetInputKind(cond);
+        if (kind == ValueInputKind.None) return _ => { };
+        if (kind == ValueInputKind.Number)
+            return @<input class="tm-dbfb__cond-value" type="number"
+                           value="@cond.ValueText"
+                           disabled="@ReadOnly"
+                           @oninput="e => SetValueAsync(cond, e.Value?.ToString() ?? string.Empty)" />;
+        if (kind == ValueInputKind.Date)
+            return @<input class="tm-dbfb__cond-value" type="date"
+                           value="@cond.ValueText"
+                           disabled="@ReadOnly"
+                           @oninput="e => SetValueAsync(cond, e.Value?.ToString() ?? string.Empty)" />;
+        if (kind == ValueInputKind.SelectOptions)
+            return @<select class="tm-dbfb__cond-value"
+                            disabled="@ReadOnly"
+                            @onchange="e => SetValueAsync(cond, e.Value?.ToString() ?? string.Empty)">
+                <option value="">@Loc["TmNotionDbFilterBar_SelectOption"]</option>
+                @foreach (var opt in GetSelectOptions(cond))
+                {
+                    <option value="@opt" selected="@(cond.ValueText == opt)">@opt</option>
+                }
+            </select>;
+        return @<input class="tm-dbfb__cond-value" type="text"
+                       value="@cond.ValueText"
+                       placeholder="@Loc["TmNotionDbFilterBar_ValuePlaceholder"]"
+                       disabled="@ReadOnly"
+                       @oninput="e => SetValueAsync(cond, e.Value?.ToString() ?? string.Empty)" />;
+    }
+}

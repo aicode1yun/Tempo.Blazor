@@ -1,0 +1,14 @@
+{
+  "itemName": "TmGanttFilterPanel",
+  "kind": "Component",
+  "category": "Scheduler",
+  "description": "TmGanttFilterPanel Blazor component in the Scheduler category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Scheduler",
+  "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttFilterPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Scheduler"
+  ],
+  "parameters": []
+}

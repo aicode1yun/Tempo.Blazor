@@ -1,72 +1,78 @@
 @namespace Tempo.Blazor.Components.Notifications
-@using Tempo.Blazor.Interfaces
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Enums
 @using Tempo.Blazor.Components.Icons
+@implements IDisposable
 
-<div class="tm-notification-bell @Class" @attributes="AdditionalAttributes">
+<div class="tm-notification-bell @Class @(_hasNew ? "tm-notification-bell--pulse" : "")"
+     @attributes="AdditionalAttributes"
+     @ref="_rootRef">
     <button type="button"
-            class="tm-notification-bell-button"
-            aria-label="@Loc["TmNotificationBell_AriaLabel"]"
-            disabled="@Disabled"
-            @onclick="Toggle">
+            class="tm-notification-bell__button"
+            aria-label="@AriaLabelText"
+            title="@AriaLabelText"
+            @onclick="ToggleAsync">
         <TmIcon Name="@IconNames.Bell" Size="IconSize.Sm" />
         @if (UnreadCount > 0)
         {
-            <span class="tm-notification-badge">@UnreadCount</span>
+            <span class="tm-notification-bell__badge">@UnreadCount</span>
         }
     </button>
 
     @if (_isOpen)
     {
-        <div class="tm-notification-dropdown">
-            <div class="tm-notification-header">
-                <span class="tm-notification-title">@Loc["TmNotificationBell_AriaLabel"]</span>
-                @if (UnreadCount > 0)
-                {
+        <div class="tm-notification-bell__dropdown">
+            <div class="tm-notification-bell__header">
+                <span class="tm-notification-bell__title">@Loc["TmNotificationBell_AriaLabel"]</span>
+                <div class="tm-notification-bell__actions">
                     <button type="button"
-                            class="tm-notification-mark-all-read"
-                            @onclick="async () => await OnMarkAllRead.InvokeAsync()">
-                        @Loc["TmNotificationBell_MarkAllRead"]
+                            class="tm-notification-bell__filter"
+                            @onclick="() => _showOnlyUnread = !_showOnlyUnread">
+                        @(_showOnlyUnread ? Loc["TmNotificationBell_ShowAll"] : Loc["TmNotificationBell_ShowOnlyUnread"])
                     </button>
-                }
+                    @if (UnreadCount > 0)
+                    {
+                        <button type="button"
+                                class="tm-notification-bell__mark-all"
+                                @onclick="MarkAllReadAsync">
+                            @Loc["TmNotificationBell_MarkAllRead"]
+                        </button>
+                    }
+                </div>
             </div>
 
-            <div class="tm-notification-list">
-                @if (VisibleItems.Any())
+            <div class="tm-notification-bell__list">
+                @if (VisibleNotifications.Any())
                 {
-                    @foreach (var item in VisibleItems)
+                    @foreach (var n in VisibleNotifications)
                     {
-                        var n = item;
-                        <div class="tm-notification-item @(n.IsRead ? "" : "tm-notification-unread")"
-                             @onclick="async () => await OnNotificationClick.InvokeAsync(n)">
-                            <span class="tm-notification-severity tm-notification-severity--@n.Severity.ToString().ToLowerInvariant()"
-                                  aria-hidden="true">
-                                <TmIcon Name="@SeverityIcon(n.Severity)" Size="IconSize.Xs" />
-                            </span>
-                            <div class="tm-notification-item-content">
-                                <span class="tm-notification-item-title">@n.Title</span>
-                                @if (!string.IsNullOrEmpty(n.Body))
+                        <div class="tm-notification-bell__item @(n.IsRead ? "" : "tm-notification-bell__item--unread")"
+                             @onclick="() => OnItemClickAsync(n)">
+                            <div class="tm-notification-bell__avatar">
+                                @if (!string.IsNullOrEmpty(n.Event.SenderAvatarUrl))
                                 {
-                                    <span class="tm-notification-item-message">@n.Body</span>
+                                    <img src="@n.Event.SenderAvatarUrl" alt="" />
                                 }
-                                <span class="tm-notification-item-time">@FormatTime(n.CreatedAt)</span>
+                                else
+                                {
+                                    <TmIcon Name="@TypeIcon(n.Event.Type)" Size="IconSize.Sm" />
+                                }
+                            </div>
+                            <div class="tm-notification-bell__content">
+                                <span class="tm-notification-bell__message">@n.Event.Message</span>
+                                <span class="tm-notification-bell__time">@FormatTime(n.Event.CreatedAt)</span>
                             </div>
                             @if (!n.IsRead)
                             {
-                                <button type="button"
-                                        class="tm-notification-mark-read"
-                                        aria-label="@Loc["TmNotificationBell_MarkAllRead"]"
-                                        @onclick:stopPropagation="true"
-                                        @onclick="async () => await OnMarkAsRead.InvokeAsync(n.Id)">
-                                    <TmIcon Name="@IconNames.Check" Size="IconSize.Xs" />
-                                </button>
-                                <span class="tm-notification-unread-dot" aria-hidden="true"></span>
+                                <span class="tm-notification-bell__dot" aria-hidden="true"></span>
                             }
                         </div>
                     }
                 }
                 else
                 {
-                    <div class="tm-notification-empty">@Loc["TmNotificationBell_NoNotifications"]</div>
+                    <div class="tm-notification-bell__empty">@Loc["TmNotificationBell_NoNotifications"]</div>
                 }
             </div>
         </div>
@@ -74,52 +80,115 @@
 </div>
 
 @code {
-    /// <summary>Notification items to display.</summary>
-    [Parameter] public IReadOnlyList<INotificationItem> Notifications { get; set; } = [];
+    [Inject] private INotificationService NotificationService { get; set; } = default!;
+    [Inject] private INotificationBadgeState BadgeState { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
 
-    /// <summary>Fires when "mark as read" is clicked for a single notification. Argument = item Id.</summary>
-    [Parameter] public EventCallback<string> OnMarkAsRead { get; set; }
-
-    /// <summary>Fires when the "Mark all as read" button is clicked.</summary>
-    [Parameter] public EventCallback OnMarkAllRead { get; set; }
-
-    /// <summary>Maximum number of notifications shown in the dropdown.</summary>
-    [Parameter] public int MaxVisible { get; set; } = 10;
-
-    /// <summary>Fires when a notification item is clicked.</summary>
-    [Parameter] public EventCallback<INotificationItem> OnNotificationClick { get; set; }
-
-    /// <summary>Additional CSS class.</summary>
     [Parameter] public string? Class { get; set; }
-
-    /// <summary>When true the bell button is disabled.</summary>
-    [Parameter] public bool Disabled { get; set; }
-
+    [Parameter] public string CurrentUserId { get; set; } = "demo";
+    [Parameter] public EventCallback<bool> OnDropdownOpenChanged { get; set; }
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
     private bool _isOpen;
+    private bool _hasNew;
+    private bool _showOnlyUnread;
+    private int _serviceUnreadCount;
+    private List<INotification> _notifications = new();
+    private ElementReference _rootRef;
 
-    private int UnreadCount => Notifications.Count(n => !n.IsRead);
+    private int UnreadCount => Math.Max(_serviceUnreadCount, BadgeState.UnreadCount);
 
-    private IEnumerable<INotificationItem> VisibleItems =>
-        Notifications.Take(MaxVisible);
+    private string AriaLabelText => UnreadCount > 0
+        ? Loc["TmNotificationBell_NewCount", UnreadCount]
+        : Loc["TmNotificationBell_AriaLabel"];
 
-    private void Toggle() => _isOpen = !_isOpen;
+    private IEnumerable<INotification> VisibleNotifications =>
+        _showOnlyUnread ? _notifications.Where(n => !n.IsRead) : _notifications;
 
-    private string FormatTime(DateTimeOffset ts)
+    protected override async Task OnInitializedAsync()
     {
-        var diff = DateTimeOffset.Now - ts;
-        if (diff.TotalMinutes < 1) return Loc["TmTimeline_JustNow"];
-        if (diff.TotalHours   < 1) return Loc["TmTimeline_MinutesAgo", (int)diff.TotalMinutes];
-        if (diff.TotalDays    < 1) return Loc["TmTimeline_HoursAgo",   (int)diff.TotalHours];
-        return Loc["TmTimeline_DaysAgo", (int)diff.TotalDays];
+        BadgeState.OnChanged += OnBadgeChanged;
+        await LoadUnreadCountAsync();
     }
 
-    private static string SeverityIcon(NotificationSeverity severity) => severity switch
+    private async void OnBadgeChanged()
     {
-        NotificationSeverity.Success => IconNames.CheckCircle,
-        NotificationSeverity.Warning => IconNames.AlertTriangle,
-        NotificationSeverity.Error   => IconNames.AlertCircle,
-        _                            => IconNames.Info,
+        await InvokeAsync(async () =>
+        {
+            _hasNew = true;
+            await LoadUnreadCountAsync();
+            if (_isOpen)
+                await LoadNotificationsAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task ToggleAsync()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen)
+        {
+            _hasNew = false;
+            await LoadNotificationsAsync();
+        }
+        else
+        {
+            _showOnlyUnread = false;
+        }
+        await OnDropdownOpenChanged.InvokeAsync(_isOpen);
+    }
+
+    private async Task LoadNotificationsAsync()
+    {
+        _notifications = (await NotificationService.GetNotificationsAsync(CurrentUserId, limit: 50)).ToList();
+        _serviceUnreadCount = _notifications.Count(n => !n.IsRead);
+    }
+
+    private async Task LoadUnreadCountAsync()
+    {
+        _serviceUnreadCount = await NotificationService.GetUnreadCountAsync(CurrentUserId);
+    }
+
+    private async Task MarkAllReadAsync()
+    {
+        await NotificationService.MarkAllAsReadAsync(CurrentUserId);
+        await LoadNotificationsAsync();
+    }
+
+    private async Task OnItemClickAsync(INotification notification)
+    {
+        if (!notification.IsRead)
+            await NotificationService.MarkAsReadAsync(notification.Id, CurrentUserId);
+
+        if (!string.IsNullOrEmpty(notification.Event.DeepLink))
+            Navigation.NavigateTo(notification.Event.DeepLink);
+
+        await LoadNotificationsAsync();
+    }
+
+    private static string FormatTime(DateTime dt)
+    {
+        var diff = DateTime.UtcNow - dt.ToUniversalTime();
+        if (diff.TotalMinutes < 1) return "just now";
+        if (diff.TotalHours < 1) return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalDays < 1) return $"{(int)diff.TotalHours}h ago";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays}d ago";
+        return dt.ToString("MMM d");
+    }
+
+    private static string TypeIcon(NotificationType type) => type switch
+    {
+        NotificationType.Mention => IconNames.AtSign,
+        NotificationType.Reply => IconNames.MessageSquare,
+        NotificationType.Reaction => IconNames.ThumbsUp,
+        NotificationType.ThreadResolved => IconNames.CheckCircle,
+        NotificationType.NewThread => IconNames.PlusCircle,
+        _ => IconNames.Bell
     };
+
+    public void Dispose()
+    {
+        BadgeState.OnChanged -= OnBadgeChanged;
+    }
 }

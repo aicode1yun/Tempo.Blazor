@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Calculates per-assignee per-day workload from a list of tasks.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/WorkloadCalculator.cs",
+  "documentationStatus": "generated",
+  "itemName": "WorkloadCalculator"
+}

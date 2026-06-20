@@ -10,3 +10,12 @@
 .tm-icon-success  { color: var(--tm-color-success); }
 .tm-icon-warning  { color: var(--tm-color-warning); }
 .tm-icon-muted    { color: var(--tm-text-secondary); }
+
+.tm-icon-unknown {
+    display: inline-block;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 1px dashed var(--tm-color-text-muted);
+    border-radius: var(--tm-radius-xs);
+    opacity: 0.4;
+}

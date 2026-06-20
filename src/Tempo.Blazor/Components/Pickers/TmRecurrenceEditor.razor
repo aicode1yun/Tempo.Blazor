@@ -1,0 +1,141 @@
+@namespace Tempo.Blazor.Components.Pickers
+@using Tempo.Blazor.Abstractions.Models
+@inject ITmLocalizer Loc
+
+<div class="tm-recurrence-editor @Class" @attributes="AdditionalAttributes">
+    <!-- Pattern Type -->
+    <div class="tm-recurrence-editor__field">
+        <label class="tm-recurrence-editor__label">@Loc["TmRecurrenceEditor_Pattern"]</label>
+        <TmSelect TValue="RecurrencePattern"
+                  Value="_rule.Pattern"
+                  ValueChanged="OnPatternChangedAsync"
+                  Options="_patternOptions" />
+    </div>
+
+    <!-- Interval -->
+    <div class="tm-recurrence-editor__field">
+        <label class="tm-recurrence-editor__label">@Loc["TmRecurrenceEditor_Every"]</label>
+        <div class="tm-recurrence-editor__interval">
+            <TmNumberInput Value="_rule.Interval"
+                           ValueChanged="OnIntervalChangedAsync"
+                           Min="1" />
+            <span class="tm-recurrence-editor__interval-label">@GetIntervalLabel(_rule.Pattern)</span>
+        </div>
+    </div>
+
+    <!-- Weekly: Days of week -->
+    @if (_rule.Pattern == RecurrencePattern.Weekly)
+    {
+        <div class="tm-recurrence-editor__field">
+            <label class="tm-recurrence-editor__label">@Loc["TmRecurrenceEditor_On"]</label>
+            <div class="tm-recurrence-editor__days">
+                @for (int i = 0; i < 7; i++)
+                {
+                    var dayIndex = i;
+                    var isChecked = _rule.DaysOfWeek.Contains(dayIndex);
+                    <label class="tm-recurrence-editor__day @(_rule.DaysOfWeek.Contains(dayIndex) ? "tm-recurrence-editor__day--checked" : "")">
+                        <input type="checkbox"
+                               checked="@isChecked"
+                               @onchange="() => ToggleDayAsync(dayIndex)" />
+                        <span>@_dayNames[i]</span>
+                    </label>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Monthly: Day or Position -->
+    @if (_rule.Pattern == RecurrencePattern.Monthly)
+    {
+        <div class="tm-recurrence-editor__field">
+            <label class="tm-recurrence-editor__label">@Loc["TmRecurrenceEditor_On"]</label>
+            <div class="tm-recurrence-editor__monthly-options">
+                <label class="tm-recurrence-editor__radio-label">
+                    <input type="radio"
+                           name="monthly-type"
+                           checked="@(_monthlyMode == "day")"
+                           @onchange="@(e => SetMonthlyModeAsync("day"))" />
+                    <span>@Loc["TmRecurrenceEditor_Day"] </span>
+                    <TmNumberInput Value="_rule.DayOfMonth"
+                                   ValueChanged="OnDayOfMonthChangedAsync"
+                                   Min="1" Max="31" />
+                </label>
+                <label class="tm-recurrence-editor__radio-label">
+                    <input type="radio"
+                           name="monthly-type"
+                           checked="@(_monthlyMode == "position")"
+                           @onchange="@(e => SetMonthlyModeAsync("position"))" />
+                    <span>@Loc["TmRecurrenceEditor_The"] </span>
+                    <TmSelect TValue="int?"
+                              Value="_rule.Position"
+                              ValueChanged="OnPositionChangedAsync"
+                              Options="_positionOptions" />
+                    <TmSelect TValue="int"
+                              Value="(_rule.DaysOfWeek.FirstOrDefault())"
+                              ValueChanged="OnMonthlyDayChangedAsync"
+                              Options="_dayOfWeekOptions" />
+                </label>
+            </div>
+        </div>
+    }
+
+    <!-- Yearly: Month + Day -->
+    @if (_rule.Pattern == RecurrencePattern.Yearly)
+    {
+        <div class="tm-recurrence-editor__field">
+            <label class="tm-recurrence-editor__label">@Loc["TmRecurrenceEditor_On"]</label>
+            <div class="tm-recurrence-editor__yearly-options">
+                <TmSelect TValue="int?"
+                          Value="_rule.MonthOfYear"
+                          ValueChanged="OnMonthOfYearChangedAsync"
+                          Options="_monthOptions" />
+                <TmNumberInput Value="_rule.DayOfMonth"
+                               ValueChanged="OnDayOfMonthChangedAsync"
+                               Min="1" Max="31" />
+            </div>
+        </div>
+    }
+
+    <!-- End -->
+    <div class="tm-recurrence-editor__field">
+        <label class="tm-recurrence-editor__label">@Loc["TmRecurrenceEditor_End"]</label>
+        <div class="tm-recurrence-editor__end-options">
+            <label class="tm-recurrence-editor__radio-label">
+                <input type="radio"
+                       name="end-type"
+                       checked="@(_endMode == "never")"
+                       @onchange="@(e => SetEndModeAsync("never"))" />
+                <span>@Loc["TmRecurrenceEditor_Never"]</span>
+            </label>
+            <label class="tm-recurrence-editor__radio-label">
+                <input type="radio"
+                       name="end-type"
+                       checked="@(_endMode == "count")"
+                       @onchange="@(e => SetEndModeAsync("count"))" />
+                <span>@Loc["TmRecurrenceEditor_After"] </span>
+                <TmNumberInput Value="GetEndCount()"
+                               ValueChanged="OnEndCountChangedAsync"
+                               Min="1" />
+                <span>@Loc["TmRecurrenceEditor_Occurrences"]</span>
+            </label>
+            <label class="tm-recurrence-editor__radio-label">
+                <input type="radio"
+                       name="end-type"
+                       checked="@(_endMode == "date")"
+                       @onchange="@(e => SetEndModeAsync("date"))" />
+                <span>@Loc["TmRecurrenceEditor_OnDate"] </span>
+                <TmDatePicker Value="GetEndDate()"
+                              ValueChanged="OnEndDateChangedAsync" />
+            </label>
+        </div>
+    </div>
+
+    <!-- Summary -->
+    @if (ShowSummary)
+    {
+        <div class="tm-recurrence-editor__summary">
+            <span class="tm-recurrence-editor__summary-label">@Loc["TmRecurrenceEditor_Summary"]:</span>
+            <span class="tm-recurrence-editor__summary-text">@_currentRRule</span>
+        </div>
+    }
+</div>

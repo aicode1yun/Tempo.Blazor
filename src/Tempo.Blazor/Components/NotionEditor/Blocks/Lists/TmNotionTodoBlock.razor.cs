@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.NotionEditor.Services;
+using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -27,6 +29,12 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
 
     /// <summary>Fired when the checkbox is toggled. Arg = new checked state.</summary>
     [Parameter] public EventCallback<bool>                      OnCheckedChanged  { get; set; }
+
+    /// <summary>Fired when the todo assignee changes. Args = assignee ID and display name.</summary>
+    [Parameter] public EventCallback<(string? AssigneeId, string? AssigneeDisplayName)> OnAssigneeChanged { get; set; }
+
+    /// <summary>Fired when the todo due date changes. Arg = selected due date or null.</summary>
+    [Parameter] public EventCallback<DateTime?> OnDueDateChanged { get; set; }
 
     /// <summary>Fired on blur when HTML has changed. Arg = new HTML.</summary>
     [Parameter] public EventCallback<string>                    OnContentSaved    { get; set; }
@@ -55,6 +63,9 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
     /// <summary>Fired when '[[' is typed. Args = (top, left) caret coords.</summary>
     [Parameter] public EventCallback<(double Top, double Left)> OnPageLinkMenu    { get; set; }
 
+    /// <summary>Fired when '{{' token syntax is typed. Args = (top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(double Top, double Left)> OnTokenMenu       { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private ElementReference                             _editableRef;
@@ -64,6 +75,13 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
     private string?                                     _lastHtml;
     private ITodoBlockContent?                          _lastContent;
     private bool                                        _isChecked;
+    private bool                                        _showAssigneePicker;
+    private bool                                        _showDatePicker;
+    private string                                      _assigneeQuery = string.Empty;
+    private IReadOnlyList<IMentionUser>                 _assignees = [];
+    private bool                                        _loadingAssignees;
+
+    [CascadingParameter] private NotionEditorContext Context { get; set; } = default!;
 
     // ── Computed CSS ─────────────────────────────────────────────────────────
 
@@ -74,10 +92,74 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
         _                    => string.Empty
     };
 
+    private string _rootClass =>
+        $"tm-notion-todo {(_isChecked ? "tm-notion-todo--checked" : string.Empty)} {(IsOverdue ? "tm-notion-todo--overdue" : string.Empty)} {_bgClass}";
+
     private string _bgClass =>
         string.IsNullOrEmpty(Content?.BackgroundColor)
             ? string.Empty
             : $"tm-notion-bg-{Content.BackgroundColor}";
+
+    private bool HasAssignee =>
+        !string.IsNullOrWhiteSpace(Content?.AssigneeDisplayName) ||
+        !string.IsNullOrWhiteSpace(Content?.AssigneeId);
+
+    private bool HasDueDate => Content?.DueDate is not null;
+
+    private bool IsOverdue =>
+        !_isChecked &&
+        Content?.DueDate is DateTime dueDate &&
+        dueDate.Date < DateTime.Today;
+
+    private DateOnly? DueDateOnly =>
+        Content?.DueDate is DateTime dueDate ? DateOnly.FromDateTime(dueDate) : null;
+
+    private string DueClass
+    {
+        get
+        {
+            var css = "tm-notion-todo__due";
+            if (IsOverdue)
+                return $"{css} tm-notion-todo__due--overdue";
+
+            if (Content?.DueDate is not DateTime dueDate)
+                return css;
+
+            if (dueDate.Date == DateTime.Today)
+                return $"{css} tm-notion-todo__due--today";
+
+            if (dueDate.Date == DateTime.Today.AddDays(1))
+                return $"{css} tm-notion-todo__due--tomorrow";
+
+            return css;
+        }
+    }
+
+    private string DueText
+    {
+        get
+        {
+            if (Content?.DueDate is not DateTime dueDate)
+                return string.Empty;
+
+            return IsOverdue
+                ? $"{Loc["Notion_Todo_Overdue"]} · {dueDate:d}"
+                : dueDate.ToString("d");
+        }
+    }
+
+    private string AssigneeDisplayName =>
+        !string.IsNullOrWhiteSpace(Content?.AssigneeDisplayName)
+            ? Content.AssigneeDisplayName
+            : Content?.AssigneeId ?? string.Empty;
+
+    private string AssigneeInitials
+    {
+        get
+        {
+            return UserInitials(AssigneeDisplayName);
+        }
+    }
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -89,6 +171,8 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
         _dirty         = false;
         _kbInitialized = false;
         _lastHtml      = null;
+        _showAssigneePicker = false;
+        _showDatePicker = false;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -112,7 +196,7 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
             }
             catch { }
         }
-        else if (html != _lastHtml)
+        else if (!_dirty && html != _lastHtml)
         {
             _lastHtml = html;
             try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html); }
@@ -124,7 +208,7 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
 
     private async Task HandleCheckboxChangeAsync(ChangeEventArgs e)
     {
-        _isChecked = e.Value is bool b && b;
+        _isChecked = !_isChecked;
         await OnCheckedChanged.InvokeAsync(_isChecked);
     }
 
@@ -133,17 +217,84 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
     private async Task OnBlurAsync()
     {
         if (!_dirty || ReadOnly) return;
-        _dirty = false;
         try
         {
-            var html  = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
-            _lastHtml = html;
+            var html = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
             await OnContentSaved.InvokeAsync(html);
         }
         catch { }
+        finally
+        {
+            _dirty = false;
+        }
     }
 
     private async Task HandleFocusAsync() => await OnFocused.InvokeAsync();
+
+    private async Task ToggleAssigneePickerAsync()
+    {
+        if (ReadOnly || Context.MentionProvider is null)
+            return;
+
+        _showAssigneePicker = !_showAssigneePicker;
+        _showDatePicker = false;
+        if (_showAssigneePicker)
+            await LoadAssigneesAsync();
+    }
+
+    private void ToggleDatePicker()
+    {
+        if (ReadOnly)
+            return;
+
+        _showDatePicker = !_showDatePicker;
+        _showAssigneePicker = false;
+    }
+
+    private async Task HandleAssigneeSearchAsync(ChangeEventArgs args)
+    {
+        _assigneeQuery = args.Value?.ToString() ?? string.Empty;
+        await LoadAssigneesAsync();
+    }
+
+    private async Task LoadAssigneesAsync()
+    {
+        if (Context.MentionProvider is null)
+        {
+            _assignees = [];
+            return;
+        }
+
+        _loadingAssignees = true;
+        try
+        {
+            _assignees = (await Context.MentionProvider.SearchUsersAsync(_assigneeQuery)).ToArray();
+        }
+        finally
+        {
+            _loadingAssignees = false;
+        }
+    }
+
+    private async Task SelectAssigneeAsync(IMentionUser user)
+    {
+        _showAssigneePicker = false;
+        await OnAssigneeChanged.InvokeAsync((user.UserId, user.DisplayName));
+    }
+
+    private async Task ClearAssigneeAsync()
+    {
+        _showAssigneePicker = false;
+        await OnAssigneeChanged.InvokeAsync((null, null));
+    }
+
+    private async Task HandleDueDateSelectedAsync(DateOnly? dueDate)
+    {
+        _showDatePicker = false;
+        await OnDueDateChanged.InvokeAsync(dueDate.HasValue
+            ? dueDate.Value.ToDateTime(TimeOnly.MinValue)
+            : null);
+    }
 
     // ── JS keyboard callbacks — names MUST match notion-editor.js ─────────────
 
@@ -190,6 +341,10 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
     public async Task OnPageLinkTriggered(double top, double left) =>
         await OnPageLinkMenu.InvokeAsync((top, left));
 
+    [JSInvokable]
+    public async Task OnTokenTriggered(double top, double left) =>
+        await OnTokenMenu.InvokeAsync((top, left));
+
     // ── Dispose ───────────────────────────────────────────────────────────────
 
     public async ValueTask DisposeAsync()
@@ -206,4 +361,16 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
 
     private static bool IsEmptyHtml(string html) =>
         string.IsNullOrWhiteSpace(html) || html.Trim() is "" or "<br>" or "<br/>" or "&nbsp;";
+
+    private static string UserInitials(string? displayName)
+    {
+        var name = displayName?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(name))
+            return string.Empty;
+
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length == 1
+            ? parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant()
+            : string.Concat(parts.Take(2).Select(part => char.ToUpperInvariant(part[0])));
+    }
 }

@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Spell and proofing options supplied by the host application to the document editor runtime.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProofingOptions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DefaultLanguage",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Default language tag used when a block does not provide its own language metadata."
+    },
+    {
+      "name": "Enabled",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether proofing diagnostics should run in the editor surface."
+    },
+    {
+      "name": "FlaggedWords",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>",
+      "description": "Words that the host proofing provider currently reports as misspelled."
+    },
+    {
+      "name": "Suggestions",
+      "kind": "Property",
+      "type": "IReadOnlyDictionary<string, IReadOnlyList<string>>",
+      "description": "Host-supplied spelling suggestions keyed by the original misspelled word."
+    }
+  ],
+  "itemName": "DocumentProofingOptions"
+}

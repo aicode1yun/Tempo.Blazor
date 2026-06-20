@@ -1,0 +1,34 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+  "description": "Loads diagram stencil libraries from JSON sources.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Stencils/JsonDiagramStencilProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetStencilSets",
+      "kind": "Method",
+      "type": "IEnumerable<DiagramStencilSet>"
+    },
+    {
+      "name": "LoadOptionalLibrary",
+      "kind": "Method",
+      "type": "void",
+      "description": "Loads an optional source and makes its stencils available from .",
+      "parameters": [
+        {
+          "name": "sourceId",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Priority",
+      "kind": "Property",
+      "type": "int"
+    }
+  ],
+  "itemName": "JsonDiagramStencilProvider"
+}

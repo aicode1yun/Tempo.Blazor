@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Defines a default port on a diagram stencil.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencilPortDef.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "IsInput",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the port accepts incoming edges."
+    },
+    {
+      "name": "IsOutput",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the port allows outgoing edges."
+    },
+    {
+      "name": "MagnetStrategy",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Magnet strategy for edge snapping. Supported: cardinal, perimeter, custom."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Human-readable name of the port."
+    },
+    {
+      "name": "Offset",
+      "kind": "Property",
+      "type": "double",
+      "description": "Offset along the side as a ratio from 0.0 to 1.0."
+    },
+    {
+      "name": "Side",
+      "kind": "Property",
+      "type": "PortSide",
+      "description": "Which side of the node the port sits on."
+    }
+  ],
+  "itemName": "DiagramStencilPortDef"
+}

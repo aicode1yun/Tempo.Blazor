@@ -1,0 +1,75 @@
+{
+  "itemName": "TmSpreadsheetFormulaBar",
+  "kind": "Component",
+  "category": "Spreadsheet",
+  "description": "Displays the active cell reference and provides an input for editing cell values and formulas. Synchronizes bidirectionally with the active cell in the spreadsheet grid.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/TmSpreadsheetFormulaBar.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Spreadsheet"
+  ],
+  "parameters": [
+    {
+      "name": "DisplayValue",
+      "type": "string?",
+      "isRequired": false,
+      "description": "The A1 reference of the currently active cell."
+    },
+    {
+      "name": "IsEditing",
+      "type": "bool",
+      "isRequired": false,
+      "description": "The current display value or formula of the active cell."
+    },
+    {
+      "name": "OnCommitNavigationRequested",
+      "type": "EventCallback<(int RowDelta, int ColDelta)>",
+      "isRequired": false,
+      "description": "Called when the user presses Tab while editing in the formula bar."
+    },
+    {
+      "name": "OnEditCancelled",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the user commits a value from the formula bar."
+    },
+    {
+      "name": "OnEditStarted",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Whether the formula bar is in editing mode."
+    },
+    {
+      "name": "OnNavigateToRef",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Called after a commit when spreadsheet-like navigation should move the active cell."
+    },
+    {
+      "name": "OnTabPressed",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the formula bar value changes during editing."
+    },
+    {
+      "name": "OnTransferToInlineEditorRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the user enters a cell reference or named range in the name box and presses Enter."
+    },
+    {
+      "name": "OnValueChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Called when the user cancels editing in the formula bar."
+    },
+    {
+      "name": "OnValueCommitted",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Called when the user starts editing in the formula bar."
+    }
+  ]
+}

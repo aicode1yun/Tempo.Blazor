@@ -18,6 +18,7 @@
                                       Events="@_loadedEvents"
                                       MaxVisibleEvents="3"
                                       ReadOnly="@ReadOnly"
+                                      ShowAdjacentMonthEvents="@ShowAdjacentMonthEvents"
                                       OnSlotClick="@OnSlotClick"
                                       OnEventClick="@OnEventClick"
                                       OnEventChanged="@OnEventChanged"
@@ -31,6 +32,7 @@
                                     Resources="@Resources"
                                     SlotDuration="@SlotDuration"
                                     ReadOnly="@ReadOnly"
+                                    HideTimeGrid="@HideTimeGrid"
                                     OnSlotClick="@OnSlotClick"
                                     OnEventClick="@OnEventClick"
                                     OnEventChanged="@OnEventChanged"
@@ -46,6 +48,7 @@
                                      FirstDayOfWeek="@FirstDayOfWeek"
                                      SlotDuration="@SlotDuration"
                                      ReadOnly="@ReadOnly"
+                                     HideTimeGrid="@HideTimeGrid"
                                      OnSlotClick="@OnSlotClick"
                                      OnEventClick="@OnEventClick"
                                      OnEventChanged="@OnEventChanged"
@@ -135,6 +138,12 @@
 
     /// <summary>Whether events are read-only (no drag/resize).</summary>
     [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>When true, hides the hourly time grid body in Day and Week views (only column headers and all-day row are shown).</summary>
+    [Parameter] public bool HideTimeGrid { get; set; }
+
+    /// <summary>When true, events are rendered in adjacent-month day cells visible in the month grid. Default: true.</summary>
+    [Parameter] public bool ShowAdjacentMonthEvents { get; set; } = true;
 
     /// <summary>Custom event template.</summary>
     [Parameter] public RenderFragment<TmScheduleEvent>? EventTemplate { get; set; }

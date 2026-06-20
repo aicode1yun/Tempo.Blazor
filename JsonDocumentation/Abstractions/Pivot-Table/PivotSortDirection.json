@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Specifies the sort direction for a pivot dimension field.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotSortDirection.cs",
+  "documentationStatus": "generated",
+  "itemName": "PivotSortDirection"
+}

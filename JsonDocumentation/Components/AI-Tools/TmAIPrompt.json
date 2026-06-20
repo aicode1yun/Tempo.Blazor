@@ -1,0 +1,57 @@
+{
+  "itemName": "TmAIPrompt",
+  "kind": "Component",
+  "category": "AI Tools",
+  "description": "An AI prompt component with quick commands, output rendering, copy, and rating.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.AITools",
+  "sourcePath": "src/Tempo.Blazor/Components/AITools/TmAIPrompt.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.AITools"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the input is disabled."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Placeholder text for the prompt input."
+    },
+    {
+      "name": "OnCommandClick",
+      "type": "EventCallback<AIPromptCommand>",
+      "isRequired": false,
+      "description": "Fired when the user submits a prompt."
+    },
+    {
+      "name": "OnOutputCopy",
+      "type": "EventCallback<AIPromptOutput>",
+      "isRequired": false,
+      "description": "Fired when a command button is clicked."
+    },
+    {
+      "name": "OnOutputRate",
+      "type": "EventCallback<(AIPromptOutput Output, bool? Rating)>",
+      "isRequired": false,
+      "description": "Fired when the copy button is clicked."
+    },
+    {
+      "name": "Output",
+      "type": "AIPromptOutput?",
+      "isRequired": false,
+      "description": "Available quick-action commands displayed above the input."
+    },
+    {
+      "name": "Placeholder",
+      "type": "string?",
+      "isRequired": false,
+      "description": "The current output / response to display."
+    }
+  ]
+}

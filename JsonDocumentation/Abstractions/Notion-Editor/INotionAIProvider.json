@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Provides AI-powered Notion editor operations. Implementations may call an LLM, a private enterprise AI gateway, or another deterministic provider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/INotionAIProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "INotionAIProvider"
+}

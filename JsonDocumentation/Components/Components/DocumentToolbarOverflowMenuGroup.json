@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "description": "Represents one grouped section in the document editor toolbar overflow menu.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/DocumentToolbarOverflowMenuGroup.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentToolbarOverflowMenuGroup"
+}

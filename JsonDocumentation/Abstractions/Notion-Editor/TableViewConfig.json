@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/TableViewConfig.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "RowHeight",
+      "kind": "Property",
+      "type": "TableRowHeight"
+    },
+    {
+      "name": "WrapCells",
+      "kind": "Property",
+      "type": "bool"
+    }
+  ],
+  "itemName": "TableViewConfig"
+}

@@ -1,0 +1,82 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Table
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+<tr class="tm-notion-table-row @(IsHeaderRow ? "tm-notion-table-row--header" : "") @(IsDragging ? "tm-notion-table-row--dragging" : "") @(IsDragOver ? "tm-notion-table-row--drag-over" : "")"
+    @ref="_rowRef"
+    @ondragover="() => OnDragOver.InvokeAsync()"
+    @ondragover:preventDefault="true"
+    @ondrop="() => OnDrop.InvokeAsync()"
+    @ondragend="() => OnDragEnd.InvokeAsync()">
+
+    @if (!ReadOnly)
+    {
+        <td class="tm-notion-table__handle-cell" @onclick:stopPropagation="true">
+            <div class="tm-notion-table__handle">
+                <span class="tm-notion-table__drag-icon"
+                      draggable="true"
+                      title="@Loc["TmNotionTableBlock_DragRow"]"
+                      @ondragstart="() => OnDragStart.InvokeAsync()"
+                      @onclick:stopPropagation="true">
+                    ⋮⋮
+                </span>
+                @if (CanDelete)
+                {
+                    <button class="tm-notion-table__row-delete"
+                            type="button"
+                            title="@Loc["TmNotionTableBlock_DeleteRow"]"
+                            aria-label="@Loc["TmNotionTableBlock_DeleteRow"]"
+                            @onclick="() => OnDeleteRequested.InvokeAsync()"
+                            @onclick:stopPropagation="true">
+                        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+                            <line x1="1" y1="1" x2="7" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <line x1="7" y1="1" x2="1" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                }
+            </div>
+        </td>
+    }
+
+    @for (var c = 0; c < _cells.Count; c++)
+    {
+        var colIdx     = c;
+        var isHdrCol   = HasHeaderColumn && c == 0;
+        var cell       = _cells[c];
+        if (cell.IsMergeHidden)
+        {
+            continue;
+        }
+
+        <td class="tm-notion-table__cell-td @(isHdrCol ? "tm-notion-table__cell-td--header-col" : "") @(IsHeaderRow ? "tm-notion-table__cell-td--header-row" : "") @(IsSelected(colIdx) ? "tm-notion-table__cell-td--selected" : "")"
+            @key="colIdx"
+            data-tm-row="@RowIndex"
+            data-tm-col="@colIdx"
+            colspan="@Math.Max(1, cell.ColSpan)"
+            rowspan="@Math.Max(1, cell.RowSpan)"
+            style="@CellStyle(cell)"
+            @onmousedown="args => OnCellMouseDownAsync(colIdx, args)"
+            @onmouseenter="args => OnCellMouseEnterAsync(colIdx, args)"
+            @onmouseup="args => OnCellMouseUpAsync(colIdx, args)">
+            @if (!ReadOnly)
+            {
+                <div class="tm-notion-table__cell"
+                     contenteditable="true"
+                     role="gridcell"
+                     @ref="_cellRefs[colIdx]"
+                     @onblur="() => OnCellBlurAsync(colIdx)"
+                     @onfocus="OnFocusedAsync"
+                     @onclick:stopPropagation="true">
+                    @((MarkupString)cell.Html)
+                </div>
+            }
+            else
+            {
+                <div class="tm-notion-table__cell tm-notion-table__cell--readonly"
+                     role="gridcell"
+                     @ref="_cellRefs[colIdx]">
+                    @((MarkupString)cell.Html)
+                </div>
+            }
+        </td>
+    }
+</tr>

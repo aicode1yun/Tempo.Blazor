@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "description": "Event arguments for the spreadsheet download/export event.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Events/SpreadsheetDownloadEventArgs.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Data",
+      "kind": "Property",
+      "type": "byte[]",
+      "description": "The raw XLSX file bytes."
+    },
+    {
+      "name": "FileName",
+      "kind": "Property",
+      "type": "string",
+      "description": "The name of the exported file."
+    }
+  ],
+  "itemName": "SpreadsheetDownloadEventArgs"
+}

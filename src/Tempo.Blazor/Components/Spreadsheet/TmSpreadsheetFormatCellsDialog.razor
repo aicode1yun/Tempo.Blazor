@@ -1,0 +1,366 @@
+@namespace Tempo.Blazor.Components.Spreadsheet
+@using Tempo.Blazor.Components.Spreadsheet.Models
+@using Tempo.Blazor.Components.Spreadsheet.Enums
+
+<div class="tm-spreadsheet-dialog-backdrop" @onclick="OnClose">
+    <div class="tm-fcd" @onclick:stopPropagation @onkeydown="OnKeyDown">
+        <div class="tm-fcd__header">
+            <h3 class="tm-fcd__title">@Loc["TmSpreadsheet_FormatCells"]</h3>
+        </div>
+
+        <!-- Tab bar -->
+        <div class="tm-fcd__tabs" role="tablist">
+            @foreach (var tab in _tabs)
+            {
+                <button class="tm-fcd__tab @(_activeTab == tab ? "tm-fcd__tab--active" : "")"
+                        role="tab"
+                        aria-selected="@(_activeTab == tab)"
+                        @onclick="() => _activeTab = tab">
+                    @Loc[$"TmSpreadsheet_Tab{tab}"]
+                </button>
+            }
+        </div>
+
+        <!-- Tab content -->
+        <div class="tm-fcd__body">
+            @if (_activeTab == "Number")
+            {
+                @RenderNumberTab()
+            }
+            else if (_activeTab == "Alignment")
+            {
+                @RenderAlignmentTab()
+            }
+            else if (_activeTab == "Font")
+            {
+                @RenderFontTab()
+            }
+            else if (_activeTab == "Border")
+            {
+                @RenderBorderTab()
+            }
+            else if (_activeTab == "Fill")
+            {
+                @RenderFillTab()
+            }
+        </div>
+
+        <!-- Live preview -->
+        <div class="tm-fcd__preview-section">
+            <div class="tm-fcd__preview-label">@Loc["TmSpreadsheet_Preview"]</div>
+            <div class="tm-fcd__preview" style="@GetPreviewStyle()">
+                @_previewText
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="tm-fcd__actions">
+            <TmButton Variant="ButtonVariant.Secondary" OnClick="OnClose">@Loc["Tm_Cancel"]</TmButton>
+            <TmButton OnClick="Apply">@Loc["Tm_Apply"]</TmButton>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly string[] _tabs = ["Number", "Alignment", "Font", "Border", "Fill"];
+    private string _activeTab = "Number";
+
+    private RenderFragment RenderNumberTab() => __builder =>
+    {
+        <div class="tm-fcd__two-col">
+            <div class="tm-fcd__col">
+                <div class="tm-fcd__field-label">@Loc["TmSpreadsheet_Category"]</div>
+                <div class="tm-fcd__listbox">
+                    @foreach (var cat in _numberCategories)
+                    {
+                        <div class="tm-fcd__listbox-item @(_selectedCategory == cat ? "tm-fcd__listbox-item--selected" : "")"
+                             @onclick="() => SelectCategory(cat)">
+                            @Loc[$"TmSpreadsheet_NumCat_{cat}"]
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="tm-fcd__col">
+                @if (_selectedCategory == "General")
+                {
+                    <p class="tm-fcd__info">@Loc["TmSpreadsheet_NumCat_GeneralDesc"]</p>
+                }
+                else if (_selectedCategory == "Number")
+                {
+                    <div class="tm-fcd__field-row">
+                        <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_DecimalPlaces"]</label>
+                        <input class="tm-fcd__input tm-fcd__input--sm" type="number" min="0" max="30"
+                               value="@_numDecimalPlaces"
+                               @oninput="e => { _numDecimalPlaces = int.TryParse(e.Value?.ToString(), out var v) ? Math.Clamp(v, 0, 30) : 2; UpdateNumberFormat(); }" />
+                    </div>
+                    <div class="tm-fcd__field-row">
+                        <label class="tm-fcd__check-label">
+                            <input type="checkbox" checked="@_numThousands"
+                                   @onchange="e => { _numThousands = (bool)(e.Value ?? false); UpdateNumberFormat(); }" />
+                            @Loc["TmSpreadsheet_ThousandSeparator"]
+                        </label>
+                    </div>
+                }
+                else if (_selectedCategory == "Currency" || _selectedCategory == "Accounting")
+                {
+                    <div class="tm-fcd__field-row">
+                        <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_DecimalPlaces"]</label>
+                        <input class="tm-fcd__input tm-fcd__input--sm" type="number" min="0" max="30"
+                               value="@_numDecimalPlaces"
+                               @oninput="e => { _numDecimalPlaces = int.TryParse(e.Value?.ToString(), out var v) ? Math.Clamp(v, 0, 30) : 2; UpdateNumberFormat(); }" />
+                    </div>
+                    <div class="tm-fcd__field-row">
+                        <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_CurrencySymbol"]</label>
+                        <select class="tm-fcd__input" @onchange="OnCurrencySymbolChange">
+                            <option value="Kč" selected="@(_currencySymbol == "Kč")">Kč</option>
+                            <option value="$" selected="@(_currencySymbol == "$")">$</option>
+                            <option value="€" selected="@(_currencySymbol == "€")">€</option>
+                            <option value="£" selected="@(_currencySymbol == "£")">£</option>
+                            <option value="¥" selected="@(_currencySymbol == "¥")">¥</option>
+                        </select>
+                    </div>
+                }
+                else if (_selectedCategory == "Date")
+                {
+                    <div class="tm-fcd__field-row">
+                        <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_DateFormat"]</label>
+                        <div class="tm-fcd__listbox tm-fcd__listbox--sm">
+                            @foreach (var fmt in _dateFormats)
+                            {
+                                <div class="tm-fcd__listbox-item @(_workingStyle.NumberFormat == fmt ? "tm-fcd__listbox-item--selected" : "")"
+                                     @onclick="() => { _workingStyle.NumberFormat = fmt; }">
+                                    @fmt
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (_selectedCategory == "Percentage")
+                {
+                    <div class="tm-fcd__field-row">
+                        <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_DecimalPlaces"]</label>
+                        <input class="tm-fcd__input tm-fcd__input--sm" type="number" min="0" max="30"
+                               value="@_numDecimalPlaces"
+                               @oninput="e => { _numDecimalPlaces = int.TryParse(e.Value?.ToString(), out var v) ? Math.Clamp(v, 0, 30) : 0; UpdateNumberFormat(); }" />
+                    </div>
+                }
+                else if (_selectedCategory == "Custom")
+                {
+                    <div class="tm-fcd__field-row">
+                        <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_FormatCode"]</label>
+                        <input class="tm-fcd__input" value="@_workingStyle.NumberFormat"
+                               @oninput="e => _workingStyle.NumberFormat = e.Value?.ToString() ?? _workingStyle.NumberFormat" />
+                    </div>
+                    <div class="tm-fcd__listbox tm-fcd__listbox--sm">
+                        @foreach (var fmt in _customFormats)
+                        {
+                            <div class="tm-fcd__listbox-item @(_workingStyle.NumberFormat == fmt ? "tm-fcd__listbox-item--selected" : "")"
+                                 @onclick="() => _workingStyle.NumberFormat = fmt">
+                                @fmt
+                            </div>
+                        }
+                    </div>
+                }
+                else if (_selectedCategory == "Text")
+                {
+                    <p class="tm-fcd__info">@Loc["TmSpreadsheet_NumCat_TextDesc"]</p>
+                }
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderAlignmentTab() => __builder =>
+    {
+        <div class="tm-fcd__form">
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_HorizontalAlign"]</label>
+                <select class="tm-fcd__input" value="@_workingStyle.HorizontalAlign.ToString()"
+                        @onchange="e => _workingStyle.HorizontalAlign = Enum.TryParse<SpreadsheetHorizontalAlign>(e.Value?.ToString(), out var v) ? v : SpreadsheetHorizontalAlign.General">
+                    <option value="General">@Loc["TmSpreadsheet_AlignGeneral"]</option>
+                    <option value="Left">@Loc["TmSpreadsheet_AlignLeft"]</option>
+                    <option value="Center">@Loc["TmSpreadsheet_AlignCenter"]</option>
+                    <option value="Right">@Loc["TmSpreadsheet_AlignRight"]</option>
+                    <option value="Justify">@Loc["TmSpreadsheet_AlignJustify"]</option>
+                </select>
+            </div>
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_VerticalAlign"]</label>
+                <select class="tm-fcd__input" value="@_workingStyle.VerticalAlign.ToString()"
+                        @onchange="e => _workingStyle.VerticalAlign = Enum.TryParse<SpreadsheetVerticalAlign>(e.Value?.ToString(), out var v) ? v : SpreadsheetVerticalAlign.Bottom">
+                    <option value="Top">@Loc["TmSpreadsheet_VAlignTop"]</option>
+                    <option value="Middle">@Loc["TmSpreadsheet_VAlignMiddle"]</option>
+                    <option value="Bottom">@Loc["TmSpreadsheet_VAlignBottom"]</option>
+                </select>
+            </div>
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_Indent"] (0–15)</label>
+                <input class="tm-fcd__input tm-fcd__input--sm" type="number" min="0" max="15"
+                       value="@_workingStyle.Indent"
+                       @oninput="e => _workingStyle.Indent = int.TryParse(e.Value?.ToString(), out var v) ? Math.Clamp(v, 0, 15) : 0" />
+            </div>
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_TextRotation"] (−90–90)</label>
+                <input class="tm-fcd__input tm-fcd__input--sm" type="number" min="-90" max="90"
+                       value="@_workingStyle.TextRotation"
+                       @oninput="e => _workingStyle.TextRotation = int.TryParse(e.Value?.ToString(), out var v) ? Math.Clamp(v, -90, 90) : 0" />
+            </div>
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__check-label">
+                    <input type="checkbox" checked="@_workingStyle.TextWrap"
+                           @onchange="e => { _workingStyle.TextWrap = (bool)(e.Value ?? false); if (_workingStyle.TextWrap) _workingStyle.ShrinkToFit = false; }" />
+                    @Loc["TmSpreadsheet_TextWrap"]
+                </label>
+            </div>
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__check-label">
+                    <input type="checkbox" checked="@_workingStyle.ShrinkToFit" disabled="@_workingStyle.TextWrap"
+                           @onchange="e => { if (!_workingStyle.TextWrap) _workingStyle.ShrinkToFit = (bool)(e.Value ?? false); }" />
+                    @Loc["TmSpreadsheet_ShrinkToFit"]
+                </label>
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderFontTab() => __builder =>
+    {
+        <div class="tm-fcd__form">
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_FontFamily"]</label>
+                <input class="tm-fcd__input" list="tm-fcd-fonts"
+                       value="@_workingStyle.FontFamily"
+                       @oninput="e => _workingStyle.FontFamily = e.Value?.ToString() ?? _workingStyle.FontFamily" />
+                <datalist id="tm-fcd-fonts">
+                    @foreach (var f in _fontFamilies) { <option value="@f" /> }
+                </datalist>
+            </div>
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_FontSize"]</label>
+                <input class="tm-fcd__input tm-fcd__input--sm" list="tm-fcd-font-sizes" type="number" min="4" max="400"
+                       value="@_workingStyle.FontSize"
+                       @oninput="e => _workingStyle.FontSize = double.TryParse(e.Value?.ToString(), out var v) ? Math.Clamp(v, 4, 400) : 11" />
+                <datalist id="tm-fcd-font-sizes">
+                    @foreach (var s in new[] { 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 })
+                    { <option value="@s" /> }
+                </datalist>
+            </div>
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_FontStyle"]</label>
+                <div class="tm-fcd__btn-group">
+                    <button class="tm-fcd__btn @(_workingStyle.Bold ? "tm-fcd__btn--active" : "")" style="font-weight:bold"
+                            @onclick="() => _workingStyle.Bold = !_workingStyle.Bold">B</button>
+                    <button class="tm-fcd__btn @(_workingStyle.Italic ? "tm-fcd__btn--active" : "")" style="font-style:italic"
+                            @onclick="() => _workingStyle.Italic = !_workingStyle.Italic">I</button>
+                    <button class="tm-fcd__btn @(_workingStyle.Underline ? "tm-fcd__btn--active" : "")" style="text-decoration:underline"
+                            @onclick="() => { _workingStyle.Underline = !_workingStyle.Underline; if (_workingStyle.Underline) _workingStyle.DoubleUnderline = false; }">U</button>
+                    <button class="tm-fcd__btn @(_workingStyle.DoubleUnderline ? "tm-fcd__btn--active" : "")" style="text-decoration:underline double"
+                            @onclick="() => { _workingStyle.DoubleUnderline = !_workingStyle.DoubleUnderline; if (_workingStyle.DoubleUnderline) _workingStyle.Underline = false; }">U̳</button>
+                    <button class="tm-fcd__btn @(_workingStyle.StrikeThrough ? "tm-fcd__btn--active" : "")" style="text-decoration:line-through"
+                            @onclick="() => _workingStyle.StrikeThrough = !_workingStyle.StrikeThrough">S̶</button>
+                </div>
+            </div>
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_TextColor"]</label>
+                <div class="tm-fcd__color-row">
+                    <input type="color" class="tm-fcd__color-input"
+                           value="@_workingStyle.ForeColor"
+                           @oninput="e => _workingStyle.ForeColor = e.Value?.ToString() ?? _workingStyle.ForeColor" />
+                    <span class="tm-fcd__color-hex">@_workingStyle.ForeColor</span>
+                </div>
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderBorderTab() => __builder =>
+    {
+        <div class="tm-fcd__form">
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_BorderPresets"]</label>
+                <div class="tm-fcd__btn-group">
+                    <button class="tm-fcd__btn" title="@Loc["TmSpreadsheet_BorderNone"]"
+                            @onclick="() => { _workingStyle.BorderTop = new(); _workingStyle.BorderRight = new(); _workingStyle.BorderBottom = new(); _workingStyle.BorderLeft = new(); }">
+                        ☐
+                    </button>
+                    <button class="tm-fcd__btn" title="@Loc["TmSpreadsheet_BorderOutside"]"
+                            @onclick="ApplyOutsideBorder">
+                        ▣
+                    </button>
+                    <button class="tm-fcd__btn" title="@Loc["TmSpreadsheet_BorderAllBorders"]"
+                            @onclick="ApplyAllBorders">
+                        ⊞
+                    </button>
+                    <button class="tm-fcd__btn" title="@Loc["TmSpreadsheet_BorderThickBox"]"
+                            @onclick="ApplyThickBorder">
+                        ◼
+                    </button>
+                </div>
+            </div>
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_BorderStyle"]</label>
+                <select class="tm-fcd__input" value="@_borderStyle.ToString()"
+                        @onchange="e => _borderStyle = Enum.TryParse<SpreadsheetBorderStyle>(e.Value?.ToString(), out var v) ? v : SpreadsheetBorderStyle.Thin">
+                    <option value="None">@Loc["TmSpreadsheet_BorderStyleNone"]</option>
+                    <option value="Thin">@Loc["TmSpreadsheet_BorderStyleThin"]</option>
+                    <option value="Medium">@Loc["TmSpreadsheet_BorderStyleMedium"]</option>
+                    <option value="Thick">@Loc["TmSpreadsheet_BorderStyleThick"]</option>
+                    <option value="Dashed">@Loc["TmSpreadsheet_BorderStyleDashed"]</option>
+                    <option value="Dotted">@Loc["TmSpreadsheet_BorderStyleDotted"]</option>
+                    <option value="Double">@Loc["TmSpreadsheet_BorderStyleDouble"]</option>
+                </select>
+            </div>
+            <div class="tm-fcd__field-row">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_BorderColor"]</label>
+                <div class="tm-fcd__color-row">
+                    <input type="color" class="tm-fcd__color-input"
+                           value="@_borderColor"
+                           @oninput="e => _borderColor = e.Value?.ToString() ?? _borderColor" />
+                    <span class="tm-fcd__color-hex">@_borderColor</span>
+                </div>
+            </div>
+            <div class="tm-fcd__border-edges">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_BorderEdges"]</label>
+                <div class="tm-fcd__btn-group">
+                    <button class="tm-fcd__btn @(_workingStyle.BorderTop.Style != SpreadsheetBorderStyle.None ? "tm-fcd__btn--active" : "")"
+                            title="@Loc["TmSpreadsheet_BorderTop"]"
+                            @onclick="ToggleBorderTop">⊤</button>
+                    <button class="tm-fcd__btn @(_workingStyle.BorderBottom.Style != SpreadsheetBorderStyle.None ? "tm-fcd__btn--active" : "")"
+                            title="@Loc["TmSpreadsheet_BorderBottom"]"
+                            @onclick="ToggleBorderBottom">⊥</button>
+                    <button class="tm-fcd__btn @(_workingStyle.BorderLeft.Style != SpreadsheetBorderStyle.None ? "tm-fcd__btn--active" : "")"
+                            title="@Loc["TmSpreadsheet_BorderLeft"]"
+                            @onclick="ToggleBorderLeft">⊣</button>
+                    <button class="tm-fcd__btn @(_workingStyle.BorderRight.Style != SpreadsheetBorderStyle.None ? "tm-fcd__btn--active" : "")"
+                            title="@Loc["TmSpreadsheet_BorderRight"]"
+                            @onclick="ToggleBorderRight">⊢</button>
+                </div>
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderFillTab() => __builder =>
+    {
+        <div class="tm-fcd__form">
+            <div class="tm-fcd__field-label">@Loc["TmSpreadsheet_BackgroundColor"]</div>
+            <div class="tm-fcd__color-palette">
+                @foreach (var color in _colorPalette)
+                {
+                    <button class="tm-fcd__palette-cell @(_workingStyle.BackgroundColor == color ? "tm-fcd__palette-cell--selected" : "")"
+                            style="background: @color"
+                            title="@color"
+                            @onclick="() => _workingStyle.BackgroundColor = color" />
+                }
+                <button class="tm-fcd__palette-cell tm-fcd__palette-cell--transparent @(_workingStyle.BackgroundColor == "transparent" ? "tm-fcd__palette-cell--selected" : "")"
+                        title="@Loc["TmSpreadsheet_NoFill"]"
+                        @onclick="ClearBackgroundColor">∅</button>
+            </div>
+            <div class="tm-fcd__field-row" style="margin-top:var(--tm-space-3)">
+                <label class="tm-fcd__field-label">@Loc["TmSpreadsheet_CustomColor"]</label>
+                <div class="tm-fcd__color-row">
+                    <input type="color" class="tm-fcd__color-input"
+                           value="@(_workingStyle.BackgroundColor == "transparent" ? "#ffffff" : _workingStyle.BackgroundColor)"
+                           @oninput="e => _workingStyle.BackgroundColor = e.Value?.ToString() ?? _workingStyle.BackgroundColor" />
+                    <span class="tm-fcd__color-hex">@_workingStyle.BackgroundColor</span>
+                </div>
+            </div>
+        </div>
+    };
+}

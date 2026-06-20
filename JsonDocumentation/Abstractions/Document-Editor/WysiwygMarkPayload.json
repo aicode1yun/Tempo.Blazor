@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Payload for mark toggle commands from the JS engine.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygMarkPayload.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Data",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional mark value, for example a link URL."
+    },
+    {
+      "name": "Href",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional link URL for link marks."
+    },
+    {
+      "name": "MarkType",
+      "kind": "Property",
+      "type": "string",
+      "description": "Mark type: Bold, Italic, Underline, etc."
+    },
+    {
+      "name": "Selection",
+      "kind": "Property",
+      "type": "WysiwygSelectionSnapshot?",
+      "description": "Selection snapshot at the time of the command."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional link title for link marks."
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional structured mark value, for example a CSS font family or font size."
+    }
+  ],
+  "itemName": "WysiwygMarkPayload"
+}

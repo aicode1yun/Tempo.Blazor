@@ -1,0 +1,37 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/EmbedBlockContent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Caption",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "int?"
+    },
+    {
+      "name": "Provider",
+      "kind": "Property",
+      "type": "EmbedProvider"
+    },
+    {
+      "name": "Url",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "int?"
+    }
+  ],
+  "itemName": "EmbedBlockContent"
+}

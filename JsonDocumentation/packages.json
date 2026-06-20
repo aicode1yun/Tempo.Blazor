@@ -1,0 +1,83 @@
+{
+  "packages": [
+    {
+      "packageId": "Tempo.Blazor",
+      "sourceProject": "src/Tempo.Blazor/Tempo.Blazor.csproj",
+      "outputFile": "tempo-blazor.json",
+      "aliases": [ "tempo-blazor-documentation.json" ],
+      "documentationRoots": [ "Components" ],
+      "componentRoots": [ "src/Tempo.Blazor/Components" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "gettingStartedFile": "gettingStarted.json",
+      "examplesFile": "libraryExamples.json",
+      "includePublicTypes": true,
+      "includeAssets": true
+    },
+    {
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourceProject": "src/Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj",
+      "outputFile": "tempo-blazor-abstractions.json",
+      "documentationRoots": [ "Abstractions" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "includePublicTypes": true
+    },
+    {
+      "packageId": "Tempo.Blazor.FluentValidation",
+      "sourceProject": "src/Tempo.Blazor.FluentValidation/Tempo.Blazor.FluentValidation.csproj",
+      "outputFile": "tempo-blazor-fluentvalidation.json",
+      "documentationRoots": [ "Packages/Tempo.Blazor.FluentValidation/items" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "includePublicTypes": true
+    },
+    {
+      "packageId": "Tempo.Blazor.Collaboration",
+      "sourceProject": "src/Tempo.Blazor.Collaboration/Tempo.Blazor.Collaboration.csproj",
+      "outputFile": "tempo-blazor-collaboration.json",
+      "documentationRoots": [ "Packages/Tempo.Blazor.Collaboration/items" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "includePublicTypes": true
+    },
+    {
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourceProject": "src/Tempo.Blazor.DocumentFormats/Tempo.Blazor.DocumentFormats.csproj",
+      "outputFile": "tempo-blazor-documentformats.json",
+      "documentationRoots": [ "Packages/Tempo.Blazor.DocumentFormats/items" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "includePublicTypes": true
+    },
+    {
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourceProject": "src/Tempo.Blazor.EmailTemplates.Abstractions/Tempo.Blazor.EmailTemplates.Abstractions.csproj",
+      "outputFile": "tempo-blazor-emailtemplates-abstractions.json",
+      "documentationRoots": [ "Packages/Tempo.Blazor.EmailTemplates.Abstractions/items" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "includePublicTypes": true
+    },
+    {
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourceProject": "src/Tempo.Blazor.EmailTemplates/Tempo.Blazor.EmailTemplates.csproj",
+      "outputFile": "tempo-blazor-emailtemplates.json",
+      "documentationRoots": [ "Packages/Tempo.Blazor.EmailTemplates/items" ],
+      "componentRoots": [ "src/Tempo.Blazor.EmailTemplates/Components" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "includePublicTypes": true,
+      "includeAssets": true
+    },
+    {
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourceProject": "src/Tempo.Blazor.Mcp/Tempo.Blazor.Mcp.csproj",
+      "outputFile": "tempo-blazor-mcp.json",
+      "documentationRoots": [ "Packages/Tempo.Blazor.Mcp/items" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "includePublicTypes": true
+    }
+  ]
+}

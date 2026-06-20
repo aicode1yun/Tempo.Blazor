@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Manages the stack of open floating UI layers in the document editor. Layers are ordered by z-index; the topmost layer is closed first when Esc is pressed.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentFloatingLayer.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentFloatingLayerStack"
+}

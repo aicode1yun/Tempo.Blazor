@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Crop rectangle for a document object, expressed as normalized percentages from each object edge.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentObjectLayout.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentObjectCrop"
+}

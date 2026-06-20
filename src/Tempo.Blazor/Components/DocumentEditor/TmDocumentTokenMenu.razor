@@ -1,0 +1,36 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.Components.Activity
+
+<div class="tm-document-token-menu" data-testid="document-token-menu">
+    <TokenAutocomplete IsVisible="@IsVisible"
+                       Tokens="@Tokens"
+                       Query="@Query"
+                       HighlightedIndex="@HighlightedIndex"
+                       IsLoading="@IsLoading"
+                       SupportsCreation="false"
+                       OnTokenSelected="@OnTokenSelected"
+                       OnHighlightedIndexChanged="@OnHighlightedIndexChanged" />
+</div>
+
+@code {
+    /// <summary>Whether the token menu is visible.</summary>
+    [Parameter] public bool IsVisible { get; set; }
+
+    /// <summary>Tokens shown in the menu.</summary>
+    [Parameter] public IEnumerable<TokenItem> Tokens { get; set; } = [];
+
+    /// <summary>Current search query.</summary>
+    [Parameter] public string Query { get; set; } = string.Empty;
+
+    /// <summary>Currently highlighted item index.</summary>
+    [Parameter] public int HighlightedIndex { get; set; }
+
+    /// <summary>Whether the token provider is loading.</summary>
+    [Parameter] public bool IsLoading { get; set; }
+
+    /// <summary>Raised when a token is selected.</summary>
+    [Parameter] public EventCallback<TokenItem> OnTokenSelected { get; set; }
+
+    /// <summary>Raised when the highlighted item changes.</summary>
+    [Parameter] public EventCallback<int> OnHighlightedIndexChanged { get; set; }
+}

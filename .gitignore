@@ -41,6 +41,9 @@ ScaffoldingReadMe.txt
 *~
 CodeCoverage/
 
+# Generated CSS bundle (build artifact)
+src/Tempo.Blazor/wwwroot/css/tempo-blazor.bundled.css
+
 # MSBuild Binary and Structured Log
 *.binlog
 
@@ -52,3 +55,8 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Phase D — JS module build artifacts
+node_modules/
+src/Tempo.Blazor/wwwroot/js/document-editor.dist.js
+src/Tempo.Blazor/wwwroot/js/document-editor.dist.js.map

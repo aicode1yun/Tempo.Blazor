@@ -1,0 +1,90 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Default edge values applied when an edge stencil creates or updates a diagram edge.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramEdgeStencilDefaults.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ArcSize",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Corner radius in pixels for rounded edges."
+    },
+    {
+      "name": "ConnectorType",
+      "kind": "Property",
+      "type": "string",
+      "description": "Connector semantic type. Supported values match ."
+    },
+    {
+      "name": "CubicBezier",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether curved routing uses cubic Bezier commands."
+    },
+    {
+      "name": "EndArrow",
+      "kind": "Property",
+      "type": "string",
+      "description": "End arrowhead style. Supported values match ."
+    },
+    {
+      "name": "EndArrowFill",
+      "kind": "Property",
+      "type": "bool?",
+      "description": "Whether the end arrowhead is filled. Null uses the renderer default."
+    },
+    {
+      "name": "EndArrowSize",
+      "kind": "Property",
+      "type": "double?",
+      "description": "End arrowhead size in pixels."
+    },
+    {
+      "name": "Rounded",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether to use rounded corners on the edge path."
+    },
+    {
+      "name": "Routing",
+      "kind": "Property",
+      "type": "string",
+      "description": "Edge routing type. Supported values match ."
+    },
+    {
+      "name": "Shape",
+      "kind": "Property",
+      "type": "string",
+      "description": "Edge shape type. Supported values match ."
+    },
+    {
+      "name": "StartArrow",
+      "kind": "Property",
+      "type": "string",
+      "description": "Start arrowhead style. Supported values match ."
+    },
+    {
+      "name": "StartArrowFill",
+      "kind": "Property",
+      "type": "bool?",
+      "description": "Whether the start arrowhead is filled. Null uses the renderer default."
+    },
+    {
+      "name": "StartArrowSize",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Start arrowhead size in pixels."
+    },
+    {
+      "name": "Style",
+      "kind": "Property",
+      "type": "DiagramStyle?",
+      "description": "Optional default visual style for edges created from this stencil."
+    }
+  ],
+  "itemName": "DiagramEdgeStencilDefaults"
+}

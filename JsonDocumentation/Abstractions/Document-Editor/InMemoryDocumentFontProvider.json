@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "In-memory font provider with a conservative cross-platform font catalog.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/InMemoryDocumentSupportProviders.cs",
+  "documentationStatus": "generated",
+  "itemName": "InMemoryDocumentFontProvider"
+}

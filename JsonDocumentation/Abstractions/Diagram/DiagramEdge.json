@@ -1,0 +1,276 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "A directed edge (connection) between two nodes on the canvas.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramEdge.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "IsValid",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Validates that at least one end of the edge is connected (to a node or edge) or has an absolute point."
+    },
+    {
+      "name": "ArcSize",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Corner radius in pixels for rounded edges. Null = use default (8px)."
+    },
+    {
+      "name": "ConnectorType",
+      "kind": "Property",
+      "type": "string",
+      "description": "Connector semantic type. (e.g. \"association\", \"inheritance\", \"dependency\", \"composition\", \"aggregation\")."
+    },
+    {
+      "name": "CubicBezier",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether curved routing uses cubic Bézier (C command) instead of quadratic (Q command)."
+    },
+    {
+      "name": "ElbowOrientation",
+      "kind": "Property",
+      "type": "string",
+      "description": "Elbow orientation. \"auto\" (default), \"horizontal\" (horizontal-first L-shape), or \"vertical\" (vertical-first L-shape)."
+    },
+    {
+      "name": "EndArrow",
+      "kind": "Property",
+      "type": "string",
+      "description": "End arrowhead style. Supported: none, classic, block, open, oval, diamond, async."
+    },
+    {
+      "name": "EndArrowFill",
+      "kind": "Property",
+      "type": "bool?",
+      "description": "Whether the end arrowhead is filled. Null = use default based on arrowhead type."
+    },
+    {
+      "name": "EndArrowSize",
+      "kind": "Property",
+      "type": "double?",
+      "description": "End arrowhead size in pixels."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier (short Guid, e.g. \"a3f8c21b\")."
+    },
+    {
+      "name": "IsManuallyRouted",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether this edge uses manually placed waypoints and should not be auto-routed."
+    },
+    {
+      "name": "JumpSize",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Line jump size in pixels."
+    },
+    {
+      "name": "JumpStyle",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Line jump style when edges cross. Supported: arc, gap, sharp, line."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional label rendered along the connector path."
+    },
+    {
+      "name": "LabelOffsetX",
+      "kind": "Property",
+      "type": "double",
+      "description": "Horizontal offset of the label from the point on the edge path (px)."
+    },
+    {
+      "name": "LabelOffsetY",
+      "kind": "Property",
+      "type": "double",
+      "description": "Vertical offset of the label from the point on the edge path (px)."
+    },
+    {
+      "name": "LabelPositionT",
+      "kind": "Property",
+      "type": "double",
+      "description": "Label position along the edge path as parameter t (0-1). Default 0.5."
+    },
+    {
+      "name": "LayerId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional layer identifier. When null, the edge belongs to the default layer."
+    },
+    {
+      "name": "Link",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional hyperlink target (external URL or page:// link)."
+    },
+    {
+      "name": "LockedBy",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Reserved for future collaborative editing – who has this edge locked."
+    },
+    {
+      "name": "Rounded",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether to use rounded corners on the edge path."
+    },
+    {
+      "name": "Routing",
+      "kind": "Property",
+      "type": "string",
+      "description": "Edge routing type. Supported: \"straight\", \"orthogonal\", \"elbow\", \"segment\", \"curved\"."
+    },
+    {
+      "name": "Shape",
+      "kind": "Property",
+      "type": "string",
+      "description": "Edge shape type. Supported: \"connector\", \"link\", \"filledEdge\", \"pipe\", \"wire\"."
+    },
+    {
+      "name": "SourceCardinality",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Source cardinality for ER diagrams."
+    },
+    {
+      "name": "SourceConstraint",
+      "kind": "Property",
+      "type": "DiagramConnectionConstraint?",
+      "description": "Source connection constraint. When set, overrides port-based connection."
+    },
+    {
+      "name": "SourceEdgeId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional source edge identifier (for edge-to-edge connections)."
+    },
+    {
+      "name": "SourceEdgeT",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Parameter t (0-1) along the source edge for edge-to-edge connections."
+    },
+    {
+      "name": "SourceNodeId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Source node identifier. Null when the edge has a free-floating source."
+    },
+    {
+      "name": "SourcePoint",
+      "kind": "Property",
+      "type": "DiagramPoint?",
+      "description": "Absolute position of the free-floating source point. Used when is null."
+    },
+    {
+      "name": "SourcePortId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional source port identifier."
+    },
+    {
+      "name": "SourceSpacing",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Spacing between source node boundary and edge start."
+    },
+    {
+      "name": "StartArrow",
+      "kind": "Property",
+      "type": "string",
+      "description": "Start arrowhead style. Supported: none, classic, block, open, oval, diamond, async."
+    },
+    {
+      "name": "StartArrowFill",
+      "kind": "Property",
+      "type": "bool?",
+      "description": "Whether the start arrowhead is filled. Null = use default based on arrowhead type."
+    },
+    {
+      "name": "StartArrowSize",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Start arrowhead size in pixels."
+    },
+    {
+      "name": "Style",
+      "kind": "Property",
+      "type": "DiagramStyle",
+      "description": "Visual style overrides for this edge."
+    },
+    {
+      "name": "TargetCardinality",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Target cardinality for ER diagrams."
+    },
+    {
+      "name": "TargetConstraint",
+      "kind": "Property",
+      "type": "DiagramConnectionConstraint?",
+      "description": "Target connection constraint. When set, overrides port-based connection."
+    },
+    {
+      "name": "TargetEdgeId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional target edge identifier (for edge-to-edge connections)."
+    },
+    {
+      "name": "TargetEdgeT",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Parameter t (0-1) along the target edge for edge-to-edge connections."
+    },
+    {
+      "name": "TargetNodeId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Target node identifier. Null when the edge has a free-floating target."
+    },
+    {
+      "name": "TargetPoint",
+      "kind": "Property",
+      "type": "DiagramPoint?",
+      "description": "Absolute position of the free-floating target point. Used when is null."
+    },
+    {
+      "name": "TargetPortId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional target port identifier."
+    },
+    {
+      "name": "TargetSpacing",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Spacing between target node boundary and edge end."
+    },
+    {
+      "name": "Waypoints",
+      "kind": "Property",
+      "type": "List<DiagramPoint>",
+      "description": "Intermediate waypoints for the edge path. Empty for straight lines."
+    },
+    {
+      "name": "ZIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "Z-order index for edge layering. Higher values render on top."
+    }
+  ],
+  "itemName": "DiagramEdge"
+}

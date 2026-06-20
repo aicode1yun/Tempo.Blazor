@@ -1,8 +1,9 @@
 @namespace Tempo.Blazor.Components.Diagram
+@using Tempo.Blazor.Components.Diagram.Models
 @using Tempo.Blazor.Components.Diagram.Stencils
 @inject DiagramStencilRegistry StencilRegistry
 
-<div class="tm-diagram-toolbox @Class" data-collapsed="@_collapsed" @ref="_containerRef">
+<div class="tm-diagram-toolbox @Class" data-testid="diagram-toolbox" data-collapsed="@_collapsed" @ref="_containerRef">
     <button type="button" class="tm-diagram-toolbox__toggle" @onclick="ToggleCollapse"
             aria-label="@Loc["TmDiagramToolbox_Toggle"]" title="@Loc["TmDiagramToolbox_Toggle"]">
         <TmIcon Name="@(_collapsed ? IconNames.ChevronRight : IconNames.ChevronLeft)" />
@@ -12,63 +13,97 @@
         <h3 class="tm-diagram-toolbox__title">@Loc["TmDiagramToolbox_Title"]</h3>
 
         <div class="tm-diagram-toolbox__search">
-            <TmSearchInput Value="_searchQuery"
+            <TmSearchInput Value="@_searchQuery"
                            ValueChanged="OnSearchChanged"
                            Placeholder="@Loc["TmDiagramToolbox_SearchPlaceholder"]"
+                           aria-label="@Loc["TmDiagramToolbox_SearchAriaLabel"]"
                            Clearable="true" />
         </div>
 
-        @if (_filteredCategories.Count == 0)
+        @if (_filteredLibraries.Count == 0)
         {
             <div class="tm-diagram-toolbox__no-results">@Loc["TmDiagramToolbox_NoResults"]</div>
         }
         else
         {
-            @foreach (var cat in _filteredCategories)
+            @foreach (var library in _filteredLibraries)
             {
-                var stencils = _filteredStencilsByCategory[cat];
-                if (stencils.Count == 0) continue;
-
-                <div class="tm-diagram-toolbox__category">
-                    <button type="button" class="tm-diagram-toolbox__category-header"
-                            @onclick="() => ToggleCategory(cat)"
-                            aria-expanded="@(!_collapsedCategories.Contains(cat))">
-                        <TmIcon Name="@(_collapsedCategories.Contains(cat) ? IconNames.ChevronRight : IconNames.ChevronDown)" />
-                        <span>@cat</span>
-                    </button>
-
-                    @if (!_collapsedCategories.Contains(cat))
+                <section class="tm-diagram-toolbox__library" data-library-id="@library.Id">
+                    @if (library.ShowHeader)
                     {
-                        <div class="tm-diagram-toolbox__category-body">
-                            @foreach (var stencil in stencils)
+                        <div class="tm-diagram-toolbox__library-header">
+                            @GetLocalizedText(library.NameResourceKey, library.FallbackName)
+                        </div>
+                    }
+
+                    @foreach (var palette in library.Palettes)
+                    {
+                        <div class="tm-diagram-toolbox__category" data-palette-id="@palette.Id">
+                            <button type="button" class="tm-diagram-toolbox__category-header"
+                                    @onclick="() => TogglePalette(palette.Id)"
+                                    aria-expanded="@((!_collapsedPalettes.Contains(palette.Id)).ToString().ToLowerInvariant())">
+                                <TmIcon Name="@(_collapsedPalettes.Contains(palette.Id) ? IconNames.ChevronRight : IconNames.ChevronDown)" />
+                                <span>@GetLocalizedText(palette.NameResourceKey, palette.FallbackName)</span>
+                            </button>
+
+                            @if (!_collapsedPalettes.Contains(palette.Id))
                             {
-                                <div class="tm-diagram-toolbox__item"
-                                     data-stencil-id="@stencil.Id"
-                                     draggable="true"
-                                     @ondragstart="e => OnDragStart(e, stencil.Id)"
-                                     title="@stencil.Name">
-                                    <div class="tm-diagram-toolbox__preview">
-                                        @if (!string.IsNullOrEmpty(stencil.IconSvg))
-                                        {
-                                            <svg viewBox="0 0 32 32" aria-hidden="true" style="width:32px;height:32px;">
-                                                @((MarkupString)stencil.IconSvg)
-                                            </svg>
-                                        }
-                                        else
-                                        {
-                                            <svg viewBox="0 0 32 32" aria-hidden="true" style="width:32px;height:32px;">
-                                                <rect x="2" y="8" width="28" height="16" rx="2"
-                                                      fill="var(--tm-color-surface-elevated)"
-                                                      stroke="var(--tm-color-text)" stroke-width="2" />
-                                            </svg>
-                                        }
-                                    </div>
-                                    <span class="tm-diagram-toolbox__label">@stencil.Name</span>
+                                <div class="tm-diagram-toolbox__category-body">
+                                    @foreach (var stencil in palette.Stencils)
+                                    {
+                                        var stencilDisplayName = GetStencilDisplayName(stencil);
+                                        var stencilTooltip = GetStencilTooltip(stencilDisplayName);
+                                        var stencilAriaLabel = GetStencilAriaLabel(stencilDisplayName);
+                                        <div class="@GetStencilItemCssClass(stencil)"
+                                             data-stencil-id="@stencil.Id"
+                                             data-stencil-kind="@GetStencilKindValue(stencil)"
+                                             draggable="true"
+                                             tabindex="0"
+                                             role="button"
+                                             aria-label="@stencilAriaLabel"
+                                             @ondragstart="e => OnDragStart(e, stencil.Id)"
+                                             @onkeydown="e => OnStencilKeyDown(e, stencil.Id)"
+                                             title="@stencilTooltip">
+                                            <div class="tm-diagram-toolbox__preview @(stencil.Kind == DiagramStencilKind.Edge ? "tm-diagram-toolbox__edge-preview" : "")">
+                                                @if (!string.IsNullOrEmpty(stencil.IconSvg))
+                                                {
+                                                    <svg viewBox="0 0 32 32" aria-hidden="true" style="width:32px;height:32px;">
+                                                        @((MarkupString)stencil.IconSvg)
+                                                    </svg>
+                                                }
+                                                else if (stencil.Kind == DiagramStencilKind.Edge)
+                                                {
+                                                    <svg viewBox="0 0 32 32" aria-hidden="true" style="width:32px;height:32px;">
+                                                        <path d="M4 16 H28"
+                                                              fill="none"
+                                                              stroke="var(--tm-color-text)"
+                                                              stroke-width="2"
+                                                              stroke-linecap="round" />
+                                                        <path d="M23 11 L28 16 L23 21"
+                                                              fill="none"
+                                                              stroke="var(--tm-color-text)"
+                                                              stroke-width="2"
+                                                              stroke-linecap="round"
+                                                              stroke-linejoin="round" />
+                                                    </svg>
+                                                }
+                                                else
+                                                {
+                                                    <svg viewBox="0 0 32 32" aria-hidden="true" style="width:32px;height:32px;">
+                                                        <rect x="2" y="8" width="28" height="16" rx="2"
+                                                              fill="var(--tm-color-surface-elevated)"
+                                                              stroke="var(--tm-color-text)" stroke-width="2" />
+                                                    </svg>
+                                                }
+                                            </div>
+                                            <span class="tm-diagram-toolbox__label" aria-hidden="true">@stencilDisplayName</span>
+                                        </div>
+                                    }
                                 </div>
                             }
                         </div>
                     }
-                </div>
+                </section>
             }
         }
     </div>

@@ -1,0 +1,28 @@
+{
+  "itemName": "INotionMediaLibraryProvider",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Enables the Media Library tab in TmNotionEditor's upload dialog. When supplied, users can browse previously uploaded files and insert them without re-uploading. The tab is hidden when this provider is not supplied.",
+  "methods": [
+    {
+      "name": "SearchAsync",
+      "returnType": "Task<IEnumerable<INotionMediaLibraryItem>>",
+      "description": "Returns media items matching the search query, optionally filtered by media type, with pagination support.",
+      "parameters": [
+        { "name": "query",     "type": "string",  "description": "Free-text search query. Empty string returns all items." },
+        { "name": "mediaType", "type": "string?", "description": "Optional type filter: \"image\" | \"pdf\" | \"file\" | null (all types).", "defaultValue": "null" },
+        { "name": "skip",      "type": "int",     "description": "Pagination offset (number of items to skip).", "defaultValue": "0" },
+        { "name": "take",      "type": "int",     "description": "Page size.", "defaultValue": "24" },
+        { "name": "ct",        "type": "CancellationToken", "defaultValue": "default" }
+      ]
+    }
+  ],
+  "usedInComponents": ["TmNotionEditor"],
+  "examples": [
+    {
+      "title": "In-memory implementation with seeded data",
+      "code": "public class DemoMediaLibraryProvider : INotionMediaLibraryProvider\n{\n    private static readonly List<MediaItem> _items =\n    [\n        new() { Id = \"img1\", Url = \"https://example.com/hero.png\",  Name = \"Hero image\",  MediaType = \"image\", FileSizeBytes = 42000 },\n        new() { Id = \"pdf1\", Url = \"https://example.com/report.pdf\", Name = \"Q4 Report\",   MediaType = \"pdf\",   FileSizeBytes = 204800 },\n    ];\n\n    public Task<IEnumerable<INotionMediaLibraryItem>> SearchAsync(\n        string query, string? mediaType = null, int skip = 0, int take = 24,\n        CancellationToken ct = default)\n    {\n        IEnumerable<MediaItem> result = _items;\n        if (!string.IsNullOrWhiteSpace(query))\n            result = result.Where(i => i.Name.Contains(query, StringComparison.OrdinalIgnoreCase));\n        if (mediaType != null)\n            result = result.Where(i => i.MediaType == mediaType);\n        return Task.FromResult(result.Skip(skip).Take(take).Cast<INotionMediaLibraryItem>());\n    }\n}"
+    }
+  ]
+}

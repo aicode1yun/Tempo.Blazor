@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Modeling",
+  "description": "An issue discovered in source data, validation, or diagram generation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/ModelingDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ModelingIssueDto"
+}

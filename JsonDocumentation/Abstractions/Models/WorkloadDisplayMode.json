@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "How workload values are displayed in the workload panel.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/WorkloadDisplayMode.cs",
+  "documentationStatus": "generated",
+  "itemName": "WorkloadDisplayMode"
+}

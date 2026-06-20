@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Frequency of recurrence for scheduled events.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmRecurrenceRule.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmRecurrenceFrequency"
+}

@@ -1,0 +1,72 @@
+@namespace Tempo.Blazor.Components.Spreadsheet.Dialogs
+@using Tempo.Blazor.Components.Spreadsheet.Models
+
+<div class="tm-spreadsheet-named-range-edit__backdrop" @onclick="OnCancelClick">
+    <div class="tm-spreadsheet-named-range-edit"
+         role="dialog"
+         aria-label="@(_isNew ? Loc["TmSpreadsheet_NamesEdit_TitleNew"] : Loc["TmSpreadsheet_NamesEdit_Title"])"
+         @onclick:stopPropagation
+         @onkeydown="OnKeyDown">
+        <div class="tm-spreadsheet-named-range-edit__header">
+            <span class="tm-spreadsheet-named-range-edit__title">@(_isNew ? Loc["TmSpreadsheet_NamesEdit_TitleNew"] : Loc["TmSpreadsheet_NamesEdit_Title"])</span>
+            <button type="button" class="tm-spreadsheet-named-range-edit__close" title="@Loc["Tm_Close"]" aria-label="@Loc["Tm_Close"]" @onclick="OnCancelClick">
+                <TmIcon Name="close" />
+            </button>
+        </div>
+
+        <div class="tm-spreadsheet-named-range-edit__body">
+            <div class="tm-spreadsheet-named-range-edit__field">
+                <label for="nr-name">@Loc["TmSpreadsheet_NamesEdit_Name"]</label>
+                <input id="nr-name" type="text" @bind="_name" @bind:event="oninput" class="tm-spreadsheet-named-range-edit__input" />
+                @if (_errors.Contains("name"))
+                {
+                    <span class="tm-spreadsheet-named-range-edit__error">@Loc["TmSpreadsheet_NamesEdit_NameRequired"]</span>
+                }
+                @if (_errors.Contains("invalid"))
+                {
+                    <span class="tm-spreadsheet-named-range-edit__error">@Loc["TmSpreadsheet_NamesEdit_InvalidName"]</span>
+                }
+            </div>
+
+            <div class="tm-spreadsheet-named-range-edit__field">
+                <label for="nr-refers">@Loc["TmSpreadsheet_NamesEdit_RefersTo"]</label>
+                <input id="nr-refers" type="text" @bind="_refersTo" @bind:event="oninput" class="tm-spreadsheet-named-range-edit__input" />
+                @if (_errors.Contains("refersTo"))
+                {
+                    <span class="tm-spreadsheet-named-range-edit__error">@Loc["TmSpreadsheet_NamesEdit_RefersToRequired"]</span>
+                }
+            </div>
+
+            <div class="tm-spreadsheet-named-range-edit__field">
+                <label for="nr-scope">@Loc["TmSpreadsheet_NamesEdit_Scope"]</label>
+                <select id="nr-scope" @bind="_scope" class="tm-spreadsheet-named-range-edit__select">
+                    <option value="@NamedRangeScope.Workbook">@Loc["TmSpreadsheet_NamesEdit_ScopeWorkbook"]</option>
+                    <option value="@NamedRangeScope.Sheet">@Loc["TmSpreadsheet_NamesEdit_ScopeSheet"]</option>
+                </select>
+            </div>
+
+            @if (_scope == NamedRangeScope.Sheet)
+            {
+                <div class="tm-spreadsheet-named-range-edit__field">
+                    <label for="nr-sheet">@Loc["TmSpreadsheet_NamesEdit_Sheet"]</label>
+                    <select id="nr-sheet" @bind="_sheetIndex" class="tm-spreadsheet-named-range-edit__select">
+                        @for (var i = 0; i < Workbook.Sheets.Count; i++)
+                        {
+                            <option value="@i">@Workbook.Sheets[i].Name</option>
+                        }
+                    </select>
+                </div>
+            }
+
+            <div class="tm-spreadsheet-named-range-edit__field">
+                <label for="nr-comment">@Loc["TmSpreadsheet_NamesEdit_Comment"]</label>
+                <input id="nr-comment" type="text" @bind="_comment" class="tm-spreadsheet-named-range-edit__input" />
+            </div>
+        </div>
+
+        <div class="tm-spreadsheet-named-range-edit__actions">
+            <button type="button" class="tm-spreadsheet-named-range-edit__btn tm-spreadsheet-named-range-edit__btn--cancel" @onclick="OnCancelClick">@Loc["TmSpreadsheet_NamesEdit_Cancel"]</button>
+            <button type="button" class="tm-spreadsheet-named-range-edit__btn tm-spreadsheet-named-range-edit__btn--ok" @onclick="OnSaveClick">@Loc["TmSpreadsheet_NamesEdit_Save"]</button>
+        </div>
+    </div>
+</div>

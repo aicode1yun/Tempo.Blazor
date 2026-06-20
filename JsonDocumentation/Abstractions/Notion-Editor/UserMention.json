@@ -1,0 +1,37 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/UserMention.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AvatarUrl",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "DisplayName",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "TextOffset",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "InlineMentionType"
+    },
+    {
+      "name": "UserId",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "UserMention"
+}

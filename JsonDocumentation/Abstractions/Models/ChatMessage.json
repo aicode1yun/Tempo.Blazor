@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Represents a single message in a chat conversation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatMessage.cs",
+  "documentationStatus": "generated",
+  "itemName": "ChatMessage"
+}

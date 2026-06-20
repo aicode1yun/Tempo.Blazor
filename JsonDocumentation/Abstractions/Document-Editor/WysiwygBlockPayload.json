@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Payload for block insert commands from the JS engine.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygBlockPayload.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BlockType",
+      "kind": "Property",
+      "type": "string",
+      "description": "Block type: Paragraph, Heading, List, Table, Image, PageBreak."
+    },
+    {
+      "name": "HeadingLevel",
+      "kind": "Property",
+      "type": "int?",
+      "description": "Optional heading level when BlockType is Heading."
+    },
+    {
+      "name": "Selection",
+      "kind": "Property",
+      "type": "WysiwygSelectionSnapshot?",
+      "description": "Selection snapshot at the time of the command."
+    }
+  ],
+  "itemName": "WysiwygBlockPayload"
+}

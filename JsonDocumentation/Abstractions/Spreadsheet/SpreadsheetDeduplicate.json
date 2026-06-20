@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "Pure engine that finds duplicate rows within a range by comparing the values of a chosen set of key columns. The first occurrence of each distinct key combination is kept; every later row with the same combination is reported for removal. Comparison is type-aware (numbers, dates and booleans compare by value, not by their formatted text) and honours case sensitivity for text.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetDeduplicate.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetDeduplicate"
+}

@@ -1,0 +1,52 @@
+{
+  "itemName": "TmCommentReactionBar",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "TmCommentReactionBar Blazor component in the Signing category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor/Components/Signing/TmCommentReactionBar.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "AvailableReactions",
+      "type": "IReadOnlyList<string>",
+      "isRequired": false,
+      "default": "[\"\uD83D\uDC4D\", \"✅\", \"\uD83D\uDC40\", \"❤️\", \"\uD83C\uDF89\"]",
+      "description": "Whether the picker is open."
+    },
+    {
+      "name": "CurrentUserId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Existing grouped reactions."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Current user id used for active reaction styling."
+    },
+    {
+      "name": "OnReactionToggled",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Callback invoked when the picker open state changes."
+    },
+    {
+      "name": "PickerOpen",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the reaction bar is disabled."
+    },
+    {
+      "name": "PickerOpenChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "Available picker reaction values."
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells
+@inherits TmNotionDbCellBase
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Enums
+
+@if (IsEditing)
+{
+    <input class="tm-dbc__input tm-dbc__input--number"
+           type="number"
+           @ref="_inputRef"
+           value="@_buffer"
+           step="any"
+           @oninput="e => _buffer = e.Value?.ToString() ?? string.Empty"
+           @onblur="CommitNumberAsync"
+           @onkeydown="e => HandleKeyAsync(e, CommitNumberAsync)"
+           @onclick:stopPropagation="true" />
+}
+else
+{
+    <div class="tm-dbc @(ReadOnly ? "tm-dbc--readonly" : "")"
+         style="justify-content: flex-end"
+         @onclick="() => !ReadOnly ? RequestEditAsync() : Task.CompletedTask">
+        @if (DisplayValue.Length > 0)
+        {
+            <span class="tm-dbc__number">@DisplayValue</span>
+        }
+        else
+        {
+            <span class="tm-dbc__text tm-dbc__text--empty">&nbsp;</span>
+        }
+    </div>
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Provides Confluence-style page restrictions for the Notion editor.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/INotionPermissionProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "INotionPermissionProvider"
+}

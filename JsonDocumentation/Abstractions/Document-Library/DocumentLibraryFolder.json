@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Document Library",
+  "namespace": "Tempo.Blazor.DocumentLibrary",
+  "description": "A node in the library's virtual folder tree, used to render the dialog's left-hand navigation. Flat stores return a single root with no children.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/DocumentLibraryFolder.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Children",
+      "kind": "Property",
+      "type": "List<DocumentLibraryFolder>",
+      "description": "Child folders nested directly under this one."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "required string",
+      "description": "Display name of the folder (last path segment, or a label for the root)."
+    },
+    {
+      "name": "Path",
+      "kind": "Property",
+      "type": "required string",
+      "description": "Full path of the folder, used as its identity (e.g. \"/\" for root, \"/Designs/Mobile\" for a nested folder)."
+    }
+  ],
+  "itemName": "DocumentLibraryFolder"
+}

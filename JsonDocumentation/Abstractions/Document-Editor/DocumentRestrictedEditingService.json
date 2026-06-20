@@ -1,0 +1,92 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Manages restricted markers within a protected document, keeping marker ranges in sync as text is inserted or deleted.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentRestrictedEditingService.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AddMarker",
+      "kind": "Method",
+      "type": "void",
+      "description": "Add a new editable region.",
+      "parameters": [
+        {
+          "name": "marker",
+          "type": "DocumentRestrictedMarker"
+        }
+      ]
+    },
+    {
+      "name": "IsInsideEditableRegion",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns true if the position (, ) falls inside at least one editable marker.",
+      "parameters": [
+        {
+          "name": "blockId",
+          "type": "string"
+        },
+        {
+          "name": "offset",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "RemoveMarker",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Remove the marker with the given .",
+      "parameters": [
+        {
+          "name": "markerId",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "UpdateForDelete",
+      "kind": "Method",
+      "type": "void",
+      "description": "Update marker offsets after text is deleted at / spanning characters.",
+      "parameters": [
+        {
+          "name": "blockId",
+          "type": "string"
+        },
+        {
+          "name": "offset",
+          "type": "int"
+        },
+        {
+          "name": "length",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "UpdateForInsert",
+      "kind": "Method",
+      "type": "void",
+      "description": "Update marker offsets after text is inserted at / with characters.",
+      "parameters": [
+        {
+          "name": "blockId",
+          "type": "string"
+        },
+        {
+          "name": "offset",
+          "type": "int"
+        },
+        {
+          "name": "length",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentRestrictedEditingService"
+}

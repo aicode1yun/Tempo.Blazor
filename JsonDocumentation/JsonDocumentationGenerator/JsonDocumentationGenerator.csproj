@@ -5,6 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);MA0002;MA0006;MA0009;MA0023;MA0048;MA0051;MA0074</NoWarn>
   </PropertyGroup>
 
 </Project>

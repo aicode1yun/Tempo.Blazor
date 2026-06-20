@@ -1,0 +1,28 @@
+{
+  "itemName": "TmEmailExportDialog",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailExportDialog Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailExportDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "Document",
+      "type": "EmailTemplateDocument",
+      "isRequired": true,
+      "description": "Whether the dialog is shown."
+    },
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": true,
+      "description": "The document to export.",
+      "editorRequired": true
+    }
+  ]
+}

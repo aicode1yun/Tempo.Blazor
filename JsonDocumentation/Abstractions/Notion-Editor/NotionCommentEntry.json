@@ -1,0 +1,67 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionCommentEntry.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AuthorAvatarUrl",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "AuthorDisplayName",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "AuthorUserId",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "CanDelete",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "CanEdit",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTime"
+    },
+    {
+      "name": "HtmlContent",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "ParentEntryId",
+      "kind": "Property",
+      "type": "Guid?"
+    },
+    {
+      "name": "Reactions",
+      "kind": "Property",
+      "type": "List<ICommentReaction>"
+    },
+    {
+      "name": "UpdatedAt",
+      "kind": "Property",
+      "type": "DateTime"
+    }
+  ],
+  "itemName": "NotionCommentEntry"
+}

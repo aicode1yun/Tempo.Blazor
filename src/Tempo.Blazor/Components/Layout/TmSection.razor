@@ -73,6 +73,7 @@
     private async Task HandleHeaderClick()
     {
         if (!Collapsible) return;
-        await CollapsedChanged.InvokeAsync(!Collapsed);
+        Collapsed = !Collapsed;
+        await CollapsedChanged.InvokeAsync(Collapsed);
     }
 }

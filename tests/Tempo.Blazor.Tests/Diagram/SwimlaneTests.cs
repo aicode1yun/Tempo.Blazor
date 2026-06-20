@@ -87,6 +87,46 @@ public class SwimlaneTests : DiagramTestBase
     }
 
     [Fact]
+    public void SwimlaneLayoutService_ArrangeChild_PreservesDropPositionInsideCell()
+    {
+        var swimlane = new DiagramNode
+        {
+            Id = "swim1",
+            StencilId = "swimlane.horizontal",
+            X = 100,
+            Y = 100,
+            W = 500,
+            H = 220,
+            SwimlaneData = new()
+            {
+                IsHorizontal = true,
+                RowCount = 2,
+                ColumnCount = 1,
+                HeaderSize = 30,
+                RowSizes = [100, 100],
+                ColumnSizes = []
+            }
+        };
+
+        var child = new DiagramNode
+        {
+            Id = "child1",
+            ParentNodeId = "swim1",
+            SwimlaneRow = 0,
+            SwimlaneColumn = 0,
+            X = 320,
+            Y = 138,
+            W = 80,
+            H = 42
+        };
+
+        SwimlaneLayoutService.ArrangeChild(swimlane, child);
+
+        child.X.Should().Be(320);
+        child.Y.Should().Be(138);
+    }
+
+    [Fact]
     public void AddSwimlaneRowCommand_IncreasesHeightAndRowCount()
     {
         var doc = new DiagramDocument { Title = "Test" };

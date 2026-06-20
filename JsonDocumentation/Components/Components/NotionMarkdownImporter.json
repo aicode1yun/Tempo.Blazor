@@ -1,0 +1,39 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
+  "description": "Parses a CommonMark / GFM Markdown string into an ordered list of objects. Supports: headings, paragraphs, bullet lists, numbered lists, task lists, blockquotes, fenced code blocks, horizontal rules, images, block equations, tables, and inline formatting.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Services/NotionMarkdownImporter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Import",
+      "kind": "Method",
+      "type": "List<IPageBlock>",
+      "parameters": [
+        {
+          "name": "markdown",
+          "type": "string"
+        },
+        {
+          "name": "pageId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "InlineMarkdownToHtml",
+      "kind": "Method",
+      "type": "string",
+      "description": "Converts CommonMark inline elements to HTML for storage in block content.",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "NotionMarkdownImporter"
+}

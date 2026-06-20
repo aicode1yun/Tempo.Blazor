@@ -1,0 +1,122 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "In-memory document editor provider intended for tests and demos.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/InMemoryDocumentEditorProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "LoadJsonAsync",
+      "kind": "Method",
+      "type": "Task<string?>",
+      "parameters": [
+        {
+          "name": "documentId",
+          "type": "string"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "RecordAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "auditEvent",
+          "type": "DocumentEditorAuditEvent"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "SeedCanvasSearchOutlineTocDocument",
+      "kind": "Method",
+      "type": "DocumentEditorDocument",
+      "description": "Seeds a document that exercises canvas search, bookmarks, outline extraction, and generated TOC.",
+      "parameters": [
+        {
+          "name": "documentId",
+          "type": "string",
+          "default": "CanvasSearchOutlineTocDocumentId"
+        }
+      ]
+    },
+    {
+      "name": "SeedContractDocument",
+      "kind": "Method",
+      "type": "DocumentEditorDocument",
+      "description": "Seeds a representative contract document.",
+      "parameters": [
+        {
+          "name": "documentId",
+          "type": "string",
+          "default": "\"contract-demo\""
+        }
+      ]
+    },
+    {
+      "name": "SeedEmptyDocument",
+      "kind": "Method",
+      "type": "DocumentEditorDocument",
+      "description": "Seeds a new empty document.",
+      "parameters": [
+        {
+          "name": "documentId",
+          "type": "string",
+          "default": "\"empty-document\""
+        }
+      ]
+    },
+    {
+      "name": "SeedFilingDocument",
+      "kind": "Method",
+      "type": "DocumentEditorDocument",
+      "description": "Seeds a simple court filing document.",
+      "parameters": [
+        {
+          "name": "documentId",
+          "type": "string",
+          "default": "\"filing-demo\""
+        }
+      ]
+    },
+    {
+      "name": "SeedOnlyOfficeParityDocument",
+      "kind": "Method",
+      "type": "DocumentEditorDocument",
+      "description": "Seeds the deterministic ONLYOFFICE parity baseline used by P0 editor engine E2E tests.",
+      "parameters": [
+        {
+          "name": "documentId",
+          "type": "string",
+          "default": "OnlyOfficeParity20260524DocumentId"
+        }
+      ]
+    },
+    {
+      "name": "SeedRecoveryDocument",
+      "kind": "Method",
+      "type": "DocumentEditorDocument",
+      "description": "Seeds the deterministic recovery document used by Google Docs engine regression E2E tests.",
+      "parameters": [
+        {
+          "name": "documentId",
+          "type": "string",
+          "default": "Recovery20260523DocumentId"
+        }
+      ]
+    }
+  ],
+  "itemName": "InMemoryDocumentEditorProvider"
+}

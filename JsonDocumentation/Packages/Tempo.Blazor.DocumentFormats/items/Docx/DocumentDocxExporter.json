@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Docx",
+  "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+  "description": "Exports document editor JSON models as DOCX packages.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocumentDocxExporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentDocxExporter"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Inline signing field placed in the document (plan S2). An atomic box a signer later fills; its areas are derived from the layout (body field → one, header/footer field → one per page).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentInline.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentSigningFieldRun"
+}

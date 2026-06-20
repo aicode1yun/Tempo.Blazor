@@ -1,0 +1,342 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.Components.NotionEditor.Services
+
+@if (Visible)
+{
+    @* ── Backdrop ──────────────────────────────────────────────────────────── *@
+    <div class="tm-nph-backdrop" @onclick="CloseAsync" aria-hidden="true"></div>
+
+    @* ── Panel ─────────────────────────────────────────────────────────────── *@
+    <div class="tm-nph" role="dialog" aria-modal="true"
+         aria-label="@Loc["TmNotionPageHistory_PanelLabel"]">
+
+        @* ════════════════════════════════════════════════════════════════════ *@
+        @* ── LEFT: Version list sidebar ────────────────────────────────────── *@
+        @* ════════════════════════════════════════════════════════════════════ *@
+        <aside class="tm-nph__sidebar" aria-label="@Loc["TmNotionPageHistory_VersionList"]">
+
+            <div class="tm-nph__sidebar-header">
+                <h2 class="tm-nph__sidebar-title">@Loc["TmNotionPageHistory_Title"]</h2>
+                <button class="tm-nph__close-btn" type="button"
+                        aria-label="@Loc["Tm_Close"]"
+                        @onclick="CloseAsync">
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                        <path d="M2 2l11 11M13 2L2 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            @* ── Compare mode banner ────────────────────────────────────────── *@
+            @if (_compareMode)
+            {
+                <div class="tm-nph__compare-banner" role="status">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    @Loc["TmNotionPageHistory_CompareBannerSelect"]
+                    <button class="tm-nph__compare-cancel" type="button" @onclick="CancelCompare">
+                        @Loc["TmNotionPageHistory_Cancel"]
+                    </button>
+                </div>
+            }
+
+            @* ── Version items ─────────────────────────────────────────────── *@
+            <div class="tm-nph__version-list" role="list">
+
+                @if (_versionsLoading)
+                {
+                    <div class="tm-nph__status" aria-live="polite" aria-busy="true">
+                        <span class="tm-nph__spinner" aria-hidden="true"></span>
+                        @Loc["TmNotionPageHistory_Loading"]
+                    </div>
+                }
+                else if (_versions.Count == 0)
+                {
+                    <div class="tm-nph__status">@Loc["TmNotionPageHistory_NoVersions"]</div>
+                }
+                else
+                {
+                    @foreach (var version in _versions)
+                    {
+                        var isSelected  = _selectedVersion?.Id == version.Id;
+                        var isFrom      = _compareFromVersion?.Id == version.Id;
+                        var isTo        = _compareToVersion?.Id == version.Id;
+                        var isCurrent   = version.Id == _versions[0].Id && _page == 1;
+
+                        <div class="tm-nph__version-item
+                                    @(isSelected  ? "tm-nph__version-item--selected"  : "")
+                                    @(isFrom      ? "tm-nph__version-item--compare-from" : "")
+                                    @(isTo        ? "tm-nph__version-item--compare-to"   : "")"
+                             role="listitem"
+                             tabindex="0"
+                             @onclick="() => SelectVersionAsync(version)"
+                             @onkeydown="e => HandleVersionKeyDownAsync(e, version)">
+
+                            <div class="tm-nph__version-time-group">
+                                <time class="tm-nph__version-time"
+                                      datetime="@version.EditedAt.ToString("O")"
+                                      title="@version.EditedAt.ToLocalTime().ToString("f")">
+                                    @FormatVersionTime(version.EditedAt)
+                                </time>
+                                @if (isCurrent)
+                                {
+                                    <span class="tm-nph__current-badge">@Loc["TmNotionPageHistory_Current"]</span>
+                                }
+                                @if (isFrom)
+                                {
+                                    <span class="tm-nph__compare-badge tm-nph__compare-badge--from">A</span>
+                                }
+                                @if (isTo)
+                                {
+                                    <span class="tm-nph__compare-badge tm-nph__compare-badge--to">B</span>
+                                }
+                            </div>
+
+                            <div class="tm-nph__version-author">
+                                <div class="tm-nph__version-avatar" aria-hidden="true">
+                                    @AvatarInitial(version.EditedByDisplayName)
+                                </div>
+                                <span class="tm-nph__version-author-name">@version.EditedByDisplayName</span>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(version.ChangeDescription))
+                            {
+                                <p class="tm-nph__version-desc">@version.ChangeDescription</p>
+                            }
+
+                        </div>
+                    }
+                }
+
+            </div>
+
+            @* ── Pagination ─────────────────────────────────────────────────── *@
+            @if (_totalCount > PageSize)
+            {
+                <div class="tm-nph__pagination">
+                    <button class="tm-nph__page-btn" type="button"
+                            disabled="@(_page <= 1 || _versionsLoading)"
+                            aria-label="@Loc["TmNotionPageHistory_PreviousPage"]"
+                            @onclick="PreviousPageAsync">
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+                            <path d="M8 2.5L4 6.5l4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <span class="tm-nph__page-info">
+                        @string.Format(Loc["TmNotionPageHistory_PageInfo"], _page, TotalPages)
+                    </span>
+                    <button class="tm-nph__page-btn" type="button"
+                            disabled="@(_page >= TotalPages || _versionsLoading)"
+                            aria-label="@Loc["TmNotionPageHistory_NextPage"]"
+                            @onclick="NextPageAsync">
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+                            <path d="M5 2.5L9 6.5l-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            }
+
+        </aside>
+
+        @* ════════════════════════════════════════════════════════════════════ *@
+        @* ── RIGHT: Content area ───────────────────────────────────────────── *@
+        @* ════════════════════════════════════════════════════════════════════ *@
+        <main class="tm-nph__content">
+
+            @if (_view == HistoryView.Empty)
+            {
+                @* ── Empty state ──────────────────────────────────────────── *@
+                <div class="tm-nph__empty-state">
+                    <svg class="tm-nph__empty-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                        <rect x="8" y="6" width="32" height="36" rx="4" stroke="currentColor" stroke-width="1.5" opacity=".3"/>
+                        <path d="M15 14h18M15 20h18M15 26h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".3"/>
+                        <circle cx="36" cy="36" r="8" fill="currentColor" opacity=".08"/>
+                        <path d="M32 36h8M36 32v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+                    </svg>
+                    <p class="tm-nph__empty-title">@Loc[_totalCount == 0 && !_versionsLoading ? "TmNotionPageHistory_NoVersionsEmptyTitle" : "TmNotionPageHistory_EmptyTitle"]</p>
+                    <p class="tm-nph__empty-sub">@Loc[_totalCount == 0 && !_versionsLoading ? "TmNotionPageHistory_NoVersionsEmptySub" : "TmNotionPageHistory_EmptySub"]</p>
+                </div>
+            }
+
+            @if (_view == HistoryView.Preview && _selectedVersion is not null)
+            {
+                @* ── Preview toolbar ──────────────────────────────────────── *@
+                <div class="tm-nph__toolbar">
+                    <div class="tm-nph__toolbar-info">
+                        <span class="tm-nph__toolbar-version-time">
+                            @_selectedVersion.EditedAt.ToLocalTime().ToString("f")
+                        </span>
+                        <span class="tm-nph__toolbar-author">
+                            @string.Format(Loc["TmNotionPageHistory_EditedBy"], _selectedVersion.EditedByDisplayName)
+                        </span>
+                    </div>
+                    <div class="tm-nph__toolbar-actions">
+                        <button class="tm-nph__toolbar-btn tm-nph__toolbar-btn--secondary"
+                                type="button"
+                                disabled="@_compareMode"
+                                title="@Loc["TmNotionPageHistory_CompareTooltip"]"
+                                @onclick="StartCompare">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                                <path d="M2 4h4v8H2zM8 2h4v8H8z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            @Loc["TmNotionPageHistory_Compare"]
+                        </button>
+                        <button class="tm-nph__toolbar-btn tm-nph__toolbar-btn--primary"
+                                type="button"
+                                disabled="@(_restoring || (_versions.Count > 0 && _selectedVersion?.Id == _versions[0].Id && _page == 1))"
+                                @onclick="RestoreAsync">
+                            @if (_restoring)
+                            {
+                                <span class="tm-nph__spinner tm-nph__spinner--sm" aria-hidden="true"></span>
+                            }
+                            else
+                            {
+                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                                    <path d="M2 7a5 5 0 1 0 1.5-3.5L2 2v3h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            }
+                            @Loc["TmNotionPageHistory_Restore"]
+                        </button>
+                    </div>
+                </div>
+
+                @* ── Preview blocks ────────────────────────────────────────── *@
+                <div class="tm-nph__preview" aria-label="@Loc["TmNotionPageHistory_PreviewLabel"]"
+                     aria-readonly="true">
+                    @if (_previewLoading)
+                    {
+                        <div class="tm-nph__status">
+                            <span class="tm-nph__spinner" aria-hidden="true"></span>
+                            @Loc["TmNotionPageHistory_LoadingPreview"]
+                        </div>
+                    }
+                    else if (_selectedVersion.BlocksSnapshot.Count == 0)
+                    {
+                        <div class="tm-nph__status">@Loc["TmNotionPageHistory_EmptySnapshot"]</div>
+                    }
+                    else
+                    {
+                        @foreach (var block in _selectedVersion.BlocksSnapshot.OrderBy(b => b.Order))
+                        {
+                            <div class="tm-nph__preview-block tm-nph__preview-block--@block.Type.ToString().ToLowerInvariant()">
+                                @((MarkupString)GetBlockHtml(block))
+                            </div>
+                        }
+                    }
+                </div>
+            }
+
+            @if (_view == HistoryView.Diff)
+            {
+                @* ── Diff toolbar ─────────────────────────────────────────── *@
+                <div class="tm-nph__toolbar">
+                    <div class="tm-nph__toolbar-info">
+                        <span class="tm-nph__diff-label tm-nph__diff-label--a">A</span>
+                        <span class="tm-nph__toolbar-version-time">
+                            @_compareFromVersion?.EditedAt.ToLocalTime().ToString("g")
+                        </span>
+                        <span class="tm-nph__diff-separator">↔</span>
+                        <span class="tm-nph__diff-label tm-nph__diff-label--b">B</span>
+                        <span class="tm-nph__toolbar-version-time">
+                            @_compareToVersion?.EditedAt.ToLocalTime().ToString("g")
+                        </span>
+                    </div>
+                    <div class="tm-nph__toolbar-actions">
+                        <button class="tm-nph__toolbar-btn @(_diffViewMode == NotionDiffViewMode.Inline ? "tm-nph__toolbar-btn--active" : "")"
+                                type="button"
+                                data-testid="notion-diff-mode-inline"
+                                aria-pressed="@(_diffViewMode == NotionDiffViewMode.Inline)"
+                                @onclick="() => SetDiffViewMode(NotionDiffViewMode.Inline)">
+                            @Loc["TmNotionPageHistory_DiffModeInline"]
+                        </button>
+                        <button class="tm-nph__toolbar-btn @(_diffViewMode == NotionDiffViewMode.SideBySide ? "tm-nph__toolbar-btn--active" : "")"
+                                type="button"
+                                data-testid="notion-diff-mode-side-by-side"
+                                aria-pressed="@(_diffViewMode == NotionDiffViewMode.SideBySide)"
+                                @onclick="() => SetDiffViewMode(NotionDiffViewMode.SideBySide)">
+                            @Loc["TmNotionPageHistory_DiffModeSideBySide"]
+                        </button>
+                        <button class="tm-nph__toolbar-btn tm-nph__toolbar-btn--secondary"
+                                type="button"
+                                @onclick="ExitDiff">
+                            @Loc["TmNotionPageHistory_ExitDiff"]
+                        </button>
+                    </div>
+                </div>
+
+                @* ── Diff legend ───────────────────────────────────────────── *@
+                <div class="tm-nph__diff-legend" role="group" aria-label="@Loc["TmNotionPageHistory_DiffLegend"]">
+                    <span class="tm-nph__legend-item tm-nph__legend-item--added">
+                        @Loc["TmNotionPageHistory_DiffAdded"]
+                    </span>
+                    <span class="tm-nph__legend-item tm-nph__legend-item--removed">
+                        @Loc["TmNotionPageHistory_DiffRemoved"]
+                    </span>
+                    <span class="tm-nph__legend-item tm-nph__legend-item--modified">
+                        @Loc["TmNotionPageHistory_DiffModified"]
+                    </span>
+                    <span class="tm-nph__legend-item tm-nph__legend-item--moved">
+                        @Loc["TmNotionPageHistory_DiffMoved"]
+                    </span>
+                </div>
+
+                @* ── Diff content ──────────────────────────────────────────── *@
+                <TmNotionDiffViewer Diffs="_diffs"
+                                    ViewMode="_diffViewMode"
+                                    Loading="_diffLoading" />
+            }
+
+        </main>
+
+    </div>
+
+    @* ── Restore confirmation dialog ────────────────────────────────────────── *@
+    @if (_showRestoreConfirm)
+    {
+        <div class="tm-nph-confirm-backdrop" @onclick="CancelRestore" aria-hidden="true"></div>
+        <div class="tm-nph-confirm" role="alertdialog"
+             aria-label="@Loc["TmNotionPageHistory_RestoreConfirmTitle"]"
+             aria-modal="true">
+            <h3 class="tm-nph-confirm__title">@Loc["TmNotionPageHistory_RestoreConfirmTitle"]</h3>
+            <p class="tm-nph-confirm__body">
+                @string.Format(Loc["TmNotionPageHistory_RestoreConfirmBody"],
+                    _selectedVersion?.EditedAt.ToLocalTime().ToString("f"))
+            </p>
+            <div class="tm-nph-confirm__actions">
+                <button class="tm-nph-confirm__cancel" type="button" @onclick="CancelRestore">
+                    @Loc["TmNotionPageHistory_Cancel"]
+                </button>
+                <button class="tm-nph-confirm__ok" type="button" @onclick="ConfirmRestoreAsync">
+                    @Loc["TmNotionPageHistory_RestoreConfirm"]
+                </button>
+            </div>
+        </div>
+    }
+
+    @* ── Error toast ────────────────────────────────────────────────────────── *@
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="tm-nph__toast tm-nph__toast--error" role="alert">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M7 4.5v3M7 9.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            @_error
+        </div>
+    }
+
+    @* ── Success toast ───────────────────────────────────────────────────────── *@
+    @if (!string.IsNullOrEmpty(_success))
+    {
+        <div class="tm-nph__toast tm-nph__toast--success" role="status">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            @_success
+        </div>
+    }
+}

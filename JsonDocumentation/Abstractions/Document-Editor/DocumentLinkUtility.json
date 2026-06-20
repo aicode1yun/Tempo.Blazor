@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Utility methods for document editor hyperlink validation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentLinkUtility.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "IsSafeHref",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Determines whether a hyperlink target is safe to persist or render.",
+      "parameters": [
+        {
+          "name": "href",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "NormalizeHref",
+      "kind": "Method",
+      "type": "string",
+      "description": "Normalizes a hyperlink target before it is persisted.",
+      "parameters": [
+        {
+          "name": "href",
+          "type": "string?"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentLinkUtility"
+}

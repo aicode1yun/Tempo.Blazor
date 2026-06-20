@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "An active (applied) filter produced by TmFilterBuilder.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/FilterDefinition.cs",
+  "documentationStatus": "generated",
+  "itemName": "ActiveFilter"
+}

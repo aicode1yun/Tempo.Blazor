@@ -1,0 +1,25 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Mcp",
+  "description": "Builds the JSON envelope every wireframe MCP tool returns, so the LLM can reliably tell success from failure: { \"success\": true, ... } or { \"success\": false, \"error\": \"...\", \"message\": \"...\", \"validationErrors\": [...] }.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/McpToolResults.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Success",
+      "kind": "Method",
+      "type": "string",
+      "description": "A successful result. The properties of are merged at the top level next to success: true.",
+      "parameters": [
+        {
+          "name": "data",
+          "type": "object?",
+          "default": "null"
+        }
+      ]
+    }
+  ],
+  "itemName": "McpToolResults"
+}

@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Mutation record captured by the MutationObserver guard.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygMutationRecord.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AttributeName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Attribute name if the mutation was an attribute change."
+    },
+    {
+      "name": "Target",
+      "kind": "Property",
+      "type": "string",
+      "description": "Node name of the mutated target."
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "string",
+      "description": "Type of mutation: childList, attributes, or characterData."
+    }
+  ],
+  "itemName": "WysiwygMutationRecord"
+}

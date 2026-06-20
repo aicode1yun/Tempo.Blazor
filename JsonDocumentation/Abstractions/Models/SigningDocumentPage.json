@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Rendered document page used by signing designers and signing forms.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningDocumentPage.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AttachmentUuid",
+      "kind": "Property",
+      "type": "string",
+      "description": "Document attachment identifier this page belongs to."
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "double",
+      "description": "Original page height in pixels."
+    },
+    {
+      "name": "ImageUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Page image URL, usually a server-rendered PNG or JPEG preview."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Accessible page label."
+    },
+    {
+      "name": "Labels",
+      "kind": "Property",
+      "type": "SigningLocalizedText",
+      "description": "Localized accessible page labels."
+    },
+    {
+      "name": "PageIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based page index within the attachment."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "double",
+      "description": "Original page width in pixels."
+    }
+  ],
+  "itemName": "SigningDocumentPage"
+}

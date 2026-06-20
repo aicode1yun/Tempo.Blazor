@@ -99,6 +99,7 @@ public sealed class MarkdownShortcutDetector
         "numbered"      => BlockType.NumberedList,
         "todo"          => BlockType.TodoItem,
         "todo_checked"  => BlockType.TodoItem,
+        "todoDone"      => BlockType.TodoItem,
         "quote"         => BlockType.Quote,
         "code"          => BlockType.Code,
         "divider"       => BlockType.Divider,
@@ -110,5 +111,6 @@ public sealed class MarkdownShortcutDetector
     /// shortcut (<c>"todo_checked"</c> / <c>"[x] "</c> pattern).
     /// </summary>
     public static bool IsCheckedTodo(string jsShortcutKey) =>
-        string.Equals(jsShortcutKey, "todo_checked", StringComparison.OrdinalIgnoreCase);
+        string.Equals(jsShortcutKey, "todo_checked", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(jsShortcutKey, "todoDone", StringComparison.OrdinalIgnoreCase);
 }

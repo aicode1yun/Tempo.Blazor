@@ -52,6 +52,9 @@ public partial class TmNotionHeadingBlock : ComponentBase, IAsyncDisposable
     /// <summary>Fired when '[[' page-link is triggered. Args = (top, left) caret coords.</summary>
     [Parameter] public EventCallback<(double Top, double Left)> OnPageLinkMenu    { get; set; }
 
+    /// <summary>Fired when '{{' token syntax is typed. Args = (top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(double Top, double Left)> OnTokenMenu       { get; set; }
+
     /// <summary>Fired when the toggle arrow is clicked. Bool = new isOpen state.</summary>
     [Parameter] public EventCallback<bool>                      OnToggleChanged   { get; set; }
 
@@ -113,7 +116,7 @@ public partial class TmNotionHeadingBlock : ComponentBase, IAsyncDisposable
             }
             catch { }
         }
-        else if (html != _lastHtml)
+        else if (!_dirty && html != _lastHtml)
         {
             _lastHtml = html;
             try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html); }
@@ -126,14 +129,16 @@ public partial class TmNotionHeadingBlock : ComponentBase, IAsyncDisposable
     private async Task OnBlurAsync()
     {
         if (!_dirty || ReadOnly) return;
-        _dirty = false;
         try
         {
-            var html  = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
-            _lastHtml = html;
+            var html = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
             await OnContentSaved.InvokeAsync(html);
         }
         catch { }
+        finally
+        {
+            _dirty = false;
+        }
     }
 
     private async Task HandleFocusAsync() => await OnFocused.InvokeAsync();
@@ -184,6 +189,10 @@ public partial class TmNotionHeadingBlock : ComponentBase, IAsyncDisposable
     [JSInvokable]
     public async Task OnPageLinkTriggered(double top, double left) =>
         await OnPageLinkMenu.InvokeAsync((top, left));
+
+    [JSInvokable]
+    public async Task OnTokenTriggered(double top, double left) =>
+        await OnTokenMenu.InvokeAsync((top, left));
 
     // ── Dispose ───────────────────────────────────────────────────────────────
 

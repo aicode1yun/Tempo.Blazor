@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Modeling",
+  "description": "Optional Entity Relationship Diagram notation profile for consumer-registered modeling scenarios.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Modeling/BuiltInModelingProfiles.cs",
+  "documentationStatus": "generated",
+  "itemName": "ErdNotationProfile"
+}

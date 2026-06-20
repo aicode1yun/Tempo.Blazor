@@ -22,12 +22,15 @@ public partial class TmNotionBlockHandle : ComponentBase
     [Parameter] public EventCallback          OnMoveTo             { get; set; }
     [Parameter] public EventCallback          OnCopyLink           { get; set; }
     [Parameter] public EventCallback          OnComment            { get; set; }
+    [Parameter] public EventCallback          OnNewThread          { get; set; }
+    [Parameter] public EventCallback<CalloutVariant> OnCalloutVariantChange { get; set; }
     [Parameter] public EventCallback<string?> OnTextColorChange    { get; set; }
     [Parameter] public EventCallback<string?> OnBackgroundChange   { get; set; }
 
     // ── State ────────────────────────────────────────────────────────────────
 
     private bool _showMenu;
+    private ElementReference _menuButtonRef;
 
     // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -35,5 +38,20 @@ public partial class TmNotionBlockHandle : ComponentBase
 
     private void ToggleMenu() => _showMenu = !_showMenu;
 
-    private void CloseMenu() => _showMenu = false;
+    private async Task CloseMenuAsync()
+    {
+        if (!_showMenu)
+            return;
+
+        _showMenu = false;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await _menuButtonRef.FocusAsync();
+        }
+        catch
+        {
+        }
+    }
 }

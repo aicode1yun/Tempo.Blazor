@@ -1,0 +1,50 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+  "description": "Models the MJML <mj-attributes> head section: global defaults (mj-all), per-component defaults and named classes (mj-class). The importer keeps this cascade intact rather than flattening it onto blocks, preserving both fidelity and editability of global styles.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/MjAttributes.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Resolve",
+      "kind": "Method",
+      "type": "string?",
+      "description": "Resolves the head-level value of an attribute for a component, following MJML precedence: referenced classes (later class wins) > per-tag default > mj-all. Returns when no head rule supplies the attribute (the block's own value or the MJML built-in default then applies). The block's own inline value is not considered here.",
+      "parameters": [
+        {
+          "name": "tag",
+          "type": "string"
+        },
+        {
+          "name": "mjClasses",
+          "type": "IReadOnlyList<string>"
+        },
+        {
+          "name": "attribute",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "All",
+      "kind": "Property",
+      "type": "IDictionary<string, string>",
+      "description": "Gets the attributes applied to every component (mj-all)."
+    },
+    {
+      "name": "Classes",
+      "kind": "Property",
+      "type": "IDictionary<string, Dictionary<string, string>>",
+      "description": "Gets the named class definitions (mj-class), keyed by class name."
+    },
+    {
+      "name": "PerTag",
+      "kind": "Property",
+      "type": "IDictionary<string, Dictionary<string, string>>",
+      "description": "Gets the per-component default attributes, keyed by MJML tag name (e.g. mj-text)."
+    }
+  ],
+  "itemName": "MjAttributes"
+}

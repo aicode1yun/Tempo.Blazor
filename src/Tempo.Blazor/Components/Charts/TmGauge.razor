@@ -1,0 +1,21 @@
+@namespace Tempo.Blazor.Components.Charts
+@using System.Globalization
+@using Tempo.Blazor.Models
+
+<div class="@CssClass" style="@WrapperStyle">
+    <svg viewBox="0 0 @SvgW @SvgH" preserveAspectRatio="xMidYMid meet" width="100%" height="100%"
+         aria-label="@Loc["TmGauge_AriaLabel"]" role="img">
+        @if (Type == GaugeType.Arc)
+        {
+            @RenderArc
+        }
+        else if (Type == GaugeType.Circular)
+        {
+            @RenderCircular
+        }
+        else if (Type == GaugeType.Linear)
+        {
+            @RenderLinear
+        }
+    </svg>
+</div>

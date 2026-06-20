@@ -1,0 +1,78 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A data table (mj-table). Rows and cells are modelled, not raw HTML.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailTableBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Align",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the table alignment (align)."
+    },
+    {
+      "name": "Border",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the table border shorthand (border)."
+    },
+    {
+      "name": "CellPadding",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the cell padding (cellpadding)."
+    },
+    {
+      "name": "CellSpacing",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the cell spacing (cellspacing)."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the text colour (color)."
+    },
+    {
+      "name": "FontFamily",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the font family (font-family)."
+    },
+    {
+      "name": "FontSize",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the font size (font-size)."
+    },
+    {
+      "name": "LineHeight",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the line height (line-height)."
+    },
+    {
+      "name": "Rows",
+      "kind": "Property",
+      "type": "IList<EmailTableRow>",
+      "description": "Gets the table rows."
+    },
+    {
+      "name": "TableLayout",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the table layout algorithm (table-layout)."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the table width (width)."
+    }
+  ],
+  "itemName": "EmailTableBlock"
+}

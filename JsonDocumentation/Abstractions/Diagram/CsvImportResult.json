@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Result of importing CSV data into a diagram.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/CsvImportResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Document",
+      "kind": "Property",
+      "type": "DiagramDocument"
+    },
+    {
+      "name": "LayoutAlgorithm",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "CsvImportResult"
+}

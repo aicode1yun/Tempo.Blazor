@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Tracks undoable/redoable commands for a diagram editor instance.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Commands/IDiagramCommandStack.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDiagramCommandStack"
+}

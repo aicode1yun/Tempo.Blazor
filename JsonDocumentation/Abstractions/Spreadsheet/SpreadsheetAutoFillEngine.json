@@ -1,0 +1,39 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.AutoFill",
+  "description": "Detects patterns in a source range and fills them into a target range.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/AutoFill/SpreadsheetAutoFillEngine.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Fill",
+      "kind": "Method",
+      "type": "void",
+      "description": "Fills the target range based on the pattern in the source range.",
+      "parameters": [
+        {
+          "name": "sourceRangeRef",
+          "type": "string"
+        },
+        {
+          "name": "targetRangeRef",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "GetValue",
+      "kind": "Method",
+      "type": "object?",
+      "parameters": [
+        {
+          "name": "index",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "itemName": "SpreadsheetAutoFillEngine"
+}

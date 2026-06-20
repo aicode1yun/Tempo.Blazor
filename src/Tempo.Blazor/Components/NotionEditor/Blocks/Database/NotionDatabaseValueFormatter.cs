@@ -1,0 +1,57 @@
+using System.Collections;
+using System.Globalization;
+using System.Text.Json;
+
+namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database;
+
+internal static class NotionDatabaseValueFormatter
+{
+    public static string Format(object? value, string dateFormat = "yyyy-MM-dd")
+    {
+        return value switch
+        {
+            null           => string.Empty,
+            string s       => s,
+            bool b         => b ? "✓" : string.Empty,
+            double d       => d.ToString("G", CultureInfo.CurrentCulture),
+            float f        => f.ToString("G", CultureInfo.CurrentCulture),
+            decimal d      => d.ToString("G", CultureInfo.CurrentCulture),
+            int i          => i.ToString(CultureInfo.CurrentCulture),
+            long l         => l.ToString(CultureInfo.CurrentCulture),
+            DateTime dt    => dt.ToString(dateFormat, CultureInfo.CurrentCulture),
+            DateOnly d     => d.ToString(dateFormat, CultureInfo.CurrentCulture),
+            JsonElement je => FormatJsonElement(je, dateFormat),
+            IEnumerable e  => FormatEnumerable(e, dateFormat),
+            _              => Convert.ToString(value, CultureInfo.CurrentCulture) ?? string.Empty
+        };
+    }
+
+    private static string FormatEnumerable(IEnumerable values, string dateFormat)
+    {
+        var parts = values
+            .Cast<object?>()
+            .Select(value => Format(value, dateFormat))
+            .Where(value => value.Length > 0);
+
+        return string.Join(", ", parts);
+    }
+
+    private static string FormatJsonElement(JsonElement element, string dateFormat)
+    {
+        return element.ValueKind switch
+        {
+            JsonValueKind.Null      => string.Empty,
+            JsonValueKind.Undefined => string.Empty,
+            JsonValueKind.String    => element.GetString() ?? string.Empty,
+            JsonValueKind.True      => "✓",
+            JsonValueKind.False     => string.Empty,
+            JsonValueKind.Number    => element.TryGetInt64(out var l)
+                ? l.ToString(CultureInfo.CurrentCulture)
+                : element.TryGetDouble(out var d)
+                    ? d.ToString("G", CultureInfo.CurrentCulture)
+                    : element.GetRawText(),
+            JsonValueKind.Array => FormatEnumerable(element.EnumerateArray(), dateFormat),
+            _                   => element.GetRawText()
+        };
+    }
+}

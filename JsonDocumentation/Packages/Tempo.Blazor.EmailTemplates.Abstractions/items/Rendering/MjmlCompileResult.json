@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Rendering",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+  "description": "The outcome of compiling MJML markup to HTML.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/MjmlCompileResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "MjmlCompileResult"
+}

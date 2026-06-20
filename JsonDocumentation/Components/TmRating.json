@@ -1,0 +1,70 @@
+{
+  "itemName": "TmRating",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "A rating component that displays stars and allows users to select a value. Supports hover effects, keyboard navigation, and read-only mode.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "Value",
+      "type": "int?",
+      "isRequired": false,
+      "description": "The current rating value. Null means no rating."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<int?>",
+      "isRequired": false,
+      "description": "Event fired when the rating changes."
+    },
+    {
+      "name": "Max",
+      "type": "int",
+      "isRequired": false,
+      "default": "5",
+      "description": "The maximum rating value. Defaults to 5."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the rating is read-only."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the rating is disabled."
+    },
+    {
+      "name": "AdditionalCssClass",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes."
+    }
+  ],
+  "cssClasses": [
+    "tm-rating",
+    "tm-rating--disabled",
+    "tm-rating--readonly",
+    "tm-rating__star--full",
+    "tm-rating__star--empty",
+    "tm-rating__star--hover"
+  ],
+  "examples": [
+    {
+      "title": "Basic rating",
+      "code": "<TmRating @bind-Value=\"rating\" />"
+    },
+    {
+      "title": "10-star rating",
+      "code": "<TmRating @bind-Value=\"rating\" Max=\"10\" />"
+    },
+    {
+      "title": "Read-only display",
+      "code": "<TmRating Value=\"4\" ReadOnly=\"true\" />"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Docx",
+  "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+  "description": "Converts document image crop values to and from DrawingML source rectangles.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocxCropConverter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "FromSourceRectangle",
+      "kind": "Method",
+      "type": "DocumentObjectCrop",
+      "description": "Reads normalized crop percentages from an a:srcRect element.",
+      "parameters": [
+        {
+          "name": "crop",
+          "type": "SourceRectangle?"
+        }
+      ]
+    },
+    {
+      "name": "IsEmpty",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns true when the crop rectangle has no visible crop.",
+      "parameters": [
+        {
+          "name": "crop",
+          "type": "DocumentObjectCrop?"
+        }
+      ]
+    },
+    {
+      "name": "ToSourceRectangle",
+      "kind": "Method",
+      "type": "SourceRectangle?",
+      "description": "Creates an a:srcRect element from normalized crop percentages.",
+      "parameters": [
+        {
+          "name": "crop",
+          "type": "DocumentObjectCrop?"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocxCropConverter"
+}

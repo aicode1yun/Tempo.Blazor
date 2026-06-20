@@ -1,0 +1,48 @@
+.tm-modeling-view-selector {
+    display: flex;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: var(--tm-space-3);
+    min-width: 0;
+}
+
+.tm-modeling-view-selector__field {
+    display: grid;
+    gap: var(--tm-space-1);
+    min-width: calc(var(--tm-space-16) * 2);
+}
+
+.tm-modeling-view-selector__field span {
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-medium);
+}
+
+.tm-modeling-view-selector__field select {
+    width: 100%;
+    min-width: 0;
+    padding: var(--tm-space-2) var(--tm-space-8) var(--tm-space-2) var(--tm-space-3);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    font: inherit;
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-modeling-view-selector__field select:focus {
+    border-color: var(--tm-color-primary);
+    outline: 2px solid var(--tm-color-primary-subtle);
+    outline-offset: 1px;
+}
+
+.tm-modeling-view-selector__empty-viewpoints {
+    max-width: calc(var(--tm-space-16) * 3);
+    padding: var(--tm-space-2) var(--tm-space-3);
+    border: 1px solid var(--tm-color-border-subtle);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface-secondary);
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-xs);
+    line-height: var(--tm-line-height-normal);
+}

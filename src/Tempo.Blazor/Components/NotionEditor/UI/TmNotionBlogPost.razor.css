@@ -1,0 +1,87 @@
+.tm-notion-blog-post {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: 100%;
+    color: var(--tm-text-primary);
+}
+
+.tm-notion-blog-post__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--tm-space-3);
+    padding: var(--tm-space-4);
+    border-bottom: 1px solid var(--tm-color-border);
+}
+
+.tm-notion-blog-post__title-wrap {
+    min-width: 0;
+}
+
+.tm-notion-blog-post__title {
+    margin: 0;
+    font-size: var(--tm-font-size-xl);
+    line-height: var(--tm-line-height-tight);
+    font-weight: var(--tm-font-weight-semibold);
+    overflow-wrap: anywhere;
+}
+
+.tm-notion-blog-post__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--tm-space-2);
+    margin-top: var(--tm-space-2);
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-xs);
+}
+
+.tm-notion-blog-post__status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.375rem;
+    padding: 0 var(--tm-space-2);
+    border-radius: var(--tm-radius-full);
+    font-weight: var(--tm-font-weight-medium);
+}
+
+.tm-notion-blog-post__status--draft {
+    background: var(--tm-color-warning-soft);
+    color: var(--tm-color-warning);
+}
+
+.tm-notion-blog-post__status--published {
+    background: var(--tm-color-success-soft);
+    color: var(--tm-color-success);
+}
+
+.tm-notion-blog-post__publish {
+    min-height: 2rem;
+    padding: 0 var(--tm-space-3);
+    border: 1px solid var(--tm-color-primary);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-color-primary);
+    color: var(--tm-color-on-primary);
+    font-size: var(--tm-font-size-sm);
+    font-weight: var(--tm-font-weight-medium);
+    cursor: pointer;
+    transition: filter var(--tm-transition-fast), opacity var(--tm-transition-fast);
+    white-space: nowrap;
+}
+
+.tm-notion-blog-post__publish:hover:not(:disabled) {
+    filter: brightness(0.96);
+}
+
+.tm-notion-blog-post__publish:disabled {
+    opacity: 0.65;
+    cursor: progress;
+}
+
+.tm-notion-blog-post__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--tm-space-4);
+}

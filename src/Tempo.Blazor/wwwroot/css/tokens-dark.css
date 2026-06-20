@@ -68,6 +68,15 @@
   --tm-color-gray-800:       #f8fafc;
   --tm-color-gray-900:       #ffffff;
 
+  /* Alias Tokens (dark overrides) */
+  --tm-color-surface:          var(--tm-bg-surface);
+  --tm-color-surface-elevated: #1e293b;
+  --tm-color-surface-hover:    #334155;
+  --tm-color-border:           var(--tm-border-color);
+  --tm-color-border-subtle:    #475569;
+  --tm-color-text:             var(--tm-text-primary);
+  --tm-color-text-muted:       var(--tm-text-secondary);
+
   /* Shadows — stronger on dark */
   --tm-shadow-sm:  0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --tm-shadow-md:  0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);

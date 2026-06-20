@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -10,6 +11,10 @@ public partial class TmNotionImageBlock : ComponentBase, IAsyncDisposable
     // ── DI ───────────────────────────────────────────────────────────────────
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    // ── Cascading ─────────────────────────────────────────────────────────────
+
+    [CascadingParameter] private NotionEditorContext? Context { get; set; }
 
     // ── Parameters ───────────────────────────────────────────────────────────
 
@@ -36,14 +41,18 @@ public partial class TmNotionImageBlock : ComponentBase, IAsyncDisposable
 
     // ── State ────────────────────────────────────────────────────────────────
 
-    private ElementReference                          _imgWrapRef;
-    private ElementReference                          _captionRef;
+    private ElementReference                           _blockRef;
+    private ElementReference                           _imgWrapRef;
+    private ElementReference                           _captionRef;
     private DotNetObjectReference<TmNotionImageBlock>? _dotNetRef;
-    private bool                                      _resizeInitialized;
-    private bool                                      _captionDirty;
-    private bool                                      _captionInitialized;
-    private IImageBlockContent?                       _lastContent;
-    private bool                                      _dialogOpen;
+    private bool                                       _pasteInitialized;
+    private bool                                       _dropZoneInitialized;
+    private bool                                       _resizeInitialized;
+    private bool                                       _captionDirty;
+    private bool                                       _captionInitialized;
+    private IImageBlockContent?                        _lastContent;
+    private bool                                       _dialogOpen;
+    private bool                                       _isDragging;
 
     // ── Computed ─────────────────────────────────────────────────────────────
 
@@ -64,21 +73,39 @@ public partial class TmNotionImageBlock : ComponentBase, IAsyncDisposable
     protected override void OnParametersSet()
     {
         if (ReferenceEquals(Content, _lastContent)) return;
-        _lastContent         = Content;
-        _resizeInitialized   = false;
-        _captionInitialized  = false;
-        _captionDirty        = false;
+        _lastContent        = Content;
+        _resizeInitialized  = false;
+        _captionInitialized = false;
+        _captionDirty       = false;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (ReadOnly || string.IsNullOrEmpty(Content?.Url)) return;
+        if (ReadOnly) return;
+
+        _dotNetRef ??= DotNetObjectReference.Create(this);
+
+        // Paste handler — once, requires FileProvider
+        if (!_pasteInitialized && Context?.FileProvider != null)
+        {
+            _pasteInitialized = true;
+            try { await JS.InvokeVoidAsync("tmNotionEditor.initBlockPaste", _blockRef, _dotNetRef); }
+            catch { }
+        }
+
+        // Drop zone handler — once, requires FileProvider
+        if (!_dropZoneInitialized && Context?.FileProvider != null)
+        {
+            _dropZoneInitialized = true;
+            try { await JS.InvokeVoidAsync("tmNotionEditor.initBlockDropZone", _blockRef, _dotNetRef); }
+            catch { }
+        }
+
+        if (string.IsNullOrEmpty(Content?.Url)) return;
 
         if (!_resizeInitialized && Content?.Alignment != MediaAlignment.FullWidth)
         {
             _resizeInitialized = true;
-            _dotNetRef?.Dispose();
-            _dotNetRef = DotNetObjectReference.Create(this);
             try { await JS.InvokeVoidAsync("tmNotionEditor.initResizeHandle", _imgWrapRef, _dotNetRef); }
             catch { }
         }
@@ -95,10 +122,40 @@ public partial class TmNotionImageBlock : ComponentBase, IAsyncDisposable
         }
     }
 
-    // ── JS callback ───────────────────────────────────────────────────────────
+    // ── JS callbacks ──────────────────────────────────────────────────────────
 
     [JSInvokable]
     public async Task OnResize(int width, int height) => await OnWidthChanged.InvokeAsync(width);
+
+    [JSInvokable]
+    public async Task OnFileDropped(string dataUrl, string mimeType, string fileName)
+    {
+        if (ReadOnly || Context?.FileProvider == null) return;
+
+        var base64 = dataUrl[(dataUrl.IndexOf(',') + 1)..];
+        var bytes  = Convert.FromBase64String(base64);
+        using var stream = new MemoryStream(bytes);
+
+        var fileId = await Context.FileProvider.UploadFileAsync(stream, fileName, mimeType);
+        var url    = await Context.FileProvider.GetFileUrlAsync(fileId);
+        await OnMediaSet.InvokeAsync((fileId, url));
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task OnImagePasted(string dataUrl, string mimeType, string fileName)
+    {
+        if (ReadOnly || Context?.FileProvider == null || !string.IsNullOrEmpty(Content?.Url)) return;
+
+        var base64 = dataUrl[(dataUrl.IndexOf(',') + 1)..];
+        var bytes  = Convert.FromBase64String(base64);
+        using var stream = new MemoryStream(bytes);
+
+        var fileId = await Context.FileProvider.UploadFileAsync(stream, fileName, mimeType);
+        var url    = await Context.FileProvider.GetFileUrlAsync(fileId);
+        await OnMediaSet.InvokeAsync((fileId, url));
+        await InvokeAsync(StateHasChanged);
+    }
 
     // ── Caption ───────────────────────────────────────────────────────────────
 
@@ -134,6 +191,11 @@ public partial class TmNotionImageBlock : ComponentBase, IAsyncDisposable
         await OnMediaSet.InvokeAsync(media);
     }
 
+    // ── Drag and drop ────────────────────────────────────────────────────────
+
+    private void HandleDragEnter() { if (Context?.FileProvider == null) return; _isDragging = true; }
+    private void HandleDragLeave() { _isDragging = false; }
+
     // ── Alignment ─────────────────────────────────────────────────────────────
 
     private async Task HandleAlignmentAsync(MediaAlignment alignment) =>
@@ -147,6 +209,16 @@ public partial class TmNotionImageBlock : ComponentBase, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (_pasteInitialized)
+        {
+            try { await JS.InvokeVoidAsync("tmNotionEditor.destroyBlockPaste", _blockRef); }
+            catch { }
+        }
+        if (_dropZoneInitialized)
+        {
+            try { await JS.InvokeVoidAsync("tmNotionEditor.destroyBlockDropZone", _blockRef); }
+            catch { }
+        }
         if (_resizeInitialized)
         {
             try { await JS.InvokeVoidAsync("tmNotionEditor.destroyResizeHandle", _imgWrapRef); }

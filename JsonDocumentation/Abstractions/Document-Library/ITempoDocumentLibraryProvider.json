@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Document Library",
+  "namespace": "Tempo.Blazor.DocumentLibrary",
+  "description": "Browses and (optionally) manages stored documents produced by the wireframe, diagram and spreadsheet editors, so they can be opened or inserted as blocks elsewhere (e.g. the NotionEditor) and read by MCP tooling.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/ITempoDocumentLibraryProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITempoDocumentLibraryProvider"
+}

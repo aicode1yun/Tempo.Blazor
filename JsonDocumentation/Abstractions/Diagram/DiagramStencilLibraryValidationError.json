@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Single validation error for a data-driven diagram stencil library.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencilLibraryValidationError.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Code",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable machine-readable error code."
+    },
+    {
+      "name": "Message",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional non-localized diagnostic detail for tooling; never used as UI text."
+    },
+    {
+      "name": "Path",
+      "kind": "Property",
+      "type": "string",
+      "description": "JSON-style path to the invalid field."
+    }
+  ],
+  "itemName": "DiagramStencilLibraryValidationError"
+}

@@ -34,13 +34,37 @@
 
         @* ── Item list ─────────────────────────────────────────────────────── *@
         <div class="tm-notion-slash__list" role="listbox" @ref="_listRef">
-            @if (_groups.Count == 0)
+            @if (!_showAiItem && _groups.Count == 0)
             {
                 <div class="tm-notion-slash__empty">@Loc["TmNotionSlashMenu_NoResults"]</div>
             }
             else
             {
                 var flatIdx = 0;
+                @if (_showAiItem)
+                {
+                    <div class="tm-notion-slash__group" role="group">
+                        <div class="tm-notion-slash__group-label" role="presentation">
+                            @Loc["TmNotionSlashMenu_CategoryAdvanced"]
+                        </div>
+                        <div class="tm-notion-slash__item @(flatIdx == _selectedIndex ? "tm-notion-slash__item--selected" : "")"
+                             role="option"
+                             aria-selected="@(flatIdx == _selectedIndex)"
+                             data-slash-idx="@flatIdx"
+                             data-testid="notion-ai-slash-item"
+                             @onclick="SelectAiItemAsync"
+                             @onmouseenter="() => _selectedIndex = 0">
+                            <span class="tm-notion-slash__item-icon" aria-hidden="true">
+                                @((MarkupString)AiIcon)
+                            </span>
+                            <span class="tm-notion-slash__item-body">
+                                <span class="tm-notion-slash__item-name">@Loc["Notion_AI_Assistant"]</span>
+                                <span class="tm-notion-slash__item-desc">@Loc["TmNotionSlashMenu_ItemDesc_AI"]</span>
+                            </span>
+                        </div>
+                    </div>
+                    flatIdx++;
+                }
                 @foreach (var (category, items) in _groups)
                 {
                     <div class="tm-notion-slash__group" role="group">

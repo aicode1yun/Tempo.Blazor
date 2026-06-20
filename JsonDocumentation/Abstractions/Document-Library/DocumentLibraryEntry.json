@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Document Library",
+  "namespace": "Tempo.Blazor.DocumentLibrary",
+  "description": "Metadata describing one stored document in the library. Carries everything the open dialog needs to list and preview an item without loading its full payload — the payload is fetched lazily through the kind-specific document provider when the user opens it.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/DocumentLibraryEntry.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Author",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional display name of the last author. Null when unknown."
+    },
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "UTC timestamp of document creation."
+    },
+    {
+      "name": "FolderPath",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Virtual folder path the document lives in (e.g. \"/Designs/Mobile\"). Null for flat stores that do not organise documents into folders."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "required Guid",
+      "description": "Stable identifier of the document."
+    },
+    {
+      "name": "Kind",
+      "kind": "Property",
+      "type": "required TempoDocumentKind",
+      "description": "Which editor produced the document."
+    },
+    {
+      "name": "ModifiedAt",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "UTC timestamp of the last modification. Used both for sorting and as the optimistic-concurrency token surfaced to MCP write tools."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "required string",
+      "description": "Human-readable document name shown in the listing."
+    },
+    {
+      "name": "PreviewSvg",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional cached SVG thumbnail rendered from the document, shown in grid view. Null when the store does not provide previews."
+    }
+  ],
+  "itemName": "DocumentLibraryEntry"
+}

@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/DatabaseRecordTemplate.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DatabaseId",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "DefaultFields",
+      "kind": "Property",
+      "type": "IReadOnlyDictionary<string, object?>"
+    },
+    {
+      "name": "IconEmoji",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "TemplateBlocks",
+      "kind": "Property",
+      "type": "IReadOnlyList<IPageBlock>"
+    }
+  ],
+  "itemName": "DatabaseRecordTemplate"
+}

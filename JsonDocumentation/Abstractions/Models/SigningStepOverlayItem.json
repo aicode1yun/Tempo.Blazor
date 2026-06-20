@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Field and area pair rendered as an overlay on a signing document page.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningStepOverlayItem.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Area",
+      "kind": "Property",
+      "type": "required SigningFieldArea",
+      "description": "Field area rendered on the page."
+    },
+    {
+      "name": "Field",
+      "kind": "Property",
+      "type": "required SigningField",
+      "description": "Signing field rendered on the page."
+    }
+  ],
+  "itemName": "SigningStepOverlayItem"
+}

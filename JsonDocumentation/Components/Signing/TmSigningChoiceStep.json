@@ -1,0 +1,70 @@
+{
+  "itemName": "TmSigningChoiceStep",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "Renders select, radio, multiple-choice, and checkbox signing steps.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor/Components/Signing/TmSigningChoiceStep.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "AnonymousCheckbox",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the input controls are disabled."
+    },
+    {
+      "name": "AppearsOn",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when the value changes."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Fallback culture used when localized text is missing."
+    },
+    {
+      "name": "Culture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether a single checkbox should show a generic instruction instead of the field label."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Short text describing where the field appears in the document."
+    },
+    {
+      "name": "FallbackCulture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Culture used to resolve localized field and option text."
+    },
+    {
+      "name": "Fields",
+      "type": "IReadOnlyList<SigningField>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Primary signing field represented by this step."
+    },
+    {
+      "name": "Value",
+      "type": "object?",
+      "isRequired": false,
+      "description": "Optional checkbox fields rendered as one grouped checkbox step."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<object?>",
+      "isRequired": false,
+      "description": "Current value. Select/radio use string, multiple and grouped checkboxes use string arrays, checkbox uses bool."
+    }
+  ]
+}

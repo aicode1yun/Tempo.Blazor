@@ -1,0 +1,72 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Describes the JS-owned undo/redo stack state for a WYSIWYG editor instance.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygUndoState.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CanRedo",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether a redo operation can currently run."
+    },
+    {
+      "name": "CanUndo",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether an undo operation can currently run."
+    },
+    {
+      "name": "Epoch",
+      "kind": "Property",
+      "type": "int",
+      "description": "Runtime epoch used to discard stale local patches after undo/redo."
+    },
+    {
+      "name": "JsOwnedUndo",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the state comes from the JS-owned runtime undo stack."
+    },
+    {
+      "name": "LastTransactionId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Identifier of the latest committed transaction, if any."
+    },
+    {
+      "name": "NextRedoDescription",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Description of the next redo operation."
+    },
+    {
+      "name": "NextUndoDescription",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Description of the next undo operation."
+    },
+    {
+      "name": "PendingTransactionId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Identifier of the currently open transaction, if any."
+    },
+    {
+      "name": "RedoDepth",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of redoable transactions."
+    },
+    {
+      "name": "UndoDepth",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of undoable transactions, including an open typing transaction."
+    }
+  ],
+  "itemName": "WysiwygUndoState"
+}

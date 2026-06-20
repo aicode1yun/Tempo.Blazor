@@ -1,0 +1,42 @@
+{
+  "itemName": "TmNotionSyncedBlockOrigin",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionSyncedBlockOrigin Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Synced",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Synced/TmNotionSyncedBlockOrigin.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Synced"
+  ],
+  "parameters": [
+    {
+      "name": "Block",
+      "type": "IPageBlock",
+      "isRequired": true,
+      "editorRequired": true
+    },
+    {
+      "name": "IsFocused",
+      "type": "bool",
+      "isRequired": false
+    },
+    {
+      "name": "OnCopySyncId",
+      "type": "EventCallback<Guid>",
+      "isRequired": false
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "Blocks / Synced"
+}

@@ -1,0 +1,72 @@
+@namespace Tempo.Blazor.EmailTemplates.Components
+@inject ITemplateEngine Engine
+
+<div class="tm-email-validation" data-tm-validation>
+    @if (_messages.Count == 0)
+    {
+        <p class="tm-email-validation__ok" data-tm-validation-ok>@Loc["EmailEditor_Validation_Valid"]</p>
+    }
+    else
+    {
+        <ul class="tm-email-validation__list">
+            @foreach (var message in _messages)
+            {
+                <li class="tm-email-validation__item tm-email-validation__item--@(message.Severity.ToString().ToLowerInvariant())"
+                    data-tm-validation-message data-tm-validation-severity="@message.Severity"
+                    @onclick="() => NavigateAsync(message.Path)">
+                    @Loc[message.Key]
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    /// <summary>The document to validate.</summary>
+    [Parameter, EditorRequired] public EmailTemplateDocument Document { get; set; } = new();
+
+    /// <summary>Raised with the offending node id when a finding is clicked.</summary>
+    [Parameter] public EventCallback<Guid?> OnNavigate { get; set; }
+
+    private static readonly EmailDocumentValidator Validator = new();
+    private IReadOnlyList<DocumentValidationMessage> _messages = Array.Empty<DocumentValidationMessage>();
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        var messages = new List<DocumentValidationMessage>(Validator.Validate(Document));
+
+        // Scriban syntax validation of every template-bearing string (E8.7).
+        foreach (var (template, path) in TemplateStrings())
+        {
+            if (string.IsNullOrEmpty(template)) continue;
+            if (!Engine.Validate(template).IsValid)
+                messages.Add(new DocumentValidationMessage(
+                    Abstractions.Layout.LayoutSeverity.Error, TemplateValidationResult.SyntaxErrorKey, path));
+        }
+
+        _messages = messages;
+    }
+
+    private IEnumerable<(string Template, string Path)> TemplateStrings()
+    {
+        yield return (Document.Subject, Document.Id.ToString());
+        if (Document.Preheader is not null) yield return (Document.Preheader, Document.Id.ToString());
+
+        foreach (var block in DocumentTree.AllBlocks(Document))
+        {
+            if (!string.IsNullOrEmpty(block.VisibleWhen))
+                yield return ("{{ " + block.VisibleWhen + " }}", block.Id.ToString());
+            switch (block)
+            {
+                case EmailTextBlock t: yield return (t.Content, block.Id.ToString()); break;
+                case EmailRawBlock r: yield return (r.Content, block.Id.ToString()); break;
+            }
+        }
+    }
+
+    private async Task NavigateAsync(string path)
+    {
+        if (Guid.TryParse(path, out var id)) await OnNavigate.InvokeAsync(id);
+    }
+}

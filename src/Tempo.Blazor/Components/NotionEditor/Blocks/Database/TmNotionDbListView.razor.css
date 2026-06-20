@@ -1,0 +1,214 @@
+/* ── Wrapper ────────────────────────────────────────────────────────────── */
+
+.tm-dblv {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+
+.tm-dblv__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 56px 24px;
+    color: var(--tm-text-muted, #b0b0b0);
+}
+
+.tm-dblv__empty-icon {
+    color: var(--tm-text-muted, #c8c8c8);
+    flex-shrink: 0;
+}
+
+.tm-dblv__empty-text {
+    font-size: 14px;
+    color: var(--tm-text-muted, #9a9a9a);
+    margin: 0;
+}
+
+.tm-dblv__empty-add {
+    height: 30px;
+    padding: 0 14px;
+    border-radius: 5px;
+    background: transparent;
+    border: 1px dashed var(--tm-border, #d0d0d0);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--tm-text-muted, #9a9a9a);
+    transition: border-color 0.1s, color 0.1s;
+    margin-top: 2px;
+}
+
+.tm-dblv__empty-add:hover {
+    border-color: var(--tm-primary, #2383e2);
+    color: var(--tm-primary, #2383e2);
+}
+
+/* ── Row ─────────────────────────────────────────────────────────────────── */
+
+.tm-dblv__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    height: 38px;
+    border-bottom: 1px solid var(--tm-border, #f0f0f0);
+    cursor: pointer;
+    transition: background 0.08s;
+    outline: none;
+    position: relative;
+}
+
+.tm-dblv__row:last-of-type {
+    border-bottom: none;
+}
+
+.tm-dblv__row:hover {
+    background: var(--tm-bg-hover, rgba(0,0,0,.025));
+}
+
+.tm-dblv__row:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--tm-primary, #2383e2);
+    border-radius: 3px;
+}
+
+/* ── Page icon ───────────────────────────────────────────────────────────── */
+
+.tm-dblv__page-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--tm-text-muted, #c0c0c0);
+    transition: color 0.1s;
+}
+
+.tm-dblv__row:hover .tm-dblv__page-icon {
+    color: var(--tm-text-secondary, #7a7a7a);
+}
+
+/* ── Title ───────────────────────────────────────────────────────────────── */
+
+.tm-dblv__title {
+    flex: 1;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--tm-text-primary, #1a1a1a);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    line-height: 1;
+}
+
+.tm-dblv__title--untitled {
+    color: var(--tm-text-muted, #b0b0b0);
+    font-style: italic;
+}
+
+/* ── Chips area ──────────────────────────────────────────────────────────── */
+
+.tm-dblv__chips {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+    max-width: 55%;
+    overflow: hidden;
+}
+
+/* ── Individual chip ─────────────────────────────────────────────────────── */
+
+.tm-dblv__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 11.5px;
+    font-weight: 500;
+    background: var(--tm-bg-subtle, #f2f2f2);
+    color: var(--tm-text-secondary, #5a5a5a);
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+    line-height: 1.6;
+}
+
+.tm-dblv__chip--colored {
+    background: color-mix(in srgb, var(--chip-color, #2383e2) 13%, white);
+    color: color-mix(in srgb, var(--chip-color, #2383e2) 75%, #111);
+}
+
+.tm-dblv__chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--chip-color, #2383e2);
+    flex-shrink: 0;
+}
+
+/* ── Chevron ─────────────────────────────────────────────────────────────── */
+
+.tm-dblv__chevron {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: var(--tm-text-muted, #c8c8c8);
+    opacity: 0;
+    transition: opacity 0.12s, color 0.12s;
+    margin-left: 2px;
+}
+
+.tm-dblv__row:hover .tm-dblv__chevron,
+.tm-dblv__row:focus-visible .tm-dblv__chevron {
+    opacity: 1;
+    color: var(--tm-text-muted, #9a9a9a);
+}
+
+/* ── Add row button ──────────────────────────────────────────────────────── */
+
+.tm-dblv__add-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    padding: 0 14px;
+    height: 36px;
+    border: none;
+    border-top: 1px solid var(--tm-border, #f0f0f0);
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--tm-text-muted, #9a9a9a);
+    transition: background 0.1s, color 0.1s;
+    text-align: left;
+}
+
+.tm-dblv__add-row:hover {
+    background: var(--tm-bg-hover, rgba(0,0,0,.025));
+    color: var(--tm-primary, #2383e2);
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────────────── */
+
+:global(.tm-dark) .tm-dblv__chip {
+    background: var(--tm-bg-subtle, #2a2a2a);
+    color: var(--tm-text-secondary, #a0a0a0);
+}
+
+:global(.tm-dark) .tm-dblv__chip--colored {
+    background: color-mix(in srgb, var(--chip-color, #2383e2) 18%, #222);
+    color: color-mix(in srgb, var(--chip-color, #2383e2) 65%, #eee);
+}
+
+:global(.tm-dark) .tm-dblv__row:hover {
+    background: var(--tm-bg-hover, rgba(255,255,255,.04));
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Media package metadata for an image referenced by a document drawing.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentDocxDrawingMetadata.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentImageMediaInfo"
+}

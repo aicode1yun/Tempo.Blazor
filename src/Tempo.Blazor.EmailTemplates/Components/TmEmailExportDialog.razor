@@ -1,0 +1,46 @@
+@namespace Tempo.Blazor.EmailTemplates.Components
+
+<TmModal Show="Show" Title="@Loc["EmailEditor_Mjml_Title"]" Size="ModalSize.Large" OnClose="OnClose">
+    <div class="tm-email-export">
+        <div class="tm-email-export__modes" role="group">
+            <TmButton Size="ButtonSize.Sm" Variant="@ModeVariant(false)" data-tm-export-mode="mjml"
+                      OnClick="() => _json = false">MJML</TmButton>
+            <TmButton Size="ButtonSize.Sm" Variant="@ModeVariant(true)" data-tm-export-mode="json"
+                      OnClick="() => _json = true">JSON</TmButton>
+        </div>
+        @if (_json)
+        {
+            <textarea class="tm-email-export__code" data-tm-export-json readonly rows="20">@_jsonText</textarea>
+        }
+        else
+        {
+            <textarea class="tm-email-export__code" data-tm-export-mjml readonly rows="20">@_mjml</textarea>
+        }
+    </div>
+</TmModal>
+
+@code {
+    /// <summary>Whether the dialog is shown.</summary>
+    [Parameter] public bool Show { get; set; }
+
+    /// <summary>The document to export.</summary>
+    [Parameter, EditorRequired] public EmailTemplateDocument Document { get; set; } = new();
+
+    /// <summary>Raised when the dialog is closed.</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private static readonly MjmlGenerator Generator = new();
+    private string _mjml = string.Empty;
+    private string _jsonText = string.Empty;
+    private bool _json;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (!Show) return;
+        _mjml = Generator.Generate(Document, MjmlGeneratorOptions.ForExport);
+        _jsonText = EmailTemplateSerializer.Serialize(Document);
+    }
+
+    private ButtonVariant ModeVariant(bool json) => _json == json ? ButtonVariant.Primary : ButtonVariant.Ghost;
+}

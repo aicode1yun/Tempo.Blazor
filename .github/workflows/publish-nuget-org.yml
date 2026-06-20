@@ -62,8 +62,12 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.version.outputs.VERSION }}
 
+      # E2E testy (Playwright) a smtp4dev integrační testy na CI vynecháváme -
+      # runner nemá prohlížeče, běžící demo hosty ani smtp4dev kontejner, takže
+      # by spadly na prostředí (NullReferenceException / Connection refused).
+      # Spouští se jen lokálně.
       - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: dotnet test --no-build --configuration Release --verbosity normal --filter "FullyQualifiedName!~Tempo.Blazor.E2E&FullyQualifiedName!~Smtp4Dev"
 
   publish:
     needs: build-and-test

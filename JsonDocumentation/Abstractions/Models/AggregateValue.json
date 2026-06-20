@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Aggregation result for a single column in a group.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GroupedResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "AggregateValue"
+}

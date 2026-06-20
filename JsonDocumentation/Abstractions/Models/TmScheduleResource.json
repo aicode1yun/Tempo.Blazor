@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Represents a schedulable resource (person, room, etc.).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SchedulerModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmScheduleResource"
+}

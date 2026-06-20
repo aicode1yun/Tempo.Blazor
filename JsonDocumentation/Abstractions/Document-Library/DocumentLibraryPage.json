@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Document Library",
+  "namespace": "Tempo.Blazor.DocumentLibrary",
+  "description": "One page of browse/search results plus the total count for pagination.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/DocumentLibraryPage.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Items",
+      "kind": "Property",
+      "type": "IReadOnlyList<DocumentLibraryEntry>",
+      "description": "The entries on this page, already sorted per the request."
+    },
+    {
+      "name": "TotalCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Total number of entries matching the query across all pages."
+    }
+  ],
+  "itemName": "DocumentLibraryPage"
+}

@@ -1,0 +1,121 @@
+/* ── Outer frame ──────────────────────────────────────────────────────────── */
+
+.tm-synced-ref {
+    position: relative;
+    border: 1.5px dashed var(--tm-synced-border, #f87171);
+    border-radius: var(--tm-radius-md);
+    background-color: color-mix(in srgb, var(--tm-synced-border, #f87171) 2%, transparent);
+    outline: none;
+}
+
+.tm-synced-ref--focused {
+    border-style: solid;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tm-synced-border, #f87171) 18%, transparent);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.tm-synced-ref__header {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2);
+    padding: var(--tm-space-1-5) var(--tm-space-3);
+    border-bottom: 1px dashed color-mix(in srgb, var(--tm-synced-border, #f87171) 30%, transparent);
+    border-radius: var(--tm-radius-md) var(--tm-radius-md) 0 0;
+    min-height: 32px;
+}
+
+.tm-synced-ref__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tm-space-1);
+    font-size: var(--tm-font-size-xs);
+    font-weight: 600;
+    color: var(--tm-synced-border, #f87171);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+/* ── Origin link ─────────────────────────────────────────────────────────── */
+
+.tm-synced-ref__origin-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tm-space-1);
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: var(--tm-font-size-xs);
+    color: var(--tm-color-gray-500);
+    cursor: pointer;
+    text-align: left;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transition: color 100ms;
+}
+
+.tm-synced-ref__origin-link:hover {
+    color: var(--tm-color-primary-500);
+}
+
+/* ── Unsync button ───────────────────────────────────────────────────────── */
+
+.tm-synced-ref__unsync-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tm-space-1);
+    padding: var(--tm-space-1) var(--tm-space-2);
+    background: none;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    font-size: var(--tm-font-size-xs);
+    color: var(--tm-color-gray-500);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 100ms, border-color 100ms, color 100ms;
+    flex-shrink: 0;
+}
+
+.tm-synced-ref__unsync-btn:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--tm-color-danger, #e53e3e) 8%, transparent);
+    border-color: color-mix(in srgb, var(--tm-color-danger, #e53e3e) 40%, transparent);
+    color: var(--tm-color-danger, #e53e3e);
+}
+
+.tm-synced-ref__unsync-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Spinner (in-button) ─────────────────────────────────────────────────── */
+
+.tm-synced-ref__unsync-spinner {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border: 1.5px solid var(--tm-color-gray-300);
+    border-top-color: var(--tm-color-gray-600);
+    border-radius: 50%;
+    animation: tm-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes tm-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────── */
+
+.tm-synced-ref__body {
+    padding: var(--tm-space-2) 0;
+}
+
+.tm-synced-ref__skeleton {
+    padding: var(--tm-space-3) var(--tm-space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2);
+}

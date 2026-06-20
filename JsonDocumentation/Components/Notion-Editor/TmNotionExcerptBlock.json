@@ -1,0 +1,40 @@
+{
+  "itemName": "TmNotionExcerptBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionExcerptBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Special/TmNotionExcerptBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
+  ],
+  "parameters": [
+    {
+      "name": "Content",
+      "type": "IExcerptBlockContent?",
+      "isRequired": false,
+      "description": "Owning page block for persistence context."
+    },
+    {
+      "name": "OnContentChanged",
+      "type": "EventCallback<ExcerptBlockContent>",
+      "isRequired": false,
+      "description": "Whether the excerpt is rendered without editing affordances."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when edited excerpt HTML should be persisted."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Saved excerpt content."
+    }
+  ],
+  "subcategory": "Blocks / Special"
+}

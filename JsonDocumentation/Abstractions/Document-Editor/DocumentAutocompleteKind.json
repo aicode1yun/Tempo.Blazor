@@ -1,0 +1,273 @@
+{
+  "kind": "Enum",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Autocomplete trigger kind used by the document editor.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentAutocomplete.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Cancel",
+      "kind": "Method",
+      "type": "void",
+      "description": "Cancels the active search."
+    },
+    {
+      "name": "Canceled",
+      "kind": "Method",
+      "type": "DocumentAutocompleteResult",
+      "description": "Creates a canceled result for an aborted request.",
+      "parameters": [
+        {
+          "name": "sequence",
+          "type": "long"
+        }
+      ]
+    },
+    {
+      "name": "CanSearch",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns true when the supplied query is long enough to search.",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "Dispose",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "Mention",
+      "kind": "Method",
+      "type": "DocumentAutocompleteTrigger",
+      "description": "Creates the default mention trigger."
+    },
+    {
+      "name": "MentionDocumentAutocompleteProvider",
+      "kind": "Method",
+      "type": "class",
+      "description": "Adapts the existing mention provider to the generic autocomplete contract.",
+      "parameters": [
+        {
+          "name": "mentionProvider",
+          "type": "IMentionDataProvider"
+        }
+      ]
+    },
+    {
+      "name": "SlashCommand",
+      "kind": "Method",
+      "type": "DocumentAutocompleteTrigger",
+      "description": "Creates the default slash command trigger."
+    },
+    {
+      "name": "Stale",
+      "kind": "Method",
+      "type": "DocumentAutocompleteResult",
+      "description": "Creates a stale result for a superseded request.",
+      "parameters": [
+        {
+          "name": "sequence",
+          "type": "long"
+        }
+      ]
+    },
+    {
+      "name": "Tag",
+      "kind": "Method",
+      "type": "DocumentAutocompleteTrigger",
+      "description": "Creates the default tag trigger."
+    },
+    {
+      "name": "Token",
+      "kind": "Method",
+      "type": "DocumentAutocompleteTrigger",
+      "description": "Creates the default token trigger."
+    },
+    {
+      "name": "TokenDocumentAutocompleteProvider",
+      "kind": "Method",
+      "type": "class",
+      "description": "Adapts the existing document token provider to the generic autocomplete contract.",
+      "parameters": [
+        {
+          "name": "tokenProvider",
+          "type": "ITokenDataProvider"
+        }
+      ]
+    },
+    {
+      "name": "Warning",
+      "kind": "Method",
+      "type": "DocumentAutocompleteResult",
+      "description": "Creates a warning result for a provider failure.",
+      "parameters": [
+        {
+          "name": "sequence",
+          "type": "long"
+        },
+        {
+          "name": "message",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "BlockId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Runtime block id that contains the marker."
+    },
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional secondary text."
+    },
+    {
+      "name": "EndOffset",
+      "kind": "Property",
+      "type": "int",
+      "description": "Caret offset after the query."
+    },
+    {
+      "name": "Group",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional grouping text."
+    },
+    {
+      "name": "Icon",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional icon name."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable trigger id."
+    },
+    {
+      "name": "IsCanceled",
+      "kind": "Property",
+      "type": "bool",
+      "description": "True when this request was canceled before the provider completed."
+    },
+    {
+      "name": "IsStale",
+      "kind": "Property",
+      "type": "bool",
+      "description": "True when this response was superseded by a newer request."
+    },
+    {
+      "name": "Items",
+      "kind": "Property",
+      "type": "IReadOnlyList<DocumentAutocompleteItem>",
+      "description": "Items returned by the provider."
+    },
+    {
+      "name": "Kind",
+      "kind": "Property",
+      "type": "DocumentAutocompleteKind",
+      "description": "Autocomplete kind served by this trigger."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string",
+      "description": "Main display label."
+    },
+    {
+      "name": "LatestAppliedSequence",
+      "kind": "Property",
+      "type": "long",
+      "description": "Latest sequence that was allowed to update UI state."
+    },
+    {
+      "name": "Limit",
+      "kind": "Property",
+      "type": "int",
+      "description": "Maximum number of items displayed in the menu."
+    },
+    {
+      "name": "Marker",
+      "kind": "Property",
+      "type": "string",
+      "description": "Text marker that opens the menu."
+    },
+    {
+      "name": "MarkerType",
+      "kind": "Property",
+      "type": "string",
+      "description": "Runtime marker type used by the JS-owned surface."
+    },
+    {
+      "name": "Metadata",
+      "kind": "Property",
+      "type": "Dictionary<string, string?>",
+      "description": "Additional provider-specific metadata."
+    },
+    {
+      "name": "MinimumCharacters",
+      "kind": "Property",
+      "type": "int",
+      "description": "Minimum query length required after the marker."
+    },
+    {
+      "name": "Query",
+      "kind": "Property",
+      "type": "string",
+      "description": "User-entered query text without the trigger marker."
+    },
+    {
+      "name": "RendererKey",
+      "kind": "Property",
+      "type": "string",
+      "description": "Renderer key used by the menu item template."
+    },
+    {
+      "name": "Sequence",
+      "kind": "Property",
+      "type": "long",
+      "description": "Sequence assigned by ."
+    },
+    {
+      "name": "StartOffset",
+      "kind": "Property",
+      "type": "int",
+      "description": "Marker start offset in the block text."
+    },
+    {
+      "name": "Trigger",
+      "kind": "Property",
+      "type": "DocumentAutocompleteTrigger",
+      "description": "Trigger that produced the request."
+    },
+    {
+      "name": "TriggerId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Trigger id detected by JavaScript."
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Raw value inserted or executed when selected."
+    },
+    {
+      "name": "WarningMessage",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional non-fatal warning shown in the menu."
+    }
+  ],
+  "itemName": "DocumentAutocompleteKind"
+}

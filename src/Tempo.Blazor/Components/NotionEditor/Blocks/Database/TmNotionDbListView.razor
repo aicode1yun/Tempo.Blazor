@@ -1,0 +1,107 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Enums
+
+<div class="tm-dblv" role="list" aria-label="@Loc["TmNotionDbListView_Label"]">
+
+    @if (Records.Count == 0)
+    {
+        @* ── Empty state ─────────────────────────────────────────────────── *@
+        <div class="tm-dblv__empty">
+            <svg class="tm-dblv__empty-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="2" rx="1" fill="currentColor" opacity=".25"/>
+                <rect x="3" y="10" width="14" height="2" rx="1" fill="currentColor" opacity=".18"/>
+                <rect x="3" y="15" width="10" height="2" rx="1" fill="currentColor" opacity=".12"/>
+            </svg>
+            <p class="tm-dblv__empty-text">@Loc["TmNotionDbListView_Empty"]</p>
+            @if (!ReadOnly)
+            {
+                <button class="tm-dblv__empty-add" type="button" @onclick="() => OnNewRecord.InvokeAsync()">
+                    @Loc["TmNotionDbListView_NewRecord"]
+                </button>
+            }
+        </div>
+    }
+    else
+    {
+        var previewFields = PreviewFields.ToList();
+
+        @* ── Record rows ─────────────────────────────────────────────────── *@
+        @foreach (var record in Records)
+        {
+            var rec   = record;
+            var title = GetPrimaryValue(rec);
+
+            <div class="tm-dblv__row"
+                 role="listitem"
+                 tabindex="0"
+                 @key="rec.Id"
+                 @onclick="() => HandleRowClickAsync(rec)"
+                 @onkeydown="e => HandleRowKeyAsync(e, rec)">
+
+                @* Page icon *@
+                <span class="tm-dblv__page-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                              stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        <polyline points="14 2 14 8 20 8"
+                                  stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+
+                @* Title *@
+                <span class="tm-dblv__title @(title.Length == 0 ? "tm-dblv__title--untitled" : "")">
+                    @(title.Length > 0 ? title : Loc["TmNotionDbListView_Untitled"])
+                </span>
+
+                @* Field chips *@
+                @if (previewFields.Count > 0)
+                {
+                    <span class="tm-dblv__chips" aria-label="@Loc["TmNotionDbListView_Properties"]">
+                        @foreach (var field in previewFields)
+                        {
+                            @foreach (var (val, color) in GetFieldChips(rec, field))
+                            {
+                                if (color is not null)
+                                {
+                                    <span class="tm-dblv__chip tm-dblv__chip--colored"
+                                          style="--chip-color:@color"
+                                          title="@field.Name">
+                                        <span class="tm-dblv__chip-dot" aria-hidden="true"></span>
+                                        @val
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="tm-dblv__chip" title="@field.Name">@val</span>
+                                }
+                            }
+                        }
+                    </span>
+                }
+
+                @* Chevron — decorative, shown on hover *@
+                <span class="tm-dblv__chevron" aria-hidden="true">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+
+            </div>
+        }
+
+        @* ── Add row ──────────────────────────────────────────────────────── *@
+        @if (!ReadOnly)
+        {
+            <button class="tm-dblv__add-row" type="button" @onclick="() => OnNewRecord.InvokeAsync()">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                @Loc["TmNotionDbListView_NewRecord"]
+            </button>
+        }
+    }
+
+</div>

@@ -1,0 +1,50 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "In-memory collaboration provider for tests and demos.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/InMemoryDocumentCollaborationProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BroadcastCursorAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "cursor",
+          "type": "DocumentCollaborationCursor"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "LeaveAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "sessionId",
+          "type": "string"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "Reset",
+      "kind": "Method",
+      "type": "void",
+      "description": "Clears all in-memory collaboration sessions, operation batches, and cursors."
+    }
+  ],
+  "itemName": "InMemoryDocumentCollaborationProvider"
+}

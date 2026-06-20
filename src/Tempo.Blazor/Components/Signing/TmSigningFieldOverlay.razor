@@ -1,0 +1,108 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<div @attributes="AdditionalAttributes"
+     class="@RootClass"
+     style="@PositionStyle"
+     role="button"
+     tabindex="@TabIndex"
+     aria-label="@AriaLabel"
+     aria-invalid="@BoolText(Invalid)"
+     aria-disabled="@BoolText(IsDisabled)"
+     data-completed="@BoolText(Completed)"
+     @onclick="HandleClickAsync"
+     @onclick:stopPropagation="true"
+     @ondblclick="HandleDoubleClickAsync"
+     @ondblclick:stopPropagation="true"
+     @oncontextmenu="HandleContextMenuAsync"
+     @oncontextmenu:preventDefault="PreventDefaultContextMenu"
+     @oncontextmenu:stopPropagation="true"
+     @onkeydown="HandleKeyDownAsync"
+     @onmousedown="HandleStartMoveAsync"
+     @onmousedown:stopPropagation="StopMouseDownPropagation">
+    <span class="tm-signing-field__icon" data-icon="@IconName" aria-hidden="true">
+        <TmIcon Name="@IconName" Size="IconSize.Xs" />
+    </span>
+
+    <span class="tm-signing-field__label">@Label</span>
+
+    @if (Field?.Required == true)
+    {
+        <span class="tm-signing-field__required" aria-label="@Loc["TmSigning_Required"]">*</span>
+    }
+
+    <div class="tm-signing-field__content">
+        @if (Field?.Type is SigningFieldType.Checkbox)
+        {
+            <span class="@CheckboxClass" aria-checked="@BoolText(IsChecked(Value))" role="checkbox">
+                @if (IsChecked(Value))
+                {
+                    <TmIcon Name="check" Size="IconSize.Xs" />
+                }
+            </span>
+        }
+        else if (Field?.Type is SigningFieldType.Radio or SigningFieldType.Select or SigningFieldType.Multiple)
+        {
+            <span class="tm-signing-field__options">
+                @foreach (var option in Field.Options)
+                {
+                    <span class="@GetOptionClass(option)"
+                          data-option-uuid="@option.Uuid">
+                        @GetOptionLabel(option)
+                    </span>
+                }
+            </span>
+        }
+        else if (Field?.Type is SigningFieldType.Cells)
+        {
+            <span class="tm-signing-field__cells">
+                @foreach (var character in TextValue)
+                {
+                    <span class="tm-signing-field__cell">@character</span>
+                }
+            </span>
+        }
+        else if (Field?.Type is SigningFieldType.Signature or SigningFieldType.Initials or SigningFieldType.Image)
+        {
+            @if (HasImageValue)
+            {
+                <img class="tm-signing-field__thumbnail"
+                     src="@ImageValue"
+                     alt="@Label" />
+            }
+            else
+            {
+                <span class="tm-signing-field__value">@PlaceholderText</span>
+            }
+        }
+        else if (Field?.Type is SigningFieldType.Stamp)
+        {
+            <span class="tm-signing-field__stamp">@(!string.IsNullOrWhiteSpace(TextValue) ? TextValue : PlaceholderText)</span>
+        }
+        else if (Field?.Type is SigningFieldType.Heading)
+        {
+            <span class="tm-signing-field__heading">@HeadingText</span>
+        }
+        else if (Field?.Type is SigningFieldType.Strikethrough)
+        {
+            <span class="tm-signing-field__strikethrough" aria-hidden="true"></span>
+        }
+        else
+        {
+            <span class="tm-signing-field__value">@DisplayValue</span>
+        }
+    </div>
+
+    @if (Editable && !IsDisabled)
+    {
+        <span class="tm-signing-field__resize-handles" aria-hidden="true">
+            @foreach (var handle in ResizeHandles)
+            {
+                <span class="@GetResizeHandleClass(handle)"
+                      data-handle="@handle"
+                      @onmousedown="args => HandleStartResizeAsync(handle, args)"
+                      @onmousedown:stopPropagation="true"></span>
+            }
+        </span>
+    }
+</div>

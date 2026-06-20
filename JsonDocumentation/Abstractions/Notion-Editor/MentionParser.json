@@ -1,0 +1,40 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Helpers",
+  "description": "Parses and transforms @username mentions in comment text.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Helpers/MentionParser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ExtractUsernames",
+      "kind": "Method",
+      "type": "IEnumerable<string>",
+      "description": "Extracts all unique usernames (without the leading @) from text.",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ReplaceMentions",
+      "kind": "Method",
+      "type": "string",
+      "description": "Replaces every @username with a <span class=\"tm-mention\" data-user-id=\"...\">@username</span> when the resolver returns a non-null user id. Unresolved mentions are left as plain text.",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string"
+        },
+        {
+          "name": "userIdResolver",
+          "type": "string?>"
+        }
+      ]
+    }
+  ],
+  "itemName": "MentionParser"
+}

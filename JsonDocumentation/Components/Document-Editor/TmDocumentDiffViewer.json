@@ -1,0 +1,46 @@
+{
+  "itemName": "TmDocumentDiffViewer",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "TmDocumentDiffViewer Blazor component in the Document Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/TmDocumentDiffViewer.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": [
+    {
+      "name": "ComparisonResult",
+      "type": "DocumentCompareResult?",
+      "isRequired": false,
+      "description": "Whether side-by-side text panes should be shown."
+    },
+    {
+      "name": "NewDocument",
+      "type": "DocumentEditorDocument?",
+      "isRequired": false,
+      "description": "Old document snapshot."
+    },
+    {
+      "name": "NewTitle",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional title for the old side."
+    },
+    {
+      "name": "OldTitle",
+      "type": "string?",
+      "isRequired": false,
+      "description": "New document snapshot."
+    },
+    {
+      "name": "SideBySide",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Optional title for the new side."
+    }
+  ]
+}

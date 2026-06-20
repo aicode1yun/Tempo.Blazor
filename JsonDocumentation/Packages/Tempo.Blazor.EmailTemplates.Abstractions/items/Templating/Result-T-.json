@@ -1,0 +1,60 @@
+{
+  "kind": "Struct",
+  "category": "Templating",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+  "description": "A success-or-error result that avoids throwing for expected failures.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/Result.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "T",
+      "description": "Generic type parameter T."
+    }
+  ],
+  "members": [
+    {
+      "name": "Failure",
+      "kind": "Method",
+      "type": "Result<T>",
+      "description": "Creates a failed result with an error message.",
+      "parameters": [
+        {
+          "name": "error",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Success",
+      "kind": "Method",
+      "type": "Result<T>",
+      "description": "Creates a successful result.",
+      "parameters": [
+        {
+          "name": "value",
+          "type": "T"
+        }
+      ]
+    },
+    {
+      "name": "Error",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets the error message (null when succeeded)."
+    },
+    {
+      "name": "IsSuccess",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Gets whether the operation succeeded."
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "T?",
+      "description": "Gets the success value (default when failed)."
+    }
+  ],
+  "itemName": "Result<T>"
+}

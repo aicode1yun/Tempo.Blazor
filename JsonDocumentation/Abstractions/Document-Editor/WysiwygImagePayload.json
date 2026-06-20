@@ -1,0 +1,72 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Payload for WYSIWYG image insert and upload commands.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygImagePayload.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AltText",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Alternative text."
+    },
+    {
+      "name": "AssetId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Provider-managed image asset id."
+    },
+    {
+      "name": "Base64Data",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Base64 encoded binary image payload without the data URL prefix."
+    },
+    {
+      "name": "Caption",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional caption."
+    },
+    {
+      "name": "ContentType",
+      "kind": "Property",
+      "type": "string",
+      "description": "Image content type used for uploads."
+    },
+    {
+      "name": "FileName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Original or generated file name."
+    },
+    {
+      "name": "Selection",
+      "kind": "Property",
+      "type": "WysiwygSelectionSnapshot?",
+      "description": "Selection snapshot at the time of the image insert command."
+    },
+    {
+      "name": "SizeBytes",
+      "kind": "Property",
+      "type": "long",
+      "description": "Image size in bytes used for upload validation."
+    },
+    {
+      "name": "Source",
+      "kind": "Property",
+      "type": "DocumentImageSource",
+      "description": "Image source kind."
+    },
+    {
+      "name": "Url",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Direct image URL or uploaded image URL."
+    }
+  ],
+  "itemName": "WysiwygImagePayload"
+}

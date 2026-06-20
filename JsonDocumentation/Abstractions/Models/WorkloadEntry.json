@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Represents the workload allocation for one assignee on one day.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/WorkloadEntry.cs",
+  "documentationStatus": "generated",
+  "itemName": "WorkloadEntry"
+}

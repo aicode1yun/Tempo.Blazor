@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Odt",
+  "namespace": "Tempo.Blazor.DocumentFormats.Odt",
+  "description": "Exports document editor JSON models as ODT packages.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Odt/DocumentOdtExporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentOdtExporter"
+}

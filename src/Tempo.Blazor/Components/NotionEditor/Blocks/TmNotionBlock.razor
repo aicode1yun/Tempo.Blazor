@@ -6,12 +6,91 @@
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Text
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Lists
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Media
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Embed
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Layout
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Special
+@using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Table
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Page
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Synced
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Database
 
 <div class="tm-notion-block @_blockMods"
      data-notion-block
      data-block-id="@Block.Id"
      data-block-type="@Block.Type"
      @ref="_blockRef">
+
+    @* ── Comment margin thread (visible when block has comments) ──────────── *@
+    @if (BlockUnresolvedCount > 0 || BlockResolvedUnreadCount > 0)
+    {
+        <div class="tm-notion-block__thread-wrap"
+             @onmouseenter="ShowTooltipDelayed"
+             @onmouseleave="HideTooltip">
+            <button class="tm-notion-block__comment-thread @(BlockUnresolvedCount > 0 ? "" : "tm-notion-block__comment-thread--resolved") @(BlockHasUnreadActivity ? "tm-notion-block__comment-thread--unread" : "")"
+                    type="button"
+                    title="@Loc["TmNotionBlock_Comments"]"
+                    @onclick="HandleCommentThreadClickedAsync"
+                    @onclick:stopPropagation="true">
+                @if (BlockHasUnreadActivity)
+                {
+                    <span class="tm-notion-block__comment-thread-dot" aria-hidden="true"></span>
+                }
+                else if (BlockThreadCount > 1)
+                {
+                    <span class="tm-notion-block__comment-thread-count">@BlockUnresolvedCount</span>
+                    @if (BlockResolvedUnreadCount > 0)
+                    {
+                        <span class="tm-notion-block__comment-thread-resolved-count">@BlockResolvedUnreadCount</span>
+                    }
+                }
+                else if (BlockUnresolvedCount > 0)
+                {
+                    <span class="tm-notion-block__comment-thread-count">@BlockUnresolvedCount</span>
+                }
+                else if (BlockResolvedUnreadCount > 0)
+                {
+                    <span class="tm-notion-block__comment-thread-resolved">@BlockResolvedUnreadCount</span>
+                }
+                else
+                {
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                        <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/>
+                        <path d="M3.5 6l1.5 1.5 2.5-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                }
+            </button>
+
+            @* Hover tooltip ───────────────────────────────────────────────── *@
+            @if (_tooltipVisible && !string.IsNullOrEmpty(BlockLastAuthorName))
+            {
+                <div class="tm-notion-block__thread-tooltip"
+                     role="tooltip"
+                     aria-label="@Loc["TmNotionBlock_ThreadTooltipLabel"]">
+                    <div class="tm-notion-block__thread-tooltip__avatar">
+                        @if (!string.IsNullOrEmpty(BlockLastAuthorAvatar))
+                        {
+                            <img src="@BlockLastAuthorAvatar" alt="" />
+                        }
+                        else
+                        {
+                            <span>@BlockLastAuthorName[..1]</span>
+                        }
+                    </div>
+                    <div class="tm-notion-block__thread-tooltip__body">
+                        <div class="tm-notion-block__thread-tooltip__meta">
+                            <span class="tm-notion-block__thread-tooltip__author">@BlockLastAuthorName</span>
+                            <span class="tm-notion-block__thread-tooltip__time">@FormatRelativeTime(BlockLastEntryTime)</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(BlockLastEntryText))
+                        {
+                            <p class="tm-notion-block__thread-tooltip__text">@BlockLastEntryText</p>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
 
     @* ── Block handle (add + drag + options menu) ──────────────────────────── *@
     @if (!ReadOnly)
@@ -24,6 +103,8 @@
                              OnMoveTo="HandleMoveToAsync"
                              OnCopyLink="HandleCopyLinkAsync"
                              OnComment="HandleCommentAsync"
+                             OnNewThread="HandleNewThreadAsync"
+                             OnCalloutVariantChange="HandleCalloutVariantChangedAsync"
                              OnTextColorChange="HandleTextColorChangeAsync"
                              OnBackgroundChange="HandleBackgroundColorChangeAsync" />
     }
@@ -36,7 +117,8 @@
             case BlockType.Paragraph:
             {
                 var c = Block.Content as ITextBlockContent;
-                <TmNotionTextBlock Content="c"
+                <TmNotionTextBlock Block="Block"
+                                   Content="c"
                                    ReadOnly="ReadOnly"
                                    IsFocused="IsFocused"
                                    Placeholder="@Loc["TmNotionBlock_ParagraphPlaceholder"]"
@@ -46,9 +128,12 @@
                                    OnIndentChange="HandleParagraphTabAsync"
                                    OnTypeConvert="HandleParagraphMarkdownShortcutAsync"
                                    OnFocused="OnFocusedAsync"
+                                   OnMoveFocusPrevious="MoveFocusPreviousAsync"
+                                   OnMoveFocusNext="MoveFocusNextAsync"
                                    OnSlashMenu="HandleParagraphSlashAsync"
                                    OnMentionMenu="HandleParagraphMentionAsync"
-                                   OnPageLinkMenu="HandleParagraphPageLinkAsync" />
+                                   OnPageLinkMenu="HandleParagraphPageLinkAsync"
+                                   OnTokenMenu="HandleParagraphTokenAsync" />
                 break;
             }
 
@@ -70,6 +155,7 @@
                                       OnSlashMenu="HandleHeadingSlashAsync"
                                       OnMentionMenu="HandleHeadingMentionAsync"
                                       OnPageLinkMenu="HandleHeadingPageLinkAsync"
+                                      OnTokenMenu="HandleHeadingTokenAsync"
                                       OnToggleChanged="HandleHeadingToggleAsync" />
                 break;
             }
@@ -90,7 +176,8 @@
                                     OnFocused="OnFocusedAsync"
                                     OnSlashMenu="HandleQuoteSlashAsync"
                                     OnMentionMenu="HandleQuoteMentionAsync"
-                                    OnPageLinkMenu="HandleQuotePageLinkAsync" />
+                                    OnPageLinkMenu="HandleQuotePageLinkAsync"
+                                    OnTokenMenu="HandleQuoteTokenAsync" />
                 break;
             }
 
@@ -111,6 +198,7 @@
                                       OnSlashMenu="HandleCalloutSlashAsync"
                                       OnMentionMenu="HandleCalloutMentionAsync"
                                       OnPageLinkMenu="HandleCalloutPageLinkAsync"
+                                      OnTokenMenu="HandleCalloutTokenAsync"
                                       OnEmojiChanged="HandleCalloutEmojiChangedAsync" />
                 break;
             }
@@ -131,7 +219,8 @@
                                          OnFocused="OnFocusedAsync"
                                          OnSlashMenu="HandleBulletSlashAsync"
                                          OnMentionMenu="HandleBulletMentionAsync"
-                                         OnPageLinkMenu="HandleBulletPageLinkAsync" />
+                                         OnPageLinkMenu="HandleBulletPageLinkAsync"
+                                         OnTokenMenu="HandleBulletTokenAsync" />
                 break;
             }
 
@@ -152,7 +241,8 @@
                                            OnFocused="OnFocusedAsync"
                                            OnSlashMenu="HandleNumberedSlashAsync"
                                            OnMentionMenu="HandleNumberedMentionAsync"
-                                           OnPageLinkMenu="HandleNumberedPageLinkAsync" />
+                                           OnPageLinkMenu="HandleNumberedPageLinkAsync"
+                                           OnTokenMenu="HandleNumberedTokenAsync" />
                 break;
             }
 
@@ -165,6 +255,8 @@
                                    IsFocused="IsFocused"
                                    Placeholder="@Loc["TmNotionBlock_ListPlaceholder"]"
                                    OnCheckedChanged="HandleTodoCheckedChangedAsync"
+                                   OnAssigneeChanged="HandleTodoAssigneeChangedAsync"
+                                   OnDueDateChanged="HandleTodoDueDateChangedAsync"
                                    OnContentSaved="HandleTodoContentSavedAsync"
                                    OnEnterSplit="HandleTodoEnterSplitAsync"
                                    OnDeleteRequested="OnDeleted"
@@ -172,7 +264,8 @@
                                    OnFocused="OnFocusedAsync"
                                    OnSlashMenu="HandleTodoSlashAsync"
                                    OnMentionMenu="HandleTodoMentionAsync"
-                                   OnPageLinkMenu="HandleTodoPageLinkAsync" />
+                                   OnPageLinkMenu="HandleTodoPageLinkAsync"
+                                   OnTokenMenu="HandleTodoTokenAsync" />
                 break;
             }
 
@@ -191,9 +284,10 @@
                                      OnTypeConvert="HandleToggleMarkdownShortcutAsync"
                                      OnFocused="OnFocusedAsync"
                                      OnOpenChanged="HandleToggleOpenChangedAsync"
-                                     OnSlashMenu="HandleToggleSlashAsync"
-                                     OnMentionMenu="HandleToggleMentionAsync"
-                                     OnPageLinkMenu="HandleTogglePageLinkAsync" />
+                                     OnSlashMenu="OnSlashMenu"
+                                     OnMentionMenu="OnMentionMenu"
+                                     OnPageLinkMenu="OnPageLinkMenu"
+                                     OnTokenMenu="OnTokenMenu" />
                 break;
             }
 
@@ -225,14 +319,12 @@
             case BlockType.Equation:
             {
                 var c = Block.Content as IEquationBlockContent;
-                <div class="tm-notion-equation" @ref="_equationRef">
-                    @if (string.IsNullOrWhiteSpace(c?.Expression))
-                    {
-                        <span class="tm-notion-equation__placeholder">
-                            @Loc["TmNotionBlock_EquationPlaceholder"]
-                        </span>
-                    }
-                </div>
+                <TmNotionEquationBlock Content="c"
+                                       ReadOnly="ReadOnly"
+                                       IsFocused="IsFocused"
+                                       OnExpressionSaved="HandleEquationExpressionSavedAsync"
+                                       OnDeleteRequested="OnDeleted"
+                                       OnFocused="OnFocusedAsync" />
                 break;
             }
 
@@ -308,48 +400,12 @@
             case BlockType.Bookmark:
             {
                 var c = Block.Content as IBookmarkBlockContent;
-                if (!string.IsNullOrEmpty(c?.Url))
-                {
-                    <a class="tm-notion-bookmark" href="@c.Url" target="_blank" rel="noopener noreferrer">
-                        <div class="tm-notion-bookmark__body">
-                            @if (!string.IsNullOrEmpty(c.Title))
-                            {
-                                <div class="tm-notion-bookmark__title">@c.Title</div>
-                            }
-                            @if (!string.IsNullOrEmpty(c.Description))
-                            {
-                                <div class="tm-notion-bookmark__description">@c.Description</div>
-                            }
-                            <div class="tm-notion-bookmark__url">
-                                @if (!string.IsNullOrEmpty(c.FaviconUrl))
-                                {
-                                    <img src="@c.FaviconUrl" width="16" height="16" alt="" aria-hidden="true" />
-                                }
-                                <span>@(c.Domain ?? c.Url)</span>
-                            </div>
-                        </div>
-                        @if (!string.IsNullOrEmpty(c.CoverImageUrl))
-                        {
-                            <div class="tm-notion-bookmark__cover"
-                                 style="background-image:url('@c.CoverImageUrl')">
-                            </div>
-                        }
-                    </a>
-                }
-                else
-                {
-                    <div class="tm-notion-media-empty">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
-                                  stroke="currentColor" stroke-width="1.5"
-                                  stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
-                                  stroke="currentColor" stroke-width="1.5"
-                                  stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>@Loc["TmNotionBlock_MediaUrlPlaceholder"]</span>
-                    </div>
-                }
+                <TmNotionBookmarkBlock Content="c"
+                                       ReadOnly="ReadOnly"
+                                       BookmarkProvider="Context.BookmarkProvider"
+                                       OnResolved="HandleBookmarkResolvedAsync"
+                                       OnCaptionSaved="HandleBookmarkCaptionSavedAsync"
+                                       OnFocused="OnFocusedAsync" />
                 break;
             }
 
@@ -357,27 +413,23 @@
             case BlockType.Embed:
             {
                 var c = Block.Content as IEmbedBlockContent;
-                if (!string.IsNullOrEmpty(c?.Url))
-                {
-                    <div class="tm-notion-embed"
-                         style="@(c.Height.HasValue ? $"height:{c.Height}px" : string.Empty)">
-                        <iframe src="@c.Url"
-                                class="tm-notion-embed__frame"
-                                allowfullscreen
-                                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">
-                        </iframe>
-                    </div>
-                }
-                else
-                {
-                    <div class="tm-notion-media-empty">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                            <path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
-                        <span>@Loc["TmNotionBlock_MediaUrlPlaceholder"]</span>
-                    </div>
-                }
+                <TmNotionEmbedBlock Content="c"
+                                    ReadOnly="ReadOnly"
+                                    OnUrlSet="HandleEmbedUrlSetAsync"
+                                    OnResized="HandleEmbedResizedAsync"
+                                    OnCaptionSaved="HandleEmbedCaptionSavedAsync"
+                                    OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Work item ───────────────────────────────────────────────────
+            case BlockType.WorkItem:
+            {
+                var c = Block.Content as IWorkItemBlockContent;
+                <TmNotionWorkItemBlock Content="c"
+                                       ReadOnly="ReadOnly"
+                                       OnContentChanged="HandleWorkItemContentChangedAsync"
+                                       OnFocused="OnFocusedAsync" />
                 break;
             }
 
@@ -385,17 +437,12 @@
             case BlockType.ChildPage:
             {
                 var c = Block.Content as IChildPageBlockContent;
-                <div class="tm-notion-page-link" role="link"
-                     tabindex="0"
-                     @onclick="() => OnNavigateToPage(c?.ChildPageId)"
-                     @onkeydown="@(e => OnPageLinkKeyDown(e, c?.ChildPageId))">
-                    <span class="tm-notion-page-link__icon" aria-hidden="true">
-                        @(string.IsNullOrEmpty(c?.IconEmoji) ? "📄" : c.IconEmoji)
-                    </span>
-                    <span class="tm-notion-page-link__title">
-                        @(string.IsNullOrEmpty(c?.Title) ? Loc["TmNotionEditor_Untitled"] : c.Title)
-                    </span>
-                </div>
+                <TmNotionChildPageBlock Content="c"
+                                        ReadOnly="ReadOnly"
+                                        IsFocused="IsFocused"
+                                        OnNavigate="HandleChildPageNavigateAsync"
+                                        OnRenameCommitted="HandleChildPageRenameCommittedAsync"
+                                        OnFocused="OnFocusedAsync" />
                 break;
             }
 
@@ -403,24 +450,248 @@
             case BlockType.LinkedPage:
             {
                 var c = Block.Content as ILinkedPageBlockContent;
-                <div class="tm-notion-page-link tm-notion-page-link--linked" role="link"
-                     tabindex="0"
-                     @onclick="() => OnNavigateToPage(c?.LinkedPageId)"
-                     @onkeydown="@(e => OnPageLinkKeyDown(e, c?.LinkedPageId))">
-                    <svg class="tm-notion-page-link__external" width="12" height="12" viewBox="0 0 12 12"
-                         fill="none" aria-hidden="true">
-                        <path d="M5 1H1v10h10V7M7 1h4m0 0v4m0-4L5 7"
-                              stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-                    </svg>
-                    <span class="tm-notion-page-link__icon" aria-hidden="true">
-                        @(string.IsNullOrEmpty(c?.IconEmoji) ? "📄" : c.IconEmoji)
-                    </span>
-                    <span class="tm-notion-page-link__title">
-                        @(string.IsNullOrEmpty(c?.Title) ? Loc["TmNotionEditor_Untitled"] : c.Title)
-                    </span>
-                </div>
+                <TmNotionLinkedPageBlock Content="c"
+                                         ReadOnly="ReadOnly"
+                                         OnNavigate="HandleLinkedPageNavigateAsync"
+                                         OnFocused="OnFocusedAsync" />
                 break;
             }
+
+            // ── Table of contents ─────────────────────────────────────────────
+            case BlockType.TableOfContents:
+            {
+                var c = Block.Content as ITableOfContentsBlockContent;
+                <TmNotionTableOfContentsBlock Content="c"
+                                              ReadOnly="ReadOnly"
+                                              OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Include page ────────────────────────────────────────────────
+            case BlockType.IncludePage:
+            {
+                var c = Block.Content as IIncludePageBlockContent;
+                <TmNotionIncludePageBlock Block="Block"
+                                          Content="c"
+                                          ReadOnly="ReadOnly"
+                                          OnUpdated="OnUpdated"
+                                          OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Children display ────────────────────────────────────────────
+            case BlockType.ChildrenDisplay:
+            {
+                var c = Block.Content as IChildrenDisplayBlockContent;
+                <TmNotionChildrenDisplayBlock Block="Block"
+                                              Content="c"
+                                              ReadOnly="ReadOnly"
+                                              OnContentChanged="HandleChildrenDisplayContentChangedAsync"
+                                              OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Excerpt ─────────────────────────────────────────────────────
+            case BlockType.Excerpt:
+            {
+                var c = Block.Content as IExcerptBlockContent;
+                <TmNotionExcerptBlock Block="Block"
+                                      Content="c"
+                                      ReadOnly="ReadOnly"
+                                      OnContentChanged="HandleExcerptContentChangedAsync"
+                                      OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Excerpt include ─────────────────────────────────────────────
+            case BlockType.ExcerptInclude:
+            {
+                var c = Block.Content as IExcerptIncludeBlockContent;
+                <TmNotionExcerptIncludeBlock Block="Block"
+                                             Content="c"
+                                             ReadOnly="ReadOnly"
+                                             OnUpdated="OnUpdated"
+                                             OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Content by label ────────────────────────────────────────────
+            case BlockType.ContentByLabel:
+            {
+                var c = Block.Content as IContentByLabelBlockContent;
+                <TmNotionContentByLabelBlock Content="c"
+                                             ReadOnly="ReadOnly"
+                                             OnContentChanged="HandleContentByLabelContentChangedAsync"
+                                             OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Page properties ─────────────────────────────────────────────
+            case BlockType.PageProperties:
+            {
+                var c = Block.Content as IPagePropertiesBlockContent;
+                <TmNotionPagePropertiesBlock Block="Block"
+                                             Content="c"
+                                             ReadOnly="ReadOnly"
+                                             OnContentChanged="HandlePagePropertiesContentChangedAsync"
+                                             OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Page properties report ──────────────────────────────────────
+            case BlockType.PagePropertiesReport:
+            {
+                var c = Block.Content as IPagePropertiesReportBlockContent;
+                <TmNotionPagePropertiesReportBlock Block="Block"
+                                                   Content="c"
+                                                   ReadOnly="ReadOnly"
+                                                   OnContentChanged="HandlePagePropertiesReportContentChangedAsync"
+                                                   OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Breadcrumb ───────────────────────────────────────────────────
+            case BlockType.Breadcrumb:
+            {
+                var c = Block.Content as IBreadcrumbBlockContent;
+                <TmNotionBreadcrumbBlock Block="Block"
+                                         Content="c"
+                                         ReadOnly="ReadOnly"
+                                         OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Synced block origin ───────────────────────────────────────────
+            case BlockType.SyncedBlockOrigin:
+            {
+                var c = Block.Content as ISyncedBlockOriginContent;
+                <TmNotionSyncedBlockOrigin Block="Block"
+                                           Content="c"
+                                           ReadOnly="ReadOnly"
+                                           IsFocused="IsFocused"
+                                           OnFocused="OnFocusedAsync"
+                                           OnCopySyncId="HandleSyncedOriginCopySyncIdAsync" />
+                break;
+            }
+
+            // ── Synced block ref ──────────────────────────────────────────────
+            case BlockType.SyncedBlockRef:
+            {
+                var c = Block.Content as ISyncedBlockRefContent;
+                <TmNotionSyncedBlockRef Block="Block"
+                                        Content="c"
+                                        ReadOnly="ReadOnly"
+                                        IsFocused="IsFocused"
+                                        OnFocused="OnFocusedAsync"
+                                        OnUnsync="HandleSyncedRefUnsyncAsync" />
+                break;
+            }
+
+            // ── Template button ───────────────────────────────────────────────
+            case BlockType.TemplateButton:
+            {
+                var c = Block.Content as ITemplateButtonBlockContent;
+                <TmNotionTemplateButtonBlock Content="c"
+                                             ReadOnly="ReadOnly"
+                                             IsFocused="IsFocused"
+                                             OnInsertTemplateBlocks="HandleInsertTemplateBlocksAsync"
+                                             OnUpdated="HandleTemplateButtonUpdatedAsync"
+                                             OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Inline database ───────────────────────────────────────────────
+            case BlockType.InlineDatabase:
+            // ── Linked database ───────────────────────────────────────────────
+            case BlockType.LinkedDatabase:
+            {
+                <TmNotionDatabaseBlock Block="Block"
+                                       ReadOnly="ReadOnly"
+                                       IsFocused="IsFocused"
+                                       OnFocused="OnFocusedAsync"
+                                       OnUpdated="OnUpdated" />
+                break;
+            }
+
+            // ── Column list ───────────────────────────────────────────────────
+            case BlockType.ColumnList:
+            {
+                var c = Block.Content as IColumnListBlockContent;
+                <TmNotionColumnListBlock Block="Block"
+                                        Content="c"
+                                        ReadOnly="ReadOnly"
+                                        OnUpdated="OnUpdated"
+                                        OnFocused="OnFocusedAsync"
+                                        OnSlashMenu="OnSlashMenu"
+                                        OnMentionMenu="OnMentionMenu"
+                                        OnPageLinkMenu="OnPageLinkMenu"
+                                        OnTokenMenu="OnTokenMenu" />
+                break;
+            }
+
+            // ── Column (standalone fallback — normally inside ColumnList) ─────
+            case BlockType.Column:
+            {
+                var c = Block.Content as IColumnBlockContent;
+                <TmNotionColumnBlock Block="Block"
+                                     ColumnIndex="c?.ColumnIndex ?? 0"
+                                     WidthPercent="100"
+                                     ReadOnly="ReadOnly"
+                                     OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Diagram ───────────────────────────────────────────────────────
+            case BlockType.Diagram:
+            {
+                var c = Block.Content as IDiagramBlockContent;
+                <TmNotionDiagramBlock Content="c"
+                                      ReadOnly="ReadOnly"
+                                      OnContentSaved="HandleDiagramContentSavedAsync"
+                                      OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Wireframe ─────────────────────────────────────────────────────
+            case BlockType.Wireframe:
+            {
+                var c = Block.Content as IWireframeBlockContent;
+                <TmNotionWireframeBlock Content="c"
+                                        ReadOnly="ReadOnly"
+                                        OnContentSaved="HandleWireframeContentSavedAsync"
+                                        OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Spreadsheet ───────────────────────────────────────────────────
+            case BlockType.Spreadsheet:
+            {
+                var c = Block.Content as ISpreadsheetBlockContent;
+                <TmNotionSpreadsheetBlock Content="c"
+                                          ReadOnly="ReadOnly"
+                                          OnContentSaved="HandleSpreadsheetContentSavedAsync"
+                                          OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Table ────────────────────────────────────────────────────────
+            case BlockType.Table:
+            {
+                var c = Block.Content as ITableBlockContent;
+                <TmNotionTableBlock Block="Block"
+                                    Content="c"
+                                    ReadOnly="ReadOnly"
+                                    OnUpdated="OnUpdated"
+                                    OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── TableRow (managed by TmNotionTableBlock — standalone fallback) ─
+            case BlockType.TableRow:
+                <div class="tm-notion-block-unsupported" aria-hidden="true">
+                    <span class="tm-notion-block-unsupported__label">@Block.Type</span>
+                </div>
+                break;
 
             // ── Default / unsupported ────────────────────────────────────────
             default:

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Describes a single toast notification instance.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/ToastService.cs",
+  "documentationStatus": "generated",
+  "itemName": "ToastInstance"
+}

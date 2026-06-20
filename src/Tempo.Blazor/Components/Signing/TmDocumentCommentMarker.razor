@@ -1,0 +1,104 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+@if (Thread.Anchor.Kind == DocumentCommentAnchorKind.Area)
+{
+    <button type="button"
+            class="@MarkerClass("tm-document-comments-layer__area")"
+            style="@DocumentCommentGeometryHelper.ToAreaStyle(Thread.Anchor)"
+            aria-label="@MarkerLabel"
+            data-thread-id="@Thread.Id"
+            disabled="@Disabled"
+            @onclick:stopPropagation="true"
+            @onclick="SelectAsync">
+        @if (MarkerTemplate is not null)
+        {
+            @MarkerTemplate(Thread)
+        }
+        else
+        {
+            <span class="tm-document-comments-layer__area-badge">@ThreadNumber</span>
+        }
+    </button>
+}
+else if (Thread.Anchor.Kind == DocumentCommentAnchorKind.Point)
+{
+    <button type="button"
+            class="@MarkerClass("tm-document-comments-layer__point")"
+            style="@DocumentCommentGeometryHelper.ToPointStyle(Thread.Anchor)"
+            aria-label="@MarkerLabel"
+            data-thread-id="@Thread.Id"
+            disabled="@Disabled"
+            @onclick:stopPropagation="true"
+            @onclick="SelectAsync">
+        @if (MarkerTemplate is not null)
+        {
+            @MarkerTemplate(Thread)
+        }
+        else
+        {
+            <span>@ThreadNumber</span>
+        }
+    </button>
+}
+
+@code {
+    /// <summary>Thread rendered by the marker.</summary>
+    [Parameter, EditorRequired] public DocumentCommentThread Thread { get; set; } = new();
+
+    /// <summary>One-based visual thread number.</summary>
+    [Parameter] public int ThreadNumber { get; set; } = 1;
+
+    /// <summary>Whether this marker is selected.</summary>
+    [Parameter] public bool Selected { get; set; }
+
+    /// <summary>Current user id used for mention styling.</summary>
+    [Parameter] public string? CurrentUserId { get; set; }
+
+    /// <summary>Whether marker interaction is disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Optional custom marker content.</summary>
+    [Parameter] public RenderFragment<DocumentCommentThread>? MarkerTemplate { get; set; }
+
+    /// <summary>Callback invoked when marker is selected.</summary>
+    [Parameter] public EventCallback<string> OnSelected { get; set; }
+
+    private string MarkerLabel
+    {
+        get
+        {
+            var state = Thread.Status == DocumentCommentThreadStatus.Resolved
+                ? Loc["TmDocumentComments_Resolved"]
+                : Loc["TmDocumentComments_Open"];
+            return Loc["TmDocumentComments_MarkerAriaLabel", ThreadNumber, Thread.Anchor.PageNumber, state];
+        }
+    }
+
+    private Task SelectAsync()
+    {
+        return Disabled ? Task.CompletedTask : OnSelected.InvokeAsync(Thread.Id);
+    }
+
+    private string MarkerClass(string baseClass)
+    {
+        var classes = new List<string> { baseClass };
+        if (Selected)
+        {
+            classes.Add(baseClass + "--selected");
+        }
+
+        if (Thread.Status == DocumentCommentThreadStatus.Resolved)
+        {
+            classes.Add(baseClass + "--resolved");
+        }
+
+        if (DocumentCommentHelper.MentionsUser(Thread, CurrentUserId))
+        {
+            classes.Add(baseClass + "--mentioned");
+        }
+
+        return string.Join(" ", classes);
+    }
+
+}

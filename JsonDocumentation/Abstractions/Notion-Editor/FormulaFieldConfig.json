@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/FormulaFieldConfig.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Expression",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "ResultType",
+      "kind": "Property",
+      "type": "DatabaseFieldType"
+    }
+  ],
+  "itemName": "FormulaFieldConfig"
+}

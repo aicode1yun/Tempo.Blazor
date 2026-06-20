@@ -10,7 +10,7 @@
 
 <CascadingValue Value="_commandStack" IsFixed="false">
 
-<div class="tm-wd-editor @Class">
+<div class="tm-wd-editor @Class" @onkeydown="OnKeyDown" tabindex="0">
 
     @* ── Toolbar ─────────────────────────────────────────────────────────── *@
     @if (ShowToolbar)
@@ -43,6 +43,14 @@
                     @onclick='() => SetToolMode("pan")'>
                 ✋
             </button>
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(_toolMode == "connector" ? "tm-wd-editor__btn--active" : "")"
+                    aria-label="@Loc["TmWireframe_ConnectorTool"]"
+                    aria-pressed="@(_toolMode == "connector")"
+                    title="@Loc["TmWireframe_ConnectorTool"]"
+                    disabled="@ReadOnly"
+                    @onclick='() => SetToolMode("connector")'>
+                →
+            </button>
 
             <div class="tm-wd-editor__toolbar-sep" role="separator"></div>
 
@@ -60,6 +68,140 @@
                     disabled="@(!_commandStack.CanRedo || ReadOnly)"
                     @onclick="OnRedoClicked">
                 ↪
+            </button>
+
+            <div class="tm-wd-editor__toolbar-sep" role="separator"></div>
+
+            @* Arrange: Bring to Front / Send to Back / Lock *@
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon"
+                    aria-label="@Loc["TmWireframe_SendToBack"]"
+                    title="@Loc["TmWireframe_SendToBack"]"
+                    disabled="@(_selectedIds.Length == 0 || ReadOnly)"
+                    @onclick="OnSendToBack">
+                ⬇
+            </button>
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon"
+                    aria-label="@Loc["TmWireframe_BringToFront"]"
+                    title="@Loc["TmWireframe_BringToFront"]"
+                    disabled="@(_selectedIds.Length == 0 || ReadOnly)"
+                    @onclick="OnBringToFront">
+                ⬆
+            </button>
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(_selectedIds.Length > 0 && IsSelectionLocked() ? "tm-wd-editor__btn--active" : "")"
+                    aria-label="@(_selectedIds.Length > 0 && IsSelectionLocked() ? Loc["TmWireframe_Unlock"] : Loc["TmWireframe_Lock"])"
+                    title="@(_selectedIds.Length > 0 && IsSelectionLocked() ? Loc["TmWireframe_Unlock"] : Loc["TmWireframe_Lock"])"
+                    disabled="@(_selectedIds.Length == 0 || ReadOnly)"
+                    @onclick="OnToggleLock">
+                🔒
+            </button>
+
+            <div class="tm-wd-editor__toolbar-sep" role="separator"></div>
+
+            @* Group / Ungroup *@
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon"
+                    aria-label="@Loc["TmWireframe_Group"]"
+                    title="@Loc["TmWireframe_Group"]"
+                    disabled="@(_selectedIds.Length < 2 || ReadOnly)"
+                    @onclick="OnGroup">
+                📁
+            </button>
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon"
+                    aria-label="@Loc["TmWireframe_Ungroup"]"
+                    title="@Loc["TmWireframe_Ungroup"]"
+                    disabled="@(!SelectedIdsContainGroup() || ReadOnly)"
+                    @onclick="OnUngroup">
+                📂
+            </button>
+
+            <div class="tm-wd-editor__toolbar-sep" role="separator"></div>
+
+            @* Align *@
+            <div class="tm-wd-editor__dropdown-wrap">
+                <button class="tm-wd-editor__btn tm-wd-editor__btn--icon"
+                        aria-label="@Loc["TmWireframe_Align"]"
+                        title="@Loc["TmWireframe_Align"]"
+                        aria-haspopup="true"
+                        aria-expanded="@_alignMenuOpen"
+                        disabled="@(_selectedIds.Length < 2 || ReadOnly)"
+                        @onclick="ToggleAlignMenu">
+                    ⇹
+                </button>
+                @if (_alignMenuOpen)
+                {
+                    <div class="tm-wd-editor__dropdown" role="menu" aria-label="@Loc["TmWireframe_Align"]" @onfocusout="CloseAlignMenu">
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="() => { CloseAlignMenu(); OnAlign(WireframeAlignment.Left); }">@Loc["TmWireframe_AlignLeft"]</button>
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="() => { CloseAlignMenu(); OnAlign(WireframeAlignment.CenterH); }">@Loc["TmWireframe_AlignCenterH"]</button>
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="() => { CloseAlignMenu(); OnAlign(WireframeAlignment.Right); }">@Loc["TmWireframe_AlignRight"]</button>
+                        <div class="tm-wd-editor__dropdown-sep"></div>
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="() => { CloseAlignMenu(); OnAlign(WireframeAlignment.Top); }">@Loc["TmWireframe_AlignTop"]</button>
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="() => { CloseAlignMenu(); OnAlign(WireframeAlignment.CenterV); }">@Loc["TmWireframe_AlignCenterV"]</button>
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="() => { CloseAlignMenu(); OnAlign(WireframeAlignment.Bottom); }">@Loc["TmWireframe_AlignBottom"]</button>
+                    </div>
+                }
+            </div>
+
+            @* Distribute *@
+            <div class="tm-wd-editor__dropdown-wrap">
+                <button class="tm-wd-editor__btn tm-wd-editor__btn--icon"
+                        aria-label="@Loc["TmWireframe_Distribute"]"
+                        title="@Loc["TmWireframe_Distribute"]"
+                        aria-haspopup="true"
+                        aria-expanded="@_distributeMenuOpen"
+                        disabled="@(_selectedIds.Length < 3 || ReadOnly)"
+                        @onclick="ToggleDistributeMenu">
+                    ⇔
+                </button>
+                @if (_distributeMenuOpen)
+                {
+                    <div class="tm-wd-editor__dropdown" role="menu" aria-label="@Loc["TmWireframe_Distribute"]" @onfocusout="CloseDistributeMenu">
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="() => { CloseDistributeMenu(); OnDistribute(WireframeDistribution.Horizontal); }">@Loc["TmWireframe_DistributeHorizontal"]</button>
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="() => { CloseDistributeMenu(); OnDistribute(WireframeDistribution.Vertical); }">@Loc["TmWireframe_DistributeVertical"]</button>
+                    </div>
+                }
+            </div>
+
+            <div class="tm-wd-editor__toolbar-sep" role="separator"></div>
+
+            @* Snap to Objects *@
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(_snapToObjects ? "tm-wd-editor__btn--active" : "")"
+                    aria-label="@Loc["TmWireframe_SnapToObjects"]"
+                    title="@Loc["TmWireframe_SnapToObjects"]"
+                    disabled="@ReadOnly"
+                    @onclick="ToggleSnapToObjects">
+                🧲
+            </button>
+
+            @* Show Rulers *@
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(ShowRulers ? "tm-wd-editor__btn--active" : "")"
+                    aria-label="@Loc["TmWireframe_ShowRulers"]"
+                    title="@Loc["TmWireframe_ShowRulers"]"
+                    @onclick="ToggleRulers">
+                📏
+            </button>
+
+            <div class="tm-wd-editor__toolbar-sep" role="separator"></div>
+
+            @* Format Painter *@
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon"
+                    aria-label="@Loc["TmWireframe_CopyStyle"]"
+                    title="@Loc["TmWireframe_CopyStyle"]"
+                    disabled="@(_selectedIds.Length != 1 || ReadOnly)"
+                    @onclick="OnCopyStyle">
+                🎨
+            </button>
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(_hasStyleOnClipboard ? "tm-wd-editor__btn--active" : "")"
+                    aria-label="@Loc["TmWireframe_PasteStyle"]"
+                    title="@Loc["TmWireframe_PasteStyle"]"
+                    disabled="@(!_hasStyleOnClipboard || _selectedIds.Length == 0 || ReadOnly)"
+                    @onclick="OnPasteStyle">
+                🖌️
+            </button>
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon"
+                    aria-label="@Loc["TmWireframe_PasteSize"]"
+                    title="@Loc["TmWireframe_PasteSize"]"
+                    disabled="@(!_hasStyleOnClipboard || _selectedIds.Length == 0 || ReadOnly)"
+                    @onclick="OnPasteSize">
+                📐
             </button>
 
             <div class="tm-wd-editor__toolbar-sep" role="separator"></div>
@@ -120,6 +262,8 @@
                     <div class="tm-wd-editor__dropdown" role="menu" aria-label="@Loc["TmWireframe_Export"]" @onfocusout="CloseExportMenu">
                         <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="ExportJson">@Loc["TmWireframe_ExportJson"]</button>
                         <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="ExportSvg">@Loc["TmWireframe_ExportSvg"]</button>
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="ExportPng">@Loc["TmWireframe_ExportPng"]</button>
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="ExportPdf">@Loc["TmWireframe_ExportPdf"]</button>
                     </div>
                 }
             </div>
@@ -166,6 +310,61 @@
         </div>
     }
 
+    @* ── Page tabs ───────────────────────────────────────────────────────── *@
+    @if (ShowPageTabs && _document?.Pages.Count > 0)
+    {
+        <div class="tm-wd-editor__page-tabs">
+            @foreach (var pg in _document.Pages)
+            {
+                var isActive = _activePage?.Id == pg.Id;
+                <div class="tm-wd-editor__page-tab @(isActive ? "tm-wd-editor__page-tab--active" : "")"
+                     role="tab"
+                     aria-selected="@isActive"
+                     draggable="true"
+                     @ondragstart="() => OnPageDragStart(pg.Id)"
+                     @ondrop="() => OnPageDrop(pg.Id)"
+                     @ondragover:preventDefault
+                     @onclick="() => SwitchPage(pg.Id)">
+                    @if (_renamingPageId == pg.Id)
+                    {
+                        <input class="tm-wd-editor__page-tab-input"
+                               type="text"
+                               value="@pg.Name"
+                               @onchange="e => OnPageRenamed(pg.Id, e)"
+                               @onblur="() => _renamingPageId = null"
+                               @onkeydown="OnRenameInputKeyDown"
+                               autofocus />
+                    }
+                    else
+                    {
+                        <span class="tm-wd-editor__page-tab-label"
+                              @ondblclick:stopPropagation
+                              @ondblclick="() => StartRenamePage(pg.Id)">@pg.Name</span>
+                    }
+                    @if (_document.Pages.Count > 1)
+                    {
+                        <button class="tm-wd-editor__page-tab-close"
+                                aria-label="@Loc["TmWireframe_ClosePage"]"
+                                title="@Loc["TmWireframe_ClosePage"]"
+                                @onclick:stopPropagation
+                                @onclick="() => DeletePage(pg.Id)">✕</button>
+                    }
+                </div>
+            }
+            <button class="tm-wd-editor__page-tab-add"
+                    aria-label="@Loc["TmWireframe_AddPage"]"
+                    title="@Loc["TmWireframe_AddPage"]"
+                    @onclick="AddPage">+</button>
+            @if (_activePage is not null)
+            {
+                <button class="tm-wd-editor__page-tab-dup"
+                        aria-label="@Loc["TmWireframe_DuplicatePage"]"
+                        title="@Loc["TmWireframe_DuplicatePage"]"
+                        @onclick="DuplicatePage">@Loc["TmWireframe_DuplicatePageShort"]</button>
+            }
+        </div>
+    }
+
     @* ── Import error banner ──────────────────────────────────────────────── *@
     @if (_importError is not null)
     {
@@ -175,7 +374,7 @@
         </div>
     }
 
-    @* ── Body (toolbox + canvas + props) ─────────────────────────────────── *@
+    @* ── Body (toolbox + rulers + canvas + props) ───────────────────────── *@
     <div class="tm-wd-editor__body">
 
         @* Left: Toolbox *@
@@ -187,17 +386,102 @@
             </div>
         }
 
-        @* Centre: Canvas + optional minimap overlay *@
-        <div class="tm-wd-editor__canvas-wrap">
-            <TmWireframeDesignerCanvas @ref="_canvas"
+        @* Centre: Rulers + Canvas *@
+        <div class="tm-wd-editor__canvas-area">
+            @* Horizontal ruler *@
+            @if (ShowRulers)
+            {
+                <TmWireframeRuler Orientation="Horizontal"
+                                  Size="20"
+                                  ViewBoxX="@_viewBoxX"
+                                  ViewBoxY="@_viewBoxY"
+                                  ViewBoxW="@_viewBoxW"
+                                  ViewBoxH="@_viewBoxH"
+                                  Scale="@_zoomLevel"
+                                  IndicatorPos="@_rulerCursorX"
+                                  Class="tm-wd-editor__ruler-h" />
+            }
+
+            <div class="tm-wd-editor__canvas-inner">
+                @* Vertical ruler *@
+                @if (ShowRulers)
+                {
+                    <TmWireframeRuler Orientation="Vertical"
+                                      Size="20"
+                                      ViewBoxX="@_viewBoxX"
+                                      ViewBoxY="@_viewBoxY"
+                                      ViewBoxW="@_viewBoxW"
+                                      ViewBoxH="@_viewBoxH"
+                                      Scale="@_zoomLevel"
+                                      IndicatorPos="@_rulerCursorY"
+                                      Class="tm-wd-editor__ruler-v" />
+                }
+
+                @* Canvas *@
+                <div class="tm-wd-editor__canvas-wrap">
+                    <TmWireframeDesignerCanvas @ref="_canvas"
                                        Document="@_document"
                                        DocumentChanged="OnDocumentChanged"
                                        ShowGrid="@ShowGrid"
                                        GridSize="@GridSize"
+                                       SnapToObjects="@_snapToObjects"
                                        ReadOnly="@ReadOnly"
                                        OnSelectionChanged="OnSelectionChanged"
+                                       OnConnectorSelectionChanged="OnConnectorSelectionChanged"
+                                       OnConnectorCreated="OnConnectorCreated"
+                                       OnDeleteConnectors="OnDeleteConnectors"
+                                       OnConnectorWaypointDragged="OnConnectorWaypointDragged"
+                                       OnConnectorWaypointAdded="OnConnectorWaypointAdded"
+                                       OnConnectorDragged="OnConnectorDragged"
                                        OnToolModeChanged="OnCanvasToolModeChanged"
+                                       OnCopyStyleRequested="OnCopyStyle"
+                                       OnPasteStyleRequested="OnPasteStyle"
+                                       OnPasteSizeRequested="OnPasteSize"
+                                       OnElementContextMenuRequested="OnElementContextMenuRequested"
+                                       OnConnectorContextMenuRequested="OnConnectorContextMenuRequested"
+                                       OnCanvasContextMenuRequested="OnCanvasContextMenuRequested"
+                                       OnCloseContextMenu="CloseContextMenu"
+                                       OnViewBoxChangedEvent="OnCanvasViewBoxChanged"
+                                       OnCanvasMouseMoved="OnCanvasMouseMoved"
                                        Class="tm-wd-editor__canvas" />
+
+            @* Context menu (right-click) *@
+            <TmWireframeContextMenu @ref="_contextMenu"
+                                    IsOpen="@_ctxMenuOpen"
+                                    X="@_ctxMenuX"
+                                    Y="@_ctxMenuY"
+                                    MenuType="@_ctxMenuType"
+                                    CanUndo="@_commandStack.CanUndo"
+                                    CanRedo="@_commandStack.CanRedo"
+                                    HasClipboardStyle="@WireframeClipboard.HasStyle"
+                                    SelectedCount="@_selectedIds.Length"
+                                    HasGroupInSelection="@SelectedIdsContainGroup()"
+                                    IsSelectionLocked="@IsSelectionLocked()"
+                                    ReadOnly="@ReadOnly"
+                                    ShowGrid="@ShowGrid"
+                                    SnapToObjects="@_snapToObjects"
+                                    OnClose="CloseContextMenu"
+                                    OnUndo="OnUndoClicked"
+                                    OnRedo="OnRedoClicked"
+                                    OnSelectAll="OnSelectAll"
+                                    OnCopyStyle="OnCopyStyle"
+                                    OnDuplicate="OnDuplicateFromContextMenu"
+                                    OnDelete="OnDeleteFromContextMenu"
+                                    OnBringToFront="OnBringToFront"
+                                    OnSendToBack="OnSendToBack"
+                                    OnGroup="OnGroup"
+                                    OnUngroup="OnUngroup"
+                                    OnLock="OnLockFromContextMenu"
+                                    OnUnlock="OnUnlockFromContextMenu"
+                                    OnPasteStyle="OnPasteStyle"
+                                    OnPasteSize="OnPasteSize"
+                                    OnAlign="OnAlign"
+                                    OnDistribute="OnDistribute"
+                                    OnToggleGrid="ContextMenuToggleGrid"
+                                    OnToggleSnapToObjects="ContextMenuToggleSnapToObjects"
+                                    OnFitToView="ContextMenuFitToView"
+                                    OnEditConnectorLabel="OnEditConnectorLabelFromContextMenu"
+                                    OnSetConnectorRouting="OnSetConnectorRoutingFromContextMenu" />
 
             @if (ShowMinimap)
             {
@@ -211,16 +495,30 @@
                                         Class="tm-wd-editor__minimap" />
                 </div>
             }
-        </div>
+                </div> @* canvas-wrap *@
+            </div> @* canvas-inner *@
+        </div> @* canvas-area *@
 
-        @* Right: Properties Panel *@
+        @* Right: Properties Panel + Layers *@
         @if (ShowPropertiesPanel && !_propsCollapsed)
         {
             <div class="tm-wd-editor__props-wrap">
                 <TmWireframePropertiesPanel Document="@_document"
                                             DocumentChanged="OnDocumentChanged"
                                             SelectedIds="@_selectedIds"
+                                            SelectedConnectorIds="@_selectedConnectorIds"
+                                            OnCopyStyle="OnCopyStyle"
+                                            OnPasteStyle="OnPasteStyle"
+                                            OnPasteSize="OnPasteSize"
+                                            ReadOnly="@ReadOnly"
                                             Class="tm-wd-editor__props" />
+                <TmWireframeLayersPanel Document="@_document"
+                                        DocumentChanged="OnDocumentChanged"
+                                        SelectedElementIds="@_selectedIds"
+                                        ActiveLayerId="@_activeLayerId"
+                                        ActiveLayerIdChanged="OnActiveLayerChanged"
+                                        ReadOnly="@ReadOnly"
+                                        Class="tm-wd-editor__layers" />
             </div>
         }
 
@@ -229,6 +527,12 @@
 </div>
 
 </CascadingValue>
+
+@* Export dialog *@
+<TmWireframeExportDialog Show="@_exportDialogOpen"
+                         OnClose="CloseExportDialog"
+                         OnExport="OnExportDialogExport"
+                         DefaultFileName="@SanitizeFileName(_document?.Title ?? Loc["TmWireframe_ExportFilename"])" />
 
 @* Hidden download anchor for export *@
 <a @ref="_downloadAnchor" style="display:none"></a>

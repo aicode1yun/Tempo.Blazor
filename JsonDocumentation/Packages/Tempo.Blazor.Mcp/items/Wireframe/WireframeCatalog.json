@@ -1,0 +1,52 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "Pure helpers that project entries into LLM-friendly shapes and suggest the nearest type name for typos. Used by the catalog MCP tools.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeCatalog.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Compact",
+      "kind": "Method",
+      "type": "object",
+      "description": "Compact projection: just enough to pick a component.",
+      "parameters": [
+        {
+          "name": "s",
+          "type": "WireframeComponentSchema"
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "kind": "Method",
+      "type": "object",
+      "description": "Full projection: dimensions and the property contract.",
+      "parameters": [
+        {
+          "name": "s",
+          "type": "WireframeComponentSchema"
+        }
+      ]
+    },
+    {
+      "name": "SuggestType",
+      "kind": "Method",
+      "type": "string?",
+      "description": "Returns the registered type whose name is closest to , if reasonably near.",
+      "parameters": [
+        {
+          "name": "registry",
+          "type": "WireframeSchemaRegistry"
+        },
+        {
+          "name": "unknown",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "WireframeCatalog"
+}

@@ -1,0 +1,15 @@
+{
+  "itemName": "TmNotionDbCellUrl",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionDbCellUrl Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Database/Cells/TmNotionDbCellUrl.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells"
+  ],
+  "parameters": [],
+  "subcategory": "Blocks / Database / Cells"
+}

@@ -148,4 +148,37 @@ public class TmDiagramCanvasTests : LocalizationTestBase
         doc.Edges.Should().BeEmpty();
         doc.Nodes.Should().HaveCount(2);
     }
+
+    [Fact]
+    public async Task EdgeToolbarFlipButton_SwapsSourceAndTarget()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 100, Y = 100, W = 40, H = 40 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 100, W = 40, H = 40 };
+        var edge = new DiagramEdge { SourceNodeId = n1.Id, TargetNodeId = n2.Id };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        // Select the edge by clicking the invisible hit path
+        var hitPath = cut.Find(".tm-diagram-edge-hit-path");
+        hitPath.Click();
+        cut.Render();
+
+        // The edge toolbar should be rendered
+        cut.Find(".tm-diagram-edge-toolbar").Should().NotBeNull();
+
+        // Click the flip button
+        var flipButton = cut.Find(".tm-diagram-edge-toolbar button[data-action=\"flip\"]");
+        flipButton.Should().NotBeNull();
+        flipButton.Click();
+
+        // Verify source and target were swapped
+        edge.SourceNodeId.Should().Be(n2.Id);
+        edge.TargetNodeId.Should().Be(n1.Id);
+    }
 }

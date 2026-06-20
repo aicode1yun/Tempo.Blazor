@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Represents an output / response item displayed in the AI prompt component.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AIPromptOutput.cs",
+  "documentationStatus": "generated",
+  "itemName": "AIPromptOutput"
+}

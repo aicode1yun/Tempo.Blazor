@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Docx",
+  "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+  "description": "Imports DOCX packages into the document editor JSON model.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocumentDocxImporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentDocxImporter"
+}

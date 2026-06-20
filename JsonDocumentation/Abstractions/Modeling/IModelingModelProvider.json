@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Modeling",
+  "description": "Provides source-backed modeling models.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/ModelingProviderContracts.cs",
+  "documentationStatus": "generated",
+  "itemName": "IModelingModelProvider"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Persists diagram snapshots and version history.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/IDiagramHistoryStore.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDiagramHistoryStore"
+}

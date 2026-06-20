@@ -1,0 +1,84 @@
+@namespace Tempo.Blazor.Components.Spreadsheet.Dialogs
+@using Tempo.Blazor.Components.Spreadsheet.Data
+@using Tempo.Blazor.Components.Spreadsheet.Models
+
+<div class="tm-spreadsheet-sort__backdrop" @onclick="Close">
+    <div class="tm-spreadsheet-sort"
+         role="dialog"
+         aria-label="@Loc["TmSpreadsheet_Sort_Title"]"
+         @onclick:stopPropagation
+         @onkeydown="OnKeyDown">
+        <div class="tm-spreadsheet-sort__header">
+            <span class="tm-spreadsheet-sort__title">@Loc["TmSpreadsheet_Sort_Title"]</span>
+            <button type="button" class="tm-spreadsheet-sort__close" title="@Loc["Tm_Close"]" aria-label="@Loc["Tm_Close"]" @onclick="Close">
+                <TmIcon Name="close" />
+            </button>
+        </div>
+
+        <div class="tm-spreadsheet-sort__toolbar">
+            <button type="button" class="tm-spreadsheet-sort__tool" @onclick="AddLevel">+ @Loc["TmSpreadsheet_Sort_AddLevel"]</button>
+            <label class="tm-spreadsheet-sort__header-toggle">
+                <input type="checkbox" checked="@_hasHeader" @onchange="e => _hasHeader = e.Value is bool b && b" />
+                <span>@Loc["TmSpreadsheet_Sort_HasHeader"]</span>
+            </label>
+            <label class="tm-spreadsheet-sort__header-toggle">
+                <input type="checkbox" checked="@_caseSensitive" @onchange="e => _caseSensitive = e.Value is bool b2 && b2" />
+                <span>@Loc["TmSpreadsheet_Sort_CaseSensitive"]</span>
+            </label>
+        </div>
+
+        <table class="tm-spreadsheet-sort__table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>@Loc["TmSpreadsheet_Sort_Column"]</th>
+                    <th>@Loc["TmSpreadsheet_Sort_SortOn"]</th>
+                    <th>@Loc["TmSpreadsheet_Sort_Order"]</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (var i = 0; i < _levels.Count; i++)
+                {
+                    var level = _levels[i];
+                    var index = i;
+                    <tr>
+                        <td class="tm-spreadsheet-sort__rowlabel">@(index == 0 ? Loc["TmSpreadsheet_Sort_SortBy"] : Loc["TmSpreadsheet_Sort_ThenBy"])</td>
+                        <td>
+                            <select @bind="level.KeyIndex">
+                                @foreach (var col in ColumnChoices)
+                                {
+                                    <option value="@col.Index">@col.Label</option>
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            <select @bind="level.SortOn">
+                                <option value="@SpreadsheetSortOn.Value">@Loc["TmSpreadsheet_Sort_OnValue"]</option>
+                                <option value="@SpreadsheetSortOn.CellColor">@Loc["TmSpreadsheet_Sort_OnCellColor"]</option>
+                                <option value="@SpreadsheetSortOn.FontColor">@Loc["TmSpreadsheet_Sort_OnFontColor"]</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select @bind="level.Direction">
+                                <option value="@SpreadsheetSortDirection.Ascending">@Loc["TmSpreadsheet_Sort_AtoZ"]</option>
+                                <option value="@SpreadsheetSortDirection.Descending">@Loc["TmSpreadsheet_Sort_ZtoA"]</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button type="button" class="tm-spreadsheet-sort__remove"
+                                    title="@Loc["TmSpreadsheet_Sort_DeleteLevel"]"
+                                    disabled="@(_levels.Count <= 1)"
+                                    @onclick="() => RemoveLevel(index)">✕</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="tm-spreadsheet-sort__actions">
+            <button type="button" class="tm-spreadsheet-sort__btn tm-spreadsheet-sort__btn--cancel" @onclick="Close">@Loc["TmSpreadsheet_Sort_Cancel"]</button>
+            <button type="button" class="tm-spreadsheet-sort__btn tm-spreadsheet-sort__btn--ok" @onclick="Apply">@Loc["TmSpreadsheet_Sort_Ok"]</button>
+        </div>
+    </div>
+</div>

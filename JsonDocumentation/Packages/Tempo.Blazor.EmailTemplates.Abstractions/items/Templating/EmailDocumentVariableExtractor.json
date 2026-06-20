@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Templating",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+  "description": "Extracts every template variable referenced anywhere in a document — subject, preheader, block content and URLs, visibility conditions and raw block content — as a merged, de-duplicated set.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/EmailDocumentVariableExtractor.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Extract",
+      "kind": "Method",
+      "type": "IReadOnlyList<TemplateVariableInfo>",
+      "description": "Returns the variables referenced across the whole document.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        }
+      ]
+    }
+  ],
+  "itemName": "EmailDocumentVariableExtractor"
+}

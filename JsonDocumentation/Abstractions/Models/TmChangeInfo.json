@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Represents a single property change with old and new values.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmChangeInfo.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmChangeInfo"
+}

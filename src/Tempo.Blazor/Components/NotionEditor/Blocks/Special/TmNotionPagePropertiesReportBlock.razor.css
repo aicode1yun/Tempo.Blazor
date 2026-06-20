@@ -1,0 +1,190 @@
+.tm-props-report {
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    overflow: hidden;
+}
+
+.tm-props-report__header {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2);
+    padding: var(--tm-space-3);
+    border-bottom: 1px solid var(--tm-color-border);
+    background: var(--tm-bg-muted);
+}
+
+.tm-props-report__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--tm-radius-sm);
+    color: var(--tm-color-info-text);
+    background: var(--tm-color-info-subtle);
+    flex: 0 0 auto;
+}
+
+.tm-props-report__heading {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tm-props-report__title {
+    font-weight: var(--tm-font-weight-semibold);
+    line-height: 1.25;
+}
+
+.tm-props-report__summary {
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-xs);
+    line-height: 1.35;
+}
+
+.tm-props-report__config {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--tm-space-3);
+    padding: var(--tm-space-3);
+    border-bottom: 1px solid var(--tm-color-border);
+}
+
+.tm-props-report__field {
+    display: grid;
+    gap: var(--tm-space-1);
+    min-width: 0;
+}
+
+.tm-props-report__field-label {
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-semibold);
+    text-transform: uppercase;
+}
+
+.tm-props-report__labels-input,
+.tm-props-report__columns-input {
+    width: 100%;
+    min-height: 2.25rem;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    font: inherit;
+    padding: var(--tm-space-1) var(--tm-space-2);
+}
+
+.tm-props-report__labels-input:focus,
+.tm-props-report__columns-input:focus {
+    outline: none;
+    border-color: var(--tm-color-primary);
+    box-shadow: 0 0 0 2px var(--tm-color-primary-subtle);
+}
+
+.tm-props-report__state,
+.tm-props-report__empty {
+    padding: var(--tm-space-4);
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-props-report__state--warning {
+    color: var(--tm-color-warning-text);
+    background: var(--tm-color-warning-subtle);
+}
+
+.tm-props-report__table-wrap {
+    overflow-x: auto;
+}
+
+.tm-props-report__table {
+    width: 100%;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: var(--tm-font-size-sm);
+    table-layout: fixed;
+}
+
+.tm-props-report__table th,
+.tm-props-report__table td {
+    padding: var(--tm-space-2) var(--tm-space-3);
+    border-bottom: 1px solid var(--tm-color-border);
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+
+.tm-props-report__table th:first-child {
+    width: 42%;
+}
+
+.tm-props-report__table thead th {
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-semibold);
+    text-transform: uppercase;
+    background: var(--tm-color-surface);
+}
+
+.tm-props-report__table tbody tr:hover {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-props-report__page-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tm-space-2);
+    max-width: 18rem;
+    border: 0;
+    background: transparent;
+    color: var(--tm-color-text);
+    font: inherit;
+    font-weight: var(--tm-font-weight-semibold);
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+}
+
+.tm-props-report__table th:first-child .tm-props-report__page-link {
+    max-width: 100%;
+}
+
+.tm-props-report__page-link:hover {
+    color: var(--tm-color-primary);
+}
+
+.tm-props-report__page-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    flex: 0 0 auto;
+}
+
+.tm-props-report__page-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-props-report__value {
+    color: var(--tm-color-text);
+}
+
+.tm-props-report__missing {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.5rem;
+    color: var(--tm-color-text-muted);
+    font-style: italic;
+}
+
+@media (max-width: 640px) {
+    .tm-props-report__config {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Result of parsing raw CSV text.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/CsvParseResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DetectedDelimiter",
+      "kind": "Property",
+      "type": "char"
+    },
+    {
+      "name": "Headers",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>"
+    },
+    {
+      "name": "Rows",
+      "kind": "Property",
+      "type": "IReadOnlyList<IReadOnlyList<string>>"
+    }
+  ],
+  "itemName": "CsvParseResult"
+}

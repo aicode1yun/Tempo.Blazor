@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard",
+  "description": "Result of running clipboard content through the normalizer pipeline.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Clipboard/DocumentClipboardOutput.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Blocks",
+      "kind": "Property",
+      "type": "IReadOnlyList<DocumentBlock>",
+      "description": "Normalized document blocks ready to be inserted into the editor."
+    },
+    {
+      "name": "Source",
+      "kind": "Property",
+      "type": "DocumentClipboardSource",
+      "description": "Detected source that produced the output."
+    },
+    {
+      "name": "Warnings",
+      "kind": "Property",
+      "type": "IReadOnlyList<DocumentClipboardWarning>",
+      "description": "Non-fatal issues encountered during normalization."
+    }
+  ],
+  "itemName": "DocumentClipboardOutput"
+}

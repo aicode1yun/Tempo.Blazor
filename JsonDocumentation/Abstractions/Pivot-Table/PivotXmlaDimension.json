@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Describes an OLAP dimension exposed by an XMLA data source.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotXmlaDimension.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Caption",
+      "kind": "Property",
+      "type": "string",
+      "description": "Human-readable caption."
+    },
+    {
+      "name": "Hierarchies",
+      "kind": "Property",
+      "type": "List<PivotXmlaHierarchy>",
+      "description": "Hierarchies belonging to this dimension."
+    },
+    {
+      "name": "UniqueName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier of the dimension."
+    }
+  ],
+  "itemName": "PivotXmlaDimension"
+}

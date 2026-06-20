@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Enums",
+  "description": "Specifies the horizontal alignment of cell content.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Enums/SpreadsheetHorizontalAlign.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetHorizontalAlign"
+}

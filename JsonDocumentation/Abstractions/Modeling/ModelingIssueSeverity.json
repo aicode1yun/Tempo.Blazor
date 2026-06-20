@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Modeling",
+  "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/ModelingDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ModelingIssueSeverity"
+}

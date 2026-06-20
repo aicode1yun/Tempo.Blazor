@@ -1,0 +1,78 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Special
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+
+<section class="tm-children"
+         aria-label="@Loc["Notion_Children_Title"]"
+         @onclick="OnFocusedAsync">
+    <div class="tm-children__header">
+        <svg class="tm-children__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 3.5h4.25l1.25 2H13v6.25A1.25 1.25 0 0 1 11.75 13h-7.5A1.25 1.25 0 0 1 3 11.75V3.5Z"
+                  stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" />
+            <path d="M5 8h6M5 10.5h3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" />
+        </svg>
+        <div class="tm-children__title-group">
+            <span class="tm-children__title">@Loc["Notion_Children_Title"]</span>
+            <span class="tm-children__summary">@SummaryText</span>
+        </div>
+    </div>
+
+    @if (!ReadOnly)
+    {
+        <div class="tm-children__config" aria-label="@Loc["Notion_Children_Configure"]">
+            <label class="tm-children__field">
+                <span class="tm-children__field-label">@Loc["Notion_Children_Root"]</span>
+                <select class="tm-children__root-select"
+                        value="@RootSelectValue"
+                        @onchange="HandleRootChangedAsync">
+                    <option value="">@Loc["Notion_Children_CurrentPage"]</option>
+                    @foreach (var choice in _pageChoices)
+                    {
+                        <option value="@choice.Value">@choice.Label</option>
+                    }
+                </select>
+            </label>
+
+            <label class="tm-children__field tm-children__field--compact">
+                <span class="tm-children__field-label">@Loc["Notion_Children_Depth"]</span>
+                <select class="tm-children__depth-select"
+                        value="@_depth"
+                        @onchange="HandleDepthChangedAsync">
+                    <option value="0">@Loc["Notion_Children_DepthAll"]</option>
+                    @foreach (var depth in DepthOptions)
+                    {
+                        <option value="@depth">@Loc["Notion_Children_DepthLevel", depth]</option>
+                    }
+                </select>
+            </label>
+
+            <label class="tm-children__toggle">
+                <input class="tm-children__icons-toggle"
+                       type="checkbox"
+                       checked="@_showIcons"
+                       @onchange="HandleShowIconsChangedAsync" />
+                <span>@Loc["Notion_Children_ShowIcons"]</span>
+            </label>
+        </div>
+    }
+
+    @if (_loading)
+    {
+        <div class="tm-children__state" role="status">@Loc["Tm_Loading"]</div>
+    }
+    else if (_nodes.Count == 0)
+    {
+        <div class="tm-children__empty">@(_sourceDeleted ? Loc["Notion_Children_SourceDeleted"] : Loc["Notion_Children_Empty"])</div>
+    }
+    else
+    {
+        <nav class="tm-children__tree-wrap" aria-label="@Loc["Notion_Children_Title"]">
+            <ul class="tm-children__tree" role="tree">
+                @foreach (var node in _nodes)
+                {
+                    @RenderNode(node, 1)
+                }
+            </ul>
+        </nav>
+    }
+</section>

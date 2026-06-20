@@ -8,7 +8,6 @@
          aria-label="@Loc["TmNotionInlineToolbar_Label"]"
          style="top:@(_top)px;left:@(_leftClamped)px"
          @ref="_toolbarRef"
-         @onmousedown:preventDefault="true"
          @onkeydown="HandleKeyDownAsync">
 
         @if (_showLinkInput)
@@ -221,8 +220,14 @@
             @* Turn Into *@
             <button class="tm-notion-inline-toolbar__btn tm-notion-inline-toolbar__btn--text"
                     title="@Loc["TmNotionInlineToolbar_TurnInto"]"
+                    aria-label="@Loc["TmNotionInlineToolbar_TurnInto"]"
                     @onclick="HandleTurnIntoClickAsync" @onclick:preventDefault="true">
-                @Loc["TmNotionInlineToolbar_TurnInto"]
+                <svg class="tm-notion-inline-toolbar__turn-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect x="2.5" y="3" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/>
+                    <rect x="8.5" y="9" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/>
+                    <path d="M7.5 5h2.25A2.25 2.25 0 0112 7.25V9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+                <span class="tm-notion-inline-toolbar__btn-label">@Loc["TmNotionInlineToolbar_TurnInto"]</span>
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
                     <path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -260,6 +265,21 @@
                     <text x="3" y="12" font-size="12" fill="currentColor" font-family="serif">∑</text>
                 </svg>
             </button>
+
+            @if (ShowAI)
+            {
+                <span class="tm-notion-inline-toolbar__sep" role="separator"></span>
+
+                <button class="tm-notion-inline-toolbar__btn"
+                        title="@Loc["Notion_AI_Assistant"]"
+                        data-testid="notion-inline-ai"
+                        @onclick="HandleAIAsync" @onclick:preventDefault="true">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M8 1.75l1.05 3.2 3.2 1.05-3.2 1.05L8 10.25 6.95 7.05 3.75 6l3.2-1.05L8 1.75z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/>
+                        <path d="M4.5 10.5l.55 1.65 1.65.55-1.65.55L4.5 14.9l-.55-1.65-1.65-.55 1.65-.55.55-1.65z" fill="currentColor"/>
+                    </svg>
+                </button>
+            }
         }
 
     </div>

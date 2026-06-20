@@ -1,0 +1,208 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Special
+@using Microsoft.AspNetCore.Components
+@using Tempo.Blazor.Components.NotionEditor.Blocks
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+
+<section class="tm-include-page"
+         aria-label="@Loc["Notion_IncludePage_Title"]"
+         @onclick="OnFocusedAsync">
+    <div class="tm-include-page__header">
+        <span class="tm-include-page__badge" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 2.5h6.25L13 6.25V13.5H3V2.5Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" />
+                <path d="M9.25 2.5V6.25H13" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" />
+                <path d="M5 8.25h6M5 10.75h4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" />
+            </svg>
+        </span>
+
+        <div class="tm-include-page__heading">
+            <span class="tm-include-page__title">@Loc["Notion_IncludePage_Title"]</span>
+            <span class="tm-include-page__source">@SourceSummary</span>
+        </div>
+
+        @if (_sourcePage is not null && !_cyclic)
+        {
+            <button class="tm-include-page__source-link"
+                    type="button"
+                    title="@Loc["Notion_IncludePage_EditSource"]"
+                    aria-label="@Loc["Notion_IncludePage_EditSource"]"
+                    @onclick="NavigateToSourceAsync"
+                    @onclick:stopPropagation="true">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M8.75 3.25H4.25A1.25 1.25 0 0 0 3 4.5v7.25A1.25 1.25 0 0 0 4.25 13h7.25a1.25 1.25 0 0 0 1.25-1.25v-4.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" />
+                    <path d="M10 2.5h3.5V6M13.5 2.5 7.25 8.75" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>@Loc["Notion_IncludePage_EditSource"]</span>
+            </button>
+        }
+    </div>
+
+    @if (!ReadOnly)
+    {
+        <label class="tm-include-page__picker">
+            <span class="tm-include-page__picker-label">@Loc["Notion_IncludePage_Select"]</span>
+            <select class="tm-include-page__select"
+                    value="@(Content?.SourcePageId?.ToString() ?? string.Empty)"
+                    disabled="@_loadingPages"
+                    @onchange="HandleSourceChangedAsync"
+                    @onclick:stopPropagation="true">
+                <option value="">@Loc["Notion_IncludePage_Select"]</option>
+                @foreach (var choice in _pageChoices)
+                {
+                    <option value="@choice.Id">@ChoiceLabel(choice)</option>
+                }
+            </select>
+        </label>
+    }
+
+    <div class="tm-include-page__body">
+        @if (_loadingContent)
+        {
+            <div class="tm-include-page__state" role="status">@Loc["Tm_Loading"]</div>
+        }
+        else if (_cyclic)
+        {
+            <div class="tm-include-page__state tm-include-page__state--warning">@Loc["Notion_IncludePage_Cyclic"]</div>
+        }
+        else if (_tooDeep)
+        {
+            <div class="tm-include-page__state tm-include-page__state--warning">@Loc["Notion_IncludePage_TooDeep"]</div>
+        }
+        else if (_notFound)
+        {
+            <div class="tm-include-page__state tm-include-page__state--warning">@Loc["Notion_IncludePage_NotFound"]</div>
+        }
+        else if (Content?.SourcePageId is null)
+        {
+            <div class="tm-include-page__state">@Loc["Notion_IncludePage_Select"]</div>
+        }
+        else if (_sourceBlocks.Count == 0)
+        {
+            <div class="tm-include-page__state">@Loc["Notion_IncludePage_Empty"]</div>
+        }
+        else
+        {
+            <CascadingValue Name="IncludePageStack" Value="_nextIncludeStack">
+                <div class="tm-include-page__blocks">
+                    @foreach (var sourceBlock in _sourceBlocks)
+                    {
+                        <div class="tm-include-page__block" data-block-type="@sourceBlock.Type">
+                            @switch (sourceBlock.Type)
+                            {
+                                case BlockType.Paragraph:
+                                {
+                                    var c = sourceBlock.Content as ITextBlockContent;
+                                    <div class="tm-include-page__paragraph">@((MarkupString)SanitizeInline(c?.Html))</div>
+                                    break;
+                                }
+                                case BlockType.Heading1:
+                                case BlockType.Heading2:
+                                case BlockType.Heading3:
+                                {
+                                    var c = sourceBlock.Content as IHeadingBlockContent;
+                                    var level = sourceBlock.Type == BlockType.Heading1 ? 1 : sourceBlock.Type == BlockType.Heading2 ? 2 : 3;
+                                    if (level == 1)
+                                    {
+                                        <h1 class="tm-include-page__h1">@((MarkupString)SanitizeInline(c?.Html))</h1>
+                                    }
+                                    else if (level == 2)
+                                    {
+                                        <h2 class="tm-include-page__h2">@((MarkupString)SanitizeInline(c?.Html))</h2>
+                                    }
+                                    else
+                                    {
+                                        <h3 class="tm-include-page__h3">@((MarkupString)SanitizeInline(c?.Html))</h3>
+                                    }
+                                    break;
+                                }
+                                case BlockType.Quote:
+                                {
+                                    var c = sourceBlock.Content as ITextBlockContent;
+                                    <blockquote class="tm-include-page__quote">@((MarkupString)SanitizeInline(c?.Html))</blockquote>
+                                    break;
+                                }
+                                case BlockType.BulletList:
+                                {
+                                    var c = sourceBlock.Content as IListBlockContent;
+                                    <div class="tm-include-page__list-item" data-indent="@(c?.IndentLevel ?? 0)">
+                                        <span class="tm-include-page__bullet" aria-hidden="true"></span>
+                                        <span>@((MarkupString)SanitizeInline(c?.Html))</span>
+                                    </div>
+                                    break;
+                                }
+                                case BlockType.NumberedList:
+                                {
+                                    var c = sourceBlock.Content as IListBlockContent;
+                                    <div class="tm-include-page__list-item" data-indent="@(c?.IndentLevel ?? 0)">
+                                        <span class="tm-include-page__number">@ListNumber(sourceBlock)</span>
+                                        <span>@((MarkupString)SanitizeInline(c?.Html))</span>
+                                    </div>
+                                    break;
+                                }
+                                case BlockType.TodoItem:
+                                {
+                                    var c = sourceBlock.Content as ITodoBlockContent;
+                                    <label class="tm-include-page__todo">
+                                        <input type="checkbox" checked="@(c?.IsChecked == true)" disabled />
+                                        <span>@((MarkupString)SanitizeInline(c?.Html))</span>
+                                    </label>
+                                    break;
+                                }
+                                case BlockType.Callout:
+                                {
+                                    var c = sourceBlock.Content as ICalloutBlockContent;
+                                    <div class="tm-include-page__callout" data-variant="@(c?.Variant.ToString().ToLowerInvariant())">
+                                        <span class="tm-include-page__callout-icon" aria-hidden="true">@(!string.IsNullOrWhiteSpace(c?.IconEmoji) ? c.IconEmoji : "i")</span>
+                                        <div>@((MarkupString)SanitizeInline(c?.Html))</div>
+                                    </div>
+                                    break;
+                                }
+                                case BlockType.Code:
+                                {
+                                    var c = sourceBlock.Content as ICodeBlockContent;
+                                    <pre class="tm-include-page__code"><code>@(c?.Code ?? string.Empty)</code></pre>
+                                    break;
+                                }
+                                case BlockType.Divider:
+                                    <hr class="tm-include-page__divider" />
+                                    break;
+                                case BlockType.Table:
+                                    @RenderTable(sourceBlock)
+                                    break;
+                                case BlockType.IncludePage:
+                                {
+                                    var c = sourceBlock.Content as IIncludePageBlockContent;
+                                    <TmNotionIncludePageBlock Block="sourceBlock"
+                                                              Content="c"
+                                                              ReadOnly="true" />
+                                    break;
+                                }
+                                case BlockType.ChildPage:
+                                case BlockType.LinkedPage:
+                                    @RenderPageLink(sourceBlock)
+                                    break;
+                                default:
+                                    <TmNotionBlock Block="sourceBlock" ReadOnly="true" />
+                                    break;
+                            }
+
+                            @if (_childBlocksByBlockId.TryGetValue(sourceBlock.Id, out var children) &&
+                                 children.Count > 0 &&
+                                 sourceBlock.Type is not BlockType.Table and not BlockType.IncludePage)
+                            {
+                                <div class="tm-include-page__children">
+                                    @foreach (var child in children)
+                                    {
+                                        <TmNotionBlock Block="child" ReadOnly="true" />
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </CascadingValue>
+        }
+    </div>
+</section>

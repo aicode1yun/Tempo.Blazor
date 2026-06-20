@@ -29,8 +29,8 @@ public class BuiltInWireframeComponentProviderTests
     // ── Coverage ──────────────────────────────────────────────────────────────
 
     [Fact]
-    public void RegistersAtLeast70Components()
-        => _defs.Count.Should().BeGreaterThanOrEqualTo(70);
+    public void RegistersAtLeast110Components()
+        => _defs.Count.Should().BeGreaterThanOrEqualTo(110);
 
     [Theory]
     [InlineData("TmButton")]
@@ -79,6 +79,62 @@ public class BuiltInWireframeComponentProviderTests
     [InlineData("TmKeyboardShortcutsHelp")]
     [InlineData("TmDivider")]
     [InlineData("TmIcon")]
+    // Phase 1 — Atomic inputs
+    [InlineData("TmSlider")]
+    [InlineData("TmRangeSlider")]
+    [InlineData("TmRating")]
+    [InlineData("TmMaskedTextBox")]
+    [InlineData("TmMultiColumnComboBox")]
+    // Phase 2 — Color controls
+    [InlineData("TmColorPicker")]
+    [InlineData("TmFlatColorPicker")]
+    [InlineData("TmColorPalette")]
+    [InlineData("TmColorGradient")]
+    // Phase 3 — Signature & recurrence
+    [InlineData("TmSignature")]
+    [InlineData("TmSignatureCapture")]
+    [InlineData("TmRecurrenceEditor")]
+    // Phase 4 — Charts
+    [InlineData("TmSparkline")]
+    [InlineData("TmGauge")]
+    [InlineData("TmStockChart")]
+    // Phase 4 — Data display
+    [InlineData("TmQRCode")]
+    [InlineData("TmBarcode")]
+    [InlineData("TmPdfViewer")]
+    // Phase 5 — Buttons & navigation
+    [InlineData("TmFloatingActionButton")]
+    [InlineData("TmBottomNavigation")]
+    [InlineData("TmMenu")]
+    // Phase 6 — Layout
+    [InlineData("TmStackLayout")]
+    [InlineData("TmSplitter")]
+    [InlineData("TmDockManager")]
+    // Phase 7 — Builders & collaboration
+    [InlineData("TmFormulaBuilder")]
+    [InlineData("TmConditionBuilder")]
+    [InlineData("TmCommentComposer")]
+    [InlineData("TmCommentReactions")]
+    [InlineData("TmReactionPicker")]
+    [InlineData("TmShareLinkPanel")]
+    [InlineData("TmSubmissionStatusTimeline")]
+    [InlineData("TmAuditTrailViewer")]
+    [InlineData("TmAIPrompt")]
+    [InlineData("TmWidgetSelector")]
+    // Phase 8 — Editors & Apps
+    [InlineData("TmChat")]
+    [InlineData("TmSpreadsheet")]
+    [InlineData("TmGantt")]
+    [InlineData("TmGanttPortfolio")]
+    [InlineData("TmPivotTable")]
+    [InlineData("TmTreeList")]
+    [InlineData("TmDiagramEditor")]
+    [InlineData("TmDocumentEditor")]
+    [InlineData("TmNotionEditor")]
+    [InlineData("TmNotionPage")]
+    [InlineData("TmModelingEditor")]
+    [InlineData("TmFileManager")]
+    [InlineData("TmDocumentManager")]
     public void ExpectedComponentIsRegistered(string type)
         => _defs.Should().Contain(d => d.Type == type, $"{type} should be registered");
 
@@ -132,6 +188,8 @@ public class BuiltInWireframeComponentProviderTests
     [InlineData("Charts")]
     [InlineData("Complex")]
     [InlineData("Icons")]
+    [InlineData("Color")]
+    [InlineData("Editors & Apps")]
     public void CategoryExists(string category)
         => _defs.Should().Contain(d => d.Category == category, $"category '{category}' should have components");
 

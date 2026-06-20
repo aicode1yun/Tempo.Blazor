@@ -1,0 +1,261 @@
+/* ── Wrapper ────────────────────────────────────────────────────────────── */
+
+.tm-dbcal {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 420px;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.tm-dbcal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 8px;
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.tm-dbcal__nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.tm-dbcal__month-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--tm-text-primary, #1a1a1a);
+    min-width: 160px;
+    text-align: center;
+    letter-spacing: -0.01em;
+}
+
+.tm-dbcal__nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 5px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--tm-text-muted, #8a8a8a);
+    transition: background 0.1s, color 0.1s;
+    padding: 0;
+}
+
+.tm-dbcal__nav-btn:hover {
+    background: var(--tm-bg-hover, rgba(0,0,0,.06));
+    color: var(--tm-text-primary, #1a1a1a);
+}
+
+.tm-dbcal__today-btn {
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 5px;
+    background: transparent;
+    border: 1px solid var(--tm-border, #e0e0e0);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--tm-text-secondary, #4a4a4a);
+    transition: background 0.1s, border-color 0.1s;
+    white-space: nowrap;
+}
+
+.tm-dbcal__today-btn:hover {
+    background: var(--tm-bg-hover, rgba(0,0,0,.04));
+    border-color: var(--tm-border-hover, #ccc);
+}
+
+/* ── Weekday headers ────────────────────────────────────────────────────── */
+
+.tm-dbcal__weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid var(--tm-border, #e8e8e8);
+    flex-shrink: 0;
+}
+
+.tm-dbcal__weekday {
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--tm-text-muted, #9a9a9a);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* ── Grid ───────────────────────────────────────────────────────────────── */
+
+.tm-dbcal__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: minmax(88px, 1fr);
+    flex: 1;
+    overflow-y: auto;
+    border-left: 1px solid var(--tm-border, #e8e8e8);
+    scrollbar-width: thin;
+}
+
+/* ── Cell ───────────────────────────────────────────────────────────────── */
+
+.tm-dbcal__cell {
+    border-right: 1px solid var(--tm-border, #e8e8e8);
+    border-bottom: 1px solid var(--tm-border, #e8e8e8);
+    padding: 4px 5px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+    transition: background 0.1s;
+    min-height: 88px;
+    overflow: hidden;
+    position: relative;
+}
+
+.tm-dbcal__cell:hover {
+    background: var(--tm-bg-hover, rgba(0,0,0,.025));
+}
+
+.tm-dbcal__cell--other-month {
+    background: var(--tm-bg-subtle, #fcfcfc);
+}
+
+.tm-dbcal__cell--other-month .tm-dbcal__cell-num {
+    color: var(--tm-text-muted, #c0c0c0);
+}
+
+.tm-dbcal__cell--today {
+    background: color-mix(in srgb, var(--tm-primary, #2383e2) 4%, white);
+}
+
+:global(.tm-dark) .tm-dbcal__cell--today {
+    background: color-mix(in srgb, var(--tm-primary, #2383e2) 8%, var(--tm-bg, #1a1a1a));
+}
+
+.tm-dbcal__cell--target {
+    background: color-mix(in srgb, var(--tm-primary, #2383e2) 8%, white) !important;
+    outline: 2px solid var(--tm-primary, #2383e2);
+    outline-offset: -2px;
+}
+
+/* ── Day number ─────────────────────────────────────────────────────────── */
+
+.tm-dbcal__cell-num {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--tm-text-secondary, #5a5a5a);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    align-self: flex-end;
+    line-height: 1;
+}
+
+.tm-dbcal__cell-num--today {
+    background: var(--tm-primary, #2383e2);
+    color: #fff;
+    font-weight: 700;
+}
+
+/* ── Event pill ─────────────────────────────────────────────────────────── */
+
+.tm-dbcal__event {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 5px 2px 4px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.3;
+    background: color-mix(in srgb, var(--event-color, #2383e2) 14%, white);
+    color: color-mix(in srgb, var(--event-color, #2383e2) 70%, #111);
+    cursor: pointer;
+    outline: none;
+    transition: background 0.1s, opacity 0.12s;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+}
+
+.tm-dbcal__event:hover {
+    background: color-mix(in srgb, var(--event-color, #2383e2) 22%, white);
+}
+
+.tm-dbcal__event:focus-visible {
+    box-shadow: 0 0 0 2px var(--event-color, #2383e2);
+}
+
+.tm-dbcal__event--dragging {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.tm-dbcal__event-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--event-color, #2383e2);
+    flex-shrink: 0;
+}
+
+.tm-dbcal__event-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+/* ── Overflow ───────────────────────────────────────────────────────────── */
+
+.tm-dbcal__overflow {
+    font-size: 10px;
+    color: var(--tm-text-muted, #9a9a9a);
+    padding: 1px 4px;
+    cursor: default;
+    flex-shrink: 0;
+}
+
+/* ── No date field ──────────────────────────────────────────────────────── */
+
+.tm-dbcal__no-field {
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--tm-text-muted, #9a9a9a);
+    font-size: 14px;
+}
+
+/* ── Dark mode ──────────────────────────────────────────────────────────── */
+
+:global(.tm-dark) .tm-dbcal__cell--other-month {
+    background: var(--tm-bg-subtle, #1a1a1a);
+}
+
+:global(.tm-dark) .tm-dbcal__event {
+    background: color-mix(in srgb, var(--event-color, #2383e2) 18%, #222);
+    color: color-mix(in srgb, var(--event-color, #2383e2) 60%, #eee);
+}
+
+:global(.tm-dark) .tm-dbcal__event:hover {
+    background: color-mix(in srgb, var(--event-color, #2383e2) 28%, #222);
+}
+
+:global(.tm-dark) .tm-dbcal__cell--target {
+    background: color-mix(in srgb, var(--tm-primary, #2383e2) 12%, #222) !important;
+}

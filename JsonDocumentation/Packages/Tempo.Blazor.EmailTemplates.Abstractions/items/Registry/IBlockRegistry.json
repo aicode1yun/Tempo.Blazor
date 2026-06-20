@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Registry",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Registry",
+  "description": "Catalogue of block kinds available to the editor, with factories to create them.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Registry/IBlockRegistry.cs",
+  "documentationStatus": "generated",
+  "itemName": "IBlockRegistry"
+}

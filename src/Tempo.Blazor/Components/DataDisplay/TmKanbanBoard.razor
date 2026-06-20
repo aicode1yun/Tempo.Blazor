@@ -11,6 +11,7 @@
             var colCss = "tm-kanban__column" + (isOverLimit ? " tm-kanban__column--over-limit" : "");
 
             <div class="@colCss"
+                 data-testid="board-column-@col.Id"
                  @ondragover="HandleDragOver"
                  @ondragover:preventDefault="true"
                  @ondrop="@(() => HandleDrop(col.Id))">

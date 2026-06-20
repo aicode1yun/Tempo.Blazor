@@ -1,0 +1,90 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Represents a single pane inside a layout.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DockPane.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CanClose",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the pane shows a close button."
+    },
+    {
+      "name": "CanFloat",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the pane can be floated into an overlay window."
+    },
+    {
+      "name": "FloatX",
+      "kind": "Property",
+      "type": "double",
+      "description": "Horizontal position for floating panes (CSS pixels)."
+    },
+    {
+      "name": "FloatY",
+      "kind": "Property",
+      "type": "double",
+      "description": "Vertical position for floating panes (CSS pixels)."
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Desired height in pixels when docked to top/bottom or floating."
+    },
+    {
+      "name": "Icon",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional icon name (registered in the icon system)."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier of the pane."
+    },
+    {
+      "name": "IsActive",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the pane is the active tab in its group."
+    },
+    {
+      "name": "IsVisible",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the pane is currently visible."
+    },
+    {
+      "name": "Order",
+      "kind": "Property",
+      "type": "int",
+      "description": "Display order within the same docking position."
+    },
+    {
+      "name": "Position",
+      "kind": "Property",
+      "type": "DockPosition",
+      "description": "Current docking position."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display title shown in the pane header."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Desired width in pixels when docked to left/right or floating."
+    }
+  ],
+  "itemName": "DockPane"
+}

@@ -1,0 +1,47 @@
+{
+  "itemName": "INotionHistoryProvider",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Enables the Page History panel in TmNotionEditor — version list, block-level diff view, and restore. The panel is accessible from Page Settings → Page History and is hidden when this provider is not supplied.",
+  "methods": [
+    {
+      "name": "GetVersionsAsync",
+      "returnType": "Task<PagedResult<IPageVersion>>",
+      "description": "Returns a paginated list of saved versions for the given page, newest first.",
+      "parameters": [
+        { "name": "pageId", "type": "string" },
+        { "name": "page", "type": "int", "description": "1-based page number." },
+        { "name": "pageSize", "type": "int" }
+      ]
+    },
+    {
+      "name": "GetVersionAsync",
+      "returnType": "Task<IPageVersion>",
+      "description": "Loads a specific version including its full block snapshot.",
+      "parameters": [
+        { "name": "pageId", "type": "string" },
+        { "name": "versionId", "type": "string" }
+      ]
+    },
+    {
+      "name": "RestoreVersionAsync",
+      "returnType": "Task",
+      "description": "Restores a version by inserting its blocks as the new current state. The previous state is automatically saved as a new version before restoring.",
+      "parameters": [
+        { "name": "pageId", "type": "string" },
+        { "name": "versionId", "type": "string" }
+      ]
+    },
+    {
+      "name": "CompareVersionsAsync",
+      "returnType": "Task<IEnumerable<BlockDiff>>",
+      "description": "Computes a block-level diff between two versions for the side-by-side diff view.",
+      "parameters": [
+        { "name": "versionId1", "type": "string", "description": "Older version ID." },
+        { "name": "versionId2", "type": "string", "description": "Newer version ID." }
+      ]
+    }
+  ],
+  "usedInComponents": ["TmNotionEditor"]
+}

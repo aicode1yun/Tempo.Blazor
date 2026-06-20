@@ -36,5 +36,14 @@ public enum BlockType
     TemplateButton,
     TableOfContents,
     Diagram,
-    Wireframe
+    Wireframe,
+    Spreadsheet,
+    WorkItem,
+    ContentByLabel,
+    IncludePage,
+    ChildrenDisplay,
+    Excerpt,
+    ExcerptInclude,
+    PageProperties,
+    PagePropertiesReport
 }

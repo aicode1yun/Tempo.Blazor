@@ -1,0 +1,66 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Represents a file or folder item in the file manager.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/FileManagerItem.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Extension",
+      "kind": "Property",
+      "type": "string",
+      "description": "File extension (e.g. \".pdf\"). Empty for directories."
+    },
+    {
+      "name": "IconName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Icon name override. When null, the file manager chooses based on extension."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "required string",
+      "description": "Unique identifier of the item (full path or GUID)."
+    },
+    {
+      "name": "IsDirectory",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether this item is a directory."
+    },
+    {
+      "name": "IsSelected",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the item is currently selected."
+    },
+    {
+      "name": "ModifiedDate",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Last modification date."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "required string",
+      "description": "Display name of the file or folder."
+    },
+    {
+      "name": "Path",
+      "kind": "Property",
+      "type": "required string",
+      "description": "Full path of the item."
+    },
+    {
+      "name": "Size",
+      "kind": "Property",
+      "type": "long?",
+      "description": "File size in bytes. Null for directories."
+    }
+  ],
+  "itemName": "FileManagerItem"
+}

@@ -43,6 +43,18 @@ public sealed class WireframeElement
     /// <summary>Optional group identifier for grouping elements together.</summary>
     public string? GroupId { get; set; }
 
+    /// <summary>
+    /// When <c>true</c>, the element cannot be moved, resized, or deleted.
+    /// Provides a local editing lock independent of <see cref="LockedBy"/>.
+    /// </summary>
+    public bool IsLocked { get; set; }
+
+    /// <summary>Rotation angle in degrees. 0 = no rotation.</summary>
+    public double Rotation { get; set; }
+
+    /// <summary>Optional layer identifier. When null, the element belongs to the default layer.</summary>
+    public string? LayerId { get; set; }
+
     /// <summary>Reserved for future collaborative editing – who has this element locked.</summary>
     public string? LockedBy { get; set; }
 }

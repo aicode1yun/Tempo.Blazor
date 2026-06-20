@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Thrown when a wireframe JSON string cannot be deserialized.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/WireframeDeserializationException.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeDeserializationException"
+}

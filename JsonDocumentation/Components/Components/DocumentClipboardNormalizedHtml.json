@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard",
+  "description": "Sanitized or source-normalized HTML ready for block conversion.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Clipboard/DocumentClipboardStageModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentClipboardNormalizedHtml"
+}

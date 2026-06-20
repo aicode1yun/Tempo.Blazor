@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Layout",
+  "description": "Side from which the drawer slides in.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Layout/DrawerPosition.cs",
+  "documentationStatus": "generated",
+  "itemName": "DrawerPosition"
+}

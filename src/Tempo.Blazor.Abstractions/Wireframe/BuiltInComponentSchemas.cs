@@ -91,6 +91,8 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
         foreach (var s in Charts())        yield return s;
         foreach (var s in Workflow())      yield return s;
         foreach (var s in Complex())       yield return s;
+        foreach (var s in Color())         yield return s;
+        foreach (var s in EditorsAndApps()) yield return s;
     }
 
     // ── BUTTONS ───────────────────────────────────────────────────────────────
@@ -135,6 +137,20 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             Props =
             [
                 P("size", "Size", PropType.Enum, "md", cat: "Appearance", opts: ["xs","sm","md","lg"]),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmFloatingActionButton", Category = "Buttons", DisplayName = "Floating Action Button",
+            DefaultWidth = 56, DefaultHeight = 56,
+            Props =
+            [
+                P("icon",    "Icon",    PropType.Icon,   "plus",   cat: "Content"),
+                P("variant", "Variant", PropType.Enum,   "primary",cat: "Appearance",
+                    opts: ["primary","secondary","danger"]),
+                P("size",    "Size",    PropType.Enum,   "md",     cat: "Appearance",
+                    opts: ["sm","md","lg"]),
             ]
         };
     }
@@ -427,6 +443,95 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("strength", "Strength", PropType.Int, 3, cat: "State"),
             ]
         };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmSlider", Category = "Inputs", DisplayName = "Slider",
+            DefaultWidth = 180, DefaultHeight = 32,
+            Props =
+            [
+                P("label",    "Label",    PropType.String, "",    cat: "Content"),
+                P("min",      "Min",      PropType.Double, 0.0,   cat: "Behavior"),
+                P("max",      "Max",      PropType.Double, 100.0, cat: "Behavior"),
+                P("value",    "Value",    PropType.Double, 40.0,  cat: "State"),
+                P("showValue","Show Value",PropType.Bool,  true,  cat: "Appearance"),
+                P("disabled", "Disabled", PropType.Bool,   false, cat: "Behavior"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmRangeSlider", Category = "Inputs", DisplayName = "Range Slider",
+            DefaultWidth = 180, DefaultHeight = 32,
+            Props =
+            [
+                P("label",  "Label",  PropType.String, "",    cat: "Content"),
+                P("min",    "Min",    PropType.Double, 0.0,   cat: "Behavior"),
+                P("max",    "Max",    PropType.Double, 100.0, cat: "Behavior"),
+                P("from",   "From",   PropType.Double, 20.0,  cat: "State"),
+                P("to",     "To",     PropType.Double, 70.0,  cat: "State"),
+                P("disabled","Disabled",PropType.Bool, false, cat: "Behavior"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmRating", Category = "Inputs", DisplayName = "Rating",
+            DefaultWidth = 120, DefaultHeight = 24,
+            Props =
+            [
+                P("value",   "Value",  PropType.Int,  3,     cat: "State"),
+                P("max",     "Max",    PropType.Int,  5,     cat: "Appearance"),
+                P("disabled","Disabled",PropType.Bool,false, cat: "Behavior"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmMaskedTextBox", Category = "Inputs", DisplayName = "Masked Text Box",
+            DefaultWidth = 180, DefaultHeight = 36,
+            Props =
+            [
+                P("label",    "Label",    PropType.String, "Label",       cat: "Content"),
+                P("mask",     "Mask",     PropType.String, "__/__/____",  cat: "Behavior"),
+                P("disabled", "Disabled", PropType.Bool,   false,         cat: "Behavior"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmMultiColumnComboBox", Category = "Inputs", DisplayName = "Multi-Column Combo",
+            DefaultWidth = 200, DefaultHeight = 36,
+            Props =
+            [
+                P("label",       "Label",       PropType.String, "Label",      cat: "Content"),
+                P("placeholder", "Placeholder", PropType.String, "Select...",  cat: "Content"),
+                P("columns",     "Columns",     PropType.Int,    2,            cat: "Appearance"),
+                P("disabled",    "Disabled",    PropType.Bool,   false,        cat: "Behavior"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmSignature", Category = "Inputs", DisplayName = "Signature",
+            DefaultWidth = 240, DefaultHeight = 100,
+            Props =
+            [
+                P("placeholder", "Placeholder", PropType.String, "Sign here", cat: "Content"),
+                P("signed",      "Signed",       PropType.Bool,   false,       cat: "State"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmSignatureCapture", Category = "Inputs", DisplayName = "Signature Capture",
+            DefaultWidth = 260, DefaultHeight = 140,
+            Props =
+            [
+                P("placeholder", "Placeholder", PropType.String, "Draw your signature", cat: "Content"),
+                P("signed",      "Signed",       PropType.Bool,   false,                cat: "State"),
+            ]
+        };
     }
 
     // ── TAGS ─────────────────────────────────────────────────────────────────
@@ -538,6 +643,18 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             [
                 P("month", "Month", PropType.String, "January", cat: "Content"),
                 P("year",  "Year",  PropType.Int,    2025,      cat: "Content"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmRecurrenceEditor", Category = "Pickers", DisplayName = "Recurrence Editor",
+            DefaultWidth = 280, DefaultHeight = 120,
+            Props =
+            [
+                P("frequency", "Frequency", PropType.Enum, "weekly", cat: "State",
+                    opts: ["daily","weekly","monthly","yearly"]),
+                P("interval",  "Interval",  PropType.Int,  1,        cat: "State"),
             ]
         };
     }
@@ -739,6 +856,28 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             [
                 P("title",      "Title",       PropType.String, "Items", cat: "Content"),
                 P("showSearch", "Show Search", PropType.Bool,   true,    cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmQRCode", Category = "Data Display", DisplayName = "QR Code",
+            DefaultWidth = 120, DefaultHeight = 120,
+            Props =
+            [
+                P("value", "Value", PropType.String, "https://example.com", cat: "Content"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmBarcode", Category = "Data Display", DisplayName = "Barcode",
+            DefaultWidth = 200, DefaultHeight = 80,
+            Props =
+            [
+                P("value",  "Value",  PropType.String, "1234567890", cat: "Content"),
+                P("format", "Format", PropType.Enum,   "CODE128",    cat: "Appearance",
+                    opts: ["CODE128","EAN13","QR"]),
             ]
         };
     }
@@ -1007,6 +1146,28 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("danger",   "Danger",   PropType.Bool,   false,   cat: "Appearance"),
             ]
         };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmBottomNavigation", Category = "Navigation", DisplayName = "Bottom Navigation",
+            DefaultWidth = 360, DefaultHeight = 56,
+            Props =
+            [
+                P("items",      "Items",        PropType.StringList, cat: "Content"),
+                P("activeIndex","Active Index", PropType.Int, 0,     cat: "State"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmMenu", Category = "Navigation", DisplayName = "Menu",
+            DefaultWidth = 200, DefaultHeight = 180,
+            Props =
+            [
+                P("items",     "Items",     PropType.StringList, cat: "Content"),
+                P("showIcons", "Show Icons",PropType.Bool, true, cat: "Appearance"),
+            ]
+        };
     }
 
     // ── LAYOUT ────────────────────────────────────────────────────────────────
@@ -1069,6 +1230,43 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             Type = "TmKeyboardShortcutsHelp", Category = "Layout", DisplayName = "Keyboard Shortcuts",
             DefaultWidth = 360, DefaultHeight = 280,
             Props = [P("shortcuts", "Shortcuts", PropType.StringList, cat: "Content")]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmStackLayout", Category = "Layout", DisplayName = "Stack Layout",
+            DefaultWidth = 240, DefaultHeight = 160,
+            Props =
+            [
+                P("direction", "Direction", PropType.Enum, "vertical", cat: "Appearance",
+                    opts: ["vertical","horizontal"]),
+                P("gap",      "Gap",       PropType.Int,  8,           cat: "Appearance"),
+                P("items",    "Items",     PropType.Int,  3,           cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmSplitter", Category = "Layout", DisplayName = "Splitter",
+            DefaultWidth = 320, DefaultHeight = 180,
+            Props =
+            [
+                P("orientation", "Orientation", PropType.Enum, "horizontal", cat: "Appearance",
+                    opts: ["horizontal","vertical"]),
+                P("pane1Label",  "Pane 1 Label",PropType.String,"Pane 1",    cat: "Content"),
+                P("pane2Label",  "Pane 2 Label",PropType.String,"Pane 2",    cat: "Content"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmDockManager", Category = "Layout", DisplayName = "Dock Manager",
+            DefaultWidth = 360, DefaultHeight = 220,
+            Props =
+            [
+                P("showLeft",   "Show Left Panel",   PropType.Bool, true,  cat: "Appearance"),
+                P("showBottom", "Show Bottom Panel", PropType.Bool, true,  cat: "Appearance"),
+            ]
         };
     }
 
@@ -1196,6 +1394,29 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                     opts: ["error","warning","info"]),
             ]
         };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmFormulaBuilder", Category = "Forms", DisplayName = "Formula Builder",
+            DefaultWidth = 300, DefaultHeight = 160,
+            Props =
+            [
+                P("formula",    "Formula",    PropType.String, "SUM(A1:A5)", cat: "Content"),
+                P("showResult", "Show Result",PropType.Bool,   true,         cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmConditionBuilder", Category = "Forms", DisplayName = "Condition Builder",
+            DefaultWidth = 320, DefaultHeight = 180,
+            Props =
+            [
+                P("conditions",    "Conditions",     PropType.Int,  2,     cat: "Appearance"),
+                P("groupOperator", "Group Operator", PropType.Enum, "AND", cat: "Appearance",
+                    opts: ["AND","OR"]),
+            ]
+        };
     }
 
     // ── FILES ─────────────────────────────────────────────────────────────────
@@ -1236,6 +1457,45 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("type",       "Type",        PropType.Enum,   "bar",         cat: "Appearance",
                     opts: ["bar","line","pie","donut"]),
                 P("dataPoints", "Data Points", PropType.Int,    6,             cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmSparkline", Category = "Charts", DisplayName = "Sparkline",
+            DefaultWidth = 120, DefaultHeight = 32,
+            Props =
+            [
+                P("type",  "Type",  PropType.Enum, "line", cat: "Appearance",
+                    opts: ["line","area","bar"]),
+                P("color", "Color", PropType.Color, "#3b82f6", cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmGauge", Category = "Charts", DisplayName = "Gauge",
+            DefaultWidth = 140, DefaultHeight = 100,
+            Props =
+            [
+                P("value",  "Value",  PropType.Double, 65.0,  cat: "State"),
+                P("min",    "Min",    PropType.Double, 0.0,   cat: "Behavior"),
+                P("max",    "Max",    PropType.Double, 100.0, cat: "Behavior"),
+                P("label",  "Label",  PropType.String, "",    cat: "Content"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmStockChart", Category = "Charts", DisplayName = "Stock Chart",
+            DefaultWidth = 320, DefaultHeight = 180,
+            Props =
+            [
+                P("title",   "Title",  PropType.String, "ACME",  cat: "Content"),
+                P("type",    "Type",   PropType.Enum,   "candle",cat: "Appearance",
+                    opts: ["candle","area","line"]),
+                P("period",  "Period", PropType.Enum,   "1M",    cat: "Appearance",
+                    opts: ["1D","1W","1M","3M","1Y"]),
             ]
         };
     }
@@ -1455,6 +1715,313 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             Type = "TmWorkflowDesignerCanvas", Category = "Complex", DisplayName = "Workflow Designer",
             DefaultWidth = 500, DefaultHeight = 300,
             Props = [P("title", "Title", PropType.String, "Workflow", cat: "Content")]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmPdfViewer", Category = "Complex", DisplayName = "PDF Viewer",
+            DefaultWidth = 360, DefaultHeight = 460,
+            Props =
+            [
+                P("fileName",    "File Name",    PropType.String, "document.pdf", cat: "Content"),
+                P("pageCount",   "Page Count",   PropType.Int,    12,             cat: "Content"),
+                P("currentPage", "Current Page", PropType.Int,    1,              cat: "State"),
+                P("showToolbar", "Show Toolbar", PropType.Bool,   true,           cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmCommentComposer", Category = "Complex", DisplayName = "Comment Composer",
+            DefaultWidth = 300, DefaultHeight = 88,
+            Props =
+            [
+                P("placeholder", "Placeholder", PropType.String, "Write a comment…", cat: "Content"),
+                P("showAvatar",  "Show Avatar",  PropType.Bool,   true,              cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmCommentReactions", Category = "Complex", DisplayName = "Comment Reactions",
+            DefaultWidth = 160, DefaultHeight = 28,
+            Props =
+            [
+                P("reactions", "Reactions", PropType.StringList, cat: "Content"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmReactionPicker", Category = "Complex", DisplayName = "Reaction Picker",
+            DefaultWidth = 200, DefaultHeight = 80,
+            Props =
+            [
+                P("columns", "Columns", PropType.Int, 8, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmShareLinkPanel", Category = "Complex", DisplayName = "Share Link Panel",
+            DefaultWidth = 320, DefaultHeight = 120,
+            Props =
+            [
+                P("link",       "Link",         PropType.String, "https://app.example.com/share/abc123", cat: "Content"),
+                P("showRole",   "Show Role",    PropType.Bool,   true, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmSubmissionStatusTimeline", Category = "Complex", DisplayName = "Submission Timeline",
+            DefaultWidth = 260, DefaultHeight = 200,
+            Props =
+            [
+                P("statusCount", "Status Count", PropType.Int, 4, cat: "Appearance"),
+                P("activeIndex", "Active Index", PropType.Int, 2, cat: "State"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmAuditTrailViewer", Category = "Complex", DisplayName = "Audit Trail",
+            DefaultWidth = 320, DefaultHeight = 200,
+            Props =
+            [
+                P("rowCount", "Row Count", PropType.Int, 5, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmAIPrompt", Category = "Complex", DisplayName = "AI Prompt",
+            DefaultWidth = 320, DefaultHeight = 120,
+            Props =
+            [
+                P("placeholder", "Placeholder", PropType.String, "Ask anything…", cat: "Content"),
+                P("showChips",   "Show Chips",   PropType.Bool,   true,            cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmWidgetSelector", Category = "Complex", DisplayName = "Widget Selector",
+            DefaultWidth = 280, DefaultHeight = 200,
+            Props =
+            [
+                P("columns",     "Columns",      PropType.Int, 3, cat: "Appearance"),
+                P("widgetCount", "Widget Count", PropType.Int, 6, cat: "Appearance"),
+            ]
+        };
+
+        // ── GROUP (internal container, not shown in toolbox) ──────────────────
+        yield return new WireframeComponentSchema
+        {
+            Type = "__group__", Category = "Layout", DisplayName = "Group",
+            DefaultWidth = 200, DefaultHeight = 150,
+            Props =
+            [
+                P("label", "Label", PropType.String, "Group", cat: "Content"),
+            ]
+        };
+    }
+
+    // ── COLOR ─────────────────────────────────────────────────────────────────
+
+    private static IEnumerable<WireframeComponentSchema> Color()
+    {
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmColorPicker", Category = "Color", DisplayName = "Color Picker",
+            DefaultWidth = 140, DefaultHeight = 36,
+            Props =
+            [
+                P("label", "Label", PropType.String, "Color", cat: "Content"),
+                P("value", "Value", PropType.Color,  "#3b82f6", cat: "State"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmFlatColorPicker", Category = "Color", DisplayName = "Flat Color Picker",
+            DefaultWidth = 200, DefaultHeight = 140,
+            Props =
+            [
+                P("value",   "Value",   PropType.Color, "#3b82f6", cat: "State"),
+                P("columns", "Columns", PropType.Int,   8,         cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmColorPalette", Category = "Color", DisplayName = "Color Palette",
+            DefaultWidth = 200, DefaultHeight = 40,
+            Props =
+            [
+                P("swatches", "Swatches", PropType.Int, 8, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmColorGradient", Category = "Color", DisplayName = "Color Gradient",
+            DefaultWidth = 200, DefaultHeight = 120,
+            Props =
+            [
+                P("startColor", "Start Color", PropType.Color, "#3b82f6", cat: "State"),
+                P("endColor",   "End Color",   PropType.Color, "#8b5cf6", cat: "State"),
+            ]
+        };
+    }
+
+    // ── EDITORS & APPS ────────────────────────────────────────────────────────
+
+    private static IEnumerable<WireframeComponentSchema> EditorsAndApps()
+    {
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmChat", Category = "Editors & Apps", DisplayName = "Chat",
+            DefaultWidth = 320, DefaultHeight = 400,
+            Props =
+            [
+                P("messageCount", "Message Count", PropType.Int,  4,     cat: "Appearance"),
+                P("showInput",    "Show Input",    PropType.Bool, true,   cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmSpreadsheet", Category = "Editors & Apps", DisplayName = "Spreadsheet",
+            DefaultWidth = 480, DefaultHeight = 320,
+            Props =
+            [
+                P("rows",    "Rows",    PropType.Int, 8,  cat: "Appearance"),
+                P("columns", "Columns", PropType.Int, 6,  cat: "Appearance"),
+                P("sheetCount", "Sheet Count", PropType.Int, 2, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmGantt", Category = "Editors & Apps", DisplayName = "Gantt Chart",
+            DefaultWidth = 520, DefaultHeight = 300,
+            Props =
+            [
+                P("taskCount", "Task Count", PropType.Int, 5, cat: "Appearance"),
+                P("period",    "Period",     PropType.Enum,"week", cat: "Appearance",
+                    opts: ["day","week","month","quarter"]),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmGanttPortfolio", Category = "Editors & Apps", DisplayName = "Gantt Portfolio",
+            DefaultWidth = 520, DefaultHeight = 300,
+            Props =
+            [
+                P("projectCount", "Project Count", PropType.Int, 3, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmPivotTable", Category = "Editors & Apps", DisplayName = "Pivot Table",
+            DefaultWidth = 420, DefaultHeight = 280,
+            Props =
+            [
+                P("rows",    "Rows",    PropType.Int, 4, cat: "Appearance"),
+                P("columns", "Columns", PropType.Int, 4, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmTreeList", Category = "Editors & Apps", DisplayName = "Tree List",
+            DefaultWidth = 360, DefaultHeight = 260,
+            Props =
+            [
+                P("rowCount",    "Row Count",    PropType.Int, 6, cat: "Appearance"),
+                P("columnCount", "Column Count", PropType.Int, 3, cat: "Appearance"),
+                P("depth",       "Depth",        PropType.Int, 2, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmDiagramEditor", Category = "Editors & Apps", DisplayName = "Diagram Editor",
+            DefaultWidth = 520, DefaultHeight = 340,
+            Props =
+            [
+                P("title",     "Title",      PropType.String, "Diagram",   cat: "Content"),
+                P("nodeCount", "Node Count", PropType.Int,    4,           cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmDocumentEditor", Category = "Editors & Apps", DisplayName = "Document Editor",
+            DefaultWidth = 480, DefaultHeight = 360,
+            Props =
+            [
+                P("title",     "Title",      PropType.String, "Document", cat: "Content"),
+                P("showRuler", "Show Ruler", PropType.Bool,   true,       cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmNotionEditor", Category = "Editors & Apps", DisplayName = "Notion Editor",
+            DefaultWidth = 520, DefaultHeight = 360,
+            Props =
+            [
+                P("title",       "Title",        PropType.String, "Page Title", cat: "Content"),
+                P("showSidebar", "Show Sidebar", PropType.Bool,   true,         cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmNotionPage", Category = "Editors & Apps", DisplayName = "Notion Page",
+            DefaultWidth = 420, DefaultHeight = 360,
+            Props =
+            [
+                P("title",      "Title",      PropType.String, "Page Title", cat: "Content"),
+                P("blockCount", "Block Count",PropType.Int,    5,            cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmModelingEditor", Category = "Editors & Apps", DisplayName = "Modeling Editor",
+            DefaultWidth = 520, DefaultHeight = 340,
+            Props =
+            [
+                P("title", "Title", PropType.String, "Model", cat: "Content"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmFileManager", Category = "Editors & Apps", DisplayName = "File Manager",
+            DefaultWidth = 480, DefaultHeight = 320,
+            Props =
+            [
+                P("path",        "Current Path",  PropType.String, "/Documents", cat: "Content"),
+                P("viewMode",    "View Mode",     PropType.Enum,   "grid",       cat: "Appearance",
+                    opts: ["grid","list"]),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmDocumentManager", Category = "Editors & Apps", DisplayName = "Document Manager",
+            DefaultWidth = 480, DefaultHeight = 320,
+            Props =
+            [
+                P("rowCount",    "Row Count",     PropType.Int,  6,    cat: "Appearance"),
+                P("showPreview", "Show Preview",  PropType.Bool, true, cat: "Appearance"),
+            ]
         };
     }
 }

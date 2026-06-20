@@ -152,6 +152,25 @@
   --tm-z-toast:       1080;
   --tm-z-tooltip:     1090;
 
+  /* ── Alias Tokens (used by components) ──────────────────────── */
+  --tm-surface:                var(--tm-bg-surface);
+  --tm-surface-secondary:      var(--tm-bg-surface-secondary);
+  --tm-color-surface:          var(--tm-bg-surface);
+  --tm-color-surface-elevated: var(--tm-color-white);
+  --tm-color-surface-hover:    var(--tm-color-gray-100);
+  --tm-color-border:           var(--tm-border-color);
+  --tm-color-border-subtle:    var(--tm-color-gray-200);
+  --tm-color-text:             var(--tm-text-primary);
+  --tm-color-text-muted:       var(--tm-text-secondary);
+
+  --tm-text-xs:                var(--tm-font-size-xs);
+  --tm-text-sm:                var(--tm-font-size-sm);
+  --tm-text-lg:                var(--tm-font-size-lg);
+  --tm-font-medium:            var(--tm-font-weight-medium);
+  --tm-font-bold:              var(--tm-font-weight-bold);
+
+  --tm-radius-xs:              0.125rem; /* 2px */
+
   /* ── Component-specific ─────────────────────────────────────── */
   --tm-input-height-xs:  1.75rem;
   --tm-input-height-sm:  2rem;

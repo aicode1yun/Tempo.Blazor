@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Layout",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+  "description": "Validates the structural layout of a document: column-width totals, empty sections and excessive container nesting. Findings carry localization keys, never localized text.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutValidator.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Validate",
+      "kind": "Method",
+      "type": "IReadOnlyList<LayoutValidationMessage>",
+      "description": "Validates the document and returns all layout findings.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        }
+      ]
+    }
+  ],
+  "itemName": "LayoutValidator"
+}

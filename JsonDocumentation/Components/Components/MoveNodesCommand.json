@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Moves one or more nodes to new positions and updates their swimlane parent state. Supports coalescing: consecutive move commands targeting the same node ids within a 100 ms window are merged. The \"before\" snapshot is kept from the first move; only the \"after\" positions are updated.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Commands/MoveNodesCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "MoveNodesCommand"
+}

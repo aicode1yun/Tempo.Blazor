@@ -42,6 +42,9 @@ public static class SlashMenuRegistry
         internal const string Callout =
             """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v4M10 13h.01" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>""";
 
+        internal const string Status =
+            """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="5" width="15" height="10" rx="5" stroke="currentColor" stroke-width="1.5"/><circle cx="7.5" cy="10" r="2" fill="currentColor"/><path d="M11 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>""";
+
         internal const string Divider =
             """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2 10h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>""";
 
@@ -72,6 +75,12 @@ public static class SlashMenuRegistry
         internal const string Embed =
             """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="3.5" width="16" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 18h6M10 14.5V18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>""";
 
+        internal const string WorkItem =
+            """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M6 8h8M6 12h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="14.5" cy="12" r="1.5" fill="currentColor"/></svg>""";
+
+        internal const string ContentByLabel =
+            """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 5.5h7l5.5 5.5-4 4-5.5-5.5v-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="7" cy="7.5" r="1" fill="currentColor"/><path d="M11.5 5h4M13 8h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>""";
+
         internal const string ChildPage =
             """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 3h9l4 4v10a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M13 3v5h4" stroke="currentColor" stroke-width="1.5"/><path d="M6 10h8M6 13h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>""";
 
@@ -89,6 +98,18 @@ public static class SlashMenuRegistry
 
         internal const string Wireframe =
             """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="2" width="16" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="8" width="7" height="10" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="11" y="8" width="7" height="10" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>""";
+
+        internal const string Spreadsheet =
+            """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 7h16M2 12h16M7 2v16M13 2v16" stroke="currentColor" stroke-width="1.1"/></svg>""";
+
+        internal const string Table =
+            """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="3" width="16" height="14" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 8h16M8 3v14M13 3v14" stroke="currentColor" stroke-width="1.3"/></svg>""";
+
+        internal const string ColumnList =
+            """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="3" width="6.5" height="14" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="11.5" y="3" width="6.5" height="14" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>""";
+
+        internal const string Breadcrumb =
+            """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2 10h4M6 10l3-3M6 10l3 3M9 7h4M13 7l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>""";
     }
 
     // ── Registry ───────────────────────────────────────────────────────────────
@@ -136,6 +157,36 @@ public static class SlashMenuRegistry
             Icons.Callout,        SlashMenuCategory.Basic,
             ["callout", "note", "info", "warning", "alert", "tip"]),
 
+        new(BlockType.Callout,        "TmNotionSlashMenu_ItemName_InfoPanel",       "TmNotionSlashMenu_ItemDesc_InfoPanel",
+            Icons.Callout,        SlashMenuCategory.Basic,
+            ["info", "panel", "callout", "information", "notice"],
+            CalloutVariant: CalloutVariant.Info),
+
+        new(BlockType.Callout,        "TmNotionSlashMenu_ItemName_NotePanel",       "TmNotionSlashMenu_ItemDesc_NotePanel",
+            Icons.Callout,        SlashMenuCategory.Basic,
+            ["note", "panel", "callout", "memo"],
+            CalloutVariant: CalloutVariant.Note),
+
+        new(BlockType.Callout,        "TmNotionSlashMenu_ItemName_WarningPanel",    "TmNotionSlashMenu_ItemDesc_WarningPanel",
+            Icons.Callout,        SlashMenuCategory.Basic,
+            ["warning", "panel", "callout", "alert", "caution"],
+            CalloutVariant: CalloutVariant.Warning),
+
+        new(BlockType.Callout,        "TmNotionSlashMenu_ItemName_ErrorPanel",      "TmNotionSlashMenu_ItemDesc_ErrorPanel",
+            Icons.Callout,        SlashMenuCategory.Basic,
+            ["error", "panel", "callout", "danger", "problem"],
+            CalloutVariant: CalloutVariant.Error),
+
+        new(BlockType.Callout,        "TmNotionSlashMenu_ItemName_SuccessPanel",    "TmNotionSlashMenu_ItemDesc_SuccessPanel",
+            Icons.Callout,        SlashMenuCategory.Basic,
+            ["success", "panel", "callout", "done", "complete"],
+            CalloutVariant: CalloutVariant.Success),
+
+        new(BlockType.Paragraph,      "TmNotionSlashMenu_ItemName_Status",          "TmNotionSlashMenu_ItemDesc_Status",
+            Icons.Status,         SlashMenuCategory.Basic,
+            ["status", "state", "badge", "chip", "macro"],
+            Action: SlashMenuAction.InsertStatus),
+
         new(BlockType.Divider,        "TmNotionSlashMenu_ItemName_Divider",         "TmNotionSlashMenu_ItemDesc_Divider",
             Icons.Divider,        SlashMenuCategory.Basic,
             ["divider", "separator", "line", "hr", "---", "rule"]),
@@ -147,6 +198,10 @@ public static class SlashMenuRegistry
         new(BlockType.Equation,       "TmNotionSlashMenu_ItemName_Equation",        "TmNotionSlashMenu_ItemDesc_Equation",
             Icons.Equation,       SlashMenuCategory.Basic,
             ["equation", "math", "latex", "formula", "$$", "block equation"]),
+
+        new(BlockType.Table,          "TmNotionSlashMenu_ItemName_Table",           "TmNotionSlashMenu_ItemDesc_Table",
+            Icons.Table,          SlashMenuCategory.Basic,
+            ["table", "grid", "spreadsheet", "rows", "columns", "data"]),
 
         // ── Media ────────────────────────────────────────────────────────────
         new(BlockType.Image,          "TmNotionSlashMenu_ItemName_Image",           "TmNotionSlashMenu_ItemDesc_Image",
@@ -178,6 +233,10 @@ public static class SlashMenuRegistry
             Icons.Embed,          SlashMenuCategory.Embeds,
             ["embed", "iframe", "website", "integration"]),
 
+        new(BlockType.WorkItem,       "TmNotionSlashMenu_ItemName_WorkItem",        "TmNotionSlashMenu_ItemDesc_WorkItem",
+            Icons.WorkItem,       SlashMenuCategory.Embeds,
+            ["work item", "workitem", "issue", "ticket", "task", "jira", "devops"]),
+
         // ── Page ─────────────────────────────────────────────────────────────
         new(BlockType.ChildPage,      "TmNotionSlashMenu_ItemName_ChildPage",       "TmNotionSlashMenu_ItemDesc_ChildPage",
             Icons.ChildPage,      SlashMenuCategory.Page,
@@ -202,7 +261,23 @@ public static class SlashMenuRegistry
 
         new(BlockType.Wireframe,      "TmNotionSlashMenu_ItemName_Wireframe",       "TmNotionSlashMenu_ItemDesc_Wireframe",
             Icons.Wireframe,      SlashMenuCategory.Advanced,
-            ["wireframe", "mockup", "ui", "design", "prototype", "layout"])
+            ["wireframe", "mockup", "ui", "design", "prototype", "layout"]),
+
+        new(BlockType.Spreadsheet,    "TmNotionSlashMenu_ItemName_Spreadsheet",     "TmNotionSlashMenu_ItemDesc_Spreadsheet",
+            Icons.Spreadsheet,    SlashMenuCategory.Advanced,
+            ["spreadsheet", "tabulka", "excel", "sheet", "data", "formula", "grid", "table"]),
+
+        new(BlockType.ColumnList,     "TmNotionSlashMenu_ItemName_ColumnList",      "TmNotionSlashMenu_ItemDesc_ColumnList",
+            Icons.ColumnList,     SlashMenuCategory.Advanced,
+            ["columns", "column", "layout", "2 columns", "multi", "side by side", "split"]),
+
+        new(BlockType.Breadcrumb,     "TmNotionSlashMenu_ItemName_Breadcrumb",      "TmNotionSlashMenu_ItemDesc_Breadcrumb",
+            Icons.Breadcrumb,     SlashMenuCategory.Advanced,
+            ["breadcrumb", "navigation", "path", "nav", "crumb"]),
+
+        new(BlockType.ContentByLabel, "TmNotionSlashMenu_ItemName_ContentByLabel",  "TmNotionSlashMenu_ItemDesc_ContentByLabel",
+            Icons.ContentByLabel, SlashMenuCategory.Advanced,
+            ["content by label", "label", "labels", "tag", "tags", "page list", "related"])
     ];
 
     // ── Public API ─────────────────────────────────────────────────────────────
@@ -222,7 +297,8 @@ public static class SlashMenuRegistry
         string                        query,
         IReadOnlyList<BlockType>      recentlyUsed,
         Func<SlashMenuItem, string>   resolveName,
-        Func<SlashMenuItem, string>   resolveDescription)
+        Func<SlashMenuItem, string>   resolveDescription,
+        IReadOnlySet<BlockType>?      allowedTypes = null)
     {
         var q = query.Trim().ToLowerInvariant();
 
@@ -235,7 +311,10 @@ public static class SlashMenuRegistry
             return false;
         }
 
-        var filtered = _all.Where(Matches).ToList();
+        var filtered = _all
+            .Where(Matches)
+            .Where(i => allowedTypes is null || allowedTypes.Contains(i.Type))
+            .ToList();
 
         var result = new List<(SlashMenuCategory, List<SlashMenuItem>)>();
 

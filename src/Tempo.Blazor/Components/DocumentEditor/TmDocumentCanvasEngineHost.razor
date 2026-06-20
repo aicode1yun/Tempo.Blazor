@@ -1,0 +1,1900 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using Microsoft.JSInterop
+@using Tempo.Blazor.Components.DocumentEditor.Clipboard
+@using Tempo.Blazor.DocumentEditor.Interfaces
+@using Tempo.Blazor.DocumentEditor.Models
+@using Tempo.Blazor.DocumentEditor.Services
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<div @ref="_host"
+     class="@HostClass"
+     data-testid="document-canvas-engine-host"
+     data-canvas-engine-ready="@(_ready ? "true" : "false")"
+     data-canvas-engine-readonly="@ReadOnly.ToString().ToLowerInvariant()"
+     data-canvas-engine-can-edit="@EffectiveCanEdit.ToString().ToLowerInvariant()"
+     data-canvas-source-document-id="@(Document?.DocumentId ?? string.Empty)"
+     data-canvas-source-block-count="@(Document?.Blocks.Count ?? 0)"
+     data-canvas-source-hyphenation-enabled="@((Document?.Hyphenation?.Enabled == true).ToString().ToLowerInvariant())"
+     data-canvas-source-hyphenation-mode="@(Document?.Hyphenation?.Mode ?? string.Empty)"
+     data-canvas-source-page-background-color="@(Document?.PageBackground?.Color ?? string.Empty)"
+     data-canvas-source-watermark-text="@(Document?.PageBackground?.Watermark?.Text ?? string.Empty)"
+     data-canvas-content-control-render-mode="@EffectiveContentControlRenderMode"
+     data-canvas-source-math-count="@CountDocumentMathRuns(Document)">
+    <div @ref="_mount"
+         class="tm-document-canvas-engine-host__mount"
+         data-testid="document-canvas-engine-mount">
+        <div class="tm-document-canvas-engine-host__root"
+             data-testid="document-canvas-engine-root"
+             data-canvas-engine-owned="blazor-shell">
+            <div class="tm-document-canvas-engine-host__page"
+                 data-testid="document-canvas-page"
+                 style="@PageStyle">
+                @foreach (var layer in CanvasLayerKinds)
+                {
+                    <canvas class="tm-document-canvas-engine-host__canvas"
+                            data-canvas-layer="@layer"
+                            width="@PagePixelWidth"
+                            height="@PagePixelHeight"
+                            aria-hidden="true"></canvas>
+                }
+            </div>
+        </div>
+        <div class="tm-document-canvas-engine-host__a11y"
+             data-testid="document-canvas-a11y-mirror"
+             id="document-canvas-a11y-mirror"
+             role="document"
+             aria-label="@EffectiveAriaLabel"></div>
+        <div class="tm-document-canvas-engine-host__live"
+             data-testid="document-canvas-live-region"
+             id="document-canvas-live-region"
+             role="status"
+             aria-live="polite"
+             aria-atomic="true"
+             aria-label="@Loc["TmDocumentEditor_CanvasLiveRegionLabel"]"></div>
+        <textarea class="tm-document-canvas-engine-host__input"
+                  data-testid="document-canvas-hidden-input"
+                  role="textbox"
+                  aria-multiline="true"
+                  aria-controls="document-canvas-a11y-mirror"
+                  aria-describedby="document-canvas-live-region"
+                  aria-label="@EffectiveInputAriaLabel"
+                  readonly="@ReadOnly"></textarea>
+    </div>
+</div>
+
+@code {
+    private static readonly IReadOnlyList<string> CanvasLayerKinds =
+    [
+        "page-background",
+        "content",
+        "objects",
+        "selection-caret",
+        "annotations",
+        "diagnostics"
+    ];
+
+    private const string InteropModulePath = "./_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs";
+    private const double PointsToCssPixels = 96d / 72d;
+    private static readonly JsonSerializerOptions CanvasJsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: true) }
+    };
+
+    private ElementReference _host;
+    private ElementReference _mount;
+    private IJSObjectReference? _module;
+    private string? _handle;
+    private string? _lastModelJson;
+    private string? _lastParameterModelJson;
+    private string? _lastOptionsJson;
+    private object? _lastMountedDocumentRef;
+    private DotNetObjectReference<TmDocumentCanvasEngineHost>? _selfRef;
+    private bool _ready;
+    private bool _disposed;
+
+    /// <summary>The document accepted by the canvas engine host.</summary>
+    [Parameter] public DocumentEditorDocument? Document { get; set; }
+
+    /// <summary>Whether editing should be disabled for the canvas host.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>Host-controlled permissions used to expose the canvas shell state.</summary>
+    [Parameter] public DocumentEditorPermissions? Permissions { get; set; }
+
+    /// <summary>Optional resolver for provider-managed document image assets.</summary>
+    [Parameter] public IDocumentImageUrlResolver? ImageUrlResolver { get; set; }
+
+    /// <summary>Optional image provider used by canvas upload and clipboard image flows.</summary>
+    [Parameter] public IDocumentImageProvider? ImageProvider { get; set; }
+
+    /// <summary>Validation policy for provider-backed canvas image uploads.</summary>
+    [Parameter] public DocumentImageValidationOptions ImageValidation { get; set; } = new();
+
+    /// <summary>Canvas content-control rendering mode. Use <c>form</c> for plain fill mode or <c>design</c> for structured-tag chrome.</summary>
+    [Parameter] public string? ContentControlRenderMode { get; set; }
+
+    /// <summary>Signer roles used to colour inline signing fields by submitter (plan S2).</summary>
+    [Parameter] public IReadOnlyList<Tempo.Blazor.Abstractions.Models.SigningSubmitterRole> SigningRoles { get; set; } = [];
+
+    /// <summary>Host-supplied proofing options used by the canvas diagnostics overlay.</summary>
+    [Parameter] public DocumentProofingOptions? ProofingOptions { get; set; }
+
+    /// <summary>Current document author used by tracked canvas changes.</summary>
+    [Parameter] public DocumentEditorAuthor? Author { get; set; }
+
+    /// <summary>Whether canvas tracked changes are enabled.</summary>
+    [Parameter] public bool TrackChangesEnabled { get; set; }
+
+    /// <summary>Current canvas review display mode for tracked revisions.</summary>
+    [Parameter] public DocumentReviewDisplayMode ReviewDisplayMode { get; set; } = DocumentReviewDisplayMode.AllMarkup;
+
+    /// <summary>Accessible label for the canvas document surface.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    /// <summary>Accessible label for the hidden keyboard and IME bridge.</summary>
+    [Parameter] public string? InputAriaLabel { get; set; }
+
+    /// <summary>Raised when the JavaScript canvas host has mounted and reported readiness.</summary>
+    [Parameter] public EventCallback<TmDocumentCanvasEngineHost> OnReady { get; set; }
+
+    /// <summary>
+    /// Raised when the canvas engine reports a model change. This is a plain delegate rather than an
+    /// <see cref="EventCallback{T}"/> ON PURPOSE: it fires on every keystroke, and an EventCallback would
+    /// auto-invoke StateHasChanged on the (very large) parent editor after every keystroke, re-rendering
+    /// the whole toolbar/ribbon/chrome and freezing typing. The parent owns its own (debounced) re-render.
+    /// </summary>
+    [Parameter] public Func<CanvasEngineChangedState, Task>? OnChanged { get; set; }
+
+    /// <summary>Raised when the canvas engine requests a context menu at the pointer location.</summary>
+    [Parameter] public EventCallback<CanvasEngineContextMenuRequest> OnContextMenu { get; set; }
+
+    /// <summary>
+    /// Raised when the canvas selection changes (mini toolbar show/hide). A plain delegate, NOT an
+    /// EventCallback, for the same reason as <see cref="OnChanged"/>: the selection changes on every
+    /// keystroke (the caret moves), and an EventCallback would auto-render the whole parent editor each
+    /// time. The parent re-renders itself only when the selection-driven state actually changes.
+    /// </summary>
+    [Parameter] public Func<WysiwygMiniToolbarRequest?, Task>? OnMiniToolbarChanged { get; set; }
+
+    /// <summary>
+    /// Raised with the small primitives-only UI snapshot (formatting pressed-state, dirty, undo/redo
+    /// availability, page count) the engine pushes alongside a deliberate selection change (B2). Lets the
+    /// parent update the toolbar immediately without a follow-up interop pull. A plain delegate for the same
+    /// reason as <see cref="OnMiniToolbarChanged"/>.
+    /// </summary>
+    [Parameter] public Func<CanvasEngineUiState?, Task>? OnUiStateChanged { get; set; }
+
+    /// <summary>Raised when a canvas comment or revision marker is selected.</summary>
+    [Parameter] public EventCallback<CanvasEngineAnnotationSelection> OnAnnotationSelected { get; set; }
+
+    /// <summary>Raised when a canvas keyboard shortcut requests the command palette.</summary>
+    [Parameter] public EventCallback OnCommandPaletteRequested { get; set; }
+
+    /// <summary>Raised when a canvas keyboard shortcut requests focus to move to the ribbon.</summary>
+    [Parameter] public EventCallback OnRibbonFocusRequested { get; set; }
+
+    /// <summary>Raised when a canvas keyboard shortcut requests the versions side panel.</summary>
+    [Parameter] public EventCallback OnVersionsPanelRequested { get; set; }
+
+    /// <summary>Whether the host has completed its JavaScript mount lifecycle.</summary>
+    public bool IsReady => _ready;
+
+    private bool EffectiveCanEdit => !ReadOnly && (Permissions?.CanEdit ?? true);
+
+    private string EffectiveAriaLabel => string.IsNullOrWhiteSpace(AriaLabel)
+        ? Loc["TmDocumentEditor_CanvasSurfaceLabel"]
+        : AriaLabel!;
+
+    private string EffectiveInputAriaLabel => string.IsNullOrWhiteSpace(InputAriaLabel)
+        ? Loc["TmDocumentEditor_CanvasInputLabel"]
+        : InputAriaLabel!;
+
+    private string HostClass => EffectiveCanEdit
+        ? "tm-document-canvas-engine-host"
+        : "tm-document-canvas-engine-host tm-document-canvas-engine-host--readonly";
+
+    private string EffectiveContentControlRenderMode
+        => (string.Equals(ContentControlRenderMode, "design", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(ContentControlRenderMode, "designMode", StringComparison.OrdinalIgnoreCase))
+                ? "design"
+                : "form";
+
+    private int PagePixelWidth => Math.Max(1, (int)Math.Round(PageWidthPoints * PointsToCssPixels));
+
+    private int PagePixelHeight => Math.Max(1, (int)Math.Round(PageHeightPoints * PointsToCssPixels));
+
+    private double PageWidthPoints
+    {
+        get
+        {
+            var size = Document?.PageSettings?.Size ?? DocumentPageSize.A4;
+            return Document?.PageSettings?.Landscape == true
+                ? Math.Max(size.Width, size.Height)
+                : size.Width;
+        }
+    }
+
+    private double PageHeightPoints
+    {
+        get
+        {
+            var size = Document?.PageSettings?.Size ?? DocumentPageSize.A4;
+            return Document?.PageSettings?.Landscape == true
+                ? Math.Min(size.Width, size.Height)
+                : size.Height;
+        }
+    }
+
+    private string PageStyle =>
+        $"--tm-document-canvas-page-width:{PagePixelWidth}px;--tm-document-canvas-page-height:{PagePixelHeight}px";
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Document is null || _disposed)
+        {
+            return;
+        }
+
+        if (_handle is not null)
+        {
+            await UpdateMountedModelAsync();
+            return;
+        }
+
+        _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", InteropModulePath);
+        _selfRef = DotNetObjectReference.Create(this);
+        await EnsureAssetUrlsResolvedAsync();
+        _lastModelJson = JsonSerializer.Serialize(BuildCanvasModel(), CanvasJsonOptions);
+        _lastParameterModelJson = _lastModelJson;
+        _lastMountedDocumentRef = Document;
+        _lastOptionsJson = JsonSerializer.Serialize(BuildCanvasOptions(), CanvasJsonOptions);
+        try
+        {
+            _handle = await _module.InvokeAsync<string>(
+                "mount",
+                _host,
+                _mount,
+                _lastModelJson,
+                _lastOptionsJson,
+                _selfRef);
+        }
+        catch (JSException ex) when (_disposed || ex.Message.Contains("Canvas engine host element is required.", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        await MarkReadyAsync();
+    }
+
+    /// <summary>Returns the canonical document currently owned by the host boundary.</summary>
+    public async Task<DocumentEditorDocument?> RequestDocumentAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return Document;
+        }
+
+        var modelJson = await _module.InvokeAsync<string?>("getModelJson", _handle);
+        if (string.IsNullOrWhiteSpace(modelJson))
+        {
+            return Document;
+        }
+
+        var model = JsonSerializer.Deserialize<CanvasDocumentModel>(modelJson, CanvasJsonOptions);
+        if (model is null)
+        {
+            return Document;
+        }
+
+        // Reuse the JSON the engine already produced instead of re-serializing the whole model (the extra
+        // O(document) Serialize was pure overhead on the per-pause reconcile path). The mounted-model
+        // reference-gate in UpdateMountedModelAsync — primed via MarkDocumentMounted after a reconcile —
+        // prevents this from triggering a spurious replaceModel even if the JS/C# JSON form differs.
+        _lastModelJson = modelJson;
+        return CanvasDocumentModelConverter.FromCanvasModel(model, Document);
+    }
+
+    /// <summary>Replaces the mounted canvas engine model with an imported or provider-loaded document.</summary>
+    public async Task ReplaceDocumentAsync(DocumentEditorDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        var modelJson = JsonSerializer.Serialize(CanvasDocumentModelConverter.ToCanvasModel(document), CanvasJsonOptions);
+        _lastModelJson = modelJson;
+        _lastParameterModelJson = modelJson;
+        if (_module is not null && _handle is not null)
+        {
+            await _module.InvokeVoidAsync("replaceModel", _handle, modelJson);
+        }
+    }
+
+    /// <summary>
+    /// Marks <paramref name="document"/> as the model already mounted in the engine, so the next render's
+    /// <see cref="UpdateMountedModelAsync"/> reference-gate skips re-serializing and re-pushing it. The
+    /// parent calls this right after it reconciles its canonical document out of the engine, which breaks
+    /// the reconcile -> re-render -> replaceModel -> change-notify -> reconcile feedback loop.
+    /// </summary>
+    internal void MarkDocumentMounted(DocumentEditorDocument document)
+    {
+        _lastMountedDocumentRef = document;
+    }
+
+    /// <summary>Returns the canvas runtime debug snapshot as JSON.</summary>
+    public async Task<string> GetRuntimeDebugSnapshotJsonAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return string.Empty;
+        }
+
+        return await _module.InvokeAsync<string>("getRuntimeDebugSnapshotJson", _handle);
+    }
+
+    /// <summary>Returns the canvas offline runtime state as JSON.</summary>
+    public async Task<string?> RequestOfflineStateJsonAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return null;
+        }
+
+        return await _module.InvokeAsync<string?>("getOfflineStateJson", _handle);
+    }
+
+    /// <summary>Returns the canvas collaboration op-log state as JSON.</summary>
+    public async Task<string?> RequestCollaborationStateJsonAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return null;
+        }
+
+        return await _module.InvokeAsync<string?>("getCollaborationStateJson", _handle);
+    }
+
+    /// <summary>Returns whether the JavaScript canvas engine has local changes since the last save mark.</summary>
+    public async Task<bool> IsDirtyAsync()
+    {
+        if (_disposed || _module is null || _handle is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return await _module.InvokeAsync<bool>("isDirty", _handle);
+        }
+        catch (ObjectDisposedException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Marks the current JavaScript canvas engine state as saved.</summary>
+    public async Task MarkSavedAsync()
+    {
+        if (_module is not null && _handle is not null)
+        {
+            await _module.InvokeVoidAsync("markSaved", _handle);
+        }
+    }
+
+    /// <summary>Applies a remote collaboration batch to the mounted canvas runtime.</summary>
+    /// <summary>
+    /// B1 operation-relay: hands the engine's pending local op-log batches to the host for collaboration
+    /// relay, clearing them from the engine. Returns each batch as its verbatim canvas-format JSON string
+    /// (the host pipes it to collaborators unchanged — no C# document diff).
+    /// </summary>
+    public async Task<IReadOnlyList<string>> TakeLocalOperationBatchesAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return [];
+        }
+
+        var json = await _module.InvokeAsync<string?>("takeLocalOperationBatchesJson", _handle);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return [];
+        }
+
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var batches = new List<string>(document.RootElement.GetArrayLength());
+        foreach (var element in document.RootElement.EnumerateArray())
+        {
+            batches.Add(element.GetRawText());
+        }
+
+        return batches;
+    }
+
+    public async Task<CanvasEngineRemoteApplyResult> ApplyRemoteOperationBatchAsync(DocumentCollaborationOperationBatch batch)
+    {
+        ArgumentNullException.ThrowIfNull(batch);
+
+        if (_module is null || _handle is null)
+        {
+            return new CanvasEngineRemoteApplyResult { Success = false };
+        }
+
+        // B1 operation-relay: when the batch carries a verbatim canvas op-log payload, apply it RAW — the
+        // engine's applyRemoteOperationBatch consumes the canvas operations directly (incl. table/image
+        // blocks the typed model cannot round-trip). Otherwise fall back to the legacy typed batch.
+        var json = !string.IsNullOrEmpty(batch.Batch?.CanvasOperationBatchJson)
+            ? batch.Batch!.CanvasOperationBatchJson!
+            : JsonSerializer.Serialize(batch, CanvasJsonOptions);
+        var resultJson = await _module.InvokeAsync<string?>("applyRemoteOperationBatch", _handle, json);
+        var result = DeserializeState(resultJson, new CanvasEngineRemoteApplyResult());
+        if (result.Success)
+        {
+            var modelJson = await _module.InvokeAsync<string?>("getModelJson", _handle);
+            if (!string.IsNullOrWhiteSpace(modelJson))
+            {
+                _lastModelJson = modelJson;
+                _lastParameterModelJson = modelJson;
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>Applies a remote collaboration cursor to the mounted canvas runtime.</summary>
+    public async Task<CanvasEnginePresenceState> ApplyRemoteCursorAsync(DocumentCollaborationCursor cursor)
+    {
+        ArgumentNullException.ThrowIfNull(cursor);
+
+        if (_module is null || _handle is null)
+        {
+            return new CanvasEnginePresenceState();
+        }
+
+        var json = JsonSerializer.Serialize(cursor, CanvasJsonOptions);
+        var resultJson = await _module.InvokeAsync<string?>("applyRemoteCursor", _handle, json);
+        return DeserializeState(resultJson, new CanvasEnginePresenceState());
+    }
+
+    /// <summary>Replaces the remote collaboration cursors rendered by the mounted canvas runtime.</summary>
+    public async Task<CanvasEnginePresenceState> ApplyRemoteCursorsAsync(IReadOnlyList<DocumentCollaborationCursor> cursors)
+    {
+        ArgumentNullException.ThrowIfNull(cursors);
+
+        if (_module is null || _handle is null)
+        {
+            return new CanvasEnginePresenceState();
+        }
+
+        var json = JsonSerializer.Serialize(cursors, CanvasJsonOptions);
+        var resultJson = await _module.InvokeAsync<string?>("applyRemoteCursors", _handle, json);
+        return DeserializeState(resultJson, new CanvasEnginePresenceState());
+    }
+
+    /// <summary>Moves focus to the canvas engine hidden input bridge.</summary>
+    public async Task FocusAsync()
+    {
+        if (_module is not null && _handle is not null)
+        {
+            await _module.InvokeVoidAsync("focus", _handle);
+        }
+    }
+
+    /// <summary>Executes a command through the canvas engine dispatcher.</summary>
+    public async Task<CanvasEngineCommandResult> ExecCommandAsync(string commandId, object? argument = null)
+    {
+        if (_module is null || _handle is null)
+        {
+            return new CanvasEngineCommandResult { Handled = false, CommandId = commandId };
+        }
+
+        var argumentJson = argument is null ? null : JsonSerializer.Serialize(argument, CanvasJsonOptions);
+        var json = await _module.InvokeAsync<string?>("execCommand", _handle, commandId, argumentJson);
+        return DeserializeState(json, new CanvasEngineCommandResult { CommandId = commandId });
+    }
+
+    /// <summary>Copies the current selection to the system clipboard (B11 context-menu Copy / programmatic copy).</summary>
+    public async Task<CanvasEngineClipboardResult> CopySelectionAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return new CanvasEngineClipboardResult();
+        }
+
+        var json = await _module.InvokeAsync<string?>("copySelection", _handle);
+        return DeserializeState(json, new CanvasEngineClipboardResult());
+    }
+
+    /// <summary>Cuts the current selection to the system clipboard (B11 context-menu Cut).</summary>
+    public async Task<CanvasEngineClipboardResult> CutSelectionAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return new CanvasEngineClipboardResult();
+        }
+
+        var json = await _module.InvokeAsync<string?>("cutSelection", _handle);
+        return DeserializeState(json, new CanvasEngineClipboardResult());
+    }
+
+    /// <summary>Pastes from the system clipboard via the async Clipboard API (B12 context-menu Paste).</summary>
+    public async Task<CanvasEngineClipboardResult> PasteFromSystemClipboardAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return new CanvasEngineClipboardResult();
+        }
+
+        var json = await _module.InvokeAsync<string?>("pasteFromSystemClipboard", _handle);
+        return DeserializeState(json, new CanvasEngineClipboardResult());
+    }
+
+    /// <summary>Enters header/footer editing (places the caret in the first header/footer of the type) (B6).</summary>
+    public async Task EnterHeaderFooterAsync(string type)
+    {
+        if (_module is null || _handle is null)
+        {
+            return;
+        }
+
+        await _module.InvokeVoidAsync("editHeaderFooter", _handle, type);
+    }
+
+    /// <summary>Closes header/footer editing (moves the caret back to the body) (B6).</summary>
+    public async Task CloseHeaderFooterAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return;
+        }
+
+        await _module.InvokeVoidAsync("closeHeaderFooter", _handle);
+    }
+
+    /// <summary>Reads page metrics (total pages, per-page list, active page) for the navigator + status bar (B9).</summary>
+    public Task<WysiwygPageMetrics> GetPageMetricsAsync()
+        => ReadStateAsync("getPageMetricsJson", new WysiwygPageMetrics { TotalPages = 1, RenderedPages = 1, Pages = [new WysiwygPageMetric { PageIndex = 0, PageNumber = 1 }] });
+
+    /// <summary>
+    /// Exports each document page as a flat bitmap (plan S1) so the editor's output can be used as a
+    /// signing-template page. Pulls one descriptor per page from the engine (it reuses the engine's
+    /// current display list, so every page — including virtualized ones — is exported faithfully).
+    /// </summary>
+    public async Task<IReadOnlyList<DocumentPageImage>> ExportPageImagesAsync(DocumentPageImageExportOptions? options = null)
+    {
+        if (_module is null || _handle is null)
+        {
+            return [];
+        }
+
+        var resolved = options ?? new DocumentPageImageExportOptions();
+        var optionsJson = JsonSerializer.Serialize(
+            new { scale = resolved.Scale, format = resolved.Format, quality = resolved.Quality },
+            CanvasJsonOptions);
+
+        var metrics = await GetPageMetricsAsync();
+        var total = Math.Max(0, metrics.TotalPages);
+        var images = new List<DocumentPageImage>(total);
+        for (var pageIndex = 0; pageIndex < total; pageIndex++)
+        {
+            var json = await _module.InvokeAsync<string?>("exportPageImage", _handle, pageIndex, optionsJson);
+            var image = DeserializeState<DocumentPageImage?>(json, null);
+            if (image is not null)
+            {
+                images.Add(image);
+            }
+        }
+
+        return images;
+    }
+
+    /// <summary>
+    /// Reads the signing fields the editor currently lays out (plan S2). Areas are derived from the
+    /// layout — a body field has one area, a header/footer field one per page — and the attachment id
+    /// is applied to every area so the produced fields plug straight into the signing designer/runner.
+    /// </summary>
+    public async Task<IReadOnlyList<Tempo.Blazor.Abstractions.Models.SigningField>> GetSigningFieldsAsync(string attachmentUuid)
+    {
+        if (_module is null || _handle is null)
+        {
+            return [];
+        }
+
+        var json = await _module.InvokeAsync<string?>("getSigningFieldsJson", _handle);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return [];
+        }
+
+        var descriptors = JsonSerializer.Deserialize<List<DocumentSigningFieldDescriptor>>(json, CanvasJsonOptions) ?? [];
+        return descriptors.ToSigningFields(attachmentUuid);
+    }
+
+    /// <summary>Inserts a signing field at the current caret (body or header/footer) via the engine command.</summary>
+    public async Task InsertSigningFieldAsync(Tempo.Blazor.Abstractions.Models.SigningField field)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+
+        if (_module is null || _handle is null)
+        {
+            return;
+        }
+
+        await ExecCommandAsync("insertSigningField", new
+        {
+            uuid = string.IsNullOrEmpty(field.Uuid) ? null : field.Uuid,
+            fieldType = field.Type,
+            submitterUuid = field.SubmitterUuid,
+            required = field.Required,
+            label = field.Title ?? string.Empty
+        });
+    }
+
+    /// <summary>Scrolls a page into view from the navigator (handles virtualized pages) (B9).</summary>
+    public async Task ScrollToPageAsync(int pageIndex)
+    {
+        if (_module is null || _handle is null)
+        {
+            return;
+        }
+
+        await _module.InvokeVoidAsync("scrollToPage", _handle, pageIndex);
+    }
+
+    /// <summary>Queries a command state through the canvas engine dispatcher.</summary>
+    public Task<CanvasEngineCommandState> QueryCommandAsync(string commandId)
+        => ReadStateAsync<CanvasEngineCommandState>("queryCommand", new CanvasEngineCommandState(), commandId);
+
+    /// <summary>Reads the current formatting state from the canvas engine boundary.</summary>
+    public Task<CanvasEngineFormattingState> GetFormattingStateAsync()
+        => ReadStateAsync<CanvasEngineFormattingState>("getFormattingStateJson", new CanvasEngineFormattingState());
+
+    /// <summary>Reads the current undo state from the canvas engine boundary.</summary>
+    public Task<CanvasEngineUndoState> GetUndoStateAsync()
+        => ReadStateAsync<CanvasEngineUndoState>("getUndoStateJson", new CanvasEngineUndoState());
+
+    /// <summary>Reads the live comment + revision lists from the engine (B3) — a light pull that avoids the
+    /// full-document marshal so the comment rail / revision panel need not read the C# document mirror.</summary>
+    public Task<CanvasEngineAnnotations> GetAnnotationsAsync()
+        => ReadStateAsync<CanvasEngineAnnotations>("getAnnotationsJson", new CanvasEngineAnnotations());
+
+    /// <summary>Reads the current selection state from the canvas engine boundary.</summary>
+    public Task<CanvasEngineSelectionState> GetSelectionStateAsync()
+        => ReadStateAsync<CanvasEngineSelectionState>("getSelectionStateJson", new CanvasEngineSelectionState());
+
+    /// <summary>Captures a comment anchor from the current canvas selection.</summary>
+    public async Task<DocumentCommentAnchor?> CaptureCommentAnchorAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return null;
+        }
+
+        var json = await _module.InvokeAsync<string?>("captureCommentAnchorJson", _handle);
+        var anchor = DeserializeState(json, new CanvasCommentAnchorState());
+        if (string.IsNullOrWhiteSpace(anchor.BlockId))
+        {
+            return null;
+        }
+
+        var start = Math.Min(anchor.StartOffset, anchor.EndOffset);
+        var end = Math.Max(anchor.StartOffset, anchor.EndOffset);
+        return new DocumentCommentAnchor
+        {
+            Type = anchor.Type.Equals("textRange", StringComparison.OrdinalIgnoreCase) && end > start
+                ? DocumentCommentAnchorType.TextRange
+                : DocumentCommentAnchorType.Block,
+            BlockId = anchor.BlockId,
+            StartOffset = start,
+            EndOffset = end
+        };
+    }
+
+    /// <summary>Synchronizes the canvas track-changes runtime flag.</summary>
+    public async Task SetTrackChangesEnabledAsync(bool enabled)
+    {
+        if (_module is not null && _handle is not null)
+        {
+            var authorJson = JsonSerializer.Serialize(Author, CanvasJsonOptions);
+            await _module.InvokeAsync<string?>("setTrackChangesEnabled", _handle, enabled, authorJson);
+        }
+    }
+
+    /// <summary>Synchronizes the canvas review display mode.</summary>
+    public async Task SetReviewDisplayModeAsync(DocumentReviewDisplayMode mode)
+    {
+        if (_module is not null && _handle is not null)
+        {
+            await _module.InvokeAsync<string?>("setReviewDisplayMode", _handle, mode.ToString());
+        }
+    }
+
+    /// <summary>Selects and scrolls to a canvas comment marker.</summary>
+    public async Task SelectCommentAsync(string commentId)
+    {
+        if (_module is not null && _handle is not null && !string.IsNullOrWhiteSpace(commentId))
+        {
+            await _module.InvokeAsync<string?>("selectComment", _handle, commentId);
+        }
+    }
+
+    /// <summary>Upserts a comment into the live canvas model and synchronizes its anchor mark.</summary>
+    public async Task UpsertCommentAsync(DocumentComment comment)
+    {
+        ArgumentNullException.ThrowIfNull(comment);
+
+        if (_module is not null && _handle is not null)
+        {
+            await ExecCommandAsync("upsertComment", new { comment });
+        }
+    }
+
+    /// <summary>Removes a comment from the live canvas model and clears its anchor mark.</summary>
+    public async Task RemoveCommentAsync(string commentId)
+    {
+        if (_module is not null && _handle is not null && !string.IsNullOrWhiteSpace(commentId))
+        {
+            await ExecCommandAsync("deleteComment", new { commentId });
+        }
+    }
+
+    /// <summary>Selects and scrolls to a canvas revision marker.</summary>
+    public async Task SelectRevisionAsync(string revisionId)
+    {
+        if (_module is not null && _handle is not null && !string.IsNullOrWhiteSpace(revisionId))
+        {
+            await _module.InvokeAsync<string?>("selectRevision", _handle, revisionId);
+        }
+    }
+
+    /// <summary>Reads diagnostics from the canvas engine boundary.</summary>
+    public Task<CanvasEngineDiagnosticsState> GetDiagnosticsAsync()
+        => ReadStateAsync<CanvasEngineDiagnosticsState>("getDiagnosticsJson", new CanvasEngineDiagnosticsState());
+
+    /// <summary>Reads the current canvas search state from the JavaScript runtime.</summary>
+    public Task<CanvasEngineSearchState> GetSearchStateAsync()
+        => ReadStateAsync<CanvasEngineSearchState>("getSearchStateJson", new CanvasEngineSearchState());
+
+    /// <summary>Reads the current canvas navigation state from the JavaScript runtime.</summary>
+    public Task<CanvasEngineNavigationState> GetNavigationStateAsync()
+        => ReadStateAsync<CanvasEngineNavigationState>("getNavigationStateJson", new CanvasEngineNavigationState());
+
+    /// <summary>Reads the latest print preview snapshot from the canvas runtime.</summary>
+    public Task<CanvasEnginePrintPreviewState> GetPrintPreviewStateAsync()
+        => ReadStateAsync<CanvasEnginePrintPreviewState>("getPrintPreviewStateJson", new CanvasEnginePrintPreviewState());
+
+    /// <summary>Reads the latest clipboard debug snapshot from the canvas runtime.</summary>
+    public async Task<DocumentClipboardDebugSnapshot> GetClipboardDebugSnapshotAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return new DocumentClipboardDebugSnapshot();
+        }
+
+        var json = await _module.InvokeAsync<string?>("getClipboardDebugSnapshotJson", _handle);
+        var state = DeserializeState(json, new CanvasEngineClipboardDebugState());
+        return new DocumentClipboardDebugSnapshot
+        {
+            RawHtml = state.RawHtml,
+            PlainText = state.PlainText,
+            Source = DocumentClipboardSource.Unknown,
+            NormalizedJson = state.NormalizedJson,
+            Warnings = state.Warnings
+                .Select(message => new DocumentClipboardWarning
+                {
+                    Code = message,
+                    Message = message
+                })
+                .ToList(),
+            CapturedAt = state.CapturedAt ?? DateTimeOffset.UtcNow
+        };
+    }
+
+    /// <summary>JavaScript callback for canvas engine readiness.</summary>
+    [JSInvokable]
+    public Task OnCanvasEngineReady(string? stateJson)
+        => MarkReadyAsync();
+
+    /// <summary>JavaScript callback for canvas engine model changes.</summary>
+    [JSInvokable]
+    public async Task OnCanvasEngineChanged(string? stateJson)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        var state = DeserializeState(stateJson, new CanvasEngineChangedState());
+        // Phase 6.5: do NOT marshal the full model JSON across the JS<->.NET boundary on every edit.
+        // The engine is the source of truth; the canonical model is fetched lazily only on save /
+        // RequestDocumentAsync. Invalidating the cached parameter snapshot keeps parameter-driven
+        // re-sync correct (a later Document parameter change always re-applies via UpdateMountedModel).
+        _lastModelJson = null;
+
+        if (OnChanged is not null)
+        {
+            await OnChanged(state);
+        }
+    }
+
+    /// <summary>JavaScript callback for canvas context menu requests.</summary>
+    [JSInvokable]
+    public Task OnCanvasContextMenuRequested(string? stateJson)
+    {
+        var request = DeserializeState(stateJson, new CanvasEngineContextMenuRequest());
+        return OnContextMenu.HasDelegate ? OnContextMenu.InvokeAsync(request) : Task.CompletedTask;
+    }
+
+    /// <summary>JavaScript callback for canvas mini toolbar placement changes.</summary>
+    [JSInvokable]
+    public Task OnCanvasMiniToolbarChanged(string? stateJson)
+    {
+        if (_disposed)
+        {
+            return Task.CompletedTask;
+        }
+
+        var request = DeserializeState<WysiwygMiniToolbarRequest?>(stateJson, null);
+        // The selection payload also carries the pushed UI snapshot (B2). Dispatch it so a deliberate
+        // selection updates the toolbar pressed-state immediately, without a follow-up interop pull.
+        var envelope = DeserializeState<CanvasEngineUiStateEnvelope?>(stateJson, null);
+        var miniToolbar = OnMiniToolbarChanged is not null ? OnMiniToolbarChanged(request) : Task.CompletedTask;
+        var uiState = OnUiStateChanged is not null && envelope?.UiState is not null
+            ? OnUiStateChanged(envelope.UiState)
+            : Task.CompletedTask;
+        return Task.WhenAll(miniToolbar, uiState);
+    }
+
+    /// <summary>JavaScript callback for canvas comment or revision marker selection.</summary>
+    [JSInvokable]
+    public Task OnCanvasAnnotationSelected(string? stateJson)
+    {
+        var request = DeserializeState(stateJson, new CanvasEngineAnnotationSelection());
+        return OnAnnotationSelected.HasDelegate ? OnAnnotationSelected.InvokeAsync(request) : Task.CompletedTask;
+    }
+
+    /// <summary>JavaScript callback for the canvas command palette shortcut.</summary>
+    [JSInvokable]
+    public Task OnCanvasCommandPaletteRequested(string? stateJson)
+        => OnCommandPaletteRequested.HasDelegate ? OnCommandPaletteRequested.InvokeAsync() : Task.CompletedTask;
+
+    /// <summary>JavaScript callback for canvas ribbon activation shortcuts.</summary>
+    [JSInvokable]
+    public Task OnCanvasRibbonFocusRequested(string? stateJson)
+        => OnRibbonFocusRequested.HasDelegate ? OnRibbonFocusRequested.InvokeAsync() : Task.CompletedTask;
+
+    /// <summary>JavaScript callback for canvas versions panel shortcuts.</summary>
+    [JSInvokable]
+    public Task OnCanvasVersionsPanelRequested(string? stateJson)
+        => OnVersionsPanelRequested.HasDelegate ? OnVersionsPanelRequested.InvokeAsync() : Task.CompletedTask;
+
+    /// <summary>Uploads a canvas clipboard image through the configured host image provider.</summary>
+    [JSInvokable]
+    public async Task<CanvasClipboardImageUploadResult> UploadCanvasClipboardImage(
+        CanvasClipboardImageUploadRequest request,
+        IJSStreamReference streamReference)
+    {
+        if (ImageProvider is null)
+        {
+            return new CanvasClipboardImageUploadResult
+            {
+                Success = false,
+                ErrorMessage = "Image provider is not available."
+            };
+        }
+
+        var contentType = string.IsNullOrWhiteSpace(request.ContentType) ? "image/png" : request.ContentType;
+        var sizeBytes = Math.Max(0, request.SizeBytes);
+        if (!ImageValidation.IsAllowed(contentType, sizeBytes))
+        {
+            return new CanvasClipboardImageUploadResult
+            {
+                Success = false,
+                ErrorMessage = "Image content type or size is not allowed."
+            };
+        }
+
+        await using var stream = await streamReference.OpenReadStreamAsync(ImageValidation.MaxFileSizeBytes);
+        var upload = await ImageProvider.UploadAsync(
+            new DocumentImageUploadRequest
+            {
+                DocumentId = string.IsNullOrWhiteSpace(request.DocumentId)
+                    ? Document?.DocumentId ?? string.Empty
+                    : request.DocumentId,
+                FileName = string.IsNullOrWhiteSpace(request.FileName)
+                    ? "clipboard-image.png"
+                    : request.FileName,
+                ContentType = contentType,
+                SizeBytes = sizeBytes
+            },
+            stream);
+
+        return new CanvasClipboardImageUploadResult
+        {
+            Success = upload.Success,
+            AssetId = upload.AssetId,
+            Url = upload.Url,
+            ContentType = contentType,
+            FileName = request.FileName,
+            ErrorMessage = upload.ErrorMessage
+        };
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        try
+        {
+            if (_module is not null && _handle is not null)
+            {
+                await _module.InvokeVoidAsync("dispose", _handle);
+            }
+        }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { }
+
+        try
+        {
+            if (_module is not null)
+            {
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { }
+
+        _selfRef?.Dispose();
+    }
+
+    private async Task<TState> ReadStateAsync<TState>(string identifier, TState fallback, params object?[] args)
+    {
+        if (_module is null || _handle is null)
+        {
+            return fallback;
+        }
+
+        var invocationArgs = new object?[args.Length + 1];
+        invocationArgs[0] = _handle;
+        Array.Copy(args, 0, invocationArgs, 1, args.Length);
+        var json = await _module.InvokeAsync<string?>(identifier, invocationArgs);
+        return DeserializeState(json, fallback);
+    }
+
+    private static TState DeserializeState<TState>(string? json, TState fallback)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return fallback;
+        }
+
+        // MUST reuse the cached options instance: a fresh JsonSerializerOptions rebuilds its reflection
+        // metadata cache on first use, and this runs on every change callback (per keystroke) — constructing
+        // new options each time cost ~170 ms/keystroke on WASM.
+        return JsonSerializer.Deserialize<TState>(json, CanvasJsonOptions) ?? fallback;
+    }
+
+    // Cache of provider-resolved display URLs keyed by asset id (perf phase 3.1) so repeated model builds and
+    // re-renders never re-hit the resolver. A resolved-but-empty result is cached too, so a missing asset is
+    // not retried on every render.
+    private readonly Dictionary<string, string> _resolvedAssetUrls = new(StringComparer.OrdinalIgnoreCase);
+
+    private CanvasDocumentModel BuildCanvasModel()
+    {
+        var model = CanvasDocumentModelConverter.ToCanvasModel(Document ?? DocumentEditorDocument.Empty());
+        ApplyResolvedAssetUrls(model);
+        return model;
+    }
+
+    // Fills the canvas model's asset URLs from the resolver cache so the engine paints real bitmaps instead of
+    // the grey placeholder. Provider-managed assets carry an id but no Url (the URL is resolved on demand via
+    // IDocumentImageUrlResolver); without this the engine had no source to draw (the host previously only told
+    // the engine whether a resolver existed).
+    private void ApplyResolvedAssetUrls(CanvasDocumentModel model)
+    {
+        if (_resolvedAssetUrls.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var asset in model.Assets)
+        {
+            if (!string.IsNullOrWhiteSpace(asset.Url) || string.IsNullOrWhiteSpace(asset.Id))
+            {
+                continue;
+            }
+
+            if (_resolvedAssetUrls.TryGetValue(asset.Id, out var url) && !string.IsNullOrWhiteSpace(url))
+            {
+                asset.Url = url;
+            }
+        }
+    }
+
+    // Resolves display URLs for every document asset that still lacks one, through IDocumentImageUrlResolver,
+    // caching the result per asset id. No-op when no resolver is configured (URLs stay as authored).
+    private async Task EnsureAssetUrlsResolvedAsync()
+    {
+        if (ImageUrlResolver is null || Document is null)
+        {
+            return;
+        }
+
+        var documentId = Document.DocumentId ?? string.Empty;
+        foreach (var asset in Document.Assets)
+        {
+            var id = asset.Id;
+            if (string.IsNullOrWhiteSpace(id)
+                || !string.IsNullOrWhiteSpace(asset.Url)
+                || _resolvedAssetUrls.ContainsKey(id))
+            {
+                continue;
+            }
+
+            try
+            {
+                var url = await ImageUrlResolver.ResolveUrlAsync(documentId, id);
+                _resolvedAssetUrls[id] = url ?? string.Empty;
+            }
+            catch
+            {
+                _resolvedAssetUrls[id] = string.Empty;
+            }
+        }
+    }
+
+    private static int CountDocumentMathRuns(DocumentEditorDocument? document)
+        => document?.Blocks.Sum(block => block.Content switch
+        {
+            ParagraphBlockContent paragraph => paragraph.Inlines.OfType<DocumentMathRun>().Count(),
+            HeadingBlockContent heading => heading.Inlines.OfType<DocumentMathRun>().Count(),
+            ListBlockContent list => list.Inlines.OfType<DocumentMathRun>().Count(),
+            QuoteBlockContent quote => quote.Inlines.OfType<DocumentMathRun>().Count(),
+            TableBlockContent table => table.Rows.Sum(row => row.Cells.Sum(cell => cell.Blocks.Sum(CountDocumentMathRuns))),
+            _ => 0
+        }) ?? 0;
+
+    private static int CountDocumentMathRuns(DocumentBlock block)
+        => block.Content switch
+        {
+            ParagraphBlockContent paragraph => paragraph.Inlines.OfType<DocumentMathRun>().Count(),
+            HeadingBlockContent heading => heading.Inlines.OfType<DocumentMathRun>().Count(),
+            ListBlockContent list => list.Inlines.OfType<DocumentMathRun>().Count(),
+            QuoteBlockContent quote => quote.Inlines.OfType<DocumentMathRun>().Count(),
+            TableBlockContent table => table.Rows.Sum(row => row.Cells.Sum(cell => cell.Blocks.Sum(CountDocumentMathRuns))),
+            _ => 0
+        };
+
+    private async Task UpdateMountedModelAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return;
+        }
+
+        var optionsJson = JsonSerializer.Serialize(BuildCanvasOptions(), CanvasJsonOptions);
+        if (!string.Equals(_lastOptionsJson, optionsJson, StringComparison.Ordinal))
+        {
+            _lastOptionsJson = optionsJson;
+            await _module.InvokeVoidAsync("setOptions", _handle, optionsJson);
+        }
+
+        // OnAfterRenderAsync fires after EVERY render — and a render happens after every keystroke. Building
+        // and serializing the whole canvas model in C# here (heavy on large documents) per keystroke froze
+        // typing. The host app only swaps the model by handing us a new Document parameter reference; the
+        // canvas engine owns in-place edits. So when the Document reference is unchanged there is nothing to
+        // push and we must skip the serialization entirely.
+        if (ReferenceEquals(Document, _lastMountedDocumentRef))
+        {
+            return;
+        }
+
+        _lastMountedDocumentRef = Document;
+
+        await EnsureAssetUrlsResolvedAsync();
+        var modelJson = JsonSerializer.Serialize(BuildCanvasModel(), CanvasJsonOptions);
+        if (string.Equals(_lastParameterModelJson, modelJson, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _lastParameterModelJson = modelJson;
+        if (string.Equals(_lastModelJson, modelJson, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _lastModelJson = modelJson;
+        await _module.InvokeVoidAsync("replaceModel", _handle, modelJson);
+    }
+
+    private object BuildCanvasOptions()
+        => new
+        {
+            ariaLabel = EffectiveAriaLabel,
+            inputAriaLabel = EffectiveInputAriaLabel,
+            readOnly = ReadOnly,
+            canEdit = EffectiveCanEdit,
+            contentControlRenderMode = EffectiveContentControlRenderMode,
+            signingRoles = (SigningRoles ?? []).Select(role => new
+            {
+                uuid = role.Uuid,
+                color = role.Color,
+                name = role.Name
+            }),
+            accessibility = new
+            {
+                liveRegionLabel = Loc["TmDocumentEditor_CanvasLiveRegionLabel"],
+                caretAnnouncement = Loc["TmDocumentEditor_CanvasCaretAnnouncement"],
+                searchResultAnnouncement = Loc["TmDocumentEditor_CanvasSearchResultAnnouncement"],
+                searchNoResultsAnnouncement = Loc["TmDocumentEditor_CanvasSearchNoResultsAnnouncement"],
+                commentAnnouncement = Loc["TmDocumentEditor_CanvasCommentAnnouncement"],
+                revisionAnnouncement = Loc["TmDocumentEditor_CanvasRevisionAnnouncement"],
+                saveAnnouncement = Loc["TmDocumentEditor_CanvasSaveAnnouncement"],
+                mathSlotAnnouncement = Loc["TmDocumentEditor_CanvasMathSlotAnnouncement"],
+                mathExitAnnouncement = Loc["TmDocumentEditor_CanvasMathExitAnnouncement"]
+            },
+            providerCapabilities = new
+            {
+                hasImageProvider = ImageProvider is not null,
+                hasImageUrlResolver = ImageUrlResolver is not null
+            },
+            proofing = BuildProofingOptions(),
+            author = Author,
+            trackChanges = new
+            {
+                enabled = TrackChangesEnabled,
+                reviewDisplayMode = ReviewDisplayMode.ToString(),
+                author = Author
+            },
+            pageSettings = new
+            {
+                width = PagePixelWidth,
+                height = PagePixelHeight,
+                marginTop = ToCssPixels(Document?.PageSettings?.Margins?.Top ?? DocumentPageMargins.Default.Top),
+                marginRight = ToCssPixels(Document?.PageSettings?.Margins?.Right ?? DocumentPageMargins.Default.Right),
+                marginBottom = ToCssPixels(Document?.PageSettings?.Margins?.Bottom ?? DocumentPageMargins.Default.Bottom),
+                marginLeft = ToCssPixels(Document?.PageSettings?.Margins?.Left ?? DocumentPageMargins.Default.Left)
+            }
+        };
+
+    private object BuildProofingOptions()
+        => new
+        {
+            enabled = ProofingOptions?.Enabled == true,
+            defaultLanguage = ProofingOptions?.DefaultLanguage ?? string.Empty,
+            flaggedWords = ProofingOptions?.FlaggedWords ?? Array.Empty<string>(),
+            suggestions = ProofingOptions?.Suggestions ?? new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
+        };
+
+    private static int ToCssPixels(double points)
+        => Math.Max(0, (int)Math.Round(points * PointsToCssPixels));
+
+    private async Task MarkReadyAsync()
+    {
+        if (_ready)
+        {
+            return;
+        }
+
+        _ready = true;
+        if (OnReady.HasDelegate)
+        {
+            await OnReady.InvokeAsync(this);
+        }
+    }
+
+    /// <summary>Canvas engine formatting state exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineFormattingState
+    {
+        /// <summary>Whether bold is active at the current selection.</summary>
+        public bool Bold { get; set; }
+
+        /// <summary>Whether bold is mixed across the current selection.</summary>
+        public bool BoldMixed { get; set; }
+
+        /// <summary>Whether italic is active at the current selection.</summary>
+        public bool Italic { get; set; }
+
+        /// <summary>Whether italic is mixed across the current selection.</summary>
+        public bool ItalicMixed { get; set; }
+
+        /// <summary>Whether underline is active at the current selection.</summary>
+        public bool Underline { get; set; }
+
+        /// <summary>Whether underline is mixed across the current selection.</summary>
+        public bool UnderlineMixed { get; set; }
+
+        /// <summary>Whether strikethrough is active at the current selection.</summary>
+        public bool Strikethrough { get; set; }
+
+        /// <summary>Whether strikethrough is mixed across the current selection.</summary>
+        public bool StrikethroughMixed { get; set; }
+
+        /// <summary>Whether superscript is active at the current selection.</summary>
+        public bool Superscript { get; set; }
+
+        /// <summary>Whether superscript is mixed across the current selection.</summary>
+        public bool SuperscriptMixed { get; set; }
+
+        /// <summary>Whether subscript is active at the current selection.</summary>
+        public bool Subscript { get; set; }
+
+        /// <summary>Whether subscript is mixed across the current selection.</summary>
+        public bool SubscriptMixed { get; set; }
+
+        /// <summary>Whether small caps is active at the current selection.</summary>
+        public bool SmallCaps { get; set; }
+
+        /// <summary>Whether small caps is mixed across the current selection.</summary>
+        public bool SmallCapsMixed { get; set; }
+
+        /// <summary>Whether all caps is active at the current selection.</summary>
+        public bool AllCaps { get; set; }
+
+        /// <summary>Whether all caps is mixed across the current selection.</summary>
+        public bool AllCapsMixed { get; set; }
+
+        /// <summary>Whether double strikethrough is active at the current selection.</summary>
+        public bool DoubleStrikethrough { get; set; }
+
+        /// <summary>Whether double strikethrough is mixed across the current selection.</summary>
+        public bool DoubleStrikethroughMixed { get; set; }
+
+        /// <summary>Current font family value.</summary>
+        public string FontFamily { get; set; } = string.Empty;
+
+        /// <summary>Whether font family is mixed across the current selection.</summary>
+        public bool FontFamilyMixed { get; set; }
+
+        /// <summary>Current font size value.</summary>
+        public string FontSize { get; set; } = string.Empty;
+
+        /// <summary>Whether font size is mixed across the current selection.</summary>
+        public bool FontSizeMixed { get; set; }
+
+        /// <summary>Current text color value.</summary>
+        public string TextColor { get; set; } = string.Empty;
+
+        /// <summary>Whether text color is mixed across the current selection.</summary>
+        public bool TextColorMixed { get; set; }
+
+        /// <summary>Current highlight color value.</summary>
+        public string HighlightColor { get; set; } = string.Empty;
+
+        /// <summary>Whether highlight color is mixed across the current selection.</summary>
+        public bool HighlightColorMixed { get; set; }
+
+        /// <summary>Current paragraph alignment.</summary>
+        public string Alignment { get; set; } = "left";
+
+        /// <summary>Whether paragraph alignment is mixed across the current selection.</summary>
+        public bool AlignmentMixed { get; set; }
+
+        /// <summary>Current line spacing multiplier.</summary>
+        public double LineSpacing { get; set; } = 1;
+
+        /// <summary>Whether line spacing is mixed across the current selection.</summary>
+        public bool LineSpacingMixed { get; set; }
+
+        /// <summary>Current spacing before the paragraph in points.</summary>
+        public double SpacingBefore { get; set; }
+
+        /// <summary>Whether spacing before is mixed across the current selection.</summary>
+        public bool SpacingBeforeMixed { get; set; }
+
+        /// <summary>Current spacing after the paragraph in points.</summary>
+        public double SpacingAfter { get; set; }
+
+        /// <summary>Whether spacing after is mixed across the current selection.</summary>
+        public bool SpacingAfterMixed { get; set; }
+
+        /// <summary>Current left indent in points.</summary>
+        public double LeftIndent { get; set; }
+
+        /// <summary>Whether left indent is mixed across the current selection.</summary>
+        public bool LeftIndentMixed { get; set; }
+
+        /// <summary>Whether the current paragraph is an unordered list item.</summary>
+        public bool BulletList { get; set; }
+
+        /// <summary>Whether the current paragraph is an ordered list item.</summary>
+        public bool NumberedList { get; set; }
+
+        /// <summary>Whether the current selection spans multiple list states.</summary>
+        public bool ListMixed { get; set; }
+
+        /// <summary>Current block style name.</summary>
+        public string BlockStyle { get; set; } = "Normal";
+
+        /// <summary>Whether block style is mixed across the current selection.</summary>
+        public bool BlockStyleMixed { get; set; }
+
+        /// <summary>Whether the ruler is visible in the canvas engine.</summary>
+        public bool ShowRuler { get; set; } = true;
+
+        /// <summary>Whether block boundaries are visible in the canvas engine.</summary>
+        public bool ShowBlocks { get; set; }
+
+        /// <summary>Whether non-printing characters are visible in the canvas engine.</summary>
+        public bool ShowNonPrintingCharacters { get; set; }
+
+        /// <summary>Current canvas view mode.</summary>
+        public string ViewMode { get; set; } = "print";
+
+        /// <summary>Current canvas zoom percent.</summary>
+        public int ZoomPercent { get; set; } = 100;
+
+        /// <summary>Current canvas zoom preset.</summary>
+        public string ZoomPreset { get; set; } = "custom";
+
+        /// <summary>Whether the current canvas view hides the editor toolbar.</summary>
+        public bool ToolbarHidden { get; set; }
+
+        /// <summary>Whether print preview is currently active.</summary>
+        public bool PrintPreviewActive { get; set; }
+
+        /// <summary>Selected canvas image object, if the current selection targets an image.</summary>
+        public CanvasEngineImageState? Image { get; set; }
+    }
+
+    /// <summary>Canvas print preview state exposed to Blazor callers and tests.</summary>
+    public sealed class CanvasEnginePrintPreviewState
+    {
+        /// <summary>Whether print preview is active.</summary>
+        public bool Active { get; set; }
+
+        /// <summary>Document id rendered by the preview.</summary>
+        public string DocumentId { get; set; } = string.Empty;
+
+        /// <summary>Rendered page count.</summary>
+        public int PageCount { get; set; }
+
+        /// <summary>Total display-list command count.</summary>
+        public int CommandCount { get; set; }
+
+        /// <summary>Printable display-list command count.</summary>
+        public int PrintableCommandCount { get; set; }
+
+        /// <summary>Rendered text run count.</summary>
+        public int TextRunCount { get; set; }
+
+        /// <summary>Whether the preview contains no printable document content.</summary>
+        public bool IsBlank { get; set; }
+
+        /// <summary>Print dialog invocation state, if requested.</summary>
+        public CanvasEnginePrintDialogState? Dialog { get; set; }
+    }
+
+    /// <summary>Browser print dialog request state.</summary>
+    public sealed class CanvasEnginePrintDialogState
+    {
+        /// <summary>Whether a print dialog was requested.</summary>
+        public bool Requested { get; set; }
+
+        /// <summary>Whether the browser print function was available and invoked.</summary>
+        public bool Invoked { get; set; }
+    }
+
+    /// <summary>Selected canvas image state exposed to the editor properties panel.</summary>
+    public sealed class CanvasEngineImageState
+    {
+        /// <summary>Stable image object id.</summary>
+        public string ObjectId { get; set; } = string.Empty;
+
+        /// <summary>Owning block id.</summary>
+        public string BlockId { get; set; } = string.Empty;
+
+        /// <summary>Owning drawing run id when the image is inline.</summary>
+        public string RunId { get; set; } = string.Empty;
+
+        /// <summary>Resolved image URL when available.</summary>
+        public string Url { get; set; } = string.Empty;
+
+        /// <summary>Provider asset id when available.</summary>
+        public string AssetId { get; set; } = string.Empty;
+
+        /// <summary>Rendered image width in points.</summary>
+        public double Width { get; set; }
+
+        /// <summary>Rendered image height in points.</summary>
+        public double Height { get; set; }
+
+        /// <summary>Horizontal offset in points.</summary>
+        public double X { get; set; }
+
+        /// <summary>Vertical offset in points.</summary>
+        public double Y { get; set; }
+
+        /// <summary>Canonical wrap mode name.</summary>
+        public string WrapMode { get; set; } = "Inline";
+
+        /// <summary>Stacking order value.</summary>
+        public double ZIndex { get; set; }
+
+        /// <summary>Alternative text.</summary>
+        public string AltText { get; set; } = string.Empty;
+
+        /// <summary>Caption text.</summary>
+        public string Caption { get; set; } = string.Empty;
+
+        /// <summary>Whether the image is decorative and does not require alternative text.</summary>
+        public bool IsDecorative { get; set; }
+    }
+
+    /// <summary>Canvas context menu request sent from the canvas JavaScript runtime.</summary>
+    public sealed class CanvasEngineContextMenuRequest
+    {
+        /// <summary>Viewport-relative left coordinate for the menu.</summary>
+        public int X { get; set; }
+
+        /// <summary>Viewport-relative top coordinate for the menu.</summary>
+        public int Y { get; set; }
+
+        /// <summary>Zero-based rendered page index under the pointer.</summary>
+        public int PageIndex { get; set; }
+
+        /// <summary>Block id under the pointer when available.</summary>
+        public string? BlockId { get; set; }
+
+        /// <summary>Text offset under the pointer when available.</summary>
+        public int Offset { get; set; }
+
+        /// <summary>Whether the context menu targets a non-collapsed text selection.</summary>
+        public bool HasSelection { get; set; }
+
+        /// <summary>Whether the pointer is inside a table block.</summary>
+        public bool InTable { get; set; }
+
+        /// <summary>Table block id under the pointer when available.</summary>
+        public string? TableId { get; set; }
+
+        /// <summary>Table cell id under or near the selection when available.</summary>
+        public string? CellId { get; set; }
+
+        /// <summary>Image block id under the pointer when available.</summary>
+        public string? ImageBlockId { get; set; }
+
+        /// <summary>Misspelling diagnostic under the pointer when available.</summary>
+        public CanvasEngineMisspelling? Misspelling { get; set; }
+
+        /// <summary>Selection snapshot to restore before running menu commands.</summary>
+        public WysiwygSelectionSnapshot? Selection { get; set; }
+    }
+
+    /// <summary>Canvas misspelling diagnostic exposed to Blazor context menu handlers.</summary>
+    public sealed class CanvasEngineMisspelling
+    {
+        /// <summary>Misspelled word.</summary>
+        public string? Word { get; set; }
+
+        /// <summary>Start offset inside the target block.</summary>
+        public int Start { get; set; }
+
+        /// <summary>End offset inside the target block.</summary>
+        public int End { get; set; }
+
+        /// <summary>Target block id.</summary>
+        public string? BlockId { get; set; }
+
+        /// <summary>Suggested replacements returned by the proofing provider.</summary>
+        public List<string> Suggestions { get; set; } = [];
+
+        /// <summary>Whether the editor may apply a replacement for this diagnostic.</summary>
+        public bool CanApplyFix { get; set; } = true;
+    }
+
+    /// <summary>Canvas engine command execution result exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineCommandResult
+    {
+        /// <summary>Whether the command was handled.</summary>
+        public bool Handled { get; set; }
+
+        /// <summary>Executed command identifier.</summary>
+        public string CommandId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Primitives-only UI snapshot bundled with the command response (perf phase 2.2) so the toolbar can
+        /// update pressed-state / dirty / undo without a follow-up batch of interop pulls.
+        /// </summary>
+        public CanvasEngineUiState? UiState { get; set; }
+    }
+
+    /// <summary>Result of a programmatic clipboard operation (B11/B12 context-menu copy/cut/paste).</summary>
+    public sealed class CanvasEngineClipboardResult
+    {
+        /// <summary>Whether the clipboard operation succeeded.</summary>
+        public bool Handled { get; set; }
+
+        /// <summary>Operation name (copy / cut / paste-*).</summary>
+        public string Operation { get; set; } = string.Empty;
+
+        /// <summary>Failure reason when not handled (e.g. "permission", "unsupported").</summary>
+        public string? Reason { get; set; }
+    }
+
+    /// <summary>Canvas engine command query state exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineCommandState
+    {
+        /// <summary>Whether the command is disabled.</summary>
+        public bool Disabled { get; set; }
+
+        /// <summary>Whether the command is active.</summary>
+        public bool Active { get; set; }
+
+        /// <summary>Whether the command has mixed state.</summary>
+        public bool Mixed { get; set; }
+
+        /// <summary>Current command value.</summary>
+        public string? Value { get; set; }
+
+        /// <summary>Compact state name.</summary>
+        public string State { get; set; } = "inactive";
+    }
+
+    private sealed class CanvasCommentAnchorState
+    {
+        public string Type { get; set; } = string.Empty;
+
+        public string BlockId { get; set; } = string.Empty;
+
+        public int StartOffset { get; set; }
+
+        public int EndOffset { get; set; }
+    }
+
+    /// <summary>Canvas comment or revision marker selection emitted from JavaScript.</summary>
+    public sealed class CanvasEngineAnnotationSelection
+    {
+        /// <summary>Annotation kind, either comment or revision.</summary>
+        public string Kind { get; set; } = string.Empty;
+
+        /// <summary>Selected annotation identifier.</summary>
+        public string Id { get; set; } = string.Empty;
+    }
+
+    /// <summary>Canvas clipboard image upload request received from JavaScript.</summary>
+    public sealed class CanvasClipboardImageUploadRequest
+    {
+        /// <summary>Document id that owns the pasted image.</summary>
+        public string DocumentId { get; set; } = string.Empty;
+
+        /// <summary>Browser-provided file name.</summary>
+        public string FileName { get; set; } = "clipboard-image.png";
+
+        /// <summary>Browser-provided content type.</summary>
+        public string ContentType { get; set; } = "image/png";
+
+        /// <summary>Browser-provided file size in bytes.</summary>
+        public long SizeBytes { get; set; }
+    }
+
+    /// <summary>Canvas clipboard image upload result returned to JavaScript.</summary>
+    public sealed class CanvasClipboardImageUploadResult
+    {
+        /// <summary>Whether the upload succeeded.</summary>
+        public bool Success { get; set; }
+
+        /// <summary>Provider-managed asset id.</summary>
+        public string? AssetId { get; set; }
+
+        /// <summary>Resolved URL returned by the provider.</summary>
+        public string? Url { get; set; }
+
+        /// <summary>Uploaded content type.</summary>
+        public string ContentType { get; set; } = "image/png";
+
+        /// <summary>Uploaded file name.</summary>
+        public string? FileName { get; set; }
+
+        /// <summary>Error message when upload failed.</summary>
+        public string? ErrorMessage { get; set; }
+    }
+
+    private sealed class CanvasEngineClipboardDebugState
+    {
+        public string Operation { get; set; } = string.Empty;
+
+        public string RawHtml { get; set; } = string.Empty;
+
+        public string PlainText { get; set; } = string.Empty;
+
+        public string Source { get; set; } = "unknown";
+
+        public string NormalizedJson { get; set; } = string.Empty;
+
+        public List<string> Warnings { get; set; } = [];
+
+        public DateTimeOffset? CapturedAt { get; set; }
+    }
+
+    /// <summary>Canvas engine undo state exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineUndoState
+    {
+        /// <summary>Whether undo can execute.</summary>
+        public bool CanUndo { get; set; }
+
+        /// <summary>Whether redo can execute.</summary>
+        public bool CanRedo { get; set; }
+    }
+
+    /// <summary>Canvas engine search state exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineSearchState
+    {
+        /// <summary>Current query text.</summary>
+        public string Query { get; set; } = string.Empty;
+
+        /// <summary>Active result index.</summary>
+        public int ActiveIndex { get; set; }
+
+        /// <summary>Current match count.</summary>
+        public int MatchCount { get; set; }
+
+        /// <summary>Current canvas search matches.</summary>
+        public List<CanvasEngineSearchMatch> Matches { get; set; } = [];
+    }
+
+    /// <summary>Canvas engine search match exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineSearchMatch
+    {
+        /// <summary>Zero-based match index.</summary>
+        public int Index { get; set; }
+
+        /// <summary>Target block id.</summary>
+        public string BlockId { get; set; } = string.Empty;
+
+        /// <summary>Start offset inside the target block.</summary>
+        public int Start { get; set; }
+
+        /// <summary>End offset inside the target block.</summary>
+        public int End { get; set; }
+
+        /// <summary>Matched text.</summary>
+        public string Text { get; set; } = string.Empty;
+
+        /// <summary>Search result preview.</summary>
+        public string Preview { get; set; } = string.Empty;
+    }
+
+    /// <summary>Canvas engine navigation state exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineNavigationState
+    {
+        /// <summary>Heading outline extracted from the canvas layout cache.</summary>
+        public List<DocumentOutlineItem> Outline { get; set; } = [];
+
+        /// <summary>Named bookmarks discovered in canvas inline marks.</summary>
+        public List<CanvasEngineBookmarkState> Bookmarks { get; set; } = [];
+    }
+
+    /// <summary>Canvas engine bookmark state exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineBookmarkState
+    {
+        /// <summary>Bookmark name.</summary>
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>Target block id.</summary>
+        public string BlockId { get; set; } = string.Empty;
+
+        /// <summary>Start offset inside the target block.</summary>
+        public int Start { get; set; }
+
+        /// <summary>End offset inside the target block.</summary>
+        public int End { get; set; }
+    }
+
+    /// <summary>Canvas engine selection state exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineSelectionState
+    {
+        /// <summary>Whether the current selection is collapsed.</summary>
+        public bool IsCollapsed { get; set; } = true;
+
+        /// <summary>Current page index.</summary>
+        public int PageIndex { get; set; }
+
+        /// <summary>Anchor block id for the current text selection.</summary>
+        public string AnchorBlockId { get; set; } = string.Empty;
+
+        /// <summary>Anchor text offset for the current text selection.</summary>
+        public int AnchorOffset { get; set; }
+
+        /// <summary>Focus block id for the current text selection.</summary>
+        public string FocusBlockId { get; set; } = string.Empty;
+
+        /// <summary>Focus text offset for the current text selection.</summary>
+        public int FocusOffset { get; set; }
+
+        /// <summary>Whether the selection focus is inside a table cell.</summary>
+        public bool InTable { get; set; }
+
+        /// <summary>Focused table block identifier when the selection is inside a table.</summary>
+        public string TableId { get; set; } = string.Empty;
+
+        /// <summary>Focused table cell identifier when the selection is inside a table.</summary>
+        public string CellId { get; set; } = string.Empty;
+
+        /// <summary>Zero-based focused table row index.</summary>
+        public int RowIndex { get; set; }
+
+        /// <summary>Zero-based focused table cell index.</summary>
+        public int CellIndex { get; set; }
+
+        /// <summary>Editable region of the caret: "Body", "Header" or "Footer" (B6).</summary>
+        public string Region { get; set; } = "Body";
+
+        /// <summary>Header/footer scope (Primary/First/Even) when the caret is in a header/footer (B6).</summary>
+        public string HeaderFooterScope { get; set; } = string.Empty;
+
+        /// <summary>Whether the caret sits on an inline signing field (plan S2.11).</summary>
+        public bool SigningFieldSelected { get; set; }
+
+        /// <summary>The signing field at the caret, when one is selected.</summary>
+        public CanvasEngineSigningFieldSelection? SigningField { get; set; }
+    }
+
+    /// <summary>Signing field at the current selection, for the properties panel (plan S2.11/S2.21).</summary>
+    public sealed class CanvasEngineSigningFieldSelection
+    {
+        /// <summary>Stable signing field identifier.</summary>
+        public string Uuid { get; set; } = string.Empty;
+
+        /// <summary>Field type name.</summary>
+        public string FieldType { get; set; } = "text";
+
+        /// <summary>Signer role identifier.</summary>
+        public string SubmitterUuid { get; set; } = string.Empty;
+
+        /// <summary>Whether the field is required.</summary>
+        public bool Required { get; set; }
+
+        /// <summary>User-facing label.</summary>
+        public string Label { get; set; } = string.Empty;
+
+        /// <summary>Owning header/footer id when the field lives in a header/footer (else empty).</summary>
+        public string HeaderFooterId { get; set; } = string.Empty;
+
+        /// <summary>Header/footer scope name (Primary/FirstPage/EvenPages/OddPages).</summary>
+        public string Scope { get; set; } = string.Empty;
+
+        /// <summary>Whether the field repeats on every page (header/footer field).</summary>
+        public bool Repeats { get; set; }
+    }
+
+    /// <summary>Canvas engine diagnostics exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineDiagnosticsState
+    {
+        /// <summary>Renderer architecture name.</summary>
+        public string ArchitectureName { get; set; } = "CanvasDocumentEngine";
+
+        /// <summary>Page surface strategy name.</summary>
+        public string PageSurfaceStrategy { get; set; } = "canvas-per-visible-page";
+
+        /// <summary>Current rendered page count.</summary>
+        public int PageCount { get; set; }
+
+        /// <summary>Current spell/proofing diagnostic count.</summary>
+        public int ProofingDiagnosticCount { get; set; }
+
+        /// <summary>Current painted spell squiggle count.</summary>
+        public int ProofingSquiggleCount { get; set; }
+    }
+
+    /// <summary>Canvas remote operation apply result exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineRemoteApplyResult
+    {
+        /// <summary>Whether every operation in the remote batch was applied.</summary>
+        public bool Success { get; set; } = true;
+
+        /// <summary>Whether the runtime model changed.</summary>
+        public bool Changed { get; set; }
+
+        /// <summary>Operation ids applied by the canvas runtime.</summary>
+        public List<string> AppliedOperationIds { get; set; } = [];
+
+        /// <summary>Operation ids rejected by the canvas runtime.</summary>
+        public List<string> FailedOperationIds { get; set; } = [];
+
+        /// <summary>Conflict details returned by the deterministic merge layer.</summary>
+        public List<CanvasEngineRemoteConflict> Conflicts { get; set; } = [];
+    }
+
+    /// <summary>Canvas remote operation conflict detail exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineRemoteConflict
+    {
+        /// <summary>Operation id associated with the conflict.</summary>
+        public string OperationId { get; set; } = string.Empty;
+
+        /// <summary>Reason reported by the JavaScript merge layer.</summary>
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    /// <summary>Canvas presence overlay state exposed to Blazor callers.</summary>
+    public sealed class CanvasEnginePresenceState
+    {
+        /// <summary>Remote cursor count rendered in the canvas overlay.</summary>
+        public int CursorCount { get; set; }
+
+        /// <summary>Rendered remote cursor geometry snapshots.</summary>
+        public List<CanvasEnginePresenceCursor> Cursors { get; set; } = [];
+    }
+
+    /// <summary>Canvas presence cursor geometry exposed to Blazor callers.</summary>
+    public sealed class CanvasEnginePresenceCursor
+    {
+        /// <summary>Remote collaboration session id.</summary>
+        public string SessionId { get; set; } = string.Empty;
+
+        /// <summary>Block id targeted by the remote cursor.</summary>
+        public string BlockId { get; set; } = string.Empty;
+
+        /// <summary>Remote cursor text offset.</summary>
+        public int Offset { get; set; }
+
+        /// <summary>Rendered page index.</summary>
+        public int PageIndex { get; set; }
+
+        /// <summary>Rendered x coordinate.</summary>
+        public double X { get; set; }
+
+        /// <summary>Rendered y coordinate.</summary>
+        public double Y { get; set; }
+
+        /// <summary>Resolved visual cursor color.</summary>
+        public string Color { get; set; } = string.Empty;
+    }
+
+    /// <summary>Canvas engine changed state exposed to Blazor callers.</summary>
+    public sealed class CanvasEngineChangedState
+    {
+        /// <summary>Whether the engine is dirty.</summary>
+        public bool IsDirty { get; set; }
+
+        /// <summary>Current model version.</summary>
+        public long ModelVersion { get; set; }
+    }
+
+    /// <summary>
+    /// Primitives-only UI snapshot pushed from the engine (see interop.mjs buildUiState) so the parent toolbar
+    /// can update pressed-state / dirty / undo availability / page count without a follow-up interop pull.
+    /// </summary>
+    public sealed class CanvasEngineUiState
+    {
+        public CanvasEngineFormattingState? Formatting { get; set; }
+        public bool IsDirty { get; set; }
+        public bool CanUndo { get; set; }
+        public bool CanRedo { get; set; }
+        public int PageCount { get; set; }
+        public long ModelVersion { get; set; }
+    }
+
+    /// <summary>Wrapper used to pluck just the pushed <see cref="CanvasEngineUiState"/> out of the selection payload.</summary>
+    public sealed class CanvasEngineUiStateEnvelope
+    {
+        public CanvasEngineUiState? UiState { get; set; }
+    }
+
+    /// <summary>Live comment + revision lists pulled from the engine model (B3). The lists already use the
+    /// canonical <see cref="DocumentComment"/> / <see cref="DocumentRevision"/> shapes, so they bind directly.</summary>
+    public sealed class CanvasEngineAnnotations
+    {
+        public List<DocumentComment> Comments { get; set; } = [];
+        public List<DocumentRevision> Revisions { get; set; } = [];
+
+        /// <summary>Live document body word count (B6) — read from the engine, not the C# document mirror.</summary>
+        public int WordCount { get; set; }
+
+        /// <summary>Live page count from the engine layout (B6).</summary>
+        public int PageCount { get; set; }
+    }
+}

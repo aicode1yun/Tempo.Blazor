@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Odt",
+  "namespace": "Tempo.Blazor.DocumentFormats.Odt",
+  "description": "Writes OpenDocument package XML from the editor model.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Odt/DocumentOdtExporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "OdtPackageWriter"
+}

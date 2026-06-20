@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "PDF signature verification state.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningPdfVerificationStatus.cs",
+  "documentationStatus": "generated",
+  "itemName": "SigningPdfVerificationStatus"
+}

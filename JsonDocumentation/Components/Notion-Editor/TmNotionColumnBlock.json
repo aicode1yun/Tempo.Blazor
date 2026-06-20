@@ -1,0 +1,27 @@
+{
+  "itemName": "TmNotionColumnBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionColumnBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Layout",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Layout/TmNotionColumnBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Layout"
+  ],
+  "parameters": [
+    {
+      "name": "Block",
+      "type": "IPageBlock",
+      "isRequired": true,
+      "editorRequired": true
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "Blocks / Layout"
+}

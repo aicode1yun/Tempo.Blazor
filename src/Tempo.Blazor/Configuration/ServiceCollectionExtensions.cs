@@ -1,10 +1,15 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Tempo.Blazor.Components.Modeling;
 using Tempo.Blazor.Components.Diagram.Services;
 using Tempo.Blazor.Components.Diagram.Stencils;
 using Tempo.Blazor.Components.Diagram.Templates;
 using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Localization;
+using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.NotionEditor.Helpers;
+using Tempo.Blazor.Modeling;
 using Tempo.Blazor.Services;
 
 namespace Tempo.Blazor.Configuration;
@@ -64,6 +69,11 @@ public static class ServiceCollectionExtensions
         // DragDropService — Scoped (carries dragged IDs between sibling components)
         services.TryAddScoped<DragDropService>();
 
+        // ── Notification system ───────────────────────────────────────────────
+        services.TryAddSingleton<INotificationBadgeState, NotificationBadgeState>();
+        services.TryAddSingleton<INotificationService, NoOpNotificationService>();
+        services.TryAddScoped<CommentNotificationOrchestrator>();
+
         // ── Wireframe editor ──────────────────────────────────────────────────
         // WireframeCommandStack is NOT registered here – it is created by
         // TmWireframeEditor and cascaded to children so that multiple editor
@@ -89,8 +99,36 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<WireframeSchemaRegistry>(sp =>
             new WireframeSchemaRegistry(sp.GetServices<IWireframeSchemaSource>()));
 
+        // ── Modeling editor ──────────────────────────────────────────────────
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationProfile, BpmnNotationProfile>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationProfile, BpmnLegacyModelingNotationProfile>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationProfile, UmlNotationProfile>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationProfile, ArchimateModelingNotationProfile>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationProfile, Archimate32NotationProfile>());
+        services.TryAddSingleton<ModelingNotationProfileRegistry>(sp =>
+            new ModelingNotationProfileRegistry(
+                sp.GetServices<IModelingNotationProfile>(),
+                sp.GetService<ILogger<ModelingNotationProfileRegistry>>()));
+        services.TryAddSingleton<IModelingNotationProfileProvider>(sp =>
+            sp.GetRequiredService<ModelingNotationProfileRegistry>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationRelationshipRulesProvider, BpmnRelationshipRulesProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationRelationshipRulesProvider, UmlRelationshipRulesProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationRelationshipRulesProvider, Archimate32RelationshipRulesProvider>());
+        services.TryAddSingleton<IModelingRelationshipRulesProvider, BuiltInModelingRelationshipRulesProvider>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationViewpointRulesProvider, BpmnViewpointRulesProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationViewpointRulesProvider, UmlViewpointRulesProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationViewpointRulesProvider, Archimate32ViewpointRulesProvider>());
+        services.TryAddSingleton<IModelingViewpointRulesProvider, BuiltInModelingViewpointRulesProvider>();
+        services.TryAddSingleton<IModelingStencilMapper, BuiltInModelingStencilMapper>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingModelProvider, DemoModelingModelProvider>());
+        services.TryAddScoped<ModelingDiagramGenerator>();
+
         // ── Diagram editor ────────────────────────────────────────────────────
-        services.TryAddSingleton<IDiagramStencilProvider, BuiltInDiagramStencilProvider>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramStencilProvider, BuiltInDiagramStencilProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramStencilProvider, Uml25DiagramStencilProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramStencilProvider, Bpmn2DiagramStencilProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramStencilProvider, Archimate3DiagramStencilProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramStencilProvider, ExtendedDiagramStencilProvider>());
         services.TryAddSingleton<DiagramStencilRegistry>(sp =>
         {
             var registry = new DiagramStencilRegistry();
@@ -100,7 +138,8 @@ public static class ServiceCollectionExtensions
             return registry;
         });
 
-        services.TryAddSingleton<IDiagramTemplateProvider, BuiltInDiagramTemplateProvider>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramTemplateProvider, BuiltInDiagramTemplateProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramTemplateProvider, ExtendedDiagramTemplateProvider>());
         services.TryAddSingleton<DiagramTemplateRegistry>(sp =>
         {
             var registry = new DiagramTemplateRegistry();
@@ -165,6 +204,38 @@ public static class ServiceCollectionExtensions
     {
         services.TryAddSingleton<T>();
         services.AddSingleton<IDiagramStencilProvider>(sp => sp.GetRequiredService<T>());
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a JSON-backed diagram stencil provider with optional lazy-loaded libraries.
+    /// </summary>
+    /// <param name="services">Service collection to configure.</param>
+    /// <param name="sources">JSON stencil library sources.</param>
+    /// <param name="priority">Provider priority. Higher values override lower-priority stencil ids.</param>
+    public static IServiceCollection AddJsonDiagramStencilProvider(
+        this IServiceCollection services,
+        IEnumerable<JsonDiagramStencilLibrarySource> sources,
+        int priority = 50)
+    {
+        services.AddSingleton<IDiagramStencilProvider>(new JsonDiagramStencilProvider(sources, priority));
+        return services;
+    }
+
+    /// <summary>
+    /// Replaces the default <see cref="NoOpNotificationService"/> with
+    /// <see cref="InMemoryNotificationStore"/> so notifications are kept in memory.
+    /// Also replaces <see cref="INotificationBadgeState"/> with the same store
+    /// so the badge count is live.
+    ///
+    /// Use this in demo / test applications where you want to see notifications
+    /// without a real backend.
+    /// </summary>
+    public static IServiceCollection AddInMemoryNotifications(this IServiceCollection services)
+    {
+        services.AddSingleton<InMemoryNotificationStore>();
+        services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<InMemoryNotificationStore>());
+        services.AddSingleton<INotificationBadgeState>(sp => sp.GetRequiredService<InMemoryNotificationStore>());
         return services;
     }
 }

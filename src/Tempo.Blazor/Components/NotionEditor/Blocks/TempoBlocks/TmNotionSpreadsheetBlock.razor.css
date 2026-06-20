@@ -1,0 +1,136 @@
+.tm-notion-spreadsheet-block {
+    position: relative;
+    width: 100%;
+}
+
+.tm-notion-spreadsheet-block__figure {
+    margin: 0;
+    width: 100%;
+}
+
+.tm-notion-spreadsheet-block__embed-wrap {
+    position: relative;
+    width: 100%;
+    min-height: 120px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.tm-notion-spreadsheet-block__spreadsheet {
+    display: block;
+    width: 100%;
+}
+
+.tm-notion-spreadsheet-block__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    color: var(--tm-color-neutral-400, #9ca3af);
+}
+
+/* Overlay — vždy viditelný, obsahuje Edit tlačítko */
+.tm-notion-spreadsheet-block__overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.tm-notion-spreadsheet-block__edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--tm-color-surface, #fff);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--tm-color-text, #111827);
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,.12);
+    white-space: nowrap;
+    opacity: 0.85;
+    transition: opacity 0.15s;
+}
+
+.tm-notion-spreadsheet-block__edit-btn:hover {
+    background: var(--tm-color-surface-hover, #f9fafb);
+    opacity: 1;
+}
+
+.tm-notion-spreadsheet-block__caption {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--tm-color-text-muted, #6b7280);
+    text-align: center;
+    outline: none;
+    min-height: 1.4em;
+}
+
+.tm-notion-spreadsheet-block__caption:empty::before {
+    content: attr(data-placeholder);
+    color: var(--tm-color-text-placeholder, #d1d5db);
+    pointer-events: none;
+}
+
+.tm-notion-spreadsheet-block__spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: tm-spin 0.7s linear infinite;
+}
+
+/* Insert-existing placeholder actions + missing-document state (document library) */
+.tm-notion-tempo-block__placeholder-actions {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.tm-notion-tempo-block__insert-existing {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    border: 1px dashed var(--tm-border-color, #d1d5db);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--tm-text-muted, #6b7280);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.tm-notion-tempo-block__insert-existing:hover {
+    border-color: var(--tm-primary, #6366f1);
+    color: var(--tm-primary, #6366f1);
+}
+
+.tm-notion-tempo-block__not-found {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--tm-border-color, #e5e7eb);
+    border-radius: 8px;
+    background: var(--tm-surface-2, #f9fafb);
+    color: var(--tm-text-muted, #6b7280);
+    font-size: 14px;
+}
+
+.tm-notion-tempo-block__remove {
+    padding: 4px 12px;
+    border: 1px solid var(--tm-border-color, #d1d5db);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 13px;
+}

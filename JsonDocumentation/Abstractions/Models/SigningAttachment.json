@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Attachment referenced by signing fields or completed documents.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningAttachment.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ContentType",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Content type, such as application/pdf or image/png."
+    },
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTimeOffset?",
+      "description": "Creation timestamp."
+    },
+    {
+      "name": "FileName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display filename."
+    },
+    {
+      "name": "Size",
+      "kind": "Property",
+      "type": "long?",
+      "description": "File size in bytes."
+    },
+    {
+      "name": "Url",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Download or preview URL."
+    },
+    {
+      "name": "Uuid",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable attachment identifier."
+    }
+  ],
+  "itemName": "SigningAttachment"
+}

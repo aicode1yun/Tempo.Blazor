@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionTemplateDto.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Blocks",
+      "kind": "Property",
+      "type": "IReadOnlyList<PageBlock>"
+    },
+    {
+      "name": "Category",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "IconEmoji",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "NotionTemplateDto"
+}

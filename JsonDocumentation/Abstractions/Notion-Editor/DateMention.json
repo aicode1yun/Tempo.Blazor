@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/DateMention.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Date",
+      "kind": "Property",
+      "type": "DateTime"
+    },
+    {
+      "name": "EndDate",
+      "kind": "Property",
+      "type": "DateTime?"
+    },
+    {
+      "name": "IncludeTime",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "TextOffset",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "TimeZone",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "InlineMentionType"
+    }
+  ],
+  "itemName": "DateMention"
+}

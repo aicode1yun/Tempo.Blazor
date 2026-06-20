@@ -1,0 +1,30 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "A variable available for insertion into an expression editor.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/ExpressionVariable.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "required string",
+      "description": "Human-readable description."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "required string",
+      "description": "Variable name (e.g. \"sender.name\")."
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "string",
+      "description": "Data type hint (e.g. \"string\", \"DateTime\")."
+    }
+  ],
+  "itemName": "ExpressionVariable"
+}

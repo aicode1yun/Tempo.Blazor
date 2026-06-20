@@ -1,0 +1,36 @@
+{
+  "itemName": "TmNotionWatchButton",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionWatchButton Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/UI/TmNotionWatchButton.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor"
+  ],
+  "parameters": [
+    {
+      "name": "OnWatchingChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "User identifier for the current watcher."
+    },
+    {
+      "name": "PageId",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"\"",
+      "description": "Watch provider used to persist page subscriptions."
+    },
+    {
+      "name": "UserId",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"\"",
+      "description": "Page identifier being watched."
+    }
+  ],
+  "subcategory": "UI"
+}

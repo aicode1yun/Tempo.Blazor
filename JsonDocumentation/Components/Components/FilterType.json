@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataTable",
+  "description": "Filter input type for a TmDataTableColumn.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataTable/DataTableEnums.cs",
+  "documentationStatus": "generated",
+  "itemName": "FilterType"
+}

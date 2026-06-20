@@ -42,6 +42,15 @@
     background: var(--tm-hover, rgba(55,53,47,.08));
 }
 
+.tm-notion-inline-toolbar__btn:focus-visible,
+.tm-notion-inline-toolbar__link-remove:focus-visible,
+.tm-notion-inline-toolbar__link-apply:focus-visible,
+.tm-notion-inline-toolbar__color-swatch:focus-visible,
+.tm-notion-inline-toolbar__turninto-item:focus-visible {
+    outline: 2px solid var(--tm-color-primary, var(--tm-primary, #2383e2));
+    outline-offset: 2px;
+}
+
 .tm-notion-inline-toolbar__btn--active {
     background: var(--tm-hover, rgba(55,53,47,.08));
     color: var(--tm-primary, #2383e2);
@@ -50,6 +59,10 @@
 .tm-notion-inline-toolbar__btn--text {
     padding: 3px 7px;
     font-size: 12px;
+}
+
+.tm-notion-inline-toolbar__btn-label {
+    min-width: 0;
 }
 
 .tm-notion-inline-toolbar__sep {
@@ -217,4 +230,69 @@
     align-items: center;
     gap: 1px;
     padding: 1px 2px;
+}
+
+@media (max-width: 640px) {
+    .tm-notion-inline-toolbar {
+        max-width: calc(100vw - 1rem);
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        padding: var(--tm-space-1, 0.25rem);
+    }
+
+    .tm-notion-inline-toolbar__btn,
+    .tm-notion-inline-toolbar__btn--text,
+    .tm-notion-inline-toolbar__link-remove,
+    .tm-notion-inline-toolbar__link-apply,
+    .tm-notion-inline-toolbar__color-swatch,
+    .tm-notion-inline-toolbar__turninto-item {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .tm-notion-inline-toolbar__btn {
+        height: 44px;
+        padding: 0 var(--tm-space-2, 0.5rem);
+    }
+
+    .tm-notion-inline-toolbar__btn--text,
+    .tm-notion-inline-toolbar__turninto-item {
+        padding-inline: var(--tm-space-3, 0.75rem);
+    }
+
+    .tm-notion-inline-toolbar__btn--text {
+        width: 44px;
+        gap: 0;
+        padding-inline: 0;
+    }
+
+    .tm-notion-inline-toolbar__btn--text .tm-notion-inline-toolbar__btn-label,
+    .tm-notion-inline-toolbar__btn--text > svg:last-child {
+        display: none;
+    }
+
+    .tm-notion-inline-toolbar__sep {
+        height: 28px;
+        margin-inline: var(--tm-space-1, 0.25rem);
+    }
+
+    .tm-notion-inline-toolbar__link-panel,
+    .tm-notion-inline-toolbar__align-panel {
+        gap: var(--tm-space-1, 0.25rem);
+    }
+
+    .tm-notion-inline-toolbar__link-input {
+        min-height: 44px;
+        width: min(180px, 48vw);
+    }
+
+    .tm-notion-inline-toolbar__color-panel {
+        width: min(300px, calc(100vw - 2rem));
+    }
+
+    .tm-notion-inline-toolbar__color-row {
+        flex-wrap: wrap;
+        gap: var(--tm-space-1, 0.25rem);
+    }
 }

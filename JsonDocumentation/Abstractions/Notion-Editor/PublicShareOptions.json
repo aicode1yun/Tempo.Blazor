@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Options used when creating or replacing a public share.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/PublicShareDto.cs",
+  "documentationStatus": "generated",
+  "itemName": "PublicShareOptions"
+}

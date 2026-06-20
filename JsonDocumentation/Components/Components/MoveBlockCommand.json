@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Commands",
+  "description": "Reorders a block within the page by moving it from to in the local list and persisting the new order. Undo restores the original order.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Commands/MoveBlockCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ExecuteAsync",
+      "kind": "Method",
+      "type": "Task"
+    },
+    {
+      "name": "UndoAsync",
+      "kind": "Method",
+      "type": "Task"
+    }
+  ],
+  "itemName": "MoveBlockCommand"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Specifies the criterion used when sorting a pivot dimension field.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotSortBy.cs",
+  "documentationStatus": "generated",
+  "itemName": "PivotSortBy"
+}

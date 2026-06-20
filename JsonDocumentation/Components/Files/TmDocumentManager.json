@@ -1,0 +1,206 @@
+{
+  "itemName": "TmDocumentManager",
+  "kind": "Component",
+  "category": "Files",
+  "description": "A DMS-ready document manager component with generic metadata support, per-item permissions, custom forms, and detail panel. Supports keyboard navigation, multiselect, inline rename, and context menu.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "sourcePath": "src/Tempo.Blazor/Components/Files/TmDocumentManager.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Files"
+  ],
+  "parameters": [
+    {
+      "name": "AllowMultipleAttachments",
+      "type": "bool",
+      "isRequired": false,
+      "description": "How the detail panel is displayed. Default is ."
+    },
+    {
+      "name": "AttachmentListTemplate",
+      "type": "RenderFragment<AttachmentListContext<TMetadata>>?",
+      "isRequired": false,
+      "description": "When true, allows one logical item to hold multiple physical file attachments."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Event fired when the selection changes."
+    },
+    {
+      "name": "CurrentPath",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Data provider for document operations."
+    },
+    {
+      "name": "CurrentPathChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Current folder path. Two-way bindable."
+    },
+    {
+      "name": "DeleteForm",
+      "type": "RenderFragment<DeleteContext<TMetadata>>?",
+      "isRequired": false,
+      "description": "Custom form for creating a new folder. When null, a default inline input is used."
+    },
+    {
+      "name": "DetailMode",
+      "type": "DocumentManagerDetailMode",
+      "isRequired": false,
+      "default": "DocumentManagerDetailMode.SlideIn",
+      "description": "When true, hides actions the current user is not permitted to perform."
+    },
+    {
+      "name": "DetailPanel",
+      "type": "RenderFragment<DetailContext<TMetadata>>?",
+      "isRequired": false,
+      "description": "Custom edit/metadata form. When null, the Edit action is unavailable."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Event fired when the view mode changes."
+    },
+    {
+      "name": "EditForm",
+      "type": "RenderFragment<EditContext<TMetadata>>?",
+      "isRequired": false,
+      "description": "Custom delete confirmation form. When null, a default is used."
+    },
+    {
+      "name": "ItemContextMenu",
+      "type": "RenderFragment<ContextMenuContext<TMetadata>>?",
+      "isRequired": false,
+      "description": "Custom detail / properties panel content."
+    },
+    {
+      "name": "ItemMetaTemplate",
+      "type": "RenderFragment<DocumentManagerItem<TMetadata>>?",
+      "isRequired": false,
+      "description": "Custom context menu for an item. When null, no context menu is shown."
+    },
+    {
+      "name": "NewFolderForm",
+      "type": "RenderFragment<NewFolderContext<TMetadata>>?",
+      "isRequired": false,
+      "description": "Custom form for uploading files with metadata. When null, a simple file input is used."
+    },
+    {
+      "name": "OnItemOpen",
+      "type": "EventCallback<DocumentManagerItem<TMetadata>>",
+      "isRequired": false,
+      "description": "Template rendered below the item name in list/grid views (e.g. tags, metadata preview)."
+    },
+    {
+      "name": "OnSelectionChanged",
+      "type": "EventCallback<IReadOnlyList<DocumentManagerItem<TMetadata>>>",
+      "isRequired": false,
+      "description": "Event fired when an item is opened (double-clicked or Enter)."
+    },
+    {
+      "name": "RespectPermissions",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the Detail / Properties button. Default is true."
+    },
+    {
+      "name": "ShowCopyButton",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to show the Move button. Default is false."
+    },
+    {
+      "name": "ShowDeleteButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the Upload button. Default is true."
+    },
+    {
+      "name": "ShowDetailButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the Edit button. Default is true."
+    },
+    {
+      "name": "ShowDownloadButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the Rename button. Default is true."
+    },
+    {
+      "name": "ShowEditButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the Copy button. Default is false."
+    },
+    {
+      "name": "ShowFolderTree",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When true, disables all user interactions."
+    },
+    {
+      "name": "ShowMoveButton",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to show the Download button. Default is true."
+    },
+    {
+      "name": "ShowNewFolderButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the folder tree sidebar. Default is true."
+    },
+    {
+      "name": "ShowRenameButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the Delete button. Default is true."
+    },
+    {
+      "name": "ShowUploadButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the New Folder button. Default is true."
+    },
+    {
+      "name": "UploadForm",
+      "type": "RenderFragment<UploadContext<TMetadata>>?",
+      "isRequired": false,
+      "description": "Custom template for rendering the attachment list inside the detail panel or edit modal."
+    },
+    {
+      "name": "ViewMode",
+      "type": "DocumentManagerViewMode",
+      "isRequired": false,
+      "default": "DocumentManagerViewMode.List",
+      "description": "Event fired when the current path changes."
+    },
+    {
+      "name": "ViewModeChanged",
+      "type": "EventCallback<DocumentManagerViewMode>",
+      "isRequired": false,
+      "description": "Display mode (List or Grid). Default is ."
+    }
+  ],
+  "typeParameters": [
+    {
+      "name": "TMetadata",
+      "description": "Generic type parameter TMetadata."
+    }
+  ]
+}

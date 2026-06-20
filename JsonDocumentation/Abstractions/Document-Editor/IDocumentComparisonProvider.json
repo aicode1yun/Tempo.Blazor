@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Interfaces",
+  "description": "Provider boundary for comparing arbitrary document snapshots outside version history.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Interfaces/DocumentEditorProviders.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDocumentComparisonProvider"
+}

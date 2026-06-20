@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Describes an OLAP level exposed by an XMLA data source.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotXmlaLevel.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Caption",
+      "kind": "Property",
+      "type": "string",
+      "description": "Human-readable caption."
+    },
+    {
+      "name": "Depth",
+      "kind": "Property",
+      "type": "int",
+      "description": "Depth of the level within its hierarchy (0-based)."
+    },
+    {
+      "name": "UniqueName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier of the level."
+    }
+  ],
+  "itemName": "PivotXmlaLevel"
+}

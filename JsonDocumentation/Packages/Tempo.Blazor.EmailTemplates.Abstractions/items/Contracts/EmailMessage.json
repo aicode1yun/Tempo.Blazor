@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Contracts",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Contracts",
+  "description": "A fully rendered email ready to be delivered.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Contracts/EmailMessage.cs",
+  "documentationStatus": "generated",
+  "itemName": "EmailMessage"
+}

@@ -1,0 +1,128 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+
+@switch (Block?.Content)
+{
+    case ParagraphBlockContent paragraph:
+        <p class="tm-document-block tm-document-block--paragraph">
+            @foreach (var inline in paragraph.Inlines)
+            {
+                <TmDocumentInlineRenderer Inline="@inline"
+                                          DocumentId="@DocumentId"
+                                          ImageUrlResolver="@ImageUrlResolver"
+                                          OnCommentSelected="@OnCommentSelected" />
+            }
+        </p>
+        break;
+
+    case HeadingBlockContent heading:
+        @RenderHeading(heading)
+        break;
+
+    case ListBlockContent list:
+        @if (list.Ordered)
+        {
+            <ol class="@GetListClass(list)">
+                <li>
+                    @foreach (var inline in list.Inlines)
+                    {
+                        <TmDocumentInlineRenderer Inline="@inline"
+                                                  DocumentId="@DocumentId"
+                                                  ImageUrlResolver="@ImageUrlResolver"
+                                                  OnCommentSelected="@OnCommentSelected" />
+                    }
+                </li>
+            </ol>
+        }
+        else
+        {
+            <ul class="@GetListClass(list)">
+                <li>
+                    @foreach (var inline in list.Inlines)
+                    {
+                        <TmDocumentInlineRenderer Inline="@inline"
+                                                  DocumentId="@DocumentId"
+                                                  ImageUrlResolver="@ImageUrlResolver"
+                                                  OnCommentSelected="@OnCommentSelected" />
+                    }
+                </li>
+            </ul>
+        }
+        break;
+
+    case QuoteBlockContent quote:
+        <blockquote class="tm-document-block tm-document-block--quote">
+            @foreach (var inline in quote.Inlines)
+            {
+                <TmDocumentInlineRenderer Inline="@inline"
+                                          DocumentId="@DocumentId"
+                                          ImageUrlResolver="@ImageUrlResolver"
+                                          OnCommentSelected="@OnCommentSelected" />
+            }
+        </blockquote>
+        break;
+
+    case TableBlockContent table:
+        <table class="tm-document-block tm-document-table" style="@GetTableStyle(table)">
+            <tbody>
+                @foreach (var row in table.Rows)
+                {
+                    <tr>
+                        @foreach (var cell in row.Cells.Where(cell => cell.Merge.IsOrigin))
+                        {
+                            <td colspan="@cell.ColumnSpan" rowspan="@cell.RowSpan" style="@GetTableCellStyle(cell)">
+                                @foreach (var nestedBlock in cell.Blocks.OrderBy(block => block.Order))
+                                {
+                                    <TmDocumentBlockRenderer DocumentId="@DocumentId"
+                                                             Block="@nestedBlock"
+                                                             ImageUrlResolver="@ImageUrlResolver"
+                                                             Suggestions="@Suggestions"
+                                                             OnCommentSelected="@OnCommentSelected" />
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+        break;
+
+    case ImageBlockContent image:
+        <figure class="@GetImageClass(image)" style="@GetImageFigureStyle(image)">
+            @if (_isResolvingImage)
+            {
+                <div class="tm-document-image__loading">@Loc["TmDocumentEditor_ImageLoading"]</div>
+            }
+            else if (!string.IsNullOrWhiteSpace(ImageUrl))
+            {
+                <img class="tm-document-image__media"
+                     src="@ImageUrl"
+                     alt="@image.AltText"
+                     style="@GetImageStyle(image)" />
+                @if (!string.IsNullOrWhiteSpace(image.Caption))
+                {
+                    <figcaption>@image.Caption</figcaption>
+                }
+            }
+            else
+            {
+                <div class="tm-document-image__broken">@Loc["TmDocumentEditor_ImageBroken"]</div>
+            }
+        </figure>
+        break;
+
+    case PageBreakBlockContent:
+        <div class="tm-document-block tm-document-page-break" role="separator" aria-label="@Loc["TmDocumentEditor_PageBreak"]">
+            <span>@Loc["TmDocumentEditor_PageBreak"]</span>
+        </div>
+        break;
+}
+
+@foreach (var suggestion in BlockSuggestions)
+{
+    <span class="@GetSuggestionClass(suggestion)"
+          data-testid="@GetSuggestionTestId(suggestion)"
+          aria-label="@GetSuggestionLabel(suggestion)">
+        @GetSuggestionPreview(suggestion)
+    </span>
+}

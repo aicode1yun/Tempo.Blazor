@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Helper utilities for working with Gantt task hierarchies and timelines.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttHelper.cs",
+  "documentationStatus": "generated",
+  "itemName": "GanttHelper"
+}

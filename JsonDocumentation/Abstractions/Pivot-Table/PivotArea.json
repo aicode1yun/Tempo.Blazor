@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Defines the area where a pivot field is placed within the pivot table configuration.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotArea.cs",
+  "documentationStatus": "generated",
+  "itemName": "PivotArea"
+}

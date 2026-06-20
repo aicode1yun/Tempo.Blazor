@@ -1,0 +1,39 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<section @attributes="AdditionalAttributes"
+         class="@RootClass"
+         aria-invalid="@BoolText(HasValidationMessage)">
+    <header class="tm-signing-step-shell__header">
+        <div class="tm-signing-step-shell__heading">
+            <h3 class="tm-signing-step-shell__title">@DisplayLabel</h3>
+            @if (IsRequired)
+            {
+                <span class="tm-signing-step-shell__required">@Loc["TmSigning_Required"]</span>
+            }
+            else
+            {
+                <span class="tm-signing-step-shell__optional">@Loc["TmSigning_Optional"]</span>
+            }
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(AppearsOn))
+        {
+            <span class="tm-signing-step-shell__appears-on">@AppearsOn</span>
+        }
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(ResolvedDescription))
+    {
+        <div class="tm-signing-step-shell__description">@((MarkupString)FormatDescription(ResolvedDescription))</div>
+    }
+
+    <div class="tm-signing-step-shell__content">
+        @ChildContent
+    </div>
+
+    @if (HasValidationMessage)
+    {
+        <div id="@ValidationMessageId" class="tm-signing-step-shell__validation" role="alert">@ValidationMessage</div>
+    }
+</section>

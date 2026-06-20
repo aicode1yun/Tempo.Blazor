@@ -1,0 +1,52 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Creates deterministic word-level diffs for document text.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentTextDiffHelper.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Diff",
+      "kind": "Method",
+      "type": "DocumentTextDiffResult",
+      "description": "Diffs old and new text at word/punctuation level.",
+      "parameters": [
+        {
+          "name": "oldText",
+          "type": "string?"
+        },
+        {
+          "name": "newText",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "ExtractBlockPlainText",
+      "kind": "Method",
+      "type": "string",
+      "description": "Extracts readable plain text from a single document block.",
+      "parameters": [
+        {
+          "name": "block",
+          "type": "DocumentBlock"
+        }
+      ]
+    },
+    {
+      "name": "ExtractPlainText",
+      "kind": "Method",
+      "type": "string",
+      "description": "Extracts readable plain text from a document snapshot.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument?"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentTextDiffHelper"
+}

@@ -1,0 +1,229 @@
+using Bunit;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Tempo.Blazor.Components.Diagram.Models;
+using Tempo.Blazor.Components.Modeling;
+using Tempo.Blazor.Configuration;
+using Tempo.Blazor.Modeling;
+using Tempo.Blazor.Tests.Localization;
+
+namespace Tempo.Blazor.Tests.Modeling;
+
+public sealed class TmModelingDiagramPreviewTests : LocalizationTestBase
+{
+    public TmModelingDiagramPreviewTests()
+    {
+        Services.AddTempoBlazor();
+    }
+
+    [Fact]
+    public void Non_empty_document_renders_diagram_editor()
+    {
+        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+            .Add(p => p.Document, CreateDocument(nodeCount: 2)));
+
+        cut.Find("[data-testid='modeling-diagram-preview']").GetAttribute("data-state").Should().Be("populated");
+        cut.Find("[data-testid='diagram-editor']").Should().NotBeNull();
+        cut.FindAll(".tm-diagram-node").Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void Null_document_renders_pre_generation_empty_state()
+    {
+        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+            .Add(p => p.Document, (DiagramDocument?)null));
+
+        cut.Find("[data-testid='modeling-diagram-preview']").GetAttribute("data-state").Should().Be("empty");
+        cut.Find("[data-testid='modeling-diagram-preview-empty']").TextContent.Should().Contain("No diagram generated");
+        cut.FindAll("[data-testid='diagram-editor']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Open_in_editor_invokes_callback_with_document()
+    {
+        var document = CreateDocument(nodeCount: 1);
+        DiagramDocument? openedDocument = null;
+
+        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+            .Add(p => p.Document, document)
+            .Add(p => p.OnOpenInEditor, EventCallback.Factory.Create<DiagramDocument>(this, value => openedDocument = value)));
+
+        cut.Find("[data-testid='modeling-open-in-editor-button']").Click();
+
+        openedDocument.Should().BeSameAs(document);
+    }
+
+    [Fact]
+    public void Zero_node_document_renders_empty_canvas_hint_without_loading_state()
+    {
+        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+            .Add(p => p.Document, CreateDocument(nodeCount: 0)));
+
+        cut.Find("[data-testid='modeling-diagram-preview']").GetAttribute("data-state").Should().Be("empty-diagram");
+        cut.Find("[data-testid='diagram-editor']").Should().NotBeNull();
+        cut.Find("[data-testid='modeling-diagram-preview-empty-diagram-hint']").TextContent.Should().Contain("generated diagram is empty");
+        cut.FindAll("[data-testid='modeling-editor-loading']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Drop_on_canvas_adds_reused_modeling_node_with_source_identity()
+    {
+        var document = CreateDocument(nodeCount: 1);
+        var element = CreateElement("task-drop", "source/task-drop");
+        ModelingNodeDroppedEventArgs? dropped = null;
+
+        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+            .Add(p => p.Document, document)
+            .Add(p => p.ActiveDraggedElement, element)
+            .Add(p => p.OnNodeDropped, EventCallback.Factory.Create<ModelingNodeDroppedEventArgs>(this, value => dropped = value)));
+
+        cut.Find("[data-testid='modeling-diagram-preview-canvas-shell']")
+            .TriggerEvent("ondrop", new DragEventArgs { OffsetX = 420, OffsetY = 320 });
+
+        document.Nodes.Should().HaveCount(2);
+        var node = document.Nodes.Single(item => item.Data.TryGetValue("modelElementId", out var value) && value?.ToString() == "task-drop");
+        node.Data["sourceId"].Should().Be("source/task-drop");
+        dropped.Should().NotBeNull();
+        dropped!.Element.Id.Should().Be("task-drop");
+        dropped.Point.X.Should().Be(node.X);
+        dropped.NodeId.Should().Be(node.Id);
+    }
+
+    [Fact]
+    public void Dropping_same_element_twice_creates_two_node_occurrences_with_same_source_id()
+    {
+        var document = CreateDocument(nodeCount: 0);
+        var element = CreateElement("task-reuse", "source/task-reuse");
+
+        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+            .Add(p => p.Document, document)
+            .Add(p => p.ActiveDraggedElement, element));
+
+        var canvas = cut.Find("[data-testid='modeling-diagram-preview-canvas-shell']");
+        canvas.TriggerEvent("ondrop", new DragEventArgs { OffsetX = 200, OffsetY = 220 });
+        canvas.TriggerEvent("ondrop", new DragEventArgs { OffsetX = 420, OffsetY = 220 });
+
+        document.Nodes.Should().HaveCount(2);
+        document.Nodes.Should().OnlyContain(node => node.Data["modelElementId"].ToString() == "task-reuse");
+        document.Nodes.Select(node => node.Data["sourceId"].ToString()).Should().OnlyContain(value => value == "source/task-reuse");
+    }
+
+    [Fact]
+    public void Drop_existing_canvas_element_adds_second_occurrence_instead_of_model_tree_item()
+    {
+        var document = CreateDocument(nodeCount: 1);
+        var element = CreateElement("element-0", "source/element-0");
+
+        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+            .Add(p => p.Document, document)
+            .Add(p => p.ActiveDraggedElement, element));
+
+        cut.Find("[data-testid='modeling-diagram-preview-canvas-shell']")
+            .TriggerEvent("ondrop", new DragEventArgs { OffsetX = 120, OffsetY = 140 });
+
+        document.Nodes.Should().HaveCount(2);
+        document.Nodes.Count(node => node.Data["modelElementId"].ToString() == "element-0").Should().Be(2);
+        document.Nodes.Select(node => node.Data["sourceId"].ToString()).Should().OnlyContain(value => value == "source/element-0");
+        document.Nodes.Select(node => node.Id).Should().OnlyHaveUniqueItems();
+    }
+
+    [Fact]
+    public void Drop_outside_canvas_coordinates_is_ignored()
+    {
+        var document = CreateDocument(nodeCount: 1);
+
+        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+            .Add(p => p.Document, document)
+            .Add(p => p.ActiveDraggedElement, CreateElement("task-drop", "source/task-drop")));
+
+        cut.Find("[data-testid='modeling-diagram-preview-canvas-shell']")
+            .TriggerEvent("ondrop", new DragEventArgs { OffsetX = -1, OffsetY = 20 });
+
+        document.Nodes.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void Drop_when_node_drop_is_disabled_is_ignored_without_error()
+    {
+        var document = CreateDocument(nodeCount: 1);
+
+        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+            .Add(p => p.Document, document)
+            .Add(p => p.ActiveDraggedElement, CreateElement("task-drop", "source/task-drop"))
+            .Add(p => p.AllowNodeDrop, false));
+
+        cut.Find("[data-testid='modeling-diagram-preview-canvas-shell']")
+            .TriggerEvent("ondrop", new DragEventArgs { OffsetX = 260, OffsetY = 260 });
+
+        document.Nodes.Should().HaveCount(1);
+    }
+
+    private static DiagramDocument CreateDocument(int nodeCount)
+    {
+        var page = new DiagramPage
+        {
+            Id = "preview-page",
+            Name = "Preview",
+            Layers =
+            [
+                new DiagramLayer
+                {
+                    Id = "default",
+                    Name = "Default"
+                }
+            ]
+        };
+
+        for (var index = 0; index < nodeCount; index++)
+        {
+            page.Nodes.Add(new DiagramNode
+            {
+                Id = $"node-{index}",
+                StencilId = "general.rectangle",
+                X = 120 + index * 180,
+                Y = 140,
+                W = 140,
+                H = 72,
+                LayerId = "default",
+                Data = new Dictionary<string, object>
+                {
+                    ["name"] = $"Node {index}",
+                    ["modelElementId"] = $"element-{index}",
+                    ["sourceId"] = $"source/element-{index}"
+                }
+            });
+        }
+
+        if (nodeCount > 1)
+        {
+            page.Edges.Add(new DiagramEdge
+            {
+                Id = "edge-0",
+                SourceNodeId = "node-0",
+                TargetNodeId = "node-1",
+                ConnectorType = "association",
+                Shape = "connector",
+                LayerId = "default"
+            });
+        }
+
+        return new DiagramDocument
+        {
+            Id = "preview-doc",
+            Title = "Preview document",
+            Pages = [page],
+            ActivePageIndex = 0
+        };
+    }
+
+    private static ModelingElementDto CreateElement(string id, string sourceId) => new()
+    {
+        Id = id,
+        SourceId = sourceId,
+        SourceType = "test-source",
+        SourcePath = $"/Test/{id}",
+        SemanticType = "userTask",
+        Notation = "bpmn",
+        Name = $"Element {id}"
+    };
+}

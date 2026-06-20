@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+  "description": "A custom CSS style block (mj-style).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/EmailStyle.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Css",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the raw CSS text."
+    },
+    {
+      "name": "Inline",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Gets or sets whether the CSS should be inlined into element style attributes (mj-style inline=\"inline\") rather than emitted as an embedded stylesheet."
+    }
+  ],
+  "itemName": "EmailStyle"
+}

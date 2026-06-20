@@ -10,5 +10,5 @@ public class NotionSearchResult
     public Guid? BlockId { get; set; }
     public BlockType? BlockType { get; set; }
     public string MatchSnippet { get; set; } = string.Empty;
-    public IReadOnlyList<(int Start, int End)> HighlightRanges { get; set; } = new List<(int, int)>();
+    public IReadOnlyList<NotionSearchHighlightRange> HighlightRanges { get; set; } = [];
 }

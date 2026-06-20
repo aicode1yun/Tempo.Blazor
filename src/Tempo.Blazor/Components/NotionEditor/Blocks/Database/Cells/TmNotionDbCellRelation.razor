@@ -1,0 +1,19 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells
+@inherits TmNotionDbCellBase
+@using Tempo.Blazor.NotionEditor.Models
+
+<div class="tm-dbc tm-dbc--readonly">
+    @if (LinkedIds.Count > 0)
+    {
+        <span class="tm-dbc__chips" style="padding:0; gap:3px">
+            @foreach (var id in LinkedIds)
+            {
+                <span class="tm-dbc__chip">@id</span>
+            }
+        </span>
+    }
+    else
+    {
+        <span class="tm-dbc__text tm-dbc__text--muted">@Loc["TmNotionDbCell_NoLinkedRecords"]</span>
+    }
+</div>

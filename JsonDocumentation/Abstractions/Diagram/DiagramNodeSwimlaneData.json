@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Swimlane configuration stored on a container node.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramNodeSwimlaneData.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CellLabels",
+      "kind": "Property",
+      "type": "List<string>",
+      "description": "Labels for each cell indexed by row*ColumnCount+column."
+    },
+    {
+      "name": "ColumnCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of columns in the swimlane grid."
+    },
+    {
+      "name": "ColumnSizes",
+      "kind": "Property",
+      "type": "List<double>",
+      "description": "Width of each column. If empty, columns share equal width."
+    },
+    {
+      "name": "HeaderSize",
+      "kind": "Property",
+      "type": "double",
+      "description": "Size of the header area perpendicular to the lane direction (row header width or column header height)."
+    },
+    {
+      "name": "IsHorizontal",
+      "kind": "Property",
+      "type": "bool",
+      "description": "True for horizontal lanes (rows), false for vertical lanes (columns)."
+    },
+    {
+      "name": "RowCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of rows in the swimlane grid."
+    },
+    {
+      "name": "RowSizes",
+      "kind": "Property",
+      "type": "List<double>",
+      "description": "Height of each row. If empty, rows share equal height."
+    }
+  ],
+  "itemName": "DiagramNodeSwimlaneData"
+}

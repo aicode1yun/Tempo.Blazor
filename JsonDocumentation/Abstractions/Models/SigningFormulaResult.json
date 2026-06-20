@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Result of signing formula normalization or validation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningFormulaResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Errors",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>",
+      "description": "Validation errors found while processing the formula."
+    },
+    {
+      "name": "Formula",
+      "kind": "Property",
+      "type": "string",
+      "description": "Normalized formula text. Field tokens use stable field UUIDs."
+    }
+  ],
+  "itemName": "SigningFormulaResult"
+}

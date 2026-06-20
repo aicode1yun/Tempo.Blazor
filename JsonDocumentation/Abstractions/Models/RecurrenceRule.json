@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Represents a recurrence rule that can be serialized to/from iCal RRULE format.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RecurrenceRule.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DayOfMonth",
+      "kind": "Property",
+      "type": "int?",
+      "description": "Day of the month for Monthly/Yearly patterns (1-31)."
+    },
+    {
+      "name": "DaysOfWeek",
+      "kind": "Property",
+      "type": "IReadOnlyList<int>",
+      "description": "Days of the week selected for Weekly pattern (0=Sunday, 6=Saturday)."
+    },
+    {
+      "name": "EndAfter",
+      "kind": "Property",
+      "type": "object?",
+      "description": "How the recurrence ends: null = never, int = after N occurrences, DateTime = until date."
+    },
+    {
+      "name": "Interval",
+      "kind": "Property",
+      "type": "int",
+      "description": "Interval (e.g. every 2 days/weeks/months/years). Default is 1."
+    },
+    {
+      "name": "MonthOfYear",
+      "kind": "Property",
+      "type": "int?",
+      "description": "Month of the year for Yearly pattern (1-12)."
+    },
+    {
+      "name": "Pattern",
+      "kind": "Property",
+      "type": "RecurrencePattern",
+      "description": "The recurrence pattern type."
+    },
+    {
+      "name": "Position",
+      "kind": "Property",
+      "type": "int?",
+      "description": "Position of the day in the month for Monthly (e.g. first Monday)."
+    },
+    {
+      "name": "StartDate",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "The start date of the recurrence."
+    }
+  ],
+  "itemName": "RecurrenceRule"
+}

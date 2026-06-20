@@ -103,6 +103,17 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
 
     private static string Capitalize(string s) => string.IsNullOrEmpty(s) ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
+    private string GetDataSectionLabel(string dataKey)
+    {
+        var resourceKey = $"TmDiagramProperties_Data_{ToResourceKeySuffix(dataKey)}";
+        return GetLocalizedText(resourceKey, Capitalize(dataKey));
+    }
+
+    private static string ToResourceKeySuffix(string value)
+        => string.Concat(value
+            .Split(['-', '_', '.', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(Capitalize));
+
     /// <summary>Returns a small SVG preview for a dash pattern option.</summary>
     private static string GetDashPreviewSvg(string? pattern) => pattern switch
     {
@@ -1124,6 +1135,81 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         };
     }
 
+    private string GetEdgeTemplate()
+    {
+        if (SelectedEdges.Count == 0) return "custom";
+
+        var match = GetEdgeStencilTemplates()
+            .FirstOrDefault(stencil => SelectedEdges.All(edge => EdgeMatchesStencil(edge, stencil)));
+
+        return match?.Id ?? "custom";
+    }
+
+    private async Task OnEdgeTemplateChanged(string stencilId)
+    {
+        if (Document is null || SelectedEdges.Count == 0 || string.Equals(stencilId, "custom", StringComparison.Ordinal))
+            return;
+
+        var stencil = StencilRegistry.GetStencil(stencilId);
+        if (stencil is null || stencil.Kind != DiagramStencilKind.Edge || stencil.EdgeDefaults is null)
+            return;
+
+        if (CommandStack is not null)
+        {
+            using (CommandStack.TransactionScope(stencil.NameResourceKey))
+            {
+                foreach (var edge in SelectedEdges)
+                {
+                    CommandStack.Push(new ApplyEdgeStencilCommand(Document, edge.Id, stencil));
+                }
+            }
+        }
+        else
+        {
+            foreach (var edge in SelectedEdges)
+            {
+                DiagramEdgeStencilFactory.ApplyDefaults(edge, stencil);
+            }
+        }
+
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private static bool EdgeMatchesStencil(DiagramEdge edge, DiagramStencil stencil)
+    {
+        var defaults = stencil.EdgeDefaults;
+        return defaults is not null
+            && edge.Routing == defaults.Routing
+            && edge.ConnectorType == defaults.ConnectorType
+            && edge.Shape == defaults.Shape
+            && edge.StartArrow == defaults.StartArrow
+            && edge.EndArrow == defaults.EndArrow
+            && edge.StartArrowFill == defaults.StartArrowFill
+            && edge.EndArrowFill == defaults.EndArrowFill;
+    }
+
+    private IReadOnlyList<DiagramStencil> GetEdgeStencilTemplates()
+        => StencilRegistry.GetAll()
+            .Where(stencil => stencil.Kind == DiagramStencilKind.Edge && stencil.EdgeDefaults is not null)
+            .OrderBy(stencil => stencil.PaletteOrder)
+            .ThenBy(stencil => stencil.Order)
+            .ThenBy(GetStencilDisplayName, StringComparer.Ordinal)
+            .ToList();
+
+    private string GetStencilDisplayName(DiagramStencil stencil)
+        => GetLocalizedText(stencil.NameResourceKey, stencil.Name);
+
+    private string GetLocalizedText(string? resourceKey, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(resourceKey))
+            return fallback;
+
+        var localized = Loc[resourceKey];
+        return string.Equals(localized, $"[{resourceKey}]", StringComparison.Ordinal)
+            ? fallback
+            : localized;
+    }
+
     private async Task OnEdgePresetChanged(string preset)
     {
         if (Document is null || SelectedEdges.Count == 0) return;
@@ -1194,6 +1280,26 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         new SelectOption<string> { Value = "thick-double-line", Label = Loc["TmDiagramProperties_Preset_ThickDoubleLine"] },
         new SelectOption<string> { Value = "dashed", Label = Loc["TmDiagramProperties_Preset_Dashed"] }
     ];
+
+    private IReadOnlyList<SelectOption<string>> _edgeTemplateOptions
+    {
+        get
+        {
+            var options = new List<SelectOption<string>>
+            {
+                new() { Value = "custom", Label = Loc["TmDiagramProperties_EdgeTemplate_Custom"] }
+            };
+
+            options.AddRange(GetEdgeStencilTemplates()
+                .Select(stencil => new SelectOption<string>
+                {
+                    Value = stencil.Id,
+                    Label = GetStencilDisplayName(stencil)
+                }));
+
+            return options;
+        }
+    }
 
     private IReadOnlyList<SelectOption<string>> _edgeShapeOptions =>
     [

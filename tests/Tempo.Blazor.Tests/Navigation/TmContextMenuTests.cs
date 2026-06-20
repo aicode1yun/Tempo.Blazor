@@ -38,6 +38,37 @@ public class TmContextMenuTests : LocalizationTestBase
         cut.Find("[role='menu']").Should().NotBeNull();
     }
 
+    [Fact]
+    public void ContextMenu_Trigger_IsKeyboardFocusable()
+    {
+        var cut = RenderComponent<TmContextMenu>(p => p
+            .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<span>Open</span>")))
+            .AddChildContent<TmContextMenuItem>(mi => mi
+                .Add(x => x.Label, "Edit")));
+
+        var trigger = cut.Find(".tm-context-menu__trigger");
+        trigger.GetAttribute("role").Should().Be("button");
+        trigger.GetAttribute("tabindex").Should().Be("0");
+        trigger.GetAttribute("aria-haspopup").Should().Be("menu");
+        trigger.GetAttribute("aria-expanded").Should().Be("false");
+    }
+
+    [Theory]
+    [InlineData("Enter")]
+    [InlineData(" ")]
+    public void ContextMenu_KeyboardActivation_OpensMenu(string key)
+    {
+        var cut = RenderComponent<TmContextMenu>(p => p
+            .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<span>Open</span>")))
+            .AddChildContent<TmContextMenuItem>(mi => mi
+                .Add(x => x.Label, "Edit")));
+
+        cut.Find(".tm-context-menu__trigger").KeyDown(new KeyboardEventArgs { Key = key });
+
+        cut.Find("[role='menu']").Should().NotBeNull();
+        cut.Find(".tm-context-menu__trigger").GetAttribute("aria-expanded").Should().Be("true");
+    }
+
     // ── Items ──────────────────────────────────────────────
 
     [Fact]

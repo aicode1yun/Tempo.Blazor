@@ -6,6 +6,8 @@ public interface INotionPage
     Guid? ParentId { get; }
     string Title { get; }
     string? Description { get; }
+    string? SpaceId { get; }
+    IReadOnlyList<string> Labels { get; }
     string? IconEmoji { get; }
     string? IconImageUrl { get; }
     string? CoverImageUrl { get; }

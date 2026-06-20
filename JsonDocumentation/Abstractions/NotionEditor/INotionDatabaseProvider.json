@@ -1,0 +1,227 @@
+{
+  "itemName": "INotionDatabaseProvider",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Enables inline database blocks in TmNotionEditor. Provides field definitions, view configuration, paginated record queries (with filter, sort, grouping), record CRUD, sub-items, templates, and CSV import/export. The database block is hidden from the slash menu when this provider is not supplied.",
+  "methods": [
+    {
+      "name": "GetFieldsAsync",
+      "returnType": "Task<IEnumerable<IDatabaseField>>",
+      "description": "Returns all field (column) definitions for the database.",
+      "parameters": [{ "name": "databaseId", "type": "string" }]
+    },
+    {
+      "name": "CreateFieldAsync",
+      "returnType": "Task<IDatabaseField>",
+      "description": "Adds a new field to the database schema.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "field", "type": "IDatabaseField" }
+      ]
+    },
+    {
+      "name": "UpdateFieldAsync",
+      "returnType": "Task<IDatabaseField>",
+      "description": "Updates a field definition (rename, type change).",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "field", "type": "IDatabaseField" }
+      ]
+    },
+    {
+      "name": "DeleteFieldAsync",
+      "returnType": "Task",
+      "description": "Removes a field from the database schema.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "fieldId", "type": "string" }
+      ]
+    },
+    {
+      "name": "ReorderFieldsAsync",
+      "returnType": "Task",
+      "description": "Persists the new field column order.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "orderedFieldIds", "type": "IEnumerable<string>" }
+      ]
+    },
+    {
+      "name": "GetViewsAsync",
+      "returnType": "Task<IEnumerable<IDatabaseView>>",
+      "description": "Returns all saved views (Table, Board, List, Gallery, Calendar, Timeline).",
+      "parameters": [{ "name": "databaseId", "type": "string" }]
+    },
+    {
+      "name": "CreateViewAsync",
+      "returnType": "Task<IDatabaseView>",
+      "description": "Creates a new database view.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "view", "type": "IDatabaseView" }
+      ]
+    },
+    {
+      "name": "UpdateViewAsync",
+      "returnType": "Task<IDatabaseView>",
+      "description": "Persists view configuration changes (filter, sort, grouping, visible fields).",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "view", "type": "IDatabaseView" }
+      ]
+    },
+    {
+      "name": "DeleteViewAsync",
+      "returnType": "Task",
+      "description": "Deletes a view.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "viewId", "type": "string" }
+      ]
+    },
+    {
+      "name": "DuplicateViewAsync",
+      "returnType": "Task<IDatabaseView>",
+      "description": "Creates a copy of a view with all its settings.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "viewId", "type": "string" }
+      ]
+    },
+    {
+      "name": "GetRecordsAsync",
+      "returnType": "Task<PagedResult<IDatabaseRecord>>",
+      "description": "Returns a paginated, filtered, sorted, and grouped set of records.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "filter", "type": "INotionDatabaseFilter?", "description": "Active filter conditions, or null for no filter." },
+        { "name": "sorts", "type": "IEnumerable<NotionDatabaseSort>?", "description": "Sort specifications, or null for default order." },
+        { "name": "grouping", "type": "NotionDatabaseGrouping?", "description": "Grouping field and direction, or null for no grouping." },
+        { "name": "page", "type": "int", "description": "1-based page number." },
+        { "name": "pageSize", "type": "int" }
+      ]
+    },
+    {
+      "name": "GetRecordAsync",
+      "returnType": "Task<IDatabaseRecord>",
+      "description": "Loads a single record by ID (for the record detail modal).",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "recordId", "type": "string" }
+      ]
+    },
+    {
+      "name": "CreateRecordAsync",
+      "returnType": "Task<IDatabaseRecord>",
+      "description": "Creates a new record.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "record", "type": "IDatabaseRecord" }
+      ]
+    },
+    {
+      "name": "UpdateRecordAsync",
+      "returnType": "Task<IDatabaseRecord>",
+      "description": "Updates field values for an existing record.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "record", "type": "IDatabaseRecord" }
+      ]
+    },
+    {
+      "name": "DeleteRecordAsync",
+      "returnType": "Task",
+      "description": "Deletes a record.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "recordId", "type": "string" }
+      ]
+    },
+    {
+      "name": "BatchUpdateRecordsAsync",
+      "returnType": "Task<IEnumerable<IDatabaseRecord>>",
+      "description": "Updates multiple records in a single call (e.g. bulk status change).",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "records", "type": "IEnumerable<IDatabaseRecord>" }
+      ]
+    },
+    {
+      "name": "GetSubItemsAsync",
+      "returnType": "Task<IEnumerable<IDatabaseRecord>>",
+      "description": "Returns sub-items (child records) of a parent record.",
+      "parameters": [{ "name": "parentRecordId", "type": "string" }]
+    },
+    {
+      "name": "MoveRecordAsync",
+      "returnType": "Task",
+      "description": "Moves a record to a different parent (for hierarchical databases).",
+      "parameters": [
+        { "name": "recordId", "type": "string" },
+        { "name": "newParentRecordId", "type": "string?", "description": "New parent ID, or null for root." }
+      ]
+    },
+    {
+      "name": "GetTemplatesAsync",
+      "returnType": "Task<IEnumerable<IDatabaseRecordTemplate>>",
+      "description": "Returns available record templates for quick row creation.",
+      "parameters": [{ "name": "databaseId", "type": "string" }]
+    },
+    {
+      "name": "CreateTemplateAsync",
+      "returnType": "Task<IDatabaseRecordTemplate>",
+      "description": "Creates a new record template.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "template", "type": "IDatabaseRecordTemplate" }
+      ]
+    },
+    {
+      "name": "UpdateTemplateAsync",
+      "returnType": "Task<IDatabaseRecordTemplate>",
+      "description": "Updates an existing record template.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "template", "type": "IDatabaseRecordTemplate" }
+      ]
+    },
+    {
+      "name": "DeleteTemplateAsync",
+      "returnType": "Task",
+      "description": "Deletes a record template.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "templateId", "type": "string" }
+      ]
+    },
+    {
+      "name": "CreateRecordFromTemplateAsync",
+      "returnType": "Task<IDatabaseRecord>",
+      "description": "Creates a new record pre-populated with a template's default field values.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "templateId", "type": "string" }
+      ]
+    },
+    {
+      "name": "ImportCsvAsync",
+      "returnType": "Task",
+      "description": "Imports records from a CSV stream. Header row maps to field names.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "csv", "type": "Stream" }
+      ]
+    },
+    {
+      "name": "ExportCsvAsync",
+      "returnType": "Task<Stream>",
+      "description": "Exports records to a CSV stream, optionally applying a view's current filter.",
+      "parameters": [
+        { "name": "databaseId", "type": "string" },
+        { "name": "viewId", "type": "string?", "description": "View ID whose filter/sort to apply, or null for all records." }
+      ]
+    }
+  ],
+  "usedInComponents": ["TmNotionEditor"]
+}

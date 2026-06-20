@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Buttons",
+  "description": "Maps to the HTML button type attribute.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Buttons/ButtonType.cs",
+  "documentationStatus": "generated",
+  "itemName": "ButtonType"
+}

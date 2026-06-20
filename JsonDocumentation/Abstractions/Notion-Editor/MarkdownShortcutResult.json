@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Result of MarkdownShortcutDetector.Detect.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/MarkdownShortcutResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "MarkdownShortcutResult"
+}

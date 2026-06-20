@@ -1,0 +1,47 @@
+{
+  "itemName": "TmNotionRestrictionsDialog",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionRestrictionsDialog Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Page/TmNotionRestrictionsDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Page"
+  ],
+  "parameters": [
+    {
+      "name": "EffectivePermission",
+      "type": "PageEffectivePermissionDto?",
+      "isRequired": false,
+      "description": "Provider used for loading and saving restrictions."
+    },
+    {
+      "name": "OnSaved",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Effective permission displayed by the dialog when inherited."
+    },
+    {
+      "name": "PageId",
+      "type": "Guid",
+      "isRequired": false,
+      "description": "Raised when dialog visibility changes."
+    },
+    {
+      "name": "Provider",
+      "type": "INotionPermissionProvider?",
+      "isRequired": true,
+      "description": "Page identifier whose restrictions are edited.",
+      "editorRequired": true
+    },
+    {
+      "name": "VisibleChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "Controls whether the dialog is visible."
+    }
+  ],
+  "subcategory": "Page"
+}

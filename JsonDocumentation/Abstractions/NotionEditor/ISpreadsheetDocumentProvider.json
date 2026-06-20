@@ -1,0 +1,31 @@
+{
+  "itemName": "ISpreadsheetDocumentProvider",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Enables Spreadsheet blocks in TmNotionEditor. When supplied, users can embed an interactive spreadsheet workbook in a page. Without this provider the Spreadsheet block type is hidden from the slash menu.",
+  "methods": [
+    {
+      "name": "GetSpreadsheetDocumentAsync",
+      "returnType": "Task<SpreadsheetWorkbook?>",
+      "description": "Loads a spreadsheet workbook by ID. Returns null if the document does not yet exist.",
+      "parameters": [{ "name": "documentId", "type": "Guid" }]
+    },
+    {
+      "name": "SaveSpreadsheetDocumentAsync",
+      "returnType": "Task<SpreadsheetWorkbook>",
+      "description": "Persists a spreadsheet workbook and returns the saved version.",
+      "parameters": [
+        { "name": "documentId", "type": "Guid" },
+        { "name": "workbook",   "type": "SpreadsheetWorkbook" }
+      ]
+    },
+    {
+      "name": "CreateSpreadsheetDocumentAsync",
+      "returnType": "Task<(Guid Id, SpreadsheetWorkbook Workbook)>",
+      "description": "Creates a new empty spreadsheet workbook and returns its ID along with the workbook.",
+      "parameters": [{ "name": "title", "type": "string", "description": "Initial spreadsheet title." }]
+    }
+  ],
+  "usedInComponents": ["TmNotionEditor"]
+}

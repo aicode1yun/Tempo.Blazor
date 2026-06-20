@@ -1,0 +1,50 @@
+{
+  "kind": "Class",
+  "category": "Registry",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Registry",
+  "description": "Default seeded with the 14 built-in MJML block kinds.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Registry/BlockRegistry.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CreateById",
+      "kind": "Method",
+      "type": "EmailBlockBase",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "CreateInstance",
+      "kind": "Method",
+      "type": "EmailBlockBase",
+      "parameters": [
+        {
+          "name": "type",
+          "type": "BlockType"
+        }
+      ]
+    },
+    {
+      "name": "GetAll",
+      "kind": "Method",
+      "type": "IReadOnlyList<BlockDescriptor>"
+    },
+    {
+      "name": "RegisterCustom",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "descriptor",
+          "type": "BlockDescriptor"
+        }
+      ]
+    }
+  ],
+  "itemName": "BlockRegistry"
+}

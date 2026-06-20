@@ -22,9 +22,10 @@
                     {
                         var idx = flatIndex;
                         <div class="tm-rte-token-item @(idx == HighlightedIndex ? "tm-rte-token-highlighted" : "")"
-                             @onclick="() => SelectToken(token)"
+                             @onclick="() => SelectTokenFromClickAsync(token)"
                              @onclick:stopPropagation
                              @onmouseenter="() => OnMouseEnter(idx)"
+                             @onmousedown="() => SelectTokenFromMouseDownAsync(token)"
                              @onmousedown:preventDefault>
                             @if (!string.IsNullOrEmpty(token.Icon))
                             {
@@ -51,9 +52,10 @@
                 @foreach (var (token, index) in FilteredTokens.Select((t, i) => (t, i)))
                 {
                     <div class="tm-rte-token-item @(index == HighlightedIndex ? "tm-rte-token-highlighted" : "")"
-                         @onclick="() => SelectToken(token)"
+                         @onclick="() => SelectTokenFromClickAsync(token)"
                          @onclick:stopPropagation
                          @onmouseenter="() => OnMouseEnter(index)"
+                         @onmousedown="() => SelectTokenFromMouseDownAsync(token)"
                          @onmousedown:preventDefault>
                         @if (!string.IsNullOrEmpty(token.Icon))
                         {
@@ -87,9 +89,10 @@
         {
             <div class="tm-rte-token-separator"></div>
             <div class="tm-rte-token-create @(IsCreateHighlighted ? "tm-rte-token-highlighted" : "")"
-                 @onclick="HandleCreateClicked"
+                 @onclick="HandleCreateFromClickAsync"
                  @onclick:stopPropagation
                  @onmouseenter="() => OnMouseEnterCreate()"
+                 @onmousedown="HandleCreateFromMouseDownAsync"
                  @onmousedown:preventDefault>
                 <span class="tm-rte-token-create-icon">+</span>
                 <span>@Loc["TmRichEditor_TokenCreateNew"]</span>
@@ -161,6 +164,8 @@
 
     private bool IsCreateHighlighted => SupportsCreation && HighlightedIndex == FilteredTokens.Count();
 
+    private bool _handledSelectionOnMouseDown;
+
     /// <summary>
     /// Moves the highlight up.
     /// </summary>
@@ -209,9 +214,43 @@
         await OnTokenSelected.InvokeAsync(token);
     }
 
+    private async Task SelectTokenFromMouseDownAsync(TokenItem token)
+    {
+        _handledSelectionOnMouseDown = true;
+        await SelectToken(token);
+    }
+
+    private async Task SelectTokenFromClickAsync(TokenItem token)
+    {
+        if (_handledSelectionOnMouseDown)
+        {
+            _handledSelectionOnMouseDown = false;
+            return;
+        }
+
+        await SelectToken(token);
+    }
+
     private async Task HandleCreateClicked()
     {
         await OnCreateRequested.InvokeAsync(string.IsNullOrWhiteSpace(Query) ? null : Query);
+    }
+
+    private async Task HandleCreateFromMouseDownAsync()
+    {
+        _handledSelectionOnMouseDown = true;
+        await HandleCreateClicked();
+    }
+
+    private async Task HandleCreateFromClickAsync()
+    {
+        if (_handledSelectionOnMouseDown)
+        {
+            _handledSelectionOnMouseDown = false;
+            return;
+        }
+
+        await HandleCreateClicked();
     }
 
     private async Task OnMouseEnter(int index)

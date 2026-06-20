@@ -1,0 +1,27 @@
+{
+  "itemName": "TmEmailImportDialog",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailImportDialog Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailImportDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised with the imported document when the user confirms."
+    },
+    {
+      "name": "OnImport",
+      "type": "EventCallback<EmailTemplateDocument>",
+      "isRequired": false,
+      "description": "Whether the dialog is shown."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Commands",
+  "description": "Deletes a block and restores its previous position on undo.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Commands/DeleteDocumentBlockCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ExecuteAsync",
+      "kind": "Method",
+      "type": "Task"
+    },
+    {
+      "name": "UndoAsync",
+      "kind": "Method",
+      "type": "Task"
+    },
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "DeleteDocumentBlockCommand"
+}

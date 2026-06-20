@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/SyncedBlockRefContent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "OriginBlockId",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "OriginPageId",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "SyncId",
+      "kind": "Property",
+      "type": "Guid"
+    }
+  ],
+  "itemName": "SyncedBlockRefContent"
+}

@@ -1,0 +1,72 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells
+@inherits TmNotionDbCellBase
+@using Tempo.Blazor.NotionEditor.Models
+
+<div class="tm-dbc @(IsEditing ? "tm-dbc--editing" : "") @(ReadOnly ? "tm-dbc--readonly" : "")"
+     @onclick="HandleClickAsync"
+     @onclick:stopPropagation="@IsEditing"
+     style="padding: @(IsEditing ? "0" : "4px 8px")">
+
+    @if (_current.Count > 0)
+    {
+        <span class="tm-dbc__chips" style="padding:0; gap:3px">
+            @foreach (var tag in _current)
+            {
+                var opt = GetOption(tag);
+                <span class="tm-dbc__chip" style="background:@(opt?.Color ?? "var(--tm-bg-muted,#f3f4f6)")">@tag</span>
+            }
+        </span>
+    }
+    else
+    {
+        <span class="tm-dbc__text tm-dbc__text--empty">&nbsp;</span>
+    }
+
+    @if (IsEditing)
+    {
+        <div class="tm-dbc__popup" @onclick:stopPropagation="true">
+            <div class="tm-dbc__popup-search">
+                <svg class="tm-dbc__popup-search-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                    <path d="m16 16 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <input class="tm-dbc__popup-search-input"
+                       @ref="_searchRef"
+                       type="text"
+                       placeholder="@Loc["Tm_Search"]"
+                       value="@_search"
+                       @oninput="e => _search = e.Value?.ToString() ?? string.Empty"
+                       @onkeydown="HandlePopupKeyAsync" />
+            </div>
+
+            <div class="tm-dbc__popup-list">
+                @foreach (var opt in FilteredOptions)
+                {
+                    var isSelected = _current.Contains(opt.Name);
+                    <button class="tm-dbc__popup-option @(isSelected ? "tm-dbc__popup-option--active" : "")"
+                            type="button"
+                            @onclick="() => Toggle(opt.Name)">
+                        <span class="tm-dbc__popup-option-check" aria-hidden="true">
+                            @if (isSelected)
+                            {
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                                    <path d="M5 12l5 5 9-9" stroke="currentColor" stroke-width="2.5"
+                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            }
+                        </span>
+                        <span class="tm-dbc__chip" style="background:@(opt.Color ?? "var(--tm-bg-muted,#f3f4f6)")">
+                            @opt.Name
+                        </span>
+                    </button>
+                }
+            </div>
+
+            <div class="tm-dbc__popup-footer">
+                <button class="tm-dbc__popup-apply" type="button" @onclick="ApplyAsync">
+                    @Loc["Tm_Apply"]
+                </button>
+            </div>
+        </div>
+    }
+</div>

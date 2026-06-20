@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Import",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Import",
+  "description": "The outcome of importing MJML markup. is only when a fatal error prevented producing a model; warnings describe lossy or unsupported parts.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Import/ImportResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Document",
+      "kind": "Property",
+      "type": "EmailTemplateDocument?",
+      "description": "Gets the imported document, or on fatal error."
+    },
+    {
+      "name": "Errors",
+      "kind": "Property",
+      "type": "IReadOnlyList<ImportMessage>",
+      "description": "Gets the fatal errors that prevented (or degraded) the import."
+    },
+    {
+      "name": "Warnings",
+      "kind": "Property",
+      "type": "IReadOnlyList<ImportMessage>",
+      "description": "Gets the non-fatal findings (lossy fallbacks, unsupported features)."
+    }
+  ],
+  "itemName": "ImportResult"
+}

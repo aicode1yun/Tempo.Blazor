@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Exports a to various output formats.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/IDiagramExportService.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDiagramExportService"
+}

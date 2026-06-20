@@ -1,0 +1,110 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Embed
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+<div class="tm-notion-bookmark-block" @onfocus="HandleFocusAsync">
+
+    @if (string.IsNullOrEmpty(Content?.Url))
+    {
+        @if (!ReadOnly)
+        {
+            <div class="tm-notion-bookmark-block__input-zone @(_resolving ? "tm-notion-bookmark-block__input-zone--loading" : "")">
+                <svg class="tm-notion-bookmark-block__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
+                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
+                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <input type="url"
+                       class="tm-notion-bookmark-block__url-input"
+                       placeholder="@Loc["TmNotionBookmarkBlock_UrlPlaceholder"]"
+                       value="@_urlInput"
+                       @oninput="HandleUrlInput"
+                       @onkeydown="HandleUrlKeyDownAsync"
+                       disabled="@_resolving"
+                       aria-label="@Loc["TmNotionBookmarkBlock_UrlPlaceholder"]" />
+                <button class="tm-notion-bookmark-block__confirm-btn"
+                        type="button"
+                        disabled="@(_resolving || string.IsNullOrWhiteSpace(_urlInput))"
+                        @onclick="ResolveAsync">
+                    @if (_resolving)
+                    {
+                        <span class="tm-notion-bookmark-block__spinner" aria-label="@Loc["TmNotionBookmarkBlock_Resolving"]" role="status"></span>
+                    }
+                    else
+                    {
+                        @Loc["TmNotionBookmarkBlock_Confirm"]
+                    }
+                </button>
+            </div>
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <div class="tm-notion-bookmark-block__error" role="alert">@_error</div>
+            }
+        }
+        else
+        {
+            <div class="tm-notion-media-empty-placeholder" aria-label="@Loc["TmNotionBookmarkBlock_UrlPlaceholder"]">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
+                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
+                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+        }
+    }
+    else
+    {
+        <a class="tm-notion-bookmark-block__card"
+           href="@Content.Url"
+           target="_blank"
+           rel="noopener noreferrer"
+           title="@Content.Url"
+           @onclick:stopPropagation="true">
+            <div class="tm-notion-bookmark-block__card-body">
+                @if (!string.IsNullOrEmpty(Content.Title))
+                {
+                    <div class="tm-notion-bookmark-block__title">@Content.Title</div>
+                }
+                @if (!string.IsNullOrEmpty(Content.Description))
+                {
+                    <div class="tm-notion-bookmark-block__description">@Content.Description</div>
+                }
+                <div class="tm-notion-bookmark-block__meta">
+                    @if (!string.IsNullOrEmpty(Content.FaviconUrl))
+                    {
+                        <img src="@Content.FaviconUrl"
+                             width="16"
+                             height="16"
+                             alt=""
+                             class="tm-notion-bookmark-block__favicon"
+                             aria-hidden="true"
+                             loading="lazy" />
+                    }
+                    <span class="tm-notion-bookmark-block__domain">@(Content.Domain ?? Content.Url)</span>
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Content.CoverImageUrl))
+            {
+                <div class="tm-notion-bookmark-block__cover"
+                     style="background-image:url('@Content.CoverImageUrl')"
+                     role="img"
+                     aria-hidden="true">
+                </div>
+            }
+        </a>
+
+        @if (!string.IsNullOrEmpty(Content?.Caption) || !ReadOnly)
+        {
+            <div class="tm-notion-bookmark-block__caption tm-notion-editable"
+                 contenteditable="@(!ReadOnly ? "true" : "false")"
+                 data-placeholder="@Loc["TmNotionBookmarkBlock_CaptionPlaceholder"]"
+                 @ref="_captionRef"
+                 @oninput="() => _captionDirty = true"
+                 @onblur="OnCaptionBlurAsync">
+            </div>
+        }
+    }
+
+</div>

@@ -1,0 +1,324 @@
+@page "/file-manager"
+@using Tempo.Blazor.Demo.Services
+@using Tempo.Blazor.Components.Files
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Components.Buttons
+@using Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Components.Pickers
+@using Tempo.Blazor.Components.Tags
+@using Tempo.Blazor.Interfaces
+<PageTitle>File Manager – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">File Manager</h1>
+    <p class="text-slate-600 dark:text-slate-400">Browse folders, switch between list and grid views, and manage files with a toolbar and breadcrumb navigation.</p>
+</div>
+
+<TmTabs ActiveTabId="@_activeTab" ActiveTabIdChanged="@(v => _activeTab = v)">
+    <TmTabPanel Id="simple" Title="Simple File Manager" Icon="folder">
+        <section class="showcase-card p-0 overflow-hidden" style="height: 600px;">
+            <TmFileManager DataProvider="_fileProvider" />
+        </section>
+    </TmTabPanel>
+
+    <TmTabPanel Id="dms" Title="DMS with Metadata" Icon="database">
+        <section class="showcase-card p-0 overflow-hidden" style="height: 600px;">
+            <TmDocumentManager TMetadata="DocumentMetadata"
+                               DataProvider="_dmsProvider"
+                               AllowMultipleAttachments="true"
+                               ItemMetaTemplate="MetaTemplate"
+                               NewFolderForm="NewFolderTemplate"
+                               UploadForm="UploadTemplate"
+                               DeleteForm="DeleteTemplate"
+                               EditForm="EditTemplate"
+                               DetailPanel="DetailTemplate"
+                               ItemContextMenu="ContextMenuTemplate" />
+        </section>
+    </TmTabPanel>
+
+    <TmTabPanel Id="readonly" Title="Read-Only DMS" Icon="lock">
+        <section class="showcase-card p-0 overflow-hidden" style="height: 600px;">
+            <TmDocumentManager TMetadata="DocumentMetadata"
+                               DataProvider="_readonlyProvider"
+                               ShowNewFolderButton="false"
+                               ShowUploadButton="false"
+                               ShowDeleteButton="false"
+                               ShowRenameButton="false"
+                               ShowEditButton="false"
+                               ShowMoveButton="false"
+                               ShowCopyButton="false" />
+        </section>
+    </TmTabPanel>
+</TmTabs>
+
+@code {
+    private string _activeTab = "simple";
+    private readonly DemoFileManagerProvider _fileProvider = new();
+    private readonly DemoDocumentManagerProvider _dmsProvider = new();
+    private readonly DemoDocumentManagerProvider _readonlyProvider = new(readOnly: true);
+
+    private RenderFragment<DocumentManagerItem<DocumentMetadata>> MetaTemplate => item =>
+        @<span class="text-xs text-slate-500 dark:text-slate-400">
+            @(item.Metadata?.Category ?? "—") • @(string.Join(", ", item.Metadata?.Tags ?? []))
+        </span>;
+
+    // ── Tag helpers ──────────────────────────────────────────────
+
+    private record SimpleTag(string Id, string Name, string Color) : ITag;
+
+    private readonly List<ITag> _allTagModels = new()
+    {
+        new SimpleTag("finance", "finance", "#3b82f6"),
+        new SimpleTag("annual", "annual", "#10b981"),
+        new SimpleTag("pdf", "pdf", "#f59e0b"),
+        new SimpleTag("budget", "budget", "#ef4444"),
+        new SimpleTag("q2", "q2", "#8b5cf6"),
+        new SimpleTag("planning", "planning", "#06b6d4"),
+        new SimpleTag("notes", "notes", "#84cc16"),
+        new SimpleTag("meeting", "meeting", "#f97316"),
+        new SimpleTag("vacation", "vacation", "#ec4899"),
+        new SimpleTag("summer", "summer", "#eab308"),
+        new SimpleTag("photos", "photos", "#14b8a6"),
+        new SimpleTag("logo", "logo", "#6366f1"),
+        new SimpleTag("branding", "branding", "#a855f7"),
+        new SimpleTag("png", "png", "#d946ef"),
+        new SimpleTag("audio", "audio", "#22c55e"),
+        new SimpleTag("podcast", "podcast", "#0ea5e9"),
+        new SimpleTag("intro", "intro", "#f43f5e"),
+        new SimpleTag("docs", "docs", "#06b6d4"),
+        new SimpleTag("images", "images", "#f59e0b"),
+        new SimpleTag("old", "old", "#64748b"),
+    };
+
+    private static List<ITag> TagsFromStrings(List<string> tags) =>
+        tags.Select(t => new SimpleTag(t, t, GetTagColor(t))).ToList<ITag>();
+
+    private static string GetTagColor(string name)
+    {
+        var colors = new[] { "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316", "#ec4899", "#eab308", "#14b8a6", "#6366f1", "#a855f7", "#d946ef", "#22c55e", "#0ea5e9", "#f43f5e", "#64748b" };
+        return colors[Math.Abs(name.GetHashCode(StringComparison.OrdinalIgnoreCase)) % colors.Length];
+    }
+
+    private static DateOnly? ToDateOnly(DateTime? dt) => dt.HasValue ? DateOnly.FromDateTime(dt.Value) : null;
+    private static DateTime? ToDateTime(DateOnly? d) => d.HasValue ? d.Value.ToDateTime(TimeOnly.MinValue) : null;
+
+    // ── Forms ────────────────────────────────────────────────────
+
+    private RenderFragment<UploadContext<DocumentMetadata>> UploadTemplate => ctx =>
+    {
+        var reviewDate = ToDateOnly(ctx.Metadata?.ReviewDate);
+        return @<div class="p-4 space-y-3">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+                <TmTextInput @bind-Value="ctx.Name" Placeholder="Document name" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Files</label>
+                <TmFileDropZone Multiple="true" OnFilesSelected="e => HandleUploadFilesSelected(ctx, e)" />
+            </div>
+            @if (ctx.Files.Count > 0)
+            {
+                <ul class="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+                    @foreach (var f in ctx.Files)
+                    {
+                        <li>@f.FileName (@(f.Size / 1024) KB)</li>
+                    }
+                </ul>
+            }
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Category" Placeholder="Category" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Description" Placeholder="Description" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Owner</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Owner" Placeholder="Owner" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Review Date</label>
+                <TmDatePicker Value="reviewDate" ValueChanged="d => ctx.Metadata.ReviewDate = ToDateTime(d)" Placeholder="Select date" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tags</label>
+                <TmTagPicker AllTags="_allTagModels"
+                             SelectedTags="TagsFromStrings(ctx.Metadata.Tags)"
+                             OnTagsChanged="tags => ctx.Metadata.Tags = tags.Select(t => t.Name).ToList()"
+                             AllowCreate="true"
+                             OnCreateTag="name => { var t = new SimpleTag(name, name, GetTagColor(name)); if (!_allTagModels.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) _allTagModels.Add(t); if (!ctx.Metadata.Tags.Contains(name)) ctx.Metadata.Tags.Add(name); }" />
+            </div>
+            <div class="flex gap-2 pt-2">
+                <TmButton Variant="ButtonVariant.Primary" OnClick="() => ctx.OnSubmit?.Invoke()">Upload</TmButton>
+                <TmButton Variant="ButtonVariant.Secondary" OnClick="() => ctx.OnCancel?.Invoke()">Cancel</TmButton>
+            </div>
+        </div>;
+    };
+
+    private async Task HandleUploadFilesSelected(UploadContext<DocumentMetadata> ctx, InputFileChangeEventArgs e)
+    {
+        var files = new List<FileUploadInfo>();
+        foreach (var file in e.GetMultipleFiles())
+        {
+            files.Add(new FileUploadInfo
+            {
+                FileName = file.Name,
+                Size = file.Size,
+                ContentType = file.ContentType,
+                Stream = file.OpenReadStream(maxAllowedSize: 100 * 1024 * 1024)
+            });
+        }
+        ctx.Files = files;
+    }
+
+    private RenderFragment<NewFolderContext<DocumentMetadata>> NewFolderTemplate => ctx =>
+    {
+        var reviewDate = ToDateOnly(ctx.Metadata.ReviewDate);
+        return @<div class="p-4 space-y-3">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Folder Name</label>
+                <TmTextInput @bind-Value="ctx.Name" Placeholder="New folder name" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Category" Placeholder="Category" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Description" Placeholder="Description" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Owner</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Owner" Placeholder="Owner" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Review Date</label>
+                <TmDatePicker Value="reviewDate" ValueChanged="d => ctx.Metadata.ReviewDate = ToDateTime(d)" Placeholder="Select date" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tags</label>
+                <TmTagPicker AllTags="_allTagModels"
+                             SelectedTags="TagsFromStrings(ctx.Metadata.Tags)"
+                             OnTagsChanged="tags => ctx.Metadata.Tags = tags.Select(t => t.Name).ToList()"
+                             AllowCreate="true"
+                             OnCreateTag="name => { var t = new SimpleTag(name, name, GetTagColor(name)); if (!_allTagModels.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) _allTagModels.Add(t); if (!ctx.Metadata.Tags.Contains(name)) ctx.Metadata.Tags.Add(name); }" />
+            </div>
+            <div class="flex gap-2 pt-2">
+                <TmButton Variant="ButtonVariant.Primary" OnClick="() => ctx.OnSubmit?.Invoke()">Create</TmButton>
+                <TmButton Variant="ButtonVariant.Secondary" OnClick="() => ctx.OnCancel?.Invoke()">Cancel</TmButton>
+            </div>
+        </div>;
+    };
+
+    private RenderFragment<DeleteContext<DocumentMetadata>> DeleteTemplate => ctx =>
+        @<div class="p-4 space-y-3">
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+                You are about to delete <strong>@ctx.Items.Count</strong> item(s):
+            </p>
+            <ul class="list-disc list-inside text-sm text-slate-700 dark:text-slate-300">
+                @foreach (var item in ctx.Items)
+                {
+                    <li>@item.Name</li>
+                }
+            </ul>
+            <div class="flex gap-2 pt-2">
+                <TmButton Variant="ButtonVariant.Danger" OnClick="() => ctx.OnConfirm?.Invoke()">Delete</TmButton>
+                <TmButton Variant="ButtonVariant.Secondary" OnClick="() => ctx.OnCancel?.Invoke()">Cancel</TmButton>
+            </div>
+        </div>;
+
+    private RenderFragment<EditContext<DocumentMetadata>> EditTemplate => ctx =>
+    {
+        var reviewDate = ToDateOnly(ctx.Metadata.ReviewDate);
+        return @<div class="p-4 space-y-3">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Category" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Description" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Owner</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Owner" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Review Date</label>
+                <TmDatePicker Value="reviewDate" ValueChanged="d => ctx.Metadata.ReviewDate = ToDateTime(d)" Placeholder="Select date" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tags</label>
+                <TmTagPicker AllTags="_allTagModels"
+                             SelectedTags="TagsFromStrings(ctx.Metadata.Tags)"
+                             OnTagsChanged="tags => ctx.Metadata.Tags = tags.Select(t => t.Name).ToList()"
+                             AllowCreate="true"
+                             OnCreateTag="name => { var t = new SimpleTag(name, name, GetTagColor(name)); if (!_allTagModels.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) _allTagModels.Add(t); if (!ctx.Metadata.Tags.Contains(name)) ctx.Metadata.Tags.Add(name); }" />
+            </div>
+            <div class="flex gap-2 pt-2">
+                <TmButton Variant="ButtonVariant.Primary" OnClick="() => ctx.OnSubmit?.Invoke()">Save</TmButton>
+                <TmButton Variant="ButtonVariant.Secondary" OnClick="() => ctx.OnCancel?.Invoke()">Cancel</TmButton>
+            </div>
+        </div>;
+    };
+
+    private RenderFragment<DetailContext<DocumentMetadata>> DetailTemplate => ctx =>
+        @<div class="p-4 space-y-4">
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Name</span>
+                <p class="text-sm text-slate-900 dark:text-white">@ctx.Item.Name</p>
+            </div>
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Category</span>
+                <p class="text-sm text-slate-900 dark:text-white">@(ctx.Item.Metadata?.Category ?? "—")</p>
+            </div>
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Description</span>
+                <p class="text-sm text-slate-900 dark:text-white">@(ctx.Item.Metadata?.Description ?? "—")</p>
+            </div>
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Owner</span>
+                <p class="text-sm text-slate-900 dark:text-white">@(ctx.Item.Metadata?.Owner ?? "—")</p>
+            </div>
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Tags</span>
+                <div class="flex flex-wrap gap-1 mt-1">
+                    @foreach (var tag in ctx.Item.Metadata?.Tags ?? [])
+                    {
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200">@tag</span>
+                    }
+                </div>
+            </div>
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Size</span>
+                <p class="text-sm text-slate-900 dark:text-white">@(ctx.Item.Size.HasValue ? $"{ctx.Item.Size.Value / 1024.0:F1} KB" : "—")</p>
+            </div>
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Modified</span>
+                <p class="text-sm text-slate-900 dark:text-white">@(ctx.Item.ModifiedDate?.ToString("dd.MM.yyyy HH:mm") ?? "—")</p>
+            </div>
+        </div>;
+
+    private RenderFragment<ContextMenuContext<DocumentMetadata>> ContextMenuTemplate => ctx =>
+        @<div class="py-1">
+            @foreach (var action in ctx.AvailableActions)
+            {
+                <button type="button"
+                        class="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                        @onclick="() => ctx.OnActionSelected?.Invoke(action)">
+                    @(action switch
+                    {
+                        "open" => "Open",
+                        "rename" => "Rename",
+                        "delete" => "Delete",
+                        "edit" => "Edit Metadata",
+                        "detail" => "Properties",
+                        "download" => "Download",
+                        _ => action
+                    })
+                </button>
+            }
+        </div>;
+}

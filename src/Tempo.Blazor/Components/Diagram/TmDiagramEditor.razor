@@ -7,10 +7,13 @@
 
 <CascadingValue Value="ActiveCommandStack" IsFixed="false">
 
-<div class="tm-diagram-editor @Class @(ReadOnly ? "tm-diagram-editor--readonly" : "")">
+<div class="tm-diagram-editor @Class @(ReadOnly ? "tm-diagram-editor--readonly" : "")"
+     data-testid="diagram-editor">
 
     @* ── Page tabs ────────────────────────────────────────────────────────── *@
     <div class="tm-diagram-editor__page-tabs"
+         role="@(ReadOnly ? null : "tablist")"
+         aria-label="@(ReadOnly ? null : Loc["TmDiagramEditor_PageName"])"
          @ondragover:preventDefault
          @ondrop:preventDefault>
         @if (_document?.Pages is not null)
@@ -28,8 +31,8 @@
                      @ondrop="() => OnPageTabDrop(pg.Id)"
                      draggable="true"
                      title="@pg.Name"
-                     role="tab"
-                     aria-selected="@isActive">
+                     role="@(ReadOnly ? null : "tab")"
+                     aria-selected="@(ReadOnly ? null : isActive.ToString().ToLowerInvariant())">
                     @if (_pageRenamingId == pg.Id)
                     {
                         <input type="text"
@@ -47,22 +50,25 @@
                         {
                             <span class="tm-diagram-editor__page-tab-dot" aria-hidden="true"></span>
                         }
-                        <button class="tm-diagram-editor__page-tab-close"
-                                aria-label="@Loc["TmDiagramEditor_DuplicatePage"]"
-                                title="@Loc["TmDiagramEditor_DuplicatePage"]"
-                                @onclick:stopPropagation
-                                @onclick="() => DuplicatePage(pg.Id)">
-                            ⧉
-                        </button>
-                        @if (_document.Pages.Count > 1)
+                        @if (!ReadOnly)
                         {
                             <button class="tm-diagram-editor__page-tab-close"
-                                    aria-label="@Loc["TmDiagramEditor_ClosePage", pg.Name]"
-                                    title="@Loc["TmDiagramEditor_ClosePage", pg.Name]"
+                                    aria-label="@Loc["TmDiagramEditor_DuplicatePage"]"
+                                    title="@Loc["TmDiagramEditor_DuplicatePage"]"
                                     @onclick:stopPropagation
-                                    @onclick="() => RemovePage(pg.Id)">
-                                ✕
+                                    @onclick="() => DuplicatePage(pg.Id)">
+                                ⧉
                             </button>
+                            @if (_document.Pages.Count > 1)
+                            {
+                                <button class="tm-diagram-editor__page-tab-close"
+                                        aria-label="@Loc["TmDiagramEditor_ClosePage", pg.Name]"
+                                        title="@Loc["TmDiagramEditor_ClosePage", pg.Name]"
+                                        @onclick:stopPropagation
+                                        @onclick="() => RemovePage(pg.Id)">
+                                    ✕
+                                </button>
+                            }
                         }
                     }
                 </div>
@@ -282,7 +288,7 @@
                             aria-label="@Loc["TmDiagramEditor_RulerUnitLabel"]"
                             title="@Loc["TmDiagramEditor_RulerUnitLabel"]"
                             value="@(_document?.ActivePage?.RulerUnit ?? MeasurementUnit.Px)"
-                            @onchange='e => OnRulerUnitChanged(Enum.Parse<MeasurementUnit>(e.Value?.ToString() ?? "Px"))'>
+                            @onchange='async e => await OnRulerUnitChanged(Enum.Parse<MeasurementUnit>(e.Value?.ToString() ?? "Px"))'>
                         @foreach (var opt in _rulerUnitOptions)
                         {
                             <option value="@opt.Value">@opt.Label</option>
@@ -344,6 +350,7 @@
                         <TmDropdownItem Value="svg" Icon="@IconNames.Image">@Loc["TmDiagramEditor_ExportSvg"]</TmDropdownItem>
                         <TmDropdownItem Value="png" Icon="@IconNames.Image">@Loc["TmDiagramEditor_ExportPng"]</TmDropdownItem>
                         <TmDropdownItem Value="pdf" Icon="@IconNames.File">@Loc["TmDiagramEditor_ExportPdf"]</TmDropdownItem>
+                        <TmDropdownItem Value="viewportSvg" Icon="@IconNames.Image">@Loc["TmDiagramEditor_ExportViewportSvg"]</TmDropdownItem>
                     </TmDropdown>
                 </div>
 
@@ -432,6 +439,7 @@
         {
             <div class="tm-diagram-editor__toolbox-wrap">
                 <TmDiagramToolbox StencilDragStart="OnToolboxDragStart"
+                                  StencilKeyboardInsert="HandleQuickInsert"
                                   Class="tm-diagram-editor__toolbox" />
             </div>
         }

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Identifies which component started the current drag operation.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/DragDropService.cs",
+  "documentationStatus": "generated",
+  "itemName": "DragSource"
+}

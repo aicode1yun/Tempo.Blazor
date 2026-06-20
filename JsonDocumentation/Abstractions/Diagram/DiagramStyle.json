@@ -1,0 +1,114 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Visual style overrides for a diagram element (node or edge).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStyle.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Text color (CSS color value)."
+    },
+    {
+      "name": "EnableMathJax",
+      "kind": "Property",
+      "type": "bool?",
+      "description": "Whether MathJax rendering is enabled for this element's text."
+    },
+    {
+      "name": "Fill",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Fill color (CSS color value)."
+    },
+    {
+      "name": "FontFamily",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Font family."
+    },
+    {
+      "name": "FontSize",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Font size in pixels."
+    },
+    {
+      "name": "HasShadow",
+      "kind": "Property",
+      "type": "bool?",
+      "description": "Whether the shape has a shadow effect."
+    },
+    {
+      "name": "IsBold",
+      "kind": "Property",
+      "type": "bool?",
+      "description": "Whether text is bold."
+    },
+    {
+      "name": "IsItalic",
+      "kind": "Property",
+      "type": "bool?",
+      "description": "Whether text is italic."
+    },
+    {
+      "name": "IsUnderline",
+      "kind": "Property",
+      "type": "bool?",
+      "description": "Whether text is underlined."
+    },
+    {
+      "name": "Opacity",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Opacity from 0.0 to 1.0."
+    },
+    {
+      "name": "Radius",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Corner radius in pixels for rectangles."
+    },
+    {
+      "name": "Stroke",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Stroke color (CSS color value)."
+    },
+    {
+      "name": "StrokeDasharray",
+      "kind": "Property",
+      "type": "string?",
+      "description": "CSS stroke dasharray pattern. (e.g. \"5,5\" for dashed)."
+    },
+    {
+      "name": "StrokeDashPattern",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Stroke dash pattern. e.g. solid, dashed, dotted, dash-dot."
+    },
+    {
+      "name": "StrokeWidth",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Stroke width in pixels."
+    },
+    {
+      "name": "TextAlign",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Horizontal text alignment. left, center, right."
+    },
+    {
+      "name": "VerticalAlign",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Vertical text alignment. top, middle, bottom."
+    }
+  ],
+  "itemName": "DiagramStyle"
+}

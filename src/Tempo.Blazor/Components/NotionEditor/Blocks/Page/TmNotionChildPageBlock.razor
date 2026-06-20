@@ -1,0 +1,49 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Page
+@using Tempo.Blazor.NotionEditor.Models
+
+@if (_isRenaming)
+{
+    <div class="tm-child-page tm-child-page--renaming">
+        <span class="tm-child-page__icon" aria-hidden="true">@_icon</span>
+        <input class="tm-child-page__rename-input"
+               @ref="_inputRef"
+               value="@_renameBuffer"
+               @oninput="e => _renameBuffer = e.Value?.ToString() ?? string.Empty"
+               @onblur="HandleRenameBlurAsync"
+               @onkeydown="HandleRenameKeyDownAsync"
+               placeholder="@Loc["TmNotionChildPageBlock_TitlePlaceholder"]"
+               spellcheck="false"
+               autocomplete="off"
+               aria-label="@Loc["TmNotionChildPageBlock_TitlePlaceholder"]" />
+    </div>
+}
+else
+{
+    <div class="tm-child-page"
+         role="link"
+         tabindex="0"
+         @onclick="HandleClickAsync"
+         @ondblclick="HandleDblClickAsync"
+         @onkeydown="HandleViewKeyDownAsync"
+         aria-label="@_title">
+        <svg class="tm-child-page__page-icon" width="16" height="16" viewBox="0 0 16 16"
+             fill="none" aria-hidden="true">
+            <path d="M3.5 1.5h6L13 5v9.5H3.5v-13z"
+                  stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+            <path d="M9.5 1.5V5H13" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+        </svg>
+        <span class="tm-child-page__emoji" aria-hidden="true">@_icon</span>
+        <span class="tm-child-page__title">@_title</span>
+        @if (!ReadOnly)
+        {
+            <span class="tm-child-page__rename-hint" aria-hidden="true">
+                @Loc["TmNotionChildPageBlock_DoubleClickRename"]
+            </span>
+        }
+        <svg class="tm-child-page__chevron" width="14" height="14" viewBox="0 0 14 14"
+             fill="none" aria-hidden="true">
+            <path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
+                  stroke-linejoin="round"/>
+        </svg>
+    </div>
+}

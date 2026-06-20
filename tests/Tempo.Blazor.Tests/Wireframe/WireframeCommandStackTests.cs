@@ -12,7 +12,7 @@ public class WireframeCommandStackTests
 
     private static WireframeDocument EmptyDoc() => new()
     {
-        Title = "Test", Width = 800, Height = 600, Elements = []
+        Title = "Test", Width = 800, Height = 600
     };
 
     private static WireframeElement MakeEl(string type = "TmButton", double x = 0, double y = 0)

@@ -1,0 +1,81 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Helper methods for color conversion between Hex, RGB, and RGBA formats.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ColorHelper.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ToHex",
+      "kind": "Method",
+      "type": "string",
+      "description": "Converts RGBA components to a hex string (with optional alpha).",
+      "parameters": [
+        {
+          "name": "r",
+          "type": "byte"
+        },
+        {
+          "name": "g",
+          "type": "byte"
+        },
+        {
+          "name": "b",
+          "type": "byte"
+        },
+        {
+          "name": "a",
+          "type": "double",
+          "default": "1.0"
+        }
+      ]
+    },
+    {
+      "name": "ToRgb",
+      "kind": "Method",
+      "type": "string",
+      "description": "Converts RGBA components to an RGB string.",
+      "parameters": [
+        {
+          "name": "r",
+          "type": "byte"
+        },
+        {
+          "name": "g",
+          "type": "byte"
+        },
+        {
+          "name": "b",
+          "type": "byte"
+        }
+      ]
+    },
+    {
+      "name": "ToRgba",
+      "kind": "Method",
+      "type": "string",
+      "description": "Converts RGBA components to an RGBA string.",
+      "parameters": [
+        {
+          "name": "r",
+          "type": "byte"
+        },
+        {
+          "name": "g",
+          "type": "byte"
+        },
+        {
+          "name": "b",
+          "type": "byte"
+        },
+        {
+          "name": "a",
+          "type": "double"
+        }
+      ]
+    }
+  ],
+  "itemName": "ColorHelper"
+}

@@ -1,0 +1,20 @@
+@page "/p/{Token}"
+@using Tempo.Blazor.Components.NotionEditor.Page
+@using Tempo.Blazor.NotionEditor.Interfaces
+@inject ITmLocalizer Loc
+@inject DemoNotionPublicShareProvider PublicShareProvider
+@inject DemoNotionDataProvider DataProvider
+@inject DemoNotionBlockProvider BlockProvider
+@inject MockNotionCommentProvider CommentProvider
+
+<PageTitle>@Loc["Notion_Share_PublicPage"]</PageTitle>
+
+<TmNotionPublicPage Token="@Token"
+                    PublicShareProvider="PublicShareProvider"
+                    DataProvider="DataProvider"
+                    BlockProvider="BlockProvider"
+                    CommentProvider="CommentProvider" />
+
+@code {
+    [Parameter] public string? Token { get; set; }
+}

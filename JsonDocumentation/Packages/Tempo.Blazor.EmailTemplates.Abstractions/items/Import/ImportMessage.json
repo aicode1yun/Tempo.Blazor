@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Import",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Import",
+  "description": "A single import diagnostic (localization key plus optional detail and position).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Import/ImportMessage.cs",
+  "documentationStatus": "generated",
+  "itemName": "ImportMessage"
+}

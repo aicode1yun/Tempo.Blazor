@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataDisplay",
+  "description": "Display mode for TmMultiViewList.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/ListViewMode.cs",
+  "documentationStatus": "generated",
+  "itemName": "ListViewMode"
+}

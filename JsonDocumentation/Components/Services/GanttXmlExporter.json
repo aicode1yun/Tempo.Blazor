@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Exports Gantt data to MS Project XML format.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/GanttXmlExporter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Export",
+      "kind": "Method",
+      "type": "string",
+      "parameters": [
+        {
+          "name": "tasks",
+          "type": "IEnumerable<GanttTask>"
+        },
+        {
+          "name": "dependencies",
+          "type": "IEnumerable<GanttDependency>"
+        }
+      ]
+    }
+  ],
+  "itemName": "GanttXmlExporter"
+}

@@ -1,0 +1,160 @@
+@namespace Tempo.Blazor.EmailTemplates.Components
+@implements IDisposable
+@inject IEmailTemplateRenderer Renderer
+
+<div class="tm-email-preview" data-tm-preview>
+    <div class="tm-email-preview__toolbar">
+        <div class="tm-email-preview__group" role="group">
+            <TmButton Size="ButtonSize.Sm" Variant="@DeviceVariant(false)" data-tm-preview-device="desktop"
+                      OnClick="() => SetDevice(false)">@Loc["EmailEditor_Preview_Desktop"]</TmButton>
+            <TmButton Size="ButtonSize.Sm" Variant="@DeviceVariant(true)" data-tm-preview-device="mobile"
+                      OnClick="() => SetDevice(true)">@Loc["EmailEditor_Preview_Mobile"]</TmButton>
+        </div>
+        <div class="tm-email-preview__group" role="group">
+            <TmButton Size="ButtonSize.Sm" Variant="@ViewVariant(false)" data-tm-preview-view="html"
+                      OnClick="() => SetTextView(false)">@Loc["EmailEditor_Preview_Html"]</TmButton>
+            <TmButton Size="ButtonSize.Sm" Variant="@ViewVariant(true)" data-tm-preview-view="text"
+                      OnClick="() => SetTextView(true)">@Loc["EmailEditor_Preview_Text"]</TmButton>
+        </div>
+    </div>
+
+    @if (_errors.Count > 0)
+    {
+        <TmAlert Severity="AlertSeverity.Warning" Title="@Loc["EmailEditor_Preview_Errors"]" data-tm-preview-errors="true">
+            <ul>
+                @foreach (var error in _errors)
+                {
+                    <li>@error.Message</li>
+                }
+            </ul>
+        </TmAlert>
+    }
+
+    <details class="tm-email-preview__data" data-tm-preview-data-editor>
+        <summary>@Loc["EmailEditor_Preview_SampleData"]</summary>
+        <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Secondary" data-tm-preview-generate="true"
+                  OnClick="GenerateSampleAsync">@Loc["EmailEditor_Preview_Generate"]</TmButton>
+        <textarea class="tm-email-preview__data-input" data-tm-preview-data rows="6"
+                  value="@_variablesJson" @oninput="OnSampleDataInput"></textarea>
+    </details>
+
+    <div class="tm-email-preview__stage @(_mobile ? "tm-email-preview__stage--mobile" : string.Empty)">
+        @if (_textView)
+        {
+            <pre class="tm-email-preview__text" data-tm-preview-text>@_text</pre>
+        }
+        else
+        {
+            <iframe class="tm-email-preview__frame" title="@Loc["EmailEditor_Toolbar_Preview"]"
+                    sandbox="" data-tm-preview-frame srcdoc="@_html"></iframe>
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>The document to preview.</summary>
+    [Parameter, EditorRequired] public EmailTemplateDocument Document { get; set; } = new();
+
+    /// <summary>Optional variable data (JSON). When null, sample data is generated from the template.</summary>
+    [Parameter] public string? VariablesJson { get; set; }
+
+    /// <summary>Clock used for the debounced re-render (overridable in tests).</summary>
+    [Parameter] public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+
+    private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(750);
+    private ITimer? _debounce;
+
+    private string _html = string.Empty;
+    private string _text = string.Empty;
+    private string _variablesJson = string.Empty;
+    private string? _lastExternalJson;
+    private bool _dataInitialized;
+    private IReadOnlyList<RenderError> _errors = Array.Empty<RenderError>();
+    private bool _mobile;
+    private bool _textView;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_dataInitialized)
+        {
+            _variablesJson = !string.IsNullOrWhiteSpace(VariablesJson) ? VariablesJson! : GenerateSampleJson();
+            _lastExternalJson = VariablesJson;
+            _dataInitialized = true;
+        }
+        else if (VariablesJson != _lastExternalJson)
+        {
+            // The parent (e.g. the send form) supplied fresh values as the user types.
+            // Adopt them as the source of truth; between external changes the local
+            // sample-data textarea edits are still preserved.
+            _lastExternalJson = VariablesJson;
+            if (!string.IsNullOrWhiteSpace(VariablesJson))
+            {
+                _variablesJson = VariablesJson!;
+            }
+        }
+        await RenderPreviewAsync();
+    }
+
+    private async Task RenderPreviewAsync()
+    {
+        var result = await Renderer.RenderAsync(Document, BuildModel());
+        _html = result.Html;
+        _text = result.TextVersion;
+        _errors = result.Errors;
+    }
+
+    private object? BuildModel()
+    {
+        if (!string.IsNullOrWhiteSpace(_variablesJson))
+        {
+            try
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(_variablesJson);
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                // Fall through to sample data on invalid JSON.
+            }
+        }
+        return SampleDataGenerator.Generate(EmailDocumentVariableExtractor.Extract(Document));
+    }
+
+    private string GenerateSampleJson()
+    {
+        var sample = SampleDataGenerator.Generate(EmailDocumentVariableExtractor.Extract(Document));
+        return System.Text.Json.JsonSerializer.Serialize(sample,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private void OnSampleDataInput(ChangeEventArgs e)
+    {
+        _variablesJson = e.Value?.ToString() ?? string.Empty;
+        ScheduleRender();
+    }
+
+    private async Task GenerateSampleAsync()
+    {
+        _variablesJson = GenerateSampleJson();
+        await RenderPreviewAsync();
+    }
+
+    private void ScheduleRender()
+    {
+        _debounce?.Dispose();
+        _debounce = TimeProvider.CreateTimer(
+            _ => _ = InvokeAsync(async () => { await RenderPreviewAsync(); StateHasChanged(); }),
+            state: null, dueTime: DebounceDelay, period: Timeout.InfiniteTimeSpan);
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => _debounce?.Dispose();
+
+    private void SetDevice(bool mobile) => _mobile = mobile;
+
+    private void SetTextView(bool textView) => _textView = textView;
+
+    private ButtonVariant DeviceVariant(bool mobile) => _mobile == mobile ? ButtonVariant.Primary : ButtonVariant.Ghost;
+
+    private ButtonVariant ViewVariant(bool textView) => _textView == textView ? ButtonVariant.Primary : ButtonVariant.Ghost;
+}

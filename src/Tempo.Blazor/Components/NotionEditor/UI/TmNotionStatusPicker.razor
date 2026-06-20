@@ -1,0 +1,54 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Enums
+
+@if (Visible)
+{
+    <div class="tm-notion-status-picker-backdrop" @onclick="HandleBackdropClickAsync" aria-hidden="true"></div>
+
+    <div class="tm-notion-status-picker"
+         role="dialog"
+         aria-label="@Loc["Notion_Status_Insert"]"
+         style="top:@(_top)px;left:@(_left)px"
+         @ref="_pickerRef"
+         @onkeydown="HandleKeyDownAsync"
+         @onkeydown:stopPropagation="true">
+
+        <input class="tm-notion-status-picker__input"
+               type="text"
+               autocomplete="off"
+               spellcheck="false"
+               maxlength="@MaxLabelLength"
+               placeholder="@Loc["Notion_Status_Placeholder"]"
+               value="@_label"
+               @ref="_inputRef"
+               @oninput="HandleLabelInputAsync" />
+
+        <div class="tm-notion-status-picker__preview" aria-live="polite">
+            <span class="@PreviewClass">
+                <span class="tm-notion-status__label">@PreviewLabel</span>
+            </span>
+        </div>
+
+        <div class="tm-notion-status-picker__colors" role="listbox">
+            @foreach (var color in Colors)
+            {
+                var selected = color == _color;
+                <button type="button"
+                        class="tm-notion-status-picker__swatch tm-notion-status-picker__swatch--@CssColor(color) @(selected ? "tm-notion-status-picker__swatch--selected" : null)"
+                        aria-label="@Loc[$"Notion_Status_Color_{color}"]"
+                        aria-selected="@selected"
+                        title="@Loc[$"Notion_Status_Color_{color}"]"
+                        @onclick="() => SelectColor(color)">
+                    <span aria-hidden="true"></span>
+                </button>
+            }
+        </div>
+
+        <button type="button"
+                class="tm-notion-status-picker__insert"
+                disabled="@IsInsertDisabled"
+                @onclick="InsertAsync">
+            @Loc["Notion_Status_Insert"]
+        </button>
+    </div>
+}

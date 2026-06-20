@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Submission status event displayed in a signing timeline.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningSubmissionStatusEvent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTimeOffset",
+      "description": "When the event occurred."
+    },
+    {
+      "name": "Metadata",
+      "kind": "Property",
+      "type": "IReadOnlyDictionary<string, string>",
+      "description": "Additional provider-specific metadata."
+    },
+    {
+      "name": "RecipientEmail",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Recipient or actor email."
+    },
+    {
+      "name": "RecipientName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Recipient or actor display name."
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "SigningSubmissionStatusEventType",
+      "description": "Lifecycle event type."
+    },
+    {
+      "name": "Uuid",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable event identifier."
+    }
+  ],
+  "itemName": "SigningSubmissionStatusEvent"
+}

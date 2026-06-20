@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Groups adjacent pending revisions for review UI presentation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentNotesHeadersRevisions.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentRevisionGrouper"
+}

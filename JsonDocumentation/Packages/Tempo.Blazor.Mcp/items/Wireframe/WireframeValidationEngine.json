@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "Validates a against the , producing precise, actionable messages with JSON-style paths — the main feedback loop that lets an LLM correct a design instead of silently producing a broken one.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeValidationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeValidationEngine"
+}

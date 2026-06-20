@@ -1,0 +1,70 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionLinkedPageBlock — external linked page with tinted card
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Card row ────────────────────────────────────────────────── */
+
+.tm-linked-page {
+    display:       flex;
+    align-items:   center;
+    gap:           var(--tm-space-2);
+    padding:       var(--tm-space-2-5) var(--tm-space-3);
+    border-radius: var(--tm-radius-md);
+    background:    color-mix(in srgb, var(--tm-color-primary-500) 5%, transparent);
+    border:        1px solid color-mix(in srgb, var(--tm-color-primary-400) 35%, transparent);
+    cursor:        pointer;
+    user-select:   none;
+    outline:       none;
+    width:         100%;
+    min-height:    42px;
+    font-size:     var(--tm-font-size-base);
+    font-weight:   var(--tm-font-weight-medium);
+    color:         var(--tm-text-primary);
+    transition:    background   var(--tm-notion-anim-fast),
+                   border-color var(--tm-notion-anim-fast),
+                   box-shadow   var(--tm-notion-anim-fast);
+}
+
+.tm-linked-page:hover {
+    background:   color-mix(in srgb, var(--tm-color-primary-500) 11%, transparent);
+    border-color: var(--tm-color-primary-400);
+}
+
+.tm-linked-page:focus-visible {
+    outline:        2px solid var(--tm-color-primary-500);
+    outline-offset: 2px;
+}
+
+/* ── Arrow (↗ indicator) ─────────────────────────────────────── */
+
+.tm-linked-page__arrow {
+    color:       var(--tm-color-primary-500);
+    flex-shrink: 0;
+    opacity:     0.85;
+}
+
+/* ── Emoji icon ──────────────────────────────────────────────── */
+
+.tm-linked-page__icon {
+    font-size:   1.15em;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+/* ── Default page icon (SVG fallback) ────────────────────────── */
+
+.tm-linked-page__default-icon {
+    color:       var(--tm-color-primary-400);
+    flex-shrink: 0;
+}
+
+/* ── Title ───────────────────────────────────────────────────── */
+
+.tm-linked-page__title {
+    flex:          1;
+    min-width:     0;
+    overflow:      hidden;
+    text-overflow: ellipsis;
+    white-space:   nowrap;
+    color:         color-mix(in srgb, var(--tm-color-primary-700) 85%, var(--tm-text-primary));
+}

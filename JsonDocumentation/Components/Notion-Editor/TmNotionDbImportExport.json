@@ -1,0 +1,15 @@
+{
+  "itemName": "TmNotionDbImportExport",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionDbImportExport Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Database/TmNotionDbImportExport.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
+  ],
+  "parameters": [],
+  "subcategory": "Blocks / Database"
+}

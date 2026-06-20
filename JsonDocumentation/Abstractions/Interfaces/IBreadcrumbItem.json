@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents a single breadcrumb item in TmBreadcrumbs.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IBreadcrumbItem.cs",
+  "documentationStatus": "generated",
+  "itemName": "IBreadcrumbItem"
+}

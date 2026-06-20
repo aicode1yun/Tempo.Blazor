@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 
@@ -8,8 +11,15 @@ namespace Tempo.Blazor.Components.NotionEditor.Blocks;
 /// Dropdown context menu for a single block — provides Delete, Duplicate, Turn into,
 /// Move to, Copy link, Comment, and Color actions.
 /// </summary>
-public partial class TmNotionBlockContextMenu : ComponentBase
+public partial class TmNotionBlockContextMenu : ComponentBase, IAsyncDisposable
 {
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    // ── Cascaded context ─────────────────────────────────────────────────────
+
+    [CascadingParameter]
+    private NotionEditorContext Context { get; set; } = default!;
+
     // ── Parameters ───────────────────────────────────────────────────────────
 
     [Parameter, EditorRequired]
@@ -22,26 +32,51 @@ public partial class TmNotionBlockContextMenu : ComponentBase
     [Parameter] public EventCallback          OnMoveTo             { get; set; }
     [Parameter] public EventCallback          OnCopyLink           { get; set; }
     [Parameter] public EventCallback          OnComment            { get; set; }
+    [Parameter] public EventCallback          OnNewThread          { get; set; }
+    [Parameter] public EventCallback<CalloutVariant> OnCalloutVariantChange { get; set; }
     [Parameter] public EventCallback<string?> OnTextColorChange    { get; set; }
     [Parameter] public EventCallback<string?> OnBackgroundChange   { get; set; }
 
     // ── Submenu state ────────────────────────────────────────────────────────
 
     private bool _showTurnInto;
+    private bool _showPanelType;
     private bool _showColor;
+    private bool _focusPending = true;
+    private ElementReference _menuRef;
 
-    private enum Sub { TurnInto, Color }
+    private bool HasCommentProvider => Context.CommentProvider is not null;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focusPending)
+            return;
+
+        _focusPending = false;
+
+        try
+        {
+            await JS.InvokeVoidAsync("tmNotionEditor.initFocusTrap", _menuRef);
+        }
+        catch
+        {
+        }
+    }
+
+    private enum Sub { TurnInto, PanelType, Color }
 
     private void OpenSub(Sub sub)
     {
-        _showTurnInto = sub == Sub.TurnInto;
-        _showColor    = sub == Sub.Color;
+        _showTurnInto  = sub == Sub.TurnInto;
+        _showPanelType = sub == Sub.PanelType;
+        _showColor     = sub == Sub.Color;
     }
 
     private void CloseSub(Sub sub)
     {
-        if (sub == Sub.TurnInto) _showTurnInto = false;
-        if (sub == Sub.Color)    _showColor    = false;
+        if (sub == Sub.TurnInto)  _showTurnInto = false;
+        if (sub == Sub.PanelType) _showPanelType = false;
+        if (sub == Sub.Color)     _showColor = false;
     }
 
     // ── Action handlers ───────────────────────────────────────────────────────
@@ -82,6 +117,18 @@ public partial class TmNotionBlockContextMenu : ComponentBase
         await OnComment.InvokeAsync();
     }
 
+    private async Task HandleNewThreadAsync()
+    {
+        await OnClose.InvokeAsync();
+        await OnNewThread.InvokeAsync();
+    }
+
+    private async Task HandleCalloutVariantAsync(CalloutVariant variant)
+    {
+        await OnClose.InvokeAsync();
+        await OnCalloutVariantChange.InvokeAsync(variant);
+    }
+
     private async Task HandleTextColorAsync(string? color)
     {
         await OnClose.InvokeAsync();
@@ -95,6 +142,23 @@ public partial class TmNotionBlockContextMenu : ComponentBase
     }
 
     private async Task CloseAsync() => await OnClose.InvokeAsync();
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (string.Equals(args.Key, "Escape", StringComparison.Ordinal))
+            await CloseAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("tmNotionEditor.destroyFocusTrap", _menuRef);
+        }
+        catch
+        {
+        }
+    }
 
     // ── Static data ───────────────────────────────────────────────────────────
 
@@ -128,6 +192,21 @@ public partial class TmNotionBlockContextMenu : ComponentBase
         new("red",    "TmNotionBlockContextMenu_ColorRed"),
     ];
 
+    private static readonly PanelTypeItem[] _panelTypeItems =
+    [
+        new(CalloutVariant.Info, "TmNotionSlashMenu_ItemName_InfoPanel"),
+        new(CalloutVariant.Note, "TmNotionSlashMenu_ItemName_NotePanel"),
+        new(CalloutVariant.Warning, "TmNotionSlashMenu_ItemName_WarningPanel"),
+        new(CalloutVariant.Error, "TmNotionSlashMenu_ItemName_ErrorPanel"),
+        new(CalloutVariant.Success, "TmNotionSlashMenu_ItemName_SuccessPanel")
+    ];
+
+    private IEnumerable<TurnIntoItem> AllowedTurnIntoItems =>
+        Context?.AllowedBlockTypes is null
+            ? _turnIntoItems
+            : _turnIntoItems.Where(i => Context.AllowedBlockTypes.Contains(i.Type));
+
     private sealed record TurnIntoItem(BlockType Type, string LabelKey);
     private sealed record ColorItem(string? Value, string LabelKey);
+    private sealed record PanelTypeItem(CalloutVariant Variant, string LabelKey);
 }

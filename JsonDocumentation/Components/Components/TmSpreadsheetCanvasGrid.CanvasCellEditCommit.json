@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "description": "Represents one cell edit committed by the canvas JavaScript editor.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/TmSpreadsheetCanvasGrid.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmSpreadsheetCanvasGrid.CanvasCellEditCommit"
+}

@@ -1,0 +1,14 @@
+{
+  "itemName": "TmGanttWorkloadView",
+  "kind": "Component",
+  "category": "Scheduler",
+  "description": "TmGanttWorkloadView Blazor component in the Scheduler category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Scheduler",
+  "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttWorkloadView.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Scheduler"
+  ],
+  "parameters": []
+}

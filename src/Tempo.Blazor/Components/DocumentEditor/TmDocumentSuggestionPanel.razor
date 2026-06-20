@@ -1,0 +1,111 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+
+<aside class="tm-document-suggestion-panel" data-testid="document-suggestion-panel" aria-label="@Loc["TmDocumentEditor_SuggestionPanelLabel"]">
+    <h3 class="tm-document-suggestion-panel__title">@Loc["TmDocumentEditor_Suggestions"]</h3>
+
+    @if (!string.IsNullOrWhiteSpace(StatusMessage))
+    {
+        <div class="tm-document-suggestion-panel__status" role="status" data-testid="document-suggestion-status">@StatusMessage</div>
+    }
+
+    @if (IsLoading)
+    {
+        <TmSkeleton Variant="SkeletonVariant.Rect" Height="36px" Width="100%" />
+    }
+    else if (PendingSuggestions.Count == 0)
+    {
+        <div class="tm-document-suggestion-panel__empty" data-testid="document-suggestion-empty">
+            @Loc["TmDocumentEditor_SuggestionsEmpty"]
+        </div>
+    }
+    else
+    {
+        <div class="tm-document-suggestion-panel__list" data-testid="document-suggestion-list">
+            @foreach (var suggestion in PendingSuggestions)
+            {
+                <article class="tm-document-suggestion-panel__item"
+                         tabindex="0"
+                         data-suggestion-id="@suggestion.Id"
+                         data-testid="document-suggestion-item"
+                         @onclick="() => OnSelectSuggestion.InvokeAsync(suggestion)">
+                    <div class="tm-document-suggestion-panel__meta">
+                        <span>@GetTypeLabel(suggestion)</span>
+                        <span>@GetAuthorLabel(suggestion)</span>
+                    </div>
+                    <div class="tm-document-suggestion-panel__preview" data-testid="document-suggestion-preview">
+                        @GetPreview(suggestion)
+                    </div>
+                    <div class="tm-document-suggestion-panel__actions">
+                        <button type="button"
+                                disabled="@(IsBusy || !CanReview)"
+                                aria-label="@Loc["TmDocumentEditor_AcceptSuggestionAria", GetAuthorLabel(suggestion)]"
+                                data-testid="document-suggestion-accept"
+                                @onclick="() => OnAcceptSuggestion.InvokeAsync(suggestion)"
+                                @onclick:stopPropagation="true">
+                            @Loc["TmDocumentEditor_AcceptSuggestion"]
+                        </button>
+                        <button type="button"
+                                disabled="@(IsBusy || !CanReview)"
+                                aria-label="@Loc["TmDocumentEditor_RejectSuggestionAria", GetAuthorLabel(suggestion)]"
+                                data-testid="document-suggestion-reject"
+                                @onclick="() => OnRejectSuggestion.InvokeAsync(suggestion)"
+                                @onclick:stopPropagation="true">
+                            @Loc["TmDocumentEditor_RejectSuggestion"]
+                        </button>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</aside>
+
+@code {
+    /// <summary>Suggestions to display.</summary>
+    [Parameter] public IReadOnlyList<DocumentSuggestion> Suggestions { get; set; } = [];
+
+    /// <summary>Whether suggestions are loading.</summary>
+    [Parameter] public bool IsLoading { get; set; }
+
+    /// <summary>Whether a review action is running.</summary>
+    [Parameter] public bool IsBusy { get; set; }
+
+    /// <summary>Whether the current user can accept or reject suggestions.</summary>
+    [Parameter] public bool CanReview { get; set; } = true;
+
+    /// <summary>Optional status text.</summary>
+    [Parameter] public string? StatusMessage { get; set; }
+
+    /// <summary>Raised when a suggestion is selected.</summary>
+    [Parameter] public EventCallback<DocumentSuggestion> OnSelectSuggestion { get; set; }
+
+    /// <summary>Raised when a suggestion should be accepted.</summary>
+    [Parameter] public EventCallback<DocumentSuggestion> OnAcceptSuggestion { get; set; }
+
+    /// <summary>Raised when a suggestion should be rejected.</summary>
+    [Parameter] public EventCallback<DocumentSuggestion> OnRejectSuggestion { get; set; }
+
+    private IReadOnlyList<DocumentSuggestion> PendingSuggestions => Suggestions
+        .Where(suggestion => suggestion.Status == DocumentSuggestionStatus.Pending)
+        .ToList();
+
+    private string GetTypeLabel(DocumentSuggestion suggestion)
+        => suggestion.Type switch
+        {
+            DocumentSuggestionType.DeleteText => Loc["TmDocumentEditor_SuggestionTypeDelete"],
+            DocumentSuggestionType.Formatting => Loc["TmDocumentEditor_SuggestionTypeFormatting"],
+            DocumentSuggestionType.Move => Loc["TmDocumentEditor_SuggestionTypeMove"],
+            DocumentSuggestionType.ReplaceText => Loc["TmDocumentEditor_SuggestionTypeReplace"],
+            _ => Loc["TmDocumentEditor_SuggestionTypeInsert"]
+        };
+
+    private string GetAuthorLabel(DocumentSuggestion suggestion)
+        => string.IsNullOrWhiteSpace(suggestion.Author.DisplayName)
+            ? (string.IsNullOrWhiteSpace(suggestion.Author.Id) ? Loc["TmDocumentEditor_UnknownAuthor"] : suggestion.Author.Id)
+            : suggestion.Author.DisplayName;
+
+    private static string GetPreview(DocumentSuggestion suggestion)
+        => suggestion.Type == DocumentSuggestionType.DeleteText
+            ? suggestion.OriginalText ?? string.Empty
+            : suggestion.SuggestedText ?? string.Empty;
+}

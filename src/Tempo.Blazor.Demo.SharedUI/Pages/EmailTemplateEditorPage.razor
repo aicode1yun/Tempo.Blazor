@@ -1,0 +1,72 @@
+@page "/email-templates/edit/{Id:guid}"
+@inject IEmailTemplateApiClient Api
+@inject NavigationManager Nav
+
+<PageTitle>Edit template</PageTitle>
+
+<div class="tm-demo-email-editor-page" data-tm-email-editor-page>
+    <div class="tm-demo-email-editor-page__bar">
+        <TmButton Variant="ButtonVariant.Ghost" Icon="arrow-left" OnClick="Back" data-tm-back>Back</TmButton>
+        @if (_status is not null)
+        {
+            <span class="tm-demo-email-editor-page__status" data-tm-save-status>@_status</span>
+        }
+    </div>
+
+    @if (_loading)
+    {
+        <TmSpinner />
+    }
+    else if (_document is null)
+    {
+        <TmEmptyState Icon="alert-triangle" Title="Template not found" />
+    }
+    else
+    {
+        <div class="tm-demo-email-editor-page__editor">
+            <TmEmailTemplateEditor @bind-Document="_document" OnSave="SaveAsync"
+                                   AutoSave="_autoSave" OnAutoSave="SaveAsync" />
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The template id from the route.</summary>
+    [Parameter] public Guid Id { get; set; }
+
+    private EmailTemplateDocument? _document;
+    private EmailTemplateDetailDto? _detail;
+    private bool _loading = true;
+    private string? _status;
+    private readonly AutoSaveOptions _autoSave = new() { Enabled = true, Interval = TimeSpan.FromSeconds(3) };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _detail = await Api.GetAsync(Id);
+        _document = _detail is null ? null : EmailTemplateSerializer.Deserialize(_detail.ContentJson);
+        _loading = false;
+    }
+
+    private async Task SaveAsync(EmailTemplateDocument document)
+    {
+        if (_detail is null) return;
+        _status = "Saving…";
+        StateHasChanged();
+
+        var ok = await Api.UpdateAsync(Id, new UpdateEmailTemplateRequest
+        {
+            Name = string.IsNullOrWhiteSpace(document.Name) ? _detail.Name : document.Name,
+            Subject = document.Subject,
+            Preheader = document.Preheader,
+            Language = document.Language,
+            IsActive = _detail.IsActive,
+            ContentJson = EmailTemplateSerializer.Serialize(document),
+            SampleDataJson = _detail.SampleDataJson,
+        });
+        _status = ok ? "Saved" : "Save failed";
+        StateHasChanged();
+    }
+
+    private void Back() => Nav.NavigateTo("/email-templates");
+}

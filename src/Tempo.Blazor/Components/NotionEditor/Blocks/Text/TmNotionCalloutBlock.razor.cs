@@ -51,6 +51,9 @@ public partial class TmNotionCalloutBlock : ComponentBase, IAsyncDisposable
     /// <summary>Fired when '[[' page-link syntax is typed. Args = (top, left) caret coords.</summary>
     [Parameter] public EventCallback<(double Top, double Left)> OnPageLinkMenu    { get; set; }
 
+    /// <summary>Fired when '{{' token syntax is typed. Args = (top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(double Top, double Left)> OnTokenMenu       { get; set; }
+
     /// <summary>
     /// Fired when the emoji icon is changed or removed.
     /// Arg = new emoji string, or null when the user removes the icon.
@@ -69,8 +72,23 @@ public partial class TmNotionCalloutBlock : ComponentBase, IAsyncDisposable
 
     // ── Computed ─────────────────────────────────────────────────────────────
 
-    private string _currentEmoji =>
-        string.IsNullOrEmpty(Content?.IconEmoji) ? "💡" : Content.IconEmoji;
+    private CalloutVariant _variant => Content?.Variant ?? CalloutVariant.Default;
+
+    private string _variantName => _variant.ToString().ToLowerInvariant();
+
+    private string _variantClass => _variant == CalloutVariant.Default
+        ? string.Empty
+        : $"tm-notion-callout--{_variantName}";
+
+    private string _currentEmoji => _variant switch
+    {
+        CalloutVariant.Info    => "ℹ️",
+        CalloutVariant.Note    => "📝",
+        CalloutVariant.Warning => "⚠️",
+        CalloutVariant.Error   => "❌",
+        CalloutVariant.Success => "✅",
+        _ => string.IsNullOrEmpty(Content?.IconEmoji) ? "💡" : Content.IconEmoji
+    };
 
     private string _alignClass => Content?.Alignment switch
     {
@@ -116,7 +134,7 @@ public partial class TmNotionCalloutBlock : ComponentBase, IAsyncDisposable
             }
             catch { }
         }
-        else if (html != _lastHtml)
+        else if (!_dirty && html != _lastHtml)
         {
             _lastHtml = html;
             try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html); }
@@ -129,14 +147,16 @@ public partial class TmNotionCalloutBlock : ComponentBase, IAsyncDisposable
     private async Task OnBlurAsync()
     {
         if (!_dirty || ReadOnly) return;
-        _dirty = false;
         try
         {
-            var html  = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
-            _lastHtml = html;
+            var html = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
             await OnContentSaved.InvokeAsync(html);
         }
         catch { }
+        finally
+        {
+            _dirty = false;
+        }
     }
 
     private async Task HandleFocusAsync() => await OnFocused.InvokeAsync();
@@ -201,6 +221,10 @@ public partial class TmNotionCalloutBlock : ComponentBase, IAsyncDisposable
     [JSInvokable]
     public async Task OnPageLinkTriggered(double top, double left) =>
         await OnPageLinkMenu.InvokeAsync((top, left));
+
+    [JSInvokable]
+    public async Task OnTokenTriggered(double top, double left) =>
+        await OnTokenMenu.InvokeAsync((top, left));
 
     // ── Dispose ───────────────────────────────────────────────────────────────
 

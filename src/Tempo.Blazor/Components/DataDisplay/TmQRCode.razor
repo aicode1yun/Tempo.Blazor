@@ -1,0 +1,8 @@
+@namespace Tempo.Blazor.Components.DataDisplay
+
+@if (!string.IsNullOrEmpty(_svgContent))
+{
+    <div class="tm-qr-code @CssClass">
+        @((MarkupString)_svgContent)
+    </div>
+}

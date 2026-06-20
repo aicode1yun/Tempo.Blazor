@@ -1,0 +1,75 @@
+{
+  "itemName": "TmFormulaBuilder",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "Builds computed signing field formulas from numeric field tokens and operators.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor/Components/Signing/TmFormulaBuilder.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Fallback culture used when a field label is missing for ."
+    },
+    {
+      "name": "Culture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the builder controls are disabled."
+    },
+    {
+      "name": "CurrentFieldUuid",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Computed field edited by the formula builder."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Callback invoked after the edited field is updated on save."
+    },
+    {
+      "name": "FallbackCulture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Culture used to resolve field labels in the token picker."
+    },
+    {
+      "name": "Field",
+      "type": "SigningField?",
+      "isRequired": false,
+      "description": "All fields in the current signing template."
+    },
+    {
+      "name": "FieldChanged",
+      "type": "EventCallback<SigningField>",
+      "isRequired": false,
+      "description": "Callback invoked after a valid formula is saved. The supplied value is normalized to UUID tokens."
+    },
+    {
+      "name": "Saved",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Callback invoked when displayed formula text changes."
+    },
+    {
+      "name": "Value",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Field identifier edited by the formula builder when is not supplied."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Formula text displayed by the builder. Human-readable field tokens are accepted."
+    }
+  ]
+}

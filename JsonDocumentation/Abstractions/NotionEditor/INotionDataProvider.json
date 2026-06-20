@@ -1,0 +1,101 @@
+{
+  "itemName": "INotionDataProvider",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Required core provider for TmNotionEditor. Handles all page-level CRUD operations: loading, creating, updating, deleting, moving, duplicating, and trash management.",
+  "methods": [
+    {
+      "name": "GetPageAsync",
+      "returnType": "Task<INotionPage>",
+      "description": "Loads a single page by its ID.",
+      "parameters": [{ "name": "pageId", "type": "string" }]
+    },
+    {
+      "name": "GetChildPagesAsync",
+      "returnType": "Task<IEnumerable<INotionPage>>",
+      "description": "Returns direct child pages of the given parent. Pass null for root-level pages.",
+      "parameters": [{ "name": "parentId", "type": "string?", "description": "Parent page ID, or null for root." }]
+    },
+    {
+      "name": "GetFavoritesAsync",
+      "returnType": "Task<IEnumerable<INotionPage>>",
+      "description": "Returns pages marked as favorites for the sidebar Favorites section."
+    },
+    {
+      "name": "GetRecentPagesAsync",
+      "returnType": "Task<IEnumerable<INotionPage>>",
+      "description": "Returns the most recently viewed pages for the sidebar Recent section.",
+      "parameters": [{ "name": "count", "type": "int", "description": "Maximum number of recent pages to return." }]
+    },
+    {
+      "name": "GetTrashAsync",
+      "returnType": "Task<IEnumerable<INotionPage>>",
+      "description": "Returns soft-deleted pages for the Trash panel."
+    },
+    {
+      "name": "CreatePageAsync",
+      "returnType": "Task<INotionPage>",
+      "description": "Creates a new empty page.",
+      "parameters": [
+        { "name": "parentId", "type": "string?", "description": "Parent page ID, or null for root." },
+        { "name": "title", "type": "string", "description": "Initial page title." }
+      ]
+    },
+    {
+      "name": "UpdatePageAsync",
+      "returnType": "Task",
+      "description": "Persists changes to page metadata (title, icon, cover, settings).",
+      "parameters": [{ "name": "page", "type": "INotionPage" }]
+    },
+    {
+      "name": "DeletePageAsync",
+      "returnType": "Task",
+      "description": "Soft-deletes a page (moves to Trash).",
+      "parameters": [{ "name": "pageId", "type": "string" }]
+    },
+    {
+      "name": "RestorePageAsync",
+      "returnType": "Task",
+      "description": "Restores a soft-deleted page from Trash.",
+      "parameters": [{ "name": "pageId", "type": "string" }]
+    },
+    {
+      "name": "PermanentlyDeletePageAsync",
+      "returnType": "Task",
+      "description": "Permanently deletes a page from Trash. Cannot be undone.",
+      "parameters": [{ "name": "pageId", "type": "string" }]
+    },
+    {
+      "name": "ToggleFavoriteAsync",
+      "returnType": "Task",
+      "description": "Adds or removes a page from the user's favorites.",
+      "parameters": [
+        { "name": "pageId", "type": "string" },
+        { "name": "isFavorite", "type": "bool" }
+      ]
+    },
+    {
+      "name": "MovePageAsync",
+      "returnType": "Task",
+      "description": "Moves a page to a different parent.",
+      "parameters": [
+        { "name": "pageId", "type": "string" },
+        { "name": "newParentId", "type": "string?", "description": "New parent page ID, or null for root." }
+      ]
+    },
+    {
+      "name": "DuplicatePageAsync",
+      "returnType": "Task<INotionPage>",
+      "description": "Creates a deep copy of a page including all its blocks.",
+      "parameters": [{ "name": "pageId", "type": "string" }]
+    }
+  ],
+  "usedInComponents": ["TmNotionEditor"],
+  "examples": [
+    {
+      "title": "Minimal in-memory implementation",
+      "code": "public class MyNotionDataProvider : INotionDataProvider\n{\n    private readonly List<PageRecord> _pages = [];\n\n    public Task<INotionPage> GetPageAsync(string pageId)\n    {\n        var page = _pages.First(p => p.Id.ToString() == pageId);\n        return Task.FromResult<INotionPage>(page);\n    }\n\n    public Task<IEnumerable<INotionPage>> GetChildPagesAsync(string? parentId)\n    {\n        var pages = _pages.Where(p => p.ParentId?.ToString() == parentId);\n        return Task.FromResult(pages.Cast<INotionPage>());\n    }\n\n    // ... implement remaining methods\n}"
+    }
+  ]
+}

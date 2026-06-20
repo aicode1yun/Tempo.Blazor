@@ -1,0 +1,129 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+  "description": "Central registry for named editor commands. Owns the forced-disable stack and read-only gating.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Registry/DocumentEditorCommandRegistry.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AddForceDisableReason",
+      "kind": "Method",
+      "type": "void",
+      "description": "Adds a forced-disable reason for the named command. The command stays disabled until all reasons are removed.",
+      "parameters": [
+        {
+          "name": "commandName",
+          "type": "string"
+        },
+        {
+          "name": "reason",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ExecuteAsync",
+      "kind": "Method",
+      "type": "Task<bool>",
+      "description": "Executes a command only when the current command state is visible and enabled.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "context",
+          "type": "DocumentEditorCommandContext"
+        },
+        {
+          "name": "payload",
+          "type": "object?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "GetRequired",
+      "kind": "Method",
+      "type": "IDocumentEditorCommandEntry",
+      "description": "Returns a registered command by name. Throws when not found.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "GetState",
+      "kind": "Method",
+      "type": "DocumentEditorCommandState?",
+      "description": "Returns the last computed state for the named command, or null when not yet refreshed.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "RefreshAllAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Recomputes and caches the state of every registered command against the given context.",
+      "parameters": [
+        {
+          "name": "context",
+          "type": "DocumentEditorCommandContext"
+        }
+      ]
+    },
+    {
+      "name": "Register",
+      "kind": "Method",
+      "type": "void",
+      "description": "Registers a command. Throws if a command with the same name is already registered.",
+      "parameters": [
+        {
+          "name": "command",
+          "type": "IDocumentEditorCommandEntry"
+        }
+      ]
+    },
+    {
+      "name": "RemoveForceDisableReason",
+      "kind": "Method",
+      "type": "void",
+      "description": "Removes a previously added forced-disable reason. The command becomes eligible for re-enabling once no reasons remain.",
+      "parameters": [
+        {
+          "name": "commandName",
+          "type": "string"
+        },
+        {
+          "name": "reason",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "TryGet",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Tries to find a registered command by name. Returns false when not found.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "command",
+          "type": "out IDocumentEditorCommandEntry?"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentEditorCommandRegistry"
+}

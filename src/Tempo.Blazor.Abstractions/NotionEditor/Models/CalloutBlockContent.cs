@@ -6,6 +6,7 @@ public class CalloutBlockContent : ICalloutBlockContent
 {
     public string? IconEmoji { get; set; }
     public string? IconImageUrl { get; set; }
+    public CalloutVariant Variant { get; set; } = CalloutVariant.Default;
     public string Html { get; set; } = string.Empty;
     public IReadOnlyList<Mention> Mentions { get; set; } = new List<Mention>();
     public string? BackgroundColor { get; set; }

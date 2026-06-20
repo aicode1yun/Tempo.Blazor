@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Workflow",
+  "description": "Full workflow canvas definition.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Workflow/WorkflowCanvasModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "WorkflowCanvasDefinition"
+}

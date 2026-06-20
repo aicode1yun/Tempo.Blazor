@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "The criteria of a text/number/date column filter: one or two conditions combined with AND/OR.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetAutoFilter.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetFilterCriteria"
+}

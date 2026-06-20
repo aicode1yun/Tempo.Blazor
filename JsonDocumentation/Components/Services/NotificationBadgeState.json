@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "In-memory badge state that tracks unread notification count.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/NotificationBadgeState.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Increment",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "Reset",
+      "kind": "Method",
+      "type": "void"
+    }
+  ],
+  "itemName": "NotificationBadgeState"
+}

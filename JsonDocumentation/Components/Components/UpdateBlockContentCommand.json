@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Commands",
+  "description": "Records a change to a block's so the edit can be undone and redone without extra round-trips. The command stores snapshots of and content; applies and restores .",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Commands/UpdateBlockContentCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ExecuteAsync",
+      "kind": "Method",
+      "type": "Task"
+    },
+    {
+      "name": "UndoAsync",
+      "kind": "Method",
+      "type": "Task"
+    }
+  ],
+  "itemName": "UpdateBlockContentCommand"
+}

@@ -1,0 +1,271 @@
+@page "/spreadsheet"
+@inject IJSRuntime JS
+@using Tempo.Blazor.Components.Spreadsheet
+@using Tempo.Blazor.Components.Spreadsheet.Enums
+@using Tempo.Blazor.Components.Spreadsheet.Models
+<PageTitle>Spreadsheet – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Spreadsheet</h1>
+    <p class="text-slate-600 dark:text-slate-400">Excel-like spreadsheet with cell editing, formulas, styling, multi-sheet workbooks, and XLSX import/export.</p>
+</div>
+
+<!-- Canvas Spreadsheet Renderer -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Canvas Renderer</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full">Large Dataset</span>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden" data-testid="spreadsheet-demo">
+        <TmSpreadsheet @ref="_canvasSpreadsheet"
+                       RowsCount="1000"
+                       ColumnsCount="120"
+                       Height="500px" />
+    </div>
+</section>
+
+<!-- Basic Spreadsheet -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Basic Spreadsheet</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">Editing & Selection</span>
+    </div>
+
+    <div class="p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-xl mb-4">
+        <p class="text-sm text-primary-800 dark:text-primary-200">
+            Interactive grid with inline editing, range selection, keyboard navigation, and toolbar formatting.
+            Try double-clicking a cell to edit, or use Ctrl+A to select all.
+        </p>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmSpreadsheet @ref="_basicSpreadsheet"
+                       RowsCount="15"
+                       ColumnsCount="10"
+                       Height="500px" />
+    </div>
+</section>
+
+<!-- Spreadsheet with Formulas -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Formula Engine</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">100+ Functions</span>
+    </div>
+
+    <div class="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl mb-4">
+        <p class="text-sm text-emerald-800 dark:text-emerald-200">
+            Supports 100+ built-in functions including SUM, AVERAGE, IF, VLOOKUP, DATE, TEXT, and more.
+            Change a value and watch dependent formulas recalculate automatically.
+        </p>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmSpreadsheet @ref="_formulaSpreadsheet"
+                       RowsCount="20"
+                       ColumnsCount="80"
+                       Height="500px"
+                       OnChange="OnFormulaSheetChange" />
+    </div>
+
+    @if (_lastChange is not null)
+    {
+        <div class="mt-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg animate-fade-in">
+            <p class="text-sm text-slate-700 dark:text-slate-300">
+                Cell <span class="font-semibold text-emerald-600 dark:text-emerald-400">@_lastChange.CellRef</span>
+                changed from <span class="font-mono text-slate-600 dark:text-slate-400">@(_lastChange.PreviousValue ?? "null")</span>
+                to <span class="font-mono text-slate-600 dark:text-slate-400">@(_lastChange.NewValue ?? "null")</span>
+            </p>
+        </div>
+    }
+</section>
+
+<!-- Spreadsheet with XLSX Import/Export -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">XLSX Import & Export</h2>
+            <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">Open XML</span>
+        </div>
+    </div>
+
+    <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl mb-4">
+        <div class="flex items-start space-x-3">
+            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+                <p class="text-sm text-blue-800 dark:text-blue-200">
+                    Import existing .xlsx files or export the current workbook. Styles, formulas, merged cells, and sheet metadata are preserved.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="showcase-card mb-4">
+        <div class="flex items-center space-x-4">
+            <label class="relative cursor-pointer">
+                <InputFile OnChange="OnXlsxFileSelected" accept=".xlsx" class="sr-only" />
+                <TmButton Variant="ButtonVariant.Secondary">
+                    <span class="flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <span>Import XLSX</span>
+                    </span>
+                </TmButton>
+            </label>
+            <TmButton OnClick="ExportXlsxAsync">
+                <span class="flex items-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Export XLSX</span>
+                </span>
+            </TmButton>
+            @if (_importStatus is not null)
+            {
+                <span class="text-sm text-slate-600 dark:text-slate-400">@_importStatus</span>
+            }
+        </div>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmSpreadsheet @ref="_xlsxSpreadsheet"
+                       RowsCount="30"
+                       ColumnsCount="80"
+                       Height="500px" />
+    </div>
+</section>
+
+@code {
+    private TmSpreadsheet _basicSpreadsheet = null!;
+    private TmSpreadsheet _formulaSpreadsheet = null!;
+    private TmSpreadsheet _xlsxSpreadsheet = null!;
+    private TmSpreadsheet _canvasSpreadsheet = null!;
+    private SpreadsheetChangeEventArgs? _lastChange;
+    private string? _importStatus;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _ = InitializeFormulaSheetAsync();
+            _canvasSpreadsheet.SetCellValue("A1", "Canvas JS engine");
+            _canvasSpreadsheet.SetCellValue("B1", "Public API sync");
+            _canvasSpreadsheet.SetCellValue("A2", "Arrow keys");
+            _canvasSpreadsheet.SetCellValue("B2", "Formula/editor hot path");
+        }
+    }
+
+    private async Task InitializeFormulaSheetAsync()
+    {
+        var sheet = _formulaSpreadsheet.Workbook.ActiveSheet;
+        if (sheet is null) return;
+
+        // Headers
+        sheet.SetCellValue(0, 0, "Product");
+        sheet.SetCellValue(0, 1, "Q1");
+        sheet.SetCellValue(0, 2, "Q2");
+        sheet.SetCellValue(0, 3, "Q3");
+        sheet.SetCellValue(0, 4, "Q4");
+        sheet.SetCellValue(0, 5, "Total");
+        sheet.SetCellValue(0, 6, "Average");
+
+        // Sample data
+        var products = new[] { "Laptops", "Monitors", "Keyboards", "Mice", "Headsets" };
+        for (int i = 0; i < products.Length; i++)
+        {
+            sheet.SetCellValue(i + 1, 0, products[i]);
+            sheet.SetCellValue(i + 1, 1, 100 + i * 25);
+            sheet.SetCellValue(i + 1, 2, 120 + i * 20);
+            sheet.SetCellValue(i + 1, 3, 90 + i * 30);
+            sheet.SetCellValue(i + 1, 4, 130 + i * 15);
+            sheet.SetCellFormula(i + 1, 5, $"=SUM(B{i + 2}:E{i + 2})");
+            sheet.SetCellFormula(i + 1, 6, $"=AVERAGE(B{i + 2}:E{i + 2})");
+        }
+
+        // Summary row
+        int lastRow = products.Length + 1;
+        sheet.SetCellValue(lastRow, 0, "TOTAL");
+        for (int c = 1; c <= 4; c++)
+        {
+            char col = (char)('A' + c);
+            sheet.SetCellFormula(lastRow, c, $"=SUM({col}2:{col}{lastRow})");
+        }
+        sheet.SetCellFormula(lastRow, 5, $"=SUM(B{lastRow + 1}:E{lastRow + 1})");
+        sheet.SetCellFormula(lastRow, 6, $"=AVERAGE(B2:E{lastRow})");
+
+        // Style headers
+        for (int c = 0; c <= 6; c++)
+        {
+            var cell = sheet.GetOrCreateCell($"{(char)('A' + c)}1");
+            cell.Style.Bold = true;
+            cell.Style.BackgroundColor = "#e2e8f0";
+        }
+
+        // Style total row
+        for (int c = 0; c <= 6; c++)
+        {
+            var cell = sheet.GetOrCreateCell($"{(char)('A' + c)}{lastRow + 1}");
+            cell.Style.Bold = true;
+            cell.Style.BackgroundColor = "#dbeafe";
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnFormulaSheetChange(SpreadsheetChangeEventArgs args)
+    {
+        _lastChange = args;
+    }
+
+    private async Task OnXlsxFileSelected(InputFileChangeEventArgs e)
+    {
+        _importStatus = "Loading...";
+        try
+        {
+            var file = e.File;
+            if (file.Name.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                await _xlsxSpreadsheet.ImportFromExcelAsync(ms.ToArray());
+                _importStatus = $"Imported: {file.Name}";
+            }
+            else
+            {
+                _importStatus = "Please select a .xlsx file.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _importStatus = $"Import failed: {ex.Message}";
+        }
+    }
+
+    private async Task ExportXlsxAsync()
+    {
+        try
+        {
+            var data = await _xlsxSpreadsheet.ExportToExcelAsync();
+            var fileName = $"spreadsheet_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            await DownloadFileAsync(fileName, data);
+            _importStatus = $"Exported: {fileName}";
+        }
+        catch (Exception ex)
+        {
+            _importStatus = $"Export failed: {ex.Message}";
+        }
+    }
+
+    private async Task DownloadFileAsync(string fileName, byte[] data)
+    {
+        var base64 = Convert.ToBase64String(data);
+        var js = "var a=document.createElement('a');a.href='data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64," + base64 + "';a.download='" + fileName + "';document.body.appendChild(a);a.click();document.body.removeChild(a);";
+        await JS.InvokeVoidAsync("eval", js);
+    }
+}

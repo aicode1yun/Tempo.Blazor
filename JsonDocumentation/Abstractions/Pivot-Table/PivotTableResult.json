@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "The computed result of a pivot table transformation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotTableResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Cells",
+      "kind": "Property",
+      "type": "PivotCell[,]",
+      "description": "The 2D matrix of cells. First index = row leaf index, second = column leaf index."
+    },
+    {
+      "name": "Columns",
+      "kind": "Property",
+      "type": "List<PivotColumnNode>",
+      "description": "Root nodes of the column dimension tree."
+    },
+    {
+      "name": "Configuration",
+      "kind": "Property",
+      "type": "PivotTableConfiguration",
+      "description": "Configuration used to produce this result."
+    },
+    {
+      "name": "GrandTotals",
+      "kind": "Property",
+      "type": "Dictionary<int, PivotCell>",
+      "description": "Grand total values keyed by value field index."
+    },
+    {
+      "name": "LeafColumnCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Total number of leaf column nodes."
+    },
+    {
+      "name": "LeafRowCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Total number of leaf row nodes."
+    },
+    {
+      "name": "Rows",
+      "kind": "Property",
+      "type": "List<PivotRowNode>",
+      "description": "Root nodes of the row dimension tree."
+    },
+    {
+      "name": "ValueFieldCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of value fields (columns per leaf column node)."
+    }
+  ],
+  "itemName": "PivotTableResult"
+}

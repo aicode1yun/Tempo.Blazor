@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Represents the border style of a single edge of a spreadsheet cell.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Models/SpreadsheetBorder.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string",
+      "description": "The color of the border in hex format (e.g. #000000). Defaults to black."
+    },
+    {
+      "name": "Style",
+      "kind": "Property",
+      "type": "SpreadsheetBorderStyle",
+      "description": "The line style of the border. Defaults to ."
+    }
+  ],
+  "itemName": "SpreadsheetBorder"
+}

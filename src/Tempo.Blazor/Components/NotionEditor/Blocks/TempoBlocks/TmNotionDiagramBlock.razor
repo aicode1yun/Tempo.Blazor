@@ -1,0 +1,145 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Components.Files
+@using Tempo.Blazor.Components.Diagram.Models
+
+<div class="tm-notion-diagram-block" @onfocus="HandleFocusAsync">
+
+    @if (_notFound)
+    {
+        <div class="tm-notion-tempo-block__not-found" role="status">
+            <span>@Loc["TmNotionBlock_DocumentNotFound"]</span>
+            @if (!ReadOnly)
+            {
+                <button type="button" class="tm-notion-tempo-block__remove"
+                        @onclick="HandleRemoveAsync">@Loc["TmNotionBlock_RemoveBlock"]</button>
+            }
+        </div>
+    }
+    else if (Content is null || Content.DiagramDocumentId == Guid.Empty)
+    {
+        @if (!ReadOnly)
+        {
+            <div class="tm-notion-tempo-block__placeholder-actions">
+            <button class="tm-notion-media-upload-zone tm-notion-media-upload-zone--diagram"
+                    type="button"
+                    aria-label="@Loc["TmNotionDiagramBlock_CreateDiagram"]"
+                    @onclick="CreateDiagramAsync"
+                    disabled="@_creating">
+                @if (_creating)
+                {
+                    <span class="tm-notion-diagram-block__spinner" aria-hidden="true"></span>
+                }
+                else
+                {
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                        <rect x="13" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M7 11v2m0 0v2m0-2h2m-2 0H5M17 7h-4m4 0V3m0 4v4"
+                              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                }
+                <span>@Loc["TmNotionDiagramBlock_CreateDiagram"]</span>
+            </button>
+            @if (Context.DocumentLibraryProvider is not null)
+            {
+                <button class="tm-notion-tempo-block__insert-existing"
+                        type="button"
+                        @onclick="() => _insertDialogOpen = true">
+                    @Loc["TmNotionBlock_InsertExisting"]
+                </button>
+            }
+            </div>
+        }
+        else
+        {
+            <div class="tm-notion-media-empty-placeholder"
+                 aria-label="@Loc["TmNotionDiagramBlock_CreateDiagram"]">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="13" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M7 11v2m0 0v2m0-2h2m-2 0H5M17 7h-4m4 0V3m0 4v4"
+                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </div>
+        }
+    }
+    else
+    {
+        <figure class="tm-notion-diagram-block__figure">
+
+            <div class="tm-notion-diagram-block__preview-wrap"
+                 style="@_sizeStyle"
+                 @ref="_previewWrapRef">
+
+                @if (!string.IsNullOrEmpty(_effectivePreview))
+                {
+                    <div class="tm-notion-diagram-block__svg-container">
+                        @((MarkupString)_effectivePreview)
+                    </div>
+                }
+                else
+                {
+                    <div class="tm-notion-diagram-block__placeholder-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                            <rect x="13" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M7 11v2m0 0v2m0-2h2m-2 0H5M17 7h-4m4 0V3m0 4v4"
+                                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                }
+
+                @if (!ReadOnly)
+                {
+                    <div class="tm-notion-diagram-block__overlay">
+                        <button class="tm-notion-diagram-block__edit-btn"
+                                type="button"
+                                @onclick="OpenEditorAsync"
+                                @onclick:stopPropagation="true">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"
+                                      stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+                                      stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            @Loc["TmNotionDiagramBlock_Edit"]
+                        </button>
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(Content.Caption) || !ReadOnly)
+            {
+                <figcaption class="tm-notion-diagram-block__caption tm-notion-editable"
+                             contenteditable="@(!ReadOnly ? "true" : "false")"
+                             data-placeholder="@Loc["TmNotionDiagramBlock_CaptionPlaceholder"]"
+                             @ref="_captionRef"
+                             @oninput="() => _captionDirty = true"
+                             @onblur="OnCaptionBlurAsync">
+                </figcaption>
+            }
+
+        </figure>
+    }
+
+    @if (_editorOpen && Content is not null && Content.DiagramDocumentId != Guid.Empty)
+    {
+        <TmNotionDiagramEditModal DiagramDocumentId="Content.DiagramDocumentId"
+                                   Provider="Context.DiagramDocumentProvider"
+                                   ExportService="_exportService"
+                                   OnSaved="HandleEditorSavedAsync"
+                                   OnDiscarded="HandleEditorDiscardedAsync" />
+    }
+
+    @if (Context.DocumentLibraryProvider is not null)
+    {
+        <TmDocumentOpenDialog Provider="Context.DocumentLibraryProvider"
+                              Kind="Tempo.Blazor.DocumentLibrary.TempoDocumentKind.Diagram"
+                              ShowModeToggle="true"
+                              @bind-Open="_insertDialogOpen"
+                              OnSelected="HandleInsertSelectedAsync" />
+    }
+
+</div>

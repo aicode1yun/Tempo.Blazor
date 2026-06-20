@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Data-driven diagram stencil library loaded from JSON or another external source.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencilLibrary.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "IsOptional",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the library should be loaded only when explicitly requested."
+    },
+    {
+      "name": "NameResourceKey",
+      "kind": "Property",
+      "type": "string",
+      "description": "Localization resource key used for the library display name."
+    },
+    {
+      "name": "Palettes",
+      "kind": "Property",
+      "type": "List<DiagramStencilPalette>",
+      "description": "Palettes included in this library."
+    },
+    {
+      "name": "SetId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique logical stencil set identifier."
+    }
+  ],
+  "itemName": "DiagramStencilLibrary"
+}

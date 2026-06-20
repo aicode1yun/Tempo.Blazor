@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Option for select, radio, or multiple-choice signing fields.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningFieldOption.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Labels",
+      "kind": "Property",
+      "type": "SigningLocalizedText",
+      "description": "Localized display labels for this option."
+    },
+    {
+      "name": "Uuid",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable option identifier."
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "string",
+      "description": "Displayed and submitted option value."
+    }
+  ],
+  "itemName": "SigningFieldOption"
+}

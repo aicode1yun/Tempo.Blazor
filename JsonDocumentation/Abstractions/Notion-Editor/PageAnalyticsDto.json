@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Analytics summary for a Notion page.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/PageAnalyticsDto.cs",
+  "documentationStatus": "generated",
+  "itemName": "PageAnalyticsDto"
+}

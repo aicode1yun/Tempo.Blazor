@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Represents a single cell in the pivot table matrix.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotCell.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Null",
+      "kind": "Method",
+      "type": "PivotCell",
+      "description": "Creates an empty/null cell."
+    },
+    {
+      "name": "Count",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of source items aggregated into this cell."
+    },
+    {
+      "name": "FormattedValue",
+      "kind": "Property",
+      "type": "string",
+      "description": "The formatted display value."
+    },
+    {
+      "name": "IsNull",
+      "kind": "Property",
+      "type": "bool",
+      "description": "True when no data exists for this cell combination."
+    },
+    {
+      "name": "RawValue",
+      "kind": "Property",
+      "type": "object?",
+      "description": "The raw aggregated value before formatting."
+    }
+  ],
+  "itemName": "PivotCell"
+}

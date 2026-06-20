@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Templating",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+  "description": "The result of validating a template's syntax.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/TemplateValidationResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Invalid",
+      "kind": "Method",
+      "type": "TemplateValidationResult",
+      "description": "Creates an invalid result with the given errors.",
+      "parameters": [
+        {
+          "name": "errors",
+          "type": "IReadOnlyList<TemplateError>"
+        }
+      ]
+    },
+    {
+      "name": "Errors",
+      "kind": "Property",
+      "type": "IReadOnlyList<TemplateError>",
+      "description": "Gets the syntax errors found (empty when valid)."
+    },
+    {
+      "name": "Valid",
+      "kind": "Property",
+      "type": "static TemplateValidationResult",
+      "description": "A valid result."
+    }
+  ],
+  "itemName": "TemplateValidationResult"
+}

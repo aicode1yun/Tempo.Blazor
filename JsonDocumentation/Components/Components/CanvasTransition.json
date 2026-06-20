@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Workflow",
+  "description": "A transition (edge) between two states.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Workflow/WorkflowCanvasModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "CanvasTransition"
+}

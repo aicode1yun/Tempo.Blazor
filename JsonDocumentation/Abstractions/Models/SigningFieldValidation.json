@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Validation settings for a signing field.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningFieldValidation.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Max",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Maximum numeric/date value or maximum length depending on field type."
+    },
+    {
+      "name": "Message",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Custom validation message displayed when validation fails."
+    },
+    {
+      "name": "Messages",
+      "kind": "Property",
+      "type": "SigningLocalizedText",
+      "description": "Localized validation messages displayed when validation fails."
+    },
+    {
+      "name": "Min",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Minimum numeric/date value or minimum length depending on field type."
+    },
+    {
+      "name": "Pattern",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Regular expression pattern for text-like fields."
+    },
+    {
+      "name": "Step",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Numeric input step."
+    }
+  ],
+  "itemName": "SigningFieldValidation"
+}

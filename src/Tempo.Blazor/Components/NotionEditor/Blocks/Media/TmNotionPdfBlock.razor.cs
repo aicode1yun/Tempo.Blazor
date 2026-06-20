@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.Blocks.Media;
@@ -10,35 +11,34 @@ public partial class TmNotionPdfBlock : ComponentBase, IAsyncDisposable
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
+    // ── Cascading ─────────────────────────────────────────────────────────────
+
+    [CascadingParameter] private NotionEditorContext? Context { get; set; }
+
     // ── Parameters ───────────────────────────────────────────────────────────
 
     [Parameter] public IPdfBlockContent? Content  { get; set; }
     [Parameter] public bool              ReadOnly { get; set; }
 
     [Parameter] public EventCallback<(string? FileId, string? Url)> OnMediaSet       { get; set; }
-    [Parameter] public EventCallback<string?> OnCaptionSaved    { get; set; }
-    [Parameter] public EventCallback          OnDeleteRequested { get; set; }
-    [Parameter] public EventCallback          OnFocused         { get; set; }
+    [Parameter] public EventCallback<string?>                         OnCaptionSaved    { get; set; }
+    [Parameter] public EventCallback                                OnDeleteRequested { get; set; }
+    [Parameter] public EventCallback                                OnFocused         { get; set; }
 
     // ── State ────────────────────────────────────────────────────────────────
 
-    private ElementReference                       _canvasRef;
-    private ElementReference                       _captionRef;
+    private ElementReference                         _blockRef;
+    private ElementReference                         _captionRef;
     private DotNetObjectReference<TmNotionPdfBlock>? _dotNetRef;
-    private bool                                   _pdfInitialized;
-    private bool                                   _captionInitialized;
-    private bool                                   _captionDirty;
-    private bool                                   _useFallback;
-    private bool                                   _isLoading;
-    private int                                    _currentPage  = 1;
-    private int                                    _totalPages;
-    private double                                 _scale        = 1.0;
-    private int                                    _height       = 600;
-    private string?                                _loadError;
-    private IPdfBlockContent?                      _lastContent;
-    private bool                                   _dialogOpen;
-
-    private static readonly double[] _zoomSteps = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+    private bool                                     _dropZoneInitialized;
+    private bool                                     _captionInitialized;
+    private bool                                     _captionDirty;
+    private int                                      _currentPage = 1;
+    private double                                   _scale        = 1.0;
+    private int                                      _height       = 600;
+    private IPdfBlockContent?                        _lastContent;
+    private bool                                     _dialogOpen;
+    private bool                                     _isDragging;
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -46,45 +46,27 @@ public partial class TmNotionPdfBlock : ComponentBase, IAsyncDisposable
     {
         if (ReferenceEquals(Content, _lastContent)) return;
         _lastContent        = Content;
-        _pdfInitialized     = false;
         _captionInitialized = false;
         _captionDirty       = false;
         _currentPage        = 1;
-        _totalPages         = 0;
         _scale              = 1.0;
-        _useFallback        = false;
-        _loadError          = null;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (string.IsNullOrEmpty(Content?.Url)) return;
-
-        if (!_pdfInitialized)
+        if (!ReadOnly)
         {
-            _pdfInitialized = true;
-            _isLoading      = true;
-            StateHasChanged();
-            _dotNetRef?.Dispose();
-            _dotNetRef = DotNetObjectReference.Create(this);
-            try
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+
+            if (!_dropZoneInitialized && Context?.FileProvider != null)
             {
-                var available = await JS.InvokeAsync<bool>("tmNotionPdf.isAvailable");
-                if (available)
-                    await JS.InvokeVoidAsync("tmNotionPdf.init", _canvasRef, Content.Url, _dotNetRef);
-                else
-                    _useFallback = true;
-            }
-            catch
-            {
-                _useFallback = true;
-            }
-            finally
-            {
-                _isLoading = false;
-                StateHasChanged();
+                _dropZoneInitialized = true;
+                try { await JS.InvokeVoidAsync("tmNotionEditor.initBlockDropZone", _blockRef, _dotNetRef); }
+                catch { }
             }
         }
+
+        if (string.IsNullOrEmpty(Content?.Url)) return;
 
         if (!_captionInitialized)
         {
@@ -97,71 +79,27 @@ public partial class TmNotionPdfBlock : ComponentBase, IAsyncDisposable
         }
     }
 
-    // ── JS invokable (called from tmNotionPdf.init) ───────────────────────────
+    // ── JS callbacks ──────────────────────────────────────────────────────────
 
     [JSInvokable]
-    public void OnPdfLoaded(int totalPages)
+    public async Task OnFileDropped(string dataUrl, string mimeType, string fileName)
     {
-        _totalPages = totalPages;
-        _isLoading  = false;
-        _loadError  = null;
-        StateHasChanged();
+        if (ReadOnly || Context?.FileProvider == null) return;
+
+        var base64 = dataUrl[(dataUrl.IndexOf(',') + 1)..];
+        var bytes  = Convert.FromBase64String(base64);
+        using var stream = new MemoryStream(bytes);
+
+        var fileId = await Context.FileProvider.UploadFileAsync(stream, fileName, mimeType);
+        var url    = await Context.FileProvider.GetFileUrlAsync(fileId);
+        await OnMediaSet.InvokeAsync((fileId, url));
+        await InvokeAsync(StateHasChanged);
     }
 
-    [JSInvokable]
-    public void OnPdfLoadError(string message)
-    {
-        _useFallback = true;
-        _isLoading   = false;
-        _loadError   = Loc["TmNotionPdfBlock_LoadError"];
-        StateHasChanged();
-    }
+    // ── Drag and drop ────────────────────────────────────────────────────────
 
-    // ── Navigation ────────────────────────────────────────────────────────────
-
-    private async Task GoToPreviousPageAsync()
-    {
-        if (_currentPage <= 1) return;
-        _currentPage--;
-        await RenderCurrentPageAsync();
-    }
-
-    private async Task GoToNextPageAsync()
-    {
-        if (_currentPage >= _totalPages) return;
-        _currentPage++;
-        await RenderCurrentPageAsync();
-    }
-
-    private async Task RenderCurrentPageAsync()
-    {
-        try { await JS.InvokeVoidAsync("tmNotionPdf.renderPage", _canvasRef, _currentPage, _scale); }
-        catch { }
-    }
-
-    // ── Zoom ──────────────────────────────────────────────────────────────────
-
-    private async Task ZoomInAsync()
-    {
-        var next = _zoomSteps.FirstOrDefault(z => z > _scale);
-        if (next == 0) return;
-        _scale = next;
-        await ApplyZoomAsync();
-    }
-
-    private async Task ZoomOutAsync()
-    {
-        var prev = _zoomSteps.LastOrDefault(z => z < _scale);
-        if (prev == 0) return;
-        _scale = prev;
-        await ApplyZoomAsync();
-    }
-
-    private async Task ApplyZoomAsync()
-    {
-        try { await JS.InvokeVoidAsync("tmNotionPdf.setScale", _canvasRef, _scale); }
-        catch { }
-    }
+    private void HandleDragEnter() { if (Context?.FileProvider == null) return; _isDragging = true; }
+    private void HandleDragLeave() { _isDragging = false; }
 
     // ── Caption ───────────────────────────────────────────────────────────────
 
@@ -196,9 +134,9 @@ public partial class TmNotionPdfBlock : ComponentBase, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_pdfInitialized && !_useFallback)
+        if (_dropZoneInitialized)
         {
-            try { await JS.InvokeVoidAsync("tmNotionPdf.destroy", _canvasRef); }
+            try { await JS.InvokeVoidAsync("tmNotionEditor.destroyBlockDropZone", _blockRef); }
             catch { }
         }
         _dotNetRef?.Dispose();

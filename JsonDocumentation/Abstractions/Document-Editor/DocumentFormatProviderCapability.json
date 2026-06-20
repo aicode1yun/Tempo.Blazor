@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Import/export capability exposed by an external document format provider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentFormatProviderModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentFormatProviderCapability"
+}

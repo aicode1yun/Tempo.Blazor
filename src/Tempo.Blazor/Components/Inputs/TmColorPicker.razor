@@ -1,0 +1,65 @@
+@namespace Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Abstractions.Models
+@inject ITmLocalizer Loc
+
+<div class="tm-color-picker @(_isOpen ? "tm-color-picker--open" : "") @(Disabled ? "tm-color-picker--disabled" : "") @Class"
+     @ref="_rootElement"
+     @onkeydown="HandleKeyDownAsync"
+     @attributes="AdditionalAttributes">
+    <div class="tm-color-picker-trigger"
+         @ref="_triggerElement"
+         @onclick="ToggleDropdownAsync"
+         @onkeydown="HandleTriggerKeyDownAsync"
+         @onpointerdown:preventDefault="true"
+         @onmousedown:preventDefault="true"
+         role="button"
+         tabindex="@(Disabled ? "-1" : "0")"
+         aria-haspopup="dialog"
+         aria-expanded="@(_isOpen ? "true" : "false")"
+         aria-disabled="@(Disabled ? "true" : "false")">
+        <div class="tm-color-picker-trigger-bg">
+            <div class="tm-color-picker-trigger-color"
+                 style="background: @(string.IsNullOrEmpty(Value) ? "transparent" : Value)"></div>
+        </div>
+        <span class="tm-color-picker-trigger-text">
+            @(string.IsNullOrEmpty(Value) ? (Placeholder ?? Loc["TmColorPicker_SelectColor"]) : Value)
+        </span>
+        <TmIcon Name="chevron-down" Class="tm-color-picker-trigger-icon" />
+    </div>
+
+    @if (_isOpen)
+    {
+        <div class="tm-color-picker-dropdown">
+            <TmFlatColorPicker Value="@_pendingValue"
+                               ValueChanged="OnFlatValueChangedAsync"
+                               Format="Format"
+                               ShowAlpha="ShowAlpha"
+                               ShowGradient="ShowGradient"
+                               ShowHexInput="ShowHexInput"
+                               ShowPalette="ShowPalette"
+                               PaletteColors="PaletteColors"
+                               PaletteColumns="PaletteColumns"
+                               ShowPreview="false"
+                               ShowClearButton="ShowClearButton" />
+
+            @if (ShowApplyButton)
+            {
+                <div class="tm-color-picker-actions">
+                    @if (ShowCancelButton)
+                    {
+                        <TmButton Variant="ButtonVariant.Secondary"
+                                  Class="tm-color-picker-cancel"
+                                  OnClick="CancelAsync">
+                            @(CancelText ?? Loc["Tm_Cancel"])
+                        </TmButton>
+                    }
+                    <TmButton Variant="ButtonVariant.Primary"
+                              Class="tm-color-picker-apply"
+                              OnClick="ApplyAsync">
+                        @(ApplyText ?? Loc["Tm_Apply"])
+                    </TmButton>
+                </div>
+            }
+        </div>
+    }
+</div>

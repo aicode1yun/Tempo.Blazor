@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Rendering",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+  "description": "Sanitizes the inline HTML allowed inside text-bearing blocks: only a small safe whitelist of tags and attributes survives; scripts/styles are dropped with their content, event handlers and unsafe URL schemes are stripped. Built on AngleSharp's HTML parser so it is robust against evasion.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/HtmlContentSanitizer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Sanitize",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns a sanitized copy of safe to embed in generated markup.",
+      "parameters": [
+        {
+          "name": "html",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "HtmlContentSanitizer"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Misspelled word and replacement suggestions shown in a document editor text context menu.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygFloatingUiModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "WysiwygMisspelling"
+}

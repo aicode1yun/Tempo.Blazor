@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Contracts",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Contracts",
+  "description": "Persistence contract for email templates, implemented by the host application. Operations are asynchronous and cancellable; mutations are expected to be atomic (unit of work).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Contracts/IEmailTemplateStore.cs",
+  "documentationStatus": "generated",
+  "itemName": "IEmailTemplateStore"
+}

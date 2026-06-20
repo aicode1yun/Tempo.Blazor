@@ -1,0 +1,60 @@
+@namespace Tempo.Blazor.EmailTemplates.Components
+@typeparam TItem where TItem : class, new()
+
+<div class="tm-email-list-editor" data-tm-list-editor>
+    @for (var i = 0; i < Items.Count; i++)
+    {
+        var index = i;
+        var item = Items[index];
+        <div class="tm-email-list-editor__item" data-tm-list-item>
+            <div class="tm-email-list-editor__item-actions">
+                <button type="button" data-tm-list-action="up" aria-label="@Loc["EmailEditor_Action_MoveUp"]"
+                        @onclick="() => MoveAsync(index, -1)">
+                    <TmIcon Name="chevron-up" Size="IconSize.Xs" />
+                </button>
+                <button type="button" data-tm-list-action="down" aria-label="@Loc["EmailEditor_Action_MoveDown"]"
+                        @onclick="() => MoveAsync(index, 1)">
+                    <TmIcon Name="chevron-down" Size="IconSize.Xs" />
+                </button>
+                <button type="button" data-tm-list-action="remove" aria-label="@Loc["EmailEditor_Action_Delete"]"
+                        @onclick="() => RemoveAsync(index)">
+                    <TmIcon Name="trash-2" Size="IconSize.Xs" />
+                </button>
+            </div>
+            <TmEmailObjectFields Target="item" Primary="ItemPrimary" OnChanged="OnChanged" />
+        </div>
+    }
+    <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="plus"
+              OnClick="AddAsync" data-tm-list-add="true">@Loc["EmailEditor_List_Add"]</TmButton>
+</div>
+
+@code {
+    /// <summary>The list of sub-elements being edited (mutated in place).</summary>
+    [Parameter, EditorRequired] public IList<TItem> Items { get; set; } = default!;
+
+    /// <summary>Property names shown first for each item.</summary>
+    [Parameter] public IReadOnlyList<string> ItemPrimary { get; set; } = Array.Empty<string>();
+
+    /// <summary>Raised after the list or any item changes.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private async Task AddAsync()
+    {
+        Items.Add(new TItem());
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task RemoveAsync(int index)
+    {
+        if (index >= 0 && index < Items.Count) Items.RemoveAt(index);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task MoveAsync(int index, int direction)
+    {
+        var target = index + direction;
+        if (index < 0 || target < 0 || target >= Items.Count) return;
+        (Items[index], Items[target]) = (Items[target], Items[index]);
+        await OnChanged.InvokeAsync();
+    }
+}

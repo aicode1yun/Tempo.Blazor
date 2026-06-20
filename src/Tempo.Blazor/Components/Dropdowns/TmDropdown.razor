@@ -63,6 +63,7 @@
         if (Disabled) return;
         await OnSelect.InvokeAsync(value);
         _isOpen = false;
+        StateHasChanged();
     }
 
     private async Task HandleKeyDownAsync(KeyboardEventArgs e)

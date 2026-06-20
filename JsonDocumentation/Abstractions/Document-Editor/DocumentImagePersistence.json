@@ -1,0 +1,112 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Persistence normalization helpers for image blocks and drawing runs.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentImagePersistence.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ConvertImageBlocksToDrawingRuns",
+      "kind": "Method",
+      "type": "void",
+      "description": "Converts legacy top-level image blocks into paragraph drawing runs for provider persistence.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument?"
+        }
+      ]
+    },
+    {
+      "name": "EnumerateDrawingRuns",
+      "kind": "Method",
+      "type": "IEnumerable<DocumentDrawingRun>",
+      "description": "Enumerates drawing runs in a full document, including table cells, headers, footers, and notes.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument?"
+        }
+      ]
+    },
+    {
+      "name": "IsImageBlockOrigin",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Determines whether a drawing run originated from a standalone image block.",
+      "parameters": [
+        {
+          "name": "drawing",
+          "type": "DocumentDrawingRun?"
+        }
+      ]
+    },
+    {
+      "name": "IsSafePersistentImageUrl",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Determines whether an image URL is safe to persist in the document JSON.",
+      "parameters": [
+        {
+          "name": "url",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "MarkImageBlockOrigin",
+      "kind": "Method",
+      "type": "void",
+      "description": "Marks a drawing run as a temporary representation of a standalone image block.",
+      "parameters": [
+        {
+          "name": "drawing",
+          "type": "DocumentDrawingRun"
+        },
+        {
+          "name": "blockId",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "RestoreImageBlocksFromDrawingRuns",
+      "kind": "Method",
+      "type": "void",
+      "description": "Restores image blocks that were temporarily represented as drawing-only paragraphs.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument?"
+        }
+      ]
+    },
+    {
+      "name": "Sanitize",
+      "kind": "Method",
+      "type": "void",
+      "description": "Normalizes image references that are about to cross a provider or export boundary.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument?"
+        }
+      ]
+    },
+    {
+      "name": "ToImageBlockContent",
+      "kind": "Method",
+      "type": "ImageBlockContent",
+      "description": "Creates an image block payload from a drawing run.",
+      "parameters": [
+        {
+          "name": "drawing",
+          "type": "DocumentDrawingRun"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentImagePersistence"
+}

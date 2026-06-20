@@ -1,0 +1,63 @@
+{
+  "itemName": "TmSpreadsheetSheetTabs",
+  "kind": "Component",
+  "category": "Spreadsheet",
+  "description": "Tab bar for switching between workbook sheets with add, delete, and rename support.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/TmSpreadsheetSheetTabs.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Spreadsheet"
+  ],
+  "parameters": [
+    {
+      "name": "ActiveIndex",
+      "type": "int",
+      "isRequired": false,
+      "description": "All sheets in the workbook."
+    },
+    {
+      "name": "IsFormulaPointMode",
+      "type": "bool",
+      "isRequired": false,
+      "description": "When true, hides add/delete/rename controls (embedded/readonly view)."
+    },
+    {
+      "name": "IsReadonly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Called when a sheet should be renamed."
+    },
+    {
+      "name": "OnActiveSheetChanged",
+      "type": "EventCallback<int>",
+      "isRequired": false,
+      "description": "Zero-based index of the active sheet."
+    },
+    {
+      "name": "OnAddSheetRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the active sheet should change."
+    },
+    {
+      "name": "OnDeleteSheetRequested",
+      "type": "EventCallback<int>",
+      "isRequired": false,
+      "description": "Called when a new sheet should be added."
+    },
+    {
+      "name": "OnRenameSheetRequested",
+      "type": "EventCallback<(int Index, string NewName)>",
+      "isRequired": false,
+      "description": "Called when a sheet should be deleted."
+    },
+    {
+      "name": "OnSheetSelectedForFormula",
+      "type": "EventCallback<int>",
+      "isRequired": false,
+      "description": "Whether formula-point mode is active (tab click selects sheet for formula rather than switching view)."
+    }
+  ]
+}

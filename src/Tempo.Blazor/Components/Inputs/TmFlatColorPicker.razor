@@ -1,0 +1,46 @@
+@namespace Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Abstractions.Models
+@inject ITmLocalizer Loc
+
+<div class="tm-flat-color-picker @Class" @attributes="AdditionalAttributes">
+    @if (ShowPreview)
+    {
+        <div class="tm-flat-color-picker-preview-row">
+            <div class="tm-flat-color-picker-preview-bg">
+                <div class="tm-flat-color-picker-preview" style="background: @(_currentValue);"></div>
+            </div>
+            <span class="tm-flat-color-picker-value-text">@_currentValue</span>
+        </div>
+    }
+
+    @if (ShowGradient)
+    {
+        <TmColorGradient Value="@_currentValue"
+                         ValueChanged="OnGradientValueChanged"
+                         Format="Format"
+                         ShowAlpha="ShowAlpha" />
+    }
+
+    @if (ShowHexInput)
+    {
+        <label class="tm-flat-color-picker-hex">
+            <span>@Loc["TmColorPicker_Hex"]</span>
+            <input type="text"
+                   value="@_hexValue"
+                   maxlength="7"
+                   spellcheck="false"
+                   @onchange="OnHexValueChangedAsync"
+                   aria-label="@Loc["TmColorPicker_Hex"]" />
+        </label>
+    }
+
+    @if (ShowPalette)
+    {
+        <div class="tm-flat-color-picker-divider"></div>
+        <TmColorPalette Value="@_currentValue"
+                        ValueChanged="OnPaletteValueChanged"
+                        Colors="PaletteColors"
+                        Columns="PaletteColumns"
+                        ShowClearButton="ShowClearButton" />
+    }
+</div>

@@ -1,0 +1,21 @@
+{
+  "itemName": "TmEmailVariablePicker",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailVariablePicker Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailVariablePicker.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "OnInsert",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "The variables available to insert (extracted from the document plus host-provided)."
+    }
+  ]
+}

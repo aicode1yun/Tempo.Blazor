@@ -1,0 +1,197 @@
+namespace Tempo.Blazor.Components.DocumentEditor.Registry;
+
+/// <summary>Central registry for named editor commands. Owns the forced-disable stack and read-only gating.</summary>
+public sealed class DocumentEditorCommandRegistry
+{
+    private readonly Dictionary<string, IDocumentEditorCommandEntry> _commands =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly Dictionary<string, HashSet<string>> _forcedDisableReasons =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly Dictionary<string, DocumentEditorCommandState> _currentState =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Registers a command. Throws if a command with the same name is already registered.</summary>
+    public void Register(IDocumentEditorCommandEntry command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        if (_commands.ContainsKey(command.Name))
+        {
+            throw new InvalidOperationException(
+                $"A command named '{command.Name}' is already registered in this registry.");
+        }
+
+        _commands[command.Name] = command;
+        _forcedDisableReasons[command.Name] = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Tries to find a registered command by name. Returns <c>false</c> when not found.</summary>
+    public bool TryGet(string name, out IDocumentEditorCommandEntry? command)
+    {
+        return _commands.TryGetValue(name, out command);
+    }
+
+    /// <summary>Returns a registered command by name. Throws when not found.</summary>
+    public IDocumentEditorCommandEntry GetRequired(string name)
+    {
+        if (!_commands.TryGetValue(name, out var command))
+        {
+            throw new InvalidOperationException(
+                $"Command '{name}' is not registered in this registry.");
+        }
+
+        return command;
+    }
+
+    /// <summary>Adds a forced-disable reason for the named command.
+    /// The command stays disabled until all reasons are removed.</summary>
+    public void AddForceDisableReason(string commandName, string reason)
+    {
+        if (_forcedDisableReasons.TryGetValue(commandName, out var reasons))
+        {
+            reasons.Add(reason);
+        }
+    }
+
+    /// <summary>Removes a previously added forced-disable reason.
+    /// The command becomes eligible for re-enabling once no reasons remain.</summary>
+    public void RemoveForceDisableReason(string commandName, string reason)
+    {
+        if (_forcedDisableReasons.TryGetValue(commandName, out var reasons))
+        {
+            reasons.Remove(reason);
+        }
+    }
+
+    /// <summary>Recomputes and caches the state of every registered command against the given context.</summary>
+    public Task RefreshAllAsync(DocumentEditorCommandContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        foreach (var (name, command) in _commands)
+        {
+            _currentState[name] = BuildState(command, context, _forcedDisableReasons[name]);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Returns the last computed state for the named command, or <c>null</c> when not yet refreshed.</summary>
+    public DocumentEditorCommandState? GetState(string name)
+    {
+        return _currentState.TryGetValue(name, out var state) ? state : null;
+    }
+
+    /// <summary>Read-only view of the last computed state for every registered command.</summary>
+    public IReadOnlyDictionary<string, DocumentEditorCommandState> CurrentState => _currentState;
+
+    /// <summary>Executes a command only when the current command state is visible and enabled.</summary>
+    public async Task<bool> ExecuteAsync(string name, DocumentEditorCommandContext context, object? payload = null)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        var command = GetRequired(name);
+        var state = BuildState(command, context, _forcedDisableReasons[name]);
+        _currentState[name] = state;
+
+        if (!state.IsVisible || !state.IsEnabled)
+        {
+            return false;
+        }
+
+        await command.ExecuteAsync(context, payload);
+        return true;
+    }
+
+    private static DocumentEditorCommandState BuildState(
+        IDocumentEditorCommandEntry command,
+        DocumentEditorCommandContext context,
+        HashSet<string> forcedDisableReasons)
+    {
+        var value = command.ComputeValue(context);
+        var isVisible = command.ComputeVisible(context);
+
+        if (forcedDisableReasons.Count > 0)
+        {
+            return new DocumentEditorCommandState
+            {
+                Name = command.Name,
+                IsEnabled = false,
+                IsVisible = isVisible,
+                AffectsData = command.AffectsData,
+                Value = value,
+                DisabledReason = string.Join("; ", forcedDisableReasons),
+                DisabledReasonKey = command.DisabledReasonKey,
+                DescriptionKey = command.DescriptionKey,
+                TooltipKey = command.TooltipKey,
+                Category = command.Category,
+                DefaultShortcut = command.DefaultShortcut,
+                Icon = command.Icon
+            };
+        }
+
+        if (context.IsReadOnly && command.AffectsData)
+        {
+            return new DocumentEditorCommandState
+            {
+                Name = command.Name,
+                IsEnabled = false,
+                IsVisible = isVisible,
+                AffectsData = command.AffectsData,
+                Value = value,
+                DisabledReason = "read-only",
+                DisabledReasonKey = "TmDocumentEditor_CommandDisabledReadOnly",
+                DescriptionKey = command.DescriptionKey,
+                TooltipKey = command.TooltipKey,
+                Category = command.Category,
+                DefaultShortcut = command.DefaultShortcut,
+                Icon = command.Icon
+            };
+        }
+
+        if (context.IsProtected
+            && command.AffectsData
+            && !context.IsInEditableRegion
+            && !CanRunOutsideProtectedEditableRegion(command.Name))
+        {
+            return new DocumentEditorCommandState
+            {
+                Name = command.Name,
+                IsEnabled = false,
+                IsVisible = isVisible,
+                AffectsData = command.AffectsData,
+                Value = value,
+                DisabledReason = "protected",
+                DisabledReasonKey = command.DisabledReasonKey ?? "TmDocumentEditor_CommandDisabledUnavailable",
+                DescriptionKey = command.DescriptionKey,
+                TooltipKey = command.TooltipKey,
+                Category = command.Category,
+                DefaultShortcut = command.DefaultShortcut,
+                Icon = command.Icon
+            };
+        }
+
+        var isEnabled = command.ComputeEnabled(context);
+        return new DocumentEditorCommandState
+        {
+            Name = command.Name,
+            IsEnabled = isVisible && isEnabled,
+            IsVisible = isVisible,
+            AffectsData = command.AffectsData,
+            Value = value,
+            DisabledReason = isVisible && isEnabled ? null : "unavailable",
+            DisabledReasonKey = isVisible && isEnabled
+                ? null
+                : command.DisabledReasonKey ?? "TmDocumentEditor_CommandDisabledUnavailable",
+            DescriptionKey = command.DescriptionKey,
+            TooltipKey = command.TooltipKey,
+            Category = command.Category,
+            DefaultShortcut = command.DefaultShortcut,
+            Icon = command.Icon
+        };
+    }
+
+    private static bool CanRunOutsideProtectedEditableRegion(string commandName) =>
+        string.Equals(commandName, "undo", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(commandName, "redo", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(commandName, "save", StringComparison.OrdinalIgnoreCase);
+}

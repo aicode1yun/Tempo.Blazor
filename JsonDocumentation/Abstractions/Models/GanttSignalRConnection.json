@@ -1,0 +1,35 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "SignalR hub client implementing IGanttRealtimeConnection. Consumers instantiate this with a hub URL and call StartAsync() before assigning to TmGantt.RealtimeConnection.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttSignalRConnection.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ReceiveTaskUpdate",
+      "kind": "Method",
+      "type": "void",
+      "description": "Invoke from hub message handler to propagate update to TmGantt.",
+      "parameters": [
+        {
+          "name": "task",
+          "type": "GanttTask"
+        }
+      ]
+    },
+    {
+      "name": "SendTaskUpdate",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "task",
+          "type": "GanttTask"
+        }
+      ]
+    }
+  ],
+  "itemName": "GanttSignalRConnection"
+}

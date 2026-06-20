@@ -1,0 +1,422 @@
+@page "/pivot-table"
+@using Tempo.Blazor.Abstractions.PivotTable
+@using Tempo.Blazor.Components.PivotTable
+<PageTitle>Pivot Table – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Pivot Table</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        Interactive pivot tables with drag-and-drop field configuration, multi-dimensional grouping, 
+        aggregations (Sum, Count, Average, Min, Max), and totals.
+    </p>
+</div>
+
+<!-- Basic Pivot Table -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Basic Pivot Table</h2>
+            <span class="px-2 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">Client-Side</span>
+        </div>
+        <div class="flex items-center space-x-2">
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="@(() => _showBasicPanel = !_showBasicPanel)">
+                <span class="flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    <span>@(_showBasicPanel ? "Hide Panel" : "Show Panel")</span>
+                </span>
+            </TmButton>
+        </div>
+    </div>
+
+    <div class="p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-xl mb-4">
+        <div class="flex items-start space-x-3">
+            <svg class="w-5 h-5 text-primary-600 dark:text-primary-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+                <p class="text-sm text-primary-800 dark:text-primary-200">
+                    Drag fields between zones to rearrange the pivot. Use the settings button on value fields to change aggregation type and format. Click the three-dots menu on row/column fields to sort by dimension value or by aggregate total.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmPivotTable TItem="Transaction"
+                      Items="_transactions"
+                      Fields="_transactionFields"
+                      RowFieldKeys="_basicRowFields"
+                      ColumnFieldKeys="_basicColumnFields"
+                      ValueFields="_basicValueFields"
+                      ShowConfigurationPanel="_showBasicPanel"
+                      ShowTotals="true" />
+    </div>
+</section>
+
+<!-- Field Tree View -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Field Tree View</h2>
+            <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Checkbox Fields</span>
+        </div>
+        <div class="flex items-center space-x-2">
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="@(() => _showTreePanel = !_showTreePanel)">
+                <span class="flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    <span>@(_showTreePanel ? "Hide Panel" : "Show Panel")</span>
+                </span>
+            </TmButton>
+        </div>
+    </div>
+
+    <div class="p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl mb-4">
+        <div class="flex items-start space-x-3">
+            <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <div>
+                <p class="text-sm text-indigo-800 dark:text-indigo-200">
+                    Field tree provides an alternative to drag-and-drop. Click the three-dots menu on any field to add it to Row, Column, Value, or Filter areas. Fields already in use show their area badge. You can add the same field to Values multiple times (e.g. Sum and Count). Remove removes the field from all areas.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmPivotTable TItem="Transaction"
+                      Items="_transactions"
+                      Fields="_transactionFields"
+                      RowFieldKeys="_treeRowFields"
+                      ColumnFieldKeys="_treeColumnFields"
+                      ValueFields="_treeValueFields"
+                      ShowConfigurationPanel="_showTreePanel"
+                      ShowFieldTree="true"
+                      ShowTotals="true" />
+    </div>
+</section>
+
+<!-- Pivot Without Panel -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Read-Only View</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-300 rounded-full">No Panel</span>
+    </div>
+
+    <div class="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl mb-4">
+        <p class="text-sm text-slate-700 dark:text-slate-300">
+            Configuration panel hidden. Useful for dashboard widgets or fixed report layouts.
+        </p>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmPivotTable TItem="Transaction"
+                      Items="_transactions"
+                      Fields="_transactionFields"
+                      RowFieldKeys="_readonlyRowFields"
+                      ColumnFieldKeys="_readonlyColumnFields"
+                      ValueFields="_readonlyValueFields"
+                      ShowConfigurationPanel="false"
+                      ShowTotals="true" />
+    </div>
+</section>
+
+<!-- Multiple Value Fields -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Multiple Value Fields</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">Sum + Count</span>
+    </div>
+
+    <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl mb-4">
+        <p class="text-sm text-green-800 dark:text-green-200">
+            Multiple value fields are displayed side-by-side under each column dimension.
+        </p>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmPivotTable TItem="Transaction"
+                      Items="_transactions"
+                      Fields="_transactionFields"
+                      RowFieldKeys="_multiRowFields"
+                      ColumnFieldKeys="_multiColumnFields"
+                      ValueFields="_multiValueFields"
+                      ShowConfigurationPanel="true"
+                      ShowTotals="true" />
+    </div>
+</section>
+
+<!-- Filtered Pivot -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Filtered Data</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full">Pre-filtered</span>
+    </div>
+
+    <div class="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl mb-4">
+        <p class="text-sm text-orange-800 dark:text-orange-200">
+            Data can be pre-filtered before pivot transformation. Only Q1 months (Jan, Feb, Mar) are included.
+        </p>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmPivotTable TItem="Transaction"
+                      Items="_filteredTransactions"
+                      Fields="_transactionFields"
+                      RowFieldKeys="_filteredRowFields"
+                      ColumnFieldKeys="_filteredColumnFields"
+                      ValueFields="_filteredValueFields"
+                      ShowConfigurationPanel="true"
+                      ShowTotals="true" />
+    </div>
+</section>
+
+<!-- Interactive Filters -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Interactive Filters</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 rounded-full">Filter Panel</span>
+    </div>
+
+    <div class="p-4 bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-xl mb-4">
+        <p class="text-sm text-pink-800 dark:text-pink-200">
+            Drag a field to the Filters zone, then click the gear icon to select specific values. 
+            Try filtering by Region or Category.
+        </p>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmPivotTable TItem="Transaction"
+                      Items="_transactions"
+                      Fields="_transactionFields"
+                      RowFieldKeys="_filterDemoRowFields"
+                      ColumnFieldKeys="_filterDemoColumnFields"
+                      ValueFields="_filterDemoValueFields"
+                      FilterFields="_filterDemoFilterFields"
+                      ShowConfigurationPanel="true"
+                      ShowTotals="true" />
+    </div>
+</section>
+
+<!-- Custom Templates -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Custom Templates</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Templates</span>
+    </div>
+
+    <div class="p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl mb-4">
+        <p class="text-sm text-indigo-800 dark:text-indigo-200">
+            Use <code>DataCellTemplate</code>, <code>RowHeaderTemplate</code>, and <code>ColumnHeaderTemplate</code>
+            to customize cell appearance. The example below shows a progress bar in cells and colored row headers.
+        </p>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmPivotTable TItem="Transaction"
+                      Items="_transactions"
+                      Fields="_transactionFields"
+                      RowFieldKeys="_templateRowFields"
+                      ColumnFieldKeys="_templateColumnFields"
+                      ValueFields="_templateValueFields"
+                      ShowConfigurationPanel="false"
+                      ShowTotals="true"
+                      DataCellTemplate="_dataCellTemplate"
+                      RowHeaderTemplate="_rowHeaderTemplate" />
+    </div>
+</section>
+
+<!-- Empty State -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Empty State</h2>
+            <span class="px-2 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full">No Data</span>
+        </div>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmPivotTable TItem="Transaction"
+                      Items="Array.Empty<Transaction>()"
+                      Fields="_transactionFields"
+                      RowFieldKeys="_basicRowFields"
+                      ColumnFieldKeys="_basicColumnFields"
+                      ValueFields="_basicValueFields"
+                      ShowConfigurationPanel="false"
+                      EmptyTitle="No transactions available" />
+    </div>
+</section>
+
+@code {
+    // ── Data Model ─────────────────────────────────────────────────
+
+    private record Transaction(string Category, string Month, decimal Amount, string Region);
+
+    private static readonly string[] Categories = ["Food", "Transport", "Utilities", "Entertainment", "Healthcare"];
+    private static readonly string[] Months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+    private static readonly string[] Regions = ["North", "South", "East", "West"];
+
+    private readonly List<Transaction> _transactions = GenerateTransactions();
+
+    private static List<Transaction> GenerateTransactions()
+    {
+        var random = new Random(42); // seeded for reproducibility
+        var transactions = new List<Transaction>();
+
+        foreach (var category in Categories)
+        {
+            foreach (var month in Months)
+            {
+                foreach (var region in Regions)
+                {
+                    var baseAmount = category switch
+                    {
+                        "Food" => 400,
+                        "Transport" => 200,
+                        "Utilities" => 150,
+                        "Entertainment" => 100,
+                        "Healthcare" => 80,
+                        _ => 100
+                    };
+
+                    var variation = random.Next(-50, 100);
+                    transactions.Add(new Transaction(category, month, baseAmount + variation, region));
+                }
+            }
+        }
+
+        return transactions;
+    }
+
+    private IEnumerable<Transaction> _filteredTransactions =>
+        _transactions.Where(t => t.Month is "Jan" or "Feb" or "Mar");
+
+    // ── Field Definitions ──────────────────────────────────────────
+
+    private readonly List<PivotField<Transaction>> _transactionFields =
+    [
+        new() { Key = "Category", Title = "Category", Accessor = t => t.Category },
+        new() { Key = "Month", Title = "Month", Accessor = t => t.Month },
+        new() { Key = "Region", Title = "Region", Accessor = t => t.Region },
+        new() { Key = "Amount", Title = "Amount", Accessor = t => t.Amount },
+    ];
+
+    // ── Basic Configuration ────────────────────────────────────────
+
+    private bool _showBasicPanel = true;
+
+    private readonly List<string> _basicRowFields = ["Category"];
+    private readonly List<string> _basicColumnFields = ["Month"];
+    private readonly List<PivotValueFieldConfiguration> _basicValueFields =
+    [
+        new() { FieldKey = "Amount", Aggregation = "Sum", Format = "#,##0.00 €" }
+    ];
+
+    // ── Field Tree Configuration ───────────────────────────────────
+
+    private bool _showTreePanel = true;
+
+    private readonly List<string> _treeRowFields = ["Category"];
+    private readonly List<string> _treeColumnFields = ["Month"];
+    private readonly List<PivotValueFieldConfiguration> _treeValueFields =
+    [
+        new() { FieldKey = "Amount", Aggregation = "Sum", Format = "#,##0.00 €" }
+    ];
+
+    // ── Read-Only Configuration ────────────────────────────────────
+
+    private readonly List<string> _readonlyRowFields = ["Region"];
+    private readonly List<string> _readonlyColumnFields = ["Category"];
+    private readonly List<PivotValueFieldConfiguration> _readonlyValueFields =
+    [
+        new() { FieldKey = "Amount", Aggregation = "Sum" }
+    ];
+
+    // ── Multiple Value Fields Configuration ────────────────────────
+
+    private readonly List<string> _multiRowFields = ["Category"];
+    private readonly List<string> _multiColumnFields = ["Month"];
+    private readonly List<PivotValueFieldConfiguration> _multiValueFields =
+    [
+        new() { FieldKey = "Amount", Aggregation = "Sum", DisplayName = "Total" },
+        new() { FieldKey = "Amount", Aggregation = "Count", DisplayName = "Count" }
+    ];
+
+    // ── Filtered Configuration ─────────────────────────────────────
+
+    private readonly List<string> _filteredRowFields = ["Category"];
+    private readonly List<string> _filteredColumnFields = ["Region"];
+    private readonly List<PivotValueFieldConfiguration> _filteredValueFields =
+    [
+        new() { FieldKey = "Amount", Aggregation = "Sum" }
+    ];
+
+    // ── Interactive Filter Demo Configuration ──────────────────────
+
+    private readonly List<string> _filterDemoRowFields = ["Category"];
+    private readonly List<string> _filterDemoColumnFields = ["Month"];
+    private readonly List<PivotValueFieldConfiguration> _filterDemoValueFields =
+    [
+        new() { FieldKey = "Amount", Aggregation = "Sum" }
+    ];
+    private readonly Dictionary<string, List<object?>> _filterDemoFilterFields = new()
+    {
+        ["Region"] = ["North", "South"]
+    };
+
+    // ── Template Demo Configuration ────────────────────────────────
+
+    private readonly List<string> _templateRowFields = ["Category"];
+    private readonly List<string> _templateColumnFields = ["Month"];
+    private readonly List<PivotValueFieldConfiguration> _templateValueFields =
+    [
+        new() { FieldKey = "Amount", Aggregation = "Sum" }
+    ];
+
+    private RenderFragment<PivotCellContext> _dataCellTemplate => ctx => builder =>
+    {
+        var pct = ctx.Value is decimal d ? Math.Min(100, (int)(d / 6)) : 0;
+        var color = pct > 80 ? "bg-emerald-500" : pct > 50 ? "bg-amber-500" : "bg-rose-500";
+
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "flex items-center gap-2 w-full");
+
+        builder.OpenElement(2, "div");
+        builder.AddAttribute(3, "class", "flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden");
+        builder.OpenElement(4, "div");
+        builder.AddAttribute(5, "class", $"h-full {color} rounded-full transition-all");
+        builder.AddAttribute(6, "style", $"width: {pct}%");
+        builder.CloseElement();
+        builder.CloseElement();
+
+        builder.OpenElement(7, "span");
+        builder.AddAttribute(8, "class", "text-xs font-medium text-slate-700 dark:text-slate-300 tabular-nums w-12 text-right");
+        builder.AddContent(9, ctx.FormattedValue);
+        builder.CloseElement();
+
+        builder.CloseElement();
+    };
+
+    private RenderFragment<PivotRowHeaderContext> _rowHeaderTemplate => ctx => builder =>
+    {
+        var color = ctx.Text switch
+        {
+            "Food" => "text-emerald-600 dark:text-emerald-400",
+            "Transport" => "text-blue-600 dark:text-blue-400",
+            "Utilities" => "text-amber-600 dark:text-amber-400",
+            "Entertainment" => "text-purple-600 dark:text-purple-400",
+            "Healthcare" => "text-rose-600 dark:text-rose-400",
+            _ => "text-slate-700 dark:text-slate-300"
+        };
+
+        builder.OpenElement(0, "span");
+        builder.AddAttribute(1, "class", $"font-medium {color}");
+        builder.AddContent(2, ctx.Text);
+        builder.CloseElement();
+    };
+}

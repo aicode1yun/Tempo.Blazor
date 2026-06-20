@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "General",
+  "namespace": "Tempo.Blazor.DocumentFormats",
+  "description": "Severity of an import/export compatibility message.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentFormatCompatibilitySeverity"
+}

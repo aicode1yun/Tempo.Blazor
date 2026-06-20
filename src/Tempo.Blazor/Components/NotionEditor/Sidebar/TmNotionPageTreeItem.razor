@@ -1,0 +1,247 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Sidebar
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+<li class="tm-npt-item @(IsActive ? "tm-npt-item--active" : "") @(_isDragOver ? "tm-npt-item--drag-over" : "")"
+    role="treeitem"
+    aria-selected="@IsActive"
+    aria-expanded="@(_isExpanded.ToString().ToLowerInvariant())"
+    draggable="true"
+    @ondragstart="OnDragStart"
+    @ondragend="OnDragEnd"
+    @ondragover:preventDefault
+    @ondragover="OnDragOver"
+    @ondragleave="OnDragLeave"
+    @ondrop:preventDefault
+    @ondrop="OnDropAsync">
+
+    @* ── Row ─────────────────────────────────────────────────────────────────── *@
+
+    <div class="tm-npt-row">
+
+        @* indent spacers *@
+        @for (int i = 0; i < Depth; i++)
+        {
+            <span class="tm-npt-indent" aria-hidden="true"></span>
+        }
+
+        <input class="tm-npt-select"
+               type="checkbox"
+               data-testid="notion-page-select-@Page.Id.ToString("D")"
+               checked="@Tree.IsSelected(Page.Id.ToString("D"))"
+               aria-label="@string.Format(Loc["TmNotionPageTree_SelectPage"], PageTitle)"
+               @onchange="OnSelectionChangedAsync"
+               @onclick:stopPropagation="true" />
+
+        @* expand / collapse toggle *@
+        <button class="tm-npt-toggle"
+                type="button"
+                aria-label="@(_isExpanded ? Loc["TmNotionPageTree_CollapseNode"] : Loc["TmNotionPageTree_ExpandNode"])"
+                @onclick:stopPropagation="true"
+                @onclick="ToggleExpandAsync">
+            @if (_isLoadingChildren)
+            {
+                <span class="tm-npt-spinner" aria-hidden="true"></span>
+            }
+            else
+            {
+                <svg class="tm-npt-chevron @(_isExpanded ? "tm-npt-chevron--open" : "")"
+                     width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                    <path d="M3 4l2 2.5L7 4" stroke="currentColor" stroke-width="1.25"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            }
+        </button>
+
+        @* page icon *@
+        <span class="tm-npt-icon" aria-hidden="true">@PageIcon</span>
+
+        @* title button or inline rename input *@
+        @if (_isRenaming)
+        {
+            <input class="tm-npt-rename-input"
+                   type="text"
+                   value="@_renameValue"
+                   aria-label="@string.Format(Loc["TmNotionPageTree_RenameHint"], PageTitle)"
+                   @oninput="e => _renameValue = e.Value?.ToString() ?? string.Empty"
+                   @onkeydown="OnRenameKeyDownAsync"
+                   @onblur="CommitRenameAsync"
+                   @ref="_renameInputRef"
+                   @onclick:stopPropagation="true" />
+        }
+        else
+        {
+            <button class="tm-npt-title"
+                    type="button"
+                    title="@PageTitle"
+                    @onclick="NavigateAsync"
+                    @ondblclick="BeginRenameAsync">
+                @PageTitle
+            </button>
+        }
+
+        @* hover action buttons *@
+        <div class="tm-npt-actions" aria-hidden="true">
+            <button class="tm-npt-btn"
+                    type="button"
+                    title="@Loc["TmNotionPageTree_NewChildPage"]"
+                    aria-label="@Loc["TmNotionPageTree_NewChildPage"]"
+                    @onclick:stopPropagation="true"
+                    @onclick="AddChildPageAsync">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.4"
+                          stroke-linecap="round"/>
+                </svg>
+            </button>
+            <button class="tm-npt-btn"
+                    type="button"
+                    title="@Loc["TmNotionPageTree_OpenMenu"]"
+                    aria-label="@Loc["TmNotionPageTree_OpenMenu"]"
+                    aria-haspopup="true"
+                    aria-expanded="@MenuOpen"
+                    @onclick:stopPropagation="true"
+                    @onclick="OpenMenu">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <circle cx="6" cy="2.5" r="1" fill="currentColor"/>
+                    <circle cx="6" cy="6"   r="1" fill="currentColor"/>
+                    <circle cx="6" cy="9.5" r="1" fill="currentColor"/>
+                </svg>
+            </button>
+        </div>
+
+    </div>
+
+    @* ── Children ─────────────────────────────────────────────────────────────── *@
+
+    @if (_isExpanded)
+    {
+        <ul class="tm-npt-children" role="group">
+            @if (_isLoadingChildren)
+            {
+                <li class="tm-npt-child-loading" role="treeitem">
+                    <span class="tm-npt-spinner" aria-hidden="true"></span>
+                    <span>@Loc["TmNotionPageTree_LoadingChildren"]</span>
+                </li>
+            }
+            else
+            {
+                @foreach (var child in _children)
+                {
+                    <TmNotionPageTreeItem Page="@child"
+                                          Depth="@(Depth + 1)"
+                                          ActivePageId="@ActivePageId" />
+                }
+            }
+        </ul>
+    }
+
+    @* ── Context menu ─────────────────────────────────────────────────────────── *@
+
+    @if (MenuOpen)
+    {
+        <div class="tm-npt-backdrop" @onclick="CloseMenu" aria-hidden="true"></div>
+
+        <div class="tm-npt-menu"
+             role="menu"
+             style="left:@(_ctxX.ToString("F0", System.Globalization.CultureInfo.InvariantCulture))px;top:@(_ctxY.ToString("F0", System.Globalization.CultureInfo.InvariantCulture))px"
+             @onclick:stopPropagation="true">
+
+            @if (_menuPhase == MenuPhase.Main)
+            {
+                <button class="tm-npt-menu__item" type="button" role="menuitem" @onclick="ContextRenameAsync">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M9.5 2.5L11.5 4.5l-7 7H2.5v-2L9.5 2.5z"
+                              stroke="currentColor" stroke-width="1.1"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    @Loc["TmNotionPageTree_Rename"]
+                </button>
+                <button class="tm-npt-menu__item" type="button" role="menuitem" @onclick="ContextDuplicateAsync">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <rect x="4.5" y="4.5" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.1"/>
+                        <path d="M2.5 9.5v-7h7" stroke="currentColor" stroke-width="1.1"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    @Loc["TmNotionPageTree_Duplicate"]
+                </button>
+                <button class="tm-npt-menu__item" type="button" role="menuitem" @onclick="ContextShowMoveTo">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.1"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    @Loc["TmNotionPageTree_MoveTo"]
+                </button>
+                <button class="tm-npt-menu__item" type="button" role="menuitem" @onclick="ContextToggleFavoriteAsync">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M7 1.5l1.5 3 3.3.5-2.4 2.3.6 3.3L7 9l-3 1.6.6-3.3L2.2 5l3.3-.5z"
+                              stroke="currentColor" stroke-width="1.1"
+                              fill="@(Page.IsFavorite ? "currentColor" : "none")"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    @(Page.IsFavorite ? Loc["TmNotionPageTree_Unfavorite"] : Loc["TmNotionPageTree_Favorite"])
+                </button>
+                <hr class="tm-npt-menu__divider" aria-hidden="true" />
+                <button class="tm-npt-menu__item tm-npt-menu__item--danger" type="button" role="menuitem"
+                        @onclick="ContextShowDeleteConfirm">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M2.5 4h9M5 4V2.5h4V4M3.5 4l.7 7.5h5.6L10.5 4"
+                              stroke="currentColor" stroke-width="1.1"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    @Loc["TmNotionPageTree_Delete"]
+                </button>
+            }
+            else if (_menuPhase == MenuPhase.ConfirmDelete)
+            {
+                <div class="tm-npt-menu__confirm">
+                    <p class="tm-npt-menu__confirm-text">@Loc["TmNotionPageTree_DeleteConfirm"]</p>
+                    <div class="tm-npt-menu__confirm-actions">
+                        <button class="tm-npt-menu__confirm-yes" type="button"
+                                @onclick="ContextConfirmDeleteAsync">
+                            @Loc["TmNotionPageTree_DeleteYes"]
+                        </button>
+                        <button class="tm-npt-menu__confirm-no" type="button"
+                                @onclick="CloseMenu">
+                            @Loc["TmNotionPageTree_DeleteNo"]
+                        </button>
+                    </div>
+                </div>
+            }
+            else if (_menuPhase == MenuPhase.MoveTo)
+            {
+                <div class="tm-npt-menu__moveto">
+                    <p class="tm-npt-menu__moveto-title">@Loc["TmNotionPageTree_MoveToTitle"]</p>
+                    <input class="tm-npt-menu__moveto-input"
+                           type="search"
+                           placeholder="@Loc["TmNotionPageTree_MoveToSearch"]"
+                           value="@_moveToQuery"
+                           @oninput="OnMoveToInputAsync"
+                           autocomplete="off" />
+                    <div class="tm-npt-menu__moveto-results">
+                        @if (_moveToLoading)
+                        {
+                            <span class="tm-npt-spinner" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <button class="tm-npt-menu__moveto-item" type="button"
+                                    @onclick="() => MoveToPageAsync(null)">
+                                @Loc["TmNotionPageTree_MoveToRoot"]
+                            </button>
+                            @foreach (var p in _moveToResults)
+                            {
+                                var captured = p;
+                                <button class="tm-npt-menu__moveto-item" type="button"
+                                        @onclick="() => MoveToPageAsync(captured)">
+                                    <span aria-hidden="true">@(string.IsNullOrEmpty(captured.IconEmoji) ? "📄" : captured.IconEmoji)</span>
+                                    @(string.IsNullOrWhiteSpace(captured.Title) ? Loc["TmNotionPageTree_Untitled"].ToString() : captured.Title)
+                                </button>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
+        </div>
+    }
+
+</li>

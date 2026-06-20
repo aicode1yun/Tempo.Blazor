@@ -1,0 +1,193 @@
+{
+  "itemName": "TmSpreadsheet",
+  "kind": "Component",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "description": "Excel-like spreadsheet component with support for cell editing, formulas, styling, formatting, multi-sheet workbooks, freeze panes, merge cells, auto-fill, and XLSX import/export. Features row virtualization for smooth performance with large datasets, a formula engine with 100+ built-in functions, and a full ribbon toolbar.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Spreadsheet"
+  ],
+  "parameters": [
+    {
+      "name": "Data",
+      "type": "byte[]?",
+      "isRequired": false,
+      "default": "null",
+      "description": "XLSX file data to load into the spreadsheet on initialization."
+    },
+    {
+      "name": "Height",
+      "type": "string?",
+      "isRequired": false,
+      "default": "600px",
+      "description": "CSS height of the spreadsheet container."
+    },
+    {
+      "name": "Width",
+      "type": "string?",
+      "isRequired": false,
+      "default": "100%",
+      "description": "CSS width of the spreadsheet container."
+    },
+    {
+      "name": "RowsCount",
+      "type": "int",
+      "isRequired": false,
+      "default": "200",
+      "description": "Initial number of rows to render."
+    },
+    {
+      "name": "ColumnsCount",
+      "type": "int",
+      "isRequired": false,
+      "default": "50",
+      "description": "Initial number of columns to render."
+    },
+    {
+      "name": "RowHeight",
+      "type": "double",
+      "isRequired": false,
+      "default": "20",
+      "description": "Default row height in pixels."
+    },
+    {
+      "name": "ColumnWidth",
+      "type": "double",
+      "isRequired": false,
+      "default": "64",
+      "description": "Default column width in pixels."
+    },
+    {
+      "name": "OnChange",
+      "type": "EventCallback<SpreadsheetChangeEventArgs>",
+      "isRequired": false,
+      "description": "Fires when a cell value changes."
+    },
+    {
+      "name": "OnSelect",
+      "type": "EventCallback<SpreadsheetSelectEventArgs>",
+      "isRequired": false,
+      "description": "Fires when the active cell or selection changes."
+    },
+    {
+      "name": "OnCellEdit",
+      "type": "EventCallback<SpreadsheetCellEditEventArgs>",
+      "isRequired": false,
+      "description": "Fires when a cell enters or exits edit mode."
+    },
+    {
+      "name": "OnOpen",
+      "type": "EventCallback<SpreadsheetOpenEventArgs>",
+      "isRequired": false,
+      "description": "Fires when a file is opened via the toolbar."
+    },
+    {
+      "name": "OnDownload",
+      "type": "EventCallback<SpreadsheetDownloadEventArgs>",
+      "isRequired": false,
+      "description": "Fires when the workbook is downloaded."
+    }
+  ],
+  "cssClasses": [
+    "tm-spreadsheet",
+    "tm-spreadsheet-toolbar",
+    "tm-spreadsheet-toolbar-tabs",
+    "tm-spreadsheet-toolbar-tab",
+    "tm-spreadsheet-toolbar-tab--active",
+    "tm-spreadsheet-toolbar-group",
+    "tm-spreadsheet-toolbar-tool",
+    "tm-spreadsheet-formula-bar",
+    "tm-spreadsheet-formula-bar-reference",
+    "tm-spreadsheet-formula-bar-input",
+    "tm-spreadsheet-grid",
+    "tm-spreadsheet-grid--empty",
+    "tm-spreadsheet-col-headers",
+    "tm-spreadsheet-header-cell",
+    "tm-spreadsheet-row-header",
+    "tm-spreadsheet-body",
+    "tm-spreadsheet-row",
+    "tm-spreadsheet-cell",
+    "tm-spreadsheet-cell--selected",
+    "tm-spreadsheet-cell--active",
+    "tm-spreadsheet-cell--editing",
+    "tm-spreadsheet-cell--readonly",
+    "tm-spreadsheet-cell--merged",
+    "tm-spreadsheet-cell-input",
+    "tm-spreadsheet-sheet-tabs",
+    "tm-spreadsheet-sheet-tab",
+    "tm-spreadsheet-sheet-tab--active",
+    "tm-spreadsheet-context-menu",
+    "tm-spreadsheet-context-menu__item",
+    "tm-spreadsheet-merge-dialog",
+    "tm-spreadsheet-color-picker",
+    "tm-spreadsheet-number-format-tool",
+    "tm-spreadsheet-hyperlink",
+    "tm-spreadsheet-hyperlink__backdrop",
+    "tm-spreadsheet-hyperlink__body",
+    "tm-spreadsheet-hyperlink__actions",
+    "tm-spreadsheet-name-manager",
+    "tm-spreadsheet-name-manager__table",
+    "tm-spreadsheet-name-manager__actions",
+    "tm-spreadsheet-name-edit",
+    "tm-spreadsheet-name-edit__field"
+  ],
+  "usedAbstractions": [
+    {
+      "name": "SpreadsheetWorkbook",
+      "description": "Root workbook model containing sheets and active sheet reference",
+      "usedIn": "TmSpreadsheet.Workbook"
+    },
+    {
+      "name": "SpreadsheetSheet",
+      "description": "Individual sheet with cells, rows, columns, merged cells, and freeze panes",
+      "usedIn": "SpreadsheetWorkbook.Sheets"
+    },
+    {
+      "name": "SpreadsheetCell",
+      "description": "Cell model with value, formula, style, and display value",
+      "usedIn": "SpreadsheetSheet.Cells"
+    },
+    {
+      "name": "SpreadsheetCellStyle",
+      "description": "Cell styling including font, colors, borders, alignment, and number format",
+      "usedIn": "SpreadsheetCell.Style"
+    },
+    {
+      "name": "SpreadsheetRange",
+      "description": "Cell range for selection and merge operations (e.g. A1:B10)",
+      "usedIn": "Selection, MergeCellsCommand"
+    },
+    {
+      "name": "SpreadsheetNamedRange",
+      "description": "Named range with workbook or sheet scope for use in formulas",
+      "usedIn": "SpreadsheetWorkbook.NamedRanges"
+    },
+    {
+      "name": "SpreadsheetHyperlink",
+      "description": "Structured hyperlink supporting web, email, internal ref, and named range",
+      "usedIn": "SpreadsheetCell.Hyperlink"
+    }
+  ],
+  "examples": [
+    {
+      "title": "Basic usage",
+      "code": "<TmSpreadsheet />"
+    },
+    {
+      "title": "With custom dimensions and XLSX data",
+      "code": "<TmSpreadsheet Data=\"@excelBytes\"\n               RowsCount=\"100\"\n               ColumnsCount=\"20\"\n               Height=\"700px\"\n               OnChange=\"HandleChange\" />"
+    },
+    {
+      "title": "Programmatic API - set values and export",
+      "code": "@code {\n    private TmSpreadsheet _spreadsheet = null!;\n\n    private void SetupData()\n    {\n        var sheet = _spreadsheet.Workbook.ActiveSheet;\n        sheet.SetCellValue(0, 0, \"Revenue\");\n        sheet.SetCellValue(0, 1, \"Expenses\");\n        sheet.SetCellValue(0, 2, \"Profit\");\n        sheet.SetCellValue(1, 0, 100000);\n        sheet.SetCellValue(1, 1, 75000);\n        sheet.SetCellValue(1, 2, \"=A2-B2\");\n    }\n\n    private async Task DownloadAsync()\n    {\n        var data = await _spreadsheet.ExportToExcelAsync();\n        // download data...\n    }\n}"
+    },
+    {
+      "title": "Formula engine with 100+ functions",
+      "code": "// Supported functions include:\n// Math: SUM, AVERAGE, COUNT, MIN, MAX, ABS, ROUND, MOD, POWER, SQRT, PI, RAND\n// Text: CONCATENATE, LEFT, RIGHT, MID, LEN, TRIM, UPPER, LOWER, TEXT\n// Logical: IF, AND, OR, NOT, TRUE, FALSE, IFERROR, ISBLANK\n// Date: DATE, TIME, NOW, TODAY, YEAR, MONTH, DAY, WEEKDAY\n// Lookup: VLOOKUP, HLOOKUP, INDEX, MATCH, CHOOSE, OFFSET\n\n<TmSpreadsheet @ref=\"_sheet\"\n               RowsCount=\"50\"\n               ColumnsCount=\"15\" />\n\n@code {\n    protected override void OnAfterRender(bool firstRender)\n    {\n        if (firstRender)\n        {\n            var s = _sheet.Workbook.ActiveSheet;\n            s.SetCellValue(0, 0, \"Sales\");\n            s.SetCellValue(0, 1, \"Target\");\n            s.SetCellValue(0, 2, \"Achievement %\");\n            s.SetCellValue(1, 0, 85000);\n            s.SetCellValue(1, 1, 100000);\n            s.SetCellValue(1, 2, \"=A2/B2*100\");\n            s.SetCellValue(2, 0, \"=SUM(A2:A10)\");\n            s.SetCellValue(2, 1, \"=AVERAGE(B2:B10)\");\n        }\n    }\n}"
+    },
+    {
+      "title": "XLSX import/export",
+      "code": "<InputFile OnChange=\"OnFileSelected\" accept=\".xlsx\" />\n<TmSpreadsheet @ref=\"_spreadsheet\" />\n\n@code {\n    private TmSpreadsheet _spreadsheet = null!;\n\n    private async Task OnFileSelected(InputFileChangeEventArgs e)\n    {\n        using var stream = e.File.OpenReadStream(5 * 1024 * 1024);\n        using var ms = new MemoryStream();\n        await stream.CopyToAsync(ms);\n        await _spreadsheet.ImportFromExcelAsync(ms.ToArray());\n    }\n\n    private async Task ExportAsync()\n    {\n        var data = await _spreadsheet.ExportToExcelAsync();\n        // download bytes...\n    }\n}"
+    }
+  ]
+}

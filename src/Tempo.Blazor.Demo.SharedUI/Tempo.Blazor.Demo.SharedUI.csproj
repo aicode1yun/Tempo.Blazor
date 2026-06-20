@@ -20,12 +20,16 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Tempo.Blazor\Tempo.Blazor.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.Collaboration\Tempo.Blazor.Collaboration.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.FluentValidation\Tempo.Blazor.FluentValidation.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.Demo.Shared\Tempo.Blazor.Demo.Shared.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.EmailTemplates\Tempo.Blazor.EmailTemplates.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.EmailTemplates.Abstractions\Tempo.Blazor.EmailTemplates.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.5" />
   </ItemGroup>
 
 </Project>

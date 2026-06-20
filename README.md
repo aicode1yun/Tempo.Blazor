@@ -23,6 +23,10 @@ dotnet add package Tempo.Blazor.Abstractions      # Interfaces only (for API/ser
 dotnet add package Tempo.Blazor.FluentValidation   # FluentValidation integration for EditForm
 ```
 
+## Document Editor Cutover
+
+`TmDocumentEditor` defaults to the canvas engine after the phase 25 cutover. Rollback and migration notes are in [docs/document-editor-canvas-cutover.md](docs/document-editor-canvas-cutover.md).
+
 ## Quick Start
 
 ### 1. Register Services
@@ -30,6 +34,46 @@ dotnet add package Tempo.Blazor.FluentValidation   # FluentValidation integratio
 ```csharp
 // Program.cs
 builder.Services.AddTempoBlazor();
+```
+
+### Custom Diagram Stencils
+
+Register custom diagram stencils after `AddTempoBlazor()`. Keep provider output as your own data and mark built-in application stencils with `DiagramStencilOrigin.TempoOriginal`.
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Tempo.Blazor.Components.Diagram.Models;
+using Tempo.Blazor.Components.Diagram.Stencils;
+
+builder.Services.AddTempoBlazor();
+builder.Services.TryAddEnumerable(
+    ServiceDescriptor.Singleton<IDiagramStencilProvider, MyStencilProvider>());
+
+public sealed class MyStencilProvider : IDiagramStencilProvider
+{
+    public int Priority => 100;
+
+    public IEnumerable<DiagramStencilSet> GetStencilSets()
+    {
+        yield return new DiagramStencilSet
+        {
+            Id = "my-stencils",
+            NameResourceKey = "DiagramStencilSet_MyStencils",
+            Stencils =
+            [
+                new DiagramStencil
+                {
+                    Id = "my-stencils.service",
+                    NameResourceKey = "DiagramStencil_MyService",
+                    Category = "Application",
+                    Kind = DiagramStencilKind.Node,
+                    Origin = DiagramStencilOrigin.TempoOriginal
+                }
+            ]
+        };
+    }
+}
 ```
 
 ### 2. Add CSS
@@ -117,6 +161,16 @@ Toast.ShowError("Something went wrong");
 Toast.ShowWarning("Check your input");
 Toast.ShowInfo("Record updated");
 ```
+
+## Document Editor Collaboration Protocol
+
+`TmDocumentEditor` can synchronize live WYSIWYG edits through `IDocumentCollaborationProvider`. The provider boundary exchanges append-only `DocumentOperationBatch` payloads, not rendered HTML. Each batch carries a protocol version, a document id, stable operation ids, operation metadata, and one or more structured operations such as `InsertText`, `DeleteText`, `AddInlineMark`, `RemoveInlineMark`, `InsertBlock`, `UpdateBlock`, `DeleteBlock`, `CreateRevision`, `AcceptRevision`, and `RejectRevision`.
+
+The live editor surface is owned by the JavaScript WYSIWYG runtime while the user is editing. Remote batches are applied through the JS runtime as DOM operations and then mirrored into the C# document model for persistence, export, suggestions, revision panels, and provider replay. Blazor does not re-render the live editor surface for successful remote operations.
+
+`SetBlockAttribute("text")` is kept only as a legacy/import compatibility fallback. Rich text, formatting, images, tables, and other object changes use structured operations, most commonly `UpdateBlock` when a whole block payload is the safest representation. If a remote DOM patch fails, the component falls back to a full snapshot refresh so the browser DOM and the C# document model converge again.
+
+See [Document Editor JS-Owned Runtime](docs/document-editor-js-owned-runtime.md) for the runtime boundary, provider flow, undo/redo transaction rules, track changes model, and E2E test guidance.
 
 ## Components
 

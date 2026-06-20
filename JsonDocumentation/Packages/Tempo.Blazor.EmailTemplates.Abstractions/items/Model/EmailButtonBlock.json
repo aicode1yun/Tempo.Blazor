@@ -1,0 +1,144 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A call-to-action button (mj-button). is the label.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailButtonBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Align",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the block alignment within the column (align)."
+    },
+    {
+      "name": "BackgroundColor",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the background colour (background-color)."
+    },
+    {
+      "name": "Border",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the border shorthand (border)."
+    },
+    {
+      "name": "BorderRadius",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the border radius (border-radius)."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the text colour (color)."
+    },
+    {
+      "name": "FontFamily",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the font family (font-family)."
+    },
+    {
+      "name": "FontSize",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the font size (font-size)."
+    },
+    {
+      "name": "FontStyle",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the font style (font-style)."
+    },
+    {
+      "name": "FontWeight",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the font weight (font-weight)."
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the explicit height (height)."
+    },
+    {
+      "name": "Href",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the link target (href)."
+    },
+    {
+      "name": "InnerPadding",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the inner padding (inner-padding)."
+    },
+    {
+      "name": "LetterSpacing",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the letter spacing (letter-spacing)."
+    },
+    {
+      "name": "LineHeight",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the line height (line-height)."
+    },
+    {
+      "name": "Rel",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the link rel attribute."
+    },
+    {
+      "name": "Target",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the link target window (target)."
+    },
+    {
+      "name": "Text",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the button label text."
+    },
+    {
+      "name": "TextAlign",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the content text alignment (text-align)."
+    },
+    {
+      "name": "TextDecoration",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the text decoration (text-decoration)."
+    },
+    {
+      "name": "TextTransform",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the text transform (text-transform)."
+    },
+    {
+      "name": "VerticalAlign",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the vertical alignment (vertical-align)."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the explicit width (width)."
+    }
+  ],
+  "itemName": "EmailButtonBlock"
+}

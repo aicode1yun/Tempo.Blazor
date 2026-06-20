@@ -1,0 +1,32 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionWatchSubscriptionDto.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTime"
+    },
+    {
+      "name": "IncludeChildren",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "PageId",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "UserId",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "NotionWatchSubscriptionDto"
+}

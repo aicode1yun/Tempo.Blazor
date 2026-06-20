@@ -2,11 +2,41 @@
 @using Tempo.Blazor.Components.NotionEditor
 @using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.Demo.Services
-@using System.Net.Http.Json
-@inject IHttpClientFactory HttpClientFactory
 @inject ITmLocalizer Loc
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
 @inject DemoNotionDataProvider DataProvider
 @inject DemoNotionBlockProvider BlockProvider
+@inject MockNotionCommentProvider CommentProvider
+@inject DemoNotionHistoryProvider HistoryProvider
+@inject MockNotionMentionProvider MentionProvider
+@inject MockNotionSearchProvider SearchProvider
+@inject SignalRCollaborationProvider CollaborationProvider
+@inject DemoNotionDatabaseProvider DatabaseProvider
+@inject ApiWireframeDocumentProvider WireframeDocumentProvider
+@inject ApiDiagramDocumentProvider DiagramDocumentProvider
+@inject ApiSpreadsheetDocumentProvider SpreadsheetDocumentProvider
+@inject Tempo.Blazor.DocumentLibrary.ITempoDocumentLibraryProvider LibraryProvider
+@inject Tempo.Blazor.DocumentLibrary.ITempoDocumentChangeNotifier ChangeNotifier
+@inject DemoNotionImportExportProvider ImportExportProvider
+@inject DemoNotionMediaLibraryProvider MediaLibraryProvider
+@inject DemoNotionFileProvider FileProvider
+@inject DemoNotionTokenProvider TokenProvider
+@inject DemoNotionAIProvider AIProvider
+@inject DemoNotionTaskProvider TaskProvider
+@inject DemoNotionReactionProvider ReactionProvider
+@inject DemoNotionAnalyticsProvider AnalyticsProvider
+@inject DemoNotionPagePropertiesProvider PagePropertiesProvider
+@inject DemoNotionTemplateProvider TemplateProvider
+@inject DemoNotionSpaceProvider SpaceProvider
+@inject DemoNotionBlogProvider BlogProvider
+@inject DemoNotionWatchProvider WatchProvider
+@inject DemoNotionPermissionProvider PermissionProvider
+@inject DemoNotionPublicShareProvider PublicShareProvider
+@inject DemoNotionAuditProvider AuditProvider
+@inject DemoSmartLinkProvider SmartLinkProvider
+@inject WorkItemProviderRegistry WorkItemProviders
 
 <PageTitle>Notion Editor – Tempo.Blazor</PageTitle>
 
@@ -53,11 +83,45 @@
     }
     else if (_currentPage != null)
     {
-        <div style="height: 500px; border: 1px solid var(--slate-200); border-radius: 8px; overflow: auto; background: white;">
-            <TmNotionEditor DataProvider="@DataProvider"
+        <div style="height: 600px; border: 1px solid var(--slate-200); border-radius: 8px; overflow: hidden; background: white;">
+            <TmNotionEditor @key="_editorRefreshKey"
+                            DataProvider="@DataProvider"
                             BlockProvider="@BlockProvider"
+                            CommentProvider="@(IsProviderDisabled("disableCommentProvider") ? null : CommentProvider)"
+                            HistoryProvider="@HistoryProvider"
+                            MentionProvider="@(IsProviderDisabled("disableMentionProvider") ? null : MentionProvider)"
+                            SearchProvider="@SearchProvider"
+                            CollaborationProvider="@CollaborationProvider"
+                            DatabaseProvider="@(IsProviderDisabled("disableDatabaseProvider") ? null : DatabaseProvider)"
+                            WireframeDocumentProvider="@WireframeDocumentProvider"
+                            DiagramDocumentProvider="@DiagramDocumentProvider"
+                            SpreadsheetDocumentProvider="@SpreadsheetDocumentProvider"
+                            DocumentLibraryProvider="@LibraryProvider"
+                            DocumentChangeNotifier="@ChangeNotifier"
+                            ImportExportProvider="@(IsProviderDisabled("disableImportExportProvider") ? null : ImportExportProvider)"
+                            MediaLibraryProvider="@MediaLibraryProvider"
+                            FileProvider="@(IsProviderDisabled("disableFileProvider") ? null : FileProvider)"
+                            TokenProvider="@TokenProvider"
+                            AIProvider="@(IsProviderDisabled("disableAIProvider") ? null : AIProvider)"
+                            TaskProvider="@(IsProviderDisabled("disableTaskProvider") ? null : TaskProvider)"
+                            WorkItemProviders="@(IsProviderDisabled("disableWorkItemProvider") ? null : WorkItemProviders)"
+                            ReactionProvider="@(IsProviderDisabled("disableReactionProvider") ? null : ReactionProvider)"
+                            AnalyticsProvider="@(IsProviderDisabled("disableAnalyticsProvider") ? null : AnalyticsProvider)"
+                            BlogProvider="@(IsProviderDisabled("disableBlogProvider") ? null : BlogProvider)"
+                            WatchProvider="@(IsProviderDisabled("disableWatchProvider") ? null : WatchProvider)"
+                            PermissionProvider="@(IsProviderDisabled("disablePermissionProvider") ? null : PermissionProvider)"
+                            PublicShareProvider="@(IsProviderDisabled("disablePublicShareProvider") ? null : PublicShareProvider)"
+                            AuditProvider="@(IsProviderDisabled("disableAuditProvider") ? null : AuditProvider)"
+                            SmartLinkProvider="@(IsProviderDisabled("disableSmartLinkProvider") ? null : SmartLinkProvider)"
+                            SpaceProvider="@(IsProviderDisabled("disableSpaceProvider") ? null : SpaceProvider)"
+                            PagePropertiesProvider="@PagePropertiesProvider"
+                            TemplateProvider="@(IsProviderDisabled("disableTemplateProvider") ? null : TemplateProvider)"
+                            CurrentUserId="@CurrentUserId"
+                            CurrentUserGroupIds="@CurrentUserGroupIds"
+                            ReadOnly="@IsQueryFlagEnabled("readonly")"
                             InitialPageId="@_currentPage.Id.ToString()"
                             ShowSidebar="true"
+                            OnCreateTokenRequested="@CreateTokenAsync"
                             Class="h-full" />
         </div>
 
@@ -69,8 +133,8 @@
     }
 </section>
 
-<!-- ═══ Features checklist ════════════════════════════════════════════════════ -->
-<section class="demo-section">
+<!-- ═══ Features checklist — Phase 1 ══════════════════════════════════════════ -->
+<section class="demo-section mb-6">
     <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Phase 1 Features</h3>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -135,38 +199,569 @@
     </div>
 </section>
 
+<!-- ═══ Features checklist — Phase 2 ══════════════════════════════════════════ -->
+<section class="demo-section">
+    <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Phase 2 Features — Verification</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        All Phase 2 block types are pre-loaded in the editor above. Scroll down in the editor to test each feature.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🖼️</span> Media Blocks
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Image block with URL</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Image resize via handle</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Video block (YouTube embed)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>File block with download link</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Media upload / URL input dialog</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🔗</span> Embeds
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Bookmark with OG preview</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Embed block (CodePen iframe)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Embed resize handles</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>URL input for new embeds</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">⬜</span> Layout
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>2-column layout block</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Columns render side by side</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Column resize via divider drag</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Full block types inside columns</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">∑</span> Equation (LaTeX)
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>KaTeX rendering of LaTeX</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Click to open inline LaTeX editor</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Live preview while editing</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Enter / Esc keyboard shortcuts</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🗂️</span> Diagram &amp; Wireframe
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Diagram block with Create button</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Full-screen diagram editor modal</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Wireframe block with Create button</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>SVG preview after save</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">📋</span> Code &amp; Callout
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Code block with syntax highlight</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Language selector</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Copy to clipboard button</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Callout block with emoji icon</span>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="mt-4 p-4 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+        <p class="text-sm text-green-900 dark:text-green-100">
+            <strong>How to test:</strong>
+            Scroll down in the editor above — all Phase 2 block types are pre-loaded. Click any block to interact. Use the block handle (left side) for options menu, drag to reorder. Type <kbd class="px-1 py-0.5 bg-green-100 dark:bg-green-800 rounded text-xs">/</kbd> in any text block to insert a new block via the slash menu.
+        </p>
+    </div>
+</section>
+
+<!-- ═══ Features checklist — Phase 3 ══════════════════════════════════════════ -->
+<section class="demo-section mt-6">
+    <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Phase 3 Features — Database</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        Scroll to the bottom of the editor above to find the <strong>Phase 3: Inline Database</strong> section.
+        The "Project Tasks" database has 8 fields, 12 records, and 6 views.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🗂️</span> Views
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Table view — all 8 fields, 12 rows</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Board view — grouped by Status</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>List view — compact rows</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Gallery view — card grid</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Calendar view — grouped by due date</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Timeline view — Gantt-style bars</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🔎</span> Filter, Sort &amp; Group
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Filter panel — add conditions per field</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Filter applies immediately to records</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Sort panel — multi-field sort</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Group by — separator rows per group</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">✏️</span> Records &amp; Fields
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Inline cell editing in Table view</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Record detail modal (click row icon)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Field editor — add / rename / delete</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Import / Export CSV dialog</span>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="mt-4 p-4 rounded bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+        <p class="text-sm text-purple-900 dark:text-purple-100">
+            <strong>How to test:</strong>
+            Scroll down in the editor to the <em>Phase 3: Inline Database</em> heading.
+            Use the view tabs (Table / Board / List / Gallery / Calendar / Timeline) to switch.
+            Click toolbar buttons: <strong>Filter</strong>, <strong>Sort</strong>, <strong>Group</strong>, <strong>Fields</strong>, <strong>Import/Export</strong>.
+            Click a row's expand icon to open the record detail. Click a column header to edit the field type.
+        </p>
+    </div>
+</section>
+
+<!-- ═══ Features checklist — Phase 4 ══════════════════════════════════════════ -->
+<section class="demo-section mt-6">
+    <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Phase 4 Features — Comments, Search &amp; History</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        The editor now has <strong>6 pages</strong> in the sidebar (2 root, 1 with sub-pages) and all Phase 4 providers wired up.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🗂️</span> Sidebar &amp; Navigation
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>6 pages: Favorites, Recent, Pages, Trash sections</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Page hierarchy: Engineering Wiki → 2 sub-pages</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Expand / collapse sub-pages in tree</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Click page in sidebar → navigates to it</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🔍</span> Page Search
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Ctrl+P opens full-screen search dialog</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Searches all 6 pages by title (string.Contains)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>↑↓ keyboard navigation + Enter to open</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Escape closes the dialog</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">💬</span> Comments
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Block comment panel with pre-seeded threads</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Reply, resolve, unresolve comments</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Text anchor comment (select text → ⌘+⇧+M)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Page-level comment count badge</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🕓</span> Page History
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>3 pre-seeded versions for "Getting Started"</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Preview block snapshot per version</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Restore version → inserts as new head</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Open via ⚙️ Page Settings → Page History</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">@@</span> Mentions
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Type @@ to open mention menu</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>5 demo users (Alice, Bob, Charlie, Diana, Demo)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Type [[ to search and link pages</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Inserts inline mention chip</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">⚙️</span> Page Settings
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Full width / small text / lock toggles</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Export Markdown / HTML (downloads file)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Import Markdown / HTML (uploads file)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Copy page link / Move to / Favorites / Delete</span>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="mt-4 p-4 rounded bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+        <p class="text-sm text-indigo-900 dark:text-indigo-100">
+            <strong>How to test Phase 4:</strong>
+            Use <kbd class="px-1 py-0.5 bg-indigo-100 dark:bg-indigo-800 rounded text-xs">Ctrl+P</kbd> to open page search.
+            Hover a block to reveal the comment icon. Open the ⚙️ button (top-right of editor) for page settings and history.
+            Type <kbd class="px-1 py-0.5 bg-indigo-100 dark:bg-indigo-800 rounded text-xs">@@</kbd> in a text block to @@-mention a user.
+            Type <kbd class="px-1 py-0.5 bg-indigo-100 dark:bg-indigo-800 rounded text-xs">[[</kbd> to link another page.
+            The sidebar shows all 6 pages — click any to navigate.
+        </p>
+    </div>
+</section>
+
 @code {
     private INotionPage? _currentPage;
     private string _statusMessage = "";
     private bool _statusIsError = false;
     private bool _isLoading = true;
+    private int _editorRefreshKey;
+
+    private static readonly string[] E2ESeedMethods =
+    [
+        "seedActionItemsPage",
+        "seedAnalyticsPage",
+        "seedAuditPage",
+        "seedBlogPage",
+        "seedBulkPages",
+        "seedChildrenDisplayPage",
+        "seedCollaborationPage",
+        "seedCommentlessPage",
+        "seedCommentsPage",
+        "seedContentByLabelPage",
+        "seedDragDropPage",
+        "seedEmptyAnalyticsPage",
+        "seedEmptyAuditPage",
+        "seedEmptyBlogPage",
+        "seedEmptyPage",
+        "seedEmptyPageInfoPage",
+        "seedEmptyTasksPage",
+        "seedEmptyTocPage",
+        "seedExcerptPage",
+        "seedExpiredPublicSharePage",
+        "seedExportPage",
+        "seedHistoryDiffPage",
+        "seedHistoryEmptyPage",
+        "seedHistoryManyPage",
+        "seedIncludePagePage",
+        "seedInlineToolbarPage",
+        "seedLabelsPage",
+        "seedLayoutPage",
+        "seedListTodoPage",
+        "seedManyAuditEntriesPage",
+        "seedManyBlogPostsPage",
+        "seedManySpacesPage",
+        "seedManyTasksPage",
+        "seedMediaPage",
+        "seedMentionTokenPage",
+        "seedPageInfoPage",
+        "seedPagePropertiesPage",
+        "seedPageReactionsEmptyPage",
+        "seedPageReactionsManyPage",
+        "seedPageSettingsPage",
+        "seedPublicSharePage",
+        "seedRestrictionsPage",
+        "seedRichPage",
+        "seedSearchPage",
+        "seedSidebarDeepPage",
+        "seedSidebarEmptyPage",
+        "seedSidebarTrashPage",
+        "seedSmartLinksPage",
+        "seedSpacesPage",
+        "seedSpecialBlocksPage",
+        "seedTablePage",
+        "seedTasksPage",
+        "seedTextFormattingPage",
+        "seedWatchPage",
+        "seedWorkItemsPage",
+        "showCollaborationLongNames",
+        "showCollaborationManyCursors",
+        "showCollaborationNoUsers",
+        "showCollaborationOneCursor",
+        "showCollaborationOverlappingCursors"
+    ];
 
     protected override async Task OnInitializedAsync()
     {
+        ConfigureAIProvider();
         await LoadEditorDataAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var apiBase = HttpClientFactory.CreateClient("DemoApi").BaseAddress?.ToString().TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(apiBase))
+        {
+            return;
+        }
+
+        var apiBaseJson = System.Text.Json.JsonSerializer.Serialize(apiBase);
+        var methodsJson = System.Text.Json.JsonSerializer.Serialize(E2ESeedMethods);
+        var script = $$"""
+            (() => {
+                const apiBase = {{apiBaseJson}};
+                const methods = {{methodsJson}};
+                const seed = async (scenario) => {
+                    const response = await fetch(`${apiBase}/api/notion/e2e/seed/${encodeURIComponent(scenario)}`, {
+                        method: 'POST'
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Notion E2E seed '${scenario}' failed with ${response.status}`);
+                    }
+                    window.setTimeout(() => window.location.reload(), 0);
+                    return true;
+                };
+                window.tmNotionDemo = window.tmNotionDemo || {};
+                for (const method of methods) {
+                    window.tmNotionDemo[method] = () => seed(method);
+                }
+            })();
+            """;
+
+        await JS.InvokeVoidAsync("eval", script);
     }
 
     private async Task LoadEditorDataAsync()
     {
         try
         {
-            _isLoading = true;
+            ConfigureAIProvider();
+            _isLoading     = true;
             _statusMessage = "";
-
-            var httpClient = HttpClientFactory.CreateClient("DemoApi");
-
-            // Get all pages to find the first one
-            var pages = await httpClient.GetFromJsonAsync<List<NotionPage>>("/api/notion/pages");
-            if (pages?.Count > 0)
-            {
-                _currentPage = pages[0];
-                _statusMessage = "Editor loaded successfully";
-            }
-            else
-            {
-                _statusMessage = "No pages found";
-                _statusIsError = true;
-            }
+            _currentPage   = await DataProvider.GetPageAsync("11111111-1111-1111-1111-111111111111");
+            _editorRefreshKey++;
+            _statusMessage = "Editor loaded successfully";
         }
         catch (Exception ex)
         {
@@ -179,8 +774,87 @@
         }
     }
 
-    private async Task RefreshData()
+    private async Task RefreshData() => await LoadEditorDataAsync();
+
+    private void ConfigureAIProvider()
     {
-        await LoadEditorDataAsync();
+        AIProvider.SlowResponses = IsProviderDisabled("slowAIProvider");
+        AIProvider.FailRequests = IsProviderDisabled("failAIProvider");
+    }
+
+    private bool IsProviderDisabled(string key)
+    {
+        var query = new Uri(Navigation.Uri).Query;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return false;
+        }
+
+        foreach (var part in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var pieces = part.Split('=', 2);
+            var name = Uri.UnescapeDataString(pieces[0]);
+            if (!string.Equals(name, key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (pieces.Length == 1)
+            {
+                return true;
+            }
+
+            var value = Uri.UnescapeDataString(pieces[1]);
+            return string.IsNullOrWhiteSpace(value) || bool.TryParse(value, out var parsed) && parsed;
+        }
+
+        return false;
+    }
+
+    private bool IsQueryFlagEnabled(string key)
+        => GetQueryValue(key) is { } value &&
+           (string.IsNullOrWhiteSpace(value) || bool.TryParse(value, out var parsed) && parsed);
+
+    private string CurrentUserId => GetQueryValue("user") switch
+    {
+        { Length: > 0 } user => user,
+        _ => "demo"
+    };
+
+    private IReadOnlyList<string> CurrentUserGroupIds => GetQueryValue("groups") switch
+    {
+        { Length: > 0 } groups => groups.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+        _ => []
+    };
+
+    private string? GetQueryValue(string key)
+    {
+        var query = new Uri(Navigation.Uri).Query;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return null;
+        }
+
+        foreach (var part in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var pieces = part.Split('=', 2);
+            var name = Uri.UnescapeDataString(pieces[0]);
+            if (!string.Equals(name, key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return pieces.Length == 1 ? string.Empty : Uri.UnescapeDataString(pieces[1]);
+        }
+
+        return null;
+    }
+
+    private async Task<(string Key, string DisplayName, string? ColorClass)?> CreateTokenAsync(string query)
+    {
+        var name = await JS.InvokeAsync<string?>("prompt", "New token name:", query);
+        if (string.IsNullOrWhiteSpace(name)) return null;
+        var key = TokenProvider.AddToken(name.Trim());
+        return (key, name.Trim(), null);
     }
 }

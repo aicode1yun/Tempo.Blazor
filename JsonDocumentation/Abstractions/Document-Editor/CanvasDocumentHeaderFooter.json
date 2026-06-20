@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Canvas header or footer with converted body blocks.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/CanvasDocumentModel.cs",
+  "documentationStatus": "generated",
+  "itemName": "CanvasDocumentHeaderFooter"
+}

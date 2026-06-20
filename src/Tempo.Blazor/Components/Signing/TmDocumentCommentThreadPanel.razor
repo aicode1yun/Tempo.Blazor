@@ -1,0 +1,327 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<aside class="@RootClass"
+       aria-label="@Loc["TmDocumentComments_PanelLabel"]"
+       data-testid="document-comments-panel"
+       tabindex="0"
+       @onkeydown="HandlePanelKeyDownAsync">
+    <header class="tm-document-comments-panel__header">
+        <div>
+            <h3 class="tm-document-comments-panel__title">@Loc["TmDocumentComments_Title"]</h3>
+            <p class="tm-document-comments-panel__summary">@SummaryText</p>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(SelectedThreadId))
+        {
+            <button type="button"
+                    class="tm-document-comments-panel__icon-button"
+                    aria-label="@Loc["TmDocumentComments_CloseThread"]"
+                    disabled="@Disabled"
+                    @onclick="ClearSelectionAsync">
+                <TmIcon Name="@IconNames.X" Size="IconSize.Sm" />
+            </button>
+        }
+    </header>
+
+    <div class="tm-document-comments-panel__filters" role="tablist" aria-label="@Loc["TmDocumentComments_FilterLabel"]">
+        <button type="button" class="@FilterButtonClass(DocumentCommentThreadFilter.Open)" disabled="@Disabled" @onclick="() => SetFilter(DocumentCommentThreadFilter.Open)">
+            @Loc["TmDocumentComments_FilterOpen"]
+        </button>
+        <button type="button" class="@FilterButtonClass(DocumentCommentThreadFilter.Mentions)" disabled="@Disabled" @onclick="() => SetFilter(DocumentCommentThreadFilter.Mentions)">
+            @Loc["TmDocumentComments_FilterMentions"]
+        </button>
+        <button type="button" class="@FilterButtonClass(DocumentCommentThreadFilter.Resolved)" disabled="@Disabled" @onclick="() => SetFilter(DocumentCommentThreadFilter.Resolved)">
+            @Loc["TmDocumentComments_FilterResolved"]
+        </button>
+    </div>
+
+    @if (SelectedThread is not null)
+    {
+        <section class="tm-document-comments-panel__detail" data-thread-id="@SelectedThread.Id">
+            <div class="tm-document-comments-panel__detail-header">
+                <button type="button"
+                        class="tm-document-comments-panel__back"
+                        disabled="@Disabled"
+                        @onclick="ClearSelectionAsync">
+                    <TmIcon Name="chevron-left" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentComments_BackToList"]</span>
+                </button>
+                <span class="@StatusClass(SelectedThread)">@StatusText(SelectedThread)</span>
+            </div>
+
+            <div class="tm-document-comments-panel__thread-location">
+                @DetailLocation(SelectedThread)
+            </div>
+
+            <div class="tm-document-comments-panel__items">
+                @foreach (var comment in SelectedThread.Comments)
+                {
+                    <TmDocumentCommentItem ThreadId="@SelectedThread.Id"
+                                           Comment="@comment"
+                                           CurrentUserId="@CurrentUserId"
+                                           Disabled="@Disabled"
+                                           PickerOpen="@(_reactionPickerCommentId == comment.Id)"
+                                           PickerOpenChanged="open => SetReactionPicker(comment.Id, open)"
+                                           OnEditRequested="BeginEdit"
+                                           OnDeleteRequested="DeleteCommentAsync"
+                                           OnReactionToggled="ToggleReactionAsync" />
+                }
+            </div>
+
+            @if (_editingComment is not null)
+            {
+                <TmCommentComposer Value="@_editText"
+                                   ValueChanged="value => _editText = value"
+                                   Placeholder="@Loc["TmDocumentComments_EditPlaceholder"]"
+                                   AriaLabel="@Loc["TmDocumentComments_EditLabel"]"
+                                   SubmitText="@Loc["TmDocumentComments_Save"]"
+                                   MentionUsers="@MentionUsers"
+                                   Disabled="@Disabled"
+                                   OnSubmit="SaveEditAsync"
+                                   OnCancel="CancelEditAsync" />
+            }
+            else if (SelectedThread.Status == DocumentCommentThreadStatus.Open || AllowReplyToResolved)
+            {
+                <TmCommentComposer Placeholder="@Loc["TmDocumentComments_ReplyPlaceholder"]"
+                                   AriaLabel="@Loc["TmDocumentComments_ReplyLabel"]"
+                                   SubmitText="@Loc["TmDocumentComments_Reply"]"
+                                   MentionUsers="@MentionUsers"
+                                   Disabled="@Disabled"
+                                   OnSubmit="SubmitReplyAsync" />
+            }
+
+            <div class="tm-document-comments-panel__thread-actions">
+                @if (SelectedThread.Status == DocumentCommentThreadStatus.Open)
+                {
+                    <button type="button" class="tm-document-comments-panel__resolve" disabled="@Disabled" @onclick="() => ResolveAsync(SelectedThread.Id)">
+                        <TmIcon Name="@IconNames.CheckCircle" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentComments_Resolve"]</span>
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="tm-document-comments-panel__resolve" disabled="@Disabled" @onclick="() => ReopenAsync(SelectedThread.Id)">
+                        <TmIcon Name="@IconNames.RotateCcw" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentComments_Reopen"]</span>
+                    </button>
+                }
+            </div>
+        </section>
+    }
+    else if (FilteredThreads.Count == 0)
+    {
+        <div class="tm-document-comments-panel__empty">
+            <TmIcon Name="@IconNames.MessageSquare" Size="IconSize.Md" />
+            <span>@Loc["TmDocumentComments_Empty"]</span>
+        </div>
+    }
+    else
+    {
+        <TmDocumentCommentThreadList Threads="@FilteredThreads"
+                                     AllThreads="@Threads"
+                                     SelectedThreadId="@SelectedThreadId"
+                                     CurrentUserId="@CurrentUserId"
+                                     Disabled="@Disabled"
+                                     OnThreadSelected="SelectThreadAsync" />
+    }
+</aside>
+
+@code {
+    private DocumentCommentThreadFilter _filter = DocumentCommentThreadFilter.Open;
+    private string? _reactionPickerCommentId;
+    private DocumentComment? _editingComment;
+    private string _editText = string.Empty;
+
+    /// <summary>Comment threads to render.</summary>
+    [Parameter] public IReadOnlyList<DocumentCommentThread> Threads { get; set; } = [];
+
+    /// <summary>Selected thread id.</summary>
+    [Parameter] public string? SelectedThreadId { get; set; }
+
+    /// <summary>Callback invoked when selected thread id changes.</summary>
+    [Parameter] public EventCallback<string?> SelectedThreadIdChanged { get; set; }
+
+    /// <summary>Current user id for mentions and active reactions.</summary>
+    [Parameter] public string? CurrentUserId { get; set; }
+
+    /// <summary>Users available for mention suggestions.</summary>
+    [Parameter] public IReadOnlyList<DocumentCommentUser> MentionUsers { get; set; } = [];
+
+    /// <summary>Whether replies are allowed on resolved threads.</summary>
+    [Parameter] public bool AllowReplyToResolved { get; set; }
+
+    /// <summary>Whether panel interaction is disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Callback invoked when a reply is requested.</summary>
+    [Parameter] public EventCallback<DocumentCommentReplyRequest> OnReplyRequested { get; set; }
+
+    /// <summary>Callback invoked when resolving a thread is requested.</summary>
+    [Parameter] public EventCallback<DocumentCommentThreadStatusRequest> OnResolveRequested { get; set; }
+
+    /// <summary>Callback invoked when reopening a thread is requested.</summary>
+    [Parameter] public EventCallback<DocumentCommentThreadStatusRequest> OnReopenRequested { get; set; }
+
+    /// <summary>Callback invoked when editing a comment is requested.</summary>
+    [Parameter] public EventCallback<DocumentCommentEditRequest> OnEditRequested { get; set; }
+
+    /// <summary>Callback invoked when deleting a comment is requested.</summary>
+    [Parameter] public EventCallback<DocumentCommentDeleteRequest> OnDeleteRequested { get; set; }
+
+    /// <summary>Callback invoked when toggling a reaction is requested.</summary>
+    [Parameter] public EventCallback<DocumentCommentReactionToggleRequest> OnReactionToggled { get; set; }
+
+    /// <summary>Callback invoked when a thread asks the parent to navigate to its page.</summary>
+    [Parameter] public EventCallback<DocumentCommentThreadNavigateRequest> OnThreadNavigateRequested { get; set; }
+
+    /// <summary>Additional CSS class.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    private string RootClass => string.Join(" ", new[] { "tm-document-comments-panel", Class }.Where(value => !string.IsNullOrWhiteSpace(value)));
+
+    private DocumentCommentThread? SelectedThread => Threads.FirstOrDefault(thread => thread.Id == SelectedThreadId);
+
+    private IReadOnlyList<DocumentCommentThread> FilteredThreads => _filter switch
+    {
+        DocumentCommentThreadFilter.Resolved => Threads.Where(thread => thread.Status == DocumentCommentThreadStatus.Resolved).ToList(),
+        DocumentCommentThreadFilter.Mentions => Threads.Where(thread => DocumentCommentHelper.MentionsUser(thread, CurrentUserId)).ToList(),
+        _ => Threads.Where(thread => thread.Status == DocumentCommentThreadStatus.Open).ToList()
+    };
+
+    private string SummaryText => Loc["TmDocumentComments_Summary", DocumentCommentHelper.CountOpenThreads(Threads), Threads.Count];
+
+    private string FilterButtonClass(DocumentCommentThreadFilter filter)
+    {
+        return filter == _filter
+            ? "tm-document-comments-panel__filter tm-document-comments-panel__filter--active"
+            : "tm-document-comments-panel__filter";
+    }
+
+    private void SetFilter(DocumentCommentThreadFilter filter)
+    {
+        _filter = filter;
+    }
+
+    private async Task SelectThreadAsync(DocumentCommentThread thread)
+    {
+        await SelectedThreadIdChanged.InvokeAsync(thread.Id);
+        await OnThreadNavigateRequested.InvokeAsync(new DocumentCommentThreadNavigateRequest
+        {
+            ThreadId = thread.Id,
+            PageNumber = thread.Anchor.PageNumber,
+            Anchor = thread.Anchor
+        });
+    }
+
+    private async Task ClearSelectionAsync()
+    {
+        _editingComment = null;
+        await SelectedThreadIdChanged.InvokeAsync(null);
+    }
+
+    private string DetailLocation(DocumentCommentThread thread)
+    {
+        if (thread.Anchor.Kind == DocumentCommentAnchorKind.Page)
+        {
+            return Loc["TmDocumentComments_PageThreadTitle", thread.Anchor.PageNumber];
+        }
+
+        return Loc["TmDocumentComments_PageLocation", thread.Anchor.PageNumber];
+    }
+
+    private string StatusClass(DocumentCommentThread thread)
+    {
+        return thread.Status == DocumentCommentThreadStatus.Resolved
+            ? "tm-document-comments-panel__status tm-document-comments-panel__status--resolved"
+            : "tm-document-comments-panel__status";
+    }
+
+    private string StatusText(DocumentCommentThread thread)
+    {
+        return thread.Status == DocumentCommentThreadStatus.Resolved
+            ? Loc["TmDocumentComments_Resolved"]
+            : Loc["TmDocumentComments_Open"];
+    }
+
+    private void SetReactionPicker(string commentId, bool open)
+    {
+        _reactionPickerCommentId = open ? commentId : null;
+    }
+
+    private Task HandlePanelKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape" && _reactionPickerCommentId is not null)
+        {
+            _reactionPickerCommentId = null;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task ToggleReactionAsync(DocumentCommentReactionToggleRequest request)
+    {
+        _reactionPickerCommentId = null;
+        return OnReactionToggled.InvokeAsync(request);
+    }
+
+    private async Task SubmitReplyAsync(DocumentCommentComposerSubmitEventArgs args)
+    {
+        if (SelectedThread is null)
+        {
+            return;
+        }
+
+        await OnReplyRequested.InvokeAsync(new DocumentCommentReplyRequest
+        {
+            ThreadId = SelectedThread.Id,
+            Body = args.Body,
+            Mentions = args.Mentions.ToList()
+        });
+    }
+
+    private Task ResolveAsync(string threadId)
+    {
+        return OnResolveRequested.InvokeAsync(new DocumentCommentThreadStatusRequest { ThreadId = threadId });
+    }
+
+    private Task ReopenAsync(string threadId)
+    {
+        return OnReopenRequested.InvokeAsync(new DocumentCommentThreadStatusRequest { ThreadId = threadId });
+    }
+
+    private void BeginEdit(DocumentComment comment)
+    {
+        _editingComment = comment;
+        _editText = comment.Body;
+    }
+
+    private async Task SaveEditAsync(DocumentCommentComposerSubmitEventArgs args)
+    {
+        if (SelectedThread is null || _editingComment is null)
+        {
+            return;
+        }
+
+        await OnEditRequested.InvokeAsync(new DocumentCommentEditRequest
+        {
+            ThreadId = SelectedThread.Id,
+            CommentId = _editingComment.Id,
+            Body = args.Body,
+            Mentions = args.Mentions.ToList()
+        });
+        _editingComment = null;
+        _editText = string.Empty;
+    }
+
+    private Task CancelEditAsync()
+    {
+        _editingComment = null;
+        _editText = string.Empty;
+        return Task.CompletedTask;
+    }
+
+    private Task DeleteCommentAsync(DocumentCommentDeleteRequest request)
+    {
+        return OnDeleteRequested.InvokeAsync(request);
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Request for moving an existing Notion block within a page block tree.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/MoveNotionBlockRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "MoveNotionBlockRequest"
+}

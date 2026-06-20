@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Resizes a group container and proportionally scales all member nodes (undoable).",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Commands/ResizeGroupCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "ResizeGroupCommand"
+}

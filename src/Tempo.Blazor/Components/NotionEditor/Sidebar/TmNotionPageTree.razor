@@ -1,0 +1,139 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Sidebar
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+<CascadingValue Value="this" IsFixed="true">
+    @if (SelectedCount > 0)
+    {
+        <div class="tm-npt-bulk-toolbar"
+             data-testid="notion-page-bulk-toolbar"
+             role="toolbar"
+             aria-label="@Loc["TmNotionPageTree_BulkToolbar"]">
+            <span class="tm-npt-bulk-toolbar__count" data-testid="notion-page-bulk-count">
+                @string.Format(Loc["TmNotionPageTree_BulkSelected"], SelectedCount)
+            </span>
+            <button class="tm-npt-bulk-toolbar__button"
+                    type="button"
+                    data-testid="notion-page-bulk-move"
+                    @onclick="() => OpenBulkTargetPicker(BulkAction.Move)">
+                @Loc["TmNotionPageTree_MoveTo"]
+            </button>
+            <button class="tm-npt-bulk-toolbar__button"
+                    type="button"
+                    data-testid="notion-page-bulk-copy"
+                    @onclick="() => OpenBulkTargetPicker(BulkAction.Copy)">
+                @Loc["TmNotionPageTree_Copy"]
+            </button>
+            <button class="tm-npt-bulk-toolbar__button tm-npt-bulk-toolbar__button--danger"
+                    type="button"
+                    data-testid="notion-page-bulk-delete"
+                    @onclick="OpenBulkDeleteConfirm">
+                @Loc["TmNotionPageTree_Delete"]
+            </button>
+            <button class="tm-npt-bulk-toolbar__button"
+                    type="button"
+                    data-testid="notion-page-bulk-clear"
+                    @onclick="ClearSelectionAsync">
+                @Loc["TmBulkAction_ClearSelection"]
+            </button>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_bulkError))
+    {
+        <div class="tm-npt-bulk-error"
+             data-testid="notion-page-bulk-error"
+             role="alert">
+            @_bulkError
+        </div>
+    }
+
+    @if (_bulkPickerOpen)
+    {
+        <div class="tm-npt-bulk-panel"
+             role="dialog"
+             aria-label="@Loc["TmNotionPageTree_BulkTargetTitle"]">
+            <div class="tm-npt-bulk-panel__header">
+                <strong>@Loc["TmNotionPageTree_BulkTargetTitle"]</strong>
+                <button class="tm-npt-bulk-panel__close"
+                        type="button"
+                        aria-label="@Loc["Tm_Close"]"
+                        @onclick="CloseBulkPanels">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <input class="tm-npt-bulk-panel__search"
+                   type="search"
+                   data-testid="notion-page-bulk-target-search"
+                   placeholder="@Loc["TmNotionPageTree_MoveToSearch"]"
+                   value="@_bulkTargetQuery"
+                   @oninput="OnBulkTargetSearchAsync" />
+            <div class="tm-npt-bulk-panel__results">
+                <button class="tm-npt-bulk-panel__result"
+                        type="button"
+                        data-testid="notion-page-bulk-target-root"
+                        @onclick="() => ExecuteBulkTargetAsync(null)">
+                    @Loc["TmNotionPageTree_MoveToRoot"]
+                </button>
+                @if (_bulkTargetLoading)
+                {
+                    <span class="tm-npt-spinner" aria-hidden="true"></span>
+                }
+                else
+                {
+                    @foreach (var page in _bulkTargetResults)
+                    {
+                        var target = page;
+                        <button class="tm-npt-bulk-panel__result"
+                                type="button"
+                                data-testid="notion-page-bulk-target-page"
+                                @onclick="() => ExecuteBulkTargetAsync(target)">
+                            @if (!string.IsNullOrEmpty(target.IconEmoji))
+                            {
+                                <span aria-hidden="true">@target.IconEmoji</span>
+                            }
+                            @(string.IsNullOrWhiteSpace(target.Title) ? Loc["TmNotionPageTree_Untitled"].ToString() : target.Title)
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    }
+
+    @if (_bulkDeleteConfirmOpen)
+    {
+        <div class="tm-npt-bulk-panel"
+             role="dialog"
+             aria-label="@Loc["TmNotionPageTree_BulkDeleteTitle"]">
+            <p class="tm-npt-bulk-panel__message">@Loc["TmNotionPageTree_BulkDeleteMessage"]</p>
+            <div class="tm-npt-bulk-panel__actions">
+                <button class="tm-npt-bulk-toolbar__button"
+                        type="button"
+                        @onclick="CloseBulkPanels">
+                    @Loc["TmNotionPageTree_DeleteNo"]
+                </button>
+                <button class="tm-npt-bulk-toolbar__button tm-npt-bulk-toolbar__button--danger"
+                        type="button"
+                        data-testid="notion-page-bulk-delete-confirm-button"
+                        @onclick="ExecuteBulkDeleteAsync">
+                    @Loc["TmNotionPageTree_DeleteYes"]
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (RootPages.Count == 0)
+    {
+        <div class="tm-npt-empty">@Loc["TmNotionPageTree_NoPages"]</div>
+    }
+    else
+    {
+        <ul class="tm-npt-root" role="tree" aria-label="@Loc["TmNotionSidebar_Pages"]">
+            @foreach (var page in RootPages)
+            {
+                <TmNotionPageTreeItem Page="@(page)"
+                                      Depth="0"
+                                      ActivePageId="@ActivePageId" />
+            }
+        </ul>
+    }
+</CascadingValue>

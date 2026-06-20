@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Area where text cannot be placed because of a wrapping object.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentLayoutPrimitives.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentExclusionZone"
+}

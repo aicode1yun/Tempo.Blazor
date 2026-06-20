@@ -1,0 +1,141 @@
+{
+  "itemName": "TmDocumentSidePanel",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "TmDocumentSidePanel Blazor component in the Document Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/TmDocumentSidePanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": [
+    {
+      "name": "ActiveTab",
+      "type": "DocumentSidePanelTab",
+      "isRequired": false,
+      "default": "DocumentSidePanelTab.Comments",
+      "description": "Whether the side panel shell is open."
+    },
+    {
+      "name": "ActiveTabChanged",
+      "type": "EventCallback<DocumentSidePanelTab>",
+      "isRequired": false,
+      "description": "Currently active tab."
+    },
+    {
+      "name": "CommentsContent",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Number of versions shown in the tab badge."
+    },
+    {
+      "name": "CommentsCount",
+      "type": "int",
+      "isRequired": false,
+      "description": "Whether to show the right-edge reopen button when closed."
+    },
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Content rendered for the pages tab."
+    },
+    {
+      "name": "OnOpen",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the side panel should close."
+    },
+    {
+      "name": "OutlineContent",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Content rendered for the properties tab."
+    },
+    {
+      "name": "PagesContent",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Content rendered for the outline tab."
+    },
+    {
+      "name": "PropertiesContent",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Content rendered for the versions tab."
+    },
+    {
+      "name": "RevisionsContent",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Content rendered for the comments tab."
+    },
+    {
+      "name": "RevisionsCount",
+      "type": "int",
+      "isRequired": false,
+      "description": "Number of comments shown in the tab badge."
+    },
+    {
+      "name": "ShowComments",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Raised when the active tab changes."
+    },
+    {
+      "name": "ShowEdgeToggle",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the page navigator tab is available."
+    },
+    {
+      "name": "ShowOutline",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the properties tab is available."
+    },
+    {
+      "name": "ShowPages",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the outline tab is available."
+    },
+    {
+      "name": "ShowProperties",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the versions tab is available."
+    },
+    {
+      "name": "ShowRevisions",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the comments tab is available."
+    },
+    {
+      "name": "ShowVersions",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the revisions tab is available."
+    },
+    {
+      "name": "VersionsContent",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Content rendered for the revisions tab."
+    },
+    {
+      "name": "VersionsCount",
+      "type": "int",
+      "isRequired": false,
+      "description": "Number of pending revisions shown in the tab badge."
+    }
+  ]
+}

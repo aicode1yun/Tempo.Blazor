@@ -1,0 +1,1405 @@
+@page "/modeling-editor"
+@using Microsoft.AspNetCore.Components
+@using System.Text.Json
+@using Tempo.Blazor.Components.Diagram.Models
+@inject ITmLocalizer Loc
+@inject IEnumerable<IModelingModelProvider> ModelProviders
+
+<PageTitle>@Loc["TmModelingEditor_Title"] - Tempo.Blazor</PageTitle>
+
+<TmModelingEditor ProviderKey="@ResolvedProviderKey"
+                  NotationKey="@Notation"
+                  ViewpointKey="@Viewpoint"
+                  AllowNodeDrop="@AllowNodeDrop"
+                  ModelLoaderOverride="@ModelLoaderOverride"
+                  OnDiagramGenerated="HandleDiagramGenerated" />
+
+@code {
+    [SupplyParameterFromQuery(Name = "provider")]
+    public string? Provider { get; set; }
+
+    [SupplyParameterFromQuery(Name = "notation")]
+    public string? Notation { get; set; }
+
+    [SupplyParameterFromQuery(Name = "viewpoint")]
+    public string? Viewpoint { get; set; }
+
+    [SupplyParameterFromQuery(Name = "scenario")]
+    public string? Scenario { get; set; }
+
+    [SupplyParameterFromQuery(Name = "delay")]
+    public int? Delay { get; set; }
+
+    [SupplyParameterFromQuery(Name = "fresh")]
+    public bool? Fresh { get; set; }
+
+    private DiagramDocument? _lastGeneratedDocument;
+
+    private bool AllowNodeDrop => !string.Equals(Scenario, "drag-readonly", StringComparison.OrdinalIgnoreCase);
+
+    private string? ResolvedProviderKey => string.IsNullOrWhiteSpace(Provider)
+        ? DemoModelingModelProvider.ProviderKeyValue
+        : Provider;
+
+    private Func<ModelingModelRequest, CancellationToken, Task<ModelingModelDto>>? ModelLoaderOverride =>
+        string.Equals(Scenario, "error", StringComparison.OrdinalIgnoreCase)
+            ? ThrowingModelLoaderAsync
+            : Delay.GetValueOrDefault() > 0 || Fresh == false || HasModelingTreeScenario
+                || HasDiagramPreviewScenario
+                || HasIssueScenario
+                || HasInspectorScenario
+                || HasBpmnProfileScenario
+                || HasUmlProfileScenario
+                || HasArchimate32ProfileScenario
+                || HasErdProfileScenario
+                || HasPerformanceScenario
+                ? CustomModelLoaderAsync
+            : null;
+
+    private bool HasPerformanceScenario =>
+        string.Equals(Scenario, "performance-large", StringComparison.OrdinalIgnoreCase);
+
+    private bool HasBpmnProfileScenario =>
+        string.Equals(Scenario, "bpmn2-generated", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "bpmn2-cross-pool", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "bpmn2-ai-task", StringComparison.OrdinalIgnoreCase);
+
+    private bool HasUmlProfileScenario =>
+        string.Equals(Scenario, "uml25-class", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "uml25-usecase", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "uml25-include-invalid", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "uml25-class-empty", StringComparison.OrdinalIgnoreCase);
+
+    private bool HasArchimate32ProfileScenario =>
+        string.Equals(Scenario, "archimate32-business-app", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "archimate32-missing-stencil", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "archimate32-motivation", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "archimate32-relationships", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "archimate32-invalid-relationship", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "archimate32-large-relationships", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "archimate32-viewpoints", StringComparison.OrdinalIgnoreCase);
+
+    private bool HasErdProfileScenario =>
+        string.Equals(Scenario, "erd-no-stencils", StringComparison.OrdinalIgnoreCase);
+
+    private bool HasModelingTreeScenario =>
+        string.Equals(Scenario, "diacritics", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "large-tree", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "long-name", StringComparison.OrdinalIgnoreCase);
+
+    private bool HasDiagramPreviewScenario =>
+        string.Equals(Scenario, "empty-preview", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "large-preview", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "regression-empty-canvas", StringComparison.OrdinalIgnoreCase);
+
+    private bool HasIssueScenario =>
+        string.Equals(Scenario, "issues-mixed", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "issues-empty", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "issues-many", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "invalid-relationship", StringComparison.OrdinalIgnoreCase);
+
+    private bool HasInspectorScenario =>
+        string.Equals(Scenario, "inspector-many-properties", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "inspector-empty-description", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Scenario, "inspector-low-trust", StringComparison.OrdinalIgnoreCase);
+
+    private Task<ModelingModelDto> ThrowingModelLoaderAsync(ModelingModelRequest request, CancellationToken cancellationToken) =>
+        Task.FromException<ModelingModelDto>(new InvalidOperationException(Loc["TmModelingEditor_DemoError"]));
+
+    private async Task<ModelingModelDto> CustomModelLoaderAsync(ModelingModelRequest request, CancellationToken cancellationToken)
+    {
+        if (Delay.GetValueOrDefault() > 0)
+        {
+            var delay = Math.Clamp(Delay.GetValueOrDefault(), 1, 7_000);
+            await Task.Delay(delay, cancellationToken);
+        }
+
+        var provider = ModelProviders.FirstOrDefault(modelProvider => string.Equals(modelProvider.ProviderKey, ResolvedProviderKey, StringComparison.Ordinal));
+        if (provider is null)
+        {
+            throw new InvalidOperationException(Loc["TmModelingEditor_DemoError"]);
+        }
+
+        var model = await provider.GetModelAsync(request, cancellationToken);
+        if (HasBpmnProfileScenario)
+        {
+            return CreateBpmnProfileScenarioModel();
+        }
+
+        if (HasUmlProfileScenario)
+        {
+            return CreateUmlProfileScenarioModel();
+        }
+
+        if (HasArchimate32ProfileScenario)
+        {
+            return CreateArchimate32ProfileScenarioModel();
+        }
+
+        if (HasErdProfileScenario)
+        {
+            return CreateErdNoStencilsScenarioModel();
+        }
+
+        if (HasPerformanceScenario)
+        {
+            return CreatePerformanceLargeScenarioModel();
+        }
+
+        if (Fresh == false)
+        {
+            model.Metadata.IsFresh = false;
+            model.Metadata.SourceVersion = string.IsNullOrWhiteSpace(model.Metadata.SourceVersion)
+                ? "stale"
+                : $"{model.Metadata.SourceVersion}-stale";
+        }
+
+        ApplyModelingTreeScenario(model);
+        ApplyDiagramPreviewScenario(model);
+        ApplyIssueScenario(model);
+        ApplyInspectorScenario(model);
+
+        return model;
+    }
+
+    private ModelingModelDto CreateUmlProfileScenarioModel()
+    {
+        if (string.Equals(Scenario, "uml25-usecase", StringComparison.OrdinalIgnoreCase))
+            return CreateUmlUseCaseScenarioModel();
+
+        if (string.Equals(Scenario, "uml25-include-invalid", StringComparison.OrdinalIgnoreCase))
+            return CreateUmlInvalidIncludeScenarioModel();
+
+        return CreateUmlClassScenarioModel(emptyClassOnly: string.Equals(Scenario, "uml25-class-empty", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static ModelingModelDto CreateUmlClassScenarioModel(bool emptyClassOnly)
+    {
+        var orderClass = CreateUmlElement("uml-order", "Class", "Order", "demo/uml25/order", new()
+        {
+            ["attributes"] = JsonSerializer.SerializeToElement(emptyClassOnly ? Array.Empty<string>() : ["- id: Guid", "- number: string", "- total: decimal"]),
+            ["operations"] = JsonSerializer.SerializeToElement(emptyClassOnly ? Array.Empty<string>() : ["+ Submit(): void", "+ Cancel(reason: string): void"])
+        });
+        var aggregate = CreateUmlElement("uml-aggregate", "AbstractClass", "AggregateRoot", "demo/uml25/aggregate", new()
+        {
+            ["attributes"] = JsonSerializer.SerializeToElement(new[] { "- version: long" }),
+            ["operations"] = JsonSerializer.SerializeToElement(new[] { "+ Raise(event): void" })
+        });
+        var repository = CreateUmlElement("uml-repository", "Interface", "IOrderRepository", "demo/uml25/repository", new()
+        {
+            ["operations"] = JsonSerializer.SerializeToElement(new[] { "+ Get(id: Guid): Order", "+ Save(order: Order): Task" }),
+            ["attributes"] = JsonSerializer.SerializeToElement(Array.Empty<string>())
+        });
+        var status = CreateUmlElement("uml-status", "Enumeration", "OrderStatus", "demo/uml25/status", new()
+        {
+            ["literals"] = JsonSerializer.SerializeToElement(new[] { "Draft", "Submitted", "Cancelled" })
+        });
+
+        return new ModelingModelDto
+        {
+            Id = emptyClassOnly ? "demo-uml25-class-empty" : "demo-uml25-class",
+            Title = emptyClassOnly ? "UML 2.5 empty class" : "UML 2.5 class diagram",
+            Notation = "uml25",
+            SupportedNotations = ["uml25"],
+            Metadata = CreateUmlMetadata("2026.06-uml25-class"),
+            Elements = emptyClassOnly
+                ? [orderClass]
+                : [aggregate, orderClass, repository, status],
+            Relationships = emptyClassOnly
+                ? []
+                :
+                [
+                    CreateUmlRelationship("uml-generalization-order-aggregate", "uml-order", "uml-aggregate", "Generalization", string.Empty),
+                    CreateUmlRelationship("uml-realization-order-repository", "uml-order", "uml-repository", "Realization", string.Empty),
+                    CreateUmlRelationship("uml-association-order-status", "uml-order", "uml-status", "Association", "status")
+                ],
+            Views =
+            [
+                new ModelingViewDto
+                {
+                    Id = "uml25-class-view",
+                    Name = emptyClassOnly ? "Empty class" : "Order class diagram",
+                    Notation = "uml25",
+                    ViewpointKey = "ClassDiagram",
+                    Nodes = emptyClassOnly
+                        ? [new() { ElementId = "uml-order", X = 320, Y = 160, Width = 210, Height = 72 }]
+                        :
+                        [
+                            new() { ElementId = "uml-aggregate", X = 350, Y = 70, Width = 230, Height = 160 },
+                            new() { ElementId = "uml-order", X = 160, Y = 300, Width = 240, Height = 185 },
+                            new() { ElementId = "uml-repository", X = 540, Y = 300, Width = 250, Height = 165 },
+                            new() { ElementId = "uml-status", X = 830, Y = 315, Width = 190, Height = 150 }
+                        ],
+                    Connections = emptyClassOnly
+                        ? []
+                        :
+                        [
+                            new() { RelationshipId = "uml-generalization-order-aggregate", SourceNodeId = "uml-order", TargetNodeId = "uml-aggregate" },
+                            new() { RelationshipId = "uml-realization-order-repository", SourceNodeId = "uml-order", TargetNodeId = "uml-repository" },
+                            new() { RelationshipId = "uml-association-order-status", SourceNodeId = "uml-order", TargetNodeId = "uml-status" }
+                        ]
+                }
+            ]
+        };
+    }
+
+    private static ModelingModelDto CreateUmlUseCaseScenarioModel()
+        => new()
+        {
+            Id = "demo-uml25-usecase",
+            Title = "UML 2.5 use-case diagram",
+            Notation = "uml25",
+            SupportedNotations = ["uml25"],
+            Metadata = CreateUmlMetadata("2026.06-uml25-usecase"),
+            Elements =
+            [
+                CreateUmlElement("uml-actor-customer", "Actor", "Customer", "demo/uml25/customer"),
+                CreateUmlElement("uml-usecase-place-order", "UseCase", "Place order", "demo/uml25/place-order"),
+                CreateUmlElement("uml-usecase-pay", "UseCase", "Authorize payment", "demo/uml25/pay"),
+                CreateUmlElement("uml-usecase-track", "UseCase", "Track shipment", "demo/uml25/track")
+            ],
+            Relationships =
+            [
+                CreateUmlRelationship("uml-association-customer-order", "uml-actor-customer", "uml-usecase-place-order", "Association", string.Empty),
+                CreateUmlRelationship("uml-include-order-pay", "uml-usecase-place-order", "uml-usecase-pay", "Include", "<<include>>"),
+                CreateUmlRelationship("uml-extend-track-order", "uml-usecase-track", "uml-usecase-place-order", "Extend", "<<extend>>")
+            ],
+            Views =
+            [
+                new ModelingViewDto
+                {
+                    Id = "uml25-usecase-view",
+                    Name = "Order use cases",
+                    Notation = "uml25",
+                    ViewpointKey = "UseCaseDiagram",
+                    Nodes =
+                    [
+                        new() { ElementId = "uml-actor-customer", X = 90, Y = 170, Width = 90, Height = 125 },
+                        new() { ElementId = "uml-usecase-place-order", X = 340, Y = 175, Width = 170, Height = 88 },
+                        new() { ElementId = "uml-usecase-pay", X = 650, Y = 110, Width = 180, Height = 88 },
+                        new() { ElementId = "uml-usecase-track", X = 650, Y = 280, Width = 180, Height = 88 }
+                    ],
+                    Connections =
+                    [
+                        new() { RelationshipId = "uml-association-customer-order", SourceNodeId = "uml-actor-customer", TargetNodeId = "uml-usecase-place-order" },
+                        new() { RelationshipId = "uml-include-order-pay", SourceNodeId = "uml-usecase-place-order", TargetNodeId = "uml-usecase-pay" },
+                        new() { RelationshipId = "uml-extend-track-order", SourceNodeId = "uml-usecase-track", TargetNodeId = "uml-usecase-place-order" }
+                    ]
+                }
+            ]
+        };
+
+    private static ModelingModelDto CreateUmlInvalidIncludeScenarioModel()
+        => new()
+        {
+            Id = "demo-uml25-include-invalid",
+            Title = "UML 2.5 invalid include",
+            Notation = "uml25",
+            SupportedNotations = ["uml25"],
+            Metadata = CreateUmlMetadata("2026.06-uml25-invalid-include"),
+            Elements =
+            [
+                CreateUmlElement("uml-usecase-a", "UseCase", "Review order", "demo/uml25/review"),
+                CreateUmlElement("uml-usecase-b", "UseCase", "Approve discount", "demo/uml25/approve")
+            ],
+            Relationships =
+            [
+                CreateUmlRelationship("uml-invalid-include", "uml-usecase-a", "uml-usecase-b", "Include", "<<include>>")
+            ],
+            Views =
+            [
+                new ModelingViewDto
+                {
+                    Id = "uml25-invalid-class-view",
+                    Name = "Invalid class viewpoint",
+                    Notation = "uml25",
+                    ViewpointKey = "ClassDiagram",
+                    Nodes =
+                    [
+                        new() { ElementId = "uml-usecase-a", X = 230, Y = 185, Width = 170, Height = 88 },
+                        new() { ElementId = "uml-usecase-b", X = 560, Y = 185, Width = 180, Height = 88 }
+                    ],
+                    Connections =
+                    [
+                        new() { RelationshipId = "uml-invalid-include", SourceNodeId = "uml-usecase-a", TargetNodeId = "uml-usecase-b" }
+                    ]
+                }
+            ]
+        };
+
+    private ModelingModelDto CreateArchimate32ProfileScenarioModel()
+    {
+        if (string.Equals(Scenario, "archimate32-missing-stencil", StringComparison.OrdinalIgnoreCase))
+            return CreateArchimate32MissingStencilScenarioModel();
+
+        if (string.Equals(Scenario, "archimate32-motivation", StringComparison.OrdinalIgnoreCase))
+            return CreateArchimate32MotivationScenarioModel();
+
+        if (string.Equals(Scenario, "archimate32-relationships", StringComparison.OrdinalIgnoreCase))
+            return CreateArchimate32RelationshipsScenarioModel();
+
+        if (string.Equals(Scenario, "archimate32-invalid-relationship", StringComparison.OrdinalIgnoreCase))
+            return CreateArchimate32InvalidRelationshipScenarioModel();
+
+        if (string.Equals(Scenario, "archimate32-large-relationships", StringComparison.OrdinalIgnoreCase))
+            return CreateArchimate32LargeRelationshipsScenarioModel();
+
+        if (string.Equals(Scenario, "archimate32-viewpoints", StringComparison.OrdinalIgnoreCase))
+            return CreateArchimate32ViewpointsScenarioModel();
+
+        return CreateArchimate32BusinessAppScenarioModel();
+    }
+
+    private static ModelingModelDto CreateArchimate32BusinessAppScenarioModel()
+        => new()
+        {
+            Id = "demo-archimate32-business-app",
+            Title = "ArchiMate 3.2 business and application",
+            Notation = "archimate32",
+            SupportedNotations = ["archimate32"],
+            Metadata = CreateArchimate32Metadata("2026.06-archimate32-business-app"),
+            Elements =
+            [
+                CreateArchimate32Element("arch-order-group", "Grouping", "Order capability view"),
+                CreateArchimate32Element("arch-order-actor", "BusinessActor", "Customer"),
+                CreateArchimate32Element("arch-order-process", "BusinessProcess", "Place order"),
+                CreateArchimate32Element("arch-order-app", "ApplicationComponent", "Order portal"),
+                CreateArchimate32Element("arch-order-service", "ApplicationService", "Order API")
+            ],
+            Relationships =
+            [
+                CreateArchimate32Relationship("arch-assignment-customer-process", "arch-order-actor", "arch-order-process", "Assignment", "performs"),
+                CreateArchimate32Relationship("arch-serving-api-process", "arch-order-service", "arch-order-process", "Serving", "supports"),
+                CreateArchimate32Relationship("arch-realization-app-service", "arch-order-app", "arch-order-service", "Realization", "realizes")
+            ],
+            Views =
+            [
+                new ModelingViewDto
+                {
+                    Id = "archimate32-business-app-view",
+                    Name = "Business and application",
+                    Notation = "archimate32",
+                    ViewpointKey = "Layered",
+                    Nodes =
+                    [
+                        new() { ElementId = "arch-order-group", X = 45, Y = 60, Width = 860, Height = 330 },
+                        new() { ElementId = "arch-order-actor", X = 105, Y = 165, Width = 140, Height = 80, ParentNodeId = "arch-order-group" },
+                        new() { ElementId = "arch-order-process", X = 330, Y = 155, Width = 180, Height = 92, ParentNodeId = "arch-order-group" },
+                        new() { ElementId = "arch-order-app", X = 615, Y = 125, Width = 190, Height = 86, ParentNodeId = "arch-order-group" },
+                        new() { ElementId = "arch-order-service", X = 620, Y = 260, Width = 180, Height = 80, ParentNodeId = "arch-order-group" }
+                    ],
+                    Connections =
+                    [
+                        new() { RelationshipId = "arch-assignment-customer-process", SourceNodeId = "arch-order-actor", TargetNodeId = "arch-order-process" },
+                        new() { RelationshipId = "arch-serving-api-process", SourceNodeId = "arch-order-service", TargetNodeId = "arch-order-process" },
+                        new() { RelationshipId = "arch-realization-app-service", SourceNodeId = "arch-order-app", TargetNodeId = "arch-order-service" }
+                    ]
+                }
+            ]
+        };
+
+    private static ModelingModelDto CreateArchimate32RelationshipsScenarioModel()
+        => new()
+        {
+            Id = "demo-archimate32-relationships",
+            Title = "ArchiMate 3.2 relationship matrix",
+            Notation = "archimate32",
+            SupportedNotations = ["archimate32"],
+            Metadata = CreateArchimate32Metadata("2026.06-archimate32-relationships"),
+            Elements =
+            [
+                CreateArchimate32Element("arch-rel-actor", "BusinessActor", "Customer"),
+                CreateArchimate32Element("arch-rel-process", "BusinessProcess", "Place order"),
+                CreateArchimate32Element("arch-rel-business-service", "BusinessService", "Order handling"),
+                CreateArchimate32Element("arch-rel-app", "ApplicationComponent", "Order portal"),
+                CreateArchimate32Element("arch-rel-app-function", "ApplicationFunction", "Manage order"),
+                CreateArchimate32Element("arch-rel-app-service", "ApplicationService", "Order API"),
+                CreateArchimate32Element("arch-rel-data", "DataObject", "Order record"),
+                CreateArchimate32Element("arch-rel-node", "Node", "Cloud node"),
+                CreateArchimate32Element("arch-rel-tech-function", "TechnologyFunction", "Run container"),
+                CreateArchimate32Element("arch-rel-tech-service", "TechnologyService", "Runtime service"),
+                CreateArchimate32Element("arch-rel-goal", "Goal", "Faster fulfillment"),
+                CreateArchimate32Element("arch-rel-requirement", "Requirement", "Status automation")
+            ],
+            Relationships =
+            [
+                CreateArchimate32Relationship("arch-rel-assignment-actor-process", "arch-rel-actor", "arch-rel-process", "Assignment", "performs"),
+                CreateArchimate32Relationship("arch-rel-realization-process-service", "arch-rel-process", "arch-rel-business-service", "Realization", "realizes"),
+                CreateArchimate32Relationship("arch-rel-serving-app-business", "arch-rel-app-service", "arch-rel-process", "Serving", "serves"),
+                CreateArchimate32Relationship("arch-rel-realization-app-service", "arch-rel-app", "arch-rel-app-service", "Realization", "realizes"),
+                CreateArchimate32Relationship("arch-rel-assignment-app-function", "arch-rel-app", "arch-rel-app-function", "Assignment", "executes"),
+                CreateArchimate32Relationship("arch-rel-access-function-data", "arch-rel-app-function", "arch-rel-data", "Access", "reads"),
+                CreateArchimate32Relationship("arch-rel-serving-tech-app", "arch-rel-tech-service", "arch-rel-app", "Serving", "serves"),
+                CreateArchimate32Relationship("arch-rel-assignment-node-function", "arch-rel-node", "arch-rel-tech-function", "Assignment", "executes"),
+                CreateArchimate32Relationship("arch-rel-realization-requirement-goal", "arch-rel-requirement", "arch-rel-goal", "Realization", "realizes"),
+                CreateArchimate32Relationship("arch-rel-influence-goal-requirement", "arch-rel-goal", "arch-rel-requirement", "Influence", "drives")
+            ],
+            Views =
+            [
+                new ModelingViewDto
+                {
+                    Id = "archimate32-relationships-view",
+                    Name = "Relationships",
+                    Notation = "archimate32",
+                    ViewpointKey = "Layered",
+                    Nodes =
+                    [
+                        new() { ElementId = "arch-rel-actor", X = 70, Y = 95, Width = 135, Height = 76 },
+                        new() { ElementId = "arch-rel-process", X = 300, Y = 95, Width = 170, Height = 86 },
+                        new() { ElementId = "arch-rel-business-service", X = 535, Y = 95, Width = 170, Height = 78 },
+                        new() { ElementId = "arch-rel-app", X = 70, Y = 265, Width = 175, Height = 82 },
+                        new() { ElementId = "arch-rel-app-function", X = 300, Y = 260, Width = 175, Height = 86 },
+                        new() { ElementId = "arch-rel-app-service", X = 535, Y = 260, Width = 170, Height = 78 },
+                        new() { ElementId = "arch-rel-data", X = 765, Y = 260, Width = 150, Height = 82 },
+                        new() { ElementId = "arch-rel-node", X = 70, Y = 430, Width = 165, Height = 82 },
+                        new() { ElementId = "arch-rel-tech-function", X = 300, Y = 430, Width = 175, Height = 86 },
+                        new() { ElementId = "arch-rel-tech-service", X = 535, Y = 430, Width = 170, Height = 78 },
+                        new() { ElementId = "arch-rel-goal", X = 300, Y = 600, Width = 170, Height = 86 },
+                        new() { ElementId = "arch-rel-requirement", X = 535, Y = 600, Width = 185, Height = 86 }
+                    ],
+                    Connections =
+                    [
+                        new() { RelationshipId = "arch-rel-assignment-actor-process", SourceNodeId = "arch-rel-actor", TargetNodeId = "arch-rel-process" },
+                        new() { RelationshipId = "arch-rel-realization-process-service", SourceNodeId = "arch-rel-process", TargetNodeId = "arch-rel-business-service" },
+                        new() { RelationshipId = "arch-rel-serving-app-business", SourceNodeId = "arch-rel-app-service", TargetNodeId = "arch-rel-process" },
+                        new() { RelationshipId = "arch-rel-realization-app-service", SourceNodeId = "arch-rel-app", TargetNodeId = "arch-rel-app-service" },
+                        new() { RelationshipId = "arch-rel-assignment-app-function", SourceNodeId = "arch-rel-app", TargetNodeId = "arch-rel-app-function" },
+                        new() { RelationshipId = "arch-rel-access-function-data", SourceNodeId = "arch-rel-app-function", TargetNodeId = "arch-rel-data" },
+                        new() { RelationshipId = "arch-rel-serving-tech-app", SourceNodeId = "arch-rel-tech-service", TargetNodeId = "arch-rel-app" },
+                        new() { RelationshipId = "arch-rel-assignment-node-function", SourceNodeId = "arch-rel-node", TargetNodeId = "arch-rel-tech-function" },
+                        new() { RelationshipId = "arch-rel-realization-requirement-goal", SourceNodeId = "arch-rel-requirement", TargetNodeId = "arch-rel-goal" },
+                        new() { RelationshipId = "arch-rel-influence-goal-requirement", SourceNodeId = "arch-rel-goal", TargetNodeId = "arch-rel-requirement" }
+                    ]
+                }
+            ]
+        };
+
+    private static ModelingModelDto CreateArchimate32InvalidRelationshipScenarioModel()
+        => new()
+        {
+            Id = "demo-archimate32-invalid-relationship",
+            Title = "ArchiMate 3.2 invalid relationship",
+            Notation = "archimate32",
+            SupportedNotations = ["archimate32"],
+            Metadata = CreateArchimate32Metadata("2026.06-archimate32-invalid-relationship"),
+            Elements =
+            [
+                CreateArchimate32Element("arch-invalid-process", "BusinessProcess", "Manual order process"),
+                CreateArchimate32Element("arch-invalid-app", "ApplicationComponent", "Order portal")
+            ],
+            Relationships =
+            [
+                CreateArchimate32Relationship("arch-invalid-serving-process-app", "arch-invalid-process", "arch-invalid-app", "Serving", "invalid direction")
+            ],
+            Views =
+            [
+                new ModelingViewDto
+                {
+                    Id = "archimate32-invalid-relationship-view",
+                    Name = "Invalid relationship",
+                    Notation = "archimate32",
+                    ViewpointKey = "Layered",
+                    Nodes =
+                    [
+                        new() { ElementId = "arch-invalid-process", X = 180, Y = 160, Width = 180, Height = 92 },
+                        new() { ElementId = "arch-invalid-app", X = 520, Y = 160, Width = 190, Height = 86 }
+                    ],
+                    Connections =
+                    [
+                        new() { RelationshipId = "arch-invalid-serving-process-app", SourceNodeId = "arch-invalid-process", TargetNodeId = "arch-invalid-app" }
+                    ]
+                }
+            ]
+        };
+
+    private static ModelingModelDto CreateArchimate32LargeRelationshipsScenarioModel()
+    {
+        var model = new ModelingModelDto
+        {
+            Id = "demo-archimate32-large-relationships",
+            Title = "ArchiMate 3.2 large relationship matrix",
+            Notation = "archimate32",
+            SupportedNotations = ["archimate32"],
+            Metadata = CreateArchimate32Metadata("2026.06-archimate32-large-relationships")
+        };
+
+        for (var index = 0; index < 36; index++)
+        {
+            model.Elements.Add(CreateArchimate32Element(
+                $"arch-large-process-{index:00}",
+                "BusinessProcess",
+                $"Process {index:00}"));
+        }
+
+        for (var index = 0; index < 108; index++)
+        {
+            var source = $"arch-large-process-{index % 36:00}";
+            var target = $"arch-large-process-{(index + 1) % 36:00}";
+            model.Relationships.Add(CreateArchimate32Relationship(
+                $"arch-large-flow-{index:000}",
+                source,
+                target,
+                index % 3 == 0 ? "Flow" : index % 3 == 1 ? "Triggering" : "Association",
+                $"Relation {index:000}"));
+        }
+
+        model.Views.Add(new ModelingViewDto
+        {
+            Id = "archimate32-large-relationships-view",
+            Name = "Large relationships",
+            Notation = "archimate32",
+            ViewpointKey = "Business",
+            Nodes = model.Elements.Select((element, index) => new ModelingViewNodeDto
+            {
+                ElementId = element.Id,
+                X = 60 + index % 9 * 155,
+                Y = 70 + index / 9 * 125,
+                Width = 120,
+                Height = 66
+            }).ToList(),
+            Connections = model.Relationships.Select(relationship => new ModelingViewConnectionDto
+            {
+                RelationshipId = relationship.Id,
+                SourceNodeId = relationship.SourceElementId,
+                TargetNodeId = relationship.TargetElementId
+            }).ToList()
+        });
+
+        return model;
+    }
+
+    private static ModelingModelDto CreateArchimate32ViewpointsScenarioModel()
+    {
+        var elements = new List<ModelingElementDto>
+        {
+            CreateArchimate32Element("arch-vp-business-actor", "BusinessActor", "Customer"),
+            CreateArchimate32Element("arch-vp-business-process", "BusinessProcess", "Place order"),
+            CreateArchimate32Element("arch-vp-app", "ApplicationComponent", "Order portal"),
+            CreateArchimate32Element("arch-vp-app-function", "ApplicationFunction", "Manage order"),
+            CreateArchimate32Element("arch-vp-app-service", "ApplicationService", "Order API"),
+            CreateArchimate32Element("arch-vp-data", "DataObject", "Order record"),
+            CreateArchimate32Element("arch-vp-node", "Node", "Cloud node"),
+            CreateArchimate32Element("arch-vp-tech-service", "TechnologyService", "Runtime service"),
+            CreateArchimate32Element("arch-vp-stakeholder", "Stakeholder", "Operations sponsor"),
+            CreateArchimate32Element("arch-vp-goal", "Goal", "Reduce cycle time"),
+            CreateArchimate32Element("arch-vp-requirement", "Requirement", "Automated status updates"),
+            CreateArchimate32Element("arch-vp-grouping", "Grouping", "Scoped viewpoint grouping"),
+            CreateArchimate32Element("arch-vp-junction", "Junction", "Routing junction")
+        };
+
+        var relationships = new List<ModelingRelationshipDto>
+        {
+            CreateArchimate32Relationship("arch-vp-serving-app-business", "arch-vp-app-service", "arch-vp-business-process", "Serving", "supports"),
+            CreateArchimate32Relationship("arch-vp-realization-app-service", "arch-vp-app", "arch-vp-app-service", "Realization", "realizes"),
+            CreateArchimate32Relationship("arch-vp-access-function-data", "arch-vp-app-function", "arch-vp-data", "Access", "reads"),
+            CreateArchimate32Relationship("arch-vp-serving-tech-app", "arch-vp-tech-service", "arch-vp-app", "Serving", "hosts"),
+            CreateArchimate32Relationship("arch-vp-realization-requirement-goal", "arch-vp-requirement", "arch-vp-goal", "Realization", "realizes")
+        };
+
+        return new ModelingModelDto
+        {
+            Id = "demo-archimate32-viewpoints",
+            Title = "ArchiMate 3.2 viewpoint filtering",
+            Notation = "archimate32",
+            SupportedNotations = ["archimate32"],
+            Metadata = CreateArchimate32Metadata("2026.06-archimate32-viewpoints"),
+            Elements = elements,
+            Relationships = relationships,
+            Views =
+            [
+                CreateArchimate32ViewpointView("archimate32-viewpoint-application-usage", "Application usage", "ApplicationUsage", elements, relationships),
+                CreateArchimate32ViewpointView("archimate32-viewpoint-motivation", "Motivation", "Motivation", elements, relationships)
+            ]
+        };
+    }
+
+    private static ModelingViewDto CreateArchimate32ViewpointView(
+        string id,
+        string name,
+        string viewpointKey,
+        IReadOnlyList<ModelingElementDto> elements,
+        IReadOnlyList<ModelingRelationshipDto> relationships)
+        => new()
+        {
+            Id = id,
+            Name = name,
+            Notation = "archimate32",
+            ViewpointKey = viewpointKey,
+            Nodes = elements.Select((element, index) => new ModelingViewNodeDto
+            {
+                ElementId = element.Id,
+                X = 70 + index % 5 * 205,
+                Y = 70 + index / 5 * 135,
+                Width = element.SemanticType is "Grouping" ? 900 : 170,
+                Height = element.SemanticType is "Grouping" ? 330 : 82
+            }).ToList(),
+            Connections = relationships.Select(relationship => new ModelingViewConnectionDto
+            {
+                RelationshipId = relationship.Id,
+                SourceNodeId = relationship.SourceElementId,
+                TargetNodeId = relationship.TargetElementId
+            }).ToList()
+        };
+
+    private static ModelingModelDto CreateErdNoStencilsScenarioModel()
+    {
+        var elements = new List<ModelingElementDto>
+        {
+            CreateErdElement("erd-customer", "Entity", "Customer"),
+            CreateErdElement("erd-order", "WeakEntity", "Order line"),
+            CreateErdElement("erd-customer-id", "KeyAttribute", "Customer ID"),
+            CreateErdElement("erd-email", "Attribute", "Email"),
+            CreateErdElement("erd-phone", "MultiValuedAttribute", "Phone"),
+            CreateErdElement("erd-total", "DerivedAttribute", "Order total"),
+            CreateErdElement("erd-places", "RelationshipSet", "Places"),
+            CreateErdElement("erd-identifies", "WeakRelationshipSet", "Identifies")
+        };
+
+        return new ModelingModelDto
+        {
+            Id = "demo-erd-no-stencils",
+            Title = "ERD without registered stencils",
+            Notation = ErdNotationProfile.Key,
+            SupportedNotations = [ErdNotationProfile.Key],
+            Metadata = CreateErdMetadata("2026.06-erd-no-stencils"),
+            Elements = elements,
+            Relationships = [],
+            Views =
+            [
+                new ModelingViewDto
+                {
+                    Id = "erd-no-stencils-view",
+                    Name = "ERD no stencils",
+                    Notation = ErdNotationProfile.Key,
+                    Nodes = elements.Select((element, index) => new ModelingViewNodeDto
+                    {
+                        ElementId = element.Id,
+                        X = 80 + index % 4 * 210,
+                        Y = 90 + index / 4 * 140,
+                        Width = 160,
+                        Height = 78
+                    }).ToList()
+                }
+            ]
+        };
+    }
+
+    private static ModelingModelDto CreateArchimate32MissingStencilScenarioModel()
+        => new()
+        {
+            Id = "demo-archimate32-missing-stencil",
+            Title = "ArchiMate 3.2 missing stencil mapping",
+            Notation = "archimate32",
+            SupportedNotations = ["archimate32"],
+            Metadata = CreateArchimate32Metadata("2026.06-archimate32-missing-stencil"),
+            Elements =
+            [
+                CreateArchimate32Element("arch-valid-process", "BusinessProcess", "Accepted order"),
+                CreateArchimate32Element("arch-unmapped-element", "UnmappedElement", "Unmapped source element")
+            ],
+            Relationships = [],
+            Views =
+            [
+                new ModelingViewDto
+                {
+                    Id = "archimate32-missing-stencil-view",
+                    Name = "Missing stencil",
+                    Notation = "archimate32",
+                    ViewpointKey = "Business",
+                    Nodes =
+                    [
+                        new() { ElementId = "arch-valid-process", X = 180, Y = 160, Width = 180, Height = 92 },
+                        new() { ElementId = "arch-unmapped-element", X = 510, Y = 160, Width = 180, Height = 92 }
+                    ]
+                }
+            ]
+        };
+
+    private static ModelingModelDto CreateArchimate32MotivationScenarioModel()
+        => new()
+        {
+            Id = "demo-archimate32-motivation",
+            Title = "ArchiMate 3.2 motivation layer",
+            Notation = "archimate32",
+            SupportedNotations = ["archimate32"],
+            Metadata = CreateArchimate32Metadata("2026.06-archimate32-motivation"),
+            Elements =
+            [
+                CreateArchimate32Element("arch-stakeholder", "Stakeholder", "Operations sponsor"),
+                CreateArchimate32Element("arch-driver", "Driver", "Faster fulfillment"),
+                CreateArchimate32Element("arch-goal", "Goal", "Reduce order cycle time"),
+                CreateArchimate32Element("arch-requirement", "Requirement", "Automated status updates"),
+                CreateArchimate32Element("arch-value", "Value", "Customer visibility")
+            ],
+            Relationships =
+            [
+                CreateArchimate32Relationship("arch-influence-driver-goal", "arch-driver", "arch-goal", "Influence", "motivates"),
+                CreateArchimate32Relationship("arch-realization-requirement-goal", "arch-requirement", "arch-goal", "Realization", "realizes")
+            ],
+            Views =
+            [
+                new ModelingViewDto
+                {
+                    Id = "archimate32-motivation-view",
+                    Name = "Motivation",
+                    Notation = "archimate32",
+                    ViewpointKey = "Motivation",
+                    Nodes =
+                    [
+                        new() { ElementId = "arch-stakeholder", X = 90, Y = 150, Width = 150, Height = 76 },
+                        new() { ElementId = "arch-driver", X = 310, Y = 150, Width = 160, Height = 76 },
+                        new() { ElementId = "arch-goal", X = 545, Y = 140, Width = 175, Height = 86 },
+                        new() { ElementId = "arch-requirement", X = 785, Y = 145, Width = 185, Height = 86 },
+                        new() { ElementId = "arch-value", X = 545, Y = 285, Width = 150, Height = 86 }
+                    ],
+                    Connections =
+                    [
+                        new() { RelationshipId = "arch-influence-driver-goal", SourceNodeId = "arch-driver", TargetNodeId = "arch-goal" },
+                        new() { RelationshipId = "arch-realization-requirement-goal", SourceNodeId = "arch-requirement", TargetNodeId = "arch-goal" }
+                    ]
+                }
+            ]
+        };
+
+    private ModelingModelDto CreateBpmnProfileScenarioModel()
+    {
+        var model = new ModelingModelDto
+        {
+            Id = $"demo-{Scenario}",
+            Title = "BPMN 2.0 order process",
+            Notation = "bpmn2",
+            SupportedNotations = ["bpmn2"],
+            Metadata = new ModelingMetadataDto
+            {
+                SourceSystem = "Tempo.Blazor Demo",
+                SourceVersion = "2026.06-bpmn2",
+                LoadedAt = new DateTimeOffset(2026, 6, 6, 8, 0, 0, TimeSpan.Zero),
+                IsFresh = true
+            },
+            Elements =
+            [
+                CreateBpmnElement("pool-sales", "Pool", "Sales pool", "demo/bpmn2/pool-sales"),
+                CreateBpmnElement("pool-warehouse", "Pool", "Warehouse pool", "demo/bpmn2/pool-warehouse"),
+                CreateBpmnElement("bpmn2-start", "StartEvent", "Order received", "demo/bpmn2/start", "pool-sales"),
+                CreateBpmnElement("bpmn2-validate", "UserTask", "Validate order", "demo/bpmn2/validate", "pool-sales"),
+                CreateBpmnElement("bpmn2-decision", "ExclusiveGateway", "Ready?", "demo/bpmn2/decision", "pool-sales"),
+                CreateBpmnElement("bpmn2-ship", "ServiceTask", "Ship order", "demo/bpmn2/ship", "pool-sales"),
+                CreateBpmnElement("bpmn2-end", "EndEvent", "Order complete", "demo/bpmn2/end", "pool-sales")
+            ],
+            Relationships =
+            [
+                CreateBpmnRelationship("bpmn2-flow-start-validate", "bpmn2-start", "bpmn2-validate", "SequenceFlow", "Start validation"),
+                CreateBpmnRelationship("bpmn2-flow-validate-decision", "bpmn2-validate", "bpmn2-decision", "SequenceFlow", "Validated"),
+                CreateBpmnRelationship("bpmn2-flow-decision-ship", "bpmn2-decision", "bpmn2-ship", "SequenceFlow", "Ready"),
+                CreateBpmnRelationship("bpmn2-flow-ship-end", "bpmn2-ship", "bpmn2-end", "SequenceFlow", "Complete")
+            ],
+            Views =
+            [
+                new ModelingViewDto
+                {
+                    Id = "bpmn2-process-view",
+                    Name = "BPMN order process",
+                    Notation = "bpmn2",
+                    ViewpointKey = "Process",
+                    Nodes =
+                    [
+                        new() { ElementId = "pool-sales", X = 40, Y = 70, Width = 900, Height = 210 },
+                        new() { ElementId = "pool-warehouse", X = 40, Y = 330, Width = 900, Height = 170 },
+                        new() { ElementId = "bpmn2-start", X = 110, Y = 140, Width = 62, Height = 62, ParentNodeId = "pool-sales" },
+                        new() { ElementId = "bpmn2-validate", X = 230, Y = 125, Width = 160, Height = 92, ParentNodeId = "pool-sales" },
+                        new() { ElementId = "bpmn2-decision", X = 450, Y = 130, Width = 84, Height = 84, ParentNodeId = "pool-sales" },
+                        new() { ElementId = "bpmn2-ship", X = 620, Y = 125, Width = 160, Height = 92, ParentNodeId = "pool-sales" },
+                        new() { ElementId = "bpmn2-end", X = 830, Y = 140, Width = 62, Height = 62, ParentNodeId = "pool-sales" }
+                    ],
+                    Connections =
+                    [
+                        new() { RelationshipId = "bpmn2-flow-start-validate", SourceNodeId = "bpmn2-start", TargetNodeId = "bpmn2-validate" },
+                        new() { RelationshipId = "bpmn2-flow-validate-decision", SourceNodeId = "bpmn2-validate", TargetNodeId = "bpmn2-decision" },
+                        new() { RelationshipId = "bpmn2-flow-decision-ship", SourceNodeId = "bpmn2-decision", TargetNodeId = "bpmn2-ship" },
+                        new() { RelationshipId = "bpmn2-flow-ship-end", SourceNodeId = "bpmn2-ship", TargetNodeId = "bpmn2-end" }
+                    ]
+                }
+            ]
+        };
+
+        if (string.Equals(Scenario, "bpmn2-cross-pool", StringComparison.OrdinalIgnoreCase))
+        {
+            model.Elements.Single(element => element.Id == "bpmn2-ship").Properties["poolId"] = JsonSerializer.SerializeToElement("pool-warehouse");
+            model.Views[0].Nodes.Single(node => node.ElementId == "bpmn2-ship").Y = 365;
+            model.Views[0].Nodes.Single(node => node.ElementId == "bpmn2-ship").ParentNodeId = "pool-warehouse";
+            model.Relationships.Add(CreateBpmnRelationship("bpmn2-flow-cross-pool", "bpmn2-validate", "bpmn2-ship", "SequenceFlow", "Cross pool sequence"));
+            model.Views[0].Connections.Add(new ModelingViewConnectionDto
+            {
+                RelationshipId = "bpmn2-flow-cross-pool",
+                SourceNodeId = "bpmn2-validate",
+                TargetNodeId = "bpmn2-ship"
+            });
+        }
+
+        if (string.Equals(Scenario, "bpmn2-ai-task", StringComparison.OrdinalIgnoreCase))
+        {
+            model.Elements.Add(CreateBpmnElement("bpmn2-ai-task", "AiTask", "AI classify order", "demo/bpmn2/ai-task", "pool-sales"));
+            model.Views[0].Nodes.Add(new ModelingViewNodeDto
+            {
+                ElementId = "bpmn2-ai-task",
+                X = 250,
+                Y = 360,
+                Width = 160,
+                Height = 92,
+                ParentNodeId = "pool-sales"
+            });
+        }
+
+        return model;
+    }
+
+    private void ApplyInspectorScenario(ModelingModelDto model)
+    {
+        var validateOrder = model.Elements.FirstOrDefault(element => string.Equals(element.Id, "bpmn-validate-order", StringComparison.Ordinal));
+        if (validateOrder is null)
+        {
+            return;
+        }
+
+        if (string.Equals(Scenario, "inspector-many-properties", StringComparison.OrdinalIgnoreCase))
+        {
+            validateOrder.Properties.Clear();
+            for (var index = 0; index < 50; index++)
+            {
+                validateOrder.Properties[$"property-{index:00}"] = JsonSerializer.SerializeToElement($"Value {index:00}");
+            }
+
+            validateOrder.Properties["html-sample"] = JsonSerializer.SerializeToElement("<b>test</b>");
+            return;
+        }
+
+        if (string.Equals(Scenario, "inspector-empty-description", StringComparison.OrdinalIgnoreCase))
+        {
+            validateOrder.Description = string.Empty;
+            return;
+        }
+
+        if (string.Equals(Scenario, "inspector-low-trust", StringComparison.OrdinalIgnoreCase))
+        {
+            validateOrder.Governance.TrustLevel = "Low";
+            validateOrder.Governance.ReviewState = "needs-review";
+            validateOrder.Governance.SyncState = "stale";
+        }
+    }
+
+    private void ApplyIssueScenario(ModelingModelDto model)
+    {
+        if (string.Equals(Scenario, "issues-empty", StringComparison.OrdinalIgnoreCase))
+        {
+            model.Issues.Clear();
+            return;
+        }
+
+        if (string.Equals(Scenario, "issues-mixed", StringComparison.OrdinalIgnoreCase))
+        {
+            model.Issues.Clear();
+            model.Issues.Add(new ModelingIssueDto
+            {
+                Id = "issue-info-demo",
+                Category = "Governance",
+                Severity = ModelingIssueSeverity.Info,
+                SourceElementId = "bpmn-validate-order",
+                Message = "Element metadata is complete enough for preview generation."
+            });
+            model.Issues.Add(new ModelingIssueDto
+            {
+                Id = "issue-warning-demo",
+                Category = "Validation",
+                Severity = ModelingIssueSeverity.Warning,
+                SourceElementId = "bpmn-validate-order",
+                Message = "Validate Order should confirm the target lane before publishing.",
+                SuggestedFix = "Assign an owner lane and regenerate the diagram."
+            });
+            model.Issues.Add(new ModelingIssueDto
+            {
+                Id = "issue-error-demo",
+                Category = "Generator",
+                Severity = ModelingIssueSeverity.Error,
+                SourceElementId = "bpmn-ship-order",
+                Message = "Ship Order is missing a required outbound path."
+            });
+            return;
+        }
+
+        if (string.Equals(Scenario, "issues-many", StringComparison.OrdinalIgnoreCase))
+        {
+            model.Issues.Clear();
+            for (var index = 0; index < 64; index++)
+            {
+                model.Issues.Add(new ModelingIssueDto
+                {
+                    Id = $"issue-many-{index:000}",
+                    Category = index % 2 == 0 ? "Validation" : "Generator",
+                    Severity = index % 3 == 0
+                        ? ModelingIssueSeverity.Error
+                        : index % 3 == 1
+                            ? ModelingIssueSeverity.Warning
+                            : ModelingIssueSeverity.Info,
+                    SourceElementId = index % 2 == 0 ? "bpmn-validate-order" : "bpmn-ship-order",
+                    Message = $"Scenario issue {index:000} keeps the issue list scrollable without changing the surrounding panels.",
+                    SuggestedFix = index % 5 == 0 ? "Review the generated mapping and apply the suggested model correction." : string.Empty
+                });
+            }
+
+            return;
+        }
+
+        if (string.Equals(Scenario, "invalid-relationship", StringComparison.OrdinalIgnoreCase))
+        {
+            model.Issues.Clear();
+            const string relationshipId = "scenario-invalid-relationship";
+            model.Relationships.Add(new ModelingRelationshipDto
+            {
+                Id = relationshipId,
+                SourceId = "scenario/invalid-relationship",
+                SourceType = "bpmn-sequence-flow",
+                SourceElementId = "bpmn-validate-order",
+                TargetElementId = "missing-generated-target",
+                RelationshipType = "sequenceFlow",
+                Name = "Invalid scenario flow",
+                Tags = ["scenario", "invalid"],
+                Properties = new Dictionary<string, JsonElement>()
+            });
+
+            var view = model.Views.FirstOrDefault();
+            if (view is not null)
+            {
+                view.Connections.Add(new ModelingViewConnectionDto
+                {
+                    RelationshipId = relationshipId,
+                    SourceNodeId = "bpmn-validate-order",
+                    TargetNodeId = "missing-generated-target"
+                });
+            }
+        }
+    }
+
+    private void ApplyDiagramPreviewScenario(ModelingModelDto model)
+    {
+        if (string.Equals(Scenario, "empty-preview", StringComparison.OrdinalIgnoreCase))
+        {
+            model.Id = "demo-empty-preview-model";
+            model.Title = "Empty preview model";
+            model.Elements.Clear();
+            model.Relationships.Clear();
+            model.Views.Clear();
+            model.Issues.Clear();
+            return;
+        }
+
+        if (string.Equals(Scenario, "large-preview", StringComparison.OrdinalIgnoreCase))
+        {
+            model.Id = "demo-large-preview-model";
+            model.Title = "Large generated preview model";
+            model.Notation = "bpmn";
+            model.SupportedNotations = ["bpmn"];
+            model.Elements.Clear();
+            model.Relationships.Clear();
+            model.Views.Clear();
+            model.Issues.Clear();
+
+            for (var index = 0; index < 128; index++)
+            {
+                model.Elements.Add(CreateScenarioElement(
+                    $"preview-task-{index:000}",
+                    "userTask",
+                    $"Preview task {index:000}",
+                    $"/Demo/Preview/{index:000}"));
+
+                if (index > 0)
+                {
+                    model.Relationships.Add(new ModelingRelationshipDto
+                    {
+                        Id = $"preview-flow-{index - 1:000}-{index:000}",
+                        SourceId = $"preview/flow/{index - 1:000}/{index:000}",
+                        SourceType = "bpmn-sequence-flow",
+                        SourceElementId = $"preview-task-{index - 1:000}",
+                        TargetElementId = $"preview-task-{index:000}",
+                        RelationshipType = "sequenceFlow",
+                        Name = $"Preview flow {index:000}",
+                        Tags = ["scenario", "preview"],
+                        Properties = new Dictionary<string, JsonElement>()
+                    });
+                }
+            }
+        }
+
+        if (string.Equals(Scenario, "regression-empty-canvas", StringComparison.OrdinalIgnoreCase))
+        {
+            model.Id = "demo-regression-empty-canvas-model";
+            model.Title = "Regression empty canvas model";
+            foreach (var view in model.Views)
+            {
+                view.Nodes.Clear();
+                view.Connections.Clear();
+            }
+
+            model.Relationships.Clear();
+            model.Issues.Clear();
+        }
+    }
+
+    private static ModelingModelDto CreatePerformanceLargeScenarioModel()
+    {
+        var elements = new List<ModelingElementDto>(capacity: 200);
+        var relationships = new List<ModelingRelationshipDto>(capacity: 150);
+        var nodes = new List<ModelingViewNodeDto>(capacity: 200);
+        var connections = new List<ModelingViewConnectionDto>(capacity: 150);
+
+        for (var index = 0; index < 200; index++)
+        {
+            var semanticType = index switch
+            {
+                0 => "startEvent",
+                199 => "endEvent",
+                _ when index % 5 == 0 => "serviceTask",
+                _ => "userTask"
+            };
+            var elementId = $"perf-element-{index:000}";
+            elements.Add(CreateScenarioElement(
+                elementId,
+                semanticType,
+                $"Performance element {index:000}",
+                $"/Demo/Performance/{index:000}"));
+
+            nodes.Add(new ModelingViewNodeDto
+            {
+                ElementId = elementId,
+                X = 80 + (index % 20) * 190,
+                Y = 80 + (index / 20) * 130,
+                Width = semanticType is "startEvent" or "endEvent" ? 72 : 160,
+                Height = semanticType is "startEvent" or "endEvent" ? 72 : 88
+            });
+        }
+
+        for (var index = 0; index < 150; index++)
+        {
+            var relationshipId = $"perf-flow-{index:000}";
+            var sourceId = $"perf-element-{index:000}";
+            var targetId = $"perf-element-{index + 1:000}";
+            relationships.Add(new ModelingRelationshipDto
+            {
+                Id = relationshipId,
+                SourceId = $"performance/flow/{index:000}",
+                SourceType = "bpmn-sequence-flow",
+                SourceElementId = sourceId,
+                TargetElementId = targetId,
+                RelationshipType = "sequenceFlow",
+                Name = $"Performance flow {index:000}",
+                Tags = ["performance", "m26"],
+                Properties = new Dictionary<string, JsonElement>()
+            });
+            connections.Add(new ModelingViewConnectionDto
+            {
+                RelationshipId = relationshipId,
+                SourceNodeId = sourceId,
+                TargetNodeId = targetId
+            });
+        }
+
+        var issues = Enumerable.Range(0, 100)
+            .Select(index => new ModelingIssueDto
+            {
+                Id = $"perf-issue-{index:000}",
+                Category = index % 2 == 0 ? "Validation" : "Generator",
+                Severity = index % 3 == 0
+                    ? ModelingIssueSeverity.Error
+                    : index % 3 == 1
+                        ? ModelingIssueSeverity.Warning
+                        : ModelingIssueSeverity.Info,
+                SourceElementId = $"perf-element-{index % 200:000}",
+                Message = $"Performance issue {index:000} keeps the issue panel scrollable with realistic diagnostic text.",
+                SuggestedFix = index % 5 == 0 ? "Review the generated model mapping and regenerate the diagram." : string.Empty
+            })
+            .ToList();
+
+        return new ModelingModelDto
+        {
+            Id = "demo-performance-large-model",
+            Title = "Performance large modeling model",
+            Notation = "bpmn",
+            SupportedNotations = ["bpmn"],
+            Metadata = new ModelingMetadataDto
+            {
+                SourceSystem = "Tempo.Blazor Demo",
+                SourceVersion = "2026.06-performance-large",
+                LoadedAt = new DateTimeOffset(2026, 6, 6, 9, 0, 0, TimeSpan.Zero),
+                IsFresh = true
+            },
+            Elements = elements,
+            Relationships = relationships,
+            Issues = issues,
+            Views =
+            [
+                new ModelingViewDto
+                {
+                    Id = "performance-large-overview",
+                    Name = "Performance large overview",
+                    Notation = "bpmn",
+                    ViewpointKey = "overview",
+                    Nodes = nodes,
+                    Connections = connections
+                }
+            ]
+        };
+    }
+
+    private void ApplyModelingTreeScenario(ModelingModelDto model)
+    {
+        if (string.Equals(Scenario, "diacritics", StringComparison.OrdinalIgnoreCase))
+        {
+            model.Elements.Add(CreateScenarioElement("demo-zakaznik", "businessActor", "Zákazník", "/Demo/Obchod/Zákazník"));
+            return;
+        }
+
+        if (string.Equals(Scenario, "long-name", StringComparison.OrdinalIgnoreCase))
+        {
+            model.Elements.Add(CreateScenarioElement(
+                "demo-long-name",
+                "generatedTask",
+                "Very long generated modeling element name that should stay on a single line and end with an ellipsis inside the model tree node",
+                "/Demo/Generated/Long name"));
+            return;
+        }
+
+        if (string.Equals(Scenario, "large-tree", StringComparison.OrdinalIgnoreCase))
+        {
+            for (var index = 0; index < 520; index++)
+            {
+                var type = index % 2 == 0 ? "generatedTask" : "generatedActor";
+                model.Elements.Add(CreateScenarioElement(
+                    $"generated-element-{index:000}",
+                    type,
+                    $"Generated element {index:000}",
+                    $"/Demo/Generated/{index:000}"));
+            }
+        }
+    }
+
+    private static ModelingElementDto CreateBpmnElement(
+        string id,
+        string semanticType,
+        string name,
+        string sourceId,
+        string? poolId = null)
+    {
+        var element = new ModelingElementDto
+        {
+            Id = id,
+            SourceId = sourceId,
+            SourceType = $"bpmn2-{semanticType}",
+            SourcePath = $"/BPMN 2.0/{name}",
+            Notation = "bpmn2",
+            SemanticType = semanticType,
+            Name = name,
+            Description = $"BPMN 2.0 {semanticType} element.",
+            Tags = ["bpmn2", semanticType],
+            Properties = new Dictionary<string, JsonElement>(),
+            Governance = new ModelingGovernanceDto
+            {
+                TrustLevel = "demo",
+                ReviewState = "generated",
+                SyncState = "fresh",
+                DataSource = "Tempo.Blazor Demo"
+            }
+        };
+
+        if (!string.IsNullOrWhiteSpace(poolId))
+            element.Properties["poolId"] = JsonSerializer.SerializeToElement(poolId);
+
+        return element;
+    }
+
+    private static ModelingRelationshipDto CreateBpmnRelationship(
+        string id,
+        string sourceElementId,
+        string targetElementId,
+        string relationshipType,
+        string name)
+        => new()
+        {
+            Id = id,
+            SourceId = $"demo/bpmn2/{id}",
+            SourceType = $"bpmn2-{relationshipType}",
+            SourceElementId = sourceElementId,
+            TargetElementId = targetElementId,
+            RelationshipType = relationshipType,
+            Name = name,
+            Tags = ["bpmn2", relationshipType],
+            Properties = new Dictionary<string, JsonElement>()
+        };
+
+    private static ModelingMetadataDto CreateUmlMetadata(string sourceVersion)
+        => new()
+        {
+            SourceSystem = "Tempo.Blazor Demo",
+            SourceVersion = sourceVersion,
+            LoadedAt = new DateTimeOffset(2026, 6, 6, 8, 30, 0, TimeSpan.Zero),
+            IsFresh = true
+        };
+
+    private static ModelingElementDto CreateUmlElement(
+        string id,
+        string semanticType,
+        string name,
+        string sourceId,
+        Dictionary<string, JsonElement>? properties = null)
+        => new()
+        {
+            Id = id,
+            SourceId = sourceId,
+            SourceType = $"uml25-{semanticType}",
+            SourcePath = $"/UML 2.5/{name}",
+            Notation = "uml25",
+            SemanticType = semanticType,
+            Name = name,
+            Description = $"UML 2.5 {semanticType} element.",
+            Tags = ["uml25", semanticType],
+            Properties = properties ?? new Dictionary<string, JsonElement>(),
+            Governance = new ModelingGovernanceDto
+            {
+                TrustLevel = "demo",
+                ReviewState = "generated",
+                SyncState = "fresh",
+                DataSource = "Tempo.Blazor Demo"
+            }
+        };
+
+    private static ModelingRelationshipDto CreateUmlRelationship(
+        string id,
+        string sourceElementId,
+        string targetElementId,
+        string relationshipType,
+        string name)
+        => new()
+        {
+            Id = id,
+            SourceId = $"demo/uml25/{id}",
+            SourceType = $"uml25-{relationshipType}",
+            SourceElementId = sourceElementId,
+            TargetElementId = targetElementId,
+            RelationshipType = relationshipType,
+            Name = name,
+            Tags = ["uml25", relationshipType],
+            Properties = new Dictionary<string, JsonElement>()
+        };
+
+    private static ModelingMetadataDto CreateArchimate32Metadata(string sourceVersion)
+        => new()
+        {
+            SourceSystem = "Tempo.Blazor Demo",
+            SourceVersion = sourceVersion,
+            LoadedAt = new DateTimeOffset(2026, 6, 6, 9, 0, 0, TimeSpan.Zero),
+            IsFresh = true
+        };
+
+    private static ModelingMetadataDto CreateErdMetadata(string sourceVersion)
+        => new()
+        {
+            SourceSystem = "Tempo.Blazor Demo",
+            SourceVersion = sourceVersion,
+            LoadedAt = new DateTimeOffset(2026, 6, 6, 9, 30, 0, TimeSpan.Zero),
+            IsFresh = true
+        };
+
+    private static ModelingElementDto CreateArchimate32Element(
+        string id,
+        string semanticType,
+        string name,
+        Dictionary<string, JsonElement>? properties = null)
+        => new()
+        {
+            Id = id,
+            SourceId = id,
+            SourceType = $"archimate32-{semanticType}",
+            SourcePath = $"/ArchiMate 3.2/{name}",
+            Notation = "archimate32",
+            SemanticType = semanticType,
+            Name = name,
+            Description = $"ArchiMate 3.2 {semanticType} element.",
+            Tags = ["archimate32", semanticType],
+            Properties = properties ?? new Dictionary<string, JsonElement>(),
+            Governance = new ModelingGovernanceDto
+            {
+                TrustLevel = "demo",
+                ReviewState = "generated",
+                SyncState = "fresh",
+                DataSource = "Tempo.Blazor Demo"
+            }
+        };
+
+    private static ModelingRelationshipDto CreateArchimate32Relationship(
+        string id,
+        string sourceElementId,
+        string targetElementId,
+        string relationshipType,
+        string name)
+        => new()
+        {
+            Id = id,
+            SourceId = id,
+            SourceType = $"archimate32-{relationshipType}",
+            SourceElementId = sourceElementId,
+            TargetElementId = targetElementId,
+            RelationshipType = relationshipType,
+            Name = name,
+            Tags = ["archimate32", relationshipType],
+            Properties = new Dictionary<string, JsonElement>()
+        };
+
+    private static ModelingElementDto CreateErdElement(
+        string id,
+        string semanticType,
+        string name)
+        => new()
+        {
+            Id = id,
+            SourceId = id,
+            SourceType = $"erd-{semanticType}",
+            SourcePath = $"/ERD/{name}",
+            Notation = ErdNotationProfile.Key,
+            SemanticType = semanticType,
+            Name = name,
+            Description = $"ERD {semanticType} element.",
+            Tags = ["erd", semanticType],
+            Properties = new Dictionary<string, JsonElement>(),
+            Governance = new ModelingGovernanceDto
+            {
+                TrustLevel = "demo",
+                ReviewState = "generated",
+                SyncState = "fresh",
+                DataSource = "Tempo.Blazor Demo"
+            }
+        };
+
+    private static ModelingElementDto CreateScenarioElement(string id, string semanticType, string name, string sourcePath) => new()
+    {
+        Id = id,
+        SourceId = $"scenario/{id}",
+        SourceType = semanticType,
+        SourcePath = sourcePath,
+        Notation = "demo",
+        SemanticType = semanticType,
+        Name = name,
+        Description = $"Scenario element {name}.",
+        Tags = ["scenario", semanticType],
+        Properties = new Dictionary<string, JsonElement>(),
+        Governance = new ModelingGovernanceDto
+        {
+            TrustLevel = "demo",
+            ReviewState = "generated",
+            SyncState = "fresh",
+            DataSource = "Tempo.Blazor Demo"
+        }
+    };
+
+    private void HandleDiagramGenerated(DiagramDocument document)
+    {
+        _lastGeneratedDocument = document;
+    }
+}

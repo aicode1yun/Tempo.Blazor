@@ -1,0 +1,108 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionColumnListBlock — multi-column flex layout container
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-notion-column-list {
+    display:     flex;
+    align-items: stretch;
+    gap:         0;
+    width:       100%;
+    min-height:  40px;
+    position:    relative;
+}
+
+/* ── Skeleton loading ─────────────────────────────────────────── */
+
+.tm-notion-column-list__skeleton {
+    display: flex;
+    gap:     16px;
+    width:   100%;
+    padding: 8px 0;
+}
+
+/* ── Divider between columns ──────────────────────────────────── */
+
+.tm-notion-column-list__divider {
+    flex-shrink:     0;
+    width:           10px;
+    cursor:          col-resize;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    position:        relative;
+    z-index:         2;
+    background:      transparent;
+    transition:      background var(--tm-notion-anim-fast, 120ms);
+    border-radius:   var(--tm-radius-xs, 3px);
+}
+
+.tm-notion-column-list__divider:hover,
+.tm-notion-column-list__divider--active {
+    background: var(--tm-border-hover, rgba(0,0,0,0.06));
+}
+
+.tm-notion-column-list__divider-grip {
+    width:         2px;
+    height:        32px;
+    border-radius: 1px;
+    background:    var(--tm-border-default, #ddd);
+    transition:    background var(--tm-notion-anim-fast, 120ms),
+                   height     var(--tm-notion-anim-fast, 120ms);
+}
+
+.tm-notion-column-list__divider:hover .tm-notion-column-list__divider-grip,
+.tm-notion-column-list__divider--active .tm-notion-column-list__divider-grip {
+    background: var(--tm-color-primary, #6c63ff);
+    height:     48px;
+}
+
+/* ── Add column button ────────────────────────────────────────── */
+
+.tm-notion-column-list__add-col {
+    flex-shrink:     0;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    width:           28px;
+    height:          28px;
+    margin:          auto 0 auto 4px;
+    padding:         0;
+    background:      transparent;
+    border:          1px dashed var(--tm-border-default, #d8d8d8);
+    border-radius:   var(--tm-radius-sm, 4px);
+    color:           var(--tm-text-tertiary, #aaa);
+    cursor:          pointer;
+    transition:      border-color var(--tm-notion-anim-fast, 120ms),
+                     color        var(--tm-notion-anim-fast, 120ms),
+                     background   var(--tm-notion-anim-fast, 120ms);
+}
+
+.tm-notion-column-list__add-col:hover {
+    border-color: var(--tm-color-primary, #6c63ff);
+    color:        var(--tm-color-primary, #6c63ff);
+    background:   rgba(108, 99, 255, 0.05);
+}
+
+@media (max-width: 640px) {
+    .tm-notion-column-list {
+        flex-direction: column;
+        gap:            var(--tm-space-3, 0.75rem);
+    }
+
+    .tm-notion-column-list ::deep .tm-notion-column {
+        flex-basis: 100% !important;
+        width:      100% !important;
+        min-width:  0 !important;
+        padding:    0;
+    }
+
+    .tm-notion-column-list__divider {
+        display: none;
+    }
+
+    .tm-notion-column-list__add-col {
+        width:      100%;
+        min-height: 44px;
+        margin:     var(--tm-space-2, 0.5rem) 0 0;
+    }
+}

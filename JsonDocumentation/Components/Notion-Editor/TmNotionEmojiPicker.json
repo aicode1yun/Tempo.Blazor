@@ -1,0 +1,34 @@
+{
+  "itemName": "TmNotionEmojiPicker",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Shared emoji picker popup. Renders a search input, categorised emoji grid, and optional Remove button. Positioning is relative to the nearest positioned ancestor — callers must provide that context.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Shared",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Shared/TmNotionEmojiPicker.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Shared"
+  ],
+  "parameters": [
+    {
+      "name": "OnClosed",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when the user clicks \"Remove icon\"."
+    },
+    {
+      "name": "OnRemoved",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when the user clicks an emoji. Arg = the emoji character string."
+    },
+    {
+      "name": "ShowRemoveButton",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Fired when the backdrop is clicked (close without action)."
+    }
+  ],
+  "subcategory": "Shared"
+}

@@ -1,0 +1,53 @@
+{
+  "itemName": "TmChat",
+  "kind": "Component",
+  "category": "Chat",
+  "description": "A chat conversation component with message rendering, typing indicators, attachments, and send input.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Chat",
+  "sourcePath": "src/Tempo.Blazor/Components/Chat/TmChat.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Chat"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the input is disabled."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Placeholder for the message input."
+    },
+    {
+      "name": "Messages",
+      "type": "IReadOnlyList<ChatMessage>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "The currently authenticated user."
+    },
+    {
+      "name": "OnAttachmentClick",
+      "type": "EventCallback<ChatAttachment>",
+      "isRequired": false,
+      "description": "Fired when the user sends a message."
+    },
+    {
+      "name": "Placeholder",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Users currently typing."
+    },
+    {
+      "name": "TypingUsers",
+      "type": "IReadOnlyList<ChatUser>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "List of messages to display."
+    }
+  ]
+}

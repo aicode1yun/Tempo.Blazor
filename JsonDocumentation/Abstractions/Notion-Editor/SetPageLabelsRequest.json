@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Request body for replacing all labels assigned to a Notion page.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/SetPageLabelsRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "SetPageLabelsRequest"
+}

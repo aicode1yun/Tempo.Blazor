@@ -1,0 +1,162 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "A single node placed on the diagram canvas.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramNode.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BackgroundShape",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Background shape type for perimeter projection. E.g. \"rectangle\", \"ellipse\", \"diamond\"."
+    },
+    {
+      "name": "Collapsed",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether this node is currently collapsed."
+    },
+    {
+      "name": "Data",
+      "kind": "Property",
+      "type": "Dictionary<string, object>",
+      "description": "Node data keyed by property name. (e.g. \"name\", \"attributes\", \"methods\")."
+    },
+    {
+      "name": "ExpandedHeight",
+      "kind": "Property",
+      "type": "double",
+      "description": "Height to restore when expanding. Set automatically during collapse."
+    },
+    {
+      "name": "GroupId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional group identifier. Nodes with the same GroupId behave as a group."
+    },
+    {
+      "name": "H",
+      "kind": "Property",
+      "type": "double",
+      "description": "Height in pixels."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier (short Guid, e.g. \"a3f8c21b\")."
+    },
+    {
+      "name": "IsCollapsible",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether this node can be collapsed/expanded."
+    },
+    {
+      "name": "IsLocked",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When true, the node cannot be moved, resized or deleted."
+    },
+    {
+      "name": "LayerId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional layer identifier. When null, the node belongs to the default layer."
+    },
+    {
+      "name": "Link",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional hyperlink target (external URL or page:// link)."
+    },
+    {
+      "name": "LockedBy",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Reserved for future collaborative editing – who has this node locked."
+    },
+    {
+      "name": "ParentGroupId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional group container identifier. When set, the node is rendered only inside that group."
+    },
+    {
+      "name": "ParentNodeId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional parent node identifier for nested nodes (containers, packages, pools)."
+    },
+    {
+      "name": "Ports",
+      "kind": "Property",
+      "type": "List<DiagramPort>",
+      "description": "Connection ports on this node. Auto-generated from stencil if empty."
+    },
+    {
+      "name": "Rotation",
+      "kind": "Property",
+      "type": "double",
+      "description": "Rotation in degrees."
+    },
+    {
+      "name": "StencilId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stencil type identifier – must match a registered stencil definition. (e.g. \"uml.class\")."
+    },
+    {
+      "name": "Style",
+      "kind": "Property",
+      "type": "DiagramStyle",
+      "description": "Visual style overrides for this node."
+    },
+    {
+      "name": "SwimlaneColumn",
+      "kind": "Property",
+      "type": "int",
+      "description": "Column index inside a parent swimlane (-1 when not in a swimlane)."
+    },
+    {
+      "name": "SwimlaneData",
+      "kind": "Property",
+      "type": "DiagramNodeSwimlaneData?",
+      "description": "Swimlane configuration when this node is a swimlane container."
+    },
+    {
+      "name": "SwimlaneRow",
+      "kind": "Property",
+      "type": "int",
+      "description": "Row index inside a parent swimlane (-1 when not in a swimlane)."
+    },
+    {
+      "name": "W",
+      "kind": "Property",
+      "type": "double",
+      "description": "Width in pixels."
+    },
+    {
+      "name": "X",
+      "kind": "Property",
+      "type": "double",
+      "description": "X position of the node's top-left corner in pixels."
+    },
+    {
+      "name": "Y",
+      "kind": "Property",
+      "type": "double",
+      "description": "Y position of the node's top-left corner in pixels."
+    },
+    {
+      "name": "ZIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "Stacking order. Higher value = rendered on top."
+    }
+  ],
+  "itemName": "DiagramNode"
+}

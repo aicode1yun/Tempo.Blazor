@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Serialization",
+  "description": "Shared used across all diagram serialization.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Serialization/DiagramJsonOptions.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramJsonOptions"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "One placed component in an implementation-brief region.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeImplementationBrief.cs",
+  "documentationStatus": "generated",
+  "itemName": "BriefElement"
+}

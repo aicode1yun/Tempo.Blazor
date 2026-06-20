@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Feedback",
+  "description": "Visual shape variants for TmSkeleton.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Feedback/SkeletonVariant.cs",
+  "documentationStatus": "generated",
+  "itemName": "SkeletonVariant"
+}

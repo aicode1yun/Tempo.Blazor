@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Resolved localization metadata captured for a signing submission.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningSubmissionLocalizationSnapshot.cs",
+  "documentationStatus": "generated",
+  "itemName": "SigningSubmissionLocalizationSnapshot"
+}

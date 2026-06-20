@@ -1,0 +1,322 @@
+{
+  "itemName": "TmDocumentEditor",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "Word-like document editor shell backed by the document editor JSON provider contracts.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/TmDocumentEditor.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": [
+    {
+      "name": "AuditFailureMode",
+      "type": "DocumentEditorAuditFailureMode",
+      "isRequired": false,
+      "default": "DocumentEditorAuditFailureMode.NonBlocking",
+      "description": "Optional audit sink used to record document save events."
+    },
+    {
+      "name": "AuditSink",
+      "type": "IDocumentAuditSink?",
+      "isRequired": false,
+      "description": "Author used for save requests and audit events."
+    },
+    {
+      "name": "Author",
+      "type": "DocumentEditorAuthor?",
+      "isRequired": false,
+      "description": "Whether a newer local draft should replace the server snapshot during load."
+    },
+    {
+      "name": "AutoSaveInterval",
+      "type": "TimeSpan?",
+      "isRequired": false,
+      "description": "Whether provider-backed suggestions start enabled."
+    },
+    {
+      "name": "CanComment",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether major versions require a non-empty description."
+    },
+    {
+      "name": "CanDeleteOwnComments",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the current user can resolve or reopen comment threads."
+    },
+    {
+      "name": "CanResolveComments",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the current user can add comments and replies."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Raised immediately before a save request is sent to the provider."
+    },
+    {
+      "name": "CollaborationClientId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional provider used to synchronize realtime collaborative edits."
+    },
+    {
+      "name": "CollaborationProvider",
+      "type": "IDocumentCollaborationProvider?",
+      "isRequired": false,
+      "description": "Optional proofing options used by the canvas engine spelling overlay."
+    },
+    {
+      "name": "CollaborationSyncInterval",
+      "type": "TimeSpan",
+      "isRequired": false,
+      "default": "TimeSpan.FromSeconds(2)",
+      "description": "Stable collaboration client id for the current editor instance."
+    },
+    {
+      "name": "ComparisonProvider",
+      "type": "IDocumentComparisonProvider?",
+      "isRequired": false,
+      "description": "Optional host provider used to import and export external document formats."
+    },
+    {
+      "name": "ContentControlRenderMode",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Provider-managed image assets that can be inserted from the editor image menu."
+    },
+    {
+      "name": "DisabledFeatures",
+      "type": "IReadOnlyCollection<string>?",
+      "isRequired": false,
+      "description": "Whether debug tools (View JSON etc.) are shown in the toolbar. Intended for development only."
+    },
+    {
+      "name": "FontProvider",
+      "type": "IDocumentFontProvider?",
+      "isRequired": false,
+      "description": "Optional provider used to resolve template token values for preview."
+    },
+    {
+      "name": "FormatProvider",
+      "type": "IDocumentFormatProvider?",
+      "isRequired": false,
+      "description": "Optional host provider used to export the current document as PDF."
+    },
+    {
+      "name": "ImageAssetOptions",
+      "type": "IReadOnlyList<DocumentImageAsset>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Optional image provider used by upload and clipboard image flows."
+    },
+    {
+      "name": "ImageProvider",
+      "type": "IDocumentImageProvider?",
+      "isRequired": false,
+      "description": "Optional resolver for provider-managed document image assets."
+    },
+    {
+      "name": "ImageUrlResolver",
+      "type": "IDocumentImageUrlResolver?",
+      "isRequired": false,
+      "description": "Feature names that should be disabled for this editor instance."
+    },
+    {
+      "name": "ImageValidation",
+      "type": "DocumentImageValidationOptions",
+      "isRequired": true,
+      "description": "Canvas content-control rendering mode. Use form for plain fill mode or design for structured-tag chrome."
+    },
+    {
+      "name": "MentionProvider",
+      "type": "IMentionDataProvider?",
+      "isRequired": false,
+      "description": "Whether the current user can delete their own comments."
+    },
+    {
+      "name": "Mode",
+      "type": "DocumentEditorMode",
+      "isRequired": false,
+      "default": "DocumentEditorMode.Edit",
+      "description": "Host-controlled permissions for the current user."
+    },
+    {
+      "name": "OfflineMode",
+      "type": "DocumentEditorOfflineMode",
+      "isRequired": false,
+      "default": "DocumentEditorOfflineMode.Disabled",
+      "description": "Interval used to poll provider-backed collaboration updates."
+    },
+    {
+      "name": "OnDocumentCompared",
+      "type": "EventCallback<DocumentCompareResult>",
+      "isRequired": false,
+      "description": "Raised after the optional document format provider returns an export result."
+    },
+    {
+      "name": "OnDocumentFormatExported",
+      "type": "EventCallback<DocumentFormatExportProviderResult>",
+      "isRequired": false,
+      "description": "Raised after the optional PDF export provider returns a result."
+    },
+    {
+      "name": "OnDocumentLoaded",
+      "type": "EventCallback<DocumentEditorDocument>",
+      "isRequired": false,
+      "description": "Additional CSS class for the root element."
+    },
+    {
+      "name": "OnPdfExported",
+      "type": "EventCallback<DocumentPdfExportResult>",
+      "isRequired": false,
+      "description": "Raised after a document version was created successfully."
+    },
+    {
+      "name": "OnSaveRequested",
+      "type": "EventCallback<DocumentEditorSaveRequest>",
+      "isRequired": false,
+      "description": "Determines whether audit sink failures block editor workflows."
+    },
+    {
+      "name": "OnVersionCreated",
+      "type": "EventCallback<DocumentVersion>",
+      "isRequired": false,
+      "description": "Raised after a document was loaded successfully."
+    },
+    {
+      "name": "PdfExportProvider",
+      "type": "IDocumentPdfExportProvider?",
+      "isRequired": false,
+      "description": "Optional provider for available editor font families."
+    },
+    {
+      "name": "Permissions",
+      "type": "DocumentEditorPermissions",
+      "isRequired": true,
+      "description": "Whether the editor is read-only."
+    },
+    {
+      "name": "PreferLocalDraft",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Optional provider used to submit an offline draft back to the authoritative store."
+    },
+    {
+      "name": "ProofingOptions",
+      "type": "DocumentProofingOptions?",
+      "isRequired": false,
+      "description": "Optional provider used to store and review document suggestions."
+    },
+    {
+      "name": "Provider",
+      "type": "IDocumentEditorProvider?",
+      "isRequired": true,
+      "description": "Stable document id to load from the provider.",
+      "editorRequired": true
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Document editor provider used for load/save/version/comment operations."
+    },
+    {
+      "name": "RequireMajorVersionDescription",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Optional autosave interval. Set to null to disable autosave."
+    },
+    {
+      "name": "ShowComments",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Visual mode used by the document editor toolbar."
+    },
+    {
+      "name": "ShowDebugTools",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the version history panel is displayed."
+    },
+    {
+      "name": "ShowToolbar",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Current editor mode."
+    },
+    {
+      "name": "ShowVersionHistory",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the comments rail is displayed."
+    },
+    {
+      "name": "SigningFieldsChanged",
+      "type": "EventCallback<IReadOnlyList<Tempo.Blazor.Abstractions.Models.SigningField>>",
+      "isRequired": false,
+      "description": "Signer roles used to colour inline signing fields and to attribute placed fields (plan S2)."
+    },
+    {
+      "name": "SuggestionProvider",
+      "type": "IDocumentSuggestionProvider?",
+      "isRequired": false,
+      "description": "Whether local comparison should be used if the comparison provider fails."
+    },
+    {
+      "name": "SuggestionsEnabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether track changes starts enabled."
+    },
+    {
+      "name": "SyncProvider",
+      "type": "IDocumentSyncProvider?",
+      "isRequired": false,
+      "description": "Optional offline draft store used when is enabled."
+    },
+    {
+      "name": "TokenProvider",
+      "type": "ITokenDataProvider?",
+      "isRequired": false,
+      "description": "Optional mention provider reused by the comment composer."
+    },
+    {
+      "name": "TokenValueProvider",
+      "type": "IDocumentTokenValueProvider?",
+      "isRequired": false,
+      "description": "Optional token provider reused by the document token autocomplete menu."
+    },
+    {
+      "name": "ToolbarMode",
+      "type": "DocumentToolbarMode",
+      "isRequired": false,
+      "default": "DocumentToolbarMode.Ribbon",
+      "description": "Whether the Word-like toolbar/ribbon is displayed."
+    },
+    {
+      "name": "TrackChangesEnabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Image validation options used by upload and clipboard image flows."
+    },
+    {
+      "name": "UseLocalComparisonFallback",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Optional host provider used to compare arbitrary document sources."
+    }
+  ]
+}

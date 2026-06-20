@@ -1,0 +1,278 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.Components.Icons
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+@implements IDisposable
+
+<div class="tm-notification-bell tm-notion-notifications @Class @(_hasNew ? "tm-notification-bell--pulse" : "")"
+     data-testid="notion-notification-center"
+     @attributes="AdditionalAttributes">
+    <button type="button"
+            class="tm-notification-bell__button tm-notion-notifications__button"
+            data-testid="notion-notification-toggle"
+            aria-label="@AriaLabelText"
+            title="@AriaLabelText"
+            @onclick="ToggleAsync">
+        <TmIcon Name="@IconNames.Bell" Size="IconSize.Sm" />
+        @if (BadgeCount > 0)
+        {
+            <span class="tm-notification-bell__badge" data-testid="notion-notification-badge">@BadgeCount</span>
+        }
+    </button>
+
+    @if (_isOpen)
+    {
+        <div class="tm-notification-bell__dropdown tm-notion-notifications__panel"
+             data-testid="notion-notification-panel">
+            <div class="tm-notification-bell__header">
+                <span class="tm-notification-bell__title">@Loc["Notion_Notifications_Title"]</span>
+                <div class="tm-notification-bell__actions">
+                    <button type="button"
+                            class="tm-notification-bell__filter"
+                            data-testid="notion-notification-filter"
+                            @onclick="() => _showOnlyUnread = !_showOnlyUnread">
+                        @(_showOnlyUnread ? Loc["TmNotificationBell_ShowAll"] : Loc["TmNotificationBell_ShowOnlyUnread"])
+                    </button>
+                    @if (_unreadCount > 0)
+                    {
+                        <button type="button"
+                                class="tm-notification-bell__mark-all"
+                                data-testid="notion-notification-mark-all"
+                                @onclick="MarkAllReadAsync">
+                            @Loc["Notion_Notifications_MarkAllRead"]
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="tm-notification-bell__list">
+                @if (_loading)
+                {
+                    <div class="tm-notion-notifications__status" role="status">@Loc["Tm_Loading"]</div>
+                }
+                else if (VisibleNotifications.Any())
+                {
+                    @foreach (var n in VisibleNotifications)
+                    {
+                        <button type="button"
+                                class="tm-notification-bell__item tm-notion-notifications__item @(n.IsRead ? "" : "tm-notification-bell__item--unread")"
+                                data-testid="notion-notification-item"
+                                @onclick="() => OnItemClickAsync(n)">
+                            <span class="tm-notification-bell__avatar" aria-hidden="true">
+                                @if (!string.IsNullOrEmpty(n.Event.SenderAvatarUrl))
+                                {
+                                    <img src="@n.Event.SenderAvatarUrl" alt="" />
+                                }
+                                else
+                                {
+                                    <TmIcon Name="@TypeIcon(n.Event.Type)" Size="IconSize.Sm" />
+                                }
+                            </span>
+                            <span class="tm-notification-bell__content">
+                                <span class="tm-notification-bell__message">@n.Event.Message</span>
+                                <span class="tm-notification-bell__time">@FormatTime(n.Event.CreatedAt)</span>
+                            </span>
+                            @if (!n.IsRead)
+                            {
+                                <span class="tm-notification-bell__dot" aria-hidden="true"></span>
+                            }
+                        </button>
+                    }
+                }
+                else
+                {
+                    <div class="tm-notification-bell__empty" data-testid="notion-notification-empty">
+                        @Loc["Notion_Notifications_Empty"]
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Inject] private INotificationService NotificationService { get; set; } = default!;
+    [Inject] private INotificationBadgeState BadgeState { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    /// <summary>Additional CSS class on the notification center root.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>User whose notifications should be shown in the center.</summary>
+    [Parameter] public string CurrentUserId { get; set; } = "demo";
+
+    /// <summary>Raised whenever the dropdown is opened or closed.</summary>
+    [Parameter] public EventCallback<bool> OnDropdownOpenChanged { get; set; }
+
+    /// <summary>Polling interval for server-backed notification services. Defaults to 2.5 seconds.</summary>
+    [Parameter] public TimeSpan PollInterval { get; set; } = TimeSpan.FromMilliseconds(2500);
+
+    /// <summary>Additional unmatched attributes applied to the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private bool _isOpen;
+    private bool _hasNew;
+    private bool _showOnlyUnread;
+    private bool _loading;
+    private int _unreadCount;
+    private List<INotification> _notifications = new();
+    private PeriodicTimer? _timer;
+    private CancellationTokenSource? _pollCts;
+
+    private int BadgeCount => Math.Max(_unreadCount, BadgeState.UnreadCount);
+
+    private string AriaLabelText => BadgeCount > 0
+        ? Loc["TmNotificationBell_NewCount", BadgeCount]
+        : Loc["Notion_Notifications_Title"];
+
+    private IEnumerable<INotification> VisibleNotifications =>
+        _showOnlyUnread ? _notifications.Where(n => !n.IsRead) : _notifications;
+
+    protected override async Task OnInitializedAsync()
+    {
+        BadgeState.OnChanged += OnBadgeChanged;
+        await RefreshUnreadCountAsync(forceRender: false);
+        StartPolling();
+    }
+
+    private void StartPolling()
+    {
+        if (PollInterval <= TimeSpan.Zero)
+            return;
+
+        _pollCts = new CancellationTokenSource();
+        _timer = new PeriodicTimer(PollInterval);
+        _ = PollAsync(_pollCts.Token);
+    }
+
+    private async Task PollAsync(CancellationToken cancellationToken)
+    {
+        if (_timer is null)
+            return;
+
+        try
+        {
+            while (await _timer.WaitForNextTickAsync(cancellationToken))
+            {
+                await InvokeAsync(async () =>
+                {
+                    await RefreshUnreadCountAsync(forceRender: true);
+                    if (_isOpen)
+                        await LoadNotificationsAsync();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async void OnBadgeChanged()
+    {
+        await InvokeAsync(async () =>
+        {
+            _hasNew = true;
+            await RefreshUnreadCountAsync(forceRender: false);
+            if (_isOpen)
+                await LoadNotificationsAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task ToggleAsync()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen)
+        {
+            _hasNew = false;
+            await LoadNotificationsAsync();
+        }
+        else
+        {
+            _showOnlyUnread = false;
+        }
+
+        await OnDropdownOpenChanged.InvokeAsync(_isOpen);
+    }
+
+    private async Task RefreshUnreadCountAsync(bool forceRender)
+    {
+        var next = await NotificationService.GetUnreadCountAsync(CurrentUserId);
+        if (next > _unreadCount)
+            _hasNew = true;
+        if (next != _unreadCount || forceRender)
+        {
+            _unreadCount = next;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadNotificationsAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        try
+        {
+            _notifications = (await NotificationService.GetNotificationsAsync(CurrentUserId, limit: 50)).ToList();
+            _unreadCount = _notifications.Count(n => !n.IsRead);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task MarkAllReadAsync()
+    {
+        await NotificationService.MarkAllAsReadAsync(CurrentUserId);
+        await LoadNotificationsAsync();
+        await RefreshUnreadCountAsync(forceRender: true);
+    }
+
+    private async Task OnItemClickAsync(INotification notification)
+    {
+        if (!notification.IsRead)
+            await NotificationService.MarkAsReadAsync(notification.Id, CurrentUserId);
+
+        if (!string.IsNullOrEmpty(notification.Event.DeepLink))
+            Navigation.NavigateTo(notification.Event.DeepLink);
+
+        await LoadNotificationsAsync();
+        await RefreshUnreadCountAsync(forceRender: true);
+    }
+
+    private string FormatTime(DateTime dt)
+    {
+        var diff = DateTime.UtcNow - dt.ToUniversalTime();
+        if (diff.TotalMinutes < 1) return Loc["Notion_Notifications_JustNow"];
+        if (diff.TotalHours < 1) return Loc["Notion_Notifications_MinutesAgo", (int)diff.TotalMinutes];
+        if (diff.TotalDays < 1) return Loc["Notion_Notifications_HoursAgo", (int)diff.TotalHours];
+        if (diff.TotalDays < 7) return Loc["Notion_Notifications_DaysAgo", (int)diff.TotalDays];
+        return dt.ToLocalTime().ToString("d");
+    }
+
+    private static string TypeIcon(NotificationType type) => type switch
+    {
+        NotificationType.Mention => IconNames.AtSign,
+        NotificationType.Reply => IconNames.MessageSquare,
+        NotificationType.Reaction => IconNames.ThumbsUp,
+        NotificationType.ThreadResolved => IconNames.CheckCircle,
+        NotificationType.NewThread => IconNames.PlusCircle,
+        NotificationType.PageEdited => IconNames.Edit,
+        NotificationType.PageCommentAdded => IconNames.MessageSquare,
+        NotificationType.TaskAssigned => IconNames.CheckSquare,
+        NotificationType.PageShared => IconNames.Share,
+        _ => IconNames.Bell
+    };
+
+    public void Dispose()
+    {
+        BadgeState.OnChanged -= OnBadgeChanged;
+        _pollCts?.Cancel();
+        _timer?.Dispose();
+        _pollCts?.Dispose();
+    }
+}

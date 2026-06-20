@@ -8,20 +8,20 @@ namespace Tempo.Blazor.Components.Pickers;
 internal static class DateTimeHelpers
 {
     /// <summary>
-    /// Returns exactly 42 <see cref="DateOnly"/> values that fill a 6×7 calendar grid
-    /// for the given year/month, starting on Monday.
+    /// Returns <see cref="DateOnly"/> values that fill the calendar grid for the given year/month,
+    /// starting on Monday. The grid always contains six weeks so the calendar
+    /// keeps a stable shape while navigating between months.
     /// Leading and trailing cells contain days from adjacent months.
     /// </summary>
     public static IReadOnlyList<DateOnly> GetCalendarDays(int year, int month)
     {
-        var first   = new DateOnly(year, month, 1);
-        // DayOfWeek: 0=Sun, 1=Mon, … 6=Sat
-        // We want Mon=0 offset → (DayOfWeek + 6) % 7
-        var offset  = ((int)first.DayOfWeek + 6) % 7;
-        var start   = first.AddDays(-offset);
-
-        var days = new DateOnly[42];
-        for (var i = 0; i < 42; i++)
+        var first  = new DateOnly(year, month, 1);
+        // Mon=0 offset: (DayOfWeek + 6) % 7
+        var startOffset = ((int)first.DayOfWeek + 6) % 7;
+        var start = first.AddDays(-startOffset);
+        const int count = 42;
+        var days = new DateOnly[count];
+        for (var i = 0; i < count; i++)
             days[i] = start.AddDays(i);
 
         return days;

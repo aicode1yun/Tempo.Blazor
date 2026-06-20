@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Optional provider for Notion audit log entries.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/INotionAuditProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "INotionAuditProvider"
+}

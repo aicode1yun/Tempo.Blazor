@@ -1,0 +1,10 @@
+{
+  "kind": "RecordStruct",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Rectangle used by signing geometry calculations.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningRectangle.cs",
+  "documentationStatus": "generated",
+  "itemName": "SigningRectangle"
+}

@@ -1,0 +1,142 @@
+{
+  "kind": "Record",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Performance",
+  "description": "Aggregated result of a single performance capture window. Returned from window.tmDocumentEditorPerformance.stopCapture. All numeric fields are deltas between startCapture and stopCapture.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Performance/WysiwygPerformanceReport.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ActiveRegion",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "BeforeInputCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "BlazorCallbackDuringTypingCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "BlazorInteropCallCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "ElapsedMs",
+      "kind": "Property",
+      "type": "double",
+      "description": "Wall-clock elapsed time of the capture window in milliseconds."
+    },
+    {
+      "name": "ForcedReflowCount",
+      "kind": "Property",
+      "type": "long",
+      "description": "Number of Element.getBoundingClientRect / getClientRects calls observed during the capture (each forces synchronous layout)."
+    },
+    {
+      "name": "FullRenderCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "FullRenderSwapCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "InputDomApplyCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "InputOperationCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "InputOperationTotalMs",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "InstanceId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Identifier of the editor instance the capture targeted."
+    },
+    {
+      "name": "JsInteropCallCount",
+      "kind": "Property",
+      "type": "long",
+      "description": "Number of JS interop calls recorded via tmDocumentEditorPerformance.noteJsInteropCall during the capture."
+    },
+    {
+      "name": "KeyDownCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string",
+      "description": "Free-form label supplied by the caller of startCapture."
+    },
+    {
+      "name": "LayoutPassCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "LayoutPassTotalMs",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "MaxTypingBatchSize",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "ModelCommitCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "PartialRenderCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "RenderPassCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "RenderPassTotalMs",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "RenderSwapCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "TypingLatencyCount",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "TypingLatencyTotalMs",
+      "kind": "Property",
+      "type": "double"
+    }
+  ],
+  "itemName": "WysiwygPerformanceReport"
+}

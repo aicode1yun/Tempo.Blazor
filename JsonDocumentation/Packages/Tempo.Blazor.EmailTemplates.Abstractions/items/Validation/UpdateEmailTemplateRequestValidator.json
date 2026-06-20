@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Validation",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Validation",
+  "description": "Validates with localized messages.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Validation/UpdateEmailTemplateRequestValidator.cs",
+  "documentationStatus": "generated",
+  "itemName": "UpdateEmailTemplateRequestValidator"
+}

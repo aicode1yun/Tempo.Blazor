@@ -1,0 +1,168 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.Components.NotionEditor.Services
+
+@if (Visible)
+{
+    @* ── Transparent backdrop — click outside to close ────────────────────── *@
+    <div class="tm-nmm-backdrop" @onclick="HandleBackdropAsync" aria-hidden="true"></div>
+
+    @* ── Menu card ─────────────────────────────────────────────────────────── *@
+    <div class="tm-nmm"
+         role="dialog"
+         aria-label="@(PagesOnly ? Loc["TmNotionMentionMenu_PagesSearchPlaceholder"] : Loc["TmNotionMentionMenu_SearchPlaceholder"])"
+         style="@MenuStyle"
+         @ref="_menuRef"
+         @onkeydown:stopPropagation="true">
+
+        @* ── Search input ──────────────────────────────────────────────────── *@
+        <div class="tm-nmm__search">
+            <svg class="tm-nmm__search-icon" width="13" height="13" viewBox="0 0 13 13"
+                 fill="none" aria-hidden="true">
+                <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" stroke-width="1.25"/>
+                <path d="M8.5 8.5L11 11" stroke="currentColor" stroke-width="1.25"
+                      stroke-linecap="round"/>
+            </svg>
+            <input class="tm-nmm__search-input"
+                   type="text"
+                   autocomplete="off"
+                   spellcheck="false"
+                   placeholder="@(PagesOnly ? Loc["TmNotionMentionMenu_PagesSearchPlaceholder"] : Loc["TmNotionMentionMenu_SearchPlaceholder"])"
+                   value="@_query"
+                   @ref="_inputRef"
+                   @oninput="HandleQueryInputAsync"
+                   @onkeydown="HandleKeyDownAsync" />
+        </div>
+
+        @* ── Tabs — full mode only ──────────────────────────────────────────── *@
+        @if (!PagesOnly)
+        {
+            <div class="tm-nmm__tabs" role="tablist" aria-label="@Loc["TmNotionMentionMenu_SearchPlaceholder"]">
+                <button class="tm-nmm__tab @(_tab == MentionTab.People ? "tm-nmm__tab--active" : "")"
+                        type="button"
+                        role="tab"
+                        aria-selected="@(_tab == MentionTab.People)"
+                        @onclick="() => SwitchTabAsync(MentionTab.People)">
+                    @Loc["TmNotionMentionMenu_TabPeople"]
+                </button>
+                <button class="tm-nmm__tab @(_tab == MentionTab.Pages ? "tm-nmm__tab--active" : "")"
+                        type="button"
+                        role="tab"
+                        aria-selected="@(_tab == MentionTab.Pages)"
+                        @onclick="() => SwitchTabAsync(MentionTab.Pages)">
+                    @Loc["TmNotionMentionMenu_TabPages"]
+                </button>
+                <button class="tm-nmm__tab @(_tab == MentionTab.Date ? "tm-nmm__tab--active" : "")"
+                        type="button"
+                        role="tab"
+                        aria-selected="@(_tab == MentionTab.Date)"
+                        @onclick="() => SwitchTabAsync(MentionTab.Date)">
+                    @Loc["TmNotionMentionMenu_TabDate"]
+                </button>
+            </div>
+        }
+
+        @* ── Result list ───────────────────────────────────────────────────── *@
+        <div class="tm-nmm__list" role="listbox">
+
+            @if (_loading)
+            {
+                <div class="tm-nmm__status" aria-live="polite" aria-busy="true">
+                    <span class="tm-nmm__spinner" aria-hidden="true"></span>
+                    @Loc["TmNotionMentionMenu_Loading"]
+                </div>
+            }
+
+            @if (!_loading && _tab == MentionTab.People && !PagesOnly)
+            {
+                @if (_people.Count == 0)
+                {
+                    <div class="tm-nmm__status">@Loc["TmNotionMentionMenu_NoResults"]</div>
+                }
+                @for (int _pIdx = 0; _pIdx < _people.Count; _pIdx++)
+                {
+                    var p = _people[_pIdx];
+                    var pIdx = _pIdx;
+                    <div class="tm-nmm__item @(pIdx == _selectedIndex ? "tm-nmm__item--selected" : "")"
+                         role="option"
+                         aria-selected="@(pIdx == _selectedIndex)"
+                         @onclick="() => SelectUserAsync(p)"
+                         @onmouseenter="() => _selectedIndex = pIdx">
+                        <div class="tm-nmm__avatar" aria-hidden="true">
+                            @if (!string.IsNullOrEmpty(p.AvatarUrl))
+                            {
+                                <img class="tm-nmm__avatar-img" src="@p.AvatarUrl" alt="" />
+                            }
+                            else
+                            {
+                                <span class="tm-nmm__avatar-fallback">
+                                    @(p.DisplayName.Length > 0
+                                        ? p.DisplayName[0].ToString().ToUpperInvariant()
+                                        : "?")
+                                </span>
+                            }
+                        </div>
+                        <div class="tm-nmm__item-body">
+                            <span class="tm-nmm__item-title">@p.DisplayName</span>
+                            @if (!string.IsNullOrEmpty(p.Email))
+                            {
+                                <span class="tm-nmm__item-sub">@p.Email</span>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+
+            @if (!_loading && (_tab == MentionTab.Pages || PagesOnly))
+            {
+                @if (_pages.Count == 0)
+                {
+                    <div class="tm-nmm__status">@Loc["TmNotionMentionMenu_NoResults"]</div>
+                }
+                @for (int _pgIdx = 0; _pgIdx < _pages.Count; _pgIdx++)
+                {
+                    var capturedPg = _pages[_pgIdx];
+                    var pgIdx      = _pgIdx;
+                    <div class="tm-nmm__item @(pgIdx == _selectedIndex ? "tm-nmm__item--selected" : "")"
+                         role="option"
+                         aria-selected="@(pgIdx == _selectedIndex)"
+                         @onclick="() => SelectPageAsync(capturedPg)"
+                         @onmouseenter="() => _selectedIndex = pgIdx">
+                        <span class="tm-nmm__page-icon" aria-hidden="true">@GetPageIcon(capturedPg)</span>
+                        <div class="tm-nmm__item-body">
+                            <span class="tm-nmm__item-title">@GetPageTitle(capturedPg)</span>
+                        </div>
+                    </div>
+                }
+            }
+
+            @if (!_loading && _tab == MentionTab.Date && !PagesOnly)
+            {
+                <div class="tm-nmm__item @(0 == _selectedIndex ? "tm-nmm__item--selected" : "")"
+                     role="option" aria-selected="@(0 == _selectedIndex)"
+                     @onclick="() => SelectDateByIndexAsync(0)"
+                     @onmouseenter="() => _selectedIndex = 0">
+                    @DateIcon
+                    <span class="tm-nmm__item-title">@Loc["TmNotionMentionMenu_DateToday"]</span>
+                </div>
+                <div class="tm-nmm__item @(1 == _selectedIndex ? "tm-nmm__item--selected" : "")"
+                     role="option" aria-selected="@(1 == _selectedIndex)"
+                     @onclick="() => SelectDateByIndexAsync(1)"
+                     @onmouseenter="() => _selectedIndex = 1">
+                    @DateIcon
+                    <span class="tm-nmm__item-title">@Loc["TmNotionMentionMenu_DateTomorrow"]</span>
+                </div>
+                <div class="tm-nmm__item @(2 == _selectedIndex ? "tm-nmm__item--selected" : "")"
+                     role="option" aria-selected="@(2 == _selectedIndex)"
+                     @onclick="() => SelectDateByIndexAsync(2)"
+                     @onmouseenter="() => _selectedIndex = 2">
+                    @DateIcon
+                    <span class="tm-nmm__item-title">@Loc["TmNotionMentionMenu_DateYesterday"]</span>
+                </div>
+            }
+
+        </div>
+
+    </div>
+}

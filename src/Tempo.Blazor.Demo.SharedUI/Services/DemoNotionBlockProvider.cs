@@ -61,9 +61,16 @@ public class DemoNotionBlockProvider : INotionBlockProvider
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task MoveBlockAsync(MoveNotionBlockRequest request)
+    {
+        var response = await _http.PostAsJsonAsync("/api/notion/blocks/move", request);
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task MoveBlockToPageAsync(string blockId, string targetPageId, string? afterBlockId)
     {
-        await Task.CompletedTask;
+        var response = await _http.PostAsJsonAsync($"/api/notion/blocks/{blockId}/move-to-page", new MoveBlockToPageRequest(targetPageId, afterBlockId));
+        response.EnsureSuccessStatusCode();
     }
 
     public async Task<IPageBlock> DuplicateBlockAsync(string blockId)

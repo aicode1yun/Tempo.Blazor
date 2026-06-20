@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Event arguments sent by the JS engine when it finishes initialization.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygEngineReadyEventArgs.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "InstanceId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Instance identifier assigned by the JS engine."
+    },
+    {
+      "name": "ProtocolVersion",
+      "kind": "Property",
+      "type": "int",
+      "description": "Protocol version supported by the JS engine."
+    }
+  ],
+  "itemName": "WysiwygEngineReadyEventArgs"
+}

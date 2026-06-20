@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "A logical layer that groups diagram nodes for visibility and locking control.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramLayer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique layer identifier."
+    },
+    {
+      "name": "IsLocked",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When true, nodes on this layer cannot be moved or deleted."
+    },
+    {
+      "name": "IsVisible",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When false, nodes on this layer are hidden from the canvas."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name shown in the layers panel."
+    },
+    {
+      "name": "Order",
+      "kind": "Property",
+      "type": "int",
+      "description": "Order used for sorting layers in the UI (lower = first)."
+    }
+  ],
+  "itemName": "DiagramLayer"
+}

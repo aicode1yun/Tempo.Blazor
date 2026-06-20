@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Html",
+  "namespace": "Tempo.Blazor.DocumentFormats.Html",
+  "description": "Options used when exporting an editor document to HTML.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Html/DocumentHtmlExporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentHtmlExportOptions"
+}

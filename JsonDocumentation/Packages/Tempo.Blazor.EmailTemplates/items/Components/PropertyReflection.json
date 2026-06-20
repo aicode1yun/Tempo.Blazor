@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "description": "Enumerates the editable scalar properties of email model objects via reflection.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/PropertyReflection.cs",
+  "documentationStatus": "generated",
+  "itemName": "PropertyReflection"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Markdown",
+  "namespace": "Tempo.Blazor.DocumentFormats.Markdown",
+  "description": "Imports common safe Markdown document structures into a .",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Markdown/DocumentMarkdownImporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentMarkdownImporter"
+}

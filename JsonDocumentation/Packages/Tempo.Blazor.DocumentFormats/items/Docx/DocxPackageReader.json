@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Docx",
+  "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+  "description": "Reads WordprocessingML package parts into the editor model.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocumentDocxImporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocxPackageReader"
+}

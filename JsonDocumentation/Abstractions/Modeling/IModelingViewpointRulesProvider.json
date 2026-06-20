@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Modeling",
+  "description": "Validates whether a semantic element type is allowed in a viewpoint.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/ModelingNotationProfiles.cs",
+  "documentationStatus": "generated",
+  "itemName": "IModelingViewpointRulesProvider"
+}

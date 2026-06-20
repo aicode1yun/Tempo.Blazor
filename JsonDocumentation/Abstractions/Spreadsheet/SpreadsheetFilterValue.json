@@ -1,0 +1,10 @@
+{
+  "kind": "RecordStruct",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "A distinct value entry returned by the filter engine for the checkbox list in the UI.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetAutoFilter.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetFilterValue"
+}

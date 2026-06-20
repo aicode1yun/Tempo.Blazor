@@ -1,0 +1,14 @@
+{
+  "itemName": "TmGanttPortfolio",
+  "kind": "Component",
+  "category": "Scheduler",
+  "description": "TmGanttPortfolio Blazor component in the Scheduler category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Scheduler",
+  "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttPortfolio.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Scheduler"
+  ],
+  "parameters": []
+}

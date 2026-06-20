@@ -1,0 +1,32 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "Pure search engine that locates matches for a query within a sheet or workbook, honouring case sensitivity, whole-cell matching and value-vs-formula scope. Returns at most one hit per matching cell (the first occurrence), ordered in reading order (sheet, row, then column).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetSearchEngine.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetSearchableText",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the text the search engine inspects for a cell under the supplied mode.",
+      "parameters": [
+        {
+          "name": "cell",
+          "type": "SpreadsheetCell"
+        },
+        {
+          "name": "searchIn",
+          "type": "SpreadsheetSearchIn"
+        },
+        {
+          "name": "culture",
+          "type": "CultureInfo"
+        }
+      ]
+    }
+  ],
+  "itemName": "SpreadsheetSearchEngine"
+}

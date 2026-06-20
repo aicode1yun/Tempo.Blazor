@@ -1,0 +1,33 @@
+@namespace Tempo.Blazor.Components.Inputs
+
+<div class="tm-rating @GetCssClass()"
+     tabindex="@(_disabled ? -1 : 0)"
+     role="slider"
+     aria-label="@Loc["TmRating_AriaLabel"]"
+     aria-valuemin="0"
+     aria-valuemax="@Max"
+     aria-valuenow="@Value"
+     @onkeydown="HandleKeyDownAsync"
+     @onmouseleave="HandleMouseLeave">
+    @for (var i = 1; i <= Max; i++)
+    {
+        var starIndex = i;
+        <span class="tm-rating__star @GetStarClass(starIndex)"
+              @onclick="() => HandleClick(starIndex)"
+              @onmouseover="() => HandleMouseOver(starIndex)">
+            @if (GetStarClass(starIndex).Contains("tm-rating__star--full") ||
+                 (HoverValue.HasValue && starIndex <= HoverValue.Value))
+            {
+                <svg viewBox="0 0 24 24" fill="currentColor" class="tm-rating__icon">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                </svg>
+            }
+            else
+            {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tm-rating__icon">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                </svg>
+            }
+        </span>
+    }
+</div>

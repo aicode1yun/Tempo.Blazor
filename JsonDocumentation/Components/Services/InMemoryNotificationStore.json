@@ -1,0 +1,116 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "In-memory implementation of and for demos and tests.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/InMemoryNotificationStore.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ClearAll",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "GetNotificationsAsync",
+      "kind": "Method",
+      "type": "Task<IReadOnlyList<INotification>>",
+      "parameters": [
+        {
+          "name": "userId",
+          "type": "string"
+        },
+        {
+          "name": "limit",
+          "type": "int",
+          "default": "20"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "GetUnreadCountAsync",
+      "kind": "Method",
+      "type": "Task<int>",
+      "parameters": [
+        {
+          "name": "userId",
+          "type": "string"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "Increment",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "MarkAllAsReadAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "userId",
+          "type": "string"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "MarkAsReadAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "notificationId",
+          "type": "string"
+        },
+        {
+          "name": "userId",
+          "type": "string"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "NotifyAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "notificationEvent",
+          "type": "INotificationEvent"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "Reset",
+      "kind": "Method",
+      "type": "void"
+    }
+  ],
+  "itemName": "InMemoryNotificationStore"
+}

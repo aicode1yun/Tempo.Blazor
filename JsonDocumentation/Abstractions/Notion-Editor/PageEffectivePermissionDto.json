@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Effective permission for a page after applying inherited restrictions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/PageRestrictionDto.cs",
+  "documentationStatus": "generated",
+  "itemName": "PageEffectivePermissionDto"
+}

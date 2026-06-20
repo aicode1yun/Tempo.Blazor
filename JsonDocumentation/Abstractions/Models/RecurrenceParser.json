@@ -1,0 +1,41 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Parses and generates iCal RRULE strings for .",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RecurrenceParser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "FromRRule",
+      "kind": "Method",
+      "type": "RecurrenceRule",
+      "description": "Parses an iCal RRULE string into a .",
+      "parameters": [
+        {
+          "name": "rrule",
+          "type": "string"
+        },
+        {
+          "name": "startDate",
+          "type": "DateTime?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ToRRule",
+      "kind": "Method",
+      "type": "string",
+      "description": "Converts a to an iCal RRULE string.",
+      "parameters": [
+        {
+          "name": "rule",
+          "type": "RecurrenceRule"
+        }
+      ]
+    }
+  ],
+  "itemName": "RecurrenceParser"
+}

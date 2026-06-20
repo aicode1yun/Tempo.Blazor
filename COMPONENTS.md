@@ -30,7 +30,26 @@ Kompletní přehled všech komponent knihovny Tempo.Blazor, jejich parametrů, p
 22. [Dashboard](#dashboard) — TmDashboard
 23. [Workflow](#workflow) — TmStepper, TmWorkflowDesignerCanvas, TmWorkflowPropertiesPanel, TmWorkflowToolbox, TmWorkflowMinimap
 24. [Activity](#activity-komentáře-přílohy-rich-editor) — TmActivityLog, TmActivityComments, TmActivityAttachments, TmActivityTimeline, TmRichEditorFull, TmRichEditorSimple, TokenAutocomplete
-25. [Validace formulářů - kompletní příklady](#validace-formulářů---kompletní-příklady)
+25. [Podpisové komponenty](#podpisové-komponenty) — TmDocumentPageViewer, TmSigningFieldOverlay, TmSignatureCapture, TmConditionBuilder, TmFormulaBuilder, TmRecipientRoleEditor, TmSigningFieldEditorPanel, TmPdfTemplateDesigner, signing steps, TmSigningFormRunner, TmSigningCompletionPanel, TmSubmissionStatusTimeline, TmShareLinkPanel, TmPdfSignatureVerification, TmAuditTrailViewer
+26. [Validace formulářů - kompletní příklady](#validace-formulářů---kompletní-příklady)
+12. [Spreadsheet](#spreadsheet) — TmSpreadsheet
+13. [Layout](#layout) — TmDrawer, TmSidebar, TmTopBar, TmBreadcrumbs, TmCommandPalette, TmSection, TmKeyboardShortcutsHelp
+14. [Soubory a přílohy](#soubory-a-přílohy) — TmFileDropZone, TmAttachmentManager, TmPdfViewer
+15. [Galerie](#galerie) — TmImageGallery, TmLightbox
+16. [Import/Export](#importexport) — TmExportOptions, TmImportWizard, TmImportPreview
+17. [Grafy](#grafy) — TmChart, TmStockChart, TmSparkline, TmGauge
+18. [Tagy](#tagy) — TmTagPicker
+19. [Timeline](#timeline) — TmTimeline
+20. [Toolbar](#toolbar) — TmToolbar, TmToolbarButton, TmToolbarDivider
+21. [TreeView](#treeview) — TmTreeView
+22. [Scheduler](#scheduler) — TmScheduler
+23. [Dashboard](#dashboard) — TmDashboard
+24. [Workflow](#workflow) — TmStepper, TmWorkflowDesignerCanvas, TmWorkflowPropertiesPanel, TmWorkflowToolbox, TmWorkflowMinimap
+25. [Activity](#activity-komentáře-přílohy-rich-editor) — TmActivityLog, TmActivityComments, TmActivityAttachments, TmActivityTimeline, TmRichEditorFull, TmRichEditorSimple, TokenAutocomplete
+26. [AI Tools](#ai-tools) — TmAIPrompt
+27. [Chat](#chat) — TmChat
+28. [Knihovna dokumentů](#knihovna-dokumentů-document-library) — ITempoDocumentLibraryProvider, TmDocumentOpenDialog, ITempoDocumentChangeNotifier, NotionEditor insert-existing, MCP
+29. [Validace formulářů - kompletní příklady](#validace-formulářů---kompletní-příklady)
 
 ---
 
@@ -3595,6 +3614,106 @@ Panel hromadných akcí pro vybrané řádky.
 
 ---
 
+## Spreadsheet
+
+### TmSpreadsheet
+
+Excel-like spreadsheet komponenta s editací buněk, formulemi, stylováním, multi-sheet workbooky, freeze panes, merge cells, auto-fill a XLSX import/export.
+
+#### CSS třídy
+
+| Třída | Popis |
+|-------|-------|
+| `tm-spreadsheet` | Kořenový kontejner |
+| `tm-spreadsheet-toolbar` | Ribbon toolbar |
+| `tm-spreadsheet-toolbar-tabs` | Záložky toolbaru (File, Home, Insert, Format, View) |
+| `tm-spreadsheet-toolbar-tab` | Jedna záložka |
+| `tm-spreadsheet-toolbar-tab--active` | Aktivní záložka |
+| `tm-spreadsheet-toolbar-group` | Skupina nástrojů v toolbaru |
+| `tm-spreadsheet-toolbar-tool` | Jednotlivý nástroj |
+| `tm-spreadsheet-formula-bar` | Formula bar |
+| `tm-spreadsheet-formula-bar-reference` | Box s referencí aktivní buňky |
+| `tm-spreadsheet-formula-bar-input` | Input pro formuli/hodnotu |
+| `tm-spreadsheet-grid` | Grid s buňkami |
+| `tm-spreadsheet-grid--empty` | Prázdný stav |
+| `tm-spreadsheet-col-headers` | Záhlaví sloupců (A, B, C...) |
+| `tm-spreadsheet-header-cell` | Jedna buňka záhlaví |
+| `tm-spreadsheet-row-header` | Záhlaví řádku (1, 2, 3...) |
+| `tm-spreadsheet-body` | Tělo gridu |
+| `tm-spreadsheet-row` | Jedna řádka |
+| `tm-spreadsheet-cell` | Jedna buňka |
+| `tm-spreadsheet-cell--selected` | Vybraná buňka |
+| `tm-spreadsheet-cell--active` | Aktivní buňka |
+| `tm-spreadsheet-cell--editing` | Buňka v editaci |
+| `tm-spreadsheet-cell--merged` | Sloučená buňka |
+| `tm-spreadsheet-cell-input` | Input při editaci |
+| `tm-spreadsheet-sheet-tabs` | Záložky listů |
+| `tm-spreadsheet-sheet-tab` | Jedna záložka listu |
+| `tm-spreadsheet-sheet-tab--active` | Aktivní záložka |
+| `tm-spreadsheet-context-menu` | Kontextové menu |
+| `tm-spreadsheet-context-menu__item` | Položka kontextového menu |
+| `tm-spreadsheet-color-picker` | Color picker v toolbaru |
+| `tm-spreadsheet-number-format-tool` | Dropdown formátu čísel |
+
+#### Klíčové parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Data` | `byte[]?` | `null` | XLSX data pro načtení |
+| `Height` | `string?` | `"600px"` | Výška kontejneru |
+| `Width` | `string?` | `"100%"` | Šířka kontejneru |
+| `RowsCount` | `int` | `200` | Počet řádků |
+| `ColumnsCount` | `int` | `50` | Počet sloupců |
+| `RowHeight` | `double` | `20` | Výška řádku v px |
+| `ColumnWidth` | `double` | `64` | Šířka sloupce v px |
+| `OnChange` | `EventCallback<SpreadsheetChangeEventArgs>` | — | Změna hodnoty buňky |
+| `OnSelect` | `EventCallback<SpreadsheetSelectEventArgs>` | — | Změna výběru |
+| `OnCellEdit` | `EventCallback<SpreadsheetCellEditEventArgs>` | — | Editace buňky |
+| `OnOpen` | `EventCallback<SpreadsheetOpenEventArgs>` | — | Otevření souboru |
+| `OnDownload` | `EventCallback<SpreadsheetDownloadEventArgs>` | — | Stažení souboru |
+
+#### Programmatic API
+
+| Metoda | Popis |
+|--------|-------|
+| `SetCellValue(string cellRef, object? value)` | Nastaví hodnotu buňky |
+| `GetCellValue(string cellRef)` | Vrátí hodnotu buňky |
+| `GetActiveSheet()` | Vrátí aktivní list |
+| `ExportToExcelAsync()` | Exportuje workbook jako XLSX |
+| `ImportFromExcelAsync(byte[] data)` | Importuje XLSX data |
+| `FocusGridAsync()` | Nastaví focus na grid |
+
+#### Příklady
+
+```razor
+@* Základní použití *@
+<TmSpreadsheet />
+
+@* S vlastními rozměry a XLSX daty *@
+<TmSpreadsheet Data="@excelBytes"
+               RowsCount="100"
+               ColumnsCount="20"
+               Height="700px"
+               OnChange="HandleChange" />
+
+@* Programmatické nastavení hodnot *@
+@code {
+    private TmSpreadsheet _sheet = null!;
+
+    private void Setup()
+    {
+        var s = _sheet.Workbook.ActiveSheet;
+        s.SetCellValue(0, 0, "Product");
+        s.SetCellValue(0, 1, "Q1");
+        s.SetCellValue(1, 0, "Laptops");
+        s.SetCellValue(1, 1, 15000);
+        s.SetCellValue(1, 2, "=B2*1.1"); // formule
+    }
+}
+```
+
+---
+
 ## Layout
 
 ### TmDrawer
@@ -3657,6 +3776,104 @@ Vysouvací panel (drawer).
     <TmSidebar Items="_navItems" />
 </TmDrawer>
 ```
+
+---
+
+### TmDockManager
+
+VS Code–like dockable layout manager. Rozděluje obrazovku do zón (Top, Left, Center, Right, Bottom) a podporuje plovoucí panely.
+
+#### CSS třídy
+
+| Třída | Popis |
+|-------|-------|
+| `tm-dock-manager` | Kořenový kontejner |
+| `tm-dock-grid` | Hlavní grid layout |
+| `tm-dock-middle` | Střední řádek (Left + Center + Right) |
+| `tm-dock-area` | Zóna (top, left, center, right, bottom) |
+| `tm-dock-pane` | Jednotlivý panel |
+| `tm-dock-pane-header` | Hlavička panelu (draggable) |
+| `tm-dock-pane-body` | Tělo obsahu |
+| `tm-dock-tab-group` | Skupina záložek |
+| `tm-dock-tab-strip` | Pruh záložek |
+| `tm-dock-tab` | Záložka |
+| `tm-dock-tab--active` | Aktivní záložka |
+| `tm-dock-tab-content` | Obsah aktivní záložky |
+| `tm-dock-drop-overlay` | Overlay při drag & drop |
+| `tm-dock-zone` | Zóna pro drop (top, left, center, right, bottom) |
+| `tm-dock-floating` | Plovoucí panel |
+| `tm-dock-floating-header` | Hlavička plovoucího panelu |
+| `tm-dock-floating-body` | Tělo plovoucího panelu |
+| `tm-dock-floating-action` | Tlačítko v plovoucím panelu |
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `ChildContent` | `RenderFragment?` | `null` | Deklarativní `TmDockPane` potomci |
+| `Items` | `List<DockPane>?` | `null` | Data-bound panely (místo `ChildContent`) |
+| `PaneTemplate` | `RenderFragment<DockPane>?` | `null` | Template pro data-bound panely |
+| `OnPaneClose` | `EventCallback<DockPane>` | — | Zavření panelu |
+| `OnPaneFloat` | `EventCallback<DockPane>` | — | Panel přešel do plovoucího módu |
+| `OnPaneDock` | `EventCallback<DockPane>` | — | Panel byl ukotven zpět |
+| `OnLayoutChanged` | `EventCallback<DockLayout>` | — | Jakákoliv změna layoutu |
+| `Class` | `string?` | `null` | Další CSS třídy |
+| `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy |
+
+#### TmDockPane parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Id` | `string` | auto | Unikátní identifikátor |
+| `Title` | `string` | `""` | Nadpis |
+| `Icon` | `string?` | `null` | Ikona |
+| `Position` | `DockPosition` | `Center` | Zóna: `Top`, `Left`, `Center`, `Right`, `Bottom`, `Floating` |
+| `Width` | `double?` | `null` | Šířka v px |
+| `Height` | `double?` | `null` | Výška v px |
+| `CanFloat` | `bool` | `true` | Lze plovat |
+| `CanClose` | `bool` | `true` | Lze zavřít |
+| `IsActive` | `bool` | `false` | Aktivní záložka |
+| `IsVisible` | `bool` | `true` | Viditelný |
+| `Order` | `int` | `0` | Pořadí |
+| `FloatX` | `double` | `100` | X pozice plovoucího panelu |
+| `FloatY` | `double` | `100` | Y pozice plovoucího panelu |
+| `ChildContent` | `RenderFragment?` | `null` | Obsah |
+
+#### Příklady použití
+
+```razor
+<!-- Základní docking -->
+<TmDockManager>
+    <TmDockPane Id="explorer" Title="Explorer" Icon="folder"
+                Position="DockPosition.Left" Width="200">
+        <p>Explorer content</p>
+    </TmDockPane>
+    <TmDockPane Id="editor" Title="Editor" Icon="file-edit"
+                Position="DockPosition.Center" IsActive="true">
+        <p>Editor content</p>
+    </TmDockPane>
+    <TmDockPane Id="properties" Title="Properties" Icon="settings"
+                Position="DockPosition.Right" Width="220">
+        <p>Properties content</p>
+    </TmDockPane>
+</TmDockManager>
+
+<!-- Data-bound panely -->
+<TmDockManager Items="_panes" PaneTemplate="PaneTemplate" />
+
+@code {
+    private List<DockPane> _panes = new()
+    {
+        new() { Id = "p1", Title = "Pane 1", Position = DockPosition.Center },
+        new() { Id = "p2", Title = "Pane 2", Position = DockPosition.Center }
+    };
+
+    private RenderFragment<DockPane> PaneTemplate => pane =>
+    @<div>@pane.Title content</div>;
+}
+```
+
+---
 
 ### TmSidebar
 
@@ -4039,6 +4256,71 @@ Správa příloh entity (nahrávání, seznam, mazání).
     OnDeleted="HandleAttachmentDeleted" />
 ```
 
+### TmPdfViewer
+
+PDF prohlížeč postavený na PDF.js v5. Podporuje navigaci stránkami, zoom, rotaci, miniaturu sidebar, full-text vyhledávání, textovou vrstvu a kontinuální scroll.
+
+#### CSS třídy
+
+| Třída | Popis |
+|-------|-------|
+| `tm-pdf-viewer` | Kořenový kontejner |
+| `tm-pdf-viewer__toolbar` | Panel nástrojů |
+| `tm-pdf-viewer__pagination` | Navigace stránek |
+| `tm-pdf-viewer__zoom` | Ovládání zoomu |
+| `tm-pdf-viewer__rotation` | Rotace |
+| `tm-pdf-viewer__view-mode` | Přepínání režimu zobrazení |
+| `tm-pdf-viewer__file-actions` | Akce souboru (otevřít, stáhnout) |
+| `tm-pdf-viewer__search-bar` | Vyhledávací panel |
+| `tm-pdf-viewer__search-input` | Vyhledávací pole |
+| `tm-pdf-viewer__body` | Tělo prohlížeče |
+| `tm-pdf-viewer__thumbnails` | Sidebar s miniaturami |
+| `tm-pdf-viewer__canvas-wrap` | Obal canvasu (SinglePage) |
+| `tm-pdf-viewer__canvas` | Canvas element |
+| `tm-pdf-viewer__text-layer` | Textová vrstva nad canvasem |
+| `tm-pdf-viewer__continuous-wrap` | Scroll kontejner (Continuous) |
+| `tm-pdf-viewer__embed` | Fallback embed |
+| `tm-pdf-viewer__empty` | Prázdný stav (bez URL) |
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Url` | `string?` | `null` | URL PDF dokumentu |
+| `Page` / `PageChanged` | `int` / `EventCallback<int>` | `1` | Aktuální stránka (two-way) |
+| `Scale` / `ScaleChanged` | `double` / `EventCallback<double>` | `1.0` | Zoom (two-way) |
+| `ViewMode` / `ViewModeChanged` | `PdfViewMode` / `EventCallback<PdfViewMode>` | `SinglePage` | Režim zobrazení (two-way) |
+| `ShowToolbar` | `bool` | `true` | Zobrazit toolbar |
+| `ShowThumbnails` | `bool` | `false` | Zobrazit sidebar s miniaturami |
+| `ShowSearch` | `bool` | `false` | Zobrazit vyhledávání |
+| `ShowTextLayer` | `bool` | `false` | Zobrazit textovou vrstvu |
+| `ShowViewModeToggle` | `bool` | `false` | Zobrazit přepínač režimu |
+| `AllowRotation` | `bool` | `false` | Povolit rotaci |
+| `AllowDownload` | `bool` | `true` | Povolit stahování |
+| `Height` | `string?` | `"600px"` | Výška prohlížeče |
+| `Class` | `string?` | `null` | Další CSS třídy |
+
+#### Příklady
+
+```razor
+<!-- Základní použití -->
+<TmPdfViewer Url="https://example.com/doc.pdf" />
+
+<!-- S miniaturami a vyhledáváním -->
+<TmPdfViewer Url="@pdfUrl"
+             ShowThumbnails="true"
+             ShowSearch="true"
+             ShowTextLayer="true"
+             AllowRotation="true"
+             Height="600px" />
+
+<!-- Kontinuální scroll -->
+<TmPdfViewer Url="@pdfUrl"
+             ShowViewModeToggle="true"
+             ViewMode="PdfViewMode.Continuous"
+             Height="700px" />
+```
+
 ---
 
 ## Galerie
@@ -4336,6 +4618,158 @@ SVG graf s různými typy.
 
 @* Horizontální *@
 <TmChart Type="ChartType.HorizontalBar" Data="@_hBarData" />
+```
+
+---
+
+### TmStockChart
+
+Akciový graf s candlestick, OHLC a line režimem. Čistě SVG, bez JS závislostí.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Data` | `IReadOnlyList<StockChartDataPoint>` | `[]` | Data bodů (Open, High, Low, Close, Volume) |
+| `Type` | `StockChartType` | `Candlestick` | Typ: `Candlestick`, `OHLC`, `Line` |
+| `ShowVolume` | `bool` | `true` | Zobrazit sloupce objemu |
+| `ShowGrid` | `bool` | `true` | Zobrazit mřížku |
+| `Animated` | `bool` | `false` | Animace |
+| `Width` | `string?` | `null` | Šířka |
+| `Height` | `string?` | `400px` | Výška |
+| `Class` | `string?` | `null` | Další CSS třídy |
+
+#### Modely
+
+```csharp
+public enum StockChartType { Candlestick, OHLC, Line }
+
+public sealed record StockChartDataPoint
+{
+    public DateTime Date { get; init; }
+    public double Open { get; init; }
+    public double High { get; init; }
+    public double Low { get; init; }
+    public double Close { get; init; }
+    public double? Volume { get; init; }
+}
+```
+
+#### CSS třídy
+
+| Třída | Popis |
+|-------|-------|
+| `tm-stock-chart` | Kořenový kontejner |
+| `tm-stock-chart--animated` | Animovaný |
+| `tm-stock-chart__empty` | Prázdný stav |
+| `tm-stock-chart__grid-line` | Mřížka |
+| `tm-stock-chart__axis-label` | Popisek osy |
+| `tm-stock-chart__body` | Tělo candlesticku |
+| `tm-stock-chart__wick` | Knot candlesticku |
+| `tm-stock-chart__ohlc` | OHLC čáry |
+| `tm-stock-chart__line` | Line graf |
+| `tm-stock-chart__point` | Body line grafu |
+| `tm-stock-chart__volume` | Sloupec objemu |
+
+#### Příklady
+
+```razor
+<TmStockChart Data="_stockData"
+              Type="StockChartType.Candlestick"
+              ShowVolume="true"
+              Animated="true"
+              Height="400px" />
+```
+
+---
+
+### TmSparkline
+
+Mini graf bez os a legendy — ideální pro inline zobrazení trendu v tabulkách nebo kartách.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Data` | `double[]` | `[]` | Hodnoty |
+| `Type` | `SparklineType` | `Line` | Typ: `Line`, `Bar`, `Area`, `Pie` |
+| `Height` | `string?` | `40px` | Výška |
+| `Width` | `string?` | `100%` | Šířka |
+| `Class` | `string?` | `null` | Další CSS třídy |
+
+#### CSS třídy
+
+| Třída | Popis |
+|-------|-------|
+| `tm-sparkline` | Kořenový kontejner |
+| `tm-sparkline__line` | Čára (line) |
+| `tm-sparkline__bar` | Sloupec (bar) |
+| `tm-sparkline__area` | Plocha (area) |
+| `tm-sparkline__slice` | Výseč (pie) |
+
+#### Příklady
+
+```razor
+<TmSparkline Data="[12, 25, 18, 32, 24]" Type="SparklineType.Line" Height="40px" Width="120px" />
+<TmSparkline Data="[12, 25, 18, 32, 24]" Type="SparklineType.Bar" Height="40px" />
+<TmSparkline Data="[12, 25, 18, 32, 24]" Type="SparklineType.Area" Height="40px" />
+```
+
+---
+
+### TmGauge
+
+Měřidlo — arc, circular a linear varianty. Podporuje barevné rozsahy a animace.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Type` | `GaugeType` | `Arc` | Typ: `Arc`, `Circular`, `Linear` |
+| `Value` | `double` | `0` | Aktuální hodnota |
+| `Min` | `double` | `0` | Minimum |
+| `Max` | `double` | `100` | Maximum |
+| `Ranges` | `IReadOnlyList<GaugeRange>` | `[]` | Barevné rozsahy |
+| `ShowValue` | `bool` | `true` | Zobrazit hodnotu |
+| `LabelFormat` | `string?` | `null` | Formát hodnoty (např. `{0}%`) |
+| `Animated` | `bool` | `false` | Animace |
+| `Width` | `string?` | `200px` | Šířka |
+| `Height` | `string?` | `160px` | Výška |
+| `Class` | `string?` | `null` | Další CSS třídy |
+
+#### Modely
+
+```csharp
+public enum GaugeType { Arc, Circular, Linear }
+
+public sealed record GaugeRange
+{
+    public double From { get; init; }
+    public double To { get; init; }
+    public string Color { get; init; } = string.Empty;
+}
+```
+
+#### CSS třídy
+
+| Třída | Popis |
+|-------|-------|
+| `tm-gauge` | Kořenový kontejner |
+| `tm-gauge--animated` | Animovaný |
+| `tm-gauge__track` | Pozadí měřidla |
+| `tm-gauge__fill` | Vyplněná část |
+| `tm-gauge__range` | Barevný rozsah |
+| `tm-gauge__pointer` | Ukazatel (arc) |
+| `tm-gauge__value` | Zobrazená hodnota |
+
+#### Příklady
+
+```razor
+<TmGauge Type="GaugeType.Arc" Value="65" Min="0" Max="100"
+         ShowValue="true" LabelFormat="{0}%" Animated="true" />
+
+<TmGauge Type="GaugeType.Linear" Value="45" Min="0" Max="100"
+         Ranges="_ranges" ShowValue="true" Width="250px" Height="80px" />
 ```
 
 ---
@@ -5343,6 +5777,452 @@ public interface ITokenDataProvider
 
 ---
 
+## AI Tools
+
+### TmAIPrompt
+
+Chat-style AI prompt komponenta s rychlými akčními příkazy, zobrazením výstupu, kopírováním a hodnocením uživatelem. Komponenta je čistě prezentační — veškerou AI logiku (volání API, streaming, atd.) řeší konzumentská aplikace přes callbacky.
+
+#### Parametry
+
+| Parametr | Typ | Popis |
+|----------|-----|-------|
+| `Commands` | `IReadOnlyList<AIPromptCommand>` | Seznam rychlých akčních příkazů zobrazených nad vstupem |
+| `Output` | `AIPromptOutput?` | Aktuální výstup / odpověď k zobrazení |
+| `Placeholder` | `string?` | Placeholder text pro textarea vstup |
+| `Disabled` | `bool` | Zda je vstup zakázán |
+| `Class` | `string?` | Dodatečné CSS třídy pro kořenový element |
+| `OnPromptSubmit` | `EventCallback<string>` | Vyvoláno při odeslání promptu (Enter nebo tlačítko) |
+| `OnCommandClick` | `EventCallback<AIPromptCommand>` | Vyvoláno při kliknutí na příkazový button |
+| `OnOutputCopy` | `EventCallback<AIPromptOutput>` | Vyvoláno při kliknutí na kopírovat |
+| `OnOutputRate` | `EventCallback<(AIPromptOutput, bool?)>` | Vyvoláno při hodnocení (true = pozitivní, false = negativní) |
+
+#### Modely
+
+**AIPromptCommand**
+```csharp
+public sealed record AIPromptCommand
+{
+    public string Id { get; init; } = string.Empty;
+    public string Title { get; init; } = string.Empty;
+    public string? Icon { get; init; }
+    public string? Description { get; init; }
+    public bool IsDisabled { get; init; }
+}
+```
+
+**AIPromptOutput**
+```csharp
+public sealed record AIPromptOutput
+{
+    public string Id { get; init; } = string.Empty;
+    public string Content { get; init; } = string.Empty;
+    public AIPromptOutputFormat Format { get; init; } = AIPromptOutputFormat.Text;
+    public bool IsLoading { get; init; }
+    public bool? Rating { get; init; }
+    public string? Title { get; init; }
+}
+
+public enum AIPromptOutputFormat { Text, Markdown, Code }
+```
+
+#### Příklady použití
+
+```razor
+<!-- Základní použití s příkazy -->
+<TmAIPrompt Commands="_commands"
+            Output="_output"
+            OnPromptSubmit="HandleSubmit"
+            OnCommandClick="HandleCommand"
+            OnOutputRate="HandleRate" />
+
+@code {
+    private List<AIPromptCommand> _commands = new()
+    {
+        new("summarize", "Summarize", "list", "Summarize content"),
+        new("translate", "Translate", "language", "Translate text"),
+    };
+
+    private AIPromptOutput? _output;
+
+    private async Task HandleSubmit(string prompt)
+    {
+        _output = new AIPromptOutput(Guid.NewGuid().ToString(), "", isLoading: true, title: prompt);
+        // volání AI backendu...
+        _output = new AIPromptOutput(Guid.NewGuid().ToString(), "AI response", title: prompt);
+    }
+
+    private void HandleRate((AIPromptOutput Output, bool? Rating) args)
+    {
+        _output = args.Output with { Rating = args.Rating };
+    }
+}
+```
+
+#### Vlastnosti
+
+- **Rychlé příkazy** — horizontální řada pill tlačítek nad vstupem
+- **Enter pro odeslání** — Shift+Enter pro nový řádek
+- **Formáty výstupu** — Text, Markdown, Code
+- **Loading stav** — spinner s lokalizovaným textem
+- **Kopírování** — přes `navigator.cliplet` JS interop
+- **Hodnocení** — thumbs up / thumbs down s vizuální zpětnou vazbou
+- **Plně lokalizováno** — všechny texty přes `ITmLocalizer`
+- **Dark mode** — plná podpora přes CSS custom properties
+
+---
+
+## Podpisové komponenty
+
+Komponenty pro tvorbu DocuSeal-like podpisového workflow: návrh PDF šablony, editace polí, role příjemců, podpisový běh, sdílení odkazu, verifikace PDF a auditní stopa. Všechny komponenty jsou lokalizované přes `ITmLocalizer` a používají tokeny `--tm-*`.
+
+### Přehled komponent
+
+| Komponenta | Účel | Provider-agnostic |
+|------------|------|-------------------|
+| `TmDocumentPageViewer` | Zobrazení jedné stránky dokumentu s overlay slotem, volitelným toolbarem a zoomem. | Ano |
+| `TmSigningFieldOverlay` | Interaktivní pole nad dokumentem, výběr, stav validace a resize handles. | Ano |
+| `TmSignatureCapture` | Podpis kreslením, psaným textem nebo uploadem. Vyžaduje JS soubor níže. | Ano |
+| `TmConditionBuilder` | Pravidla viditelnosti/povinnosti polí. | Ano |
+| `TmFormulaBuilder` | Editor výpočtových výrazů pro signing pole. | Ano |
+| `TmRecipientRoleEditor` | Role příjemců, pořadí, volitelné role a invitation rules. | Ano |
+| `TmSigningFieldEditorPanel` | Detailní editor vybraného podpisového pole. | Ano |
+| `TmPdfTemplateDesigner` | Návrh PDF šablon se stránkováním, zoomem, kreslením, výběrem, resize a kontextovým menu. | Ano |
+| `TmSigningTextStep`, `TmSigningNumberStep`, `TmSigningDateStep`, `TmSigningChoiceStep`, `TmSigningAttachmentStep`, `TmSigningPhoneStep`, `TmSigningExternalStep` | Krokové editory jednotlivých typů polí. | Ano |
+| `TmSigningFormRunner` | End-user podpisový průchod dokumentem s autosave, validací a mobile panelem. | Ano |
+| `TmSigningCompletionPanel` | Dokončovací obrazovka po podpisu nebo čekání na další příjemce. | Ano |
+| `TmSubmissionStatusTimeline` | Timeline lifecycle eventů submissionu. | Ano |
+| `TmShareLinkPanel` | Veřejný signing link, copy buttony, QR kód, embed code a enable toggle. | Ano |
+| `TmPdfSignatureVerification` | Provider-agnostic vykreslení stavů ověření PDF a podpisů. | Ano |
+| `TmAuditTrailViewer` | Auditní dokumenty, checksumy, identita signerů, síťové údaje a audit PDF. | Ano |
+
+### Základní příklad šablony
+
+```razor
+<TmPdfTemplateDesigner Documents="_pages"
+                       Fields="_fields"
+                       FieldsChanged="fields => _fields = fields"
+                       SubmitterRoles="_roles"
+                       ViewMode="DocumentPageViewMode.SinglePage"
+                       Scale="1.0" />
+
+@code {
+    private IReadOnlyList<SigningDocumentPage> _pages =
+    [
+        new()
+        {
+            AttachmentUuid = "nda",
+            PageIndex = 0,
+            Width = 612,
+            Height = 792,
+            Label = "Page 1",
+            ImageUrl = "/documents/nda-page-1.png"
+        }
+    ];
+
+    private IReadOnlyList<SigningField> _fields = [];
+
+    private readonly IReadOnlyList<SigningSubmitterRole> _roles =
+    [
+        new() { Uuid = "signer", Name = "Signer" }
+    ];
+}
+```
+
+Souřadnice polí zůstávají normalizované vůči stránce (`0..1`). Zoom a režim zobrazení mění jen vizuální měřítko, takže uložené `X`, `Y`, `Width` a `Height` se při přiblížení nebo oddálení nepřepočítávají.
+
+### Komentáře nad dokumentem
+
+`TmDocumentPageViewer` může volitelně vykreslit komentářovou vrstvu nad stránkou. Ve výchozím stavu je vypnutá, takže viewer bez comments parametrů se chová stejně jako dřív. Zapnutí se dělá přes `CommentsEnabled`; režim `DocumentCommentMode.Comment` dovolí kliknutím vytvořit bodový komentář a tažením plošný komentář.
+
+```razor
+<TmDocumentPageViewer Page="_page"
+                      ShowToolbar="true"
+                      CommentsEnabled="true"
+                      CommentMode="_commentMode"
+                      CommentModeChanged="mode => _commentMode = mode"
+                      CommentThreads="_threads"
+                      SelectedCommentThreadId="_selectedThreadId"
+                      SelectedCommentThreadIdChanged="id => _selectedThreadId = id"
+                      CurrentUserId="_currentUserId"
+                      MentionUsers="_mentionUsers"
+                      OnCommentThreadCreateRequested="CreateThreadAsync"
+                      OnCommentReplyRequested="AddReplyAsync"
+                      OnCommentResolveRequested="ResolveThreadAsync"
+                      OnCommentReopenRequested="ReopenThreadAsync" />
+```
+
+Komentáře jsou provider-agnostic modely v `Tempo.Blazor.Abstractions`. Komponenta pouze emituje požadavky (`DocumentCommentThreadCreateRequest`, `DocumentCommentReplyRequest`, `DocumentCommentThreadStatusRequest`, edit/delete/reaction payloady); hostitelská aplikace rozhoduje o uložení, notifikacích, oprávněních a synchronizaci více uživatelů. Pro vlastní vzhled lze nahradit markery přes `CommentMarkerTemplate` a celý pravý panel přes `CommentThreadPanelTemplate`.
+
+Kotvy mohou být bodové, oblastní nebo celostránkové. Bodový komentář používá `DocumentCommentAnchor.Point(pageNumber, x, y)`, oblastní komentář používá `DocumentCommentAnchor.Area(pageNumber, x, y, width, height)` a širokou poznámku k celé stránce reprezentuje `DocumentCommentAnchor.Page(pageNumber)`. Souřadnice jsou normalizované vůči stránce, tedy `0..1`, stejně jako podpisová pole.
+
+Composer podporuje klikací i klávesové mentiony přes `@`, ukládá stabilní `UserId` do payloadu a při mention změně emituje `OnCommentMentionedUsersChanged`. Emoji reakce jsou vykreslené jako seskupené hodnoty s počtem uživatelů; klik na reakci nebo výběr z malého pickeru emituje `OnCommentReactionToggled`. Prázdné reakce hostitelská aplikace obvykle odstraní ze svého stavu.
+
+### Podpisový průchod
+
+```razor
+<TmSigningFormRunner Pages="_pages"
+                     Fields="_fields"
+                     Values="_values"
+                     ValuesChanged="values => _values = values"
+                     Culture="_signingCulture"
+                     FallbackCulture="en-US"
+                     SupportedCultures="_supportedCultures"
+                     ShowLanguageSelector="true"
+                     OnLocalizationSnapshotChanged="snapshot => _auditSnapshot = snapshot"
+                     OnComplete="CompleteSigningAsync" />
+
+@code {
+    private string? _signingCulture = "cs-CZ";
+    private readonly IReadOnlyList<string> _supportedCultures = ["cs-CZ", "en-US"];
+    private SigningSubmissionLocalizationSnapshot? _auditSnapshot;
+
+    private IReadOnlyDictionary<string, object?> _values =
+        new Dictionary<string, object?>(StringComparer.Ordinal);
+
+    private Task CompleteSigningAsync(IReadOnlyDictionary<string, object?> values)
+    {
+        // Persist values in the API/application layer.
+        return Task.CompletedTask;
+    }
+}
+```
+
+### Vícejazyčná podpisová vrstva
+
+Texty polí se ukládají vedle stabilních identifikátorů. UI popisek se překládá podle `Culture`, ale uložené hodnoty, option `Uuid`, field `Uuid`, formule a podmínky zůstávají stabilní a jazykově nezávislé.
+
+```csharp
+var field = new SigningField
+{
+    Uuid = "signer-name",
+    Name = "Signer name",
+    Labels = new SigningLocalizedText
+    {
+        Default = "Jméno podepisujícího",
+        Translations =
+        {
+            ["en-US"] = "Signer name",
+            ["cs-CZ"] = "Jméno podepisujícího"
+        }
+    },
+    Placeholders = new SigningLocalizedText
+    {
+        Default = "Jan Novák",
+        Translations = { ["en-US"] = "Alex Johnson" }
+    }
+};
+```
+
+Options mají překládaný label, ale submit/autosave hodnota má zůstat stabilní:
+
+```csharp
+field.Options =
+[
+    new SigningFieldOption
+    {
+        Uuid = "delivery-email",
+        Value = "email",
+        Labels = new SigningLocalizedText
+        {
+            Default = "E-mail",
+            Translations = { ["en-US"] = "Email" }
+        }
+    }
+];
+```
+
+PDF obsah se automaticky nepřekládá. Překládá se pouze podpisová vrstva, editor, validace, options a pomocné UI texty. Pokud má dokument existovat ve více jazycích, použijte buď více PDF šablon, nebo explicitně evidujte jazyk původního PDF a jazyk podpisové vrstvy.
+
+`TmSigningFormRunner` při změně jazyka vyvolá `OnLocalizationSnapshotChanged`. Snapshot doporučujeme uložit do auditu spolu s `Culture`, `FallbackCulture`, vyřešenými labely, options a informací, zda byl PDF obsah přeložen. Díky tomu později doložíte, co podepisující v konkrétním jazyce viděl.
+
+Legacy vlastnosti `Name`, `Title`, `Description`, `Option.Value` a `Validation.Message` zůstávají fallbackem. Migrace tedy může být postupná: nejprve ponechat stávající texty a následně doplňovat `SigningLocalizedText`.
+
+Formule a podmínky nikdy nestavte na přeložených popiscích. Používejte stabilní `FieldUuid`, `Option.Uuid` a tokeny typu `{{field-uuid}}`; změna jazyka pak nesmí změnit význam pravidla ani uložené hodnoty.
+
+### Dokončení, sdílení a audit
+
+```razor
+<TmSigningCompletionPanel DownloadUrl="@_signedPdfUrl"
+                          OnSendCopy="SendCopyAsync" />
+
+<TmShareLinkPanel Link="@_publicSigningUrl"
+                  EmbedCode="@_embedCode"
+                  Enabled="@_shareEnabled"
+                  EnabledChanged="enabled => _shareEnabled = enabled" />
+
+<TmSubmissionStatusTimeline Events="_statusEvents" />
+
+<TmPdfSignatureVerification Result="_verification"
+                            OnVerifyRequested="VerifyPdfAsync" />
+
+<TmAuditTrailViewer Trail="_auditTrail" />
+```
+
+### DTO/modely
+
+Signing modely jsou v `Tempo.Blazor.Abstractions`, aby je mohlo referencovat API bez závislosti na Blazoru:
+
+- `SigningDocumentPage`, `SigningField`, `SigningFieldArea`, `SigningFieldOption`, `SigningFieldValidation`, `SigningFieldPreferences`
+- `SigningSubmitterRole`, `SigningAttachment`
+- `SigningConditionAction`, `SigningConditionOperation`, `SigningFieldCondition`
+- `SigningStepItem`, `SigningStepOverlayItem`, `SigningStepPlan`, `SigningStepPlanner`
+- `SigningFormulaHelper`, `SigningFormulaResult`
+- `SigningSubmissionStatusEvent`, `SigningSubmissionStatusEventType`
+- `SigningPdfVerificationResult`, `SigningPdfVerificationStatus`, `SigningPdfSignatureInfo`
+- `SigningAuditTrail`, `SigningAuditTrailDocument`, `SigningAuditTrailSigner`, `SigningAuditTrailEvent`
+- `DocumentCommentThread`, `DocumentComment`, `DocumentCommentAnchor`, `DocumentCommentUser`, `DocumentCommentMention`, `DocumentCommentReaction`
+
+### Required JS soubory
+
+`TmSignatureCapture` používá canvas/file interop a vyžaduje:
+
+```html
+<script src="_content/Tempo.Blazor/js/signature-capture.js"></script>
+```
+
+`TmPdfTemplateDesigner`, `TmSigningFormRunner`, `TmDocumentPageViewer`, produktové panely a signing step komponenty jsou provider-agnostic. `TmPdfTemplateDesigner` používá malý JS helper načítaný dynamickým importem pro přesný převod souřadnic při zoomu a vkládání polí; hostitelská aplikace typicky jen načte hlavní CSS:
+
+```html
+<link href="_content/Tempo.Blazor/css/tempo-blazor.css" rel="stylesheet" />
+```
+
+### Most TmDocumentEditor → Signing
+
+`TmDocumentEditor` (canvas engine, `RenderEngine="CanvasEnginePreview"`) umí sloužit jako autor podpisových
+šablon: smlouvu napíšete v editoru a její stránky / pole rovnou předáte do `TmPdfTemplateDesigner`
+a `TmSigningFormRunner`. Most je čistě v Abstractions modelech (`SigningField`, `SigningFieldArea`,
+`SigningDocumentPage`, `SigningSubmitterRole`) — žádná nová UI komponenta.
+
+| API na `TmDocumentEditor` | Popis |
+|---|---|
+| `Task<IReadOnlyList<DocumentPageImage>> ExportPageImagesAsync(DocumentPageImageExportOptions?)` | Vyrenderuje každou stránku dokumentu do bitmapu (PNG/JPEG data URL). `Scale` 1–3 (výchozí 2). Funguje i pro virtualizované stránky. Vyžaduje canvas engine. |
+| `Task<IReadOnlyList<SigningField>> GetSigningFieldsAsync(string attachmentUuid)` | Vrátí inline podpisová pole s **areas odvozenými z layoutu** (pole v těle = 1 area, v hlavičce/patičce = 1 per stránka). `attachmentUuid` se zapíše do každé area. |
+| `Task InsertSigningFieldAsync(SigningField field)` | Vloží podpisové pole na aktuální caret (tělo i hlavička/patička). |
+| `Task EnterHeaderFooterAsync(string type)` | Přepne caret do hlavičky/patičky (`"header"`/`"footer"`) — následný insert vytvoří pole opakované na každé stránce. |
+| `[Parameter] IReadOnlyList<SigningSubmitterRole> SigningRoles` | Role podepisujících — barví inline pole a aktivuje toolbar skupinu „Podpisová pole". |
+| `[Parameter] EventCallback<IReadOnlyList<SigningField>> SigningFieldsChanged` | Vyvoláno po vložení/úpravě/odebrání pole. |
+
+`DocumentPageImage.ToSigningDocumentPages(attachmentUuid, labelFactory?)` a `IEnumerable<DocumentSigningFieldDescriptor>.ToSigningFields(attachmentUuid)` převedou výstup do signing modelů.
+
+**Toolbar:** se nastavenými `SigningRoles` přibude na Insert tabu skupina „Podpisová pole" s tlačítkem pro
+vložení podpisu (jinak skupina nevznikne). **Properties popover:** při výběru pole se zobrazí editace
+labelu / required / role + odznak „opakuje se na každé stránce" pro pole v hlavičce/patičce.
+
+Pole se přelévá s textem jako atomický inline box; **areas se nikdy neukládají, vždy se derivují z layoutu**
+(jedno pole v patičce = jedna hodnota „orazítkovaná" na každou stránku — `SigningStepPlanner` to řeší jako
+jeden krok). Export do DOCX/HTML/ODT/Markdown pole degraduje na placeholder `⟦Pole: {label} ({role})⟧`.
+Demo: `/signing-from-editor` (Demo.SharedUI).
+
+```razor
+<TmDocumentEditor @ref="_editor" DocumentId="contract" Provider="@_provider"
+                  SigningRoles="@_roles" SigningFieldsChanged="OnFieldsChanged" />
+
+@* po úpravách dokumentu: *@
+var pages  = (await _editor.ExportPageImagesAsync()).ToSigningDocumentPages("export", n => $"Strana {n}");
+var fields = await _editor.GetSigningFieldsAsync("export");
+@* pages + fields → TmSigningFormRunner / TmPdfTemplateDesigner *@
+```
+
+## Chat
+
+### TmChat
+
+Komponenta pro chatovací konverzaci — zobrazení zpráv (příchozí, odchozí, systémové), indikátor psaní, textový vstup a přílohy.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Messages` | `IReadOnlyList<ChatMessage>` | `[]` | Seznam zpráv k zobrazení |
+| `CurrentUser` | `ChatUser?` | `null` | Aktuální uživatel — používá se pro odlišení odchozích zpráv |
+| `TypingUsers` | `IReadOnlyList<ChatUser>` | `[]` | Uživatelé, kteří právě píší — zobrazí se animovaný indikátor |
+| `Placeholder` | `string?` | `null` | Placeholder text pro vstupní pole |
+| `Disabled` | `bool` | `false` | Zakáže vstupní pole a tlačítko odeslat |
+| `Class` | `string?` | `null` | Dodatečné CSS třídy pro kořenový element |
+| `OnSendMessage` | `EventCallback<string>` | — | Vyvoláno při odeslání zprávy (Enter nebo tlačítko) |
+| `OnAttachmentClick` | `EventCallback<ChatAttachment>` | — | Vyvoláno při kliknutí na přílohu |
+
+#### Modely
+
+**ChatMessage**
+```csharp
+public sealed record ChatMessage
+{
+    public string Id { get; init; } = string.Empty;
+    public string Text { get; init; } = string.Empty;
+    public ChatUser? Author { get; init; }
+    public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
+    public ChatMessageType Type { get; init; } = ChatMessageType.Incoming;
+    public IReadOnlyList<ChatAttachment> Attachments { get; init; } = [];
+    public bool IsRead { get; init; }
+    public bool IsSending { get; init; }
+    public bool IsError { get; init; }
+    public string? ErrorMessage { get; init; }
+}
+
+public enum ChatMessageType { Incoming, Outgoing, System }
+```
+
+**ChatUser**
+```csharp
+public sealed record ChatUser
+{
+    public string Id { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string? Avatar { get; init; }
+    public bool IsOnline { get; init; }
+    public string? Status { get; init; }
+}
+```
+
+**ChatAttachment**
+```csharp
+public sealed record ChatAttachment
+{
+    public string Id { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string Url { get; init; } = string.Empty;
+    public string? ContentType { get; init; }
+    public long? Size { get; init; }
+}
+```
+
+#### Příklady použití
+
+```razor
+<!-- Základní konverzace -->
+<TmChat Messages="_messages"
+        CurrentUser="_currentUser"
+        OnSendMessage="HandleSend"
+        TypingUsers="_typingUsers" />
+
+@code {
+    private ChatUser _currentUser = new("u1", "Alice", isOnline: true);
+    private List<ChatMessage> _messages = new()
+    {
+        new("m1", "Ahoj, jak se máš?", new ChatUser("u2", "Bob"), ChatMessageType.Incoming),
+        new("m2", "Skvěle, děkuji!", _currentUser, ChatMessageType.Outgoing),
+    };
+    private List<ChatUser> _typingUsers = new() { new ChatUser("u2", "Bob") };
+
+    private void HandleSend(string text) => _messages.Add(new(Guid.NewGuid().ToString(), text, _currentUser, ChatMessageType.Outgoing));
+}
+```
+
+#### Vlastnosti
+
+- **Tři typy zpráv** — `Incoming` (levá strana), `Outgoing` (pravá strana), `System` (centrovaná, šedá)
+- **Avatary** — zobrazení přes `TmAvatar`, zelená tečka pro online stav
+- **Timestamp** — formátovaný čas u každé zprávy
+- **Indikátor psaní** — animované tři tečky + jméno uživatele
+- **Přílohy** — karta s názvem, velikostí a ikonou; kliknutí vyvolá callback
+- **Odeslání** — Enter odesílá, Shift+Enter nový řádek
+- **Plně lokalizováno** — všechny texty přes `ITmLocalizer`
+- **Dark mode** — plná podpora přes CSS custom properties
+
+---
+
 ## Validace formulářů - kompletní příklady
 
 ### 1. FluentValidation - reaktivní validace na každé změně pole
@@ -5967,3 +6847,215 @@ Dark mode tokeny jsou definovány v `tokens-dark.css` a automaticky se aplikují
 
 ### FilterOperator
 `Contains` | `NotContains` | `Equals` | `NotEquals` | `GreaterThan` | `LessThan` | `GreaterOrEqual` | `LessOrEqual` | `Between` | `IsEmpty` | `IsNotEmpty` | `In` | `NotIn`
+
+---
+
+## Diagram Editor
+
+### TmDiagramEditor
+
+Hlavní editor pro tvorbu diagramů. Podporuje více stránek, vrstvy, undo/redo, auto-layout a import/export.
+
+Nástroj **Edge/Spojnice** umí kreslit i volné čáry kdekoli na plátně:
+
+- **Tažením** na prázdném plátně vznikne jednoduchá jednosegmentová hrana s plovoucími konci.
+- **Klikem** (bez tažení) na prázdné plátno se zahájí kreslení *polyčáry* — další kliky přidávají body polyline, dvojklik / Enter čáru ukončí v aktuální pozici kurzoru (jako plovoucí konec), klik na port / uzel / hranu čáru ukončí s navázáním. **Escape** nebo pravé tlačítko rozpracovanou polyčáru zahodí.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Document` | `DiagramDocument?` | `null` | Aktivní dokument |
+| `ReadOnly` | `bool` | `false` | Pouze pro čtení |
+| `ShowToolbox` | `bool` | `true` | Zobrazit panel nástrojů |
+| `ShowPropertiesPanel` | `bool` | `true` | Zobrazit panel vlastností |
+| `ShowLayersPanel` | `bool` | `true` | Zobrazit panel vrstev |
+| `ShowMinimap` | `bool` | `true` | Zobrazit minimapu |
+| `ShowToolbar` | `bool` | `true` | Zobrazit toolbar |
+| `ShowGrid` | `bool` | `true` | Zobrazit mřížku |
+| `GridSize` | `int` | `8` | Velikost buňky mřížky |
+| `ShowPageView` | `bool` | `true` | Zobrazit okraje stránky |
+
+### TmDiagramCanvas
+
+SVG plátno diagramu. Používá **jednotnou 4-pane architekturu** inspirovanou draw.io / mxGraph:
+
+- `.tm-diagram-bg-pane` — pozadí stránky, mřížka, group bounds (model-level).
+- `.tm-diagram-scene-pane` — scéna s uzly a hranami v globálním Z-orderu (interleaving podle `ZIndex`). Uzly obsahují nativní SVG tvar (`<rect>`, `<ellipse>`, `<polygon>`) pro jednoduché stencily a `<foreignObject>` s HTML obsahem pro komplexní stencily.
+- `.tm-diagram-overlay-pane` — výběrové obrysy (`<rect>`) a drop-target highlighty.
+- `.tm-diagram-decorator-pane` — resize/rotate handles a connect arrows.
+
+Zoom a pan jsou řízeny výhradně přes SVG `viewBox` — žádný duplicitní CSS transform, žádný drift mezi souřadnými systémy.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Document` | `DiagramDocument?` | `null` | Zobrazovaný dokument |
+| `ReadOnly` | `bool` | `false` | Pouze pro čtení |
+| `ShowGrid` | `bool` | `true` | Zobrazit mřížku |
+| `GridSize` | `int` | `8` | Velikost buňky mřížky |
+| `ShowPageView` | `bool` | `true` | Zobrazit okraje stránky |
+| `Class` | `string?` | `null` | Volitelná CSS třída |
+
+### TmDiagramSqlImportDialog
+
+Dialog pro import SQL DDL a generování ER diagramu.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Show` | `bool` | `false` | Viditelnost dialogu |
+| `OnClose` | `EventCallback` | — | Zavření dialogu |
+| `OnImport` | `EventCallback<SqlImportResult>` | — | Import výsledku |
+
+#### Použití
+
+```razor
+<TmDiagramSqlImportDialog Show="@_showDialog"
+                          OnClose="() => _showDialog = false"
+                          OnImport="HandleSqlImport" />
+```
+
+### TmDiagramCsvImportDialog
+
+Dialog pro import CSV dat a generování diagramů (organizační struktura, flowchart, timeline).
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Show` | `bool` | `false` | Viditelnost dialogu |
+| `OnClose` | `EventCallback` | — | Zavření dialogu |
+| `OnImport` | `EventCallback<CsvImportResult>` | — | Import výsledku |
+
+#### Použití
+
+```razor
+<TmDiagramCsvImportDialog Show="@_showDialog"
+                          OnClose="() => _showDialog = false"
+                          OnImport="HandleCsvImport" />
+```
+
+---
+
+## Knihovna dokumentů (Document Library)
+
+Sdílená vrstva pro procházení, otevírání a vkládání dokumentů vytvořených editory wireframů,
+diagramů a tabulek. Umožňuje znovupoužít existující dokument jako blok jinde (např. v NotionEditoru)
+a poskytuje stejnou abstrakci nástrojům MCP (`Tempo.Blazor.Mcp`).
+
+### ITempoDocumentLibraryProvider
+
+Generický poskytovatel **metadat** a organizace dokumentů (z `Tempo.Blazor.Abstractions`,
+namespace `Tempo.Blazor.DocumentLibrary`). Pracuje pouze s metadaty — vlastní obsah dokumentu se
+načítá/ukládá přes kind-specifické providery (`IWireframeDocumentProvider` atd.).
+
+| Člen | Typ | Popis |
+|------|-----|-------|
+| `Capabilities` | `DocumentLibraryCapabilities` | Které management operace provider podporuje (flagy). |
+| `GetFolderTreeAsync` | `Task<DocumentLibraryFolder>` | Strom složek pro daný `kind` (ploché úložiště vrátí kořen bez potomků). |
+| `BrowseAsync` | `Task<DocumentLibraryPage>` | Jedna stránka záznamů odpovídající `DocumentLibraryQuery`. |
+| `GetEntryAsync` | `Task<DocumentLibraryEntry?>` | Metadata jednoho dokumentu (vč. `PreviewSvg` a `ModifiedAt`) nebo `null`, pokud už neexistuje. |
+| `CreateFolderAsync` | `Task<DocumentLibraryFolder>` | Vytvoří složku (vyžaduje `CreateFolder`). |
+| `RenameDocumentAsync` / `RenameFolderAsync` | `Task` | Přejmenování (vyžaduje `Rename`). |
+| `DeleteDocumentsAsync` / `DeleteFolderAsync` | `Task` | Smazání (vyžaduje `Delete`). |
+
+`DocumentLibraryCapabilities` (Flags): `None`, `CreateFolder`, `Rename`, `Delete`, `Search`, `All`.
+Read-only úložiště vrací `None` a dialog nabídne jen procházení/otevření.
+
+`TempoDocumentKind`: `Wireframe`, `Diagram`, `Spreadsheet` (serializuje se jako camelCase string
+pro čitelnost AI/MCP).
+
+> Mazání dokumentu neodstraní odkazy na něj jinde (např. bloky v NotionEditoru) — takové odkazy
+> degradují do stavu „nenalezeno".
+
+### TmDocumentOpenDialog
+
+Dialog „Otevřít dokument" ve stylu Wordu nad `ITempoDocumentLibraryProvider`: strom složek,
+drobečková navigace, prohledávatelný seznam/mřížka dokumentů, volitelná správa složek/dokumentů
+a volba **odkaz vs. kopie**. Po potvrzení vyvolá `DocumentOpenResult`.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Provider` | `ITempoDocumentLibraryProvider` | **povinný** | Procházená knihovna. |
+| `Kind` | `TempoDocumentKind` | `Wireframe` | Druh dokumentů k zobrazení. |
+| `Open` | `bool` | `false` | Zda je dialog zobrazen. |
+| `OpenChanged` | `EventCallback<bool>` | — | Otevření/zavření dialogu (dvousměrná vazba). |
+| `ShowModeToggle` | `bool` | `true` | Nabídnout volbu odkaz/kopie. |
+| `DefaultMode` | `DocumentOpenMode` | `Link` | Výchozí režim vložení (`Link` nebo `Copy`). |
+| `OnSelected` | `EventCallback<DocumentOpenResult>` | — | Vyvoláno s vybraným dokumentem po potvrzení. |
+| `OnCancelled` | `EventCallback` | — | Vyvoláno při zrušení. |
+| `PageSize` | `int` | `50` | Velikost stránky při procházení. |
+| `SearchDebounceMs` | `int` | `300` | Debounce vyhledávání v ms (0 v testech). |
+
+`DocumentOpenResult`: `DocumentId` (Guid), `Kind` (`TempoDocumentKind`), `Mode`
+(`DocumentOpenMode`), `Name` (string?).
+
+`DocumentOpenMode`:
+
+- **`Link`** — odkaz na původní dokument; konzument zůstává v synchronizaci s pozdějšími úpravami.
+- **`Copy`** — vloží nezávislou kopii; konzument není pozdějšími úpravami originálu dotčen.
+
+#### Použití
+
+```razor
+<TmDocumentOpenDialog Provider="@LibraryProvider"
+                      Kind="TempoDocumentKind.Wireframe"
+                      @bind-Open="_openDialogVisible"
+                      OnSelected="HandleSelectedAsync" />
+```
+
+### Vkládání existujících dokumentů v NotionEditoru
+
+Bloky `TmNotionWireframeBlock`, `TmNotionDiagramBlock` a `TmNotionSpreadsheetBlock` umí kromě
+tvorby nového dokumentu vložit i **existující** dokument z knihovny. Když je editoru předán
+`DocumentLibraryProvider`, prázdný blok nabídne akci „Vložit existující…", která otevře
+`TmDocumentOpenDialog`. Podle zvoleného režimu blok buď **odkáže** na původní dokument (a živě se
+obnovuje při jeho změnách), nebo vloží jeho **hlubokou kopii**.
+
+`TmNotionEditor` / `NotionEditorContext` přijímá:
+
+| Parametr | Typ | Popis |
+|----------|-----|-------|
+| `DocumentLibraryProvider` | `ITempoDocumentLibraryProvider?` | Knihovna pro vkládání existujících dokumentů (bez ní se akce „Vložit existující" nezobrazí). |
+| `DocumentChangeNotifier` | `ITempoDocumentChangeNotifier?` | Volitelné živé obnovení odkazovaných bloků. |
+
+Odkazovaný blok zobrazuje serverový SVG náhled a obnoví ho, když přijde změna pro jeho dokument.
+Pokud byl odkazovaný dokument smazán, blok degraduje do stavu „nenalezeno" s možností odstranění.
+
+### ITempoDocumentChangeNotifier — živé obnovení
+
+Klientská abstrakce (z `Tempo.Blazor.Abstractions`) pro odběr změn konkrétních dokumentů bez
+pollingu. Otevřený editor nebo vložený blok se přihlásí k odběru těch dokumentů, které zobrazuje,
+a obnoví se, když `Changed` nastane pro některý z nich.
+
+| Člen | Popis |
+|------|-------|
+| `event Func<TempoDocumentChange, CancellationToken, Task>? Changed` | Vyvoláno při změně odebíraného dokumentu. |
+| `SubscribeAsync(kind, documentId, ct)` | Začne přijímat změny daného dokumentu. |
+| `UnsubscribeAsync(kind, documentId, ct)` | Přestane přijímat změny. |
+
+`TempoDocumentChange` nese `Kind`, `DocumentId`, `ChangeType` (`Saved`/`Deleted`/…), `ModifiedAt`
+a volitelný `Origin` (např. `"mcp"`), aby odběratel mohl ignorovat ozvěny vlastních zápisů.
+
+`Tempo.Blazor.Collaboration` poskytuje `SignalRTempoDocumentChangeNotifier` (klientská strana přes
+SignalR hub) a publikaci na straně serveru přes `ITempoDocumentChangePublisher`. Pro testy a
+single-process scénáře je k dispozici `InProcessTempoDocumentChangeBus`.
+
+> Změny publikuje **úložiště** po úspěšném uložení, nikoli MCP nástroje — tím se zabrání dvojímu
+> obnovení.
+
+### MCP nástroje pro wireframe
+
+Balíček `Tempo.Blazor.Mcp` vystavuje wireframe knihovnu jako nástroje Model Context Protocolu, aby
+LLM mohl navrhovat a číst wireframy (procházení komponent, dávkové operace, validace, implementační
+brief). Hostuje se přes `AddTempoWireframeMcpTools()` + `AddMcpServer().WithToolsFromAssembly(…)`.
+Detaily, kontrakt výsledků a optimistický concurrency model viz `src/Tempo.Blazor.Mcp/README.md`.
+
+---
+
+*Dokumentace komponent byla aktualizována o Diagram Editor a Knihovnu dokumentů (Document Library + TmDocumentOpenDialog + MCP).*

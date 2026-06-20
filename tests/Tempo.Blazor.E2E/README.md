@@ -115,6 +115,14 @@ public class MyNewTests : ServerTestBase
 - `TakeScreenshotAsync(page, "name")` - Takes screenshot
 - `GetHeapSizeAsync(page)` - Gets JS heap size
 
+### Document Editor Tests
+
+Document editor E2E tests should exercise the canvas editor host. Open `/document-editor` or a dedicated canvas route, wait for `[data-testid='document-canvas-engine-host'][data-canvas-engine-ready='true']`, and prefer user-visible DOM/provider assertions plus canvas pixel checks over implementation-only probes.
+
+Keep coverage spread across typing, undo/redo, formatting, track changes, comments, images, tables, headers/footers, collaboration, save/reload, import/export, PDF export, and comparison. Canvas E2E files are classified by `DocumentEditorCanvasParityCoverageMatrixTests`.
+
+For local editor assertions, prefer `WaitForEditorStableAsync(page, reason, blockId, expectedText)` over fixed sleeps. The helper waits for the host, visible blocks, optional expected text and absence of Blazor/runtime error UI; it deliberately does not wait for save/autosave.
+
 ## CI/CD Integration
 
 For CI/CD pipelines, use headless mode and ensure demo apps are running:

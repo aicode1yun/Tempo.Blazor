@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "DOCX DrawingML metadata preserved alongside a document drawing run.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentDocxDrawingMetadata.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentDocxDrawingMetadata"
+}

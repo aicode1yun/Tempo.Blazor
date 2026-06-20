@@ -1,0 +1,117 @@
+{
+  "itemName": "TmSlider",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "A slider component for selecting a numeric value within a range. Supports horizontal and vertical orientations, tick marks, labels, and value display.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "Min",
+      "type": "int",
+      "isRequired": false,
+      "default": "0",
+      "description": "The minimum value of the slider."
+    },
+    {
+      "name": "Max",
+      "type": "int",
+      "isRequired": false,
+      "default": "100",
+      "description": "The maximum value of the slider."
+    },
+    {
+      "name": "Step",
+      "type": "int",
+      "isRequired": false,
+      "default": "1",
+      "description": "The step increment."
+    },
+    {
+      "name": "Value",
+      "type": "int?",
+      "isRequired": false,
+      "description": "The current value of the slider."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<int?>",
+      "isRequired": false,
+      "description": "Event fired when the value changes."
+    },
+    {
+      "name": "Orientation",
+      "type": "SliderOrientation",
+      "isRequired": false,
+      "default": "Horizontal",
+      "description": "The orientation of the slider."
+    },
+    {
+      "name": "ShowTicks",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to display tick marks."
+    },
+    {
+      "name": "TickInterval",
+      "type": "int",
+      "isRequired": false,
+      "default": "10",
+      "description": "The interval between tick marks."
+    },
+    {
+      "name": "ShowLabels",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to display labels for tick marks."
+    },
+    {
+      "name": "ShowValue",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to display the current value."
+    },
+    {
+      "name": "Label",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Label shown above the slider."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the slider is disabled."
+    },
+    {
+      "name": "AdditionalCssClass",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes."
+    }
+  ],
+  "cssClasses": [
+    "tm-slider",
+    "tm-slider--horizontal",
+    "tm-slider--vertical",
+    "tm-slider__label",
+    "tm-slider__track-container",
+    "tm-slider__track",
+    "tm-slider__fill",
+    "tm-slider__input",
+    "tm-slider__ticks",
+    "tm-slider__tick",
+    "tm-slider__tick-label"
+  ],
+  "examples": [
+    {
+      "title": "Basic slider",
+      "code": "<TmSlider @bind-Value=\"volume\" Min=\"0\" Max=\"100\" Label=\"Volume\" />"
+    },
+    {
+      "title": "Slider with ticks",
+      "code": "<TmSlider @bind-Value=\"value\" Min=\"0\" Max=\"100\" Step=\"5\" ShowTicks=\"true\" TickInterval=\"25\" ShowLabels=\"true\" />"
+    }
+  ]
+}

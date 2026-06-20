@@ -1,0 +1,42 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+  "description": "The result of a preview render.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/RenderPreviewResponse.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Errors",
+      "kind": "Property",
+      "type": "IReadOnlyList<RenderErrorDto>",
+      "description": "Gets the render errors, if any."
+    },
+    {
+      "name": "Html",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets the rendered HTML."
+    },
+    {
+      "name": "Preheader",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets the substituted preheader."
+    },
+    {
+      "name": "Subject",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets the substituted subject."
+    },
+    {
+      "name": "Text",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets the rendered plain-text version."
+    }
+  ],
+  "itemName": "RenderPreviewResponse"
+}

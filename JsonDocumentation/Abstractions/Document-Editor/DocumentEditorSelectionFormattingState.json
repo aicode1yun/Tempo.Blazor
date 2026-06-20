@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Toolbar selection formatting state produced by the JS-owned runtime.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygFormattingState.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorSelectionFormattingState"
+}

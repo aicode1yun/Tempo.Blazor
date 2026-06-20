@@ -1,0 +1,15 @@
+{
+  "itemName": "TmNotionChildPageBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionChildPageBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Page",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Page/TmNotionChildPageBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Page"
+  ],
+  "parameters": [],
+  "subcategory": "Blocks / Page"
+}

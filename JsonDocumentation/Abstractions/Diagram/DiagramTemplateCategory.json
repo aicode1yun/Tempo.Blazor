@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Templates",
+  "description": "A category grouping of diagram templates displayed in the template gallery.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Templates/DiagramTemplateCategory.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name of the category."
+    },
+    {
+      "name": "Templates",
+      "kind": "Property",
+      "type": "List<DiagramTemplate>",
+      "description": "Templates belonging to this category."
+    }
+  ],
+  "itemName": "DiagramTemplateCategory"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents a user that can be @mentioned in TmRichEditor and TmSimpleEditor.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IMentionUser.cs",
+  "documentationStatus": "generated",
+  "itemName": "Tempo.Blazor.Interfaces.IMentionUser"
+}

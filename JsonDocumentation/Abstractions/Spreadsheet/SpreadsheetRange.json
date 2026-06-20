@@ -1,0 +1,94 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Represents a rectangular range of cells within a spreadsheet sheet. Supports parsing from standard A1 notation (e.g. A1, B2:D10, $A$1).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Models/SpreadsheetRange.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ColumnIndexToLetters",
+      "kind": "Method",
+      "type": "string",
+      "description": "Converts a zero-based column index to Excel-style letters (0=A, 25=Z, 26=AA).",
+      "parameters": [
+        {
+          "name": "index",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "ColumnLettersToIndex",
+      "kind": "Method",
+      "type": "int",
+      "description": "Converts Excel-style column letters to a zero-based column index.",
+      "parameters": [
+        {
+          "name": "letters",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Contains",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns true if the given cell coordinates are within this range.",
+      "parameters": [
+        {
+          "name": "row",
+          "type": "int"
+        },
+        {
+          "name": "col",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "Parse",
+      "kind": "Method",
+      "type": "SpreadsheetRange",
+      "description": "Parses a range string in A1 notation. Supports single cells (A1), ranges (A1:B10), and absolute references ($A$1).",
+      "parameters": [
+        {
+          "name": "range",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ToString",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the A1 notation string for this range."
+    },
+    {
+      "name": "EndCol",
+      "kind": "Property",
+      "type": "int",
+      "description": "The zero-based ending column index (inclusive)."
+    },
+    {
+      "name": "EndRow",
+      "kind": "Property",
+      "type": "int",
+      "description": "The zero-based ending row index (inclusive)."
+    },
+    {
+      "name": "StartCol",
+      "kind": "Property",
+      "type": "int",
+      "description": "The zero-based starting column index."
+    },
+    {
+      "name": "StartRow",
+      "kind": "Property",
+      "type": "int",
+      "description": "The zero-based starting row index."
+    }
+  ],
+  "itemName": "SpreadsheetRange"
+}

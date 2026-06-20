@@ -1,0 +1,80 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Synced
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Components.NotionEditor.Blocks
+
+<div class="tm-synced-ref @(IsFocused ? "tm-synced-ref--focused" : "")"
+     @onfocus="OnFocused"
+     tabindex="-1">
+
+    @* ── Header bar ───────────────────────────────────────────────────────────── *@
+    <div class="tm-synced-ref__header">
+        <span class="tm-synced-ref__badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            @Loc["TmNotionSyncedBlockRef_Badge"]
+        </span>
+
+        @if (Content is not null)
+        {
+            <button type="button"
+                    class="tm-synced-ref__origin-link"
+                    @onclick="HandleOriginNavigateAsync"
+                    title="@Loc["TmNotionSyncedBlockRef_GoToOrigin"]">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M13 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8M15 3h6m0 0v6m0-6L10 14"
+                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                @(_originTitle ?? Loc["TmNotionSyncedBlockRef_UnknownOrigin"])
+            </button>
+        }
+
+        @if (!ReadOnly && Content is not null)
+        {
+            <button type="button"
+                    class="tm-synced-ref__unsync-btn"
+                    @onclick="HandleUnsyncAsync"
+                    title="@Loc["TmNotionSyncedBlockRef_UnsyncTitle"]"
+                    disabled="@_unsyncInProgress">
+                @if (_unsyncInProgress)
+                {
+                    <span class="tm-synced-ref__unsync-spinner" aria-hidden="true"></span>
+                }
+                else
+                {
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                }
+                @Loc["TmNotionSyncedBlockRef_Unsync"]
+            </button>
+        }
+    </div>
+
+    @* ── Content area ─────────────────────────────────────────────────────────── *@
+    <div class="tm-synced-ref__body">
+        @if (_loading)
+        {
+            <div class="tm-synced-ref__skeleton">
+                <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:80%"></div>
+                <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:60%"></div>
+            </div>
+        }
+        else
+        {
+            <TmNotionBlockList Blocks="_children"
+                               ReadOnly="ReadOnly"
+                               ActiveBlockId="_activeChildId"
+                               OnReorder="HandleChildReorderAsync"
+                               OnBlockFocused="HandleChildFocusedAsync"
+                               OnBlockDeleted="HandleChildDeletedAsync"
+                               OnBlockUpdated="HandleChildUpdatedAsync"
+                               OnBlockDuplicated="HandleChildDuplicatedAsync"
+                               OnConvertBlock="HandleChildConvertAsync"
+                               OnAddBlockAfter="HandleChildAddAfterAsync"
+                               OnAddBlockAtEnd="HandleChildAddAtEndAsync" />
+        }
+    </div>
+
+</div>

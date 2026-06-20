@@ -1,0 +1,19 @@
+@namespace Tempo.Blazor.Components.Inputs
+
+<div class="tm-masked-text-box">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label for="@Id" class="tm-masked-text-box__label">@Label</label>
+    }
+    <input id="@Id"
+           type="text"
+           value="@DisplayValue"
+           placeholder="@Placeholder"
+           disabled="@Disabled"
+           readonly="@ReadOnly"
+           class="tm-masked-text-box__input @AdditionalCssClass"
+           @attributes="AdditionalAttributes"
+           @oninput="HandleInputAsync"
+           @onchange="HandleInputAsync"
+           @onkeydown="HandleKeyDownAsync" />
+</div>

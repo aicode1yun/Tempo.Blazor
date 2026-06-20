@@ -67,6 +67,9 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     /// <summary>Additional CSS class on the editor root.</summary>
     [Parameter] public string? Class { get; set; }
 
+    /// <summary>Raised when selected diagram item identifiers change.</summary>
+    [Parameter] public EventCallback<string[]> OnSelectedIdsChanged { get; set; }
+
     // ── Child component refs ─────────────────────────────────────────────────
 
     private TmDiagramCanvas? _canvas;
@@ -121,6 +124,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private string? _activeLayerId;
 
     private string _toolMode = "select";
+    private string? _activeEdgeStencilId;
 
     private bool _showRulers;
     private double _rulerViewportX;
@@ -276,6 +280,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private async Task OnSelectionChanged(string[] ids)
     {
         _selectedIds = ids;
+        await OnSelectedIdsChanged.InvokeAsync(ids);
         await InvokeAsync(StateHasChanged);
     }
 
@@ -652,6 +657,8 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         var ids = _selectedIds.Where(id => _document.Nodes.FirstOrDefault(n => n.Id == id)?.IsLocked != true).ToArray();
         if (ids.Length < 2) return;
         ActiveCommandStack.Push(new GroupNodesCommand(_document, ids));
+        _selectedIds = [];
+        if (_canvas is not null) await _canvas.SetSelection([]);
         await OnDocumentChanged(_document);
     }
 
@@ -1220,17 +1227,21 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         StateHasChanged();
     }
 
-    private void OnRulerUnitChanged(MeasurementUnit unit)
+    private async Task OnRulerUnitChanged(MeasurementUnit unit)
     {
         if (_document?.ActivePage is null) return;
         _document.ActivePage.RulerUnit = unit;
+        if (_canvas is not null)
+            await _canvas.SetRulerUnit(unit.ToString().ToLowerInvariant());
         StateHasChanged();
     }
 
-    private void OnPageScaleChanged(double scale)
+    private async Task OnPageScaleChanged(double scale)
     {
         if (_document?.ActivePage is null || scale <= 0) return;
         _document.ActivePage.PageScale = scale;
+        if (_canvas is not null)
+            await _canvas.SetPageScale(scale);
         StateHasChanged();
     }
 
@@ -1502,9 +1513,20 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
         var w = columns * 80 + 20;
         var h = rows * 30 + 20;
+        // Place at the visible viewport centre — see HandleQuickInsert for rationale.
         var page = _document.Pages[_document.ActivePageIndex];
-        var x = Math.Round((page.Width / 2 - w / 2) / GridSize) * GridSize;
-        var y = Math.Round((page.Height / 2 - h / 2) / GridSize) * GridSize;
+        double cx = page.Width / 2, cy = page.Height / 2;
+        if (_canvas is not null)
+        {
+            var vp = _canvas.GetViewport();
+            if (vp.W > 0 && vp.H > 0)
+            {
+                cx = vp.X + vp.W / 2;
+                cy = vp.Y + vp.H / 2;
+            }
+        }
+        var x = Math.Round((cx - w / 2) / GridSize) * GridSize;
+        var y = Math.Round((cy - h / 2) / GridSize) * GridSize;
 
         var node = new DiagramNode
         {
@@ -1560,6 +1582,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             case "svg": await ExportSvg(); break;
             case "png": await ExportPng(); break;
             case "pdf": await ExportPdf(); break;
+            case "viewportSvg": await ExportViewportSvg(); break;
         }
     }
 
@@ -1601,6 +1624,23 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         _exportMenuOpen = false;
         await ExportToServerAsync("pdf", "application/pdf", ".pdf");
+    }
+
+    private async Task ExportViewportSvg()
+    {
+        _exportMenuOpen = false;
+        if (_canvas is null) return;
+        try
+        {
+            var svg = await _canvas.ExportViewportAsSvgAsync();
+            if (string.IsNullOrEmpty(svg)) return;
+            var fileName = SanitizeFileName(_document?.Title ?? "diagram") + "-viewport.svg";
+            await DownloadFile(fileName, "image/svg+xml", System.Text.Encoding.UTF8.GetBytes(svg));
+        }
+        catch (Exception ex)
+        {
+            _exportError = Loc["TmDiagramEditor_ExportError", ex.Message];
+        }
     }
 
     private async Task ExportToServerAsync(string format, string mimeType, string extension, bool exportAllPages = false)
@@ -1695,9 +1735,14 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     // ── Toolbox drag activation ──────────────────────────────────────────────
 
-    private void OnToolboxDragStart(string stencilId)
+    private async Task OnToolboxDragStart(string stencilId)
     {
-        // Toolbox handles the HTML5 dragstart; this is just a hook if needed
+        var stencil = StencilRegistry.GetStencil(stencilId);
+        if (stencil?.Kind == DiagramStencilKind.Edge)
+        {
+            _activeEdgeStencilId = stencil.Id;
+            await SetToolMode("edge");
+        }
     }
 
     private async Task OnToolboxDrop((string StencilId, double X, double Y) drop)
@@ -1705,6 +1750,13 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         if (_document is null || ReadOnly) return;
 
         var stencil = StencilRegistry.GetStencil(drop.StencilId);
+        if (stencil?.Kind == DiagramStencilKind.Edge)
+        {
+            _activeEdgeStencilId = stencil.Id;
+            await SetToolMode("edge");
+            return;
+        }
+
         var w = stencil?.DefaultWidth ?? 120;
         var h = stencil?.DefaultHeight ?? 60;
         var x = Math.Round(drop.X / GridSize) * GridSize;
@@ -1794,12 +1846,40 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         if (_document is null || ReadOnly) return;
 
+        if (GridSize > 0)
+        {
+            if (args.TargetPointX is not null && args.TargetPointY is not null)
+            {
+                args.TargetPointX = Math.Round(args.TargetPointX.Value / GridSize) * GridSize;
+                args.TargetPointY = Math.Round(args.TargetPointY.Value / GridSize) * GridSize;
+            }
+
+            if (args.SourcePointX is not null && args.SourcePointY is not null)
+            {
+                args.SourcePointX = Math.Round(args.SourcePointX.Value / GridSize) * GridSize;
+                args.SourcePointY = Math.Round(args.SourcePointY.Value / GridSize) * GridSize;
+            }
+
+            if (args.WaypointsXY is not null)
+            {
+                for (var i = 0; i + 1 < args.WaypointsXY.Length; i += 2)
+                {
+                    args.WaypointsXY[i] = Math.Round(args.WaypointsXY[i] / GridSize) * GridSize;
+                    args.WaypointsXY[i + 1] = Math.Round(args.WaypointsXY[i + 1] / GridSize) * GridSize;
+                }
+            }
+        }
+
         var edge = new DiagramEdge();
 
         // Inherit the last used edge style (stroke, arrow, routing…) so the
         // look-and-feel carries across newly drawn edges until the user
         // explicitly edits one through the properties panel.
         _document.LastUsedEdgeStyle?.ApplyTo(edge);
+        if (_activeEdgeStencilId is not null && StencilRegistry.GetStencil(_activeEdgeStencilId) is { Kind: DiagramStencilKind.Edge } edgeStencil)
+        {
+            DiagramEdgeStencilFactory.ApplyDefaults(edge, edgeStencil);
+        }
 
         // ── Source terminal ──────────────────────────────────────────────────
         // Either attached to a node (with optional port / constraint / side) or
@@ -2426,9 +2506,25 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         var stencil = StencilRegistry.GetStencil(stencilId);
         var w = stencil?.DefaultWidth ?? 120;
         var h = stencil?.DefaultHeight ?? 60;
+        // Place at the visible viewport centre rather than the full-page centre.
+        // After F3 the canvas auto-fits content on init, which shrinks the
+        // rendered viewport away from the whole page; placing at page centre
+        // would drop the node far outside the visible rect and the viewport
+        // culling in `TmDiagramCanvas.IsNodeVisible` would hide it entirely.
+        // Falling back to page centre when no canvas/viewport info is known.
         var page = _document.Pages[_document.ActivePageIndex];
-        var x = Math.Round((page.Width / 2 - w / 2) / GridSize) * GridSize;
-        var y = Math.Round((page.Height / 2 - h / 2) / GridSize) * GridSize;
+        double cx = page.Width / 2, cy = page.Height / 2;
+        if (_canvas is not null)
+        {
+            var vp = _canvas.GetViewport();
+            if (vp.W > 0 && vp.H > 0)
+            {
+                cx = vp.X + vp.W / 2;
+                cy = vp.Y + vp.H / 2;
+            }
+        }
+        var x = Math.Round((cx - w / 2) / GridSize) * GridSize;
+        var y = Math.Round((cy - h / 2) / GridSize) * GridSize;
         await OnToolboxDrop((stencilId, x, y));
     }
 
@@ -2458,7 +2554,11 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         if (_document is null || ReadOnly) return;
         if (!CanContextMenuGroup()) return;
-        ActiveCommandStack.Push(new GroupNodesCommand(_document, _selectedIds));
+        var ids = _selectedIds.Where(id => _document.Nodes.FirstOrDefault(n => n.Id == id)?.IsLocked != true).ToArray();
+        if (ids.Length < 2) return;
+        ActiveCommandStack.Push(new GroupNodesCommand(_document, ids));
+        _selectedIds = [];
+        if (_canvas is not null) await _canvas.SetSelection([]);
         await OnDocumentChanged(_document);
     }
 

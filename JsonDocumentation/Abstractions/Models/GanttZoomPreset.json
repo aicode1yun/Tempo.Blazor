@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Timeline zoom level presets for the Gantt chart.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttZoomPreset.cs",
+  "documentationStatus": "generated",
+  "itemName": "GanttZoomPreset"
+}

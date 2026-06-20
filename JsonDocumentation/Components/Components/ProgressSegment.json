@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Feedback",
+  "description": "A single segment in a multi-segment progress bar.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Feedback/ProgressBarEnums.cs",
+  "documentationStatus": "generated",
+  "itemName": "ProgressSegment"
+}

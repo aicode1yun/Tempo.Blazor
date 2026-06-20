@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Determines which input/operator set TmFilterBuilder renders for a field.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/FilterDefinition.cs",
+  "documentationStatus": "generated",
+  "itemName": "FilterFieldType"
+}

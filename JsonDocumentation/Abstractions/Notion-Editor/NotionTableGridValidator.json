@@ -1,0 +1,31 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionTableGridValidator.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "TryValidate",
+      "kind": "Method",
+      "type": "bool",
+      "parameters": [
+        {
+          "name": "rows",
+          "type": "IReadOnlyList<IReadOnlyList<NotionTableCell>>?"
+        },
+        {
+          "name": "columnCount",
+          "type": "int"
+        },
+        {
+          "name": "errors",
+          "type": "out IReadOnlyList<string>"
+        }
+      ]
+    }
+  ],
+  "itemName": "NotionTableGridValidator"
+}

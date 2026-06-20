@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Import",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Import",
+  "description": "Resolves the content referenced by an mj-include element.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Import/IMjmlIncludeResolver.cs",
+  "documentationStatus": "generated",
+  "itemName": "IMjmlIncludeResolver"
+}

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <IsPackable>true</IsPackable>
+    <PackageId>Tempo.Blazor.Mcp</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>ptyll</Authors>
+    <Description>Model Context Protocol (MCP) tools for designing and editing Tempo.Blazor wireframes, diagrams and editor documents with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server.</Description>
+    <PackageTags>blazor;mcp;wireframe;diagram;draw;editor;ai;llm;tools</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.Core" Version="1.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tempo.Blazor.Abstractions\Tempo.Blazor.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

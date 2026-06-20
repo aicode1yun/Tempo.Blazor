@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A group of columns (mj-group) that stay side-by-side on mobile instead of stacking.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailGroupBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BackgroundColor",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the background colour (background-color)."
+    },
+    {
+      "name": "Columns",
+      "kind": "Property",
+      "type": "IList<EmailColumn>",
+      "description": "Gets the columns held by the group."
+    },
+    {
+      "name": "Direction",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the layout direction (direction)."
+    },
+    {
+      "name": "VerticalAlign",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the vertical alignment (vertical-align)."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the explicit width (width)."
+    }
+  ],
+  "itemName": "EmailGroupBlock"
+}

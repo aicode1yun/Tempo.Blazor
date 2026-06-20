@@ -1,0 +1,104 @@
+@namespace Tempo.Blazor.Components.Spreadsheet
+@using Tempo.Blazor.Components.Spreadsheet.Data
+
+<div class="tm-spreadsheet-statusbar" role="status">
+    <div class="tm-spreadsheet-statusbar__left">
+        <span class="tm-spreadsheet-statusbar__ready">@Loc["TmSpreadsheet_Status_Ready"]</span>
+    </div>
+
+    <div class="tm-spreadsheet-statusbar__aggregations"
+         @oncontextmenu="OpenAggregationMenu"
+         @oncontextmenu:preventDefault>
+        @if (ShowAggregations)
+        {
+            @if (_visible[AggregationKind.Average] && Aggregation.HasNumbers)
+            {
+                <span class="tm-spreadsheet-statusbar__agg" title="@Loc["TmSpreadsheet_Status_Average"]">
+                    <span class="tm-spreadsheet-statusbar__agg-label">@Loc["TmSpreadsheet_Status_Average"]:</span>
+                    <span class="tm-spreadsheet-statusbar__agg-value">@FormatNumber(Aggregation.Average)</span>
+                </span>
+            }
+            @if (_visible[AggregationKind.Count])
+            {
+                <span class="tm-spreadsheet-statusbar__agg" title="@Loc["TmSpreadsheet_Status_Count"]">
+                    <span class="tm-spreadsheet-statusbar__agg-label">@Loc["TmSpreadsheet_Status_Count"]:</span>
+                    <span class="tm-spreadsheet-statusbar__agg-value">@Aggregation.Count</span>
+                </span>
+            }
+            @if (_visible[AggregationKind.CountNumbers] && Aggregation.HasNumbers)
+            {
+                <span class="tm-spreadsheet-statusbar__agg" title="@Loc["TmSpreadsheet_Status_CountNumbers"]">
+                    <span class="tm-spreadsheet-statusbar__agg-label">@Loc["TmSpreadsheet_Status_CountNumbers"]:</span>
+                    <span class="tm-spreadsheet-statusbar__agg-value">@Aggregation.CountNumbers</span>
+                </span>
+            }
+            @if (_visible[AggregationKind.Min] && Aggregation.HasNumbers)
+            {
+                <span class="tm-spreadsheet-statusbar__agg" title="@Loc["TmSpreadsheet_Status_Min"]">
+                    <span class="tm-spreadsheet-statusbar__agg-label">@Loc["TmSpreadsheet_Status_Min"]:</span>
+                    <span class="tm-spreadsheet-statusbar__agg-value">@FormatNumber(Aggregation.Min)</span>
+                </span>
+            }
+            @if (_visible[AggregationKind.Max] && Aggregation.HasNumbers)
+            {
+                <span class="tm-spreadsheet-statusbar__agg" title="@Loc["TmSpreadsheet_Status_Max"]">
+                    <span class="tm-spreadsheet-statusbar__agg-label">@Loc["TmSpreadsheet_Status_Max"]:</span>
+                    <span class="tm-spreadsheet-statusbar__agg-value">@FormatNumber(Aggregation.Max)</span>
+                </span>
+            }
+            @if (_visible[AggregationKind.Sum] && Aggregation.HasNumbers)
+            {
+                <span class="tm-spreadsheet-statusbar__agg" title="@Loc["TmSpreadsheet_Status_Sum"]">
+                    <span class="tm-spreadsheet-statusbar__agg-label">@Loc["TmSpreadsheet_Status_Sum"]:</span>
+                    <span class="tm-spreadsheet-statusbar__agg-value">@FormatNumber(Aggregation.Sum)</span>
+                </span>
+            }
+        }
+    </div>
+
+    <div class="tm-spreadsheet-statusbar__zoom">
+        <button type="button"
+                class="tm-spreadsheet-statusbar__zoom-btn"
+                title="@Loc["TmSpreadsheet_ZoomOut"]"
+                aria-label="@Loc["TmSpreadsheet_ZoomOut"]"
+                disabled="@(ZoomPercent <= MinPercent)"
+                @onclick="ZoomOut">
+            <TmIcon Name="minus" />
+        </button>
+        <input type="range"
+               class="tm-spreadsheet-statusbar__zoom-slider"
+               min="@MinPercent" max="@MaxPercent" step="10"
+               value="@ZoomPercent"
+               aria-label="@Loc["TmSpreadsheet_Zoom"]"
+               @oninput="OnSliderInput" />
+        <button type="button"
+                class="tm-spreadsheet-statusbar__zoom-btn"
+                title="@Loc["TmSpreadsheet_ZoomIn"]"
+                aria-label="@Loc["TmSpreadsheet_ZoomIn"]"
+                disabled="@(ZoomPercent >= MaxPercent)"
+                @onclick="ZoomIn">
+            <TmIcon Name="plus" />
+        </button>
+        <button type="button"
+                class="tm-spreadsheet-statusbar__zoom-percent"
+                title="@Loc["TmSpreadsheet_ZoomReset"]"
+                @onclick="ResetZoom">@ZoomPercent%</button>
+    </div>
+
+    @if (_aggregationMenuVisible)
+    {
+        <div class="tm-spreadsheet-statusbar__menu"
+             style="left:@(_menuX)px;top:@(_menuY)px;"
+             @onclick:stopPropagation>
+            @foreach (var kind in AllKinds)
+            {
+                <label class="tm-spreadsheet-statusbar__menu-item">
+                    <input type="checkbox"
+                           checked="@_visible[kind]"
+                           @onchange="e => ToggleAggregation(kind, e)" />
+                    <span>@Loc[LabelKey(kind)]</span>
+                </label>
+            }
+        </div>
+    }
+</div>

@@ -1,0 +1,8 @@
+@namespace Tempo.Blazor.Components.Layout
+
+<CascadingValue Value="this">
+    <div class="tm-splitter tm-splitter--@Orientation.ToString().ToLowerInvariant() @AdditionalCssClass"
+         @ref="_splitterRef">
+        @ChildContent
+    </div>
+</CascadingValue>

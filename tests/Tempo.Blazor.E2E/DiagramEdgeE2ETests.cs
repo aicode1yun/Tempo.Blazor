@@ -40,6 +40,41 @@ public class DiagramEdgeE2ETests : WasmTestBase
         await page.WaitForTimeoutAsync(200);
     }
 
+    private async Task OpenDiagramEditorAsync(IPage page)
+    {
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            try
+            {
+                await page.GotoAsync(BaseUrl + DiagramEditorUrl, new PageGotoOptions
+                {
+                    WaitUntil = WaitUntilState.DOMContentLoaded,
+                    Timeout = 30_000
+                });
+            }
+            catch (TimeoutException) when (attempt == 0)
+            {
+                // In the full E2E suite the WASM document can occasionally miss the navigation load boundary even
+                // though the route is committed. The explicit app/canvas readiness checks below are authoritative.
+            }
+
+            try
+            {
+                await WaitForAppReadyAsync(page);
+                await WaitForCanvasAsync(page);
+                return;
+            }
+            catch (TimeoutException) when (attempt == 0)
+            {
+                // Retry the whole route bootstrap once; a stale/half-booted WASM page can otherwise keep the app
+                // readiness fallback waiting even though a fresh navigation succeeds immediately.
+            }
+        }
+
+        await WaitForAppReadyAsync(page);
+        await WaitForCanvasAsync(page);
+    }
+
     private async Task<(double X, double Y)> GetCenterAsync(ILocator locator)
     {
         var box = await locator.BoundingBoxAsync();
@@ -186,8 +221,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase1_ManualRouting_ToggleViaPropertiesPanel()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         await SelectEdgeAsync(page);
 
@@ -270,8 +304,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase1_ResetRouting_ButtonRestoresAutoRouting()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         await SelectEdgeAsync(page);
 
@@ -314,8 +347,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase1_VirtualBend_ClickInsertsWaypoint()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         await SelectEdgeAsync(page);
 
@@ -347,8 +379,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase1_SmartRemoval_DragWaypointToStraightLineRemovesIt()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         // First insert a virtual bend to create a middle waypoint
         await SelectEdgeAsync(page);
@@ -397,8 +428,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase1_GridSnap_NodeDragSnapsToGrid()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         // Drag the first sample node — nodes are HTML elements so real mouse works reliably
         var node = page.Locator(".tm-diagram-node").First;
@@ -428,23 +458,40 @@ public class DiagramEdgeE2ETests : WasmTestBase
         """);
         await page.WaitForTimeoutAsync(800);
 
-        // After grid snap, the node position should be a multiple of 20
+        // First verify the node actually moved (client-space sanity)
         var newBox = await node.BoundingBoxAsync();
         Assert.IsNotNull(newBox);
-
-        // First verify the node actually moved
         Assert.IsTrue(Math.Abs(newBox.X - box.X) > 5 || Math.Abs(newBox.Y - box.Y) > 5,
             $"Node should have moved, but stayed at ({newBox.X},{newBox.Y})");
 
-        var snapX = Math.Round(newBox.X / 20) * 20;
-        var snapY = Math.Round(newBox.Y / 20) * 20;
-        var deltaX = Math.Abs(newBox.X - snapX);
-        var deltaY = Math.Abs(newBox.Y - snapY);
-
-        // Allow slightly larger tolerance because async Blazor re-render can introduce
-        // a small sub-pixel offset before the snapped value settles.
-        Assert.IsTrue(deltaX < 5 && deltaY < 5,
-            $"Node should snap to grid multiple of 20, but is at ({newBox.X},{newBox.Y})");
+        // After F2, nodes live inside a <foreignObject> and render with
+        // sub-pixel precision (pre-F2 CSS transform on the overlay benefited
+        // from browser pixel snapping). The drag-snap logic still operates in
+        // *doc* space — snap only guarantees the node's translate() rounds to
+        // a grid multiple, not its client rect. Assert on doc-space via the
+        // node's inline translate(...) (same source the C# side reads).
+        var docPosJson = await page.EvaluateAsync<string>("""
+            () => {
+                // F3.A — node position is on the SVG <g> transform attribute
+                // (translate(x,y) rotate(θ cx cy)); no more `px` in CSS translate.
+                const node = document.querySelector('g.tm-diagram-node[data-node-id]');
+                if (!node) return null;
+                const s = node.getAttribute('transform') || '';
+                const m = s.match(/translate\(\s*([-\d.e+]+)\s*,\s*([-\d.e+]+)\s*\)/);
+                if (!m) return null;
+                return JSON.stringify({ x: parseFloat(m[1]), y: parseFloat(m[2]) });
+            }
+        """);
+        Assert.IsNotNull(docPosJson, "Could not read node translate(...) after drag.");
+        using var doc = JsonDocument.Parse(docPosJson);
+        var docX = doc.RootElement.GetProperty("x").GetDouble();
+        var docY = doc.RootElement.GetProperty("y").GetDouble();
+        var docSnapX = Math.Round(docX / 20) * 20;
+        var docSnapY = Math.Round(docY / 20) * 20;
+        Assert.IsTrue(Math.Abs(docX - docSnapX) < 0.5,
+            $"Node X should snap to grid multiple of 20 in doc space; got {docX}");
+        Assert.IsTrue(Math.Abs(docY - docSnapY) < 0.5,
+            $"Node Y should snap to grid multiple of 20 in doc space; got {docY}");
 
         await TakeScreenshotAsync(page, "phase1_grid_snap");
     }
@@ -454,8 +501,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase1_FreeLine_EmptyToEmpty_CreatesFloatingEdge()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         var initialEdgeCount = await GetEdgeCountAsync(page);
         var danglingBefore = await page.Locator(".tm-diagram-edge-handle--dangling").CountAsync();
@@ -511,8 +557,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase1_FreeLine_EmptyToNode_AttachesTarget()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         var initialEdgeCount = await GetEdgeCountAsync(page);
         var danglingBefore = await page.Locator(".tm-diagram-edge-handle--dangling").CountAsync();
@@ -563,8 +608,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase2_EdgeTool_ClickEmpty_StartsPolyline_EscCancels()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         var initialEdgeCount = await GetEdgeCountAsync(page);
         await SetToolModeAsync(page, "edge");
@@ -625,8 +669,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase2_Polyline_ThreeClicks_DblClickFinish()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         var initialEdgeCount = await GetEdgeCountAsync(page);
         await SetToolModeAsync(page, "edge");
@@ -706,8 +749,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase2_Polyline_Escape_DiscardsDraft()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         var initialEdgeCount = await GetEdgeCountAsync(page);
         await SetToolModeAsync(page, "edge");
@@ -782,8 +824,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase2_Polyline_ClickOnNode_AttachesTarget()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         var initialEdgeCount = await GetEdgeCountAsync(page);
         var danglingBefore = await page.Locator(".tm-diagram-edge-handle--dangling").CountAsync();
@@ -839,8 +880,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase2_SegmentDrag_MovesOrthogonalSegment()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         // Switch edge to orthogonal via properties panel
         await SelectEdgeAsync(page);
@@ -873,8 +913,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase2_CursorFeedback_HoverOverSegment()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         // Switch to orthogonal via properties panel
         await SelectEdgeAsync(page);
@@ -913,30 +952,86 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase3_DanglingEdge_DrawFromPortToEmptySpace()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
+
+        var initialEdgeCount = await GetEdgeCountAsync(page);
 
         var port = page.Locator($".tm-diagram-node[data-node-id='{Node1Id}'] .tm-diagram-port[data-port-id='right']");
         await port.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
         var (startX, startY) = await GetCenterAsync(port);
 
-        var endX = startX + 250;
-        var endY = startY;
+        var emptyCoordsJson = await page.EvaluateAsync<string>("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas) return null;
+                const cr = canvas.getBoundingClientRect();
+                const viewH = window.innerHeight;
+                const visibleBottom = Math.min(cr.bottom, viewH) - 20;
+                const nodes = Array.from(document.querySelectorAll('.tm-diagram-node[data-node-id]'));
+                let maxBottom = cr.top + 100;
+                for (const n of nodes) {
+                    const r = n.getBoundingClientRect();
+                    maxBottom = Math.max(maxBottom, r.bottom);
+                }
+                return JSON.stringify({
+                    x: cr.left + 80,
+                    y: Math.min(visibleBottom - 40, maxBottom + 40)
+                });
+            }
+        """);
+        Assert.IsNotNull(emptyCoordsJson, "Could not compute empty-canvas drop point.");
+        using var emptyCoords = JsonDocument.Parse(emptyCoordsJson!);
+        var endX = emptyCoords.RootElement.GetProperty("x").GetDouble();
+        var endY = emptyCoords.RootElement.GetProperty("y").GetDouble();
 
-        await page.Mouse.MoveAsync((float)startX, (float)startY);
-        await page.Mouse.DownAsync();
-        await page.Mouse.MoveAsync((float)endX, (float)endY);
-        await page.Mouse.UpAsync();
-        await page.WaitForTimeoutAsync(2000); // WASM needs more time to render
+        var gestureJson = await page.EvaluateAsync<string>("""
+            (args) => {
+                const [selector, sx, sy, ex, ey] = args;
+                const port = document.querySelector(selector);
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!port || !canvas || !window.tmDiagramEditor) return null;
+                const inst = window.tmDiagramEditor.instances.get(canvas.id);
+                if (!inst) return null;
 
-        // Debug: count total edges first
+                port.dispatchEvent(new MouseEvent('mousedown', {
+                    bubbles: true, cancelable: true, button: 0, buttons: 1,
+                    clientX: sx, clientY: sy
+                }));
+                const started = !!inst.isDrawingEdge;
+
+                document.dispatchEvent(new MouseEvent('mousemove', {
+                    bubbles: true, cancelable: true, button: 0, buttons: 1,
+                    clientX: ex, clientY: ey
+                }));
+                document.dispatchEvent(new MouseEvent('mouseup', {
+                    bubbles: true, cancelable: true, button: 0, buttons: 0,
+                    clientX: ex, clientY: ey
+                }));
+
+                return JSON.stringify({ started, toolMode: inst.toolMode });
+            }
+        """, new object[]
+        {
+            $".tm-diagram-node[data-node-id='{Node1Id}'] .tm-diagram-port[data-port-id='right']",
+            startX, startY, endX, endY
+        });
+        Assert.IsNotNull(gestureJson, "Could not dispatch port-to-empty-space edge gesture.");
+        using (var gesture = JsonDocument.Parse(gestureJson!))
+        {
+            Assert.IsTrue(gesture.RootElement.GetProperty("started").GetBoolean(),
+                $"Expected port mousedown to start edge drawing. Gesture: {gestureJson}");
+        }
+        await page.WaitForFunctionAsync("""
+            (expected) => document.querySelectorAll('.tm-diagram-edge-path').length >= expected
+        """, initialEdgeCount + 1, new PageWaitForFunctionOptions { Timeout = 5000 });
+
         var allEdges = page.Locator(".tm-diagram-edge-path");
         var edgeCount = await allEdges.CountAsync();
 
-        var dangling = page.Locator(".tm-diagram-edge-handle--dangling");
+        var dangling = page.Locator(".tm-diagram-edge-handle--dangling[data-dangling='target']");
         var count = await dangling.CountAsync();
-        Assert.IsTrue(edgeCount > 1, $"Expected edge count to increase after draw (got {edgeCount} edges).");
-        Assert.IsTrue(count > 0, "Expected at least one dangling handle after drawing to empty space");
+        Assert.AreEqual(initialEdgeCount + 1, edgeCount, $"Expected edge count to increase by one after draw (got {edgeCount} edges).");
+        Assert.IsTrue(count > 0, "Expected at least one floating target handle after drawing to empty space");
 
         await TakeScreenshotAsync(page, "phase3_dangling_edge");
     }
@@ -946,24 +1041,53 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase3_DanglingReconnect_ToNodeOutline()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
-        // Create dangling edge
+        // Create dangling edge. Drop the floating endpoint in verifiably
+        // empty canvas space (below every node) so we don't accidentally
+        // attach to a port from a neighbouring node — that would yield a
+        // fully-connected edge instead of a dangling one.
         var port = page.Locator($".tm-diagram-node[data-node-id='{Node1Id}'] .tm-diagram-port[data-port-id='right']");
         await port.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
         var (startX, startY) = await GetCenterAsync(port);
 
-        var emptyX = startX + 200;
-        var emptyY = startY + 80;
+        var emptyCoordsJson = await page.EvaluateAsync<string>("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                const cr = canvas.getBoundingClientRect();
+                const viewH = window.innerHeight;
+                const visibleBottom = Math.min(cr.bottom, viewH) - 20;
+                const nodes = Array.from(document.querySelectorAll('.tm-diagram-node[data-node-id]'));
+                let maxBottom = cr.top + 100;
+                for (const n of nodes) {
+                    const r = n.getBoundingClientRect();
+                    maxBottom = Math.max(maxBottom, r.bottom);
+                }
+                return JSON.stringify({
+                    x: cr.left + 80,
+                    y: Math.min(visibleBottom - 40, maxBottom + 40)
+                });
+            }
+        """);
+        using var ec = JsonDocument.Parse(emptyCoordsJson!);
+        var emptyX = ec.RootElement.GetProperty("x").GetDouble();
+        var emptyY = ec.RootElement.GetProperty("y").GetDouble();
 
         await page.Mouse.MoveAsync((float)startX, (float)startY);
         await page.Mouse.DownAsync();
-        await page.Mouse.MoveAsync((float)emptyX, (float)emptyY);
+        await page.Mouse.MoveAsync((float)emptyX, (float)emptyY, new MouseMoveOptions { Steps = 4 });
         await page.Mouse.UpAsync();
         await page.WaitForTimeoutAsync(500);
 
-        var dangling = page.Locator(".tm-diagram-edge-handle--dangling").First;
+        // NOTE: `.tm-diagram-edge-handle--dangling` is reused as the generic
+        // "endpoint handle" class when an edge is SELECTED — so for a
+        // just-drawn selected edge with attached source + floating target,
+        // TWO elements match the selector: data-dangling="source" (attached
+        // but rendered with the same class) and data-dangling="target" (the
+        // real floating endpoint). We must pick the *target* handle here,
+        // otherwise the second drag grabs the source handle sitting on top
+        // of the class1.right port. Scoped by the most recent edge id.
+        var dangling = page.Locator(".tm-diagram-edge-handle--dangling[data-dangling='target']").Last;
         await dangling.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
 
         // Drag dangling handle onto class2 node
@@ -971,11 +1095,39 @@ public class DiagramEdgeE2ETests : WasmTestBase
         var (targetX, targetY) = await GetCenterAsync(node2);
         var (dgX, dgY) = await GetCenterAsync(dangling);
 
+        // Outline-connect fires only after a 2s hover timer elapses while the
+        // dangling handle stays over the same node. The timer is scheduled on
+        // hover-enter during mousemove and CLEARED on mouseup, so the hover
+        // wait MUST happen before we release. After F2 the timer also needs a
+        // tiny settle tick for the `danglingOutlineConnect` flag to propagate
+        // before mouseup reads it.
         await page.Mouse.MoveAsync((float)dgX, (float)dgY);
         await page.Mouse.DownAsync();
         await page.Mouse.MoveAsync((float)targetX, (float)targetY);
+        await page.WaitForTimeoutAsync(2200);
         await page.Mouse.UpAsync();
-        await page.WaitForTimeoutAsync(2500); // outline-connect requires 2s hover timer
+        await page.WaitForTimeoutAsync(500);
+
+        // After a successful outline-connect the edge's target is attached to
+        // node2. The edge may still be selected (endpoint handles visible)
+        // but the target handle must no longer be marked as floating in the
+        // model — deselect the edge and re-count. A reconnected edge shows
+        // NO dangling handles when not selected.
+        await page.EvaluateAsync("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas || !window.tmDiagramEditor) return;
+                const inst = window.tmDiagramEditor.instances.get(canvas.id);
+                if (inst) {
+                    inst.selectedIds.clear();
+                    if (typeof window.tmDiagramEditor._updateSelection === 'function') {
+                        window.tmDiagramEditor._updateSelection(inst);
+                    }
+                    if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnClearSelection');
+                }
+            }
+        """);
+        await page.WaitForTimeoutAsync(300);
 
         var remainingDangling = page.Locator(".tm-diagram-edge-handle--dangling");
         var remainingCount = await remainingDangling.CountAsync();
@@ -989,8 +1141,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase3_ConnectionPoint_ClickStartsEdgeDraw()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         var cp = page.Locator($".tm-diagram-node[data-node-id='{Node1Id}'] .tm-diagram-connection-point").First;
         if (await cp.CountAsync() == 0)
@@ -1020,8 +1171,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase3_EdgeToEdge_HoverShowsHighlight()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         // Create a dangling edge first
         var port = page.Locator($".tm-diagram-node[data-node-id='{Node1Id}'] .tm-diagram-port[data-port-id='bottom']");
@@ -1070,8 +1220,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase4_LabelDrag_MovesLabelRelativeToEdge()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         // Sample edge has label "1..*"
         var labelGroup = page.Locator(".tm-diagram-edge-label-group").First;
@@ -1100,8 +1249,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase4_ElbowFlip_DoubleClickChangesOrientation()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         // Switch to elbow via properties panel (context menu may be blocked by HTML overlay)
         await SelectEdgeAsync(page);
@@ -1138,8 +1286,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase4_ArcSize_InputChangesRounding()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         await SelectEdgeAsync(page);
 
@@ -1185,8 +1332,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase5_CubicBezier_ToggleChangesPathShape()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         await SelectEdgeAsync(page);
 
@@ -1218,8 +1364,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase5_RubberBandSelection_IncludesEdges()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         // Install a mousedown event probe so we can prove whether Playwright's
         // mouse events actually reach DOM listeners at all (if none arrive,
@@ -1422,7 +1567,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
                     const selNodes = document.querySelectorAll('.tm-diagram-node--selected').length;
                     const outlines = document.querySelectorAll('.tm-diagram-selection-outline').length;
                     const selLayer = !!document.querySelector('.tm-diagram-selection-layer');
-                    const htmlLayer = !!document.querySelector('.tm-diagram-canvas__overlay');
+                    const htmlLayer = !!document.querySelector('.tm-diagram-scene-pane .tm-diagram-canvas__overlay');
                     const nodes = Array.from(document.querySelectorAll('.tm-diagram-node[data-node-id]'));
                     const nodeRects = nodes.map(n => { const r = n.getBoundingClientRect(); return { id: n.getAttribute('data-node-id'), l: Math.round(r.left), t: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom) }; });
                     const canvasCls = canvas ? canvas.className : null;
@@ -1465,16 +1610,23 @@ public class DiagramEdgeE2ETests : WasmTestBase
                         viewBox = svg.getAttribute('viewBox');
                     }
                     // Read node translate+data-w/h like `_nodeRect` does.
-                    const overlay = document.querySelector('.tm-diagram-canvas__overlay');
-                    const nodeDocRects = Array.from((overlay || document).querySelectorAll('.tm-diagram-node[data-node-id]')).map(el => {
-                        const s = el.style.transform || '';
-                        const m = s.match(/translate\(\s*([-\d.e+]+)px\s*,\s*([-\d.e+]+)px\s*\)/);
+                    // F2 moved nodes into a <foreignObject> inside the scene pane; the
+                    // .tm-diagram-canvas__overlay wrapper still exists but is nested inside
+                    // the SVG now. Prefer the scene pane as the query root so this stays
+                    // correct through F3 when per-node <g>s replace the single foreignObject.
+                    const overlay = document.querySelector('.tm-diagram-scene-pane');
+                    // F3.A — nodes are per-node SVG <g> with the SVG `transform`
+                    // attribute carrying translate(x,y) rotate(...). No px units,
+                    // no CSS transform.
+                    const nodeDocRects = Array.from((overlay || document).querySelectorAll('g.tm-diagram-node[data-node-id]')).map(el => {
+                        const s = el.getAttribute('transform') || '';
+                        const m = s.match(/translate\(\s*([-\d.e+]+)\s*,\s*([-\d.e+]+)\s*\)/);
                         return {
                             id: el.getAttribute('data-node-id'),
                             x: m ? Math.round(parseFloat(m[1])) : null,
                             y: m ? Math.round(parseFloat(m[2])) : null,
-                            w: parseFloat(el.getAttribute('data-w') || el.style.width || '0'),
-                            h: parseFloat(el.getAttribute('data-h') || el.style.height || '0')
+                            w: parseFloat(el.getAttribute('data-w') || '0'),
+                            h: parseFloat(el.getAttribute('data-h') || '0')
                         };
                     });
                     return JSON.stringify({
@@ -1502,8 +1654,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase5_SelectionOutline_VisibleOnSelectedEdge()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         await SelectEdgeAsync(page);
 
@@ -1520,8 +1671,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase5_Cardinality_SelectShowsSymbols()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         await SelectEdgeAsync(page);
 
@@ -1552,8 +1702,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase6_WholeEdgeDrag_DetachesAndMovesEdge()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         // Select the edge first so handles are visible
         await SelectEdgeAsync(page);
@@ -1611,8 +1760,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase6_ConnectedTerminalDrag_DetachesEnd()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         // Select edge to reveal dangling handles on connected ends
         await SelectEdgeAsync(page);
@@ -1654,8 +1802,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase6_InlineToolbar_AppearsOnEdgeSelection()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         await SelectEdgeAsync(page);
         await page.WaitForTimeoutAsync(300);
@@ -1675,8 +1822,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase6_InlineToolbar_FlipButtonWorks()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         // Select edge and switch to elbow routing so flip is applicable
         await SelectEdgeAsync(page);
@@ -1709,8 +1855,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase6_ContextMenu_RoutingPickerHasSvgPreviews()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         await SelectEdgeAsync(page);
         await OpenEdgeContextMenuAsync(page);
@@ -1746,8 +1891,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase6_ContextMenu_FlipActionWorks()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         await SelectEdgeAsync(page);
         await SetEdgeRoutingAsync(page, "elbow");
@@ -1775,8 +1919,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase6_ContextMenu_ClearWaypointsWorks()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         await SelectEdgeAsync(page);
         await SetEdgeRoutingAsync(page, "orthogonal");
@@ -1827,8 +1970,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Phase3_SnapToPort_NearMiss_Attaches()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         var initialEdgeCount = await GetEdgeCountAsync(page);
 
@@ -2032,8 +2174,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     {
         const int GridSize = 20;
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         // Configure a coarse 20px grid directly on the active diagram instance.
         // Avoids depending on demo-specific UI controls.
@@ -2042,16 +2183,31 @@ public class DiagramEdgeE2ETests : WasmTestBase
                 const canvas = document.querySelector('.tm-diagram-canvas');
                 if (!canvas || !window.tmDiagramEditor) return;
                 const inst = window.tmDiagramEditor.instances.get(canvas.id);
-                if (inst) inst.gridSize = gridSize;
+                if (inst) {
+                    inst.gridSize = gridSize;
+                }
             }
         """, GridSize);
 
         var initialEdgeCount = await GetEdgeCountAsync(page);
+        var initialEdgeIdsJson = await page.EvaluateAsync<string>("""
+            () => JSON.stringify(Array
+                .from(document.querySelectorAll('.tm-diagram-edge-group[data-edge-id]'))
+                .map(g => g.getAttribute('data-edge-id'))
+                .filter(Boolean))
+        """);
+        using var initialEdgeIds = JsonDocument.Parse(initialEdgeIdsJson!);
+        var initialEdgeIdList = initialEdgeIds.RootElement
+            .EnumerateArray()
+            .Select(id => id.GetString())
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .ToArray();
         await SetToolModeAsync(page, "edge");
 
-        // Pick screen points BELOW every node so the drag endpoint stays in
-        // truly empty canvas space (no node/edge/port hit). That lets the
-        // "nothing snapped → grid snap the floating endpoint" branch run.
+        // Pick two screen points that are truly empty according to the same
+        // `document.elementFromPoint` hit testing used by the diagram JS. A
+        // coarse "below the nodes" estimate is not enough on responsive
+        // viewports: it can still land on a node and create an attached edge.
         var coordsJson = await page.EvaluateAsync<string>("""
             (gridSize) => {
                 const canvas = document.querySelector('.tm-diagram-canvas');
@@ -2059,23 +2215,42 @@ public class DiagramEdgeE2ETests : WasmTestBase
                 const inst = window.tmDiagramEditor.instances.get(canvas.id);
                 if (!inst) return null;
                 const cr = canvas.getBoundingClientRect();
-                const nodes = Array.from(document.querySelectorAll('.tm-diagram-node[data-node-id]'));
-                let maxBottom = cr.top + 100;
-                for (const n of nodes) {
-                    const r = n.getBoundingClientRect();
-                    maxBottom = Math.max(maxBottom, r.bottom);
+                const viewH = window.innerHeight;
+                const visibleBottom = Math.min(cr.bottom, viewH) - 20;
+                const visibleRight = Math.min(cr.right, window.innerWidth) - 20;
+                const isEmpty = (x, y) => {
+                    const el = document.elementFromPoint(x, y);
+                    if (!el || !canvas.contains(el)) return false;
+                    if (el.closest('.tm-diagram-node[data-node-id]')) return false;
+                    if (el.closest('.tm-diagram-port, .tm-diagram-connection-point')) return false;
+                    if (el.closest('.tm-diagram-edge-group, .tm-diagram-edge-hit-path')) return false;
+                    if (el.closest('.tm-diagram-edge-handle')) return false;
+                    return true;
+                };
+
+                const candidates = [];
+                for (let y = cr.top + 44; y <= visibleBottom; y += 31) {
+                    for (let x = cr.left + 44; x <= visibleRight; x += 37) {
+                        if (isEmpty(x, y)) candidates.push({ x, y });
+                    }
                 }
-                const startScreen = {
-                    x: cr.left + 60,
-                    y: Math.min(cr.bottom - 80, maxBottom + 40)
-                };
-                const endScreen = {
-                    x: Math.min(cr.right - 60, startScreen.x + 223),
-                    y: Math.min(cr.bottom - 20, startScreen.y + 137)
-                };
+                let startScreen = null;
+                let endScreen = null;
+                for (const a of candidates) {
+                    for (let i = candidates.length - 1; i >= 0; i--) {
+                        const b = candidates[i];
+                        if (Math.abs(b.x - a.x) >= 180 && Math.abs(b.y - a.y) >= 80) {
+                            startScreen = a;
+                            endScreen = b;
+                            break;
+                        }
+                    }
+                    if (startScreen && endScreen) break;
+                }
+                if (!startScreen || !endScreen) return null;
                 const startDoc = window.tmDiagramEditor._screenToDoc(inst, startScreen.x, startScreen.y);
                 const endDoc   = window.tmDiagramEditor._screenToDoc(inst, endScreen.x, endScreen.y);
-                return JSON.stringify({ startScreen, endScreen, startDoc, endDoc });
+                return JSON.stringify({ startScreen, endScreen, startDoc, endDoc, candidateCount: candidates.length });
             }
         """, GridSize);
         Assert.IsNotNull(coordsJson, "Could not compute grid-snap drag coordinates.");
@@ -2098,41 +2273,53 @@ public class DiagramEdgeE2ETests : WasmTestBase
         var edgeCountAfter = await GetEdgeCountAsync(page);
         Assert.AreEqual(initialEdgeCount + 1, edgeCountAfter, "Expected one newly created floating edge.");
 
-        // Read the actual floating-target position from the dangling target
-        // handle's bounding rect (screen) and map it back to doc units via
-        // the public `_screenToDoc` helper. This is independent of any SVG
-        // transform or router layout.
+        // Read the actual floating-target position from the SVG attributes on
+        // the dangling handle. Avoid DOM bounding boxes here: they are screen
+        // geometry for the square decorator, not the document endpoint.
         var targetPosJson = await page.EvaluateAsync<string>("""
-            () => {
-                const canvas = document.querySelector('.tm-diagram-canvas');
-                if (!canvas || !window.tmDiagramEditor) return null;
-                const inst = window.tmDiagramEditor.instances.get(canvas.id);
-                if (!inst) return null;
-                const handles = Array.from(document.querySelectorAll('.tm-diagram-edge-handle--dangling[data-dangling="target"]'));
-                if (!handles.length) return JSON.stringify({ noHandle: true });
-                // Take the last-rendered dangling target handle — that's the
-                // one on the edge we just created.
-                const h = handles[handles.length - 1];
-                const r = h.getBoundingClientRect();
-                const cx = r.left + r.width / 2;
-                const cy = r.top + r.height / 2;
-                const doc = window.tmDiagramEditor._screenToDoc(inst, cx, cy);
-                return JSON.stringify({ docX: doc.x, docY: doc.y, gridSize: inst.gridSize });
+            (existingIds) => {
+                const existing = new Set(existingIds || []);
+                const groups = Array.from(document.querySelectorAll('.tm-diagram-edge-group[data-edge-id]'));
+                const group = groups.find(g => !existing.has(g.getAttribute('data-edge-id')));
+                const edgeId = group ? group.getAttribute('data-edge-id') : null;
+                const handle = edgeId
+                    ? document.querySelector(`.tm-diagram-edge-handle--dangling[data-edge-id="${edgeId}"][data-dangling="target"]`)
+                    : null;
+                if (!handle) return JSON.stringify({ noHandle: true, edgeId, allEdgeIds: groups.map(g => g.getAttribute('data-edge-id')) });
+                const x = Number(handle.getAttribute('data-doc-x'));
+                const y = Number(handle.getAttribute('data-doc-y'));
+                if (!Number.isFinite(x) || !Number.isFinite(y)) {
+                    return JSON.stringify({ noEndpoint: true, edgeId, x: handle.getAttribute('data-doc-x'), y: handle.getAttribute('data-doc-y') });
+                }
+                return JSON.stringify({
+                    docX: x,
+                    docY: y,
+                    edgeId,
+                    handleX: handle.getAttribute('x'),
+                    handleY: handle.getAttribute('y'),
+                    instGridSize: (() => {
+                        const canvas = document.querySelector('.tm-diagram-canvas');
+                        const inst = canvas && window.tmDiagramEditor ? window.tmDiagramEditor.instances.get(canvas.id) : null;
+                        return inst ? inst.gridSize : null;
+                    })()
+                });
             }
-        """);
+        """, initialEdgeIdList);
         Assert.IsNotNull(targetPosJson);
         using var targetPos = JsonDocument.Parse(targetPosJson);
         Assert.IsFalse(targetPos.RootElement.TryGetProperty("noHandle", out _),
             "Expected a dangling target handle after free-line drag; none found (target may have attached to a node or edge).");
+        Assert.IsFalse(targetPos.RootElement.TryGetProperty("noEndpoint", out _),
+            $"Expected to parse the floating target endpoint from the new edge path. State: {targetPosJson}");
         var docX = targetPos.RootElement.GetProperty("docX").GetDouble();
         var docY = targetPos.RootElement.GetProperty("docY").GetDouble();
 
         // Grid snap tolerance: 1.5 doc units covers cumulative float
         // rounding through SVG matrixTransform and DOM rect measurement.
         Assert.IsTrue(Math.Abs(docX - expectedX) <= 1.5,
-            $"Target X should snap to grid multiple of {GridSize}. Expected ≈ {expectedX} (raw {endDocX:F2}), got {docX:F2}.");
+            $"Target X should snap to grid multiple of {GridSize}. Expected ≈ {expectedX} (raw {endDocX:F2}), got {docX:F2}. State: {targetPosJson}");
         Assert.IsTrue(Math.Abs(docY - expectedY) <= 1.5,
-            $"Target Y should snap to grid multiple of {GridSize}. Expected ≈ {expectedY} (raw {endDocY:F2}), got {docY:F2}.");
+            $"Target Y should snap to grid multiple of {GridSize}. Expected ≈ {expectedY} (raw {endDocY:F2}), got {docY:F2}. State: {targetPosJson}");
 
         await TakeScreenshotAsync(page, "phase3_grid_snap_floating_point");
     }
@@ -2146,8 +2333,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
     public async Task Smoke_DiagramPage_LoadsWithSample()
     {
         var page = await CreatePageAsync();
-        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
-        await WaitForCanvasAsync(page);
+        await OpenDiagramEditorAsync(page);
 
         var node1 = page.Locator($".tm-diagram-node[data-node-id='{Node1Id}']");
         var node2 = page.Locator($".tm-diagram-node[data-node-id='{Node2Id}']");

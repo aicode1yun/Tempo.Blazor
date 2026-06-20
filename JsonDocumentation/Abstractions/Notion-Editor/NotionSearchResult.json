@@ -1,0 +1,47 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionSearchResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BlockId",
+      "kind": "Property",
+      "type": "Guid?"
+    },
+    {
+      "name": "BlockType",
+      "kind": "Property",
+      "type": "BlockType?"
+    },
+    {
+      "name": "HighlightRanges",
+      "kind": "Property",
+      "type": "IReadOnlyList<NotionSearchHighlightRange>"
+    },
+    {
+      "name": "MatchSnippet",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "PageIconEmoji",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "PageId",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "PageTitle",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "NotionSearchResult"
+}

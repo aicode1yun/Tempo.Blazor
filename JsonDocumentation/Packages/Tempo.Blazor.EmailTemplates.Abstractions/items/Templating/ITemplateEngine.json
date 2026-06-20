@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Templating",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+  "description": "Renders, validates and analyzes Scriban-syntax templates within a sandbox.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/ITemplateEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITemplateEngine"
+}

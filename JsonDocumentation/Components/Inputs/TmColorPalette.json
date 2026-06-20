@@ -1,0 +1,47 @@
+{
+  "itemName": "TmColorPalette",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "A color palette that displays predefined colors in a grid. Users can click a swatch to select a color.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmColorPalette.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Shows a clear button. Default true."
+    },
+    {
+      "name": "Colors",
+      "type": "IReadOnlyList<string>?",
+      "isRequired": false,
+      "description": "Event fired when a color is selected."
+    },
+    {
+      "name": "Columns",
+      "type": "int",
+      "isRequired": false,
+      "default": "8",
+      "description": "Predefined colors to display. Defaults to a standard palette."
+    },
+    {
+      "name": "ShowClearButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Number of columns in the grid. Default 8."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "The currently selected color value."
+    }
+  ]
+}

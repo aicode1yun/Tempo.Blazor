@@ -1,0 +1,70 @@
+@namespace Tempo.Blazor.Components.Spreadsheet.Data
+@using Tempo.Blazor.Components.Spreadsheet.Data
+
+<div class="tm-spreadsheet-filter-dropdown__overlay" @onclick="Close" @oncontextmenu:preventDefault></div>
+<div class="tm-spreadsheet-filter-dropdown"
+     role="dialog"
+     aria-label="@Loc["TmSpreadsheet_Filter_ButtonTitle"]"
+     style="left:@(X.ToString(System.Globalization.CultureInfo.InvariantCulture))px;top:@(Y.ToString(System.Globalization.CultureInfo.InvariantCulture))px;"
+     @onclick:stopPropagation
+     @onkeydown="OnKeyDown">
+
+    <button type="button" class="tm-spreadsheet-filter-dropdown__item" @onclick="SortAscending">
+        <span class="tm-spreadsheet-filter-dropdown__icon">▲</span> @Loc["TmSpreadsheet_Filter_SortAsc"]
+    </button>
+    <button type="button" class="tm-spreadsheet-filter-dropdown__item" @onclick="SortDescending">
+        <span class="tm-spreadsheet-filter-dropdown__icon">▼</span> @Loc["TmSpreadsheet_Filter_SortDesc"]
+    </button>
+
+    <div class="tm-spreadsheet-filter-dropdown__divider"></div>
+
+    <button type="button" class="tm-spreadsheet-filter-dropdown__item" @onclick="OpenCustomFilter">
+        <span class="tm-spreadsheet-filter-dropdown__icon">⚙</span> @Loc[CustomFilterLabelKey] <span class="tm-spreadsheet-filter-dropdown__chevron">›</span>
+    </button>
+    @if (HasActiveFilter)
+    {
+        <button type="button" class="tm-spreadsheet-filter-dropdown__item" @onclick="ClearColumnFilter">
+            <span class="tm-spreadsheet-filter-dropdown__icon">✕</span> @Loc["TmSpreadsheet_Filter_ClearFilter"]
+        </button>
+    }
+
+    <div class="tm-spreadsheet-filter-dropdown__divider"></div>
+
+    <input class="tm-spreadsheet-filter-dropdown__search"
+           type="text"
+           placeholder="@Loc["TmSpreadsheet_Filter_SearchPlaceholder"]"
+           aria-label="@Loc["TmSpreadsheet_Filter_SearchPlaceholder"]"
+           value="@_search"
+           @oninput="OnSearchInput" />
+
+    <label class="tm-spreadsheet-filter-dropdown__check tm-spreadsheet-filter-dropdown__check--all">
+        <input type="checkbox" checked="@AllVisibleChecked" @onchange="ToggleSelectAll" />
+        <span>@Loc["TmSpreadsheet_Filter_SelectAll"]</span>
+    </label>
+
+    <div class="tm-spreadsheet-filter-dropdown__list" role="listbox">
+        @if (VisibleValues.Count == 0)
+        {
+            <div class="tm-spreadsheet-filter-dropdown__empty">@Loc["TmSpreadsheet_Filter_NoMatches"]</div>
+        }
+        else
+        {
+            @foreach (var item in VisibleValues)
+            {
+                <label class="tm-spreadsheet-filter-dropdown__check">
+                    <input type="checkbox" checked="@_checked.Contains(item.Display)" @onchange="() => ToggleValue(item.Display)" />
+                    <span>@(item.IsBlank ? Loc["TmSpreadsheet_Filter_Blanks"] : item.Display)</span>
+                </label>
+            }
+        }
+    </div>
+
+    <div class="tm-spreadsheet-filter-dropdown__actions">
+        <button type="button" class="tm-spreadsheet-filter-dropdown__btn tm-spreadsheet-filter-dropdown__btn--cancel" @onclick="Close">
+            @Loc["TmSpreadsheet_Filter_Cancel"]
+        </button>
+        <button type="button" class="tm-spreadsheet-filter-dropdown__btn tm-spreadsheet-filter-dropdown__btn--ok" @onclick="ApplyValues">
+            @Loc["TmSpreadsheet_Filter_Ok"]
+        </button>
+    </div>
+</div>

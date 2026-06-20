@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "description": "The outcome of confirming a selection in .",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Files/DocumentOpenResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DocumentId",
+      "kind": "Property",
+      "type": "required Guid",
+      "description": "Identifier of the picked document."
+    },
+    {
+      "name": "Kind",
+      "kind": "Property",
+      "type": "required TempoDocumentKind",
+      "description": "Kind of the picked document."
+    },
+    {
+      "name": "Mode",
+      "kind": "Property",
+      "type": "required DocumentOpenMode",
+      "description": "Whether to link to or copy the document."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Display name of the picked document, for convenience."
+    }
+  ],
+  "itemName": "DocumentOpenResult"
+}

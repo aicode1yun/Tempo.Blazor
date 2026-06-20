@@ -1,0 +1,47 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/HeadingBlockContent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Alignment",
+      "kind": "Property",
+      "type": "TextAlignment"
+    },
+    {
+      "name": "BackgroundColor",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Html",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "IsToggleable",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "Level",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "Mentions",
+      "kind": "Property",
+      "type": "IReadOnlyList<Mention>"
+    },
+    {
+      "name": "TextColor",
+      "kind": "Property",
+      "type": "string?"
+    }
+  ],
+  "itemName": "Tempo.Blazor.NotionEditor.Models.HeadingBlockContent"
+}

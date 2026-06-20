@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "Applies a granular operation batch (add/update/remove elements, connectors and pages, set title and canvas size) to a wireframe document. Operations are applied in order; the first failure aborts the batch (callers apply to a copy and only persist on success).",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeOperationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeOperationEngine"
+}

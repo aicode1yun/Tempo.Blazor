@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+  "description": "Factory that resolves renderers for declarative document toolbar items.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Registry/DocumentToolbarComponentFactory.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CreateDefault",
+      "kind": "Method",
+      "type": "DocumentToolbarComponentFactory",
+      "description": "Creates a factory with the built-in document toolbar renderers registered."
+    },
+    {
+      "name": "GetRenderer",
+      "kind": "Method",
+      "type": "IDocumentToolbarItemRenderer",
+      "description": "Gets the renderer registered for the requested toolbar item kind.",
+      "parameters": [
+        {
+          "name": "kind",
+          "type": "DocumentToolbarItemKind"
+        }
+      ]
+    },
+    {
+      "name": "Register",
+      "kind": "Method",
+      "type": "void",
+      "description": "Registers or replaces a renderer for its declared toolbar item kind.",
+      "parameters": [
+        {
+          "name": "renderer",
+          "type": "IDocumentToolbarItemRenderer"
+        }
+      ]
+    },
+    {
+      "name": "Render",
+      "kind": "Method",
+      "type": "RenderFragment",
+      "description": "Renders a toolbar item using the renderer registered for its kind.",
+      "parameters": [
+        {
+          "name": "context",
+          "type": "DocumentToolbarRenderContext"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentToolbarComponentFactory"
+}

@@ -24,6 +24,8 @@ public static class WireframeSerializer
     {
         ArgumentNullException.ThrowIfNull(document);
         document.ModifiedAt = DateTime.UtcNow;
+        if (document.ActivePage is { } page)
+            page.ModifiedAt = DateTime.UtcNow;
         return JsonSerializer.Serialize(document, WireframeJsonOptions.Default);
     }
 
@@ -51,6 +53,7 @@ public static class WireframeSerializer
         if (document is null)
             throw new WireframeDeserializationException("Wireframe JSON deserialized to null.");
 
+        document.EnsureActivePage();
         return document;
     }
 

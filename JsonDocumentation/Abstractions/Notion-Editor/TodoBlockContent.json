@@ -1,0 +1,57 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/TodoBlockContent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Alignment",
+      "kind": "Property",
+      "type": "TextAlignment"
+    },
+    {
+      "name": "AssigneeDisplayName",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "AssigneeId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "BackgroundColor",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "DueDate",
+      "kind": "Property",
+      "type": "DateTime?"
+    },
+    {
+      "name": "Html",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "IsChecked",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "Mentions",
+      "kind": "Property",
+      "type": "IReadOnlyList<Mention>"
+    },
+    {
+      "name": "TextColor",
+      "kind": "Property",
+      "type": "string?"
+    }
+  ],
+  "itemName": "TodoBlockContent"
+}

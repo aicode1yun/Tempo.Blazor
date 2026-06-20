@@ -28,6 +28,19 @@
                           fill="none" stroke="#d1d5db" stroke-width="1"/>
                 </pattern>
             }
+            @* Connector arrowhead markers *@
+            @if (Document is not null)
+            {
+                @foreach (var c in Document.Connectors)
+                {
+                    @((RenderTreeBuilder __am) =>
+                    {
+                        var markers = WireframeConnectorRenderer.BuildArrowMarkers(c);
+                        if (!string.IsNullOrEmpty(markers))
+                            __am.AddMarkupContent(0, markers);
+                    })
+                }
+            }
         </defs>
 
         @* Canvas background + grid *@
@@ -42,23 +55,101 @@
                   pointer-events="none"/>
         }
 
+        @* Connectors *@
+        @if (Document is not null)
+        {
+            @foreach (var c in Document.Connectors.OrderBy(c => c.ZIndex))
+            {
+                var source = Document.Elements.FirstOrDefault(e => e.Id == c.FromId);
+                var target = Document.Elements.FirstOrDefault(e => e.Id == c.ToId);
+                if (source is null || target is null) continue;
+
+                var pathD = WireframeConnectorRenderer.BuildPath(c, source, target);
+                var labelPos = WireframeConnectorRenderer.GetLabelPosition(c, source, target);
+                var startMarker = WireframeConnectorRenderer.GetArrowMarkerRef(c.StartArrow, true, c.Id);
+                var endMarker = WireframeConnectorRenderer.GetArrowMarkerRef(c.EndArrow, false, c.Id);
+                var isSelected = _currentConnectorSelectionIds.Contains(c.Id);
+                var stroke = c.Stroke;
+                var strokeWidth = c.StrokeWidth.ToString("0.##", CultureInfo.InvariantCulture);
+                var dash = c.StrokeDasharray;
+                var lx = labelPos.X.ToString("0.##", CultureInfo.InvariantCulture);
+                var ly = labelPos.Y.ToString("0.##", CultureInfo.InvariantCulture);
+
+                <g data-connector-id="@c.Id"
+                   class="tm-wd-connector @(isSelected ? "tm-wd-connector--selected" : "")">
+
+                    @* Hit-test path (wider, invisible) *@
+                    <path d="@pathD"
+                          fill="none"
+                          stroke="transparent"
+                          stroke-width="12"
+                          class="tm-wd-connector__hit"
+                          pointer-events="stroke" />
+
+                    @* Visible path *@
+                    <path d="@pathD"
+                          fill="none"
+                          stroke="@stroke"
+                          stroke-width="@strokeWidth"
+                          stroke-dasharray="@dash"
+                          marker-start="@startMarker"
+                          marker-end="@endMarker"
+                          class="tm-wd-connector__path"
+                          pointer-events="none" />
+
+                    @* Label (rendered as MarkupString to avoid Razor <text> conflict) *@
+                    @if (!string.IsNullOrEmpty(c.Label))
+                    {
+                        @((MarkupString)$"""<text x="{lx}" y="{ly}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-family="ui-sans-serif,system-ui" fill="#374151" class="tm-wd-connector__label" pointer-events="none">{WireframeSvg.Escape(c.Label)}</text>""")
+                    }
+
+                    @* Waypoint handles (visible when connector is selected) *@
+                    @if (isSelected)
+                    {
+                        @for (int i = 0; i < c.Waypoints.Count; i++)
+                        {
+                            var wp = c.Waypoints[i];
+                            var wpx = wp.X.ToString("0.##", CultureInfo.InvariantCulture);
+                            var wpy = wp.Y.ToString("0.##", CultureInfo.InvariantCulture);
+                            <circle cx="@wpx" cy="@wpy" r="4"
+                                    fill="white" stroke="#3b82f6" stroke-width="1.5"
+                                    class="tm-wd-connector__waypoint"
+                                    data-waypoint-index="@i"
+                                    pointer-events="all"
+                                    style="cursor:move" />
+                        }
+                    }
+                </g>
+            }
+        }
+
         @* Elements *@
         @if (Document is not null)
         {
             @foreach (var el in Document.Elements.OrderBy(e => e.ZIndex))
             {
+                if (!IsLayerVisible(el.LayerId)) continue;
+
                 var def    = _registry.GetDef(el.Type);
                 var transX = el.X.ToString("0.##", CultureInfo.InvariantCulture);
                 var transY = el.Y.ToString("0.##", CultureInfo.InvariantCulture);
                 var w      = el.W.ToString("0.##", CultureInfo.InvariantCulture);
                 var h      = el.H.ToString("0.##", CultureInfo.InvariantCulture);
 
+                var rot = el.Rotation.ToString("0.##", CultureInfo.InvariantCulture);
+                var isLocked = el.IsLocked || !string.IsNullOrEmpty(el.LockedBy) || IsLayerLocked(el.LayerId);
+
                 <g data-el-id="@el.Id"
                    data-type="@el.Type"
                    data-w="@w"
                    data-h="@h"
-                   transform="translate(@transX, @transY)"
-                   style="@(ReadOnly ? "cursor:default" : "cursor:move")">
+                   data-rotation="@rot"
+                   data-locked="@(isLocked ? "true" : "false")"
+                   data-group-id="@el.GroupId"
+                   data-layer-id="@el.LayerId"
+                   class="@(isLocked ? "tm-wd-locked" : "")"
+                   transform="translate(@transX, @transY) rotate(@rot, @((el.W / 2).ToString("0.##", CultureInfo.InvariantCulture)), @((el.H / 2).ToString("0.##", CultureInfo.InvariantCulture)))"
+                   style="@(ReadOnly || isLocked ? "cursor:default" : "cursor:move")">
 
                     @* Inner SVG viewport so element coords stay local (0,0) *@
                     <svg width="@w" height="@h"

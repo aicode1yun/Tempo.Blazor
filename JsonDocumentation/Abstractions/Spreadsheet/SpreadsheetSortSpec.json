@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "A full sort specification: the range to sort, whether it has a header row, the ordered list of sort levels, and the orientation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetSortSpec.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetSortSpec"
+}

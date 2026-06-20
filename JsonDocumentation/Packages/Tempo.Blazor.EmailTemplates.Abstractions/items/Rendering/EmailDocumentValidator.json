@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Rendering",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+  "description": "Validates a document for structural and content correctness: layout (via ) plus per-block rules such as required button hrefs and image sources/alt text. Findings carry localization keys, never localized text.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/EmailDocumentValidator.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Validate",
+      "kind": "Method",
+      "type": "IReadOnlyList<DocumentValidationMessage>",
+      "description": "Validates the document and returns all findings (layout + block level).",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        }
+      ]
+    }
+  ],
+  "itemName": "EmailDocumentValidator"
+}

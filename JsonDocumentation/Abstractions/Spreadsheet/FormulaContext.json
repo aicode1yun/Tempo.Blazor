@@ -1,0 +1,69 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Formula",
+  "description": "Provides evaluation context for a formula including the source sheet, owning workbook, and sheet index for named range resolution.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Formula/FormulaContext.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ResolveCellRef",
+      "kind": "Method",
+      "type": "object?",
+      "description": "Resolves a cell reference to its raw value.",
+      "parameters": [
+        {
+          "name": "cellRef",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ResolveNamedRange",
+      "kind": "Method",
+      "type": "string?",
+      "description": "Resolves a named range to its underlying A1 reference or constant value. Sheet-scope names take precedence over workbook-scope names on their sheet.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ResolveRangeRef",
+      "kind": "Method",
+      "type": "List<object?>",
+      "description": "Resolves a range reference to a list of raw values.",
+      "parameters": [
+        {
+          "name": "startRef",
+          "type": "string"
+        },
+        {
+          "name": "endRef",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Sheet",
+      "kind": "Property",
+      "type": "SpreadsheetSheet"
+    },
+    {
+      "name": "SheetIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "The zero-based index of the sheet being evaluated."
+    },
+    {
+      "name": "Workbook",
+      "kind": "Property",
+      "type": "SpreadsheetWorkbook?",
+      "description": "The workbook that owns the sheet, used for named range lookup."
+    }
+  ],
+  "itemName": "FormulaContext"
+}

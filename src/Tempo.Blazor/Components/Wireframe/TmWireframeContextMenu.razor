@@ -1,0 +1,112 @@
+@namespace Tempo.Blazor.Components.Wireframe
+@using Tempo.Blazor.Components.Wireframe.Models
+
+@if (IsOpen)
+{
+    <div @ref="_menuRef"
+         class="tm-wd-editor__context-menu"
+         role="menu"
+         style="position:fixed;left:@($"{X}px");top:@($"{Y}px");"
+         @onclick:stopPropagation
+         @oncontextmenu:preventDefault>
+
+        @switch (MenuType)
+        {
+            case WireframeContextMenuType.Canvas:
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(!CanUndo || ReadOnly)" @onclick="CtxUndo">@Loc["TmWireframe_CtxUndo"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(!CanRedo || ReadOnly)" @onclick="CtxRedo">@Loc["TmWireframe_CtxRedo"]</button>
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                <button class="tm-wd-editor__context-item" role="menuitem" @onclick="CtxSelectAll">@Loc["TmWireframe_CtxSelectAll"]</button>
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(!HasClipboardStyle || ReadOnly)" @onclick="CtxPasteStyle">@Loc["TmWireframe_CtxPasteStyle"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(!HasClipboardStyle || ReadOnly)" @onclick="CtxPasteSize">@Loc["TmWireframe_CtxPasteSize"]</button>
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                <button class="tm-wd-editor__context-item" role="menuitem" @onclick="CtxToggleGrid">@Loc[ShowGrid ? "TmWireframe_CtxHideGrid" : "TmWireframe_CtxShowGrid"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" @onclick="CtxToggleSnapToObjects">@Loc[SnapToObjects ? "TmWireframe_CtxDisableSnap" : "TmWireframe_CtxEnableSnap"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" @onclick="CtxFitToView">@Loc["TmWireframe_CtxFitToView"]</button>
+                break;
+
+            case WireframeContextMenuType.Element:
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxCopyStyle">@Loc["TmWireframe_CtxCopyStyle"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxDuplicate">@Loc["TmWireframe_CtxDuplicate"]</button>
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(!HasClipboardStyle || ReadOnly)" @onclick="CtxPasteStyle">@Loc["TmWireframe_CtxPasteStyle"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(!HasClipboardStyle || ReadOnly)" @onclick="CtxPasteSize">@Loc["TmWireframe_CtxPasteSize"]</button>
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxBringToFront">@Loc["TmWireframe_CtxBringToFront"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxSendToBack">@Loc["TmWireframe_CtxSendToBack"]</button>
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                <span class="tm-wd-editor__context-heading">@Loc["TmWireframe_CtxAlign"]</span>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxAlign(WireframeAlignment.Left)'>@Loc["TmWireframe_AlignLeft"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxAlign(WireframeAlignment.CenterH)'>@Loc["TmWireframe_AlignCenterH"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxAlign(WireframeAlignment.Right)'>@Loc["TmWireframe_AlignRight"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxAlign(WireframeAlignment.Top)'>@Loc["TmWireframe_AlignTop"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxAlign(WireframeAlignment.CenterV)'>@Loc["TmWireframe_AlignCenterV"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxAlign(WireframeAlignment.Bottom)'>@Loc["TmWireframe_AlignBottom"]</button>
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                @if (CanGroup)
+                {
+                    <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxGroup">@Loc["TmWireframe_CtxGroup"]</button>
+                }
+                @if (HasGroupInSelection)
+                {
+                    <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxUngroup">@Loc["TmWireframe_CtxUngroup"]</button>
+                }
+                @if (IsSelectionLocked)
+                {
+                    <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxUnlock">@Loc["TmWireframe_CtxUnlock"]</button>
+                }
+                else
+                {
+                    <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxLock">@Loc["TmWireframe_CtxLock"]</button>
+                }
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                <button class="tm-wd-editor__context-item tm-wd-editor__context-item--danger" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxDelete">@Loc["TmWireframe_CtxDelete"]</button>
+                break;
+
+            case WireframeContextMenuType.Connector:
+                <button class="tm-wd-editor__context-item" role="menuitem" @onclick="CtxEditConnectorLabel">@Loc["TmDiagramEditor_EditLabel"]</button>
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                <span class="tm-wd-editor__context-heading">@Loc["TmDiagramEditor_Routing"]</span>
+                <button class="tm-wd-editor__context-item" role="menuitem" @onclick='() => CtxSetRouting("straight")'>@Loc["TmDiagramEditor_Straight"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" @onclick='() => CtxSetRouting("orthogonal")'>@Loc["TmDiagramEditor_Orthogonal"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" @onclick='() => CtxSetRouting("curved")'>@Loc["TmDiagramEditor_Curved"]</button>
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                <button class="tm-wd-editor__context-item tm-wd-editor__context-item--danger" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxDelete">@Loc["TmWireframe_CtxDelete"]</button>
+                break;
+
+            case WireframeContextMenuType.MultiSelect:
+                @if (CanGroup)
+                {
+                    <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxGroup">@Loc["TmWireframe_CtxGroup"]</button>
+                    <div class="tm-wd-editor__context-sep" role="separator"></div>
+                }
+                <span class="tm-wd-editor__context-heading">@Loc["TmWireframe_CtxAlign"]</span>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxAlign(WireframeAlignment.Left)'>@Loc["TmWireframe_AlignLeft"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxAlign(WireframeAlignment.CenterH)'>@Loc["TmWireframe_AlignCenterH"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxAlign(WireframeAlignment.Right)'>@Loc["TmWireframe_AlignRight"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxAlign(WireframeAlignment.Top)'>@Loc["TmWireframe_AlignTop"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxAlign(WireframeAlignment.CenterV)'>@Loc["TmWireframe_AlignCenterV"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxAlign(WireframeAlignment.Bottom)'>@Loc["TmWireframe_AlignBottom"]</button>
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                <span class="tm-wd-editor__context-heading">@Loc["TmWireframe_CtxDistribute"]</span>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxDistribute(WireframeDistribution.Horizontal)'>@Loc["TmWireframe_DistributeHorizontal"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick='() => CtxDistribute(WireframeDistribution.Vertical)'>@Loc["TmWireframe_DistributeVertical"]</button>
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                @if (IsSelectionLocked)
+                {
+                    <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxUnlock">@Loc["TmWireframe_CtxUnlock"]</button>
+                }
+                else
+                {
+                    <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxLock">@Loc["TmWireframe_CtxLock"]</button>
+                }
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(!HasClipboardStyle || ReadOnly)" @onclick="CtxPasteStyle">@Loc["TmWireframe_CtxPasteStyle"]</button>
+                <button class="tm-wd-editor__context-item" role="menuitem" disabled="@(!HasClipboardStyle || ReadOnly)" @onclick="CtxPasteSize">@Loc["TmWireframe_CtxPasteSize"]</button>
+                <div class="tm-wd-editor__context-sep" role="separator"></div>
+                <button class="tm-wd-editor__context-item tm-wd-editor__context-item--danger" role="menuitem" disabled="@(ReadOnly)" @onclick="CtxDelete">@Loc["TmWireframe_CtxDelete"]</button>
+                break;
+        }
+    </div>
+}

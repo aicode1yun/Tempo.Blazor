@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Page restriction mode used by a Notion-style page permission provider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/PageRestrictionDto.cs",
+  "documentationStatus": "generated",
+  "itemName": "PageRestrictionMode"
+}

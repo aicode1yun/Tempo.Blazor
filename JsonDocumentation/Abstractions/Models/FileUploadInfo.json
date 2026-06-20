@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Represents a file being uploaded through .",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/FileUploadInfo.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ContentType",
+      "kind": "Property",
+      "type": "string?",
+      "description": "The MIME content type of the file."
+    },
+    {
+      "name": "FileName",
+      "kind": "Property",
+      "type": "string",
+      "description": "The original file name including extension."
+    },
+    {
+      "name": "Size",
+      "kind": "Property",
+      "type": "long",
+      "description": "The file size in bytes."
+    },
+    {
+      "name": "Stream",
+      "kind": "Property",
+      "type": "System.IO.Stream",
+      "description": "The readable stream containing the file data."
+    }
+  ],
+  "itemName": "FileUploadInfo"
+}

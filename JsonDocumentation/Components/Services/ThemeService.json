@@ -1,0 +1,18 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Manages the current theme (light/dark) for the application. Registered as Scoped — each circuit (Server) or tab (WASM) gets its own instance.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/ThemeService.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Toggle",
+      "kind": "Method",
+      "type": "void",
+      "description": "Toggles between light and dark theme."
+    }
+  ],
+  "itemName": "ThemeService"
+}

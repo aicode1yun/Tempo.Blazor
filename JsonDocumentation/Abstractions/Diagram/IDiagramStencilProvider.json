@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Provides diagram stencil definitions to the diagram stencil registry.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/IDiagramStencilProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDiagramStencilProvider"
+}

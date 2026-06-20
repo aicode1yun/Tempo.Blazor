@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A horizontal rule (mj-divider).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailDividerBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Align",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the alignment (align)."
+    },
+    {
+      "name": "BorderColor",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the line colour (border-color)."
+    },
+    {
+      "name": "BorderStyle",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the line style (border-style)."
+    },
+    {
+      "name": "BorderWidth",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the line thickness (border-width)."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the line width (width)."
+    }
+  ],
+  "itemName": "EmailDividerBlock"
+}

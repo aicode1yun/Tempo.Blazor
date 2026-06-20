@@ -1,0 +1,57 @@
+{
+  "itemName": "TmSigningNumberStep",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "Renders a numeric signing step with min, max, step, and required validation.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor/Components/Signing/TmSigningNumberStep.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "AppearsOn",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when the numeric value changes."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Fallback culture used when localized field text is missing."
+    },
+    {
+      "name": "Culture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the input is disabled."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Short text describing where the field appears in the document."
+    },
+    {
+      "name": "FallbackCulture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Culture used to resolve localized field text."
+    },
+    {
+      "name": "Value",
+      "type": "decimal?",
+      "isRequired": false,
+      "description": "Signing field represented by this step."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<decimal?>",
+      "isRequired": false,
+      "description": "Current numeric value."
+    }
+  ]
+}

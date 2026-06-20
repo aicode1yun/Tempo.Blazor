@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Identifies what kind of diagram element a stencil creates.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencilKind.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramStencilKind"
+}

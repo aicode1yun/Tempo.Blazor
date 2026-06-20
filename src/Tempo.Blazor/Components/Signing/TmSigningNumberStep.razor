@@ -1,0 +1,20 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<TmSigningStepShell Field="Field"
+                    ValidationMessage="@_validationMessage"
+                    AppearsOn="@AppearsOn"
+                    Culture="@Culture"
+                    FallbackCulture="@FallbackCulture"
+                    Class="@ShellClass"
+                    @attributes="AdditionalAttributes">
+    <input class="tm-signing-number-step__input"
+           type="number"
+           value="@FormattedValue"
+           min="@Field.Validation?.Min"
+           max="@Field.Validation?.Max"
+           step="@Field.Validation?.Step"
+           disabled="@Disabled"
+           placeholder="@PlaceholderText"
+           @onchange="HandleValueChangedAsync" />
+</TmSigningStepShell>

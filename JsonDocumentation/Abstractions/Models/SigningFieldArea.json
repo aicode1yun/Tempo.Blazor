@@ -1,0 +1,66 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Normalized rectangle describing where a signing field appears on a document page.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningFieldArea.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AttachmentUuid",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Document attachment identifier this area belongs to."
+    },
+    {
+      "name": "CellWidth",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Normalized width of a single cell for comb-style fields."
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "double",
+      "description": "Normalized height in the 0..1 page coordinate space."
+    },
+    {
+      "name": "OptionUuid",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Option identifier represented by this area for radio or multiple-choice fields."
+    },
+    {
+      "name": "Page",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based page index."
+    },
+    {
+      "name": "Uuid",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable area identifier."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "double",
+      "description": "Normalized width in the 0..1 page coordinate space."
+    },
+    {
+      "name": "X",
+      "kind": "Property",
+      "type": "double",
+      "description": "Normalized horizontal position from the left edge, in the 0..1 page coordinate space."
+    },
+    {
+      "name": "Y",
+      "kind": "Property",
+      "type": "double",
+      "description": "Normalized vertical position from the top edge, in the 0..1 page coordinate space."
+    }
+  ],
+  "itemName": "SigningFieldArea"
+}

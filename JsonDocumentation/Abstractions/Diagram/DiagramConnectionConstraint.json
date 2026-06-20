@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Defines a fixed connection point on a node's boundary or interior.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramConnectionConstraint.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Clone",
+      "kind": "Method",
+      "type": "DiagramConnectionConstraint",
+      "description": "Creates a copy of this constraint."
+    },
+    {
+      "name": "Dx",
+      "kind": "Property",
+      "type": "double",
+      "description": "Horizontal offset in pixels applied after relative positioning."
+    },
+    {
+      "name": "Dy",
+      "kind": "Property",
+      "type": "double",
+      "description": "Vertical offset in pixels applied after relative positioning."
+    },
+    {
+      "name": "Perimeter",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When true, the point is projected onto the node perimeter. When false, the point is inside the bounding box."
+    },
+    {
+      "name": "RelativeX",
+      "kind": "Property",
+      "type": "double",
+      "description": "Relative X position (0–1) along the node width. 0 = left edge, 1 = right edge."
+    },
+    {
+      "name": "RelativeY",
+      "kind": "Property",
+      "type": "double",
+      "description": "Relative Y position (0–1) along the node height. 0 = top edge, 1 = bottom edge."
+    }
+  ],
+  "itemName": "DiagramConnectionConstraint"
+}

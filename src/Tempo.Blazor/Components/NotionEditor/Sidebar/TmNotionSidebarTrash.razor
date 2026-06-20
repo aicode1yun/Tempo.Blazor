@@ -1,0 +1,174 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Sidebar
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+<div class="tm-nst" role="region" aria-label="@Loc["TmNotionSidebarTrash_Title"]">
+
+    @* ── Header ──────────────────────────────────────────────────────────────── *@
+
+    <header class="tm-nst-header">
+        <button class="tm-nst-back"
+                type="button"
+                title="@Loc["TmNotionSidebarTrash_Back"]"
+                aria-label="@Loc["TmNotionSidebarTrash_Back"]"
+                @onclick="CloseAsync">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <h2 class="tm-nst-title">@Loc["TmNotionSidebarTrash_Title"]</h2>
+    </header>
+
+    @* ── Search / filter ─────────────────────────────────────────────────────── *@
+
+    <div class="tm-nst-search">
+        <svg class="tm-nst-search__icon" width="13" height="13" viewBox="0 0 13 13"
+             fill="none" aria-hidden="true">
+            <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" stroke-width="1.25"/>
+            <path d="M8.5 8.5L11 11" stroke="currentColor" stroke-width="1.25"
+                  stroke-linecap="round"/>
+        </svg>
+        <input class="tm-nst-search__input"
+               type="search"
+               autocomplete="off"
+               spellcheck="false"
+               placeholder="@Loc["TmNotionSidebarTrash_SearchPlaceholder"]"
+               value="@_filterQuery"
+               @oninput="OnFilterInput"
+               @onkeydown="OnFilterKeyDown"
+               @ref="_searchInputRef"
+               aria-label="@Loc["TmNotionSidebarTrash_SearchPlaceholder"]" />
+    </div>
+
+    @* ── Content ─────────────────────────────────────────────────────────────── *@
+
+    <div class="tm-nst-content">
+
+        @if (_isLoading)
+        {
+            <div class="tm-nst-status" aria-busy="true" aria-live="polite">
+                <span class="tm-nst-spinner" aria-hidden="true"></span>
+                <span>@Loc["TmNotionSidebarTrash_Loading"]</span>
+            </div>
+        }
+        else if (_loadError is not null)
+        {
+            <div class="tm-nst-status tm-nst-status--error" role="alert">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.1"/>
+                    <path d="M7 4.5v3M7 9h.01" stroke="currentColor" stroke-width="1.1"
+                          stroke-linecap="round"/>
+                </svg>
+                <span>@Loc["TmNotionSidebarTrash_LoadError"]</span>
+                <button class="tm-nst-status__retry" type="button" @onclick="LoadAsync">
+                    @Loc["Tm_Retry"]
+                </button>
+            </div>
+        }
+        else
+        {
+            var items = FilteredItems;
+
+            @if (items.Count == 0)
+            {
+                <div class="tm-nst-empty">
+                    <svg class="tm-nst-empty__icon" width="36" height="36" viewBox="0 0 36 36"
+                         fill="none" aria-hidden="true">
+                        <path d="M5 11h26M12 11V8h12v3M7 11l2 18h18l2-18"
+                              stroke="currentColor" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M14 17v8M18 17v8M22 17v8"
+                              stroke="currentColor" stroke-width="1.2"
+                              stroke-linecap="round"/>
+                    </svg>
+                    <span class="tm-nst-empty__text">
+                        @(string.IsNullOrWhiteSpace(_filterQuery)
+                            ? Loc["TmNotionSidebarTrash_Empty"]
+                            : Loc["TmNotionSidebarTrash_EmptySearch"])
+                    </span>
+                </div>
+            }
+            else
+            {
+                <ul class="tm-nst-list" role="list">
+                    @foreach (var page in items)
+                    {
+                        var isConfirming = IsConfirming(page.Id);
+                        var capturedPage = page;
+
+                        <li class="tm-nst-item @(isConfirming ? "tm-nst-item--confirming" : "")"
+                            role="listitem">
+
+                            <span class="tm-nst-item__icon" aria-hidden="true">@GetIcon(capturedPage)</span>
+
+                            <div class="tm-nst-item__body">
+                                <span class="tm-nst-item__title">@GetTitle(capturedPage)</span>
+                                <time class="tm-nst-item__date"
+                                      datetime="@(capturedPage.DeletedAt?.ToString("yyyy-MM-ddTHH:mm:ssZ") ?? "")">
+                                    @GetDeletedAt(capturedPage)
+                                </time>
+                            </div>
+
+                            @if (isConfirming)
+                            {
+                                <div class="tm-nst-item__confirm" role="alertdialog"
+                                     aria-label="@Loc["TmNotionSidebarTrash_DeleteConfirm"]">
+                                    <span class="tm-nst-item__confirm-text">
+                                        @Loc["TmNotionSidebarTrash_DeleteConfirm"]
+                                    </span>
+                                    <div class="tm-nst-item__confirm-actions">
+                                        <button class="tm-nst-item__confirm-yes"
+                                                type="button"
+                                                @onclick="() => ConfirmPermanentDeleteAsync(capturedPage)">
+                                            @Loc["TmNotionSidebarTrash_DeleteYes"]
+                                        </button>
+                                        <button class="tm-nst-item__confirm-no"
+                                                type="button"
+                                                @onclick="() => CancelDeleteConfirm(capturedPage.Id)">
+                                            @Loc["TmNotionSidebarTrash_DeleteNo"]
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="tm-nst-item__actions">
+                                    <button class="tm-nst-item__btn tm-nst-item__btn--restore"
+                                            type="button"
+                                            title="@Loc["TmNotionSidebarTrash_Restore"]"
+                                            aria-label="@Loc["TmNotionSidebarTrash_Restore"]"
+                                            @onclick="() => RestoreAsync(capturedPage)">
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                            <path d="M1.5 6A4.5 4.5 0 1 0 6 1.5H3.5"
+                                                  stroke="currentColor" stroke-width="1.2"
+                                                  stroke-linecap="round"/>
+                                            <path d="M1.5 1.5v4h4"
+                                                  stroke="currentColor" stroke-width="1.2"
+                                                  stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                        @Loc["TmNotionSidebarTrash_Restore"]
+                                    </button>
+                                    <button class="tm-nst-item__btn tm-nst-item__btn--delete"
+                                            type="button"
+                                            title="@Loc["TmNotionSidebarTrash_DeletePermanent"]"
+                                            aria-label="@Loc["TmNotionSidebarTrash_DeletePermanent"]"
+                                            @onclick="() => BeginDeleteConfirm(capturedPage.Id)">
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                            <path d="M1.5 3.5h9M4.5 3.5V2h3v1.5M2.5 3.5l.6 7h5.8l.6-7"
+                                                  stroke="currentColor" stroke-width="1.2"
+                                                  stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                        @Loc["TmNotionSidebarTrash_DeletePermanent"]
+                                    </button>
+                                </div>
+                            }
+
+                        </li>
+                    }
+                </ul>
+            }
+        }
+
+    </div>
+
+</div>

@@ -1,0 +1,37 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/LinkedDatabaseBlockContent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ActiveViewId",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "OverrideFilter",
+      "kind": "Property",
+      "type": "INotionDatabaseFilter?"
+    },
+    {
+      "name": "OverrideSorts",
+      "kind": "Property",
+      "type": "IReadOnlyList<NotionDatabaseSort>?"
+    },
+    {
+      "name": "SourceDatabaseId",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "SourcePageId",
+      "kind": "Property",
+      "type": "Guid"
+    }
+  ],
+  "itemName": "LinkedDatabaseBlockContent"
+}

@@ -1,0 +1,70 @@
+@namespace Tempo.Blazor.Components.Spreadsheet.Dialogs
+@using Tempo.Blazor.Components.Spreadsheet.Models
+
+<div class="tm-spreadsheet-hyperlink__backdrop" @onclick="OnCancelClick">
+    <div class="tm-spreadsheet-hyperlink"
+         role="dialog"
+         aria-label="@Loc["TmSpreadsheet_Hyperlink_Title"]"
+         @onclick:stopPropagation
+         @onkeydown="OnKeyDown">
+        <div class="tm-spreadsheet-hyperlink__header">
+            <span class="tm-spreadsheet-hyperlink__title">@Loc["TmSpreadsheet_Hyperlink_Title"]</span>
+            <button type="button" class="tm-spreadsheet-hyperlink__close" title="@Loc["Tm_Close"]" aria-label="@Loc["Tm_Close"]" @onclick="OnCancelClick">
+                <TmIcon Name="close" />
+            </button>
+        </div>
+
+        <div class="tm-spreadsheet-hyperlink__body">
+            <div class="tm-spreadsheet-hyperlink__field">
+                <label for="hl-type">@Loc["TmSpreadsheet_Hyperlink_Type"]</label>
+                <select id="hl-type" @bind="_kind" class="tm-spreadsheet-hyperlink__select">
+                    <option value="@SpreadsheetHyperlinkKind.Web">@Loc["TmSpreadsheet_Hyperlink_TypeWeb"]</option>
+                    <option value="@SpreadsheetHyperlinkKind.Email">@Loc["TmSpreadsheet_Hyperlink_TypeEmail"]</option>
+                    <option value="@SpreadsheetHyperlinkKind.InternalRef">@Loc["TmSpreadsheet_Hyperlink_TypeInternal"]</option>
+                    <option value="@SpreadsheetHyperlinkKind.NamedRange">@Loc["TmSpreadsheet_Hyperlink_TypeNamedRange"]</option>
+                </select>
+            </div>
+
+            <div class="tm-spreadsheet-hyperlink__field">
+                <label for="hl-target">@Loc["TmSpreadsheet_Hyperlink_Target"]</label>
+                @if (_kind == SpreadsheetHyperlinkKind.NamedRange)
+                {
+                    <select id="hl-target" @bind="_target" class="tm-spreadsheet-hyperlink__select">
+                        <option value="">@Loc["TmSpreadsheet_Hyperlink_SelectNamedRange"]</option>
+                        @foreach (var nr in Workbook.NamedRanges)
+                        {
+                            <option value="@nr.Name">@nr.Name</option>
+                        }
+                    </select>
+                }
+                else
+                {
+                    <input id="hl-target" type="text" @bind="_target" @bind:event="oninput" class="tm-spreadsheet-hyperlink__input" />
+                }
+            </div>
+
+            @if (_kind == SpreadsheetHyperlinkKind.Email)
+            {
+                <div class="tm-spreadsheet-hyperlink__field">
+                    <label for="hl-subject">@Loc["TmSpreadsheet_Hyperlink_EmailSubject"]</label>
+                    <input id="hl-subject" type="text" @bind="_emailSubject" class="tm-spreadsheet-hyperlink__input" />
+                </div>
+            }
+
+            <div class="tm-spreadsheet-hyperlink__field">
+                <label for="hl-display">@Loc["TmSpreadsheet_Hyperlink_Display"]</label>
+                <input id="hl-display" type="text" @bind="_display" class="tm-spreadsheet-hyperlink__input" />
+            </div>
+
+            <div class="tm-spreadsheet-hyperlink__field">
+                <label for="hl-tooltip">@Loc["TmSpreadsheet_Hyperlink_Tooltip"]</label>
+                <input id="hl-tooltip" type="text" @bind="_tooltip" class="tm-spreadsheet-hyperlink__input" />
+            </div>
+        </div>
+
+        <div class="tm-spreadsheet-hyperlink__actions">
+            <button type="button" class="tm-spreadsheet-hyperlink__btn tm-spreadsheet-hyperlink__btn--cancel" @onclick="OnCancelClick">@Loc["TmSpreadsheet_Hyperlink_Cancel"]</button>
+            <button type="button" class="tm-spreadsheet-hyperlink__btn tm-spreadsheet-hyperlink__btn--ok" @onclick="OnSaveClick">@Loc["TmSpreadsheet_Hyperlink_Save"]</button>
+        </div>
+    </div>
+</div>

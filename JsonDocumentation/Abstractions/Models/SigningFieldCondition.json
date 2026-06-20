@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Conditional rule controlling a signing field from another field value.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningFieldCondition.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Action",
+      "kind": "Property",
+      "type": "SigningConditionAction",
+      "description": "Comparison action to evaluate."
+    },
+    {
+      "name": "FieldUuid",
+      "kind": "Property",
+      "type": "string",
+      "description": "Source field identifier evaluated by the condition."
+    },
+    {
+      "name": "Operation",
+      "kind": "Property",
+      "type": "SigningConditionOperation",
+      "description": "Logical operation joining this condition with the previous condition."
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional comparison value or option UUID."
+    }
+  ],
+  "itemName": "SigningFieldCondition"
+}

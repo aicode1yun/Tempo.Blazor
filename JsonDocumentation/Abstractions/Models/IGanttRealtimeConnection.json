@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Abstraction for real-time (SignalR) connectivity in TmGantt. Implement this interface to receive live task updates from a server hub.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/IGanttRealtimeConnection.cs",
+  "documentationStatus": "generated",
+  "itemName": "IGanttRealtimeConnection"
+}

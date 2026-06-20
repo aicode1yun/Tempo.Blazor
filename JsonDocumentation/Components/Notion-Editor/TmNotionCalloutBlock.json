@@ -1,0 +1,81 @@
+{
+  "itemName": "TmNotionCalloutBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Self-contained callout block: emoji icon (with picker) + contenteditable body. Owns its JS keyboard-handler lifecycle, identical to TmNotionTextBlock pattern. [JSInvokable] names must match notion-editor.js; EventCallback names are distinct to avoid C# property/method conflicts.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Text",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Text/TmNotionCalloutBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Text"
+  ],
+  "parameters": [
+    {
+      "name": "OnContentSaved",
+      "type": "EventCallback<string>",
+      "isRequired": false
+    },
+    {
+      "name": "OnDeleteRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired after Enter splits the block. Arg = HTML fragment after the split point."
+    },
+    {
+      "name": "OnEmojiChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
+    },
+    {
+      "name": "OnEnterSplit",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fired on blur when the HTML has changed. Arg = new HTML."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when a markdown pattern is recognised. Arg = shortcut key."
+    },
+    {
+      "name": "OnIndentChange",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "Fired when Backspace is pressed on an empty block."
+    },
+    {
+      "name": "OnMentionMenu",
+      "type": "EventCallback<(double Top, double Left)>",
+      "isRequired": false,
+      "description": "Fired when '/' is typed in a trigger position. Args = (top, left) caret coords."
+    },
+    {
+      "name": "OnPageLinkMenu",
+      "type": "EventCallback<(double Top, double Left)>",
+      "isRequired": false,
+      "description": "Fired when '@' mention syntax is typed. Args = (top, left) caret coords."
+    },
+    {
+      "name": "OnSlashMenu",
+      "type": "EventCallback<(double Top, double Left)>",
+      "isRequired": false,
+      "description": "Fired when the editable body receives focus."
+    },
+    {
+      "name": "OnTokenMenu",
+      "type": "EventCallback<(double Top, double Left)>",
+      "isRequired": false,
+      "description": "Fired when '[[' page-link syntax is typed. Args = (top, left) caret coords."
+    },
+    {
+      "name": "OnTypeConvert",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent)."
+    }
+  ],
+  "subcategory": "Blocks / Text"
+}

@@ -1,0 +1,46 @@
+{
+  "itemName": "SpreadsheetNamedRange",
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Represents a named range within a workbook. Can be scoped to the entire workbook or a specific sheet.",
+  "properties": [
+    {
+      "name": "Name",
+      "type": "string",
+      "isRequired": true,
+      "description": "The name of the range. Must start with a letter or underscore, contain no spaces, and not collide with A1 references."
+    },
+    {
+      "name": "RefersTo",
+      "type": "string",
+      "isRequired": true,
+      "description": "The formula or reference the name resolves to (e.g. '=Sheet1!A1:B10')."
+    },
+    {
+      "name": "Scope",
+      "type": "NamedRangeScope",
+      "isRequired": false,
+      "default": "Workbook",
+      "description": "Workbook or Sheet scope."
+    },
+    {
+      "name": "SheetIndex",
+      "type": "int?",
+      "isRequired": false,
+      "description": "When Scope is Sheet, the zero-based sheet index."
+    },
+    {
+      "name": "Comment",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional comment describing the named range."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Define a workbook-scoped named range",
+      "code": "workbook.NamedRanges.Add(new SpreadsheetNamedRange\n{\n    Name = \"Revenue\",\n    RefersTo = \"=Sheet1!A1:A10\",\n    Scope = NamedRangeScope.Workbook\n});"
+    }
+  ]
+}

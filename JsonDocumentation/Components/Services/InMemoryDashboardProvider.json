@@ -1,0 +1,121 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "In-memory implementation of IDashboardProvider for testing/demo purposes. Data is lost on application restart. Register as Scoped — each circuit (Server) or tab (WASM) gets its own instance with per-user data.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/InMemoryDashboardProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DeleteDashboardAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Deletes a dashboard by ID.",
+      "parameters": [
+        {
+          "name": "dashboardId",
+          "type": "string"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "GetDashboardAsync",
+      "kind": "Method",
+      "type": "Task<DashboardConfig?>",
+      "description": "Retrieves a specific dashboard by ID.",
+      "parameters": [
+        {
+          "name": "dashboardId",
+          "type": "string"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "GetDashboardsAsync",
+      "kind": "Method",
+      "type": "Task<IEnumerable<DashboardConfig>>",
+      "description": "Retrieves all dashboards for a user or system dashboards.",
+      "parameters": [
+        {
+          "name": "userId",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "GetDefaultDashboardAsync",
+      "kind": "Method",
+      "type": "Task<DashboardConfig?>",
+      "description": "Retrieves the default dashboard for a user.",
+      "parameters": [
+        {
+          "name": "userId",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "SaveDashboardAsync",
+      "kind": "Method",
+      "type": "Task<DashboardConfig>",
+      "description": "Saves or updates a dashboard configuration.",
+      "parameters": [
+        {
+          "name": "dashboard",
+          "type": "DashboardConfig"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "SetDefaultDashboardAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Sets a dashboard as default for a user.",
+      "parameters": [
+        {
+          "name": "dashboardId",
+          "type": "string"
+        },
+        {
+          "name": "userId",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    }
+  ],
+  "itemName": "InMemoryDashboardProvider"
+}

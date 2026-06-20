@@ -1,0 +1,35 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataTable",
+  "description": "Client-side IDataTableDataProvider implementation that sorts, filters, searches, and paginates an in-memory list.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataTable/InMemoryDataProvider.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ],
+  "members": [
+    {
+      "name": "GetDataAsync",
+      "kind": "Method",
+      "type": "Task<PagedResult<TItem>>",
+      "description": "Retrieves paginated data based on the query parameters including filters, search, sort, and pagination.",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "DataTableQuery"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    }
+  ],
+  "itemName": "InMemoryDataProvider<TItem>"
+}

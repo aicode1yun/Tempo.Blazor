@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Immutable filter specification for narrowing displayed Gantt tasks. Field names: standard properties (e.g. \"Status\", \"Title\") or custom field IDs prefixed with \"custom:\" (e.g. \"custom:priority\").",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttFilter.cs",
+  "documentationStatus": "generated",
+  "itemName": "GanttFilter"
+}

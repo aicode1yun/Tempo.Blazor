@@ -1,0 +1,31 @@
+{
+  "itemName": "IDiagramDocumentProvider",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Enables Diagram blocks in TmNotionEditor. When supplied, users can create and edit diagrams in a full-screen modal powered by TmEDiagramEditor. Without this provider the Diagram block type is hidden from the slash menu.",
+  "methods": [
+    {
+      "name": "GetDiagramDocumentAsync",
+      "returnType": "Task<DiagramDocument?>",
+      "description": "Loads a diagram document by ID. Returns null if the document does not yet exist.",
+      "parameters": [{ "name": "documentId", "type": "Guid" }]
+    },
+    {
+      "name": "SaveDiagramDocumentAsync",
+      "returnType": "Task<DiagramDocument>",
+      "description": "Persists a diagram document and returns the saved version.",
+      "parameters": [
+        { "name": "documentId", "type": "Guid" },
+        { "name": "document",   "type": "DiagramDocument" }
+      ]
+    },
+    {
+      "name": "CreateDiagramDocumentAsync",
+      "returnType": "Task<(Guid Id, DiagramDocument Document)>",
+      "description": "Creates a new empty diagram document and returns its ID along with the document.",
+      "parameters": [{ "name": "title", "type": "string", "description": "Initial diagram title." }]
+    }
+  ],
+  "usedInComponents": ["TmNotionEditor"]
+}

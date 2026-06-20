@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Describes a replaceable change identified by a search result.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Services/DiagramSearchService.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramSearchReplaceResult"
+}

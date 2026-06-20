@@ -1,0 +1,47 @@
+{
+  "itemName": "INotionSyncedBlockProvider",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Enables synced block support in TmNotionEditor — a block whose content is shared across multiple pages. Edits in any instance propagate to all other references. Synced blocks are hidden from the slash menu when this provider is not supplied.",
+  "methods": [
+    {
+      "name": "GetSyncedChildBlocksAsync",
+      "returnType": "Task<IEnumerable<IPageBlock>>",
+      "description": "Returns the current child blocks of the synced block (its shared content).",
+      "parameters": [{ "name": "syncId", "type": "string", "description": "Unique sync group ID shared by all references." }]
+    },
+    {
+      "name": "UpdateSyncedChildBlocksAsync",
+      "returnType": "Task",
+      "description": "Persists content changes to the synced block. All references automatically reflect the change.",
+      "parameters": [
+        { "name": "syncId", "type": "string" },
+        { "name": "children", "type": "IEnumerable<IPageBlock>", "description": "Updated child blocks." }
+      ]
+    },
+    {
+      "name": "GetAllSyncRefsAsync",
+      "returnType": "Task<IEnumerable<(string PageId, string BlockId)>>",
+      "description": "Returns all pages and block IDs that reference the given sync group. Used to show the 'N synced copies' indicator.",
+      "parameters": [{ "name": "syncId", "type": "string" }]
+    },
+    {
+      "name": "CreateSyncRefAsync",
+      "returnType": "Task<IPageBlock>",
+      "description": "Creates a new synced block reference on the target page that mirrors the given sync group.",
+      "parameters": [
+        { "name": "syncId", "type": "string" },
+        { "name": "targetPageId", "type": "string" },
+        { "name": "afterBlockId", "type": "string?", "description": "Insert position." }
+      ]
+    },
+    {
+      "name": "UnsyncBlockAsync",
+      "returnType": "Task<IPageBlock>",
+      "description": "Detaches a synced block reference, converting it to a regular standalone block with a copy of the current content.",
+      "parameters": [{ "name": "blockId", "type": "string" }]
+    }
+  ],
+  "usedInComponents": ["TmNotionEditor"]
+}

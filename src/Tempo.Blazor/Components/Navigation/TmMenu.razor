@@ -1,0 +1,65 @@
+@namespace Tempo.Blazor.Components.Navigation
+
+<ul class="tm-menu tm-menu--@Orientation.ToString().ToLowerInvariant() @AdditionalCssClass" role="menubar">
+    @foreach (var item in Items)
+    {
+        if (item.IsSeparator)
+        {
+            <li class="tm-menu__separator" role="separator"></li>
+            continue;
+        }
+
+        <li class="tm-menu__item @(item.Disabled ? "tm-menu__item--disabled" : "")"
+            role="none">
+            @if (!string.IsNullOrEmpty(item.Href) && !item.Disabled)
+            {
+                <a href="@item.Href"
+                   class="tm-menu__link"
+                   role="menuitem"
+                   @onclick:preventDefault="true"
+                   @onclick="() => HandleClick(item)">
+                    @if (!string.IsNullOrEmpty(item.Icon))
+                    {
+                        <TmIcon Name="@item.Icon" class="tm-menu__icon" />
+                    }
+                    <span>@item.Text</span>
+                </a>
+            }
+            else
+            {
+                <button type="button"
+                        class="tm-menu__link"
+                        role="menuitem"
+                        disabled="@item.Disabled"
+                        @onclick="() => HandleClick(item)">
+                    @if (!string.IsNullOrEmpty(item.Icon))
+                    {
+                        <TmIcon Name="@item.Icon" class="tm-menu__icon" />
+                    }
+                    <span>@item.Text</span>
+                </button>
+            }
+            @if (item.Children?.Count > 0)
+            {
+                <ul class="tm-menu__submenu" role="menu">
+                    @foreach (var child in item.Children)
+                    {
+                        <li class="tm-menu__item" role="none">
+                            <button type="button"
+                                    class="tm-menu__link"
+                                    role="menuitem"
+                                    disabled="@child.Disabled"
+                                    @onclick="() => HandleClick(child)">
+                                @if (!string.IsNullOrEmpty(child.Icon))
+                                {
+                                    <TmIcon Name="@child.Icon" class="tm-menu__icon" />
+                                }
+                                <span>@child.Text</span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+        </li>
+    }
+</ul>

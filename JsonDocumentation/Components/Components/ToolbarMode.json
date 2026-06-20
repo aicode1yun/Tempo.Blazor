@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Activity",
+  "description": "Defines the display mode for the editor toolbar.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Activity/ToolbarMode.cs",
+  "documentationStatus": "generated",
+  "itemName": "ToolbarMode"
+}

@@ -1,0 +1,47 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/Mention.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DateRangeEnd",
+      "kind": "Property",
+      "type": "DateTime?"
+    },
+    {
+      "name": "DateRangeStart",
+      "kind": "Property",
+      "type": "DateTime?"
+    },
+    {
+      "name": "DateValue",
+      "kind": "Property",
+      "type": "DateTime?"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "ReminderTiming",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "InlineMentionType"
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "Mention"
+}

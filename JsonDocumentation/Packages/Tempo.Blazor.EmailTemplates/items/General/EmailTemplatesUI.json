@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.EmailTemplates",
+  "description": "Marker type identifying the Tempo.Blazor.EmailTemplates UI assembly. Used as the assembly anchor for localization resource resolution and component discovery.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/EmailTemplatesUI.cs",
+  "documentationStatus": "generated",
+  "itemName": "EmailTemplatesUI"
+}

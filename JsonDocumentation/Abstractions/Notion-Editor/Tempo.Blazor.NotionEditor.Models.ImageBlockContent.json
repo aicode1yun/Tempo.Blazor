@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/ImageBlockContent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Alignment",
+      "kind": "Property",
+      "type": "MediaAlignment"
+    },
+    {
+      "name": "AltText",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Caption",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "FileId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Url",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "int?"
+    }
+  ],
+  "itemName": "Tempo.Blazor.NotionEditor.Models.ImageBlockContent"
+}

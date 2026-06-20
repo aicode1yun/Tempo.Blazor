@@ -1,0 +1,79 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+
+<section class="tm-document-table-toolbar"
+         role="toolbar"
+         aria-label="@Loc["TmDocumentEditor_TableToolbarLabel"]"
+         data-testid="document-table-toolbar">
+    <button type="button" data-testid="document-table-toolbar-insert-row-before" @onclick="InsertRowBefore">
+        <TmIcon Name="panel-top-open" Size="IconSize.Sm" />
+        <span>@Loc["TmDocumentEditor_InsertRowBefore"]</span>
+    </button>
+    <button type="button" data-testid="document-table-toolbar-insert-row-after" @onclick="InsertRowAfter">
+        <TmIcon Name="panel-bottom-open" Size="IconSize.Sm" />
+        <span>@Loc["TmDocumentEditor_InsertRow"]</span>
+    </button>
+    <button type="button" data-testid="document-table-toolbar-insert-column-before" @onclick="InsertColumnBefore">
+        <TmIcon Name="panel-left-open" Size="IconSize.Sm" />
+        <span>@Loc["TmDocumentEditor_InsertColumnBefore"]</span>
+    </button>
+    <button type="button" data-testid="document-table-toolbar-insert-column-after" @onclick="InsertColumnAfter">
+        <TmIcon Name="panel-right-open" Size="IconSize.Sm" />
+        <span>@Loc["TmDocumentEditor_InsertColumn"]</span>
+    </button>
+    <button type="button" data-testid="document-table-toolbar-delete-row" @onclick="DeleteRow">
+        <TmIcon Name="delete" Size="IconSize.Sm" />
+        <span>@Loc["TmDocumentEditor_DeleteRow"]</span>
+    </button>
+    <button type="button" data-testid="document-table-toolbar-delete-column" @onclick="DeleteColumn">
+        <TmIcon Name="delete" Size="IconSize.Sm" />
+        <span>@Loc["TmDocumentEditor_DeleteColumn"]</span>
+    </button>
+    <button type="button" data-testid="document-table-toolbar-merge-cells" @onclick="MergeCells">
+        <TmIcon Name="combine" Size="IconSize.Sm" />
+        <span>@Loc["TmDocumentEditor_MergeCells"]</span>
+    </button>
+    <button type="button" data-testid="document-table-toolbar-split-cell" @onclick="SplitCell">
+        <TmIcon Name="split-square-horizontal" Size="IconSize.Sm" />
+        <span>@Loc["TmDocumentEditor_SplitCell"]</span>
+    </button>
+    <button type="button" data-testid="document-table-toolbar-table-properties" @onclick="TableProperties">
+        <TmIcon Name="table-properties" Size="IconSize.Sm" />
+        <span>@Loc["TmDocumentEditor_TableProperties"]</span>
+    </button>
+    <button type="button" data-testid="document-table-toolbar-cell-properties" @onclick="CellProperties">
+        <TmIcon Name="square" Size="IconSize.Sm" />
+        <span>@Loc["TmDocumentEditor_CellProperties"]</span>
+    </button>
+</section>
+
+@code {
+    /// <summary>Raised when a row should be inserted before the current row.</summary>
+    [Parameter] public EventCallback InsertRowBefore { get; set; }
+
+    /// <summary>Raised when a row should be inserted after the current row.</summary>
+    [Parameter] public EventCallback InsertRowAfter { get; set; }
+
+    /// <summary>Raised when a column should be inserted before the current column.</summary>
+    [Parameter] public EventCallback InsertColumnBefore { get; set; }
+
+    /// <summary>Raised when a column should be inserted after the current column.</summary>
+    [Parameter] public EventCallback InsertColumnAfter { get; set; }
+
+    /// <summary>Raised when the current row should be deleted.</summary>
+    [Parameter] public EventCallback DeleteRow { get; set; }
+
+    /// <summary>Raised when the current column should be deleted.</summary>
+    [Parameter] public EventCallback DeleteColumn { get; set; }
+
+    /// <summary>Raised when selected cells should merge.</summary>
+    [Parameter] public EventCallback MergeCells { get; set; }
+
+    /// <summary>Raised when the current merged cell should split.</summary>
+    [Parameter] public EventCallback SplitCell { get; set; }
+
+    /// <summary>Raised when table properties should open.</summary>
+    [Parameter] public EventCallback TableProperties { get; set; }
+
+    /// <summary>Raised when cell properties should open.</summary>
+    [Parameter] public EventCallback CellProperties { get; set; }
+}

@@ -1,0 +1,149 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Special
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+
+<div class="tm-template-btn @(IsFocused ? "tm-template-btn--focused" : "")"
+     @onkeydown="HandleKeyDownAsync"
+     tabindex="@(ReadOnly ? -1 : 0)"
+     @onfocus="OnFocused">
+
+    @* ── Insert button ────────────────────────────────────────────────────────── *@
+    <div class="tm-template-btn__row">
+        <button type="button"
+                class="tm-template-btn__trigger"
+                @onclick="HandleInsertClickAsync"
+                disabled="@(ReadOnly && (Content?.TemplateBlocks.Count == 0))"
+                title="@Loc["TmNotionTemplateButtonBlock_InsertTitle"]">
+            <span class="tm-template-btn__icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M17.5 14v7M14 17.5h7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <span class="tm-template-btn__label">
+                @(_label)
+            </span>
+            @if (Content?.TemplateBlocks.Count > 0)
+            {
+                <span class="tm-template-btn__count">
+                    @Loc["TmNotionTemplateButtonBlock_BlockCount", Content.TemplateBlocks.Count]
+                </span>
+            }
+        </button>
+
+        @if (!ReadOnly)
+        {
+            <button type="button"
+                    class="tm-template-btn__config-toggle"
+                    @onclick="ToggleConfigAsync"
+                    title="@Loc["TmNotionTemplateButtonBlock_ConfigureTitle"]"
+                    aria-label="@Loc["TmNotionTemplateButtonBlock_ConfigureTitle"]"
+                    aria-expanded="@_isConfigOpen.ToString().ToLowerInvariant()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+            </button>
+        }
+    </div>
+
+    @* ── Config panel ─────────────────────────────────────────────────────────── *@
+    @if (_isConfigOpen)
+    {
+        <div class="tm-template-btn__config" role="dialog"
+             aria-label="@Loc["TmNotionTemplateButtonBlock_ConfigTitle"]">
+
+            @* Label *@
+            <div class="tm-template-btn__config-section">
+                <label class="tm-template-btn__config-heading" for="@_labelInputId">
+                    @Loc["TmNotionTemplateButtonBlock_LabelLabel"]
+                </label>
+                <input id="@_labelInputId"
+                       type="text"
+                       class="tm-template-btn__label-input"
+                       value="@_labelBuffer"
+                       @oninput="e => _labelBuffer = e.Value?.ToString() ?? string.Empty"
+                       placeholder="@Loc["TmNotionTemplateButtonBlock_LabelPlaceholder"]"
+                       @ref="_labelInputRef"
+                       maxlength="200" />
+            </div>
+
+            @* Template blocks *@
+            <div class="tm-template-btn__config-section">
+                <div class="tm-template-btn__config-heading">
+                    @Loc["TmNotionTemplateButtonBlock_TemplateBlocksLabel"]
+                </div>
+
+                @if (_configBlocks.Count == 0)
+                {
+                    <p class="tm-template-btn__no-blocks">
+                        @Loc["TmNotionTemplateButtonBlock_NoTemplateBlocks"]
+                    </p>
+                }
+                else
+                {
+                    <ul class="tm-template-btn__block-list" aria-label="@Loc["TmNotionTemplateButtonBlock_TemplateBlocksLabel"]">
+                        @for (var i = 0; i < _configBlocks.Count; i++)
+                        {
+                            var idx  = i;
+                            var type = _configBlocks[i];
+                            <li class="tm-template-btn__block-item">
+                                <span class="tm-template-btn__block-icon" aria-hidden="true">
+                                    @BlockTypeIcon(type)
+                                </span>
+                                <span class="tm-template-btn__block-name">
+                                    @Loc[$"TmNotionSlashMenu_ItemName_{type}"]
+                                </span>
+                                <button type="button"
+                                        class="tm-template-btn__block-remove"
+                                        @onclick="() => RemoveConfigBlock(idx)"
+                                        aria-label="@Loc["TmNotionTemplateButtonBlock_RemoveBlock"]">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                <div class="tm-template-btn__add-row">
+                    <select class="tm-template-btn__add-select"
+                            @bind="_addBlockType"
+                            aria-label="@Loc["TmNotionTemplateButtonBlock_SelectBlockType"]">
+                        @foreach (var type in _addableBlockTypes)
+                        {
+                            <option value="@((int)type)">@Loc[$"TmNotionSlashMenu_ItemName_{type}"]</option>
+                        }
+                    </select>
+                    <button type="button"
+                            class="tm-template-btn__add-btn"
+                            @onclick="AddConfigBlock">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        @Loc["TmNotionTemplateButtonBlock_AddBlock"]
+                    </button>
+                </div>
+            </div>
+
+            @* Actions *@
+            <div class="tm-template-btn__config-actions">
+                <button type="button"
+                        class="tm-btn tm-btn--primary tm-btn--sm"
+                        @onclick="SaveConfigAsync">
+                    @Loc["Tm_Save"]
+                </button>
+                <button type="button"
+                        class="tm-btn tm-btn--ghost tm-btn--sm"
+                        @onclick="CloseConfigAsync">
+                    @Loc["Tm_Cancel"]
+                </button>
+            </div>
+        </div>
+    }
+
+</div>

@@ -1,0 +1,145 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionTableOfContentsBlock — auto page outline with heading links
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Outer wrapper ───────────────────────────────────────────── */
+
+.tm-toc {
+    display:        flex;
+    flex-direction: column;
+    gap:            var(--tm-space-1);
+    padding:        var(--tm-space-3) var(--tm-space-4);
+    border-radius:  var(--tm-radius-md);
+    background:     var(--tm-bg-subtle);
+    border:         1px solid var(--tm-notion-border, var(--tm-border-color));
+}
+
+/* ── Header row ──────────────────────────────────────────────── */
+
+.tm-toc__header {
+    display:     flex;
+    align-items: center;
+    gap:         var(--tm-space-1-5);
+    margin-bottom: var(--tm-space-1);
+}
+
+.tm-toc__header-icon {
+    color:       var(--tm-text-tertiary);
+    flex-shrink: 0;
+}
+
+.tm-toc__header-label {
+    font-size:      var(--tm-font-size-xs);
+    font-weight:    var(--tm-font-weight-semibold);
+    color:          var(--tm-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    user-select:    none;
+}
+
+/* ── Nav list ────────────────────────────────────────────────── */
+
+.tm-toc__nav {
+    display:        flex;
+    flex-direction: column;
+    gap:            1px;
+}
+
+/* ── Individual item ─────────────────────────────────────────── */
+
+.tm-toc__item {
+    display:       flex;
+    align-items:   center;
+    gap:           var(--tm-space-1-5);
+    padding:       var(--tm-space-1) var(--tm-space-1-5);
+    padding-left:  calc(var(--tm-space-1-5) + var(--tm-toc-indent, 0px));
+    border-radius: var(--tm-radius-sm);
+    background:    transparent;
+    border:        none;
+    cursor:        pointer;
+    text-align:    left;
+    width:         100%;
+    color:         var(--tm-text-secondary);
+    font-size:     var(--tm-font-size-sm);
+    transition:    background var(--tm-notion-anim-fast), color var(--tm-notion-anim-fast);
+    outline:       none;
+}
+
+.tm-toc__item:hover {
+    background: var(--tm-notion-bg-block-hover);
+    color:      var(--tm-text-primary);
+}
+
+.tm-toc__item--active,
+.tm-toc__item[aria-current="true"] {
+    background: var(--tm-color-primary-50);
+    color:      var(--tm-color-primary-700);
+}
+
+.tm-toc__item:focus-visible {
+    outline:        2px solid var(--tm-color-primary-500);
+    outline-offset: 1px;
+}
+
+/* ── H1 style (no indent, slightly bolder) ───────────────────── */
+
+.tm-toc__item--level1 {
+    font-weight: var(--tm-font-weight-medium);
+    color:       var(--tm-text-primary);
+}
+
+/* ── H2 style ────────────────────────────────────────────────── */
+
+.tm-toc__item--level2 {
+    font-weight: var(--tm-font-weight-normal);
+    color:       var(--tm-text-secondary);
+}
+
+/* ── H3 style ────────────────────────────────────────────────── */
+
+.tm-toc__item--level3 {
+    font-weight: var(--tm-font-weight-normal);
+    color:       var(--tm-text-tertiary);
+    font-size:   var(--tm-font-size-xs);
+}
+
+/* ── Indent dot ──────────────────────────────────────────────── */
+
+.tm-toc__item-dot {
+    width:         4px;
+    height:        4px;
+    border-radius: 50%;
+    background:    currentColor;
+    flex-shrink:   0;
+    opacity:       0.5;
+    transition:    opacity var(--tm-notion-anim-fast);
+}
+
+.tm-toc__item:hover .tm-toc__item-dot {
+    opacity: 0.85;
+}
+
+.tm-toc__item--active .tm-toc__item-dot,
+.tm-toc__item[aria-current="true"] .tm-toc__item-dot {
+    opacity: 1;
+}
+
+/* ── Item text ───────────────────────────────────────────────── */
+
+.tm-toc__item-text {
+    flex:          1;
+    min-width:     0;
+    overflow:      hidden;
+    text-overflow: ellipsis;
+    white-space:   nowrap;
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+
+.tm-toc__empty {
+    font-size:  var(--tm-font-size-sm);
+    color:      var(--tm-text-tertiary);
+    font-style: italic;
+    margin:     0;
+    padding:    var(--tm-space-1) var(--tm-space-1-5);
+}

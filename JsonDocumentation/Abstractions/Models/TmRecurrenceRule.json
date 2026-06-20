@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Represents a recurrence rule for scheduled events (subset of RFC 5545 RRULE).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmRecurrenceRule.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmRecurrenceRule"
+}

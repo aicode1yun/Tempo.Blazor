@@ -1,0 +1,71 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<div @attributes="AdditionalAttributes"
+     class="@RootClass"
+     aria-invalid="@BoolText(_error is not null)">
+    <div class="tm-formula-builder__editor">
+        <label class="tm-formula-builder__label" for="@_textareaId">@Loc["TmFormulaBuilder_Formula"]</label>
+        <textarea id="@_textareaId"
+                  class="tm-formula-builder__textarea"
+                  value="@_formulaText"
+                  placeholder="@Loc["TmFormulaBuilder_Placeholder"]"
+                  disabled="@Disabled"
+                  rows="4"
+                  @oninput="HandleInputAsync"></textarea>
+    </div>
+
+    <div class="tm-formula-builder__toolbar" aria-label="@Loc["TmFormulaBuilder_Operators"]">
+        @foreach (var op in Operators)
+        {
+            var operatorText = GetOperatorText(op);
+            <button type="button"
+                    class="tm-formula-builder__operator"
+                    data-operator="@op"
+                    disabled="@Disabled"
+                    @onclick="() => InsertTextAsync(operatorText)">
+                @op
+            </button>
+        }
+
+        @foreach (var function in Functions)
+        {
+            <button type="button"
+                    class="tm-formula-builder__function"
+                    data-function="@function"
+                    disabled="@Disabled"
+                    @onclick="() => InsertTextAsync(function)">
+                @function
+            </button>
+        }
+    </div>
+
+    <div class="tm-formula-builder__tokens" aria-label="@Loc["TmFormulaBuilder_Tokens"]">
+        @foreach (var sourceField in FormulaSourceFields)
+        {
+            var fieldLabel = GetLocalizedFieldLabel(sourceField);
+            <button type="button"
+                    class="tm-formula-builder__token"
+                    data-field-uuid="@sourceField.Uuid"
+                    disabled="@Disabled"
+                    @onclick="() => InsertFieldTokenAsync(sourceField)">
+                @fieldLabel
+            </button>
+        }
+    </div>
+
+    @if (_error is not null)
+    {
+        <div class="tm-formula-builder__error" role="alert">@_error</div>
+    }
+
+    <div class="tm-formula-builder__actions">
+        <button type="button"
+                class="tm-formula-builder__save"
+                disabled="@Disabled"
+                @onclick="SaveAsync">
+            <TmIcon Name="save" Size="IconSize.Xs" />
+            @Loc["TmFormulaBuilder_Save"]
+        </button>
+    </div>
+</div>

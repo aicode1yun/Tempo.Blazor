@@ -54,16 +54,19 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
     [Parameter] public EventCallback                            OnFocused         { get; set; }
 
     /// <summary>Fired when the open/closed state changes. Arg = new IsOpen value.</summary>
-    [Parameter] public EventCallback<bool>                      OnOpenChanged     { get; set; }
+    [Parameter] public EventCallback<(bool IsOpen, string? Html)> OnOpenChanged     { get; set; }
 
-    /// <summary>Fired when '/' is typed. Args = (top, left) caret coords.</summary>
-    [Parameter] public EventCallback<(double Top, double Left)> OnSlashMenu       { get; set; }
+    /// <summary>Fired when '/' is typed. Args = (blockId, top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnSlashMenu       { get; set; }
 
-    /// <summary>Fired when '@' is typed. Args = (top, left) caret coords.</summary>
-    [Parameter] public EventCallback<(double Top, double Left)> OnMentionMenu     { get; set; }
+    /// <summary>Fired when '@' is typed. Args = (blockId, top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnMentionMenu     { get; set; }
 
-    /// <summary>Fired when '[[' is typed. Args = (top, left) caret coords.</summary>
-    [Parameter] public EventCallback<(double Top, double Left)> OnPageLinkMenu    { get; set; }
+    /// <summary>Fired when '[[' is typed. Args = (blockId, top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnPageLinkMenu    { get; set; }
+
+    /// <summary>Fired when '{{' token syntax is typed. Args = (blockId, top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnTokenMenu       { get; set; }
 
     // ── State ────────────────────────────────────────────────────────────────
 
@@ -95,6 +98,11 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
+    protected override void OnInitialized()
+    {
+        Context.BlockConverted += OnBlockConverted;
+    }
+
     protected override void OnParametersSet()
     {
         if (ReferenceEquals(Content, _lastContent)) return;
@@ -113,20 +121,24 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
 
             if (!_kbInitialized)
             {
-                _kbInitialized = true;
-                _lastHtml      = html;
+                _lastHtml = html;
                 _dotNetRef?.Dispose();
                 _dotNetRef = DotNetObjectReference.Create(this);
                 try
                 {
                     await JS.InvokeVoidAsync("tmNotionEditor.initKeyboardHandler", _editableRef, _dotNetRef);
+                    _kbInitialized = true;
+                }
+                catch { }
+                try
+                {
                     await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html);
                     if (IsFocused)
                         await JS.InvokeVoidAsync("tmNotionEditor.focusAtStart", _editableRef);
                 }
                 catch { }
             }
-            else if (html != _lastHtml)
+            else if (!_dirty && html != _lastHtml)
             {
                 _lastHtml = html;
                 try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html); }
@@ -142,8 +154,22 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
 
     private async Task HandleArrowClickAsync()
     {
+        string? html = null;
+        if (_dirty && !ReadOnly)
+        {
+            try
+            {
+                html = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
+                await OnContentSaved.InvokeAsync(html);
+            }
+            catch { }
+            finally
+            {
+                _dirty = false;
+            }
+        }
         _isOpen = !_isOpen;
-        await OnOpenChanged.InvokeAsync(_isOpen);
+        await OnOpenChanged.InvokeAsync((_isOpen, html));
     }
 
     // ── Children loading ──────────────────────────────────────────────────────
@@ -171,14 +197,16 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
     private async Task OnBlurAsync()
     {
         if (!_dirty || ReadOnly) return;
-        _dirty = false;
         try
         {
-            var html  = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
-            _lastHtml = html;
+            var html = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
             await OnContentSaved.InvokeAsync(html);
         }
         catch { }
+        finally
+        {
+            _dirty = false;
+        }
     }
 
     private async Task HandleFocusAsync() => await OnFocused.InvokeAsync();
@@ -218,15 +246,19 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
 
     [JSInvokable]
     public async Task OnSlashTriggered(double top, double left) =>
-        await OnSlashMenu.InvokeAsync((top, left));
+        await OnSlashMenu.InvokeAsync((Block.Id.ToString(), top, left));
 
     [JSInvokable]
     public async Task OnMentionTriggered(double top, double left) =>
-        await OnMentionMenu.InvokeAsync((top, left));
+        await OnMentionMenu.InvokeAsync((Block.Id.ToString(), top, left));
 
     [JSInvokable]
     public async Task OnPageLinkTriggered(double top, double left) =>
-        await OnPageLinkMenu.InvokeAsync((top, left));
+        await OnPageLinkMenu.InvokeAsync((Block.Id.ToString(), top, left));
+
+    [JSInvokable]
+    public async Task OnTokenTriggered(double top, double left) =>
+        await OnTokenMenu.InvokeAsync((Block.Id.ToString(), top, left));
 
     // ── Child block handlers ──────────────────────────────────────────────────
 
@@ -277,6 +309,7 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
     {
         var idx = _children.FindIndex(b => b.Id == updated.Id);
         if (idx >= 0) _children[idx] = updated;
+        StateHasChanged();
         return Task.CompletedTask;
     }
 
@@ -291,6 +324,18 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
             StateHasChanged();
         }
         catch { }
+    }
+
+    private void OnBlockConverted(IPageBlock converted)
+    {
+        var idx = _children.FindIndex(b => b.Id == converted.Id);
+        if (idx >= 0)
+        {
+            _children[idx] = converted;
+            if (_activeChildId == converted.Id)
+                _activeChildId = converted.Id;
+            StateHasChanged();
+        }
     }
 
     private async Task HandleChildConvertAsync((string childId, BlockType newType) args)
@@ -361,10 +406,24 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
         catch { }
     }
 
+    private Task HandleChildSlashAsync((string BlockId, double Top, double Left) args) =>
+        OnSlashMenu.InvokeAsync(args);
+
+    private Task HandleChildMentionAsync((string BlockId, double Top, double Left) args) =>
+        OnMentionMenu.InvokeAsync(args);
+
+    private Task HandleChildPageLinkAsync((string BlockId, double Top, double Left) args) =>
+        OnPageLinkMenu.InvokeAsync(args);
+
+    private Task HandleChildTokenAsync((string BlockId, double Top, double Left) args) =>
+        OnTokenMenu.InvokeAsync(args);
+
     // ── Dispose ───────────────────────────────────────────────────────────────
 
     public async ValueTask DisposeAsync()
     {
+        Context.BlockConverted -= OnBlockConverted;
+
         if (_kbInitialized)
         {
             try { await JS.InvokeVoidAsync("tmNotionEditor.destroyBlock", _editableRef); }

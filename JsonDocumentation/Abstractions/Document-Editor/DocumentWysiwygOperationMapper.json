@@ -1,0 +1,46 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Maps WYSIWYG patches to granular document operations.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentWysiwygOperationMapper.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CreateAcceptRevision",
+      "kind": "Method",
+      "type": "DocumentOperation",
+      "description": "Creates an operation that accepts a pending revision.",
+      "parameters": [
+        {
+          "name": "revision",
+          "type": "DocumentRevision"
+        },
+        {
+          "name": "metadata",
+          "type": "DocumentOperationMetadata?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "CreateRejectRevision",
+      "kind": "Method",
+      "type": "DocumentOperation",
+      "description": "Creates an operation that rejects a pending revision.",
+      "parameters": [
+        {
+          "name": "revision",
+          "type": "DocumentRevision"
+        },
+        {
+          "name": "metadata",
+          "type": "DocumentOperationMetadata?",
+          "default": "null"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentWysiwygOperationMapper"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Mcp",
+  "description": "Shared JSON options for MCP tool input parsing and output formatting.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/McpJson.cs",
+  "documentationStatus": "generated",
+  "itemName": "McpJson"
+}

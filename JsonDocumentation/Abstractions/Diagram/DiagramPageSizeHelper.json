@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Helper for converting to pixel dimensions at 96 DPI.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramPageSizeHelper.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramPageSizeHelper"
+}

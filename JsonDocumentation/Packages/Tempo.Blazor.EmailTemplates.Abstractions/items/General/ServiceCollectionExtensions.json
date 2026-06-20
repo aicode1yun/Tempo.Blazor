@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "description": "DI registration for the email template engine (model, generation, rendering, validation).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/ServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "ServiceCollectionExtensions"
+}

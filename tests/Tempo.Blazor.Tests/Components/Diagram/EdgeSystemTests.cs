@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -394,9 +396,12 @@ public class EdgeSystemTests : LocalizationTestBase
             .Add(c => c.ReadOnly, false));
 
         cut.Render();
-        var fo = cut.Find("foreignObject");
-        fo.Should().NotBeNull();
-        fo.InnerHtml.Should().Contain("tm-diagram-math");
+        // After F3 per-node <foreignObject>s exist too; pick the one that
+        // actually holds the MathJax label (class="tm-diagram-math") rather
+        // than the first foreignObject in document order.
+        var mathFo = cut.FindAll("foreignObject")
+            .FirstOrDefault(fo => fo.InnerHtml.Contains("tm-diagram-math", StringComparison.Ordinal));
+        mathFo.Should().NotBeNull();
     }
 
     [Fact]

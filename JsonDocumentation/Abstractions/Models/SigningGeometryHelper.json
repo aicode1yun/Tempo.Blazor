@@ -1,0 +1,86 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Helpers for normalized signing field geometry.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningGeometryHelper.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Clamp",
+      "kind": "Method",
+      "type": "SigningFieldArea",
+      "description": "Clamps an area to the 0..1 page coordinate space.",
+      "parameters": [
+        {
+          "name": "area",
+          "type": "SigningFieldArea"
+        },
+        {
+          "name": "minWidth",
+          "type": "double",
+          "default": "0"
+        },
+        {
+          "name": "minHeight",
+          "type": "double",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "GetSelectionRectangle",
+      "kind": "Method",
+      "type": "SigningRectangle",
+      "description": "Returns a normalized bounding rectangle for the provided areas.",
+      "parameters": [
+        {
+          "name": "areas",
+          "type": "IEnumerable<SigningFieldArea>"
+        }
+      ]
+    },
+    {
+      "name": "ToNormalized",
+      "kind": "Method",
+      "type": "SigningFieldArea",
+      "description": "Converts a pixel rectangle to a normalized signing area.",
+      "parameters": [
+        {
+          "name": "rectangle",
+          "type": "SigningRectangle"
+        },
+        {
+          "name": "pageWidth",
+          "type": "double"
+        },
+        {
+          "name": "pageHeight",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "ToPixels",
+      "kind": "Method",
+      "type": "SigningRectangle",
+      "description": "Converts a normalized signing area to a pixel rectangle.",
+      "parameters": [
+        {
+          "name": "area",
+          "type": "SigningFieldArea"
+        },
+        {
+          "name": "pageWidth",
+          "type": "double"
+        },
+        {
+          "name": "pageHeight",
+          "type": "double"
+        }
+      ]
+    }
+  ],
+  "itemName": "SigningGeometryHelper"
+}

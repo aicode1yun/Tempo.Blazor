@@ -25,7 +25,7 @@
                  @oncontextmenu="@(e => HandleDayContextMenu(e, d))"
                  @oncontextmenu:preventDefault="true">
                 <span class="tm-scheduler-month-day-number">@d.Day</span>
-                @if (!isOther)
+                @if (!isOther || ShowAdjacentMonthEvents)
                 {
                     var dayEvents = GetEventsForDate(d);
                     var visible = dayEvents.Take(MaxVisibleEvents).ToList();
@@ -75,6 +75,9 @@
 
     /// <summary>Max events visible per day cell before showing "+N more".</summary>
     [Parameter] public int MaxVisibleEvents { get; set; } = 3;
+
+    /// <summary>When true, events are also rendered in adjacent-month day cells visible in the grid.</summary>
+    [Parameter] public bool ShowAdjacentMonthEvents { get; set; } = true;
 
     /// <summary>Whether drag/drop is disabled.</summary>
     [Parameter] public bool ReadOnly { get; set; }

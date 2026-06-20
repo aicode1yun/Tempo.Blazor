@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Describes an available export format (e.g. CSV, XLSX).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmExportRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmExportFormat"
+}

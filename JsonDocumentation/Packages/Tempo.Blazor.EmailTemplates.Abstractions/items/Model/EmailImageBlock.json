@@ -1,0 +1,84 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "An image (mj-image). is required; matters for a11y.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailImageBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Align",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the horizontal alignment (align)."
+    },
+    {
+      "name": "Alt",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the alternative text (alt). Required for accessibility."
+    },
+    {
+      "name": "Border",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the border shorthand (border)."
+    },
+    {
+      "name": "BorderRadius",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the border radius (border-radius)."
+    },
+    {
+      "name": "FluidOnMobile",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets whether the image becomes fluid on mobile (fluid-on-mobile)."
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the explicit height (height)."
+    },
+    {
+      "name": "Href",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the link target (href)."
+    },
+    {
+      "name": "Rel",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the link rel attribute."
+    },
+    {
+      "name": "Src",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the image source URL (src)."
+    },
+    {
+      "name": "Target",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the link target window (target)."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the image title (title)."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the explicit width (width)."
+    }
+  ],
+  "itemName": "EmailImageBlock"
+}

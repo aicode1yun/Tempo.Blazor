@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Import",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Import",
+  "description": "Localization keys for import diagnostics.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Import/ImportKeys.cs",
+  "documentationStatus": "generated",
+  "itemName": "ImportKeys"
+}

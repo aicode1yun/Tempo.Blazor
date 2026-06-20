@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Scoped service that carries dragged item IDs between sibling components (e.g. TmMultiViewList as drag source and TmTreeView as drop target).",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/DragDropService.cs",
+  "documentationStatus": "generated",
+  "itemName": "DragDropService"
+}

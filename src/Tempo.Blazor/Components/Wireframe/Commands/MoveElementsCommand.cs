@@ -49,6 +49,7 @@ public sealed class MoveElementsCommand : IWireframeCommand
     {
         foreach (var el in _doc.Elements)
         {
+            if (el.IsLocked || !string.IsNullOrEmpty(el.LockedBy)) continue;
             if (_after.TryGetValue(el.Id, out var pos))
             { el.X = pos.X; el.Y = pos.Y; }
         }
@@ -58,6 +59,7 @@ public sealed class MoveElementsCommand : IWireframeCommand
     {
         foreach (var el in _doc.Elements)
         {
+            if (el.IsLocked || !string.IsNullOrEmpty(el.LockedBy)) continue;
             if (_before.TryGetValue(el.Id, out var pos))
             { el.X = pos.X; el.Y = pos.Y; }
         }
@@ -76,6 +78,7 @@ public sealed class MoveElementsCommand : IWireframeCommand
         // Apply the new "after" positions directly to the document
         foreach (var el in _doc.Elements)
         {
+            if (el.IsLocked || !string.IsNullOrEmpty(el.LockedBy)) continue;
             if (next._after.TryGetValue(el.Id, out var pos))
             { el.X = pos.X; el.Y = pos.Y; }
         }

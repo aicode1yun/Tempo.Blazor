@@ -105,10 +105,14 @@ public sealed class BuiltInDiagramTemplateProvider : IDiagramTemplateProvider
         }
     }
 
-    // Converts "diagram-templates/index.json" → "Tempo.Blazor.wwwroot.diagram-templates.index.json"
+    // Converts "diagram-templates/index.json" → "Tempo.Blazor.wwwroot.diagram_templates.index.json"
+    // MSBuild replaces hyphens with underscores in directory segments of embedded resource names,
+    // but leaves them in file names.
     private static async Task<string> ReadResourceAsync(string relativePath)
     {
-        var resourceName = "Tempo.Blazor.wwwroot." + relativePath.Replace('/', '.').Replace('\\', '.');
+        var segments = relativePath.Replace('\\', '/').Split('/');
+        var normalized = string.Join(".", segments.Select((s, i) => i == segments.Length - 1 ? s : s.Replace('-', '_')));
+        var resourceName = "Tempo.Blazor.wwwroot." + normalized;
         using var stream = _assembly.GetManifestResourceStream(resourceName);
         if (stream is null)
             return string.Empty;

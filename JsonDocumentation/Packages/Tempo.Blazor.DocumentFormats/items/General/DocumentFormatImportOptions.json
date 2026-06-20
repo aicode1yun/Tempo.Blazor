@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.DocumentFormats",
+  "description": "Options used when importing an external package.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentFormatImportOptions"
+}

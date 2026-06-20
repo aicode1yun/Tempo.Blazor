@@ -1,0 +1,40 @@
+{
+  "itemName": "SpreadsheetWorkbook",
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Root workbook containing one or more spreadsheet sheets. Supports sheet management (add, remove, active sheet tracking) and deep cloning.",
+  "properties": [
+    {
+      "name": "Sheets",
+      "type": "List<SpreadsheetSheet>",
+      "isRequired": false,
+      "description": "All sheets in the workbook."
+    },
+    {
+      "name": "ActiveSheetIndex",
+      "type": "int",
+      "isRequired": false,
+      "default": "0",
+      "description": "Zero-based index of the currently active sheet."
+    },
+    {
+      "name": "ActiveSheet",
+      "type": "SpreadsheetSheet?",
+      "isRequired": false,
+      "description": "The currently active sheet, or null if no sheets exist."
+    },
+    {
+      "name": "NamedRanges",
+      "type": "List<SpreadsheetNamedRange>",
+      "isRequired": false,
+      "description": "Named ranges defined in this workbook (workbook or sheet scope)."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Create workbook with multiple sheets",
+      "code": "var workbook = new SpreadsheetWorkbook();\nworkbook.AddSheet(\"Sales\");\nworkbook.AddSheet(\"Inventory\");\nworkbook.ActiveSheetIndex = 1;"
+    }
+  ]
+}

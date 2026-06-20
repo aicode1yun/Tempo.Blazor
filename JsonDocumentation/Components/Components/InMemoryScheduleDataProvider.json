@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Scheduler",
+  "description": "Client-side that filters an in-memory event list by date range and optionally by resource.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Scheduler/InMemoryScheduleDataProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "InMemoryScheduleDataProvider"
+}

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 
 namespace Tempo.Blazor.Components.NotionEditor.UI;
@@ -11,6 +12,11 @@ public partial class TmNotionSlashMenu : ComponentBase
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
+    // ── Cascaded context ─────────────────────────────────────────────────────
+
+    [CascadingParameter]
+    private NotionEditorContext Context { get; set; } = default!;
+
     // ── Parameters ───────────────────────────────────────────────────────────
 
     [Parameter] public bool   Visible { get; set; }
@@ -19,6 +25,12 @@ public partial class TmNotionSlashMenu : ComponentBase
 
     /// <summary>Raised when the user selects a block type.</summary>
     [Parameter] public EventCallback<BlockType> OnItemSelected { get; set; }
+
+    /// <summary>Raised when the user selects a slash-menu item with item metadata.</summary>
+    [Parameter] public EventCallback<SlashMenuItem> OnSlashItemSelected { get; set; }
+
+    /// <summary>Raised when the user selects the AI assistant action.</summary>
+    [Parameter] public EventCallback OnAISelected { get; set; }
 
     /// <summary>Raised when the user dismisses the menu (Escape / backdrop click).</summary>
     [Parameter] public EventCallback OnClosed { get; set; }
@@ -35,10 +47,14 @@ public partial class TmNotionSlashMenu : ComponentBase
     private List<BlockType> _recentlyUsed = [];
     private List<(SlashMenuCategory Category, List<SlashMenuItem> Items)> _groups = [];
     private int _totalItems;
+    private bool _showAiItem;
 
     private ElementReference _menuRef;
     private ElementReference _inputRef;
     private ElementReference _listRef;
+
+    private const string AiIcon =
+        """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2.5l1.35 4.15L15.5 8l-4.15 1.35L10 13.5 8.65 9.35 4.5 8l4.15-1.35L10 2.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5.5 12.5l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7.7-2.1zM15 11l.55 1.65L17.2 13.2l-1.65.55L15 15.4l-.55-1.65-1.65-.55 1.65-.55L15 11z" fill="currentColor"/></svg>""";
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -91,12 +107,47 @@ public partial class TmNotionSlashMenu : ComponentBase
 
     private void RebuildGroups()
     {
-        _groups     = SlashMenuRegistry.GetGrouped(_query, _recentlyUsed, ResolveName, ResolveDesc);
-        _totalItems = _groups.Sum(g => g.Items.Count);
+        var allowed = BuildEffectiveAllowedTypes();
+
+        var recent = allowed is null
+            ? _recentlyUsed
+            : _recentlyUsed.Where(t => allowed.Contains(t)).ToList();
+
+        _groups     = SlashMenuRegistry.GetGrouped(_query, recent, ResolveName, ResolveDesc, allowed);
+        _showAiItem = Context?.AIProvider is not null && MatchesAI(_query);
+        _totalItems = _groups.Sum(g => g.Items.Count) + (_showAiItem ? 1 : 0);
     }
 
     private string ResolveName(SlashMenuItem item)        => Loc[item.Name];
     private string ResolveDesc(SlashMenuItem item)        => Loc[item.Description];
+
+    private IReadOnlySet<BlockType>? BuildEffectiveAllowedTypes()
+    {
+        var configured = Context?.AllowedBlockTypes;
+        var hasWorkItemProvider = Context?.WorkItemProviders?.GetAll().Count > 0;
+
+        if (hasWorkItemProvider)
+        {
+            return configured;
+        }
+
+        if (configured is null)
+        {
+            return SlashMenuRegistry.All
+                .Select(i => i.Type)
+                .Where(t => t != BlockType.WorkItem)
+                .ToHashSet();
+        }
+
+        if (!configured.Contains(BlockType.WorkItem))
+        {
+            return configured;
+        }
+
+        return configured
+            .Where(t => t != BlockType.WorkItem)
+            .ToHashSet();
+    }
 
     // ── Keyboard navigation ───────────────────────────────────────────────────
 
@@ -117,8 +168,15 @@ public partial class TmNotionSlashMenu : ComponentBase
                 break;
 
             case "Enter":
-                var item = GetFlatItem(_selectedIndex);
-                if (item is not null) await SelectItemAsync(item);
+                if (_showAiItem && _selectedIndex == 0)
+                {
+                    await SelectAiItemAsync();
+                }
+                else
+                {
+                    var item = GetFlatItem(_selectedIndex);
+                    if (item is not null) await SelectItemAsync(item);
+                }
                 break;
 
             case "Escape":
@@ -131,9 +189,26 @@ public partial class TmNotionSlashMenu : ComponentBase
 
     private async Task SelectItemAsync(SlashMenuItem item)
     {
-        await SaveRecentAsync(item.Type);
+        if (item.Action == SlashMenuAction.ConvertBlock)
+        {
+            await SaveRecentAsync(item.Type);
+            await JS.InvokeVoidAsync("tmNotionEditor.clearSlashQuery");
+        }
+
+        if (OnSlashItemSelected.HasDelegate)
+        {
+            await OnSlashItemSelected.InvokeAsync(item);
+        }
+        else
+        {
+            await OnItemSelected.InvokeAsync(item.Type);
+        }
+    }
+
+    private async Task SelectAiItemAsync()
+    {
         await JS.InvokeVoidAsync("tmNotionEditor.clearSlashQuery");
-        await OnItemSelected.InvokeAsync(item.Type);
+        await OnAISelected.InvokeAsync();
     }
 
     // ── Close ─────────────────────────────────────────────────────────────────
@@ -187,7 +262,7 @@ public partial class TmNotionSlashMenu : ComponentBase
 
     private SlashMenuItem? GetFlatItem(int flatIndex)
     {
-        var idx = 0;
+        var idx = _showAiItem ? 1 : 0;
         foreach (var (_, items) in _groups)
         {
             foreach (var item in items)
@@ -197,6 +272,17 @@ public partial class TmNotionSlashMenu : ComponentBase
             }
         }
         return null;
+    }
+
+    private bool MatchesAI(string query)
+    {
+        var q = query.Trim();
+        if (q.Length == 0) return true;
+
+        return "ai".Contains(q, StringComparison.OrdinalIgnoreCase)
+            || "assistant".Contains(q, StringComparison.OrdinalIgnoreCase)
+            || Loc["Notion_AI_Assistant"].Contains(q, StringComparison.OrdinalIgnoreCase)
+            || Loc["TmNotionSlashMenu_ItemDesc_AI"].Contains(q, StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task ScrollToSelectedAsync()

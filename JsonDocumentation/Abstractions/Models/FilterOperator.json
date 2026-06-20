@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Filter comparison operators used in TmFilterBuilder.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/FilterDefinition.cs",
+  "documentationStatus": "generated",
+  "itemName": "FilterOperator"
+}

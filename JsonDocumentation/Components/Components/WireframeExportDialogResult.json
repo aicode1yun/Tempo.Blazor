@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Result emitted by when the user confirms export.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Wireframe/WireframeExportDialogResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "FileName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Desired file name without extension."
+    },
+    {
+      "name": "Format",
+      "kind": "Property",
+      "type": "string",
+      "description": "\"png\" or \"pdf\"."
+    },
+    {
+      "name": "Options",
+      "kind": "Property",
+      "type": "WireframeExportOptions",
+      "description": "Export options (scale, background, etc.)."
+    }
+  ],
+  "itemName": "WireframeExportDialogResult"
+}

@@ -1,0 +1,22 @@
+{
+  "itemName": "TmEmailClassesEditor",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailClassesEditor Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailClassesEditor.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "OnChanged",
+      "type": "EventCallback",
+      "isRequired": true,
+      "description": "The head attributes containing the named-class definitions (mj-class).",
+      "editorRequired": true
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Document Library",
+  "namespace": "Tempo.Blazor.DocumentLibrary",
+  "description": "Server-side (or write-side) publication of document change notifications. Invoked after a document is saved, renamed or deleted — by the store, an MCP write tool, or a save flow.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/ITempoDocumentChangePublisher.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITempoDocumentChangePublisher"
+}

@@ -1,0 +1,55 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.Components.DocumentEditor.Clipboard
+
+@if (Warnings.Count > 0)
+{
+    <section class="tm-document-paste-report"
+             data-testid="document-paste-report"
+             role="status"
+             aria-live="polite">
+        <div class="tm-document-paste-report__summary">
+            <span>@string.Format(Loc["TmDocumentEditor_PasteReportSummary"], Warnings.Count)</span>
+            <button type="button"
+                    data-testid="document-paste-report-toggle"
+                    @onclick="ToggleDetailsAsync">
+                @Loc[ShowDetails ? "TmDocumentEditor_PasteReportHideDetails" : "TmDocumentEditor_PasteReportShowDetails"]
+            </button>
+            <button type="button"
+                    data-testid="document-paste-report-close"
+                    aria-label="@Loc["TmDocumentEditor_PasteReportClose"]"
+                    @onclick="CloseAsync">
+                &#10005;
+            </button>
+        </div>
+        @if (ShowDetails)
+        {
+            <ul class="tm-document-paste-report__details" data-testid="document-paste-report-details">
+                @foreach (var warning in Warnings)
+                {
+                    <li>
+                        <strong>@warning.Code</strong>
+                        <span>@warning.Message</span>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+}
+
+@code {
+    /// <summary>Warnings to display after a paste operation.</summary>
+    [Parameter] public IReadOnlyList<DocumentClipboardWarning> Warnings { get; set; } = [];
+
+    /// <summary>Raised when the user closes the report.</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private bool ShowDetails { get; set; }
+
+    private Task ToggleDetailsAsync()
+    {
+        ShowDetails = !ShowDetails;
+        return Task.CompletedTask;
+    }
+
+    private Task CloseAsync() => OnClose.InvokeAsync();
+}

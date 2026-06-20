@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Modeling",
+  "description": "Result of notation-specific relationship rule validation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/ModelingNotationProfiles.cs",
+  "documentationStatus": "generated",
+  "itemName": "ModelingRelationshipRuleResult"
+}

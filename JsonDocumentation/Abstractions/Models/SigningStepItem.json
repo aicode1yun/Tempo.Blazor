@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Single linear signing step produced from one field or a group of adjacent checkbox fields.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningStepItem.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AppearsOn",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Human-readable document location for the step."
+    },
+    {
+      "name": "Area",
+      "kind": "Property",
+      "type": "SigningFieldArea?",
+      "description": "Primary document area represented by this step."
+    },
+    {
+      "name": "Field",
+      "kind": "Property",
+      "type": "required SigningField",
+      "description": "Primary field represented by this step."
+    },
+    {
+      "name": "Fields",
+      "kind": "Property",
+      "type": "IReadOnlyList<SigningField>",
+      "description": "Fields represented by this step. Contains multiple fields for checkbox groups."
+    },
+    {
+      "name": "IsCheckboxGroup",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether this step represents multiple adjacent checkbox fields."
+    }
+  ],
+  "itemName": "SigningStepItem"
+}

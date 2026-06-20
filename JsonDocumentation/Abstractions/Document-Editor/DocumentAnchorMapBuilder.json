@@ -1,0 +1,103 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Builds normalized rendition anchors from the editable document model.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAnchorMapBuilder.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Build",
+      "kind": "Method",
+      "type": "IReadOnlyList<DocumentRenditionAnchor>",
+      "description": "Builds a normalized anchor map for a finalized rendition.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        }
+      ]
+    },
+    {
+      "name": "ToSigningField",
+      "kind": "Method",
+      "type": "SigningField",
+      "description": "Converts a signing placeholder anchor to a signing field definition.",
+      "parameters": [
+        {
+          "name": "anchor",
+          "type": "DocumentRenditionAnchor"
+        },
+        {
+          "name": "attachmentUuid",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ToSigningFieldArea",
+      "kind": "Method",
+      "type": "SigningFieldArea",
+      "description": "Converts a rendition anchor to a signing-field area.",
+      "parameters": [
+        {
+          "name": "anchor",
+          "type": "DocumentRenditionAnchor"
+        },
+        {
+          "name": "attachmentUuid",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "Anchors",
+      "kind": "Property",
+      "type": "List<DocumentRenditionAnchor>"
+    },
+    {
+      "name": "Blocks",
+      "kind": "Property",
+      "type": "Dictionary<string, LayoutBox>"
+    },
+    {
+      "name": "Cells",
+      "kind": "Property",
+      "type": "Dictionary<string, LayoutBox>"
+    },
+    {
+      "name": "ContentWidthNormalized",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "FloatingBlocks",
+      "kind": "Property",
+      "type": "Dictionary<string, LayoutBox>"
+    },
+    {
+      "name": "MarginLeftNormalized",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "MarginTopNormalized",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "PageHeight",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "PageWidth",
+      "kind": "Property",
+      "type": "double"
+    }
+  ],
+  "itemName": "DocumentAnchorMapBuilder"
+}

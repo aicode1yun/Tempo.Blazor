@@ -1,0 +1,42 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Represents a predefined command shown as a quick-action button in the AI prompt component.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AIPromptCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional longer description shown as a tooltip or subtitle."
+    },
+    {
+      "name": "Icon",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional icon name (from the icon registry)."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier for the command."
+    },
+    {
+      "name": "IsDisabled",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the command button is disabled."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display text of the command button."
+    }
+  ],
+  "itemName": "AIPromptCommand"
+}

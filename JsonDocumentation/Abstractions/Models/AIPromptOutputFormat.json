@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Format options for AI prompt output content.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AIPromptOutput.cs",
+  "documentationStatus": "generated",
+  "itemName": "AIPromptOutputFormat"
+}

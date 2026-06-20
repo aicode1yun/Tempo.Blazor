@@ -1,0 +1,53 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Default implementation of IDropdownItem<TValue>. Use with TmFilterableDropdown for items with description and avatar support.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DropdownItem.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TValue",
+      "description": "Generic type parameter TValue."
+    }
+  ],
+  "members": [
+    {
+      "name": "AvatarInitials",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "AvatarSrc",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Icon",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "IsDisabled",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "TValue"
+    }
+  ],
+  "itemName": "DropdownItem<TValue>"
+}

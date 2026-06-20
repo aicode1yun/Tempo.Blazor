@@ -40,8 +40,15 @@ public sealed class UpdateNodeDataCommand : IDiagramCommand
     }
 
     private static Dictionary<string, object> DeepCopy(Dictionary<string, object> source)
-    {
-        var json = JsonSerializer.Serialize(source);
-        return JsonSerializer.Deserialize<Dictionary<string, object>>(json) ?? [];
-    }
+        => source.ToDictionary(item => item.Key, item => CloneValue(item.Value));
+
+    private static object CloneValue(object value)
+        => value switch
+        {
+            JsonElement element => element.Clone(),
+            Dictionary<string, object> dictionary => DeepCopy(dictionary),
+            IEnumerable<string> strings => strings.ToList(),
+            IEnumerable<object> objects => objects.Select(CloneValue).ToList(),
+            _ => value
+        };
 }

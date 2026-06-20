@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Describes JS-owned dirty/save state for a WYSIWYG editor instance.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygDirtyState.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DirtyEpoch",
+      "kind": "Property",
+      "type": "int",
+      "description": "Monotonic runtime dirty epoch incremented when content changes."
+    },
+    {
+      "name": "IsDirty",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the JS runtime contains unsaved changes."
+    },
+    {
+      "name": "LastSavedAt",
+      "kind": "Property",
+      "type": "DateTimeOffset?",
+      "description": "Timestamp reported by the JS runtime for the latest successful save."
+    },
+    {
+      "name": "LastSavedMarker",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Provider marker associated with the latest successful save."
+    },
+    {
+      "name": "Reason",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Reason for the latest dirty transition."
+    },
+    {
+      "name": "SavedEpoch",
+      "kind": "Property",
+      "type": "int",
+      "description": "Dirty epoch that was last acknowledged as saved."
+    },
+    {
+      "name": "UndoEpoch",
+      "kind": "Property",
+      "type": "int",
+      "description": "Undo epoch at the time this state was produced."
+    }
+  ],
+  "itemName": "WysiwygDirtyState"
+}

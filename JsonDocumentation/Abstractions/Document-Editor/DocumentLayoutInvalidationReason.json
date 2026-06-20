@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Reason why a document layout needs invalidation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentLayoutEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentLayoutInvalidationReason"
+}

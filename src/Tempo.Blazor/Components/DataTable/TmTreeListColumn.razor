@@ -1,0 +1,43 @@
+@namespace Tempo.Blazor.Components.DataTable
+@typeparam TItem
+
+<span style="display:none" aria-hidden="true">@Title</span>
+
+@code {
+    [CascadingParameter(Name = "TmTreeListParent")] public TmTreeList<TItem> Parent { get; set; } = default!;
+
+    /// <summary>Column header text.</summary>
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Field accessor that returns the cell value for a given row item.</summary>
+    [Parameter] public Func<TItem, object?>? Field { get; set; }
+
+    /// <summary>Optional custom cell template. When set, overrides <see cref="Field"/> rendering.</summary>
+    [Parameter] public RenderFragment<TItem>? CellTemplate { get; set; }
+
+    /// <summary>Whether this column supports inline editing.</summary>
+    [Parameter] public bool Editable { get; set; }
+
+    /// <summary>Template rendered when the row is in edit mode. Replaces <see cref="CellTemplate"/> and <see cref="Field"/>.</summary>
+    [Parameter] public RenderFragment<TItem>? EditTemplate { get; set; }
+
+    /// <summary>Column width CSS value (e.g. "200px", "20%").</summary>
+    [Parameter] public string? Width { get; set; }
+
+    /// <summary>Horizontal text alignment in cells.</summary>
+    [Parameter] public ColumnAlign Align { get; set; } = ColumnAlign.Left;
+
+    /// <summary>Additional CSS class applied to each data cell in this column.</summary>
+    [Parameter] public string? CssClass { get; set; }
+
+    /// <summary>Custom header render fragment (replaces plain <see cref="Title"/> text when set).</summary>
+    [Parameter] public RenderFragment? HeaderTemplate { get; set; }
+
+    /// <summary>Optional .NET format string applied to the cell value (e.g. "{0:C0}").</summary>
+    [Parameter] public string? Format { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Parent?.AddColumn(this);
+    }
+}

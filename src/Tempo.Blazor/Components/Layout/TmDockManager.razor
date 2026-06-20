@@ -1,0 +1,362 @@
+@namespace Tempo.Blazor.Components.Layout
+@using Tempo.Blazor.Abstractions.Models
+
+<div class="tm-dock-manager @Class" @attributes="AdditionalAttributes">
+    @* Registration container for TmDockPane children — must render first so panes are available for the grid *@
+    <CascadingValue Value="this" IsFixed="true">
+        <span style="display:none" aria-hidden="true">@ChildContent</span>
+    </CascadingValue>
+
+    @* Drop-target overlay shown while dragging a pane *@
+    @if (_isDragging)
+    {
+        <div class="tm-dock-drop-overlay">
+            <div class="tm-dock-zone tm-dock-zone--top"
+                 @ondragover:preventDefault
+                 @ondrop="() => HandleDropAsync(DockPosition.Top)">
+                <TmIcon Name="arrow-up" />
+                <span>@Loc["TmDockManager_DockTop"]</span>
+            </div>
+            <div class="tm-dock-zone tm-dock-zone--left"
+                 @ondragover:preventDefault
+                 @ondrop="() => HandleDropAsync(DockPosition.Left)">
+                <TmIcon Name="arrow-left" />
+                <span>@Loc["TmDockManager_DockLeft"]</span>
+            </div>
+            <div class="tm-dock-zone tm-dock-zone--center"
+                 @ondragover:preventDefault
+                 @ondrop="() => HandleDropAsync(DockPosition.Center)">
+                <TmIcon Name="layout" />
+                <span>@Loc["TmDockManager_DockCenter"]</span>
+            </div>
+            <div class="tm-dock-zone tm-dock-zone--right"
+                 @ondragover:preventDefault
+                 @ondrop="() => HandleDropAsync(DockPosition.Right)">
+                <TmIcon Name="arrow-right" />
+                <span>@Loc["TmDockManager_DockRight"]</span>
+            </div>
+            <div class="tm-dock-zone tm-dock-zone--bottom"
+                 @ondragover:preventDefault
+                 @ondrop="() => HandleDropAsync(DockPosition.Bottom)">
+                <TmIcon Name="arrow-down" />
+                <span>@Loc["TmDockManager_DockBottom"]</span>
+            </div>
+        </div>
+    }
+
+    @* Main grid layout *@
+    <div class="tm-dock-grid">
+        @* Top *@
+        @{
+            var topPanes = GetPanesForPosition(DockPosition.Top);
+        }
+        @if (topPanes.Count > 0)
+        {
+            <div class="tm-dock-area tm-dock-area--top">
+                @RenderPaneGroup(topPanes, true)
+            </div>
+        }
+
+        @* Middle row *@
+        <div class="tm-dock-middle">
+            @{
+                var leftPanes = GetPanesForPosition(DockPosition.Left);
+            }
+            @if (leftPanes.Count > 0)
+            {
+                <div class="tm-dock-area tm-dock-area--left" style="@GetAreaSizeStyle(leftPanes, true)">
+                    @RenderPaneGroup(leftPanes, false)
+                </div>
+            }
+
+            @{
+                var centerPanes = GetPanesForPosition(DockPosition.Center);
+            }
+            @if (centerPanes.Count > 0)
+            {
+                <div class="tm-dock-area tm-dock-area--center">
+                    @RenderPaneGroup(centerPanes, true)
+                </div>
+            }
+
+            @{
+                var rightPanes = GetPanesForPosition(DockPosition.Right);
+            }
+            @if (rightPanes.Count > 0)
+            {
+                <div class="tm-dock-area tm-dock-area--right" style="@GetAreaSizeStyle(rightPanes, true)">
+                    @RenderPaneGroup(rightPanes, false)
+                </div>
+            }
+        </div>
+
+        @* Bottom *@
+        @{
+            var bottomPanes = GetPanesForPosition(DockPosition.Bottom);
+        }
+        @if (bottomPanes.Count > 0)
+        {
+            <div class="tm-dock-area tm-dock-area--bottom">
+                @RenderPaneGroup(bottomPanes, true)
+            </div>
+        }
+    </div>
+
+    @* Floating panes overlay *@
+    @foreach (var pane in GetPanesForPosition(DockPosition.Floating))
+    {
+        <div class="tm-dock-floating"
+             style="left:@(pane.FloatX.ToString("0", System.Globalization.CultureInfo.InvariantCulture))px;
+                    top:@(pane.FloatY.ToString("0", System.Globalization.CultureInfo.InvariantCulture))px;
+                    @(pane.Width.HasValue ? $"width:{pane.Width.Value}px;" : "")
+                    @(pane.Height.HasValue ? $"height:{pane.Height.Value}px;" : "")"
+             @ondragstart="() => HandleDragStart(pane)"
+             draggable="true">
+            @RenderFloatingPane(pane)
+        </div>
+    }
+
+</div>
+
+@code {
+    private RenderFragment RenderPaneGroup(IReadOnlyList<TmDockPane> panes, bool isVertical)
+    {
+        if (panes.Count == 0)
+            return builder => { };
+
+        if (panes.Count == 1)
+            return RenderSinglePane(panes[0], isVertical);
+
+        return RenderTabGroup(panes);
+    }
+
+    private RenderFragment RenderSinglePane(TmDockPane pane, bool isVertical)
+    {
+        return builder =>
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "tm-dock-pane");
+            if (isVertical && pane.Height.HasValue)
+                builder.AddAttribute(2, "style", $"height: {pane.Height.Value}px;");
+            else if (!isVertical && pane.Width.HasValue)
+                builder.AddAttribute(2, "style", $"width: {pane.Width.Value}px;");
+
+            // Header with title + actions
+            builder.OpenElement(3, "div");
+            builder.AddAttribute(4, "class", "tm-dock-pane-header");
+            builder.AddAttribute(5, "draggable", "true");
+            builder.AddAttribute(6, "ondragstart", EventCallback.Factory.Create(this, () => HandleDragStart(pane)));
+
+            builder.OpenElement(7, "span");
+            builder.AddAttribute(8, "class", "tm-dock-pane-header-title");
+            if (!string.IsNullOrEmpty(pane.Icon))
+            {
+                builder.OpenComponent(9, typeof(TmIcon));
+                builder.AddAttribute(10, "Name", pane.Icon);
+                builder.CloseComponent();
+            }
+            builder.AddContent(11, pane.Title);
+            builder.CloseElement();
+
+            // Float button
+            if (pane.CanFloat)
+            {
+                builder.OpenElement(12, "button");
+                builder.AddAttribute(13, "type", "button");
+                builder.AddAttribute(14, "class", "tm-dock-tab-action tm-dock-tab-float");
+                builder.AddAttribute(15, "aria-label", Loc["TmDockManager_Float"]);
+                builder.AddEventStopPropagationAttribute(16, "onclick", true);
+                builder.AddAttribute(17, "onclick", EventCallback.Factory.Create(this, () => FloatPaneAsync(pane)));
+                builder.OpenComponent(18, typeof(TmIcon));
+                builder.AddAttribute(19, "Name", "external-link");
+                builder.CloseComponent();
+                builder.CloseElement();
+            }
+
+            // Close button
+            if (pane.CanClose)
+            {
+                builder.OpenElement(20, "button");
+                builder.AddAttribute(21, "type", "button");
+                builder.AddAttribute(22, "class", "tm-dock-tab-action tm-dock-tab-close");
+                builder.AddAttribute(23, "aria-label", Loc["TmDockManager_Close"]);
+                builder.AddEventStopPropagationAttribute(24, "onclick", true);
+                builder.AddAttribute(25, "onclick", EventCallback.Factory.Create(this, () => ClosePaneAsync(pane)));
+                builder.OpenComponent(26, typeof(TmIcon));
+                builder.AddAttribute(27, "Name", "x");
+                builder.CloseComponent();
+                builder.CloseElement();
+            }
+
+            builder.CloseElement(); // header
+
+            builder.OpenElement(28, "div");
+            builder.AddAttribute(29, "class", "tm-dock-pane-body");
+            builder.AddContent(30, pane.ChildContent);
+            builder.CloseElement();
+            builder.CloseElement();
+        };
+    }
+
+    private RenderFragment RenderTabGroup(IReadOnlyList<TmDockPane> panes)
+    {
+        var active = panes.FirstOrDefault(p => p.IsActive) ?? panes[0];
+        return builder =>
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "tm-dock-tab-group");
+
+            // Tab strip
+            builder.OpenElement(2, "div");
+            builder.AddAttribute(3, "class", "tm-dock-tab-strip");
+            builder.AddAttribute(4, "role", "tablist");
+            foreach (var pane in panes)
+            {
+                var isActive = pane == active;
+                builder.OpenElement(5, "button");
+                builder.AddAttribute(6, "type", "button");
+                builder.AddAttribute(7, "class", $"tm-dock-tab {(isActive ? "tm-dock-tab--active" : "")}");
+                builder.AddAttribute(8, "role", "tab");
+                builder.AddAttribute(9, "aria-selected", isActive.ToString().ToLowerInvariant());
+                builder.AddAttribute(10, "draggable", "true");
+                builder.AddAttribute(11, "ondragstart", EventCallback.Factory.Create(this, () => HandleDragStart(pane)));
+                builder.AddEventStopPropagationAttribute(12, "onclick", true);
+                builder.AddAttribute(13, "onclick", EventCallback.Factory.Create(this, () => ActivatePane(pane)));
+
+                if (!string.IsNullOrEmpty(pane.Icon))
+                {
+                    builder.OpenComponent(14, typeof(TmIcon));
+                    builder.AddAttribute(15, "Name", pane.Icon);
+                    builder.CloseComponent();
+                }
+                builder.OpenElement(16, "span");
+                builder.AddAttribute(17, "class", "tm-dock-tab-title");
+                builder.AddContent(18, pane.Title);
+                builder.CloseElement();
+
+                // Float button
+                if (pane.CanFloat)
+                {
+                    builder.OpenElement(19, "button");
+                    builder.AddAttribute(20, "type", "button");
+                    builder.AddAttribute(21, "class", "tm-dock-tab-action tm-dock-tab-float");
+                    builder.AddAttribute(22, "aria-label", Loc["TmDockManager_Float"]);
+                    builder.AddEventStopPropagationAttribute(23, "onclick", true);
+                    builder.AddAttribute(24, "onclick", EventCallback.Factory.Create(this, () => FloatPaneAsync(pane)));
+                    builder.OpenComponent(25, typeof(TmIcon));
+                    builder.AddAttribute(26, "Name", "external-link");
+                    builder.CloseComponent();
+                    builder.CloseElement();
+                }
+
+                // Close button
+                if (pane.CanClose)
+                {
+                    builder.OpenElement(27, "button");
+                    builder.AddAttribute(28, "type", "button");
+                    builder.AddAttribute(29, "class", "tm-dock-tab-action tm-dock-tab-close");
+                    builder.AddAttribute(30, "aria-label", Loc["TmDockManager_Close"]);
+                    builder.AddEventStopPropagationAttribute(31, "onclick", true);
+                    builder.AddAttribute(32, "onclick", EventCallback.Factory.Create(this, () => ClosePaneAsync(pane)));
+                    builder.OpenComponent(33, typeof(TmIcon));
+                    builder.AddAttribute(34, "Name", "x");
+                    builder.CloseComponent();
+                    builder.CloseElement();
+                }
+
+                builder.CloseElement();
+            }
+            builder.CloseElement();
+
+            // Active tab content
+            builder.OpenElement(35, "div");
+            builder.AddAttribute(36, "class", "tm-dock-tab-content");
+            builder.AddAttribute(37, "role", "tabpanel");
+            builder.AddContent(38, RenderPaneHeader(active));
+            builder.OpenElement(39, "div");
+            builder.AddAttribute(40, "class", "tm-dock-pane-body");
+            builder.AddContent(41, active.ChildContent);
+            builder.CloseElement();
+            builder.CloseElement();
+
+            builder.CloseElement();
+        };
+    }
+
+    private RenderFragment RenderPaneHeader(TmDockPane pane)
+    {
+        return builder =>
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "tm-dock-pane-header");
+            builder.AddAttribute(2, "draggable", "true");
+            builder.AddAttribute(3, "ondragstart", EventCallback.Factory.Create(this, () => HandleDragStart(pane)));
+
+            builder.OpenElement(4, "span");
+            builder.AddAttribute(5, "class", "tm-dock-pane-header-title");
+            if (!string.IsNullOrEmpty(pane.Icon))
+            {
+                builder.OpenComponent(6, typeof(TmIcon));
+                builder.AddAttribute(7, "Name", pane.Icon);
+                builder.CloseComponent();
+            }
+            builder.AddContent(8, pane.Title);
+            builder.CloseElement();
+
+            builder.CloseElement();
+        };
+    }
+
+    private RenderFragment RenderFloatingPane(TmDockPane pane)
+    {
+        return builder =>
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "tm-dock-floating-header");
+            builder.AddAttribute(2, "draggable", "true");
+            builder.AddAttribute(3, "ondragstart", EventCallback.Factory.Create(this, () => HandleDragStart(pane)));
+
+            builder.OpenElement(4, "span");
+            builder.AddAttribute(5, "class", "tm-dock-floating-title");
+            if (!string.IsNullOrEmpty(pane.Icon))
+            {
+                builder.OpenComponent(6, typeof(TmIcon));
+                builder.AddAttribute(7, "Name", pane.Icon);
+                builder.CloseComponent();
+            }
+            builder.AddContent(8, pane.Title);
+            builder.CloseElement();
+
+            // Dock back button
+            builder.OpenElement(9, "button");
+            builder.AddAttribute(10, "type", "button");
+            builder.AddAttribute(11, "class", "tm-dock-floating-action");
+            builder.AddAttribute(12, "aria-label", Loc["TmDockManager_Dock"]);
+            builder.AddAttribute(13, "onclick", EventCallback.Factory.Create(this, () => DockPaneAsync(pane, DockPosition.Center)));
+            builder.OpenComponent(14, typeof(TmIcon));
+            builder.AddAttribute(15, "Name", "layout");
+            builder.CloseComponent();
+            builder.CloseElement();
+
+            if (pane.CanClose)
+            {
+                builder.OpenElement(16, "button");
+                builder.AddAttribute(17, "type", "button");
+                builder.AddAttribute(18, "class", "tm-dock-floating-action");
+                builder.AddAttribute(19, "aria-label", Loc["TmDockManager_Close"]);
+                builder.AddAttribute(20, "onclick", EventCallback.Factory.Create(this, () => ClosePaneAsync(pane)));
+                builder.OpenComponent(21, typeof(TmIcon));
+                builder.AddAttribute(22, "Name", "x");
+                builder.CloseComponent();
+                builder.CloseElement();
+            }
+
+            builder.CloseElement();
+
+            builder.OpenElement(23, "div");
+            builder.AddAttribute(24, "class", "tm-dock-floating-body");
+            builder.AddContent(25, pane.ChildContent);
+            builder.CloseElement();
+        };
+    }
+}

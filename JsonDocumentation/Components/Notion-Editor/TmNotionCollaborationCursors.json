@@ -1,0 +1,15 @@
+{
+  "itemName": "TmNotionCollaborationCursors",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Renders a pill-bar of active collaborator avatars in the editor topbar and drives per-block cursor highlights via JS DOM manipulation (tmNotionEditor.updateCollabCursors). Subscribes to NotionCollaborationSync.RemoteCursorMoved; no-op when CollaborationProvider absent.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/UI/TmNotionCollaborationCursors.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [],
+  "subcategory": "UI"
+}

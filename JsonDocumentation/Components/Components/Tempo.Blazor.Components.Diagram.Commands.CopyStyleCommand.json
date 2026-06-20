@@ -1,0 +1,17 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Copies the style and optionally size of a single node to the static clipboard.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Commands/CopyStyleCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Execute",
+      "kind": "Method",
+      "type": "void"
+    }
+  ],
+  "itemName": "Tempo.Blazor.Components.Diagram.Commands.CopyStyleCommand"
+}

@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Formula",
+  "description": "Represents a spreadsheet error value such as #DIV/0!, #VALUE!, #NAME?, #REF!, or #N/A.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Formula/FormulaError.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ToString",
+      "kind": "Method",
+      "type": "string"
+    },
+    {
+      "name": "Code",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "FormulaError"
+}

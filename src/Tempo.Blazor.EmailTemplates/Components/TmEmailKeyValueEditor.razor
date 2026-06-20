@@ -1,0 +1,81 @@
+@namespace Tempo.Blazor.EmailTemplates.Components
+
+<div class="tm-email-kv" data-tm-kv-editor>
+    @for (var i = 0; i < _rows.Count; i++)
+    {
+        var row = _rows[i];
+        <div class="tm-email-kv__row" data-tm-kv-row>
+            <TmTextInput Placeholder="@Loc["EmailEditor_KeyValue_Key"]" Value="@row.Key"
+                         ValueChanged="v => UpdateKey(row, v)" />
+            <TmTextInput Placeholder="@Loc["EmailEditor_KeyValue_Value"]" Value="@row.Value"
+                         ValueChanged="v => UpdateValue(row, v)" />
+            <button type="button" class="tm-email-kv__remove" data-tm-kv-remove
+                    aria-label="@Loc["EmailEditor_Action_Delete"]" @onclick="() => RemoveAsync(row)">
+                <TmIcon Name="trash-2" Size="IconSize.Xs" />
+            </button>
+        </div>
+    }
+    <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="plus"
+              data-tm-kv-add="true" OnClick="AddAsync">@Loc["EmailEditor_KeyValue_Add"]</TmButton>
+</div>
+
+@code {
+    /// <summary>The dictionary being edited (rebuilt in place on every change).</summary>
+    [Parameter, EditorRequired] public IDictionary<string, string> Items { get; set; } = default!;
+
+    /// <summary>Raised after the dictionary changes.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private readonly List<Row> _rows = new();
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        // Re-sync only when the external dictionary differs from our working rows (avoid clobbering typing).
+        var current = _rows.Where(r => !string.IsNullOrWhiteSpace(r.Key))
+            .ToDictionary(r => r.Key, r => r.Value, StringComparer.Ordinal);
+        if (!current.OrderBy(kv => kv.Key).SequenceEqual(Items.OrderBy(kv => kv.Key)))
+        {
+            _rows.Clear();
+            foreach (var (k, v) in Items) _rows.Add(new Row { Key = k, Value = v });
+        }
+    }
+
+    private async Task AddAsync()
+    {
+        _rows.Add(new Row());
+        await CommitAsync();
+    }
+
+    private async Task RemoveAsync(Row row)
+    {
+        _rows.Remove(row);
+        await CommitAsync();
+    }
+
+    private async Task UpdateKey(Row row, string value)
+    {
+        row.Key = value;
+        await CommitAsync();
+    }
+
+    private async Task UpdateValue(Row row, string value)
+    {
+        row.Value = value;
+        await CommitAsync();
+    }
+
+    private async Task CommitAsync()
+    {
+        Items.Clear();
+        foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Key)))
+            Items[row.Key] = row.Value;
+        await OnChanged.InvokeAsync();
+    }
+
+    private sealed class Row
+    {
+        public string Key { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+    }
+}

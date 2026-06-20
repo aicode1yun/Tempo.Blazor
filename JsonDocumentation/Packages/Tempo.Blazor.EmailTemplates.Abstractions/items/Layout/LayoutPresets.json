@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Layout",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+  "description": "Builds sections from predefined column layouts whose widths always total 100%.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutPresets.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Create",
+      "kind": "Method",
+      "type": "EmailSection",
+      "description": "Creates a new section populated with the columns of the given preset.",
+      "parameters": [
+        {
+          "name": "preset",
+          "type": "LayoutPreset"
+        }
+      ]
+    },
+    {
+      "name": "All",
+      "kind": "Property",
+      "type": "static IReadOnlyList<LayoutPresetDescriptor>",
+      "description": "Gets the catalogue of available presets."
+    }
+  ],
+  "itemName": "LayoutPresets"
+}

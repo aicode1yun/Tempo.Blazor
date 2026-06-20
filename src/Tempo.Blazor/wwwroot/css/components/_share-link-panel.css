@@ -1,0 +1,89 @@
+.tm-share-link-panel {
+    display: grid;
+    gap: var(--tm-space-3);
+    padding: var(--tm-space-4);
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+}
+
+.tm-share-link-panel--disabled {
+    background: var(--tm-bg-muted);
+}
+
+.tm-share-link-panel__header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: var(--tm-space-3);
+}
+
+.tm-share-link-panel__title {
+    margin: 0;
+    font-size: var(--tm-font-size-lg);
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-share-link-panel__expiration {
+    margin: var(--tm-space-1) 0 0;
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-share-link-panel__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tm-space-2);
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-share-link-panel__link {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2);
+    min-width: 0;
+}
+
+.tm-share-link-panel__input,
+.tm-share-link-panel__embed-code {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+    font: inherit;
+}
+
+.tm-share-link-panel__input {
+    min-height: calc(var(--tm-space-5) + var(--tm-space-4));
+    padding: 0 var(--tm-space-3);
+}
+
+.tm-share-link-panel__qr {
+    display: grid;
+    justify-items: center;
+    padding: var(--tm-space-3);
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+}
+
+.tm-share-link-panel__embed {
+    display: grid;
+    gap: var(--tm-space-2);
+}
+
+.tm-share-link-panel__embed-label {
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-share-link-panel__embed-code {
+    min-height: calc(var(--tm-space-16) * 2);
+    padding: var(--tm-space-3);
+    resize: vertical;
+}

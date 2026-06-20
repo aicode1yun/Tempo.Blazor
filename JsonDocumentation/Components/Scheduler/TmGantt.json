@@ -1,0 +1,362 @@
+{
+  "itemName": "TmGantt",
+  "kind": "Component",
+  "category": "Scheduler",
+  "description": "TmGantt Blazor component in the Scheduler category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Scheduler",
+  "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGantt.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Scheduler"
+  ],
+  "parameters": [
+    {
+      "name": "ActiveBaselineId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Named schedule snapshots for baseline comparison."
+    },
+    {
+      "name": "ActiveTimerTaskId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Fires when the user creates a new virtual (placeholder) resource."
+    },
+    {
+      "name": "AllowBulkSelect",
+      "type": "bool",
+      "isRequired": false,
+      "description": "When true, dep-drag handles are rendered on every task bar."
+    },
+    {
+      "name": "AllowDependencyCreation",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Fires when column visibility/order changes via the column toggle UI."
+    },
+    {
+      "name": "AllTasks",
+      "type": "IReadOnlyList<GanttTask>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "The task being edited."
+    },
+    {
+      "name": "AutoSchedule",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Fires when the data order changes via cascade sort."
+    },
+    {
+      "name": "Baselines",
+      "type": "IReadOnlyList<GanttBaseline>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "When true, highlights critical-path tasks with a distinct bar color."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Fires when the user clicks \"Run\" on a report."
+    },
+    {
+      "name": "Columns",
+      "type": "IReadOnlyList<GanttColumnDefinition>",
+      "isRequired": false,
+      "default": "DefaultColumns",
+      "description": "Working schedule used to shade non-working days/hours in the timeline."
+    },
+    {
+      "name": "CustomFields",
+      "type": "IReadOnlyList<GanttCustomField>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Fires after a new baseline is saved."
+    },
+    {
+      "name": "Dependencies",
+      "type": "IReadOnlyList<GanttDependency>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "All tasks for parent selection."
+    },
+    {
+      "name": "Filters",
+      "type": "IReadOnlyList<GanttFilter>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Fires when a custom field value is committed for a task. Args: (taskId, fieldId, value)."
+    },
+    {
+      "name": "History",
+      "type": "IReadOnlyList<GanttHistoryEntry>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Fires when an import operation fails (contains error message)."
+    },
+    {
+      "name": "IsOpen",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Audit history entries to display."
+    },
+    {
+      "name": "NotificationSettings",
+      "type": "GanttNotificationSettings?",
+      "isRequired": false,
+      "description": "Optional real-time SignalR connection for live task updates."
+    },
+    {
+      "name": "OnAttachmentRemoved",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fires when the user selects a file to attach."
+    },
+    {
+      "name": "OnAttachmentUpload",
+      "type": "EventCallback<IBrowserFile>",
+      "isRequired": false,
+      "description": "Fires when the description textarea changes (live)."
+    },
+    {
+      "name": "OnAutoScheduled",
+      "type": "EventCallback<IReadOnlyList<GanttTask>>",
+      "isRequired": false,
+      "description": "When true, auto-schedules tasks based on dependencies when parameters are set."
+    },
+    {
+      "name": "OnBaselineSaved",
+      "type": "EventCallback<GanttBaseline>",
+      "isRequired": false,
+      "description": "ID of the currently active baseline to compare against."
+    },
+    {
+      "name": "OnBulkUpdate",
+      "type": "EventCallback<BulkUpdateArgs>",
+      "isRequired": false,
+      "description": "Current timeline zoom preset (Weeks by default)."
+    },
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fires when the user confirms export with the chosen options."
+    },
+    {
+      "name": "OnColumnsChanged",
+      "type": "EventCallback<IReadOnlyList<GanttColumnDefinition>>",
+      "isRequired": false,
+      "description": "Column definitions for the tree grid. Defaults to all standard columns visible."
+    },
+    {
+      "name": "OnCommentAdded",
+      "type": "EventCallback<GanttComment>",
+      "isRequired": false,
+      "description": "Fires when the user removes an attachment (by attachment Id)."
+    },
+    {
+      "name": "OnCustomFieldChanged",
+      "type": "EventCallback<(string TaskId, string FieldId, string? Value)>",
+      "isRequired": false,
+      "description": "User-defined custom field definitions."
+    },
+    {
+      "name": "OnDataSorted",
+      "type": "EventCallback<IReadOnlyList<GanttTask>>",
+      "isRequired": false,
+      "description": "Fires when the user triggers a bulk status/property update."
+    },
+    {
+      "name": "OnDependencyAdded",
+      "type": "EventCallback<GanttDependency>",
+      "isRequired": false,
+      "description": "Fires when the task is saved with valid data."
+    },
+    {
+      "name": "OnDependencyRemoved",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fires when a new dependency is added."
+    },
+    {
+      "name": "OnDescriptionChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Fires when a dependency is removed (by its Id)."
+    },
+    {
+      "name": "OnExport",
+      "type": "EventCallback<GanttExportOptions>",
+      "isRequired": false,
+      "description": "Whether the dialog is visible."
+    },
+    {
+      "name": "OnExportRequested",
+      "type": "EventCallback<GanttExportOptions>",
+      "isRequired": false,
+      "description": "Fires when the user adds/removes filters via the filter panel."
+    },
+    {
+      "name": "OnFiltersChanged",
+      "type": "EventCallback<IReadOnlyList<GanttFilter>>",
+      "isRequired": false,
+      "description": "Active filter set. Empty = show all tasks."
+    },
+    {
+      "name": "OnImport",
+      "type": "EventCallback<IReadOnlyList<GanttColumnMapping>>",
+      "isRequired": false,
+      "description": "Whether the dialog is visible."
+    },
+    {
+      "name": "OnImportCompleted",
+      "type": "EventCallback<IReadOnlyList<GanttTask>>",
+      "isRequired": false,
+      "description": "Fires when the user requests an export (contains selected options)."
+    },
+    {
+      "name": "OnImportError",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fires when an import operation completes successfully."
+    },
+    {
+      "name": "OnNotificationTriggered",
+      "type": "EventCallback<GanttNotification>",
+      "isRequired": false,
+      "description": "Fires when a task's status is changed from the board view."
+    },
+    {
+      "name": "OnReportRun",
+      "type": "EventCallback<GanttReport>",
+      "isRequired": false,
+      "description": "Report definitions shown in the Reports sidebar panel."
+    },
+    {
+      "name": "OnResourceCalendarChanged",
+      "type": "EventCallback<IReadOnlyList<GanttResourceCalendar>>",
+      "isRequired": false,
+      "description": "Resource calendars for vacation/day-off overlays in People view."
+    },
+    {
+      "name": "OnRollbackRequested",
+      "type": "EventCallback<GanttHistoryEntry>",
+      "isRequired": false,
+      "description": "Fires when the user requests time-travel to the given timestamp."
+    },
+    {
+      "name": "OnStatusChanged",
+      "type": "EventCallback<(string TaskId, GanttTaskStatus NewStatus)>",
+      "isRequired": false,
+      "description": "Notification preferences for the current user."
+    },
+    {
+      "name": "OnTaskUpdated",
+      "type": "EventCallback<GanttTask>",
+      "isRequired": false,
+      "description": "Existing dependencies."
+    },
+    {
+      "name": "OnTimerStarted",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Task ID of the currently running stopwatch timer. Null = no active timer."
+    },
+    {
+      "name": "OnTimerStopped",
+      "type": "EventCallback<(string TaskId, GanttTimeLogEntry Entry)>",
+      "isRequired": false,
+      "description": "Fires when the user starts the stopwatch for a task."
+    },
+    {
+      "name": "OnTimeTravelRequested",
+      "type": "EventCallback<DateTime>",
+      "isRequired": false,
+      "description": "Audit-log entries to display in the history drawer."
+    },
+    {
+      "name": "OnViewSettingsChanged",
+      "type": "EventCallback<GanttViewSettings>",
+      "isRequired": false,
+      "description": "View display settings (today marker, days off, density, theme…)."
+    },
+    {
+      "name": "OnVirtualResourceAdded",
+      "type": "EventCallback<GanttAssignee>",
+      "isRequired": false,
+      "description": "Fires when a resource calendar entry changes."
+    },
+    {
+      "name": "RealtimeConnection",
+      "type": "IGanttRealtimeConnection?",
+      "isRequired": false,
+      "description": "Whether workload is displayed in hours or as a percentage of capacity."
+    },
+    {
+      "name": "Reports",
+      "type": "IReadOnlyList<GanttReport>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "When true (default), the left sidebar navigation is visible."
+    },
+    {
+      "name": "ResourceCalendars",
+      "type": "IReadOnlyList<GanttResourceCalendar>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Fires when a notification condition is met (assign, mention, deadline)."
+    },
+    {
+      "name": "ShowCriticalPath",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Fires after auto-scheduling with the updated task list."
+    },
+    {
+      "name": "ShowOverdueHighlight",
+      "type": "bool",
+      "isRequired": false,
+      "description": "When true, each tree row shows a checkbox for bulk selection."
+    },
+    {
+      "name": "ShowSidebar",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Fires when the user stops the stopwatch for a task, providing the completed log entry."
+    },
+    {
+      "name": "ShowWorkloadPanel",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Fires when the user requests rollback to the state before a history entry."
+    },
+    {
+      "name": "ViewSettings",
+      "type": "GanttViewSettings",
+      "isRequired": true
+    },
+    {
+      "name": "WorkingSchedule",
+      "type": "WorkingSchedule",
+      "isRequired": true,
+      "description": "Fires when the user changes a view setting via the built-in dropdown."
+    },
+    {
+      "name": "WorkloadDisplayMode",
+      "type": "WorkloadDisplayMode",
+      "isRequired": false,
+      "default": "WorkloadDisplayMode.Hours",
+      "description": "When true, shows the workload panel below the Gantt timeline."
+    },
+    {
+      "name": "ZoomPreset",
+      "type": "GanttZoomPreset",
+      "isRequired": false,
+      "default": "GanttZoomPreset.Weeks",
+      "description": "When true, overdue tasks (End in past, not done) are highlighted."
+    }
+  ]
+}

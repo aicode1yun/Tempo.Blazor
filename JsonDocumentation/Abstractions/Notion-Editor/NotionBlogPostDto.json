@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Chronological blog post stored inside a Notion space.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionBlogPostDto.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AuthorId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Author user identifier."
+    },
+    {
+      "name": "Blocks",
+      "kind": "Property",
+      "type": "IReadOnlyList<PageBlock>",
+      "description": "Read-only Notion blocks rendered as the blog post body."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable blog post identifier."
+    },
+    {
+      "name": "PublishedAt",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Publish timestamp. Null means the post is still a draft."
+    },
+    {
+      "name": "SpaceId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Owning space identifier."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string",
+      "description": "Post title displayed in blog list and detail."
+    }
+  ],
+  "itemName": "NotionBlogPostDto"
+}

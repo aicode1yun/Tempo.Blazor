@@ -1,0 +1,135 @@
+/* ── TmStockChart ────────────────────────────────────────────────────── */
+
+.tm-stock-chart {
+    width: 100%;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--tm-color-surface, #ffffff);
+    border-radius: var(--tm-radius-lg, 0.5rem);
+    border: 1px solid var(--tm-color-neutral-200, #e5e7eb);
+    overflow: hidden;
+}
+
+.tm-stock-chart svg {
+    display: block;
+}
+
+.tm-stock-chart__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--tm-color-neutral-500, #6b7280);
+    font-size: var(--tm-text-sm, 0.875rem);
+}
+
+.tm-stock-chart__grid-line {
+    stroke: var(--tm-color-neutral-200, #e5e7eb);
+    stroke-width: 1;
+    stroke-dasharray: 4, 4;
+}
+
+.tm-stock-chart__axis-label {
+    fill: var(--tm-color-neutral-500, #6b7280);
+    font-size: 11px;
+    font-family: var(--tm-font-sans, ui-sans-serif, system-ui, sans-serif);
+}
+
+.tm-stock-chart__body {
+    transition: opacity 0.2s ease;
+}
+
+.tm-stock-chart__body:hover {
+    opacity: 0.8;
+}
+
+.tm-stock-chart__wick {
+    stroke: var(--tm-color-neutral-500, #6b7280);
+    stroke-width: 1;
+}
+
+.tm-stock-chart__line {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tm-stock-chart__point {
+    transition: r 0.2s ease;
+    cursor: pointer;
+}
+
+.tm-stock-chart__point:hover {
+    r: 5;
+}
+
+.tm-stock-chart__volume {
+    transition: opacity 0.2s ease;
+}
+
+/* ── Animation ───────────────────────────────────────────────────────── */
+
+.tm-stock-chart--animated .tm-stock-chart__body {
+    animation: tm-stock-chart-fade-in 0.5s ease both;
+}
+
+.tm-stock-chart--animated .tm-stock-chart__wick {
+    animation: tm-stock-chart-fade-in 0.5s ease both;
+}
+
+.tm-stock-chart--animated .tm-stock-chart__line {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: tm-stock-chart-draw-line 1.2s ease forwards;
+}
+
+.tm-stock-chart--animated .tm-stock-chart__point {
+    opacity: 0;
+    animation: tm-stock-chart-fade-in 0.4s ease forwards;
+    animation-delay: 0.8s;
+}
+
+.tm-stock-chart--animated .tm-stock-chart__volume {
+    animation: tm-stock-chart-fade-in 0.5s ease both;
+}
+
+@keyframes tm-stock-chart-fade-in {
+    from { opacity: 0; transform: scaleY(0.5); }
+    to   { opacity: 1; transform: scaleY(1); }
+}
+
+@keyframes tm-stock-chart-draw-line {
+    to { stroke-dashoffset: 0; }
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────────── */
+
+[data-theme="dark"] .tm-stock-chart,
+.tm-dark .tm-stock-chart {
+    background: var(--tm-color-surface-dark, #1f2937);
+    border-color: var(--tm-color-neutral-700, #374151);
+}
+
+[data-theme="dark"] .tm-stock-chart__grid-line,
+.tm-dark .tm-stock-chart__grid-line {
+    stroke: var(--tm-color-neutral-700, #374151);
+}
+
+[data-theme="dark"] .tm-stock-chart__axis-label,
+.tm-dark .tm-stock-chart__axis-label {
+    fill: var(--tm-color-neutral-400, #9ca3af);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tm-stock-chart--animated .tm-stock-chart__body,
+    .tm-stock-chart--animated .tm-stock-chart__wick,
+    .tm-stock-chart--animated .tm-stock-chart__line,
+    .tm-stock-chart--animated .tm-stock-chart__point,
+    .tm-stock-chart--animated .tm-stock-chart__volume {
+        animation: none;
+        opacity: 1;
+        stroke-dashoffset: 0;
+    }
+}

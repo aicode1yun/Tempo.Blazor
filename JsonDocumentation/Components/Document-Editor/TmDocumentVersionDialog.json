@@ -1,0 +1,33 @@
+{
+  "itemName": "TmDocumentVersionDialog",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "TmDocumentVersionDialog Blazor component in the Document Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/TmDocumentVersionDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": [
+    {
+      "name": "OnCancel",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the user confirms version creation."
+    },
+    {
+      "name": "OnCreate",
+      "type": "EventCallback<DocumentVersionDialogResult>",
+      "isRequired": false,
+      "description": "Whether major versions require a non-empty description."
+    },
+    {
+      "name": "RequireMajorDescription",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether create action is currently running."
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+  "description": "Extension and factory helpers for and related models.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Models/WireframeDocumentExtensions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Clone",
+      "kind": "Method",
+      "type": "WireframeDocument",
+      "description": "Deep-clones the document via JSON roundtrip. Used by Undo/Redo – not on a hot path, so JSON overhead is acceptable.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this WireframeDocument"
+        }
+      ]
+    },
+    {
+      "name": "GetBool",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns the boolean value of a prop, or .",
+      "parameters": [
+        {
+          "name": "Dictionary<string",
+          "type": "this"
+        },
+        {
+          "name": "props",
+          "type": "JsonElement>"
+        },
+        {
+          "name": "key",
+          "type": "string"
+        },
+        {
+          "name": "fallback",
+          "type": "bool",
+          "default": "false"
+        }
+      ]
+    },
+    {
+      "name": "GetDouble",
+      "kind": "Method",
+      "type": "double",
+      "description": "Returns the double value of a prop, or .",
+      "parameters": [
+        {
+          "name": "Dictionary<string",
+          "type": "this"
+        },
+        {
+          "name": "props",
+          "type": "JsonElement>"
+        },
+        {
+          "name": "key",
+          "type": "string"
+        },
+        {
+          "name": "fallback",
+          "type": "double",
+          "default": "0.0"
+        }
+      ]
+    },
+    {
+      "name": "GetInt",
+      "kind": "Method",
+      "type": "int",
+      "description": "Returns the integer value of a prop, or .",
+      "parameters": [
+        {
+          "name": "Dictionary<string",
+          "type": "this"
+        },
+        {
+          "name": "props",
+          "type": "JsonElement>"
+        },
+        {
+          "name": "key",
+          "type": "string"
+        },
+        {
+          "name": "fallback",
+          "type": "int",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "GetString",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the string value of a prop, or when the key is absent or the value is not a JSON string.",
+      "parameters": [
+        {
+          "name": "Dictionary<string",
+          "type": "this"
+        },
+        {
+          "name": "props",
+          "type": "JsonElement>"
+        },
+        {
+          "name": "key",
+          "type": "string"
+        },
+        {
+          "name": "fallback",
+          "type": "string",
+          "default": "\"\""
+        }
+      ]
+    },
+    {
+      "name": "GetStringList",
+      "kind": "Method",
+      "type": "string[]",
+      "description": "Returns a string array from a JSON array prop, or an empty array when absent/wrong type.",
+      "parameters": [
+        {
+          "name": "Dictionary<string",
+          "type": "this"
+        },
+        {
+          "name": "props",
+          "type": "JsonElement>"
+        },
+        {
+          "name": "key",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SetProp",
+      "kind": "Method",
+      "type": "void",
+      "description": "Sets a prop value. Accepts any JSON-serialisable object. Passing null removes the key.",
+      "parameters": [
+        {
+          "name": "element",
+          "type": "this WireframeElement"
+        },
+        {
+          "name": "key",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "object?"
+        }
+      ]
+    }
+  ],
+  "itemName": "WireframeDocumentExtensions"
+}

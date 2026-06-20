@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Layout",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+  "description": "The available column-layout presets offered when adding a new section.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutPreset.cs",
+  "documentationStatus": "generated",
+  "itemName": "LayoutPreset"
+}

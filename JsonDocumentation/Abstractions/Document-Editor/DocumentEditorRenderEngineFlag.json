@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Resolves the requested to the engine that may actually run. The guard keeps fail-safe until hosted interop is available; other explicit engine selections run as requested.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProviderContracts.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorRenderEngineFlag"
+}

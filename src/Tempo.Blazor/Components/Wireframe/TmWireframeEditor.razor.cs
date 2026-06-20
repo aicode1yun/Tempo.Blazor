@@ -1,6 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using System.Net.Http.Json;
+using Tempo.Blazor.Abstractions.Wireframe.Export;
+using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.Wireframe.Commands;
 using Tempo.Blazor.Components.Wireframe.Models;
 
@@ -16,12 +20,17 @@ namespace Tempo.Blazor.Components.Wireframe;
 ///
 /// <para>Supports JSON import/export, SVG export, undo/redo, zoom, and a collapsible
 /// toolbox / properties panel. All write operations are guarded by <see cref="ReadOnly"/>.</para>
+///
+/// <para>Multi-page support: each page has its own canvas dimensions, elements, connectors,
+/// and isolated undo/redo stack. Pages can be added, duplicated, renamed, reordered (drag &amp; drop),
+/// and deleted (with confirmation when the page has elements).</para>
 /// </summary>
 public partial class TmWireframeEditor : ComponentBase, IDisposable
 {
     // ── DI ────────────────────────────────────────────────────────────────────
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private WireframeComponentRegistry _registry { get; set; } = default!;
 
     // ── Parameters ────────────────────────────────────────────────────────────
@@ -56,39 +65,76 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
     /// <summary>Additional CSS class on the editor root.</summary>
     [Parameter] public string? Class { get; set; }
 
+    /// <summary>Always show page tabs even when there is only one page.</summary>
+    [Parameter] public bool ShowPageTabs { get; set; } = true;
+
+    /// <summary>Show rulers around the canvas.</summary>
+    [Parameter] public bool ShowRulers { get; set; }
+
     // ── Child component refs ──────────────────────────────────────────────────
 
     private TmWireframeDesignerCanvas? _canvas;
     private TmWireframeMinimap?        _minimap;
     private ElementReference           _downloadAnchor;
 
-    // ── Command stack (owned by this component, cascaded down) ────────────────
+    // ── Command stacks (one per page) ─────────────────────────────────────────
 
-    private readonly WireframeCommandStack _commandStack = new();
+    private readonly Dictionary<string, WireframeCommandStack> _pageCommandStacks = new();
+    private WireframeCommandStack _commandStack = new();
 
     // ── Derived / UI state ────────────────────────────────────────────────────
 
     // Internal copy of Document: keeps a stable reference for child components.
     private WireframeDocument? _document;
+    private WireframePage?     _activePage;
 
     private string[]         _selectedIds       = [];
+    private string[]         _selectedConnectorIds = [];
+    private string?          _activeLayerId;
     private MinimapViewport? _minimapViewport;
 
     private double _zoomLevel = 1.0;
     private string _zoomLabel => $"{(int)Math.Round(_zoomLevel * 100)}%";
 
+    // Canvas viewBox snapshot (updated by JS OnViewBoxChanged)
+    private double _viewBoxX;
+    private double _viewBoxY;
+    private double _viewBoxW = 1200;
+    private double _viewBoxH = 800;
+
+    // Ruler cursor positions (SVG space)
+    private double? _rulerCursorX;
+    private double? _rulerCursorY;
+
     private bool _toolboxCollapsed;
     private bool _propsCollapsed;
     private bool _exportMenuOpen;
+    private bool _exportDialogOpen;
+    private string? _exportDialogFormat;
+    private bool _alignMenuOpen;
+    private bool _distributeMenuOpen;
     private string? _importError;
 
-    // Tool mode: 'select' | 'pan'
+    // Tool mode: 'select' | 'pan' | 'connector'
     private string _toolMode = "select";
 
     // Canvas size editing
     private bool   _canvasSizeEditing;
     private string _canvasWInput = "";
     private string _canvasHInput = "";
+    private bool   _snapToObjects;
+    private bool   _hasStyleOnClipboard => WireframeClipboard.HasStyle;
+
+    // Context menu
+    private TmWireframeContextMenu? _contextMenu;
+    private bool _ctxMenuOpen;
+    private double _ctxMenuX;
+    private double _ctxMenuY;
+    private WireframeContextMenuType _ctxMenuType;
+
+    // Page tabs
+    private string? _renamingPageId;
+    private string? _draggedPageId;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -96,21 +142,41 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
     {
         _commandStack.OnStackChanged += OnStackChanged;
         _document = Document ?? CreateEmptyDocument();
+        _document.EnsureActivePage();
+        _activePage = _document.ActivePage;
+        _activeLayerId = _document.ActiveLayerId;
+        if (_activePage is not null)
+            _pageCommandStacks[_activePage.Id] = _commandStack;
     }
 
     protected override void OnParametersSet()
     {
-        // If the caller supplies a new Document reference, adopt it and clear the stack.
+        // If the caller supplies a new Document reference, adopt it and clear stacks.
         if (Document is not null && !ReferenceEquals(Document, _document))
         {
             _document = Document;
+            _document.EnsureActivePage();
+            _activePage = _document.ActivePage;
+            _activeLayerId = _document.ActiveLayerId;
+
+            foreach (var stack in _pageCommandStacks.Values)
+                stack.OnStackChanged -= OnStackChanged;
+            _pageCommandStacks.Clear();
             _commandStack.Clear();
+
+            _commandStack = new WireframeCommandStack();
+            _commandStack.OnStackChanged += OnStackChanged;
+            if (_activePage is not null)
+                _pageCommandStacks[_activePage.Id] = _commandStack;
+
             _selectedIds = [];
         }
     }
 
     public void Dispose()
     {
+        foreach (var stack in _pageCommandStacks.Values)
+            stack.OnStackChanged -= OnStackChanged;
         _commandStack.OnStackChanged -= OnStackChanged;
     }
 
@@ -131,10 +197,114 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
     private void OnSelectionChanged(string[] ids)
     {
         _selectedIds = ids;
+        _selectedConnectorIds = []; // clear connector selection
         StateHasChanged();
     }
 
-    // ── Toolbar: Tool mode (Select / Pan) ────────────────────────────────────
+    private void OnConnectorSelectionChanged(string[] ids)
+    {
+        _selectedConnectorIds = ids;
+        _selectedIds = []; // clear element selection
+        StateHasChanged();
+    }
+
+    private async Task OnConnectorCreated((string FromId, string ToId) args)
+    {
+        if (_document is null || ReadOnly) return;
+        var conn = new WireframeConnector
+        {
+            FromId = args.FromId,
+            ToId = args.ToId,
+            ZIndex = _document.Connectors.Count > 0 ? _document.Connectors.Max(c => c.ZIndex) + 1 : 0,
+        };
+        _commandStack.Push(new AddConnectorCommand(_document, conn));
+        _selectedConnectorIds = [conn.Id];
+        _selectedIds = [];
+        await DocumentChanged.InvokeAsync(_document);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnDeleteConnectors(string[] ids)
+    {
+        if (_document is null || ReadOnly) return;
+        _commandStack.Push(new RemoveConnectorsCommand(_document, ids));
+        _selectedConnectorIds = [];
+        await DocumentChanged.InvokeAsync(_document);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnConnectorWaypointDragged((string ConnectorId, int WaypointIndex, double X, double Y) args)
+    {
+        if (_document is null || ReadOnly) return;
+        var conn = _document.Connectors.FirstOrDefault(c => c.Id == args.ConnectorId);
+        if (conn is null) return;
+
+        // Update existing waypoint position
+        var newWaypoints = conn.Waypoints.ToList();
+        if (args.WaypointIndex >= 0 && args.WaypointIndex < newWaypoints.Count)
+        {
+            newWaypoints[args.WaypointIndex] = new DiagramPoint(args.X, args.Y);
+        }
+
+        _commandStack.Push(new UpdateConnectorWaypointsCommand(_document, args.ConnectorId, conn.Waypoints.ToList(), newWaypoints));
+        await DocumentChanged.InvokeAsync(_document);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnConnectorWaypointAdded((string ConnectorId, double X, double Y) args)
+    {
+        if (_document is null || ReadOnly) return;
+        var conn = _document.Connectors.FirstOrDefault(c => c.Id == args.ConnectorId);
+        if (conn is null) return;
+
+        var newWaypoints = conn.Waypoints.ToList();
+        newWaypoints.Add(new DiagramPoint(args.X, args.Y));
+
+        _commandStack.Push(new UpdateConnectorWaypointsCommand(_document, args.ConnectorId, conn.Waypoints.ToList(), newWaypoints));
+        await DocumentChanged.InvokeAsync(_document);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnConnectorDragged((string ConnectorId, double Dx, double Dy) args)
+    {
+        if (_document is null || ReadOnly) return;
+        var conn = _document.Connectors.FirstOrDefault(c => c.Id == args.ConnectorId);
+        if (conn is null) return;
+
+        var newWaypoints = conn.Waypoints
+            .Select(w => new DiagramPoint(w.X + args.Dx, w.Y + args.Dy))
+            .ToList();
+
+        _commandStack.Push(new UpdateConnectorWaypointsCommand(_document, args.ConnectorId, conn.Waypoints.ToList(), newWaypoints));
+        await DocumentChanged.InvokeAsync(_document);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnActiveLayerChanged(string? layerId)
+    {
+        _activeLayerId = layerId;
+        if (_document is not null)
+            _document.ActiveLayerId = layerId;
+        StateHasChanged();
+    }
+
+    private void OnCanvasViewBoxChanged((double X, double Y, double W, double H) args)
+    {
+        _viewBoxX = args.X;
+        _viewBoxY = args.Y;
+        _viewBoxW = args.W;
+        _viewBoxH = args.H;
+        StateHasChanged();
+    }
+
+    private void OnCanvasMouseMoved((double SvgX, double SvgY) args)
+    {
+        _rulerCursorX = args.SvgX;
+        _rulerCursorY = args.SvgY;
+        StateHasChanged();
+    }
+
+    // ── Toolbar: Tool mode (Select / Pan / Connector) ─────────────────────────
 
     private async Task SetToolMode(string mode)
     {
@@ -152,22 +322,22 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
 
     private void OpenCanvasSize()
     {
-        _canvasWInput = ((int)(_document?.Width  ?? 1280)).ToString();
-        _canvasHInput = ((int)(_document?.Height ?? 800)).ToString();
+        _canvasWInput = ((int)(_activePage?.Width  ?? 1280)).ToString();
+        _canvasHInput = ((int)(_activePage?.Height ?? 800)).ToString();
         _canvasSizeEditing = true;
     }
 
     private async Task ApplyCanvasSize()
     {
         _canvasSizeEditing = false;
-        if (_document is null || ReadOnly) return;
+        if (_activePage is null || ReadOnly) return;
         if (!double.TryParse(_canvasWInput, out var w) || w < 100) return;
         if (!double.TryParse(_canvasHInput, out var h) || h < 100) return;
-        if (Math.Abs(w - _document.Width) < 0.5 && Math.Abs(h - _document.Height) < 0.5) return;
+        if (Math.Abs(w - _activePage.Width) < 0.5 && Math.Abs(h - _activePage.Height) < 0.5) return;
 
-        _commandStack.Push(new Commands.ResizeCanvasCommand(_document, _document.Width, _document.Height, w, h));
+        _commandStack.Push(new Commands.ResizeCanvasCommand(_document!, _activePage.Width, _activePage.Height, w, h));
         if (_canvas is not null) await _canvas.UpdateCanvasSize(w, h);
-        await OnDocumentChanged(_document);
+        await OnDocumentChanged(_document!);
     }
 
     // ── Toolbar: Title ────────────────────────────────────────────────────────
@@ -192,6 +362,293 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
     {
         if (ReadOnly) return;
         _commandStack.Redo();
+        await RerenderCanvas();
+    }
+
+    // ── Toolbar: Arrange (Bring to Front / Send to Back / Lock) ───────────────
+
+    private async Task OnBringToFront()
+    {
+        if (_document is null || _selectedIds.Length == 0 || ReadOnly) return;
+        _commandStack.Push(new Commands.BringToFrontCommand(_document, _selectedIds));
+        await RerenderCanvas();
+    }
+
+    private async Task OnSendToBack()
+    {
+        if (_document is null || _selectedIds.Length == 0 || ReadOnly) return;
+        _commandStack.Push(new Commands.SendToBackCommand(_document, _selectedIds));
+        await RerenderCanvas();
+    }
+
+    private bool IsSelectionLocked()
+    {
+        if (_document is null || _selectedIds.Length == 0) return false;
+        return _selectedIds
+            .Select(id => _document.Elements.FirstOrDefault(e => e.Id == id))
+            .Where(e => e is not null)
+            .All(e => e!.IsLocked || !string.IsNullOrEmpty(e.LockedBy));
+    }
+
+    private async Task OnToggleLock()
+    {
+        if (_document is null || _selectedIds.Length == 0 || ReadOnly) return;
+        var currentlyLocked = IsSelectionLocked();
+        if (currentlyLocked)
+            _commandStack.Push(new Commands.UnlockElementsCommand(_document, _selectedIds));
+        else
+            _commandStack.Push(new Commands.LockElementsCommand(_document, _selectedIds));
+        await RerenderCanvas();
+    }
+
+    private bool SelectedIdsContainGroup()
+    {
+        if (_document is null || _selectedIds.Length == 0) return false;
+        return _selectedIds
+            .Select(id => _document.Elements.FirstOrDefault(e => e.Id == id))
+            .Any(e => e is not null && e.Type == "__group__");
+    }
+
+    private async Task OnGroup()
+    {
+        if (_document is null || _selectedIds.Length < 2 || ReadOnly) return;
+        _commandStack.Push(new Commands.GroupElementsCommand(_document, _selectedIds));
+        await RerenderCanvas();
+    }
+
+    private async Task OnUngroup()
+    {
+        if (_document is null || ReadOnly) return;
+        var groupIds = _selectedIds
+            .Select(id => _document.Elements.FirstOrDefault(e => e.Id == id))
+            .Where(e => e is not null && e.Type == "__group__")
+            .Select(e => e!.Id)
+            .ToList();
+        foreach (var gid in groupIds)
+            _commandStack.Push(new Commands.UngroupElementsCommand(_document, gid));
+        await RerenderCanvas();
+    }
+
+    private async Task OnAlign(WireframeAlignment alignment)
+    {
+        if (_document is null || _selectedIds.Length < 2 || ReadOnly) return;
+        _commandStack.Push(new Commands.AlignElementsCommand(_document, _selectedIds, alignment));
+        await RerenderCanvas();
+    }
+
+    private async Task OnDistribute(WireframeDistribution distribution)
+    {
+        if (_document is null || _selectedIds.Length < 3 || ReadOnly) return;
+        _commandStack.Push(new Commands.DistributeElementsCommand(_document, _selectedIds, distribution));
+        await RerenderCanvas();
+    }
+
+    private async Task ToggleSnapToObjects()
+    {
+        _snapToObjects = !_snapToObjects;
+        if (_canvas is not null)
+            await JS.InvokeVoidAsync("tmWireframeDesigner.setSnapToObjects", _canvas.GetSvgRef(), _snapToObjects);
+    }
+
+    private void ToggleRulers() => ShowRulers = !ShowRulers;
+
+    private async Task OnCopyStyle()
+    {
+        if (_document is null || _selectedIds.Length != 1 || ReadOnly) return;
+        var el = _document.Elements.FirstOrDefault(e => e.Id == _selectedIds[0]);
+        if (el is null) return;
+        new Commands.CopyStyleCommand(el, includeSize: false).Execute();
+        if (_canvas is not null)
+            await JS.InvokeVoidAsync("tmWireframeDesigner.setFormatPainterActive", _canvas.GetSvgRef(), true);
+        StateHasChanged(); // refresh toolbar active state
+    }
+
+    private async Task OnPasteStyle()
+    {
+        if (_document is null || _selectedIds.Length == 0 || ReadOnly) return;
+        _commandStack.Push(new Commands.PasteStyleCommand(_document, _selectedIds, _registry));
+        await RerenderCanvas();
+    }
+
+    private async Task OnPasteSize()
+    {
+        if (_document is null || _selectedIds.Length == 0 || ReadOnly) return;
+        _commandStack.Push(new Commands.PasteSizeCommand(_document, _selectedIds));
+        await RerenderCanvas();
+    }
+
+    // ── Context Menu ──────────────────────────────────────────────────────────
+
+    private async Task OnCanvasContextMenuRequested((double SvgX, double SvgY, double ScreenX, double ScreenY) args)
+    {
+        _selectedIds = [];
+        if (_canvas is not null)
+            await _canvas.ClearSelection();
+        StateHasChanged();
+        await ShowContextMenu(WireframeContextMenuType.Canvas, args.ScreenX, args.ScreenY);
+    }
+
+    private async Task OnElementContextMenuRequested((string Id, double ScreenX, double ScreenY) args)
+    {
+        if (_document is null) return;
+
+        // If right-clicked element is not in current selection, select only that element
+        if (!_selectedIds.Contains(args.Id))
+        {
+            _selectedIds = [args.Id];
+            if (_canvas is not null)
+                await _canvas.SelectElements(args.Id);
+            StateHasChanged();
+        }
+
+        var menuType = _selectedIds.Length > 1
+            ? WireframeContextMenuType.MultiSelect
+            : WireframeContextMenuType.Element;
+        await ShowContextMenu(menuType, args.ScreenX, args.ScreenY);
+    }
+
+    private async Task OnConnectorContextMenuRequested((string Id, double ScreenX, double ScreenY) args)
+    {
+        if (_document is null) return;
+
+        // Select the connector that was right-clicked
+        _selectedConnectorIds = [args.Id];
+        _selectedIds = [];
+        StateHasChanged();
+
+        await ShowContextMenu(WireframeContextMenuType.Connector, args.ScreenX, args.ScreenY);
+    }
+
+    private async Task ShowContextMenu(WireframeContextMenuType type, double screenX, double screenY)
+    {
+        _ctxMenuType = type;
+        _ctxMenuX = screenX;
+        _ctxMenuY = screenY;
+        _ctxMenuOpen = true;
+        StateHasChanged();
+
+        if (_canvas is not null)
+        {
+            await JS.InvokeVoidAsync("tmWireframeDesigner.openContextMenu", _canvas.GetSvgRef(), _contextMenu?.GetMenuRef());
+        }
+    }
+
+    private async Task CloseContextMenu()
+    {
+        if (!_ctxMenuOpen) return;
+        _ctxMenuOpen = false;
+        if (_canvas is not null)
+        {
+            await JS.InvokeVoidAsync("tmWireframeDesigner.closeContextMenu", _canvas.GetSvgRef());
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnSelectAll()
+    {
+        if (_document is null) return;
+        var allIds = _document.Elements.Select(e => e.Id).ToArray();
+        _selectedIds = allIds;
+        if (_canvas is not null)
+            await _canvas.SelectElements(allIds);
+        StateHasChanged();
+    }
+
+    private async Task OnDuplicateFromContextMenu()
+    {
+        if (_document is null || _selectedIds.Length == 0 || ReadOnly) return;
+        var ids = _selectedIds.ToList();
+        var newIds = new List<string>();
+        foreach (var id in ids)
+        {
+            var el = _document.Elements.FirstOrDefault(e => e.Id == id);
+            if (el is null) continue;
+            var copy = el.DeepCopy();
+            copy.X += 20;
+            copy.Y += 20;
+            copy.ZIndex = _document.Elements.Count > 0
+                ? _document.Elements.Max(e => e.ZIndex) + 1 : 0;
+            _document.Elements.Add(copy);
+            newIds.Add(copy.Id);
+        }
+        if (newIds.Count > 0)
+        {
+            _selectedIds = newIds.ToArray();
+            if (_canvas is not null)
+                await _canvas.SelectElements(newIds.ToArray());
+        }
+        await RerenderCanvas();
+    }
+
+    private async Task OnDeleteFromContextMenu()
+    {
+        if (_document is null || ReadOnly) return;
+        if (_selectedIds.Length > 0)
+        {
+            var ids = _selectedIds.ToArray();
+            _commandStack.Push(new Commands.RemoveElementsCommand(_document, ids));
+            _selectedIds = [];
+            if (_canvas is not null)
+                await _canvas.ClearSelection();
+        }
+        else if (_selectedConnectorIds.Length > 0)
+        {
+            var ids = _selectedConnectorIds.ToArray();
+            _commandStack.Push(new Commands.RemoveConnectorsCommand(_document, ids));
+            _selectedConnectorIds = [];
+        }
+        await RerenderCanvas();
+    }
+
+    private async Task OnLockFromContextMenu()
+    {
+        if (_document is null || _selectedIds.Length == 0 || ReadOnly) return;
+        _commandStack.Push(new Commands.LockElementsCommand(_document, _selectedIds));
+        await RerenderCanvas();
+    }
+
+    private async Task OnUnlockFromContextMenu()
+    {
+        if (_document is null || _selectedIds.Length == 0 || ReadOnly) return;
+        _commandStack.Push(new Commands.UnlockElementsCommand(_document, _selectedIds));
+        await RerenderCanvas();
+    }
+
+    private async Task ContextMenuToggleGrid()
+    {
+        ShowGrid = !ShowGrid;
+        StateHasChanged();
+    }
+
+    private async Task ContextMenuToggleSnapToObjects()
+    {
+        await ToggleSnapToObjects();
+    }
+
+    private async Task ContextMenuFitToView()
+    {
+        await FitToView();
+    }
+
+    private async Task OnEditConnectorLabelFromContextMenu()
+    {
+        if (_document is null || _selectedConnectorIds.Length == 0 || ReadOnly) return;
+        var connId = _selectedConnectorIds[0];
+        var conn = _document.Connectors.FirstOrDefault(c => c.Id == connId);
+        if (conn is null) return;
+        // Toggle: if label exists, clear it; otherwise set a default
+        var newLabel = string.IsNullOrEmpty(conn.Label) ? "Label" : null;
+        _commandStack.Push(new UpdateConnectorLabelCommand(_document, connId, conn.Label, newLabel));
+        await RerenderCanvas();
+    }
+
+    private async Task OnSetConnectorRoutingFromContextMenu(string routing)
+    {
+        if (_document is null || _selectedConnectorIds.Length == 0 || ReadOnly) return;
+        var connId = _selectedConnectorIds[0];
+        var conn = _document.Connectors.FirstOrDefault(c => c.Id == connId);
+        if (conn is null) return;
+        _commandStack.Push(new UpdateConnectorRoutingCommand(_document, connId, conn.Routing, conn.Waypoints.ToList(), routing, conn.Waypoints.ToList()));
         await RerenderCanvas();
     }
 
@@ -223,13 +680,19 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
     private async Task FitToView()
     {
         if (_canvas is not null)
-            await _canvas.FitToView();
+            _zoomLevel = await _canvas.FitToView();
     }
 
     // ── Toolbar: Export ───────────────────────────────────────────────────────
 
     private void ToggleExportMenu() => _exportMenuOpen = !_exportMenuOpen;
     private void CloseExportMenu()  => _exportMenuOpen = false;
+
+    private void ToggleAlignMenu() => _alignMenuOpen = !_alignMenuOpen;
+    private void CloseAlignMenu()  => _alignMenuOpen = false;
+
+    private void ToggleDistributeMenu() => _distributeMenuOpen = !_distributeMenuOpen;
+    private void CloseDistributeMenu()  => _distributeMenuOpen = false;
 
     private async Task ExportJson()
     {
@@ -247,6 +710,70 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
         var svg      = await _canvas.ExportSvg();
         var fileName = SanitizeFileName(_document?.Title ?? Loc["TmWireframe_ExportFilename"]) + ".svg";
         await DownloadFile(fileName, "image/svg+xml", System.Text.Encoding.UTF8.GetBytes(svg));
+    }
+
+    /// <summary>Returns the current canvas state as an SVG string for use by embedded callers.</summary>
+    public async Task<string> ExportSvgAsync()
+    {
+        if (_canvas is null) return string.Empty;
+        return await _canvas.ExportSvg();
+    }
+
+    private void ExportPng()
+    {
+        _exportMenuOpen = false;
+        _exportDialogFormat = "png";
+        _exportDialogOpen = true;
+    }
+
+    private void ExportPdf()
+    {
+        _exportMenuOpen = false;
+        _exportDialogFormat = "pdf";
+        _exportDialogOpen = true;
+    }
+
+    private void CloseExportDialog()
+    {
+        _exportDialogOpen = false;
+        _exportDialogFormat = null;
+    }
+
+    private async Task OnExportDialogExport(WireframeExportDialogResult result)
+    {
+        _exportDialogOpen = false;
+        if (_canvas is null) return;
+
+        var svg = await _canvas.ExportSvg();
+        if (string.IsNullOrWhiteSpace(svg)) return;
+
+        var request = new WireframeExportRequest
+        {
+            Svg = svg,
+            FileName = result.FileName,
+            Options = result.Options
+        };
+
+        var endpoint = result.Format == "pdf"
+            ? "api/wireframe/export/pdf"
+            : "api/wireframe/export/png";
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync(endpoint, request);
+            response.EnsureSuccessStatusCode();
+
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var contentType = result.Format == "pdf" ? "application/pdf" : "image/png";
+            var ext = result.Format == "pdf" ? ".pdf" : ".png";
+            var fileName = SanitizeFileName(result.FileName) + ext;
+
+            await DownloadFile(fileName, contentType, bytes);
+        }
+        catch (Exception ex)
+        {
+            _importError = string.Format(Loc["TmWireframe_ExportError"], ex.Message);
+        }
     }
 
     // ── Toolbar: Import ───────────────────────────────────────────────────────
@@ -270,7 +797,18 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
             }
 
             _document = doc;
+            _document.EnsureActivePage();
+            _activePage = _document.ActivePage;
+
+            foreach (var stack in _pageCommandStacks.Values)
+                stack.OnStackChanged -= OnStackChanged;
+            _pageCommandStacks.Clear();
             _commandStack.Clear();
+            _commandStack = new WireframeCommandStack();
+            _commandStack.OnStackChanged += OnStackChanged;
+            if (_activePage is not null)
+                _pageCommandStacks[_activePage.Id] = _commandStack;
+
             _selectedIds = [];
             await DocumentChanged.InvokeAsync(_document);
             await RerenderCanvas();
@@ -303,6 +841,7 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
             def?.Props ?? []);
         el.ZIndex = _document.Elements.Count > 0
             ? _document.Elements.Max(e => e.ZIndex) + 1 : 0;
+        el.LayerId = _document.ActiveLayerId;
 
         await _canvas.AddElement(el);
         await _canvas.SelectElements(el.Id);
@@ -314,12 +853,155 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
     private async Task OnMinimapNavigate(MinimapNavigateArgs args)
     {
         if (_canvas is null) return;
-        // ScrollTo the centre point by zooming to current level with pan offset
-        // We reuse zoomTo which accepts scale; navigate via JS resetView + offset
         await JS.InvokeVoidAsync(
             "tmWireframeDesigner.scrollTo",
             _canvas.GetSvgRef(),
             args.CentreX, args.CentreY);
+    }
+
+    // ── Page management ───────────────────────────────────────────────────────
+
+    private async Task AddPage()
+    {
+        if (_document is null || ReadOnly) return;
+
+        var page = new WireframePage
+        {
+            Name = $"{Loc["TmWireframe_Page"]} {_document.Pages.Count + 1}",
+            Width = _activePage?.Width ?? 1280,
+            Height = _activePage?.Height ?? 800,
+        };
+
+        _document.Pages.Add(page);
+        await SwitchPage(page.Id);
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task DuplicatePage()
+    {
+        if (_document is null || _activePage is null || ReadOnly) return;
+
+        var json = System.Text.Json.JsonSerializer.Serialize(_activePage, WireframeJsonOptions.Default);
+        var copy = System.Text.Json.JsonSerializer.Deserialize<WireframePage>(json, WireframeJsonOptions.Default)!;
+        copy.Id = "p" + Guid.NewGuid().ToString("N")[..7];
+        copy.Name = $"{_activePage.Name} ({Loc["TmWireframe_Copy"]})";
+
+        _document.Pages.Add(copy);
+        await SwitchPage(copy.Id);
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task DeletePage(string pageId)
+    {
+        if (_document is null || ReadOnly) return;
+        if (_document.Pages.Count <= 1) return;
+
+        var page = _document.Pages.FirstOrDefault(p => p.Id == pageId);
+        if (page is null) return;
+
+        _document.Pages.Remove(page);
+        if (_pageCommandStacks.Remove(pageId, out var stack))
+            stack.OnStackChanged -= OnStackChanged;
+
+        // Switch to nearest page
+        var newActive = _document.Pages.FirstOrDefault();
+        if (newActive is not null)
+            await SwitchPage(newActive.Id);
+
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task SwitchPage(string pageId)
+    {
+        if (_document is null || _activePage?.Id == pageId) return;
+
+        // Clear selection and context menu before switching
+        _selectedIds = [];
+        _ctxMenuOpen = false;
+        if (_canvas is not null)
+            await _canvas.ClearSelection();
+
+        _document.ActivePageId = pageId;
+        _activePage = _document.ActivePage;
+        _activeLayerId = _document.ActiveLayerId;
+
+        // Get or create command stack for the new page
+        if (_activePage is not null)
+        {
+            if (!_pageCommandStacks.TryGetValue(_activePage.Id, out var stack))
+            {
+                stack = new WireframeCommandStack();
+                stack.OnStackChanged += OnStackChanged;
+                _pageCommandStacks[_activePage.Id] = stack;
+            }
+            _commandStack = stack;
+        }
+
+        StateHasChanged();
+        await OnDocumentChanged(_document);
+    }
+
+    private void StartRenamePage(string pageId)
+    {
+        if (ReadOnly) return;
+        _renamingPageId = pageId;
+        StateHasChanged();
+    }
+
+    private async Task OnPageRenamed(string pageId, ChangeEventArgs e)
+    {
+        if (_document is null || ReadOnly) return;
+        var page = _document.Pages.FirstOrDefault(p => p.Id == pageId);
+        if (page is null) return;
+        page.Name = e.Value?.ToString() ?? page.Name;
+        _renamingPageId = null;
+        await OnDocumentChanged(_document);
+    }
+
+    private void OnPageDragStart(string pageId)
+    {
+        if (ReadOnly) return;
+        _draggedPageId = pageId;
+    }
+
+    private void OnPageDrop(string targetPageId)
+    {
+        if (_document is null || ReadOnly || _draggedPageId is null || _draggedPageId == targetPageId) return;
+
+        var draggedIdx = _document.Pages.FindIndex(p => p.Id == _draggedPageId);
+        var targetIdx = _document.Pages.FindIndex(p => p.Id == targetPageId);
+        if (draggedIdx < 0 || targetIdx < 0) return;
+
+        var page = _document.Pages[draggedIdx];
+        _document.Pages.RemoveAt(draggedIdx);
+        _document.Pages.Insert(targetIdx, page);
+
+        _draggedPageId = null;
+        _ = OnDocumentChanged(_document);
+    }
+
+    private void OnRenameInputKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            _renamingPageId = null;
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (_document is null) return;
+
+        if (e.CtrlKey && e.Key == "PageUp")
+        {
+            var idx = _document.Pages.FindIndex(p => p.Id == _activePage?.Id);
+            if (idx > 0)
+                await SwitchPage(_document.Pages[idx - 1].Id);
+        }
+        else if (e.CtrlKey && e.Key == "PageDown")
+        {
+            var idx = _document.Pages.FindIndex(p => p.Id == _activePage?.Id);
+            if (idx >= 0 && idx < _document.Pages.Count - 1)
+                await SwitchPage(_document.Pages[idx + 1].Id);
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -331,8 +1013,12 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
             await DocumentChanged.InvokeAsync(_document);
     }
 
-    private WireframeDocument CreateEmptyDocument() =>
-        new() { Title = Loc["TmWireframe_DefaultTitle"], Width = 1280, Height = 800 };
+    private WireframeDocument CreateEmptyDocument()
+    {
+        var doc = new WireframeDocument { Title = Loc["TmWireframe_DefaultTitle"] };
+        doc.EnsureActivePage();
+        return doc;
+    }
 
     private static string SanitizeFileName(string name)
     {

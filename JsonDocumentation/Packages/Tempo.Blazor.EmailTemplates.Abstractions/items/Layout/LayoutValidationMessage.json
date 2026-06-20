@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Layout",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+  "description": "A single layout validation finding.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutValidationMessage.cs",
+  "documentationStatus": "generated",
+  "itemName": "LayoutValidationMessage"
+}

@@ -1,0 +1,30 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Special
+@using Tempo.Blazor.NotionEditor.Models
+
+<section class="tm-excerpt"
+         aria-label="@Loc["Notion_Excerpt_Title"]"
+         @onclick="HandleFocusedAsync">
+    <div class="tm-excerpt__header">
+        <span class="tm-excerpt__badge" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3.5 2.5h9v11h-9v-11Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" />
+                <path d="M5.5 5.5h5M5.5 8h4M5.5 10.5h3" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" />
+            </svg>
+        </span>
+        <div class="tm-excerpt__heading">
+            <span class="tm-excerpt__title">@Loc["Notion_Excerpt_Title"]</span>
+            <span class="tm-excerpt__hint">@Loc["Notion_Excerpt_Placeholder"]</span>
+        </div>
+    </div>
+
+    <div class="tm-excerpt__editor"
+         contenteditable="@(!ReadOnly ? "true" : "false")"
+         data-placeholder="@Loc["Notion_Excerpt_Placeholder"]"
+         spellcheck="true"
+         @ref="_editableRef"
+         @oninput="HandleInput"
+         @onblur="HandleBlurAsync"
+         @onfocus="HandleFocusedAsync">
+        @((MarkupString)Sanitize(Content?.Html))
+    </div>
+</section>

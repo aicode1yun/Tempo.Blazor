@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion",
+  "namespace": "Tempo.Blazor.DocumentFormats.Notion",
+  "description": "Converts the Tempo document editor model into Notion editor page blocks.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Notion/DocumentModelToNotionConverter.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentModelToNotionConverter"
+}

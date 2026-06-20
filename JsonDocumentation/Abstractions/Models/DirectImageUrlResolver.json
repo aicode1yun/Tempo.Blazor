@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Resolver that treats imageId as a direct URL (no API call). Default when no UrlResolver is provided to gallery components.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ImageUrlResolvers.cs",
+  "documentationStatus": "generated",
+  "itemName": "DirectImageUrlResolver"
+}

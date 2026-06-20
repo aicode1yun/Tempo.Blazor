@@ -1,0 +1,127 @@
+@page "/color-picker"
+@using Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Abstractions.Models
+
+<PageTitle>Color Picker – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Color Picker</h1>
+    <p class="text-slate-600 dark:text-slate-400">Pick colors from a gradient, palette, or enter precise values.</p>
+</div>
+
+<!-- ColorPicker Dropdown -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Dropdown Color Picker</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Compact picker with gradient, palette, and clear button</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">Picker</span>
+    </div>
+
+    <div class="showcase-card">
+        <div class="flex items-center gap-6 flex-wrap">
+            <TmColorPicker @bind-Value="_color1"
+                           ShowAlpha="true"
+                           ShowPalette="true"
+                           ShowClearButton="true"
+                           ShowApplyButton="true"
+                           Placeholder="Select a color..." />
+
+            @if (!string.IsNullOrEmpty(_color1))
+            {
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm"
+                         style="background-color: @_color1"></div>
+                    <code class="text-sm text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">@_color1</code>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Flat Color Picker -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Flat Color Picker</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Always-open inline picker with all controls visible</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full">Inline</span>
+    </div>
+
+    <div class="showcase-card">
+        <div class="flex flex-col md:flex-row gap-8 items-start">
+            <TmFlatColorPicker @bind-Value="_color2"
+                               ShowAlpha="true"
+                               ShowPalette="true" />
+
+            @if (!string.IsNullOrEmpty(_color2))
+            {
+                <div class="flex flex-col gap-3">
+                    <div class="w-20 h-20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"
+                         style="background-color: @_color2"></div>
+                    <div class="text-sm text-slate-600 dark:text-slate-400">
+                        <p><strong>Hex:</strong> @_color2</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Color Palette Only -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Color Palette</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Quick selection from predefined colors</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 rounded-full">Palette</span>
+    </div>
+
+    <div class="showcase-card">
+        <TmColorPalette @bind-Value="_color3" />
+
+        @if (!string.IsNullOrEmpty(_color3))
+        {
+            <div class="mt-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm"
+                     style="background-color: @_color3"></div>
+                <code class="text-sm text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">@_color3</code>
+            </div>
+        }
+    </div>
+</section>
+
+<!-- Color Gradient -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Color Gradient</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">HSV gradient with hue and alpha sliders</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-full">Gradient</span>
+    </div>
+
+    <div class="showcase-card">
+        <TmColorGradient @bind-Value="_color4" ShowAlpha="true" />
+
+        @if (!string.IsNullOrEmpty(_color4))
+        {
+            <div class="mt-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm"
+                     style="background-color: @_color4"></div>
+                <code class="text-sm text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">@_color4</code>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private string? _color1 = "#3b82f6";
+    private string? _color2;
+    private string? _color3;
+    private string? _color4;
+}

@@ -1,0 +1,22 @@
+{
+  "itemName": "TmEmailHtmlAttributesEditor",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailHtmlAttributesEditor Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailHtmlAttributesEditor.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "OnChanged",
+      "type": "EventCallback",
+      "isRequired": true,
+      "description": "The mj-html-attributes selectors (round-trip only; not rendered by Mjml.Net).",
+      "editorRequired": true
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+  "description": "Read-only queries over a document used by the editor UI.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/DocumentInspection.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ContainsRawContent",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns whether the document contains any non-empty raw block. The editor surfaces this as a warning because raw content is emitted verbatim and bypasses sanitization.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this EmailTemplateDocument"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentInspection"
+}

@@ -1,0 +1,46 @@
+{
+  "itemName": "TmDocumentCommentThreadList",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "TmDocumentCommentThreadList Blazor component in the Signing category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor/Components/Signing/TmDocumentCommentThreadList.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "AllThreads",
+      "type": "IReadOnlyList<DocumentCommentThread>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Filtered threads to render."
+    },
+    {
+      "name": "CurrentUserId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Selected thread id."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Current user id for mention indicators."
+    },
+    {
+      "name": "OnThreadSelected",
+      "type": "EventCallback<DocumentCommentThread>",
+      "isRequired": false,
+      "description": "Whether list interaction is disabled."
+    },
+    {
+      "name": "SelectedThreadId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "All threads used for stable numbering."
+    }
+  ]
+}

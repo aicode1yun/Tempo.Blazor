@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Canvas engine descriptor for a signing field choice option.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentSigningField.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentSigningFieldOptionDescriptor"
+}

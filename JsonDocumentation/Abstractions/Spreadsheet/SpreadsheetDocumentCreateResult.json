@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Response returned after creating a persisted spreadsheet document.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Models/SpreadsheetDocumentCreateResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetDocumentCreateResult"
+}

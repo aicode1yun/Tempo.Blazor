@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Interfaces",
+  "description": "Provider boundary for document editor font families and typography constraints.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Interfaces/DocumentEditorProviders.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDocumentFontProvider"
+}

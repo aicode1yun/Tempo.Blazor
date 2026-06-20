@@ -1,0 +1,84 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A text block (mj-text). may contain inline HTML.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailTextBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Align",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the horizontal alignment (align)."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the text colour (color)."
+    },
+    {
+      "name": "Content",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the inline HTML content of the block."
+    },
+    {
+      "name": "FontFamily",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the font family (font-family)."
+    },
+    {
+      "name": "FontSize",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the font size (font-size)."
+    },
+    {
+      "name": "FontStyle",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the font style, e.g. italic (font-style)."
+    },
+    {
+      "name": "FontWeight",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the font weight (font-weight)."
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the explicit height (height)."
+    },
+    {
+      "name": "LetterSpacing",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the letter spacing (letter-spacing)."
+    },
+    {
+      "name": "LineHeight",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the line height (line-height)."
+    },
+    {
+      "name": "TextDecoration",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the text decoration (text-decoration)."
+    },
+    {
+      "name": "TextTransform",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the text transform (text-transform)."
+    }
+  ],
+  "itemName": "EmailTextBlock"
+}

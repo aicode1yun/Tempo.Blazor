@@ -1,0 +1,27 @@
+{
+  "itemName": "TmModelingIssuePanel",
+  "kind": "Component",
+  "category": "Modeling",
+  "description": "Displays validation and generation issues for a modeling document.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Modeling",
+  "sourcePath": "src/Tempo.Blazor/Components/Modeling/TmModelingIssuePanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Modeling"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Raised when the user selects an issue that points to a model element or relationship."
+    },
+    {
+      "name": "OnIssueSelected",
+      "type": "EventCallback<ModelingIssueDto>",
+      "isRequired": false,
+      "description": "Issues to render in severity-coded order."
+    }
+  ]
+}

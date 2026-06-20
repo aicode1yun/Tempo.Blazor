@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "description": "Public record defined by Tempo.Blazor.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/UI/SlashMenuItem.cs",
+  "documentationStatus": "generated",
+  "itemName": "SlashMenuItem"
+}

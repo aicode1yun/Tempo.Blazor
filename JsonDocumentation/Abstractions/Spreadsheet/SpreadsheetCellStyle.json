@@ -1,0 +1,138 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Represents the visual style of a spreadsheet cell.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Models/SpreadsheetCellStyle.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Clone",
+      "kind": "Method",
+      "type": "SpreadsheetCellStyle",
+      "description": "Creates a deep copy of this style."
+    },
+    {
+      "name": "BackgroundColor",
+      "kind": "Property",
+      "type": "string",
+      "description": "The background fill color in hex format. Defaults to transparent."
+    },
+    {
+      "name": "Bold",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the text is bold."
+    },
+    {
+      "name": "BorderBottom",
+      "kind": "Property",
+      "type": "SpreadsheetBorder",
+      "description": "The border at the bottom edge of the cell."
+    },
+    {
+      "name": "BorderLeft",
+      "kind": "Property",
+      "type": "SpreadsheetBorder",
+      "description": "The border at the left edge of the cell."
+    },
+    {
+      "name": "BorderRight",
+      "kind": "Property",
+      "type": "SpreadsheetBorder",
+      "description": "The border at the right edge of the cell."
+    },
+    {
+      "name": "BorderTop",
+      "kind": "Property",
+      "type": "SpreadsheetBorder",
+      "description": "The border at the top edge of the cell."
+    },
+    {
+      "name": "DoubleUnderline",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the text has double underline."
+    },
+    {
+      "name": "FontFamily",
+      "kind": "Property",
+      "type": "string",
+      "description": "The font family name (e.g. Arial, Calibri)."
+    },
+    {
+      "name": "FontSize",
+      "kind": "Property",
+      "type": "double",
+      "description": "The font size in points."
+    },
+    {
+      "name": "ForeColor",
+      "kind": "Property",
+      "type": "string",
+      "description": "The foreground (text) color in hex format. Defaults to black."
+    },
+    {
+      "name": "HorizontalAlign",
+      "kind": "Property",
+      "type": "SpreadsheetHorizontalAlign",
+      "description": "The horizontal alignment of cell content."
+    },
+    {
+      "name": "Indent",
+      "kind": "Property",
+      "type": "int",
+      "description": "Indent level (0–15). Each level adds 12px left padding."
+    },
+    {
+      "name": "Italic",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the text is italic."
+    },
+    {
+      "name": "NumberFormat",
+      "kind": "Property",
+      "type": "string",
+      "description": "The number format string (e.g. #,##0.00, yyyy-mm-dd)."
+    },
+    {
+      "name": "ShrinkToFit",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether to shrink text to fit the cell width."
+    },
+    {
+      "name": "StrikeThrough",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the text is struck through."
+    },
+    {
+      "name": "TextRotation",
+      "kind": "Property",
+      "type": "int",
+      "description": "Text rotation in degrees (-90 to 90). 0 = normal horizontal."
+    },
+    {
+      "name": "TextWrap",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether text wraps inside the cell."
+    },
+    {
+      "name": "Underline",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the text is underlined."
+    },
+    {
+      "name": "VerticalAlign",
+      "kind": "Property",
+      "type": "SpreadsheetVerticalAlign",
+      "description": "The vertical alignment of cell content."
+    }
+  ],
+  "itemName": "SpreadsheetCellStyle"
+}

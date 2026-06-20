@@ -5,14 +5,13 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject ITmLocalizer Loc
 
-<PageTitle>Diagram Editor – Tempo.Blazor</PageTitle>
+<PageTitle>@Loc["TmDiagramDemo_PageTitle"] - Tempo.Blazor</PageTitle>
 
 <!-- Page Header -->
 <div class="mb-8">
-    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Diagram Editor</h1>
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">@Loc["TmDiagramDemo_PageTitle"]</h1>
     <p class="text-slate-600 dark:text-slate-400">
-        Declarative diagram editor with stencil-based nodes, SVG edges, and hybrid HTML/SVG rendering.
-        Drag stencils from the toolbox, connect ports, and export as JSON.
+        @Loc["TmDiagramDemo_PageDescription"]
     </p>
 </div>
 
@@ -20,19 +19,23 @@
 <section class="demo-section mb-6">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
-            <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200">Interactive Editor</h2>
+            <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200">@Loc["TmDiagramDemo_InteractiveEditor"]</h2>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                The canvas below is pre-loaded with a UML Class stencil. Drag from a port to create edges.
+                @Loc["TmDiagramDemo_InteractiveDescription"]
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
             <button class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
                     @onclick="LoadUmlSample">
-                Load UML sample
+                @Loc["TmDiagramDemo_LoadUmlSample"]
+            </button>
+            <button class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    @onclick="LoadGroupedBoundsSample">
+                @Loc["TmDiagramDemo_LoadGroupedSample"]
             </button>
             <button class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
                     @onclick="NewDocument">
-                New document
+                @Loc["TmDiagramDemo_NewDocument"]
             </button>
             <input type="text"
                    class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 w-40"
@@ -71,10 +74,10 @@
     </div>
 
     <div class="mt-3 flex gap-4 text-sm text-slate-500 dark:text-slate-400">
-        <span>Nodes: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Nodes.Count ?? 0)</strong></span>
-        <span>Edges: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Edges.Count ?? 0)</strong></span>
-        <span>Title: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Title ?? "—")</strong></span>
-        <span>ID: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Id ?? "—")</strong></span>
+        <span>@Loc["TmDiagramDemo_Nodes"]: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Nodes.Count ?? 0)</strong></span>
+        <span>@Loc["TmDiagramDemo_Edges"]: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Edges.Count ?? 0)</strong></span>
+        <span>@Loc["TmDiagramDemo_Title"]: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Title ?? "—")</strong></span>
+        <span>@Loc["TmDiagramDemo_Id"]: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Id ?? "—")</strong></span>
     </div>
 </section>
 
@@ -160,7 +163,7 @@
 </section>
 
 @code {
-    private DiagramDocument _document = CreateUmlSample();
+    private DiagramDocument _document = new();
     private string _saveLabel = "";
     private bool _isSaving;
     private string? _statusMessage;
@@ -171,6 +174,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _document = CreateUmlSample();
         await RefreshHistoryAsync();
     }
 
@@ -178,7 +182,7 @@
     {
         _document = new()
         {
-            Title = "Untitled diagram",
+            Title = Loc["TmDiagramDemo_UntitledDiagram"],
             Width = 3000,
             Height = 2000,
             Nodes = [],
@@ -193,9 +197,55 @@
         _ = RefreshVersionsAsync();
     }
 
-    private static DiagramDocument CreateUmlSample() => new()
+    private void LoadGroupedBoundsSample()
     {
-        Title = "UML Class Diagram",
+        _document = CreateGroupedBoundsSample();
+        _ = RefreshVersionsAsync();
+    }
+
+    private DiagramDocument CreateGroupedBoundsSample() => new()
+    {
+        Title = Loc["TmDiagramDemo_GroupedBoundsSample"],
+        Width = 1200,
+        Height = 800,
+        Nodes =
+        [
+            new()
+            {
+                Id = "m1",
+                StencilId = "general.rectangle",
+                X = 100,
+                Y = 100,
+                W = 120,
+                H = 60,
+                GroupId = "g1"
+            },
+            new()
+            {
+                Id = "m2",
+                StencilId = "general.rectangle",
+                X = 300,
+                Y = 240,
+                W = 120,
+                H = 60,
+                GroupId = "g1"
+            },
+            new()
+            {
+                Id = "solo",
+                StencilId = "general.rectangle",
+                X = 700,
+                Y = 400,
+                W = 120,
+                H = 60
+            }
+        ],
+        Edges = []
+    };
+
+    private DiagramDocument CreateUmlSample() => new()
+    {
+        Title = Loc["TmDiagramDemo_UmlSampleTitle"],
         Width = 3000,
         Height = 2000,
         Nodes =
@@ -210,9 +260,9 @@
                 H = 140,
                 Data = new()
                 {
-                    ["name"] = "Customer",
-                    ["attributes"] = new[] { "- id: Guid", "- name: string", "- email: string" },
-                    ["methods"] = new[] { "+ Save(): void", "+ Load(): void" }
+                    ["name"] = Loc["TmDiagramDemo_CustomerClass"],
+                    ["attributes"] = new[] { Loc["TmDiagramDemo_CustomerAttributeId"], Loc["TmDiagramDemo_CustomerAttributeName"], Loc["TmDiagramDemo_CustomerAttributeEmail"] },
+                    ["methods"] = new[] { Loc["TmDiagramDemo_CustomerMethodSave"], Loc["TmDiagramDemo_CustomerMethodLoad"] }
                 },
                 Ports =
                 [
@@ -236,9 +286,9 @@
                 H = 140,
                 Data = new()
                 {
-                    ["name"] = "Order",
-                    ["attributes"] = new[] { "- id: Guid", "- total: decimal" },
-                    ["methods"] = new[] { "+ Place(): void", "+ Cancel(): void" }
+                    ["name"] = Loc["TmDiagramDemo_OrderClass"],
+                    ["attributes"] = new[] { Loc["TmDiagramDemo_OrderAttributeId"], Loc["TmDiagramDemo_OrderAttributeTotal"] },
+                    ["methods"] = new[] { Loc["TmDiagramDemo_OrderMethodPlace"], Loc["TmDiagramDemo_OrderMethodCancel"] }
                 },
                 Ports =
                 [
@@ -262,7 +312,7 @@
                 SourcePortId = "right",
                 TargetNodeId = "class2",
                 TargetPortId = "left",
-                Label = "1..*"
+                Label = Loc["TmDiagramDemo_UmlMultiplicity"]
             }
         ]
     };

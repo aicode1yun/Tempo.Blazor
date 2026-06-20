@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "description": "A single dataset within chart data.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ChartDataset"
+}

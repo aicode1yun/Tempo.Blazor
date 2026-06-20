@@ -1,0 +1,78 @@
+.tm-demo-email-templates {
+    padding: var(--tm-space-6, 1.5rem);
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.tm-demo-email-templates__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tm-space-4, 1rem);
+    margin-bottom: var(--tm-space-6, 1.5rem);
+}
+
+.tm-demo-email-templates__header h1 {
+    font-size: var(--tm-font-size-2xl, 1.5rem);
+    font-weight: var(--tm-font-weight-semibold, 600);
+    color: var(--tm-text-primary, #1f2933);
+    margin: 0;
+}
+
+.tm-demo-email-templates__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--tm-space-4, 1rem);
+}
+
+.tm-demo-email-templates__card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--tm-space-4, 1rem);
+    padding: var(--tm-space-4, 1rem);
+    background: var(--tm-bg-surface, #fff);
+    border: 1px solid var(--tm-color-border, #e4e7eb);
+    border-radius: var(--tm-radius-lg, 0.75rem);
+    box-shadow: var(--tm-shadow-sm, 0 1px 2px rgb(0 0 0 / 0.05));
+    transition: box-shadow var(--tm-transition-fast, 150ms) ease, border-color var(--tm-transition-fast, 150ms) ease;
+}
+
+.tm-demo-email-templates__card:hover {
+    border-color: var(--tm-color-primary, #3b82f6);
+    box-shadow: var(--tm-shadow-md, 0 4px 12px rgb(0 0 0 / 0.1));
+}
+
+.tm-demo-email-templates__card-body h3 {
+    font-size: var(--tm-font-size-lg, 1.125rem);
+    font-weight: var(--tm-font-weight-semibold, 600);
+    color: var(--tm-text-primary, #1f2933);
+    margin: 0 0 var(--tm-space-1, 0.25rem) 0;
+}
+
+.tm-demo-email-templates__card-body p {
+    font-size: var(--tm-font-size-sm, 0.875rem);
+    color: var(--tm-text-secondary, #616e7c);
+    margin: 0 0 var(--tm-space-2, 0.5rem) 0;
+    word-break: break-word;
+}
+
+.tm-demo-email-templates__lang {
+    display: inline-block;
+    font-size: var(--tm-font-size-xs, 0.75rem);
+    font-weight: var(--tm-font-weight-medium, 500);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--tm-text-tertiary, #7b8794);
+    background: var(--tm-bg-muted, #f5f7fa);
+    border-radius: var(--tm-radius-full, 999px);
+    padding: 2px var(--tm-space-2, 0.5rem);
+}
+
+.tm-demo-email-templates__card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--tm-space-2, 0.5rem);
+    padding-top: var(--tm-space-3, 0.75rem);
+    border-top: 1px solid var(--tm-color-border, #e4e7eb);
+}

@@ -1,0 +1,99 @@
+{
+  "itemName": "TmFileManager",
+  "kind": "Component",
+  "category": "Files",
+  "description": "A full-featured file manager component with folder tree navigation, list/grid views, toolbar actions, and breadcrumb path display. Supports keyboard navigation like Windows Explorer (arrow keys, Enter, Delete, F2, Ctrl+A, Backspace, Ctrl+Click, Shift+Click).",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "sourcePath": "src/Tempo.Blazor/Components/Files/TmFileManager.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Files"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Event fired when the selection changes."
+    },
+    {
+      "name": "CurrentPath",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Data provider for file system operations."
+    },
+    {
+      "name": "CurrentPathChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Current folder path. Two-way bindable."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Event fired when the view mode changes."
+    },
+    {
+      "name": "OnItemOpen",
+      "type": "EventCallback<FileManagerItem>",
+      "isRequired": false,
+      "description": "Whether to show the Rename button. Default is true."
+    },
+    {
+      "name": "OnSelectionChanged",
+      "type": "EventCallback<IReadOnlyList<FileManagerItem>>",
+      "isRequired": false,
+      "description": "Event fired when an item is opened (double-clicked)."
+    },
+    {
+      "name": "ShowDeleteButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the Upload button. Default is true."
+    },
+    {
+      "name": "ShowFolderTree",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When true, disables all user interactions."
+    },
+    {
+      "name": "ShowNewFolderButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the folder tree sidebar. Default is true."
+    },
+    {
+      "name": "ShowRenameButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the Delete button. Default is true."
+    },
+    {
+      "name": "ShowUploadButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the New Folder button. Default is true."
+    },
+    {
+      "name": "ViewMode",
+      "type": "FileManagerViewMode",
+      "isRequired": false,
+      "default": "FileManagerViewMode.List",
+      "description": "Event fired when the current path changes."
+    },
+    {
+      "name": "ViewModeChanged",
+      "type": "EventCallback<FileManagerViewMode>",
+      "isRequired": false,
+      "description": "Display mode (List or Grid). Default is ."
+    }
+  ]
+}

@@ -26,6 +26,11 @@ public partial class TmNotionInlineToolbar : ComponentBase
 
     [Parameter] public EventCallback<BlockType>     OnTurnInto    { get; set; }
     [Parameter] public EventCallback<TextAlignment> OnAlignChange { get; set; }
+    [Parameter] public EventCallback<string>        OnComment     { get; set; }
+    [Parameter] public EventCallback                OnAI          { get; set; }
+    [Parameter] public bool                         ShowAI        { get; set; }
+    [Parameter] public string?                      BlockId       { get; set; }
+    [Parameter] public object?                      DotNetRef     { get; set; }
 
     // ── Static data ───────────────────────────────────────────────────────────
 
@@ -99,21 +104,21 @@ public partial class TmNotionInlineToolbar : ComponentBase
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_needsFocusLink && Visible && _showLinkInput)
-        {
-            _needsFocusLink = false;
-            try { await _linkInputRef.FocusAsync(); }
-            catch { /* SSR / test */ }
-            return;
-        }
-
-        if (Visible && !_showLinkInput && !_showColorPanel && !_showTurnIntoPanel && !_showAlignPanel)
+        if (Visible)
         {
             try
             {
                 await JS.InvokeVoidAsync("tmNotionEditor.adjustInlineToolbarPosition", _toolbarRef);
             }
             catch { /* SSR / test */ }
+        }
+
+        if (_needsFocusLink && Visible && _showLinkInput)
+        {
+            _needsFocusLink = false;
+            try { await _linkInputRef.FocusAsync(); }
+            catch { /* SSR / test */ }
+            return;
         }
     }
 
@@ -171,7 +176,8 @@ public partial class TmNotionInlineToolbar : ComponentBase
 
     private async Task HandleRemoveLinkAsync()
     {
-        try { await JS.InvokeVoidAsync("tmNotionEditor.applyFormat", "unlink"); }
+        try { await JS.InvokeVoidAsync("tmNotionEditor.restoreSavedSelection"); } catch { }
+        try { await JS.InvokeVoidAsync("tmNotionEditor.applyFormat", "unlink", CurrentHref, BlockId); }
         catch { }
         _showLinkInput = false;
     }
@@ -236,14 +242,30 @@ public partial class TmNotionInlineToolbar : ComponentBase
 
     private async Task HandleCommentAsync()
     {
-        try { await JS.InvokeVoidAsync("tmNotionEditor.wrapSelectionWithComment", Guid.NewGuid().ToString()); }
+        var commentId = Guid.NewGuid().ToString();
+        try
+        {
+            if (DotNetRef is not null && !string.IsNullOrEmpty(BlockId))
+                await JS.InvokeVoidAsync("tmNotionEditor.wrapSelectionWithComment", commentId, BlockId, DotNetRef, "OnTextCommentCreated");
+            else
+                await JS.InvokeVoidAsync("tmNotionEditor.wrapSelectionWithComment", commentId);
+        }
         catch { }
+        await OnComment.InvokeAsync(commentId);
     }
 
     private async Task HandleMathAsync()
     {
         try { await JS.InvokeVoidAsync("tmNotionEditor.insertInlineMath"); }
         catch { }
+    }
+
+    private async Task HandleAIAsync()
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.saveSelection"); }
+        catch { }
+
+        await OnAI.InvokeAsync();
     }
 
     // ── Keyboard handler ──────────────────────────────────────────────────────

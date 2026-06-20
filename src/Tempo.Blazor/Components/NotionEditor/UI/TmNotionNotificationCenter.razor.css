@@ -1,0 +1,33 @@
+.tm-notion-notifications__button {
+    position: relative;
+}
+
+.tm-notion-notifications__panel {
+    width: min(24rem, calc(100vw - 1.5rem));
+}
+
+.tm-notion-notifications__item {
+    width: 100%;
+    border: 0;
+    text-align: left;
+    font: inherit;
+}
+
+.tm-notion-notifications__status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 5rem;
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-sm);
+}
+
+@media (max-width: 760px) {
+    .tm-notion-notifications__panel {
+        position: fixed;
+        top: 3.75rem;
+        right: var(--tm-space-3);
+        left: var(--tm-space-3);
+        width: auto;
+    }
+}

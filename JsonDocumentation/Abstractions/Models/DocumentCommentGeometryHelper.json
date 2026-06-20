@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Helpers for normalized document comment anchor geometry.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentCommentGeometryHelper.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ToAreaStyle",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns a CSS style for an area anchor positioned by normalized page coordinates.",
+      "parameters": [
+        {
+          "name": "anchor",
+          "type": "DocumentCommentAnchor"
+        }
+      ]
+    },
+    {
+      "name": "ToPointStyle",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns a CSS style for a point anchor positioned by normalized page coordinates.",
+      "parameters": [
+        {
+          "name": "anchor",
+          "type": "DocumentCommentAnchor"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentCommentGeometryHelper"
+}

@@ -1,0 +1,41 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Converts between and the canvas document model.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/CanvasDocumentModelConverter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "FromCanvasModel",
+      "kind": "Method",
+      "type": "DocumentEditorDocument",
+      "description": "Rebuilds a persisted document editor snapshot from the canonical canvas model.",
+      "parameters": [
+        {
+          "name": "model",
+          "type": "CanvasDocumentModel"
+        },
+        {
+          "name": "template",
+          "type": "DocumentEditorDocument?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ToCanvasModel",
+      "kind": "Method",
+      "type": "CanvasDocumentModel",
+      "description": "Converts a persisted document editor snapshot into the canonical canvas model.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        }
+      ]
+    }
+  ],
+  "itemName": "CanvasDocumentModelConverter"
+}

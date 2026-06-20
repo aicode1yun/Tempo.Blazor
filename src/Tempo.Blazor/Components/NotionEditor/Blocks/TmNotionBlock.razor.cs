@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.NotionEditor.Services;
+using Tempo.Blazor.Components.Wireframe.Models;
+using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -36,6 +39,24 @@ public partial class TmNotionBlock : ComponentBase
 
     [Parameter] public bool IsSelected { get; set; }
 
+    /// <summary>Number of unresolved block comment threads for this block.</summary>
+    [Parameter] public int BlockUnresolvedCount { get; set; }
+
+    /// <summary>Number of resolved-but-unread block comment threads for this block.</summary>
+    [Parameter] public int BlockResolvedUnreadCount { get; set; }
+
+    /// <summary>True when any thread on this block has unread activity (new entry, reaction, resolve).</summary>
+    [Parameter] public bool BlockHasUnreadActivity { get; set; }
+
+    /// <summary>Total number of comment threads on this block.</summary>
+    [Parameter] public int BlockThreadCount { get; set; }
+
+    // ── Tooltip data (latest comment entry across all threads) ───────────────
+    [Parameter] public string? BlockLastAuthorName   { get; set; }
+    [Parameter] public string? BlockLastAuthorAvatar { get; set; }
+    [Parameter] public string? BlockLastEntryText    { get; set; }
+    [Parameter] public DateTime? BlockLastEntryTime  { get; set; }
+
     /// <summary>1-based ordinal for NumberedList blocks, pre-computed by TmNotionBlockList.</summary>
     [Parameter] public int NumberedListNumber { get; set; }
 
@@ -52,14 +73,82 @@ public partial class TmNotionBlock : ComponentBase
     [Parameter] public EventCallback<IPageBlock> OnDuplicate { get; set; }
 
     /// <summary>Raised when a '/' typed in this block opens the slash menu. Args are viewport coords.</summary>
-    [Parameter] public EventCallback<(double Top, double Left)> OnSlashMenu { get; set; }
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnSlashMenu { get; set; }
+
+    /// <summary>Raised when '@' mention syntax is typed. Args are viewport coords.</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnMentionMenu { get; set; }
+
+    /// <summary>Raised when '[[' page-link syntax is typed. Args are viewport coords.</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnPageLinkMenu { get; set; }
+
+    /// <summary>Raised when '{{' token syntax is typed. Args are viewport coords.</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnTokenMenu { get; set; }
+
+    /// <summary>Raised when a TemplateButton block requests insertion of its template blocks after itself.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<IPageBlock>> OnInsertTemplateBlocks { get; set; }
+
+    /// <summary>Raised when a text block requests keyboard focus movement to a sibling block.</summary>
+    [Parameter] public EventCallback<(string BlockId, int Direction)> OnMoveFocus { get; set; }
+
+    /// <summary>Raised when the user clicks the Comment button in the block handle menu.</summary>
+    [Parameter] public EventCallback OnComment { get; set; }
+
+    /// <summary>Raised when the user clicks the New Thread button in the block handle menu.</summary>
+    [Parameter] public EventCallback OnNewThread { get; set; }
 
     // ── State ────────────────────────────────────────────────────────────────
 
     private IPageBlock?       _lastBlock;
 
     private ElementReference  _blockRef;
-    private ElementReference  _equationRef;
+
+    // ── Tooltip state ────────────────────────────────────────────────────────
+    private bool   _tooltipVisible;
+    private System.Timers.Timer? _tooltipTimer;
+
+    private void ShowTooltipDelayed()
+    {
+        _tooltipTimer?.Stop();
+        _tooltipTimer?.Dispose();
+        _tooltipTimer = new System.Timers.Timer(300) { AutoReset = false };
+        _tooltipTimer.Elapsed += (_, _) =>
+        {
+            _tooltipTimer?.Dispose();
+            _tooltipTimer = null;
+            InvokeAsync(() =>
+            {
+                if (BlockUnresolvedCount > 0 || BlockResolvedUnreadCount > 0)
+                {
+                    _tooltipVisible = true;
+                    StateHasChanged();
+                }
+            });
+        };
+        _tooltipTimer.Start();
+    }
+
+    private void HideTooltip()
+    {
+        _tooltipTimer?.Stop();
+        _tooltipTimer?.Dispose();
+        _tooltipTimer = null;
+        if (_tooltipVisible)
+        {
+            _tooltipVisible = false;
+            StateHasChanged();
+        }
+    }
+
+    private string FormatRelativeTime(DateTime? dt)
+    {
+        if (dt is null) return string.Empty;
+        var diff = DateTime.UtcNow - dt.Value.ToUniversalTime();
+        if (diff.TotalMinutes < 1) return "just now";
+        if (diff.TotalHours < 1) return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalDays < 1) return $"{(int)diff.TotalHours}h ago";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays}d ago";
+        return dt.Value.ToString("MMM d");
+    }
 
     // ── Computed ─────────────────────────────────────────────────────────────
 
@@ -75,20 +164,13 @@ public partial class TmNotionBlock : ComponentBase
         _lastBlock = Block;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (Block.Type == BlockType.Equation)
-        {
-            var expr = (Block.Content as IEquationBlockContent)?.Expression;
-            if (!string.IsNullOrWhiteSpace(expr))
-            {
-                try { await JS.InvokeVoidAsync("tmNotionEditor.renderEquation", _equationRef, expr); }
-                catch { }
-            }
-        }
-    }
-
     private async Task OnFocusedAsync() => await OnFocused.InvokeAsync();
+
+    private Task MoveFocusPreviousAsync() =>
+        OnMoveFocus.InvokeAsync((Block.Id.ToString(), -1));
+
+    private Task MoveFocusNextAsync() =>
+        OnMoveFocus.InvokeAsync((Block.Id.ToString(), 1));
 
     // ── Todo (TmNotionTodoBlock) callbacks ───────────────────────────────────
 
@@ -98,11 +180,63 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithContent(Block, new TodoBlockContent
         {
             IsChecked       = isChecked,
+            AssigneeId      = todo.AssigneeId,
+            AssigneeDisplayName = todo.AssigneeDisplayName,
+            DueDate         = todo.DueDate,
+            IsOverdue       = IsTodoOverdue(todo.DueDate, isChecked),
             Html            = todo.Html,
             BackgroundColor = todo.BackgroundColor,
             TextColor       = todo.TextColor,
             Alignment       = todo.Alignment
         });
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await OnUpdated.InvokeAsync(updated);
+        }
+        catch { }
+    }
+
+    private async Task HandleTodoAssigneeChangedAsync((string? AssigneeId, string? AssigneeDisplayName) assignee)
+    {
+        if (Block.Content is not ITodoBlockContent todo) return;
+        var updated = BuildBlockWithContent(Block, new TodoBlockContent
+        {
+            IsChecked = todo.IsChecked,
+            AssigneeId = string.IsNullOrWhiteSpace(assignee.AssigneeId) ? null : assignee.AssigneeId,
+            AssigneeDisplayName = string.IsNullOrWhiteSpace(assignee.AssigneeDisplayName) ? null : assignee.AssigneeDisplayName,
+            DueDate = todo.DueDate,
+            IsOverdue = IsTodoOverdue(todo.DueDate, todo.IsChecked),
+            Html = todo.Html,
+            BackgroundColor = todo.BackgroundColor,
+            TextColor = todo.TextColor,
+            Alignment = todo.Alignment
+        });
+
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await OnUpdated.InvokeAsync(updated);
+        }
+        catch { }
+    }
+
+    private async Task HandleTodoDueDateChangedAsync(DateTime? dueDate)
+    {
+        if (Block.Content is not ITodoBlockContent todo) return;
+        var updated = BuildBlockWithContent(Block, new TodoBlockContent
+        {
+            IsChecked = todo.IsChecked,
+            AssigneeId = todo.AssigneeId,
+            AssigneeDisplayName = todo.AssigneeDisplayName,
+            DueDate = dueDate,
+            IsOverdue = IsTodoOverdue(dueDate, todo.IsChecked),
+            Html = todo.Html,
+            BackgroundColor = todo.BackgroundColor,
+            TextColor = todo.TextColor,
+            Alignment = todo.Alignment
+        });
+
         try
         {
             await Context.BlockProvider.UpdateBlockAsync(updated);
@@ -145,19 +279,23 @@ public partial class TmNotionBlock : ComponentBase
     }
 
     private Task HandleTodoSlashAsync((double Top, double Left) coords) =>
-        OnSlashMenu.InvokeAsync(coords);
-    private Task HandleTodoMentionAsync((double Top, double Left) _) => Task.CompletedTask;
-    private Task HandleTodoPageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
+        OnSlashMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleTodoMentionAsync((double Top, double Left) coords) =>
+        OnMentionMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleTodoPageLinkAsync((double Top, double Left) coords) =>
+        OnPageLinkMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleTodoTokenAsync((double Top, double Left) coords) =>
+        OnTokenMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
 
     // ── Toggle (TmNotionToggleBlock) callbacks ────────────────────────────────
 
-    private async Task HandleToggleOpenChangedAsync(bool isOpen)
+    private async Task HandleToggleOpenChangedAsync((bool IsOpen, string? Html) args)
     {
         if (Block.Content is not IToggleBlockContent toggle) return;
         var updated = BuildBlockWithContent(Block, new ToggleBlockContent
         {
-            IsOpen          = isOpen,
-            Html            = toggle.Html,
+            IsOpen          = args.IsOpen,
+            Html            = args.Html ?? toggle.Html,
             BackgroundColor = toggle.BackgroundColor,
             TextColor       = toggle.TextColor,
             Alignment       = toggle.Alignment
@@ -203,11 +341,6 @@ public partial class TmNotionBlock : ComponentBase
         if (newType != Block.Type)
             await OnConvertTo.InvokeAsync(newType);
     }
-
-    private Task HandleToggleSlashAsync((double Top, double Left) coords) =>
-        OnSlashMenu.InvokeAsync(coords);
-    private Task HandleToggleMentionAsync((double Top, double Left) _) => Task.CompletedTask;
-    private Task HandleTogglePageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
 
     // ── Code (TmNotionCodeBlock) callbacks ───────────────────────────────────
 
@@ -268,17 +401,75 @@ public partial class TmNotionBlock : ComponentBase
         catch { }
     }
 
-    // ── Navigation helpers ────────────────────────────────────────────────────
+    // ── Child page (TmNotionChildPageBlock) callbacks ────────────────────────
 
-    private void OnNavigateToPage(Guid? pageId)
+    private async Task HandleChildPageNavigateAsync()
     {
-        if (pageId.HasValue)
-            _ = Context.DataProvider.GetPageAsync(pageId.Value.ToString());
+        if (Block.Content is not IChildPageBlockContent cp) return;
+        await NavigateToPageAsync(cp.ChildPageId);
     }
 
-    private void OnPageLinkKeyDown(KeyboardEventArgs e, Guid? pageId)
+    private async Task HandleChildPageRenameCommittedAsync(string newTitle)
     {
-        if (e.Key == "Enter") OnNavigateToPage(pageId);
+        if (Block.Content is not IChildPageBlockContent cp) return;
+        var updated = BuildBlockWithContent(Block, new ChildPageBlockContent
+        {
+            ChildPageId = cp.ChildPageId,
+            Title       = newTitle,
+            IconEmoji   = cp.IconEmoji
+        });
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await OnUpdated.InvokeAsync(updated);
+        }
+        catch { }
+    }
+
+    // ── Linked page (TmNotionLinkedPageBlock) callbacks ──────────────────────
+
+    private async Task HandleLinkedPageNavigateAsync()
+    {
+        if (Block.Content is not ILinkedPageBlockContent lp) return;
+        await NavigateToPageAsync(lp.LinkedPageId);
+    }
+
+    // ── Navigation helper ────────────────────────────────────────────────────
+
+    private Task NavigateToPageAsync(Guid pageId)
+    {
+        if (Context.NavigateTo is not null)
+            return Context.NavigateTo(pageId.ToString());
+        return Task.CompletedTask;
+    }
+
+    // ── Synced blocks callbacks ──────────────────────────────────────────────
+
+    private async Task HandleSyncedOriginCopySyncIdAsync(Guid syncId)
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.copyText", syncId.ToString()); }
+        catch { }
+    }
+
+    private async Task HandleSyncedRefUnsyncAsync(IPageBlock newBlock)
+    {
+        await OnUpdated.InvokeAsync(newBlock);
+    }
+
+    // ── Template button (TmNotionTemplateButtonBlock) callbacks ──────────────
+
+    private Task HandleInsertTemplateBlocksAsync(IReadOnlyList<IPageBlock> blocks) =>
+        OnInsertTemplateBlocks.InvokeAsync(blocks);
+
+    private async Task HandleTemplateButtonUpdatedAsync(TemplateButtonBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await OnUpdated.InvokeAsync(updated);
+        }
+        catch { }
     }
 
     // ── Image (TmNotionImageBlock) callbacks ──────────────────────────────────
@@ -340,10 +531,12 @@ public partial class TmNotionBlock : ComponentBase
     private async Task HandleVideoMediaSetAsync((string? FileId, string? Url) media)
     {
         if (Block.Content is not IVideoBlockContent vid) return;
+        var url = media.Url ?? vid.Url;
+        var provider = !string.IsNullOrWhiteSpace(url) ? VideoProviderDetector.Detect(url) : vid.Provider;
         var updated = BuildBlockWithContent(Block, new VideoBlockContent
         {
-            Url = media.Url ?? vid.Url, FileId = media.FileId ?? vid.FileId,
-            Provider = vid.Provider, Caption = vid.Caption, Width = vid.Width
+            Url = url, FileId = media.FileId ?? vid.FileId,
+            Provider = provider, Caption = vid.Caption, Width = vid.Width
         });
         try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
@@ -378,10 +571,12 @@ public partial class TmNotionBlock : ComponentBase
     private async Task HandleAudioMediaSetAsync((string? FileId, string? Url) media)
     {
         if (Block.Content is not IAudioBlockContent aud) return;
+        var url = media.Url ?? aud.Url;
+        var provider = !string.IsNullOrWhiteSpace(url) ? AudioProviderDetector.Detect(url) : aud.Provider;
         var updated = BuildBlockWithContent(Block, new AudioBlockContent
         {
-            Url = media.Url ?? aud.Url, FileId = media.FileId ?? aud.FileId,
-            Provider = aud.Provider, Caption = aud.Caption, Width = aud.Width
+            Url = url, FileId = media.FileId ?? aud.FileId,
+            Provider = provider, Caption = aud.Caption, Width = aud.Width
         });
         try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
@@ -427,6 +622,82 @@ public partial class TmNotionBlock : ComponentBase
         catch { }
     }
 
+    // ── Bookmark (TmNotionBookmarkBlock) callbacks ────────────────────────────
+
+    private async Task HandleBookmarkResolvedAsync(BookmarkBlockContent resolved)
+    {
+        var updated = BuildBlockWithContent(Block, resolved);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleBookmarkCaptionSavedAsync(string? caption)
+    {
+        if (Block.Content is not IBookmarkBlockContent bm) return;
+        var updated = BuildBlockWithContent(Block, new BookmarkBlockContent
+        {
+            Url          = bm.Url,
+            Title        = bm.Title,
+            Description  = bm.Description,
+            CoverImageUrl = bm.CoverImageUrl,
+            FaviconUrl   = bm.FaviconUrl,
+            Domain       = bm.Domain,
+            Caption      = caption
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── Embed (TmNotionEmbedBlock) callbacks ──────────────────────────────────
+
+    private async Task HandleEmbedUrlSetAsync(EmbedBlockContent embed)
+    {
+        if (Block.Content is IEmbedBlockContent ex)
+        {
+            embed = new EmbedBlockContent
+            {
+                Url     = embed.Url,
+                Provider = embed.Provider,
+                Width   = ex.Width,
+                Height  = embed.Height ?? ex.Height,
+                Caption = ex.Caption
+            };
+        }
+        var updated = BuildBlockWithContent(Block, embed);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleEmbedResizedAsync((int W, int H) size)
+    {
+        if (Block.Content is not IEmbedBlockContent em) return;
+        var updated = BuildBlockWithContent(Block, new EmbedBlockContent
+        {
+            Url     = em.Url,
+            Provider = em.Provider,
+            Width   = size.W,
+            Height  = size.H,
+            Caption = em.Caption
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleEmbedCaptionSavedAsync(string? caption)
+    {
+        if (Block.Content is not IEmbedBlockContent em) return;
+        var updated = BuildBlockWithContent(Block, new EmbedBlockContent
+        {
+            Url     = em.Url,
+            Provider = em.Provider,
+            Width   = em.Width,
+            Height  = em.Height,
+            Caption = caption
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
     // ── PDF (TmNotionPdfBlock) callbacks ──────────────────────────────────────
 
     private async Task HandlePdfMediaSetAsync((string? FileId, string? Url) media)
@@ -448,6 +719,84 @@ public partial class TmNotionBlock : ComponentBase
         {
             Url = pdf.Url, FileId = pdf.FileId, Caption = caption, Width = pdf.Width
         });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── Diagram (TmNotionDiagramBlock) callbacks ──────────────────────────────
+
+    private async Task HandleDiagramContentSavedAsync(DiagramBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── Wireframe (TmNotionWireframeBlock) callbacks ──────────────────────────
+
+    private async Task HandleWireframeContentSavedAsync(WireframeBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleSpreadsheetContentSavedAsync(SpreadsheetBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── Equation (TmNotionEquationBlock) callbacks ────────────────────────────
+
+    private async Task HandleEquationExpressionSavedAsync(string expression)
+    {
+        var updated = BuildBlockWithContent(Block, new EquationBlockContent { Expression = expression });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── Special content blocks ───────────────────────────────────────────────
+
+    private async Task HandleChildrenDisplayContentChangedAsync(ChildrenDisplayBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleExcerptContentChangedAsync(ExcerptBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandlePagePropertiesContentChangedAsync(PagePropertiesBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandlePagePropertiesReportContentChangedAsync(PagePropertiesReportBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleContentByLabelContentChangedAsync(ContentByLabelBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleWorkItemContentChangedAsync(WorkItemBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
         try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
@@ -480,6 +829,31 @@ public partial class TmNotionBlock : ComponentBase
 
     private async Task HandleParagraphMarkdownShortcutAsync(string shortcut)
     {
+        if (shortcut == "todoDone")
+        {
+            try
+            {
+                var converted = await Context.BlockProvider.ConvertBlockTypeAsync(Block.Id.ToString(), BlockType.TodoItem);
+                var updated = new PageBlock
+                {
+                    Id            = converted.Id,
+                    PageId        = converted.PageId,
+                    ParentBlockId = converted.ParentBlockId,
+                    Type          = BlockType.TodoItem,
+                    Order         = converted.Order,
+                    Content       = new TodoBlockContent { Html = string.Empty, IsChecked = true },
+                    CreatedAt     = converted.CreatedAt,
+                    LastEditedAt  = DateTime.UtcNow
+                };
+
+                await Context.BlockProvider.UpdateBlockAsync(updated);
+                await OnUpdated.InvokeAsync(updated);
+            }
+            catch { }
+
+            return;
+        }
+
         var newType = shortcut switch
         {
             "heading1"  => BlockType.Heading1,
@@ -488,7 +862,6 @@ public partial class TmNotionBlock : ComponentBase
             "bullet"    => BlockType.BulletList,
             "numbered"  => BlockType.NumberedList,
             "todo"      => BlockType.TodoItem,
-            "todoDone"  => BlockType.TodoItem,
             "quote"     => BlockType.Quote,
             "code"      => BlockType.Code,
             "divider"   => BlockType.Divider,
@@ -499,9 +872,13 @@ public partial class TmNotionBlock : ComponentBase
     }
 
     private Task HandleParagraphSlashAsync((double Top, double Left) coords) =>
-        OnSlashMenu.InvokeAsync(coords);
-    private Task HandleParagraphMentionAsync((double Top, double Left) _) => Task.CompletedTask;
-    private Task HandleParagraphPageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
+        OnSlashMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleParagraphMentionAsync((double Top, double Left) coords) =>
+        OnMentionMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleParagraphPageLinkAsync((double Top, double Left) coords) =>
+        OnPageLinkMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleParagraphTokenAsync((double Top, double Left) coords) =>
+        OnTokenMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
 
     // ── Heading (TmNotionHeadingBlock) callbacks ──────────────────────────────
 
@@ -541,9 +918,13 @@ public partial class TmNotionBlock : ComponentBase
     }
 
     private Task HandleHeadingSlashAsync((double Top, double Left) coords) =>
-        OnSlashMenu.InvokeAsync(coords);
-    private Task HandleHeadingMentionAsync((double Top, double Left) _) => Task.CompletedTask;
-    private Task HandleHeadingPageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
+        OnSlashMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleHeadingMentionAsync((double Top, double Left) coords) =>
+        OnMentionMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleHeadingPageLinkAsync((double Top, double Left) coords) =>
+        OnPageLinkMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleHeadingTokenAsync((double Top, double Left) coords) =>
+        OnTokenMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
     private Task HandleHeadingToggleAsync(bool _) => Task.CompletedTask;
 
     // ── Quote (TmNotionQuoteBlock) callbacks ──────────────────────────────────
@@ -583,9 +964,13 @@ public partial class TmNotionBlock : ComponentBase
     }
 
     private Task HandleQuoteSlashAsync((double Top, double Left) coords) =>
-        OnSlashMenu.InvokeAsync(coords);
-    private Task HandleQuoteMentionAsync((double Top, double Left) _) => Task.CompletedTask;
-    private Task HandleQuotePageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
+        OnSlashMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleQuoteMentionAsync((double Top, double Left) coords) =>
+        OnMentionMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleQuotePageLinkAsync((double Top, double Left) coords) =>
+        OnPageLinkMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleQuoteTokenAsync((double Top, double Left) coords) =>
+        OnTokenMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
 
     // ── Callout (TmNotionCalloutBlock) callbacks ──────────────────────────────
 
@@ -625,9 +1010,13 @@ public partial class TmNotionBlock : ComponentBase
     }
 
     private Task HandleCalloutSlashAsync((double Top, double Left) coords) =>
-        OnSlashMenu.InvokeAsync(coords);
-    private Task HandleCalloutMentionAsync((double Top, double Left) _) => Task.CompletedTask;
-    private Task HandleCalloutPageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
+        OnSlashMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleCalloutMentionAsync((double Top, double Left) coords) =>
+        OnMentionMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleCalloutPageLinkAsync((double Top, double Left) coords) =>
+        OnPageLinkMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleCalloutTokenAsync((double Top, double Left) coords) =>
+        OnTokenMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
 
     private async Task HandleCalloutEmojiChangedAsync(string? emoji)
     {
@@ -637,6 +1026,7 @@ public partial class TmNotionBlock : ComponentBase
             Html            = cc.Html,
             IconEmoji       = emoji,
             IconImageUrl    = cc.IconImageUrl,
+            Variant         = cc.Variant,
             BackgroundColor = cc.BackgroundColor,
             TextColor       = cc.TextColor,
             Alignment       = cc.Alignment
@@ -706,9 +1096,13 @@ public partial class TmNotionBlock : ComponentBase
     }
 
     private Task HandleBulletSlashAsync((double Top, double Left) coords) =>
-        OnSlashMenu.InvokeAsync(coords);
-    private Task HandleBulletMentionAsync((double Top, double Left) _) => Task.CompletedTask;
-    private Task HandleBulletPageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
+        OnSlashMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleBulletMentionAsync((double Top, double Left) coords) =>
+        OnMentionMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleBulletPageLinkAsync((double Top, double Left) coords) =>
+        OnPageLinkMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleBulletTokenAsync((double Top, double Left) coords) =>
+        OnTokenMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
 
     // ── NumberedList (TmNotionNumberedListBlock) callbacks ───────────────────
 
@@ -767,9 +1161,13 @@ public partial class TmNotionBlock : ComponentBase
     }
 
     private Task HandleNumberedSlashAsync((double Top, double Left) coords) =>
-        OnSlashMenu.InvokeAsync(coords);
-    private Task HandleNumberedMentionAsync((double Top, double Left) _) => Task.CompletedTask;
-    private Task HandleNumberedPageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
+        OnSlashMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleNumberedMentionAsync((double Top, double Left) coords) =>
+        OnMentionMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleNumberedPageLinkAsync((double Top, double Left) coords) =>
+        OnPageLinkMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
+    private Task HandleNumberedTokenAsync((double Top, double Left) coords) =>
+        OnTokenMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
 
     // ── Handle context menu actions ───────────────────────────────────────────
 
@@ -787,7 +1185,34 @@ public partial class TmNotionBlock : ComponentBase
         catch { }
     }
 
-    private Task HandleCommentAsync() => Task.CompletedTask;
+    private async Task HandleCommentAsync() => await OnComment.InvokeAsync();
+
+    private async Task HandleNewThreadAsync() => await OnNewThread.InvokeAsync();
+
+    private Task HandleCommentThreadClickedAsync() => OnComment.InvokeAsync();
+
+    private async Task HandleCalloutVariantChangedAsync(CalloutVariant variant)
+    {
+        if (Block.Content is not ICalloutBlockContent cc) return;
+
+        var updated = BuildBlockWithContent(Block, new CalloutBlockContent
+        {
+            Html = cc.Html,
+            IconEmoji = cc.IconEmoji,
+            IconImageUrl = cc.IconImageUrl,
+            Variant = variant,
+            BackgroundColor = cc.BackgroundColor,
+            TextColor = cc.TextColor,
+            Alignment = cc.Alignment
+        });
+
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await OnUpdated.InvokeAsync(updated);
+        }
+        catch { }
+    }
 
     private async Task HandleTextColorChangeAsync(string? color)
     {
@@ -826,6 +1251,7 @@ public partial class TmNotionBlock : ComponentBase
         ICalloutBlockContent cc  => new CalloutBlockContent
         {
             Html = cc.Html, IconEmoji = cc.IconEmoji, IconImageUrl = cc.IconImageUrl,
+            Variant = cc.Variant,
             TextColor = textColor ?? cc.TextColor,
             BackgroundColor = backgroundColor ?? cc.BackgroundColor,
             Alignment = cc.Alignment
@@ -840,6 +1266,10 @@ public partial class TmNotionBlock : ComponentBase
         ITodoBlockContent tc2    => new TodoBlockContent
         {
             Html = tc2.Html, IsChecked = tc2.IsChecked,
+            AssigneeId = tc2.AssigneeId,
+            AssigneeDisplayName = tc2.AssigneeDisplayName,
+            DueDate = tc2.DueDate,
+            IsOverdue = IsTodoOverdue(tc2.DueDate, tc2.IsChecked),
             TextColor = textColor ?? tc2.TextColor,
             BackgroundColor = backgroundColor ?? tc2.BackgroundColor,
             Alignment = tc2.Alignment
@@ -887,6 +1317,7 @@ public partial class TmNotionBlock : ComponentBase
             ICalloutBlockContent cc => new CalloutBlockContent
             {
                 Html = html, IconEmoji = cc.IconEmoji, IconImageUrl = cc.IconImageUrl,
+                Variant = cc.Variant,
                 BackgroundColor = cc.BackgroundColor, TextColor = cc.TextColor, Alignment = cc.Alignment
             },
             IListBlockContent lc => new ListBlockContent
@@ -897,6 +1328,10 @@ public partial class TmNotionBlock : ComponentBase
             ITodoBlockContent tc => new TodoBlockContent
             {
                 Html = html, IsChecked = tc.IsChecked,
+                AssigneeId = tc.AssigneeId,
+                AssigneeDisplayName = tc.AssigneeDisplayName,
+                DueDate = tc.DueDate,
+                IsOverdue = IsTodoOverdue(tc.DueDate, tc.IsChecked),
                 BackgroundColor = tc.BackgroundColor, TextColor = tc.TextColor, Alignment = tc.Alignment
             },
             IToggleBlockContent tg => new ToggleBlockContent
@@ -934,5 +1369,7 @@ public partial class TmNotionBlock : ComponentBase
         return $"{bytes} B";
     }
 
-}
+    private static bool IsTodoOverdue(DateTime? dueDate, bool isChecked) =>
+        !isChecked && dueDate is DateTime date && date.Date < DateTime.Today;
 
+}

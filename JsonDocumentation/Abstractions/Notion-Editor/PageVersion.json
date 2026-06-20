@@ -1,0 +1,47 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/PageVersion.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BlocksSnapshot",
+      "kind": "Property",
+      "type": "IReadOnlyList<IPageBlock>"
+    },
+    {
+      "name": "ChangeDescription",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "EditedAt",
+      "kind": "Property",
+      "type": "DateTime"
+    },
+    {
+      "name": "EditedByDisplayName",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "EditedByUserId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "PageId",
+      "kind": "Property",
+      "type": "Guid"
+    }
+  ],
+  "itemName": "PageVersion"
+}

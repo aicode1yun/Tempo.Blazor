@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Format",
+  "description": "Parses raw cell input text into a typed value, mirroring how Excel / OnlyOffice interpret what the user types. Recognises (in priority order): forced text (leading apostrophe), formulas (=), booleans, percentages, currency, numbers and dates/times — all culture-aware. Also derives an implied number format (e.g. 0%, #,##0.00) which the caller applies only when the target cell still uses the General format.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Format/SpreadsheetValueParser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Parse",
+      "kind": "Method",
+      "type": "SpreadsheetParsedValue",
+      "description": "Parses using for number/date conventions.",
+      "parameters": [
+        {
+          "name": "input",
+          "type": "string?"
+        },
+        {
+          "name": "culture",
+          "type": "CultureInfo"
+        }
+      ]
+    }
+  ],
+  "itemName": "SpreadsheetValueParser"
+}

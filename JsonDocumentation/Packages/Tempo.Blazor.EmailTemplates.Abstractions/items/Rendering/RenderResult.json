@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Rendering",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+  "description": "The fully rendered output of a template: substituted subject/preheader, HTML and text.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/RenderResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "RenderResult"
+}

@@ -1,0 +1,64 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Icons",
+  "description": "Static registry for custom SVG icons. Consuming applications call or in their Program.cs before the app starts. // Program.cs IconRegistry.Register(\"my-logo\", \"<svg viewBox='0 0 24 24'>...</svg>\"); // or IconRegistry.RegisterProvider(new MyFontIconProvider());",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Icons/IconRegistry.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Contains",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns if the icon name exists in the direct registry or in any registered provider.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Register",
+      "kind": "Method",
+      "type": "void",
+      "description": "Registers an inline SVG string for the given icon name. The should be the inner content of the <svg> tag (i.e. path, circle, etc. elements — NOT the <svg> wrapper). Case-insensitive: \"MyIcon\" and \"myicon\" resolve to the same entry.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "svgContent",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "RegisterProvider",
+      "kind": "Method",
+      "type": "void",
+      "description": "Registers a custom . Providers are consulted in registration order after the direct registry.",
+      "parameters": [
+        {
+          "name": "provider",
+          "type": "IIconProvider"
+        }
+      ]
+    },
+    {
+      "name": "Resolve",
+      "kind": "Method",
+      "type": "string?",
+      "description": "Resolves SVG content for the given icon name. Checks direct registry first, then registered providers in order. Returns when not found anywhere.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "IconRegistry"
+}

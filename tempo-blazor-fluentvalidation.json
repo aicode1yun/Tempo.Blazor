@@ -1,0 +1,151 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.FluentValidation",
+    "title": "Tempo.Blazor.FluentValidation",
+    "description": "FluentValidation integration for Tempo.Blazor component library. Provides FluentValidationValidator component for EditForm and assembly scanning for validator registration.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;fluentvalidation;validation;forms",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.FluentValidation"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "FluentValidation",
+        "version": "12.1.1"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.FluentValidation"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.FluentValidation",
+    "overview": "FluentValidation integration for Tempo.Blazor component library. Provides FluentValidationValidator component for EditForm and assembly scanning for validator registration.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.FluentValidation"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "FluentValidation",
+        "version": "12.1.1"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "EditContextFluentValidationExtensions",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.FluentValidation",
+      "description": "Extension methods for to enable FluentValidation without using the component. Useful for programmatic validation scenarios.",
+      "packageId": "Tempo.Blazor.FluentValidation",
+      "sourcePath": "src/Tempo.Blazor.FluentValidation/EditContextFluentValidationExtensions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AddFluentValidation",
+          "kind": "Method",
+          "type": "EditContext",
+          "description": "Enables FluentValidation for the EditContext. Attaches OnValidationRequested and OnFieldChanged handlers that resolve and invoke the appropriate IValidator from DI.",
+          "parameters": [
+            {
+              "name": "editContext",
+              "type": "this EditContext"
+            },
+            {
+              "name": "serviceProvider",
+              "type": "IServiceProvider"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "FluentValidationValidator",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.FluentValidation",
+      "description": "A Blazor component that integrates FluentValidation with EditForm. Place inside an EditForm to enable FluentValidation-based validation. Works as a drop-in replacement for DataAnnotationsValidator.",
+      "packageId": "Tempo.Blazor.FluentValidation",
+      "sourcePath": "src/Tempo.Blazor.FluentValidation/FluentValidationValidator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Dispose",
+          "kind": "Method",
+          "type": "void",
+          "description": "Unsubscribes from EditContext validation events and releases resources."
+        }
+      ]
+    },
+    {
+      "itemName": "ServiceCollectionExtensions",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.FluentValidation",
+      "description": "Extension methods for to register FluentValidation validators via assembly scanning.",
+      "packageId": "Tempo.Blazor.FluentValidation",
+      "sourcePath": "src/Tempo.Blazor.FluentValidation/ServiceCollectionExtensions.cs",
+      "documentationStatus": "merged"
+    }
+  ],
+  "libraryExamples": [
+    {
+      "title": "Register FluentValidation",
+      "category": "Setup",
+      "code": "builder.Services.AddTempoFluentValidation(typeof(MyValidator).Assembly);"
+    },
+    {
+      "title": "Use FluentValidationValidator",
+      "category": "Forms",
+      "code": "<EditForm Model=\"model\" OnValidSubmit=\"SaveAsync\">\\n    <FluentValidationValidator />\\n    <TmValidationSummary />\\n</EditForm>"
+    }
+  ],
+  "summary": {
+    "itemCount": 3,
+    "manualItemCount": 3,
+    "generatedItemCount": 3,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 0,
+    "publicApiTypeCount": 3
+  }
+}

@@ -6,12 +6,82 @@
 <div class="tm-wd-props @Class">
 
     @* ── Nothing selected ─────────────────────────────────────────────────── *@
-    @if (!_elements.Any())
+    @if (!_elements.Any() && !_connectors.Any())
     {
         <div class="tm-wd-props__empty">
             <span class="tm-wd-props__empty-icon">◻</span>
             <span>@Loc["TmWireframeProps_NoSelectionHint"]</span>
         </div>
+    }
+    else if (_connectors.Any())
+    {
+    @* ── Connector Header ─────────────────────────────────────────────────── *@
+    <div class="tm-wd-props__header">
+        <span class="tm-wd-props__type-badge">Connector</span>
+        <span class="tm-wd-props__subtitle">@(_connectors.Count == 1 ? _connectors[0].Id : $"{_connectors.Count} connectors")</span>
+    </div>
+
+    @* ── Connector Section ────────────────────────────────────────────────── *@
+    <details class="tm-wd-props__section" open>
+        <summary class="tm-wd-props__section-header">@Loc["TmWireframeProps_SectionConnector"]</summary>
+        <div class="tm-wd-props__section-body">
+            @if (_connectors.Count == 1)
+            {
+                var c = _connectors[0];
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__label">@Loc["TmWireframeProps_Routing"]</label>
+                    <select class="tm-wd-props__select" value="@c.Routing" @onchange="e => OnConnectorRoutingChanged(c.Id, e)">
+                        <option value="straight">Straight</option>
+                        <option value="orthogonal">Orthogonal</option>
+                        <option value="curved">Curved</option>
+                    </select>
+                </div>
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__label">@Loc["TmWireframeProps_StartArrow"]</label>
+                    <select class="tm-wd-props__select" value="@c.StartArrow" @onchange="e => OnConnectorArrowChanged(c.Id, true, e)">
+                        <option value="none">None</option>
+                        <option value="classic">Classic</option>
+                        <option value="block">Block</option>
+                        <option value="open">Open</option>
+                        <option value="oval">Oval</option>
+                        <option value="diamond">Diamond</option>
+                    </select>
+                </div>
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__label">@Loc["TmWireframeProps_EndArrow"]</label>
+                    <select class="tm-wd-props__select" value="@c.EndArrow" @onchange="e => OnConnectorArrowChanged(c.Id, false, e)">
+                        <option value="none">None</option>
+                        <option value="classic">Classic</option>
+                        <option value="block">Block</option>
+                        <option value="open">Open</option>
+                        <option value="oval">Oval</option>
+                        <option value="diamond">Diamond</option>
+                    </select>
+                </div>
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__label">@Loc["TmWireframeProps_Stroke"]</label>
+                    <div class="tm-wd-props__color-row">
+                        <input type="color" class="tm-wd-props__color-swatch" value="@c.Stroke" @onchange="e => OnConnectorStrokeChanged(c.Id, e)" />
+                        <input type="text" class="tm-wd-props__input" value="@c.Stroke" @oninput="e => OnConnectorStrokeChanged(c.Id, e)" />
+                    </div>
+                </div>
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__label">@Loc["TmWireframeProps_StrokeWidth"]</label>
+                    <input class="tm-wd-props__input" type="number" step="0.5" min="0.5" max="20" value="@c.StrokeWidth.ToString("0.#", CultureInfo.InvariantCulture)" @oninput="e => OnConnectorStrokeWidthChanged(c.Id, e)" />
+                </div>
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__label">@Loc["TmWireframeProps_Label"]</label>
+                    <input class="tm-wd-props__input" type="text" value="@c.Label" @oninput="e => OnConnectorLabelChanged(c.Id, e)" />
+                </div>
+            }
+            else
+            {
+                <div class="tm-wd-props__field">
+                    <span class="tm-wd-props__label">@Loc["TmWireframeProps_MultiConnectorHint"]</span>
+                </div>
+            }
+        </div>
+    </details>
     }
     else
     {
@@ -45,10 +115,57 @@
                 </div>
                 <div class="tm-wd-props__field">
                     <label class="tm-wd-props__label">@Loc["TmWireframeProps_ZIndex"]</label>
+                    <div style="display:flex;gap:4px;">
+                        <input class="tm-wd-props__input"
+                               type="number" step="1"
+                               value="@_elements[0].ZIndex"
+                               @oninput="@(e => OnZIndexChanged(e))"
+                               style="flex:1;" />
+                        <button class="tm-wd-editor__btn tm-wd-editor__btn--icon"
+                                title="@Loc["TmWireframeProps_SendToBack"]"
+                                aria-label="@Loc["TmWireframeProps_SendToBack"]"
+                                @onclick="OnSendToBack">⬇</button>
+                        <button class="tm-wd-editor__btn tm-wd-editor__btn--icon"
+                                title="@Loc["TmWireframeProps_BringToFront"]"
+                                aria-label="@Loc["TmWireframeProps_BringToFront"]"
+                                @onclick="OnBringToFront">⬆</button>
+                    </div>
+                </div>
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__label">@Loc["TmWireframeProps_Rotation"]</label>
                     <input class="tm-wd-props__input"
                            type="number" step="1"
-                           value="@_elements[0].ZIndex"
-                           @oninput="@(e => OnZIndexChanged(e))" />
+                           value="@_elements[0].Rotation.ToString("0.##", CultureInfo.InvariantCulture)"
+                           @oninput="@(e => OnRotationChanged(e))" />
+                </div>
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__toggle">
+                        <input type="checkbox"
+                               checked="@_elements[0].IsLocked"
+                               @onchange="@(e => OnLockChanged(e))" />
+                        <span class="tm-wd-props__toggle-track"></span>
+                        <span style="font-size:12px;">@Loc["TmWireframeProps_Locked"]</span>
+                    </label>
+                </div>
+                @if (!string.IsNullOrEmpty(_elements[0].GroupId))
+                {
+                    <div class="tm-wd-props__field">
+                        <label class="tm-wd-props__label">@Loc["TmWireframeProps_Group"]</label>
+                        <input class="tm-wd-props__input tm-wd-props__input--readonly"
+                               value="@GetGroupLabel(_elements[0].GroupId!)"
+                               readonly />
+                    </div>
+                }
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__label">@Loc["TmWireframeProps_Layer"]</label>
+                    <select class="tm-wd-props__select"
+                            value="@(_elements[0].LayerId ?? "")"
+                            @onchange="e => OnLayerChanged(e)">
+                        @foreach (var layer in Document?.Layers.OrderBy(l => l.Order).ToList() ?? new List<WireframeLayer>())
+                        {
+                            <option value="@layer.Id">@layer.Name</option>
+                        }
+                    </select>
                 </div>
             }
             else
@@ -62,6 +179,69 @@
             }
         </div>
     </details>
+
+    @* ── Arrange section (Align / Distribute) ─────────────────────────────── *@
+    @if (_elements.Count >= 2)
+    {
+        <details class="tm-wd-props__section" open>
+            <summary class="tm-wd-props__section-header">@Loc["TmWireframeProps_Arrange"]</summary>
+            <div class="tm-wd-props__section-body">
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__label">@Loc["TmWireframe_Align"]</label>
+                    <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                        <button class="tm-wd-editor__btn tm-wd-editor__btn--icon" title="@Loc["TmWireframe_AlignLeft"]" @onclick="() => OnAlign(WireframeAlignment.Left)">⬅</button>
+                        <button class="tm-wd-editor__btn tm-wd-editor__btn--icon" title="@Loc["TmWireframe_AlignCenterH"]" @onclick="() => OnAlign(WireframeAlignment.CenterH)">↔</button>
+                        <button class="tm-wd-editor__btn tm-wd-editor__btn--icon" title="@Loc["TmWireframe_AlignRight"]" @onclick="() => OnAlign(WireframeAlignment.Right)">➡</button>
+                        <button class="tm-wd-editor__btn tm-wd-editor__btn--icon" title="@Loc["TmWireframe_AlignTop"]" @onclick="() => OnAlign(WireframeAlignment.Top)">⬆</button>
+                        <button class="tm-wd-editor__btn tm-wd-editor__btn--icon" title="@Loc["TmWireframe_AlignCenterV"]" @onclick="() => OnAlign(WireframeAlignment.CenterV)">↕</button>
+                        <button class="tm-wd-editor__btn tm-wd-editor__btn--icon" title="@Loc["TmWireframe_AlignBottom"]" @onclick="() => OnAlign(WireframeAlignment.Bottom)">⬇</button>
+                    </div>
+                </div>
+                @if (_elements.Count >= 3)
+                {
+                    <div class="tm-wd-props__field">
+                        <label class="tm-wd-props__label">@Loc["TmWireframe_Distribute"]</label>
+                        <div style="display:flex;gap:4px;">
+                            <button class="tm-wd-editor__btn tm-wd-editor__btn--text" title="@Loc["TmWireframe_DistributeHorizontal"]" @onclick="() => OnDistribute(WireframeDistribution.Horizontal)">@Loc["TmWireframe_DistributeHorizontal"]</button>
+                            <button class="tm-wd-editor__btn tm-wd-editor__btn--text" title="@Loc["TmWireframe_DistributeVertical"]" @onclick="() => OnDistribute(WireframeDistribution.Vertical)">@Loc["TmWireframe_DistributeVertical"]</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </details>
+    }
+
+    @* ── Format Painter section ───────────────────────────────────────────── *@
+    @if (_elements.Count >= 1)
+    {
+        <details class="tm-wd-props__section" open>
+            <summary class="tm-wd-props__section-header">@Loc["TmWireframeProps_FormatPainter"]</summary>
+            <div class="tm-wd-props__section-body">
+                <div class="tm-wd-props__field">
+                    <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                        <button class="tm-wd-editor__btn tm-wd-editor__btn--text"
+                                title="@Loc["TmWireframe_CopyStyle"]"
+                                disabled="@(_elements.Count != 1 || ReadOnly)"
+                                @onclick="OnCopyStyle">
+                            @Loc["TmWireframe_CopyStyle"]
+                        </button>
+                        <button class="tm-wd-editor__btn tm-wd-editor__btn--text"
+                                title="@Loc["TmWireframe_PasteStyle"]"
+                                disabled="@(!HasClipboardStyle || _elements.Count == 0 || ReadOnly)"
+                                @onclick="OnPasteStyle">
+                            @Loc["TmWireframe_PasteStyle"]
+                        </button>
+                        <button class="tm-wd-editor__btn tm-wd-editor__btn--text"
+                                title="@Loc["TmWireframe_PasteSize"]"
+                                disabled="@(!HasClipboardStyle || _elements.Count == 0 || ReadOnly)"
+                                @onclick="OnPasteSize">
+                            @Loc["TmWireframe_PasteSize"]
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </details>
+    }
 
     @* ── Layout section (X, Y, W, H) ──────────────────────────────────────── *@
     <details class="tm-wd-props__section" open>

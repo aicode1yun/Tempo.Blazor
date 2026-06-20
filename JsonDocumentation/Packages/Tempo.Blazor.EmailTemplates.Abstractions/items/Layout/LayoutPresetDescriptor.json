@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Layout",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+  "description": "Describes a layout preset for presentation in the toolbox.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutPresetDescriptor.cs",
+  "documentationStatus": "generated",
+  "itemName": "LayoutPresetDescriptor"
+}

@@ -1,0 +1,33 @@
+{
+  "itemName": "TmNotionColorPicker",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionColorPicker Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/UI/TmNotionColorPicker.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "OnClosed",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when a color is chosen. Exactly one element of the tuple is non-null: (hex, null) → text color selected; (null, hex) → background color selected. (null, null) → default (remove color) selected for either section."
+    },
+    {
+      "name": "SelectedBgColor",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Currently active text-color hex, or null for default."
+    },
+    {
+      "name": "SelectedTextColor",
+      "type": "string?",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "UI"
+}

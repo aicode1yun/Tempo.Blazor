@@ -1,0 +1,60 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Layout
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Enums
+
+<div class="tm-notion-column-list" @ref="_containerRef">
+
+    @if (_loadingColumns)
+    {
+        <div class="tm-notion-column-list__skeleton">
+            <div class="tm-notion-skeleton tm-notion-skeleton--rect" style="flex:1;min-height:80px"></div>
+            <div class="tm-notion-skeleton tm-notion-skeleton--rect" style="flex:1;min-height:80px"></div>
+        </div>
+    }
+    else
+    {
+        @for (var i = 0; i < _columns.Count; i++)
+        {
+            var col      = _columns[i];
+            var colIdx   = i;
+            var widthPct = GetColumnWidthPercent(i);
+
+            <TmNotionColumnBlock Block="col"
+                                 ColumnIndex="colIdx"
+                                 WidthPercent="widthPct"
+                                 ReadOnly="ReadOnly"
+                                 OnFocused="OnFocusedAsync"
+                                 OnSlashMenu="OnSlashMenu"
+                                 OnMentionMenu="OnMentionMenu"
+                                 OnPageLinkMenu="OnPageLinkMenu"
+                                 OnTokenMenu="OnTokenMenu" />
+
+            @if (!ReadOnly && i < _columns.Count - 1)
+            {
+                <div class="tm-notion-column-list__divider"
+                     data-col-divider="@i"
+                     title="@Loc["TmNotionColumnListBlock_DragToResize"]"
+                     role="separator"
+                     aria-orientation="vertical">
+                    <div class="tm-notion-column-list__divider-grip" aria-hidden="true"></div>
+                </div>
+            }
+        }
+
+        @if (!ReadOnly && _columns.Count < MaxColumns)
+        {
+            <button class="tm-notion-column-list__add-col"
+                    type="button"
+                    title="@Loc["TmNotionColumnListBlock_AddColumn"]"
+                    aria-label="@Loc["TmNotionColumnListBlock_AddColumn"]"
+                    @onclick="AddColumnAsync"
+                    @onclick:stopPropagation="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        }
+    }
+
+</div>

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Measurement units supported by the diagram ruler.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/MeasurementUnit.cs",
+  "documentationStatus": "generated",
+  "itemName": "MeasurementUnit"
+}

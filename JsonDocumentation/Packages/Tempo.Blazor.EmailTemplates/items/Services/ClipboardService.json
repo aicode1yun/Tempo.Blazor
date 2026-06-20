@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.EmailTemplates.Services",
+  "description": "In-memory, block-level clipboard for the editor. Copy stores an independent snapshot; paste returns a fresh copy with new identifiers each time, so repeated pastes never collide.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Services/ClipboardService.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Clear",
+      "kind": "Method",
+      "type": "void",
+      "description": "Clears the clipboard."
+    },
+    {
+      "name": "Copy",
+      "kind": "Method",
+      "type": "void",
+      "description": "Stores an independent copy of the block on the clipboard.",
+      "parameters": [
+        {
+          "name": "block",
+          "type": "EmailBlockBase"
+        }
+      ]
+    },
+    {
+      "name": "Paste",
+      "kind": "Method",
+      "type": "EmailBlockBase?",
+      "description": "Returns a fresh copy (with new ids) of the clipboard block, or if empty."
+    }
+  ],
+  "itemName": "ClipboardService"
+}

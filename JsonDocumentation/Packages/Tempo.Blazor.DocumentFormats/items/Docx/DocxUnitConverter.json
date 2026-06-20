@@ -1,0 +1,137 @@
+{
+  "kind": "Class",
+  "category": "Docx",
+  "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+  "description": "Centralized unit conversions used by DOCX WordprocessingML and DrawingML import/export.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocxUnitConverter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CropToPercent",
+      "kind": "Method",
+      "type": "double",
+      "description": "Converts DrawingML crop units to a percent crop value.",
+      "parameters": [
+        {
+          "name": "crop",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "DegreeToRotation",
+      "kind": "Method",
+      "type": "int",
+      "description": "Converts degrees to DrawingML rotation units.",
+      "parameters": [
+        {
+          "name": "degrees",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "EmuToPoint",
+      "kind": "Method",
+      "type": "double",
+      "description": "Converts EMUs to points.",
+      "parameters": [
+        {
+          "name": "emus",
+          "type": "long"
+        }
+      ]
+    },
+    {
+      "name": "InchToEmu",
+      "kind": "Method",
+      "type": "long",
+      "description": "Converts inches to EMUs.",
+      "parameters": [
+        {
+          "name": "inches",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "PercentToCrop",
+      "kind": "Method",
+      "type": "int",
+      "description": "Converts a percent crop value to DrawingML crop units.",
+      "parameters": [
+        {
+          "name": "percent",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "PixelToEmu",
+      "kind": "Method",
+      "type": "long",
+      "description": "Converts pixels to EMUs using the supplied DPI.",
+      "parameters": [
+        {
+          "name": "pixels",
+          "type": "double"
+        },
+        {
+          "name": "dpi",
+          "type": "double",
+          "default": "96d"
+        }
+      ]
+    },
+    {
+      "name": "PointToEmu",
+      "kind": "Method",
+      "type": "long",
+      "description": "Converts points to EMUs.",
+      "parameters": [
+        {
+          "name": "points",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "PointToTwip",
+      "kind": "Method",
+      "type": "int",
+      "description": "Converts points to twips.",
+      "parameters": [
+        {
+          "name": "points",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "RotationToDegree",
+      "kind": "Method",
+      "type": "double",
+      "description": "Converts DrawingML rotation units to degrees.",
+      "parameters": [
+        {
+          "name": "rotation",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "TwipToPoint",
+      "kind": "Method",
+      "type": "double",
+      "description": "Converts twips to points.",
+      "parameters": [
+        {
+          "name": "twips",
+          "type": "double"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocxUnitConverter"
+}

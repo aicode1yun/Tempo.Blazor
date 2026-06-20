@@ -1,0 +1,16 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents a selectable option with a typed value and display label. Used by TmSelect, TmRadioGroup, and other selection components.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ISelectOption.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TValue",
+      "description": "Generic type parameter TValue."
+    }
+  ],
+  "itemName": "ISelectOption<TValue>"
+}

@@ -1,0 +1,28 @@
+{
+  "itemName": "INotionMentionProvider",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Enables @@ user mentions and [[ page-link autocomplete in TmNotionEditor. Type @@ to search users; type [[ to search and link pages. The mention dropdown is hidden when this provider is not supplied.",
+  "methods": [
+    {
+      "name": "SearchUsersAsync",
+      "returnType": "Task<IEnumerable<IMentionUser>>",
+      "description": "Returns users whose name or email contains the query string. Called as the user types after @@.",
+      "parameters": [{ "name": "query", "type": "string", "description": "User's search text (may be empty to return all users)." }]
+    },
+    {
+      "name": "SearchPagesAsync",
+      "returnType": "Task<IEnumerable<INotionPage>>",
+      "description": "Returns pages whose title contains the query string. Called as the user types after [[.",
+      "parameters": [{ "name": "query", "type": "string" }]
+    }
+  ],
+  "usedInComponents": ["TmNotionEditor"],
+  "examples": [
+    {
+      "title": "Simple implementation",
+      "code": "public class MyMentionProvider : INotionMentionProvider\n{\n    private static readonly List<MentionUser> Users =\n    [\n        new() { Id = \"u1\", DisplayName = \"Alice Novak\",  Email = \"alice@example.com\" },\n        new() { Id = \"u2\", DisplayName = \"Bob Kral\",     Email = \"bob@example.com\" },\n    ];\n\n    private readonly INotionDataProvider _data;\n    public MyMentionProvider(INotionDataProvider data) => _data = data;\n\n    public Task<IEnumerable<IMentionUser>> SearchUsersAsync(string query)\n    {\n        IEnumerable<IMentionUser> result = Users;\n        if (!string.IsNullOrWhiteSpace(query))\n            result = result.Where(u => u.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase));\n        return Task.FromResult(result);\n    }\n\n    public Task<IEnumerable<INotionPage>> SearchPagesAsync(string query)\n        => _data.GetChildPagesAsync(null)\n               .ContinueWith(t => t.Result.Where(p =>\n                   p.Title.Contains(query, StringComparison.OrdinalIgnoreCase)));\n}"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "Deterministically transforms a wireframe into an implementation-oriented brief: pages become sections, geometry becomes layout regions, connectors become navigation flows, and component usage is summarised — the artifact a plan/use-case consumes to build the real page.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeImplementationBrief.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeImplementationBrief"
+}

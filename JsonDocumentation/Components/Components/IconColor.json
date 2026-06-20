@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Icons",
+  "description": "Icon color variants.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Icons/IconColor.cs",
+  "documentationStatus": "generated",
+  "itemName": "IconColor"
+}

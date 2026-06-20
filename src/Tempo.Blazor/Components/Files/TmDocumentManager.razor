@@ -1,0 +1,439 @@
+﻿@namespace Tempo.Blazor.Components.Files
+@typeparam TMetadata where TMetadata : class
+@using Tempo.Blazor.Abstractions.Interfaces
+@using Tempo.Blazor.Abstractions.Models
+@inject ITmLocalizer Loc
+
+<div class="tm-file-manager tm-document-manager @(Disabled ? "tm-file-manager--disabled" : "") @Class"
+     @attributes="AdditionalAttributes"
+     tabindex="0"
+     @onkeydown="HandleKeyDown">
+
+    <!-- Toolbar -->
+    <div class="tm-file-manager__toolbar">
+        <div class="tm-file-manager__toolbar-group">
+            @if (ShowNewFolderButton && !Disabled)
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="OpenNewFolderForm">
+                    <TmIcon Name="folder-plus" />
+                    <span>@Loc["TmFileManager_NewFolder"]</span>
+                </button>
+            }
+            @if (ShowUploadButton && !Disabled)
+            {
+                if (UploadForm is not null)
+                {
+                    <button type="button" class="tm-file-manager__toolbar-button" @onclick="OpenUploadForm">
+                        <TmIcon Name="upload" />
+                        <span>@Loc["TmFileManager_Upload"]</span>
+                    </button>
+                }
+                else
+                {
+                    <label class="tm-file-manager__toolbar-button tm-file-manager__upload">
+                        <TmIcon Name="upload" />
+                        <span>@Loc["TmFileManager_Upload"]</span>
+                        <InputFile style="display:none" multiple="@AllowMultipleAttachments" OnChange="HandleFileSelectedAsync" />
+                    </label>
+                }
+            }
+            @if (ShowDeleteButton && !Disabled && CanDeleteSelection())
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="DeleteSelectedAsync">
+                    <TmIcon Name="trash" />
+                    <span>@Loc["TmFileManager_Delete"]</span>
+                </button>
+            }
+            @if (ShowRenameButton && !Disabled && CanRenameSelection())
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="StartRenameAsync">
+                    <TmIcon Name="edit" />
+                    <span>@Loc["TmFileManager_Rename"]</span>
+                </button>
+            }
+            @if (ShowEditButton && !Disabled && EditForm is not null && CanEditSelection())
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="StartEditAsync">
+                    <TmIcon Name="settings" />
+                    <span>@Loc["TmFileManager_Edit"]</span>
+                </button>
+            }
+            @if (ShowDownloadButton && !Disabled && CanDownloadSelection())
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="DownloadSelectedAsync">
+                    <TmIcon Name="download" />
+                    <span>@Loc["TmFileManager_Download"]</span>
+                </button>
+            }
+            @if (ShowDownloadButton && !Disabled && CanDownloadAllSelection())
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="DownloadAllSelectedAsync">
+                    <TmIcon Name="archive" />
+                    <span>@Loc["TmFileManager_DownloadAll"]</span>
+                </button>
+            }
+            @if (ShowMoveButton && !Disabled && CanMoveSelection())
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="MoveSelectedAsync">
+                    <TmIcon Name="move" />
+                    <span>@Loc["TmFileManager_Move"]</span>
+                </button>
+            }
+            @if (ShowCopyButton && !Disabled && CanCopySelection())
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="CopySelectedAsync">
+                    <TmIcon Name="copy" />
+                    <span>@Loc["TmFileManager_Copy"]</span>
+                </button>
+            }
+            @if (ShowDetailButton && !Disabled && DetailPanel is not null && _selectedItems.Count == 1)
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="() => ShowDetailAsync(_selectedItems[0])">
+                    <TmIcon Name="info" />
+                    <span>@Loc["TmFileManager_Detail"]</span>
+                </button>
+            }
+        </div>
+
+        <div class="tm-file-manager__toolbar-group">
+            <button type="button" class="tm-file-manager__view-toggle @(_viewMode == DocumentManagerViewMode.List ? "tm-file-manager__view-toggle--active" : "")" @onclick="() => SetViewMode(DocumentManagerViewMode.List)" title="@Loc["TmFileManager_ListView"]">
+                <TmIcon Name="list" />
+            </button>
+            <button type="button" class="tm-file-manager__view-toggle @(_viewMode == DocumentManagerViewMode.Grid ? "tm-file-manager__view-toggle--active" : "")" @onclick="() => SetViewMode(DocumentManagerViewMode.Grid)" title="@Loc["TmFileManager_GridView"]">
+                <TmIcon Name="grid" />
+            </button>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <div class="tm-file-manager__breadcrumb">
+        <button type="button" class="tm-file-manager__breadcrumb-root" @onclick="NavigateToRoot">
+            <TmIcon Name="home" />
+        </button>
+        @foreach (var segment in _breadcrumbSegments)
+        {
+            <span class="tm-file-manager__breadcrumb-separator">/</span>
+            <button type="button" class="tm-file-manager__breadcrumb-item" @onclick="() => NavigateTo(segment.Path)">
+                @segment.Name
+            </button>
+        }
+    </div>
+
+    <!-- Main area -->
+    <div class="tm-file-manager__main">
+        <!-- Folder Tree Sidebar -->
+        @if (ShowFolderTree)
+        {
+            <div class="tm-file-manager__sidebar">
+                <div class="tm-file-manager__sidebar-header">
+                    <span class="tm-file-manager__sidebar-title">@Loc["TmFileManager_Folders"]</span>
+                </div>
+                <div class="tm-file-manager__folder-list">
+                    @if (_folderTree is not null)
+                    {
+                        @foreach (var folder in _folderTree)
+                        {
+                            <button type="button"
+                                    class="tm-file-manager__folder-item @GetFolderClass(folder)"
+                                    @onclick="() => NavigateTo(folder.Path)">
+                                <TmIcon Name="@(folder.Path == _currentPath ? "folder-open" : "folder")" />
+                                <span>@folder.Name</span>
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Content Area -->
+        <div class="tm-file-manager__content tm-file-manager__content--@(_viewMode.ToString().ToLowerInvariant())" @ref="_contentRef">
+            @if (_items.Count == 0)
+            {
+                <div class="tm-file-manager__empty">
+                    <TmIcon Name="inbox" Class="tm-file-manager__empty-icon" />
+                    <p class="tm-file-manager__empty-text">@Loc["TmFileManager_EmptyFolder"]</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var item in _items)
+                {
+                    @if (CanRead(item))
+                    {
+                        <div class="tm-file-manager__item @GetItemClass(item)"
+                             @onclick="(MouseEventArgs e) => HandleItemClickAsync(item, e)"
+                             @ondblclick="() => OnItemDoubleClickAsync(item)"
+                             @oncontextmenu="(MouseEventArgs e) => HandleContextMenu(item, e)"
+                             @oncontextmenu:preventDefault>
+                            <div class="tm-file-manager__item-icon">
+                                <TmIcon Name="@GetItemIcon(item)" />
+                            </div>
+                            <div class="tm-file-manager__item-info">
+                                @if (_renamingItem == item)
+                                {
+                                    <input type="text" class="tm-file-manager__item-rename-input"
+                                           @ref="_renameInputRef"
+                                           @bind="_renameValue"
+                                           @bind:event="oninput"
+                                           @onblur="CommitRenameAsync"
+                                           @onkeydown="HandleRenameKeyDown"
+                                           @onkeydown:stopPropagation
+                                           @onclick:stopPropagation />
+                                }
+                                else
+                                {
+                                    <span class="tm-file-manager__item-name">@item.Name</span>
+                                }
+                                @if (ItemMetaTemplate is not null)
+                                {
+                                    <div class="tm-document-manager__meta">
+                                        @ItemMetaTemplate(item)
+                                    </div>
+                                }
+                                else if (_viewMode == DocumentManagerViewMode.List)
+                                {
+                                    <span class="tm-file-manager__item-meta">
+                                        @(item.IsDirectory ? Loc["TmFileManager_Folder"] : FormatSize(item.Size))
+                                        @(item.ModifiedDate.HasValue ? $" • {item.ModifiedDate.Value:dd.MM.yyyy HH:mm}" : "")
+                                    </span>
+                                }
+                            </div>
+                            @if (_viewMode == DocumentManagerViewMode.List && !item.IsDirectory)
+                            {
+                                <span class="tm-file-manager__item-size">@FormatSize(item.Size)</span>
+                            }
+                        </div>
+                    }
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Default Delete Confirmation Dialog -->
+    <TmDialog Type="DialogType.Confirm"
+              Variant="DialogVariant.Warning"
+              Show="_showDeleteDialog"
+              Title="@Loc["TmFileManager_DeleteTitle"]"
+              Message="@string.Format(Loc["TmFileManager_DeleteMessage"], _itemsToDelete.Count)"
+              OkButtonText="@Loc["TmFileManager_ConfirmDelete"]"
+              CancelButtonText="@Loc["TmFileManager_CancelDelete"]"
+              IsDangerous="true"
+              OnResult="HandleDeleteDialogResult" />
+
+    <!-- Attachment Delete Confirmation Dialog -->
+    <TmDialog Type="DialogType.Confirm"
+              Variant="DialogVariant.Warning"
+              Show="_showAttachmentDeleteDialog"
+              Title="@Loc["TmFileManager_DeleteAttachmentTitle"]"
+              Message="@Loc["TmFileManager_DeleteAttachmentMessage"]"
+              OkButtonText="@Loc["TmFileManager_ConfirmDelete"]"
+              CancelButtonText="@Loc["TmFileManager_CancelDelete"]"
+              IsDangerous="true"
+              OnResult="HandleAttachmentDeleteDialogResult" />
+
+    <!-- Custom New Folder Form Overlay -->
+    @if (_showNewFolderForm && NewFolderForm is not null)
+    {
+        _newFolderContext ??= GetNewFolderContext();
+        <div class="tm-document-manager__overlay" @onclick="CancelNewFolder">
+            <div class="tm-document-manager__modal" @onclick:stopPropagation>
+                <div class="tm-document-manager__modal-header">
+                    <span class="tm-document-manager__modal-title">@Loc["TmFileManager_NewFolder"]</span>
+                    <button type="button" class="tm-document-manager__modal-close" @onclick="CancelNewFolder">
+                        <TmIcon Name="x" />
+                    </button>
+                </div>
+                <div class="tm-document-manager__modal-body">
+                    @NewFolderForm(_newFolderContext)
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Custom Delete Form Overlay -->
+    @if (_showCustomDeleteForm && DeleteForm is not null)
+    {
+        _deleteContext ??= GetDeleteContext();
+        <div class="tm-document-manager__overlay" @onclick="CancelDelete">
+            <div class="tm-document-manager__modal" @onclick:stopPropagation>
+                <div class="tm-document-manager__modal-header">
+                    <span class="tm-document-manager__modal-title">@Loc["TmFileManager_DeleteTitle"]</span>
+                    <button type="button" class="tm-document-manager__modal-close" @onclick="CancelDelete">
+                        <TmIcon Name="x" />
+                    </button>
+                </div>
+                <div class="tm-document-manager__modal-body">
+                    @DeleteForm(_deleteContext)
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Custom Edit Form Overlay -->
+    @if (_showEditForm && EditForm is not null)
+    {
+        _editContext ??= GetEditContext();
+        @if (_editContext is not null)
+        {
+            <div class="tm-document-manager__overlay" @onclick="CancelEdit">
+                <div class="tm-document-manager__modal" @onclick:stopPropagation>
+                    <div class="tm-document-manager__modal-header">
+                        <span class="tm-document-manager__modal-title">@Loc["TmFileManager_Edit"]</span>
+                        <button type="button" class="tm-document-manager__modal-close" @onclick="CancelEdit">
+                            <TmIcon Name="x" />
+                        </button>
+                    </div>
+                    <div class="tm-document-manager__modal-body">
+                        @EditForm(_editContext)
+                        @if (AllowMultipleAttachments && _editingItem is not null)
+                        {
+                            <div class="tm-document-manager__attachment-section">
+                                <span class="tm-document-manager__attachment-section-title">@Loc["TmFileManager_Attachments"]</span>
+                                @if (AttachmentListTemplate is not null)
+                                {
+                                    @AttachmentListTemplate(GetAttachmentListContext(_editingItem))
+                                }
+                                else
+                                {
+                                    <ul class="tm-document-manager__attachment-list">
+                                        @foreach (var att in _editAttachments)
+                                        {
+                                            <li class="tm-document-manager__attachment-item">
+                                                <span class="tm-document-manager__attachment-name">@att.Name</span>
+                                                <span class="tm-document-manager__attachment-size">@FormatSize(att.Size)</span>
+                                                <div class="tm-document-manager__attachment-actions">
+                                                    <button type="button" class="tm-document-manager__attachment-action" @onclick="() => DownloadAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Download"]">
+                                                        <TmIcon Name="download" />
+                                                    </button>
+                                                    <button type="button" class="tm-document-manager__attachment-action" @onclick="() => PromptAttachmentRemoval(att.Id)" title="@Loc["TmFileManager_Delete"]">
+                                                        <TmIcon Name="trash" />
+                                                    </button>
+                                                </div>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                                <TmButton Variant="ButtonVariant.Secondary" OnClick="() => OpenAttachmentUploadForm(_editingItem)">
+                                    <TmIcon Name="plus" />
+                                    <span>@Loc["TmFileManager_AddAttachment"]</span>
+                                </TmButton>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Custom Upload Form Overlay -->
+    @if (_showUploadForm && UploadForm is not null)
+    {
+        _uploadContext ??= GetUploadContext();
+        <div class="tm-document-manager__overlay" @onclick="CancelUpload">
+            <div class="tm-document-manager__modal" @onclick:stopPropagation>
+                <div class="tm-document-manager__modal-header">
+                    <span class="tm-document-manager__modal-title">@Loc["TmFileManager_UploadTitle"]</span>
+                    <button type="button" class="tm-document-manager__modal-close" @onclick="CancelUpload">
+                        <TmIcon Name="x" />
+                    </button>
+                </div>
+                <div class="tm-document-manager__modal-body">
+                    @UploadForm(_uploadContext)
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Attachment Upload Overlay -->
+    @if (_showAttachmentUploadForm)
+    {
+        <div class="tm-document-manager__overlay" @onclick="CancelAttachmentUpload">
+            <div class="tm-document-manager__modal" @onclick:stopPropagation>
+                <div class="tm-document-manager__modal-header">
+                    <span class="tm-document-manager__modal-title">@Loc["TmFileManager_AddAttachment"]</span>
+                    <button type="button" class="tm-document-manager__modal-close" @onclick="CancelAttachmentUpload">
+                        <TmIcon Name="x" />
+                    </button>
+                </div>
+                <div class="tm-document-manager__modal-body">
+                    <TmFileDropZone OnFilesSelected="HandleAttachmentFilesSelected" />
+                    @if (_attachmentUploadFiles.Count > 0)
+                    {
+                        <ul class="tm-document-manager__attachment-preview">
+                            @foreach (var f in _attachmentUploadFiles)
+                            {
+                                <li>@f.FileName (@FormatSize(f.Size))</li>
+                            }
+                        </ul>
+                    }
+                    <div class="tm-document-manager__attachment-actions">
+                        <TmButton Variant="ButtonVariant.Primary" OnClick="SubmitAttachmentUploadAsync">@Loc["TmFileManager_Upload"]</TmButton>
+                        <TmButton Variant="ButtonVariant.Secondary" OnClick="CancelAttachmentUpload">@Loc["TmFileManager_Cancel"]</TmButton>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Detail Panel (Slide-in) -->
+    @if (_showDetailPanel && DetailPanel is not null)
+    {
+        var ctx = GetDetailContext();
+        @if (ctx is not null)
+        {
+            <div class="tm-document-manager__detail-backdrop" @onclick="CloseDetailPanel"></div>
+            <div class="tm-document-manager__detail-panel">
+                <div class="tm-document-manager__detail-header">
+                    <span class="tm-document-manager__detail-title">@Loc["TmFileManager_Detail"]</span>
+                    <button type="button" class="tm-document-manager__detail-close" @onclick="CloseDetailPanel">
+                        <TmIcon Name="x" />
+                    </button>
+                </div>
+                <div class="tm-document-manager__detail-body">
+                    @DetailPanel(ctx)
+                    @if (AllowMultipleAttachments && ctx.Item.Attachments.Count > 0)
+                    {
+                        <div class="tm-document-manager__attachment-section">
+                            <span class="tm-document-manager__attachment-section-title">@Loc["TmFileManager_Attachments"]</span>
+                            @if (AttachmentListTemplate is not null)
+                            {
+                                @AttachmentListTemplate(GetAttachmentListContext(ctx.Item))
+                            }
+                            else
+                            {
+                                <ul class="tm-document-manager__attachment-list">
+                                    @foreach (var att in ctx.Item.Attachments)
+                                    {
+                                        <li class="tm-document-manager__attachment-item">
+                                            <span class="tm-document-manager__attachment-name">@att.Name</span>
+                                            <span class="tm-document-manager__attachment-size">@FormatSize(att.Size)</span>
+                                            <div class="tm-document-manager__attachment-actions">
+                                                <button type="button" class="tm-document-manager__attachment-action" @onclick="() => DownloadAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Download"]">
+                                                    <TmIcon Name="download" />
+                                                </button>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Context Menu -->
+    @if (_showContextMenu && ItemContextMenu is not null)
+    {
+        var ctx = GetContextMenuContext();
+        @if (ctx is not null)
+        {
+            <div class="tm-document-manager__context-menu-backdrop" @onclick="CloseContextMenu"></div>
+            <div class="tm-document-manager__context-menu" style="left:@(string.Concat(_contextMenuX.ToString(), "px")); top:@(string.Concat(_contextMenuY.ToString(), "px"));">
+                @ItemContextMenu(ctx)
+            </div>
+        }
+    }
+
+</div>

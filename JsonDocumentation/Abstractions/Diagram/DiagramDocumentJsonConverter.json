@@ -1,0 +1,88 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Serialization",
+  "description": "Custom JSON converter for that supports reading both the legacy v1.0 format (flat Nodes/Edges/Layers/Width/Height) and the modern v2.0 multi-page format.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Serialization/DiagramDocumentJsonConverter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Read",
+      "kind": "Method",
+      "type": "DiagramDocument",
+      "parameters": [
+        {
+          "name": "reader",
+          "type": "ref Utf8JsonReader"
+        },
+        {
+          "name": "typeToConvert",
+          "type": "Type"
+        },
+        {
+          "name": "options",
+          "type": "JsonSerializerOptions"
+        }
+      ]
+    },
+    {
+      "name": "Write",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "writer",
+          "type": "Utf8JsonWriter"
+        },
+        {
+          "name": "value",
+          "type": "DiagramDocument"
+        },
+        {
+          "name": "options",
+          "type": "JsonSerializerOptions"
+        }
+      ]
+    },
+    {
+      "name": "WriteNumberProperty",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "writer",
+          "type": "this Utf8JsonWriter"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "WriteStringProperty",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "writer",
+          "type": "this Utf8JsonWriter"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "string?"
+        }
+      ]
+    }
+  ],
+  "itemName": "DiagramDocumentJsonConverter"
+}

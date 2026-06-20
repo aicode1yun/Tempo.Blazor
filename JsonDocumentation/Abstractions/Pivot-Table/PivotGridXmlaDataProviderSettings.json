@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Configuration settings for connecting to an XMLA (XML for Analysis) data source.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotGridXmlaDataProviderSettings.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Catalog",
+      "kind": "Property",
+      "type": "string",
+      "description": "The OLAP catalog (database) name."
+    },
+    {
+      "name": "Cube",
+      "kind": "Property",
+      "type": "string",
+      "description": "The OLAP cube name within the catalog."
+    },
+    {
+      "name": "ServerUrl",
+      "kind": "Property",
+      "type": "string",
+      "description": "The endpoint URL of the XMLA HTTP service (e.g. https://server/olap/msmdpump.dll)."
+    }
+  ],
+  "itemName": "PivotGridXmlaDataProviderSettings"
+}

@@ -1,0 +1,66 @@
+@namespace Tempo.Blazor.Components.Spreadsheet
+@using Tempo.Blazor.Components.Spreadsheet.Models
+
+<div class="tm-spreadsheet-sheet-tabs">
+    <div class="tm-spreadsheet-sheet-tabs__scroll">
+        @for (int i = 0; i < Sheets.Count; i++)
+        {
+            var index = i;
+            var sheet = Sheets[index];
+            var isActive = index == ActiveIndex;
+            <div class="tm-spreadsheet-sheet-tab @(isActive ? "tm-spreadsheet-sheet-tab--active" : "")"
+                 @onclick="() => OnTabClick(index)"
+                 @oncontextmenu="e => { if (!IsReadonly) OnTabContextMenu(e, index); }"
+                 @oncontextmenu:preventDefault>
+                @if (_editingIndex == index)
+                {
+                    <input class="tm-spreadsheet-sheet-tab__input"
+                           @bind="_editName"
+                           @bind:event="oninput"
+                           @onkeydown="e => OnRenameKeyDown(e, index)"
+                           @onblur="() => CommitRename(index)"
+                           @ref="_renameInput"
+                           @onclick:stopPropagation />
+                }
+                else
+                {
+                    <span class="tm-spreadsheet-sheet-tab__label">@sheet.Name</span>
+                }
+                @if (!IsReadonly && Sheets.Count > 1)
+                {
+                    <button class="tm-spreadsheet-sheet-tab__close"
+                            title="@Loc["TmSpreadsheet_DeleteSheet"]"
+                            @onclick="e => OnCloseClick(e, index)"
+                            @onclick:stopPropagation>
+                        <TmIcon Name="close" />
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    @if (!IsReadonly)
+    {
+        <button class="tm-spreadsheet-sheet-tabs__add"
+                title="@Loc["TmSpreadsheet_AddSheet"]"
+                @onclick="OnAddSheet">
+            <TmIcon Name="plus" />
+        </button>
+    }
+
+    @if (!IsReadonly && _contextMenuVisible)
+    {
+        <div class="tm-spreadsheet-sheet-tabs__context-menu"
+             style="left:@(_contextMenuX)px;top:@(_contextMenuY)px;"
+             @onclick:stopPropagation>
+            <div class="tm-spreadsheet-sheet-tabs__context-item"
+                 @onclick="ContextMenuRename">
+                @Loc["TmSpreadsheet_RenameSheet"]
+            </div>
+            <div class="tm-spreadsheet-sheet-tabs__context-item"
+                 @onclick="ContextMenuDelete">
+                @Loc["TmSpreadsheet_DeleteSheet"]
+            </div>
+        </div>
+    }
+</div>

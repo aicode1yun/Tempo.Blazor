@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Hub method names used by the provider.",
+  "packageId": "Tempo.Blazor.Collaboration",
+  "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRDocumentCollaborationProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "SignalRDocumentCollaborationProvider.HubMethods"
+}

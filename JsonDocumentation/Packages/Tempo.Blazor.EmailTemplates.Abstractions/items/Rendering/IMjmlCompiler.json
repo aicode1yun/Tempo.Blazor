@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Rendering",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+  "description": "Compiles MJML markup into responsive HTML.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/IMjmlCompiler.cs",
+  "documentationStatus": "generated",
+  "itemName": "IMjmlCompiler"
+}

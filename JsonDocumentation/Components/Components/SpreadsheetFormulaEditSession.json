@@ -1,0 +1,90 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "description": "Represents the current editing session state for a spreadsheet formula editor.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/SpreadsheetFormulaEditSession.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ActiveFunctionHint",
+      "kind": "Property",
+      "type": "SpreadsheetFormulaFunctionHint?",
+      "description": "The active function call hint under the caret, if any."
+    },
+    {
+      "name": "ActiveReferenceToken",
+      "kind": "Property",
+      "type": "SpreadsheetFormulaReferenceToken?",
+      "description": "The active reference token under the caret or selection anchor."
+    },
+    {
+      "name": "FunctionPrefix",
+      "kind": "Property",
+      "type": "string?",
+      "description": "The currently typed function name fragment, if any."
+    },
+    {
+      "name": "FunctionPrefixEnd",
+      "kind": "Property",
+      "type": "int",
+      "description": "The end index of the current function name fragment."
+    },
+    {
+      "name": "FunctionPrefixStart",
+      "kind": "Property",
+      "type": "int",
+      "description": "The start index of the current function name fragment."
+    },
+    {
+      "name": "IsFormula",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the current text is a formula expression."
+    },
+    {
+      "name": "IsReferencePickingMode",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the editor is currently in reference-picking mode."
+    },
+    {
+      "name": "ReferenceTokens",
+      "kind": "Property",
+      "type": "IReadOnlyList<SpreadsheetFormulaReferenceToken>",
+      "description": "All parsed reference tokens from the current text."
+    },
+    {
+      "name": "SelectedSuggestionIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "The currently selected suggestion index."
+    },
+    {
+      "name": "SelectionEnd",
+      "kind": "Property",
+      "type": "int",
+      "description": "The current selection end within ."
+    },
+    {
+      "name": "SelectionStart",
+      "kind": "Property",
+      "type": "int",
+      "description": "The current selection start within ."
+    },
+    {
+      "name": "Suggestions",
+      "kind": "Property",
+      "type": "IReadOnlyList<SpreadsheetFormulaFunctionMetadata>",
+      "description": "The available autocomplete suggestions for the current function fragment."
+    },
+    {
+      "name": "Text",
+      "kind": "Property",
+      "type": "string",
+      "description": "The current editor text."
+    }
+  ],
+  "itemName": "SpreadsheetFormulaEditSession"
+}

@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Activity",
+  "description": "Represents a user mention in the editor.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Activity/MentionUser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AvatarUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the optional avatar URL of the user."
+    },
+    {
+      "name": "DisplayName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the display name of the user (e.g., \"John Doe\")."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the unique identifier of the user."
+    },
+    {
+      "name": "UserName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the username for the mention (e.g., \"john_doe\")."
+    }
+  ],
+  "itemName": "MentionUser"
+}

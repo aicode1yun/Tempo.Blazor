@@ -53,6 +53,7 @@
 
     /* ── Interactive ──────────────────────────────────────────── */
     --tm-notion-comment-highlight:   rgba(255, 212, 0, 0.22);
+    --tm-notion-comment-highlight-active: rgba(255, 193, 7, 0.55);
     --tm-notion-selection-bg:        rgba(96, 165, 250, 0.18);
     --tm-notion-focus-ring:          0 0 0 2px rgba(96, 165, 250, 0.45);
 }

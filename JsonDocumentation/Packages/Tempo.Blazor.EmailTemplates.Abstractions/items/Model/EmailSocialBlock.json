@@ -1,0 +1,78 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A row of social-network icons (mj-social).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailSocialBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Align",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the alignment (align)."
+    },
+    {
+      "name": "BorderRadius",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the border radius of icons (border-radius)."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the label colour (color)."
+    },
+    {
+      "name": "Elements",
+      "kind": "Property",
+      "type": "IList<EmailSocialElement>",
+      "description": "Gets the social elements."
+    },
+    {
+      "name": "FontFamily",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the font family (font-family)."
+    },
+    {
+      "name": "FontSize",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the font size (font-size)."
+    },
+    {
+      "name": "IconSize",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the icon size (icon-size)."
+    },
+    {
+      "name": "LineHeight",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the line height (line-height)."
+    },
+    {
+      "name": "Mode",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the layout mode, horizontal or vertical (mode)."
+    },
+    {
+      "name": "TextDecoration",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the text decoration (text-decoration)."
+    },
+    {
+      "name": "TextPadding",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the text padding (text-padding)."
+    }
+  ],
+  "itemName": "EmailSocialBlock"
+}

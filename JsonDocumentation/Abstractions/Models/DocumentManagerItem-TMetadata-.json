@@ -1,0 +1,114 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Represents a file or folder in .",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentManagerItem.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TMetadata",
+      "description": "Generic type parameter TMetadata."
+    }
+  ],
+  "members": [
+    {
+      "name": "Attachments",
+      "kind": "Property",
+      "type": "IReadOnlyList<FileAttachment>",
+      "description": "Physical file attachments linked to this item."
+    },
+    {
+      "name": "CreatedBy",
+      "kind": "Property",
+      "type": "string?",
+      "description": "User who created the item."
+    },
+    {
+      "name": "CreatedDate",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Creation date."
+    },
+    {
+      "name": "Extension",
+      "kind": "Property",
+      "type": "string",
+      "description": "File extension including the dot (e.g. \".pdf\"). Empty for folders."
+    },
+    {
+      "name": "IconName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional icon override (name from the icon registry)."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable unique identifier. Used as the primary key for all operations."
+    },
+    {
+      "name": "IsDirectory",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether this item is a folder."
+    },
+    {
+      "name": "Metadata",
+      "kind": "Property",
+      "type": "TMetadata?",
+      "description": "Custom metadata payload."
+    },
+    {
+      "name": "ModifiedBy",
+      "kind": "Property",
+      "type": "string?",
+      "description": "User who last modified the item."
+    },
+    {
+      "name": "ModifiedDate",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Last modification date."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name (file name or folder name)."
+    },
+    {
+      "name": "Path",
+      "kind": "Property",
+      "type": "string",
+      "description": "Full path for display and breadcrumb purposes only. Not used as an identifier."
+    },
+    {
+      "name": "Permissions",
+      "kind": "Property",
+      "type": "DocumentManagerPermission?",
+      "description": "Access permissions for the current user."
+    },
+    {
+      "name": "Size",
+      "kind": "Property",
+      "type": "long?",
+      "description": "File size in bytes. Null for folders."
+    },
+    {
+      "name": "Tags",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>?",
+      "description": "Optional tags or labels."
+    },
+    {
+      "name": "Version",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional version identifier (e.g. \"1.2\")."
+    }
+  ],
+  "itemName": "DocumentManagerItem<TMetadata>"
+}

@@ -1,0 +1,27 @@
+{
+  "itemName": "TmGanttExportDialog",
+  "kind": "Component",
+  "category": "Scheduler",
+  "description": "Dialog for configuring and triggering Gantt export.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Scheduler",
+  "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttExportDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Scheduler"
+  ],
+  "parameters": [
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fires when the user confirms export with the chosen options."
+    },
+    {
+      "name": "OnExport",
+      "type": "EventCallback<GanttExportOptions>",
+      "isRequired": false,
+      "description": "Whether the dialog is visible."
+    }
+  ]
+}

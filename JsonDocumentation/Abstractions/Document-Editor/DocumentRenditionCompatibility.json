@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Validates whether a signing rendition still matches a source document version.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/FinalizeForRenditionCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentRenditionCompatibility"
+}

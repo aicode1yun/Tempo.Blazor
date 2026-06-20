@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Builds the linear signing step plan from template fields and current values.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningStepPlanner.cs",
+  "documentationStatus": "generated",
+  "itemName": "SigningStepPlanner"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "The outcome of validating a wireframe document against the schema registry.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeValidationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeValidationResult"
+}

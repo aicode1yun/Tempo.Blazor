@@ -1,0 +1,22 @@
+{
+  "itemName": "TmNotionDbCalendarView",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionDbCalendarView Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Database/TmNotionDbCalendarView.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
+  ],
+  "parameters": [
+    {
+      "name": "OnRecordUpdated",
+      "type": "EventCallback<IDatabaseRecord>",
+      "isRequired": true,
+      "editorRequired": true
+    }
+  ],
+  "subcategory": "Blocks / Database"
+}

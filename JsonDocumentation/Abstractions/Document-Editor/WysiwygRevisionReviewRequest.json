@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Inline revision review request raised by the WYSIWYG surface.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygRevisionReviewRequest.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Action",
+      "kind": "Property",
+      "type": "DocumentRevisionAction",
+      "description": "Requested review action."
+    },
+    {
+      "name": "RevisionId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Revision id requested by the inline review UI."
+    }
+  ],
+  "itemName": "WysiwygRevisionReviewRequest"
+}

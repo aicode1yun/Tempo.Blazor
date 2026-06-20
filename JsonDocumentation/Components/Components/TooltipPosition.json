@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Feedback",
+  "description": "Position of a tooltip relative to its trigger element.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Feedback/TooltipPosition.cs",
+  "documentationStatus": "generated",
+  "itemName": "TooltipPosition"
+}

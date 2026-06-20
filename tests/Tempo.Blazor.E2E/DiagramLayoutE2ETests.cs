@@ -19,18 +19,26 @@ public class DiagramLayoutE2ETests : WasmTestBase
         var context = await CreateContextAsync();
         var page = await context.NewPageAsync();
 
-        // Navigate first, then set locale and reload so localStorage is accessible
-        await page.GotoAsync($"{BaseUrl}{DiagramEditorUrl}");
-        await page.EvaluateAsync("() => localStorage.setItem('tm-demo-culture', 'en')");
-        await page.ReloadAsync();
-        await WaitForAppReadyAsync(page);
-
-        // Wait for diagram editor to be fully rendered (toolbar + canvas)
-        await page.WaitForSelectorAsync(".tm-diagram-editor__toolbar", new PageWaitForSelectorOptions
+        await page.AddInitScriptAsync("() => localStorage.setItem('tm-demo-culture', 'en')");
+        for (var attempt = 0; attempt < 2; attempt++)
         {
-            State = WaitForSelectorState.Visible,
-            Timeout = 15000
-        });
+            try
+            {
+                await page.GotoAsync($"{BaseUrl}{DiagramEditorUrl}", new PageGotoOptions
+                {
+                    WaitUntil = WaitUntilState.DOMContentLoaded,
+                    Timeout = 60_000
+                });
+                await WaitForAppReadyAsync(page);
+                await WaitForDiagramEditorReadyAsync(page);
+                break;
+            }
+            catch (TimeoutException) when (attempt == 0)
+            {
+                await TryResetDiagramNavigationAsync(page);
+            }
+        }
+
         await page.WaitForTimeoutAsync(2000);
 
         // Load UML sample (creates multiple nodes locally – no HTTP wait needed)
@@ -46,6 +54,44 @@ public class DiagramLayoutE2ETests : WasmTestBase
         await page.WaitForTimeoutAsync(300);
 
         return page;
+    }
+
+    private static async Task WaitForDiagramEditorReadyAsync(IPage page)
+    {
+        await page.WaitForSelectorAsync(".tm-diagram-editor__toolbar", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30_000
+        });
+        await page.WaitForSelectorAsync(".tm-diagram-canvas", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30_000
+        });
+        await page.WaitForFunctionAsync("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas || !canvas.id) return false;
+                const editor = window.tmDiagramEditor;
+                return !!(editor && editor.instances && editor.instances.get(canvas.id));
+            }
+        """, null, new PageWaitForFunctionOptions { Timeout = 30_000 });
+    }
+
+    private static async Task TryResetDiagramNavigationAsync(IPage page)
+    {
+        try
+        {
+            await page.GotoAsync("about:blank", new PageGotoOptions
+            {
+                WaitUntil = WaitUntilState.DOMContentLoaded,
+                Timeout = 10_000
+            });
+        }
+        catch (TimeoutException)
+        {
+            // A fresh diagram route attempt below is the authoritative readiness check.
+        }
     }
 
     private async Task SelectAllNodesAsync(IPage page)
@@ -88,13 +134,30 @@ public class DiagramLayoutE2ETests : WasmTestBase
 
     private async Task<List<(string Id, double X, double Y)>> GetNodeLayoutPositionsAsync(IPage page)
     {
+        // After F3.A the canvas does viewport culling (`IsNodeVisible`) which
+        // can hide nodes that a layout pushed beyond the current viewBox. Call
+        // fit-to-view before reading positions so every layout result is
+        // inside the rendered `g.tm-diagram-node` set.
+        await page.EvaluateAsync("""
+            () => {
+                const c = document.querySelector('.tm-diagram-canvas');
+                if (c && window.tmDiagramEditor && typeof tmDiagramEditor.fitToView === 'function') {
+                    try { tmDiagramEditor.fitToView(c, 40); } catch (_e) {}
+                }
+            }
+        """);
+        await page.WaitForTimeoutAsync(300);
+
+        // After F3.A (planning/DIAGRAM_UNIFIED_SVG_PLAN.md) node position lives
+        // on the per-node SVG <g>'s `transform` attribute (translate(x,y) rotate(θ cx cy))
+        // — no more CSS `style.transform` with `px` units.
         var json = await page.EvaluateAsync<string>("""
             () => {
-                const nodes = document.querySelectorAll('.tm-diagram-node');
+                const nodes = document.querySelectorAll('g.tm-diagram-node[data-node-id]');
                 const arr = [];
                 nodes.forEach(n => {
-                    const t = n.style.transform;
-                    const m = t.match(/translate\(([-+]?[0-9]*\.?[0-9]+)px,\s*([-+]?[0-9]*\.?[0-9]+)px\)/);
+                    const t = n.getAttribute('transform') || '';
+                    const m = t.match(/translate\(\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)\s*\)/);
                     if (m) {
                         arr.push({ id: n.getAttribute('data-node-id'), x: parseFloat(m[1]), y: parseFloat(m[2]) });
                     } else {
@@ -319,5 +382,4 @@ public class DiagramLayoutE2ETests : WasmTestBase
         Assert.IsTrue(xs.Count > 1, "Distribute Horizontal should spread nodes across different X coordinates");
     }
 }
-
 

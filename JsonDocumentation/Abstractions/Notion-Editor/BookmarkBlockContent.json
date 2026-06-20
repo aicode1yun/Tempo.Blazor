@@ -1,0 +1,47 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/BookmarkBlockContent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Caption",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "CoverImageUrl",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Domain",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "FaviconUrl",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Url",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "BookmarkBlockContent"
+}

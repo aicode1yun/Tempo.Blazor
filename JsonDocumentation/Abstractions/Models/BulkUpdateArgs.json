@@ -1,0 +1,42 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Arguments for a bulk update operation on selected Gantt tasks.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/BulkUpdateArgs.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AssigneeIdsToAdd",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>"
+    },
+    {
+      "name": "AssigneeIdsToRemove",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>"
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Priority",
+      "kind": "Property",
+      "type": "GanttTaskPriority?"
+    },
+    {
+      "name": "Status",
+      "kind": "Property",
+      "type": "GanttTaskStatus?"
+    },
+    {
+      "name": "TaskIds",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>"
+    }
+  ],
+  "itemName": "BulkUpdateArgs"
+}

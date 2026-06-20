@@ -1,0 +1,40 @@
+{
+  "itemName": "TmNotionWorkItemBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionWorkItemBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Embed",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Embed/TmNotionWorkItemBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Embed"
+  ],
+  "parameters": [
+    {
+      "name": "OnContentChanged",
+      "type": "EventCallback<WorkItemBlockContent>",
+      "isRequired": false,
+      "description": "Whether editing controls are disabled."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when provider data or block configuration changes."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Registry of available work-item providers."
+    },
+    {
+      "name": "WorkItemProviders",
+      "type": "WorkItemProviderRegistry?",
+      "isRequired": false,
+      "description": "Work-item block content."
+    }
+  ],
+  "subcategory": "Blocks / Embed"
+}

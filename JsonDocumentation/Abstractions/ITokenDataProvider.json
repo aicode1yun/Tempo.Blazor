@@ -3,52 +3,53 @@
   "kind": "Interface",
   "category": "DataProviders",
   "namespace": "Tempo.Blazor.Interfaces",
-  "description": "Data provider for token/tag autocomplete functionality. Provides items based on user input for components like TmTagPicker.",
+  "description": "Data provider for the {{ token autocomplete in TmNotionEditor and TmRichEditorFull. Implement this interface to supply the list of available tokens (variables/fields) that users can insert by typing {{ in any text block.",
+  "properties": [
+    {
+      "name": "SupportsCreation",
+      "type": "bool",
+      "isRequired": false,
+      "description": "When true the dropdown will offer a 'Create new token' action for queries that return no results. Return false for read-only token sets."
+    }
+  ],
   "methods": [
     {
-      "name": "GetItemsAsync",
-      "returnType": "Task<IReadOnlyList<IToken>>",
-      "description": "Retrieves tokens matching the search text.",
+      "name": "SearchTokensAsync",
+      "returnType": "Task<IEnumerable<IToken>>",
+      "description": "Returns tokens whose Key, DisplayName, Description, or Category contain the query string. Called each time the user types after {{ . An empty query returns all tokens.",
       "parameters": [
         {
-          "name": "searchText",
+          "name": "query",
           "type": "string",
-          "description": "User's search input."
+          "description": "User's current search text (may be empty)."
         },
         {
           "name": "ct",
           "type": "CancellationToken",
-          "description": "Cancellation token.",
+          "description": "Cancellation token — cancelled if the user types another character before the search completes.",
           "defaultValue": "default"
         }
       ]
     },
     {
-      "name": "CreateTokenAsync",
-      "returnType": "Task<IToken?>",
-      "description": "Creates a new token from user input (for 'create new' functionality).",
-      "parameters": [
-        {
-          "name": "text",
-          "type": "string",
-          "description": "Text entered by user."
-        },
-        {
-          "name": "ct",
-          "type": "CancellationToken",
-          "description": "Cancellation token.",
-          "defaultValue": "default"
-        }
-      ]
+      "name": "Refresh",
+      "returnType": "void",
+      "description": "Invalidates any cached token data so the next search returns fresh results."
     }
   ],
   "usedInComponents": [
-    "TmTagPicker"
+    "TmNotionEditor",
+    "TmRichEditorFull",
+    "TmRichEditorSimple"
   ],
   "examples": [
     {
-      "title": "Tag provider implementation",
-      "code": "public class TagTokenProvider : ITokenDataProvider\n{\n    private readonly ITagService _tagService;\n\n    public TagTokenProvider(ITagService tagService)\n    {\n        _tagService = tagService;\n    }\n\n    public async Task<IReadOnlyList<IToken>> GetItemsAsync(\n        string searchText, CancellationToken ct = default)\n    {\n        var tags = await _tagService.SearchAsync(searchText, ct);\n        return tags.Select(t => new Token { Id = t.Id, Name = t.Name }).ToList();\n    }\n\n    public async Task<IToken?> CreateTokenAsync(\n        string text, CancellationToken ct = default)\n    {\n        var tag = await _tagService.CreateAsync(text, ct);\n        return new Token { Id = tag.Id, Name = tag.Name };\n    }\n}"
+      "title": "Minimal token provider",
+      "code": "public class MyTokenProvider : ITokenDataProvider\n{\n    private static readonly IToken[] _tokens =\n    [\n        new MyToken(\"client.name\",  \"Client name\",  \"Full legal name\",  \"Client\"),\n        new MyToken(\"today\",        \"Today\",         \"Current date\",    \"System\"),\n    ];\n\n    public bool SupportsCreation => false;\n\n    public Task<IEnumerable<IToken>> SearchTokensAsync(string query, CancellationToken ct = default)\n    {\n        IEnumerable<IToken> r = _tokens;\n        if (!string.IsNullOrWhiteSpace(query))\n            r = r.Where(t => t.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase));\n        return Task.FromResult(r);\n    }\n\n    public void Refresh() { }\n}"
+    },
+    {
+      "title": "Wiring to TmNotionEditor",
+      "code": "@inject MyTokenProvider TokenProvider\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                TokenProvider=\"@TokenProvider\" />"
     }
   ]
 }

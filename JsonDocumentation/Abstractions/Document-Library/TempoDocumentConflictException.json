@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Document Library",
+  "namespace": "Tempo.Blazor.DocumentLibrary",
+  "description": "Thrown when a write is attempted with an optimistic-concurrency token (expectedModifiedAt) that no longer matches the stored document — i.e. the document changed since it was read. Carries the current timestamp so the caller can re-read and retry.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/TempoDocumentConflictException.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CurrentModifiedAt",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "The document's current last-modified timestamp at the time of the failed write."
+    },
+    {
+      "name": "DocumentId",
+      "kind": "Property",
+      "type": "Guid",
+      "description": "Identifier of the document that conflicted."
+    },
+    {
+      "name": "Kind",
+      "kind": "Property",
+      "type": "TempoDocumentKind",
+      "description": "Kind of the document that conflicted."
+    }
+  ],
+  "itemName": "TempoDocumentConflictException"
+}

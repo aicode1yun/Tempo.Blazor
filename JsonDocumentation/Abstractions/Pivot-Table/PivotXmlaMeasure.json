@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Describes an OLAP measure exposed by an XMLA data source.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotXmlaMeasure.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Caption",
+      "kind": "Property",
+      "type": "string",
+      "description": "Human-readable caption."
+    },
+    {
+      "name": "DataType",
+      "kind": "Property",
+      "type": "string",
+      "description": "Data type of the measure (e.g. Integer, Double, Currency)."
+    },
+    {
+      "name": "DefaultFormat",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Default display format string (e.g. #,##0.00)."
+    },
+    {
+      "name": "UniqueName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier of the measure."
+    }
+  ],
+  "itemName": "PivotXmlaMeasure"
+}

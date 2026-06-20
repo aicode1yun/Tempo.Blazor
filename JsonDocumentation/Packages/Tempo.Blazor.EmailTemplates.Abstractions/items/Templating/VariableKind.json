@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Templating",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+  "description": "Whether a template variable is used as a single value or iterated as a collection.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/VariableKind.cs",
+  "documentationStatus": "generated",
+  "itemName": "VariableKind"
+}

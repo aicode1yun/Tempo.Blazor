@@ -1,0 +1,17 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells
+@inherits TmNotionDbCellBase
+@using Tempo.Blazor.NotionEditor.Models
+
+<div class="tm-dbc tm-dbc--readonly">
+    @if (StringValue.Length > 0)
+    {
+        <span class="tm-dbc__avatar" style="background:@AvatarColor(StringValue)">
+            @Initials(StringValue)
+        </span>
+        <span class="tm-dbc__person-name">@StringValue</span>
+    }
+    else
+    {
+        <span class="tm-dbc__text tm-dbc__text--empty">&nbsp;</span>
+    }
+</div>

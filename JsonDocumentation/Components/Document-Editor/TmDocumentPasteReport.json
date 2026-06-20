@@ -1,0 +1,21 @@
+{
+  "itemName": "TmDocumentPasteReport",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "TmDocumentPasteReport Blazor component in the Document Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/TmDocumentPasteReport.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": [
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Warnings to display after a paste operation."
+    }
+  ]
+}

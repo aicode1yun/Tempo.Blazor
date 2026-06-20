@@ -1,0 +1,83 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "Public class defined by Tempo.Blazor.EmailTemplates.Abstractions.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailBlockBase.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ContainerBackgroundColor",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the container background colour (container-background-color)."
+    },
+    {
+      "name": "CssClass",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the space-separated CSS class names (css-class)."
+    },
+    {
+      "name": "ExtraAttributes",
+      "kind": "Property",
+      "type": "IDictionary<string, string>",
+      "description": "Gets or sets attributes that are not modelled explicitly. Populated on import and re-emitted on export so unknown/future MJML attributes survive a round-trip without loss."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid",
+      "description": "Gets or sets the unique identifier of this block."
+    },
+    {
+      "name": "MjClasses",
+      "kind": "Property",
+      "type": "IList<string>",
+      "description": "Gets or sets the referenced named MJML classes (mj-class)."
+    },
+    {
+      "name": "Padding",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the padding shorthand (padding)."
+    },
+    {
+      "name": "PaddingBottom",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the bottom padding (padding-bottom)."
+    },
+    {
+      "name": "PaddingLeft",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the left padding (padding-left)."
+    },
+    {
+      "name": "PaddingRight",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the right padding (padding-right)."
+    },
+    {
+      "name": "PaddingTop",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the top padding (padding-top)."
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "abstract BlockType"
+    },
+    {
+      "name": "VisibleWhen",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets an optional Scriban boolean expression. When set, the generator wraps the block in {{ if <expr> }}…{{ end }} so it only renders when the expression is truthy. This is a Tempo extension, not an MJML attribute."
+    }
+  ],
+  "itemName": "EmailBlockBase"
+}

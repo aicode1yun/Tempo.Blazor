@@ -1,0 +1,34 @@
+@namespace Tempo.Blazor.Components.Inputs
+@inject ITmLocalizer Loc
+
+<div class="tm-signature @(Disabled ? "tm-signature--disabled" : "") @Class" @attributes="AdditionalAttributes">
+    <svg class="tm-signature__canvas"
+         width="@Width"
+         height="@Height"
+         style="@GetCanvasStyle()"
+         @onpointerdown="OnPointerDown"
+         @onpointermove="OnPointerMove"
+         @onpointerup="OnPointerUp"
+         @onpointerleave="OnPointerUp">
+        @foreach (var stroke in _strokes)
+        {
+            <polyline points="@stroke.Points"
+                      fill="none"
+                      stroke="@stroke.Color"
+                      stroke-width="@stroke.Width.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
+                      stroke-linecap="round"
+                      stroke-linejoin="round" />
+        }
+    </svg>
+
+    @if (ShowClearButton && !Disabled)
+    {
+        <div class="tm-signature__actions">
+            <button type="button"
+                    class="tm-signature__clear"
+                    @onclick="ClearAsync">
+                @Loc["TmSignature_Clear"]
+            </button>
+        </div>
+    }
+</div>

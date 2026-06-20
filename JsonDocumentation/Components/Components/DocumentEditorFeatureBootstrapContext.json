@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Features",
+  "description": "Feature bootstrap dependencies shared across registration phases.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Features/DocumentEditorFeatureInfrastructure.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorFeatureBootstrapContext"
+}

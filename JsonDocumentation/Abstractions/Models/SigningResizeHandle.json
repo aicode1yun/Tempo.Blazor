@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Resize handle used when resizing a signing field area.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningResizeHandle.cs",
+  "documentationStatus": "generated",
+  "itemName": "SigningResizeHandle"
+}

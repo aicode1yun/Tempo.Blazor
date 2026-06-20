@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A navigation bar (mj-navbar).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailNavbarBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Align",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the alignment (align)."
+    },
+    {
+      "name": "BaseUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the base URL prepended to relative link hrefs (base-url)."
+    },
+    {
+      "name": "Hamburger",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets whether a hamburger menu is shown on mobile (hamburger)."
+    },
+    {
+      "name": "Links",
+      "kind": "Property",
+      "type": "IList<EmailNavbarLink>",
+      "description": "Gets the navigation links."
+    }
+  ],
+  "itemName": "EmailNavbarBlock"
+}

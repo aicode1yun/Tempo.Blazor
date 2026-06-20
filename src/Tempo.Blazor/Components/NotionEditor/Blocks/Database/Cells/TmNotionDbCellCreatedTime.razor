@@ -1,0 +1,14 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells
+@inherits TmNotionDbCellBase
+@using Tempo.Blazor.NotionEditor.Models
+
+<div class="tm-dbc tm-dbc--readonly">
+    @if (DisplayValue.Length > 0)
+    {
+        <span class="tm-dbc__date" title="@FullDateTime">@DisplayValue</span>
+    }
+    else
+    {
+        <span class="tm-dbc__text tm-dbc__text--empty">&nbsp;</span>
+    }
+</div>

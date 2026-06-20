@@ -1,0 +1,129 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Coordinates optimistic local operations, remote catch-up, and cursor state.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentCollaborationSync.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ApplyRemoteBatch",
+      "kind": "Method",
+      "type": "DocumentOperationValidationResult",
+      "description": "Applies a remote operation batch while preserving local dirty state.",
+      "parameters": [
+        {
+          "name": "remoteBatch",
+          "type": "DocumentCollaborationOperationBatch"
+        }
+      ]
+    },
+    {
+      "name": "CreateLocalEditBatch",
+      "kind": "Method",
+      "type": "DocumentOperationBatch",
+      "description": "Creates a best-effort operation batch from a local document edit.",
+      "parameters": [
+        {
+          "name": "before",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "after",
+          "type": "DocumentEditorDocument"
+        }
+      ]
+    },
+    {
+      "name": "CreateLocalPatchBatch",
+      "kind": "Method",
+      "type": "DocumentOperationBatch",
+      "description": "Creates an operation batch from a local WYSIWYG patch.",
+      "parameters": [
+        {
+          "name": "before",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "patch",
+          "type": "WysiwygPatch"
+        }
+      ]
+    },
+    {
+      "name": "LeaveAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Leaves the current collaboration session.",
+      "parameters": [
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "ReconnectAsync",
+      "kind": "Method",
+      "type": "Task<DocumentOperationValidationResult>",
+      "description": "Fetches and applies missed remote batches after reconnect.",
+      "parameters": [
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "UpdateCursorAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Broadcasts a local cursor and refreshes remote cursors when the provider is pull-based.",
+      "parameters": [
+        {
+          "name": "cursor",
+          "type": "DocumentCollaborationCursor"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "Document",
+      "kind": "Property",
+      "type": "DocumentEditorDocument",
+      "description": "Current document."
+    },
+    {
+      "name": "IsDirty",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether local changes are pending save/sync acknowledgement."
+    },
+    {
+      "name": "LastAppliedRemoteOperations",
+      "kind": "Property",
+      "type": "IReadOnlyList<DocumentOperation>",
+      "description": "Operations applied during the last reconnect cycle."
+    },
+    {
+      "name": "LastSeenSequence",
+      "kind": "Property",
+      "type": "long",
+      "description": "Last seen collaboration sequence."
+    },
+    {
+      "name": "RemoteCursors",
+      "kind": "Property",
+      "type": "IReadOnlyList<DocumentCollaborationCursor>",
+      "description": "Remote cursors currently known to the sync coordinator."
+    }
+  ],
+  "itemName": "DocumentCollaborationSync"
+}

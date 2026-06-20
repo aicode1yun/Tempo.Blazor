@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram",
+  "description": "Renders standalone SVG arrowheads for diagram edges. Extracted from TmDiagramCanvas for testability.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/DiagramArrowheadRenderer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetArrowheadInset",
+      "kind": "Method",
+      "type": "double",
+      "description": "Returns how many pixels the edge line should be shortened at the given end so the arrowhead sits correctly without being hidden under the HTML node overlay.",
+      "parameters": [
+        {
+          "name": "edge",
+          "type": "DiagramEdge"
+        },
+        {
+          "name": "isStart",
+          "type": "bool"
+        }
+      ]
+    }
+  ],
+  "itemName": "DiagramArrowheadRenderer"
+}

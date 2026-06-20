@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Permission level granted by a page restriction entry or effective permission lookup.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/PageRestrictionDto.cs",
+  "documentationStatus": "generated",
+  "itemName": "PageRestrictionPermission"
+}

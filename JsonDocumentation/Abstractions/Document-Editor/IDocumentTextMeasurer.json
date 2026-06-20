@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Abstraction for text measurement used by the layout engine.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentLayoutEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDocumentTextMeasurer"
+}

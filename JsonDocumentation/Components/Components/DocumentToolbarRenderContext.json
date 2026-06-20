@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+  "description": "Context passed to a document toolbar item renderer.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Registry/DocumentToolbarRenderContext.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentToolbarRenderContext"
+}

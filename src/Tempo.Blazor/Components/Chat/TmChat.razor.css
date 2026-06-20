@@ -1,0 +1,332 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmChat — Scoped Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-chat {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  background: var(--tm-bg-surface);
+  border-radius: var(--tm-radius-lg);
+  border: 1px solid var(--tm-border-color);
+  overflow: hidden;
+}
+
+/* ── Messages ───────────────────────────────────────────────── */
+.tm-chat__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--tm-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-3);
+  scrollbar-width: thin;
+}
+
+.tm-chat__messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tm-chat__messages::-webkit-scrollbar-thumb {
+  background: var(--tm-border-color);
+  border-radius: var(--tm-radius-full);
+}
+
+/* ── Empty state ────────────────────────────────────────────── */
+.tm-chat__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--tm-space-2);
+  flex: 1;
+  color: var(--tm-color-text-secondary);
+  padding: var(--tm-space-8);
+}
+
+.tm-chat__empty p {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--tm-font-size-base);
+  color: var(--tm-color-text);
+}
+
+.tm-chat__empty span {
+  font-size: var(--tm-font-size-sm);
+}
+
+/* ── Message row ────────────────────────────────────────────── */
+.tm-chat__message {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--tm-space-2);
+  max-width: 80%;
+}
+
+.tm-chat__message--incoming {
+  align-self: flex-start;
+}
+
+.tm-chat__message--outgoing {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.tm-chat__message--system {
+  align-self: center;
+  max-width: 100%;
+  padding: var(--tm-space-1) var(--tm-space-3);
+  background: var(--tm-bg-muted);
+  border-radius: var(--tm-radius-full);
+  font-size: var(--tm-font-size-xs);
+  color: var(--tm-color-text-secondary);
+}
+
+/* ── Avatar ─────────────────────────────────────────────────── */
+.tm-chat__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--tm-radius-full);
+  background: var(--tm-color-primary-subtle);
+  color: var(--tm-color-primary);
+  font-size: var(--tm-font-size-xs);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.tm-chat__avatar--outgoing {
+  background: var(--tm-color-secondary-subtle);
+  color: var(--tm-color-secondary);
+}
+
+/* ── Bubble ─────────────────────────────────────────────────── */
+.tm-chat__bubble {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-1);
+  padding: var(--tm-space-2-5) var(--tm-space-3-5);
+  border-radius: var(--tm-radius-xl);
+  background: var(--tm-bg-muted);
+  color: var(--tm-color-text);
+  font-size: var(--tm-font-size-sm);
+  line-height: 1.5;
+}
+
+.tm-chat__message--outgoing .tm-chat__bubble {
+  background: var(--tm-color-primary);
+  color: var(--tm-color-primary-contrast);
+  border-bottom-right-radius: var(--tm-radius-sm);
+}
+
+.tm-chat__message--incoming .tm-chat__bubble {
+  border-bottom-left-radius: var(--tm-radius-sm);
+}
+
+/* ── Meta ───────────────────────────────────────────────────── */
+.tm-chat__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--tm-space-2);
+  font-size: var(--tm-font-size-xs);
+  margin-bottom: var(--tm-space-0-5);
+}
+
+.tm-chat__author {
+  font-weight: 600;
+  color: var(--tm-color-text-secondary);
+}
+
+.tm-chat__message--outgoing .tm-chat__author {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.tm-chat__message-time {
+  color: var(--tm-color-text-muted);
+  font-size: 11px;
+}
+
+.tm-chat__message--outgoing .tm-chat__message-time {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Text ───────────────────────────────────────────────────── */
+.tm-chat__text {
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.tm-chat__error-text {
+  color: var(--tm-color-error);
+}
+
+/* ── Sending dots ───────────────────────────────────────────── */
+.tm-chat__sending-dots::after {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-left: 2px;
+  animation: tm-chat-blink 1.4s infinite;
+}
+
+@keyframes tm-chat-blink {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+/* ── Attachments ────────────────────────────────────────────── */
+.tm-chat__attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tm-space-1-5);
+  margin-top: var(--tm-space-1);
+}
+
+.tm-chat__attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tm-space-1-5);
+  padding: var(--tm-space-1-5) var(--tm-space-2-5);
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-md);
+  font-size: var(--tm-font-size-xs);
+  color: var(--tm-color-text);
+  cursor: pointer;
+  transition: background var(--tm-transition-fast);
+}
+
+.tm-chat__attachment:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.tm-chat__attachment-name {
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tm-chat__attachment-size {
+  color: var(--tm-color-text-muted);
+  font-size: 10px;
+}
+
+/* ── Typing indicator ───────────────────────────────────────── */
+.tm-chat__typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--tm-space-2);
+  align-self: flex-start;
+  padding: var(--tm-space-2) var(--tm-space-3);
+  margin-top: var(--tm-space-1);
+}
+
+.tm-chat__typing-dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tm-chat__typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tm-color-text-muted);
+  animation: tm-chat-typing 1.4s infinite ease-in-out both;
+}
+
+.tm-chat__typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.tm-chat__typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes tm-chat-typing {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+.tm-chat__typing-text {
+  font-size: var(--tm-font-size-xs);
+  color: var(--tm-color-text-secondary);
+}
+
+/* ── Input area ─────────────────────────────────────────────── */
+.tm-chat__input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--tm-space-2);
+  padding: var(--tm-space-3) var(--tm-space-4);
+  border-top: 1px solid var(--tm-border-color);
+  background: var(--tm-bg-surface);
+}
+
+.tm-chat__input {
+  flex: 1;
+  resize: none;
+  min-height: 40px;
+  max-height: 120px;
+  padding: var(--tm-space-2-5) var(--tm-space-3);
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-lg);
+  background: var(--tm-bg-surface);
+  color: var(--tm-color-text);
+  font-size: var(--tm-font-size-sm);
+  font-family: inherit;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color var(--tm-transition-fast), box-shadow var(--tm-transition-fast);
+}
+
+.tm-chat__input:focus {
+  border-color: var(--tm-color-primary);
+  box-shadow: 0 0 0 3px var(--tm-color-primary-subtle);
+}
+
+.tm-chat__input:disabled {
+  background: var(--tm-bg-muted);
+  color: var(--tm-color-text-muted);
+  cursor: not-allowed;
+}
+
+.tm-chat__send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: var(--tm-radius-lg);
+  background: var(--tm-color-primary);
+  color: var(--tm-color-primary-contrast);
+  cursor: pointer;
+  transition: opacity var(--tm-transition-fast), transform var(--tm-transition-fast);
+  flex-shrink: 0;
+}
+
+.tm-chat__send-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.tm-chat__send-btn:disabled {
+  background: var(--tm-bg-muted);
+  color: var(--tm-color-text-muted);
+  cursor: not-allowed;
+}
+
+/* ── Dark mode overrides ────────────────────────────────────── */
+[data-theme="dark"] .tm-chat__attachment {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .tm-chat__attachment:hover {
+  background: rgba(255, 255, 255, 0.08);
+}

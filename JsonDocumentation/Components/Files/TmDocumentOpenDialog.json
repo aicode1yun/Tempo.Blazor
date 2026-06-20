@@ -1,0 +1,74 @@
+{
+  "itemName": "TmDocumentOpenDialog",
+  "kind": "Component",
+  "category": "Files",
+  "description": "A Word-like \"Open document\" dialog over an : a folder tree, breadcrumb, searchable list/grid of documents, optional folder/document management, and a link-or-copy choice. Emits a on confirm.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "sourcePath": "src/Tempo.Blazor/Components/Files/TmDocumentOpenDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Files"
+  ],
+  "parameters": [
+    {
+      "name": "DefaultMode",
+      "type": "DocumentOpenMode",
+      "isRequired": false,
+      "default": "DocumentOpenMode.Link",
+      "description": "Whether to offer the link-or-copy choice. Defaults to true."
+    },
+    {
+      "name": "Kind",
+      "type": "TempoDocumentKind",
+      "isRequired": true,
+      "description": "The library to browse. Required.",
+      "editorRequired": true
+    },
+    {
+      "name": "OnCancelled",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised with the chosen document when the user confirms."
+    },
+    {
+      "name": "OnSelected",
+      "type": "EventCallback<DocumentOpenResult>",
+      "isRequired": false,
+      "description": "Initial insert mode. Defaults to ."
+    },
+    {
+      "name": "Open",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Which kind of documents to list."
+    },
+    {
+      "name": "OpenChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "Whether the dialog is shown."
+    },
+    {
+      "name": "PageSize",
+      "type": "int",
+      "isRequired": false,
+      "default": "50",
+      "description": "Raised when the user cancels."
+    },
+    {
+      "name": "SearchDebounceMs",
+      "type": "int",
+      "isRequired": false,
+      "default": "300",
+      "description": "Page size for browsing. Defaults to 50."
+    },
+    {
+      "name": "ShowModeToggle",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Raised when the dialog opens or closes."
+    }
+  ]
+}

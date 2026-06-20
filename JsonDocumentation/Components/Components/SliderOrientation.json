@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "Defines the orientation of a slider.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/SliderOrientation.cs",
+  "documentationStatus": "generated",
+  "itemName": "SliderOrientation"
+}

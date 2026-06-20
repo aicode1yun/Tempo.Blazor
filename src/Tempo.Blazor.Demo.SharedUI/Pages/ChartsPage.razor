@@ -1,5 +1,6 @@
 @page "/charts"
 @using Tempo.Blazor.Components.Charts
+@using Tempo.Blazor.Models
 
 <PageTitle>Charts – Tempo.Blazor</PageTitle>
 
@@ -81,6 +82,81 @@
              ShowGrid="false" />
 </section>
 
+<!-- Stock Chart -->
+<section class="demo-section mb-8">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Stock Chart (Candlestick)</h2>
+    <TmStockChart Data="_stockData"
+                  Type="StockChartType.Candlestick"
+                  ShowVolume="true"
+                  Animated="true"
+                  Height="400px" />
+</section>
+
+<!-- Stock Chart OHLC -->
+<section class="demo-section mb-8">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Stock Chart (OHLC)</h2>
+    <TmStockChart Data="_stockData"
+                  Type="StockChartType.OHLC"
+                  ShowVolume="false"
+                  Height="350px" />
+</section>
+
+<!-- Stock Chart Line -->
+<section class="demo-section mb-8">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Stock Chart (Line — Closing Prices)</h2>
+    <TmStockChart Data="_stockData"
+                  Type="StockChartType.Line"
+                  ShowVolume="false"
+                  Height="350px" />
+</section>
+
+<!-- Sparklines -->
+<section class="demo-section mb-8">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Sparklines</h2>
+    <div class="flex flex-wrap items-center gap-6">
+        <div class="flex items-center gap-3">
+            <span class="text-sm text-slate-600 dark:text-slate-400">Line</span>
+            <TmSparkline Data="_sparkData" Type="SparklineType.Line" Height="40px" Width="120px" />
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-sm text-slate-600 dark:text-slate-400">Bar</span>
+            <TmSparkline Data="_sparkData" Type="SparklineType.Bar" Height="40px" Width="120px" />
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-sm text-slate-600 dark:text-slate-400">Area</span>
+            <TmSparkline Data="_sparkData" Type="SparklineType.Area" Height="40px" Width="120px" />
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-sm text-slate-600 dark:text-slate-400">Pie</span>
+            <TmSparkline Data="_sparkData" Type="SparklineType.Pie" Height="40px" Width="40px" />
+        </div>
+    </div>
+</section>
+
+<!-- Gauges -->
+<section class="demo-section mb-8">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Gauges</h2>
+    <div class="flex flex-wrap items-center gap-8">
+        <div class="text-center">
+            <TmGauge Type="GaugeType.Arc" Value="65" Min="0" Max="100" ShowValue="true" LabelFormat="{0}%" Animated="true" />
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Arc</p>
+        </div>
+        <div class="text-center">
+            <TmGauge Type="GaugeType.Circular" Value="78" Min="0" Max="100" ShowValue="true" LabelFormat="{0}%" Animated="true" />
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Circular</p>
+        </div>
+        <div class="text-center">
+            <TmGauge Type="GaugeType.Linear" Value="45" Min="0" Max="100" ShowValue="true" LabelFormat="{0}%" Width="250px" Height="80px" />
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Linear</p>
+        </div>
+        <div class="text-center">
+            <TmGauge Type="GaugeType.Arc" Value="82" Min="0" Max="100"
+                     Ranges="_gaugeRanges" ShowValue="true" LabelFormat="{0}%" Animated="true" />
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Arc with Ranges</p>
+        </div>
+    </div>
+</section>
+
 @code {
     private ChartSegment? _clickedSegment;
 
@@ -149,5 +225,28 @@
         [
             new ChartDataset { Label = "Usage %", Values = [65, 12, 10, 8, 5], Color = "#6366f1" }
         ]
+    };
+
+    private static readonly List<StockChartDataPoint> _stockData = new()
+    {
+        new(new DateTime(2026, 1, 1), 100, 110, 95, 105, 1200),
+        new(new DateTime(2026, 1, 2), 105, 108, 102, 106, 1500),
+        new(new DateTime(2026, 1, 3), 106, 115, 104, 114, 2100),
+        new(new DateTime(2026, 1, 4), 114, 118, 110, 112, 1800),
+        new(new DateTime(2026, 1, 5), 112, 116, 109, 115, 1600),
+        new(new DateTime(2026, 1, 6), 115, 120, 113, 119, 2200),
+        new(new DateTime(2026, 1, 7), 119, 122, 116, 118, 1900),
+        new(new DateTime(2026, 1, 8), 118, 119, 112, 114, 1400),
+        new(new DateTime(2026, 1, 9), 114, 117, 110, 116, 1700),
+        new(new DateTime(2026, 1, 10), 116, 121, 114, 120, 2500),
+    };
+
+    private static readonly double[] _sparkData = [12, 25, 18, 32, 24, 38, 30, 45, 36, 42];
+
+    private static readonly List<GaugeRange> _gaugeRanges = new()
+    {
+        new(0, 40, "#22c55e"),
+        new(40, 70, "#f59e0b"),
+        new(70, 100, "#ef4444")
     };
 }

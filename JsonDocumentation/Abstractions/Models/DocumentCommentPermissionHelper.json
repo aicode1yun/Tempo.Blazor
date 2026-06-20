@@ -1,0 +1,44 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Helper methods for document comment permissions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentCommentPermissionHelper.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CanDelete",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns true when the current user may delete a comment.",
+      "parameters": [
+        {
+          "name": "comment",
+          "type": "DocumentComment?"
+        },
+        {
+          "name": "currentUserId",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "CanEdit",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns true when the current user may edit a comment.",
+      "parameters": [
+        {
+          "name": "comment",
+          "type": "DocumentComment?"
+        },
+        {
+          "name": "currentUserId",
+          "type": "string?"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentCommentPermissionHelper"
+}

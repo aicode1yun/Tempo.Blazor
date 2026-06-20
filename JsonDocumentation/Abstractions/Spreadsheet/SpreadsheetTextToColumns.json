@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "Pure engine that splits raw text rows into columns either by delimiters (honouring a text qualifier and optional collapsing of consecutive delimiters) or by fixed character widths. Returns a jagged list of string tokens per row; type detection and target placement are the caller's job.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetTextToColumns.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetTextToColumns"
+}

@@ -100,6 +100,7 @@
     --tm-notion-link-color:          var(--tm-color-primary);
     --tm-notion-link-hover:          var(--tm-color-primary-hover);
     --tm-notion-comment-highlight:   rgba(255, 212, 0, 0.35);
+    --tm-notion-comment-highlight-active: rgba(255, 193, 7, 0.65);
     --tm-notion-selection-bg:        rgba(59, 130, 246, 0.15);
 
     /* ── Toolbar / menus ──────────────────────────────────────── */

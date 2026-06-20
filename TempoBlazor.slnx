@@ -8,13 +8,22 @@
     <Project Path="src/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto.csproj" />
     <Project Path="src/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto.Client/Tempo.Blazor.Demo.InteractiveAuto.Client.csproj" />
     <Project Path="src/Tempo.Blazor.Demo.Api/Tempo.Blazor.Demo.Api.csproj" />
+    <Project Path="src/Tempo.Blazor.Collaboration/Tempo.Blazor.Collaboration.csproj" />
+    <Project Path="src/Tempo.Blazor.DocumentFormats/Tempo.Blazor.DocumentFormats.csproj" />
     <Project Path="src/Tempo.Blazor/Tempo.Blazor.csproj" />
     <Project Path="src/Tempo.Blazor.FluentValidation/Tempo.Blazor.FluentValidation.csproj" />
+    <Project Path="src/Tempo.Blazor.EmailTemplates.Abstractions/Tempo.Blazor.EmailTemplates.Abstractions.csproj" />
+    <Project Path="src/Tempo.Blazor.EmailTemplates/Tempo.Blazor.EmailTemplates.csproj" />
+    <Project Path="src/Tempo.Blazor.Mcp/Tempo.Blazor.Mcp.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Tempo.Blazor.E2E/Tempo.Blazor.E2E.csproj" />
     <Project Path="tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj" />
     <Project Path="tests/Tempo.Blazor.Demo.Api.Tests/Tempo.Blazor.Demo.Api.Tests.csproj" />
+    <Project Path="tests/Tempo.Blazor.DocumentFormats.Tests/Tempo.Blazor.DocumentFormats.Tests.csproj" />
     <Project Path="tests/Tempo.Blazor.FluentValidation.Tests/Tempo.Blazor.FluentValidation.Tests.csproj" />
+    <Project Path="tests/Tempo.Blazor.EmailTemplates.Abstractions.Tests/Tempo.Blazor.EmailTemplates.Abstractions.Tests.csproj" />
+    <Project Path="tests/Tempo.Blazor.EmailTemplates.Tests/Tempo.Blazor.EmailTemplates.Tests.csproj" />
+    <Project Path="tests/Tempo.Blazor.Mcp.Tests/Tempo.Blazor.Mcp.Tests.csproj" />
   </Folder>
 </Solution>

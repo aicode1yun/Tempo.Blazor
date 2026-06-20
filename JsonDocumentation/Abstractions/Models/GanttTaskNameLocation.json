@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Controls where the task name label is rendered relative to the bar.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttTaskNameLocation.cs",
+  "documentationStatus": "generated",
+  "itemName": "GanttTaskNameLocation"
+}

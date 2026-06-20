@@ -1,0 +1,49 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "SignalR-backed realtime document collaboration provider.",
+  "packageId": "Tempo.Blazor.Collaboration",
+  "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRDocumentCollaborationProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BroadcastCursorAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "cursor",
+          "type": "DocumentCollaborationCursor"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "DisposeAsync",
+      "kind": "Method",
+      "type": "ValueTask"
+    },
+    {
+      "name": "LeaveAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "sessionId",
+          "type": "string"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    }
+  ],
+  "itemName": "SignalRDocumentCollaborationProvider"
+}

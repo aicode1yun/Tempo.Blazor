@@ -1,0 +1,132 @@
+@namespace Tempo.Blazor.Components.Notifications
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.Components.Icons
+@implements IDisposable
+
+<div class="tm-notification-toast-container">
+    @foreach (var toast in _toasts)
+    {
+        <div class="tm-notification-toast"
+             role="alert"
+             aria-live="polite"
+             aria-atomic="true"
+             @key="toast.Id"
+             @onclick="() => OnToastClickAsync(toast)">
+            <div class="tm-notification-toast__icon">
+                <TmIcon Name="@TypeIcon(toast.Event.Type)" Size="IconSize.Sm" />
+            </div>
+            <div class="tm-notification-toast__content">
+                <span class="tm-notification-toast__message">@toast.Event.Message</span>
+                <span class="tm-notification-toast__sender">@toast.Event.SenderName</span>
+            </div>
+            <button type="button"
+                    class="tm-notification-toast__close"
+                    @onclick:stopPropagation="true"
+                    @onclick="() => RemoveToast(toast.Id)">
+                <TmIcon Name="@IconNames.X" Size="IconSize.Xs" />
+            </button>
+            <div class="tm-notification-toast__progress"></div>
+        </div>
+    }
+</div>
+
+@code {
+    [Inject] private INotificationService NotificationService { get; set; } = default!;
+    [Inject] private INotificationBadgeState BadgeState { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    [Parameter] public string CurrentUserId { get; set; } = "demo";
+    [Parameter] public bool IsPanelOpen { get; set; }
+
+    private readonly List<ToastModel> _toasts = new();
+    private readonly Queue<ToastModel> _queue = new();
+    private int _lastUnreadCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _lastUnreadCount = await NotificationService.GetUnreadCountAsync(CurrentUserId);
+        BadgeState.OnChanged += OnBadgeChanged;
+    }
+
+    private async void OnBadgeChanged()
+    {
+        await InvokeAsync(async () =>
+        {
+            var newCount = await NotificationService.GetUnreadCountAsync(CurrentUserId);
+            if (newCount > _lastUnreadCount && !IsPanelOpen)
+            {
+                var notes = await NotificationService.GetNotificationsAsync(CurrentUserId, limit: 1);
+                if (notes.FirstOrDefault() is { } n)
+                    EnqueueToast(n);
+            }
+            _lastUnreadCount = newCount;
+            StateHasChanged();
+        });
+    }
+
+    private void EnqueueToast(INotification notification)
+    {
+        var toast = new ToastModel
+        {
+            Id = Guid.NewGuid().ToString(),
+            Event = notification.Event
+        };
+
+        if (_toasts.Count >= 3)
+        {
+            _queue.Enqueue(toast);
+        }
+        else
+        {
+            _toasts.Add(toast);
+            _ = StartDismissTimerAsync(toast.Id);
+        }
+    }
+
+    private async Task StartDismissTimerAsync(string toastId)
+    {
+        await Task.Delay(4000);
+        await InvokeAsync(() => RemoveToast(toastId));
+    }
+
+    private void RemoveToast(string toastId)
+    {
+        _toasts.RemoveAll(t => t.Id == toastId);
+        while (_toasts.Count < 3 && _queue.TryDequeue(out var queued))
+        {
+            _toasts.Add(queued);
+            _ = StartDismissTimerAsync(queued.Id);
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnToastClickAsync(ToastModel toast)
+    {
+        RemoveToast(toast.Id);
+        if (!string.IsNullOrEmpty(toast.Event.DeepLink))
+            Navigation.NavigateTo(toast.Event.DeepLink);
+    }
+
+    private static string TypeIcon(NotificationType type) => type switch
+    {
+        NotificationType.Mention => IconNames.AtSign,
+        NotificationType.Reply => IconNames.MessageSquare,
+        NotificationType.Reaction => IconNames.ThumbsUp,
+        NotificationType.ThreadResolved => IconNames.CheckCircle,
+        NotificationType.NewThread => IconNames.PlusCircle,
+        _ => IconNames.Bell
+    };
+
+    public void Dispose()
+    {
+        BadgeState.OnChanged -= OnBadgeChanged;
+    }
+
+    private class ToastModel
+    {
+        public string Id { get; set; } = string.Empty;
+        public INotificationEvent Event { get; set; } = default!;
+    }
+}

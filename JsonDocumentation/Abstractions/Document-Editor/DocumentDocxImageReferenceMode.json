@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "DOCX image reference mode for a DrawingML blip.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentDocxDrawingMetadata.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentDocxImageReferenceMode"
+}

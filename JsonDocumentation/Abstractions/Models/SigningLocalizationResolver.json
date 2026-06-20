@@ -1,0 +1,251 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Resolves localized signing texts with deterministic culture fallback.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningLocalizationResolver.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ResolveFieldDescription",
+      "kind": "Method",
+      "type": "string",
+      "description": "Resolves a signing field description.",
+      "parameters": [
+        {
+          "name": "field",
+          "type": "SigningField?"
+        },
+        {
+          "name": "culture",
+          "type": "string?"
+        },
+        {
+          "name": "fallbackCulture",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "finalFallback",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ResolveFieldLabel",
+      "kind": "Method",
+      "type": "string",
+      "description": "Resolves a signing field label.",
+      "parameters": [
+        {
+          "name": "field",
+          "type": "SigningField?"
+        },
+        {
+          "name": "culture",
+          "type": "string?"
+        },
+        {
+          "name": "fallbackCulture",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "finalFallback",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ResolveFieldPlaceholder",
+      "kind": "Method",
+      "type": "string",
+      "description": "Resolves a signing field placeholder.",
+      "parameters": [
+        {
+          "name": "field",
+          "type": "SigningField?"
+        },
+        {
+          "name": "culture",
+          "type": "string?"
+        },
+        {
+          "name": "fallbackCulture",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "finalFallback",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ResolveFieldTitle",
+      "kind": "Method",
+      "type": "string",
+      "description": "Resolves a signing field title.",
+      "parameters": [
+        {
+          "name": "field",
+          "type": "SigningField?"
+        },
+        {
+          "name": "culture",
+          "type": "string?"
+        },
+        {
+          "name": "fallbackCulture",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "finalFallback",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ResolveOptionLabel",
+      "kind": "Method",
+      "type": "string",
+      "description": "Resolves a choice option display label without changing the stable option value.",
+      "parameters": [
+        {
+          "name": "option",
+          "type": "SigningFieldOption?"
+        },
+        {
+          "name": "culture",
+          "type": "string?"
+        },
+        {
+          "name": "fallbackCulture",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "finalFallback",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ResolvePageLabel",
+      "kind": "Method",
+      "type": "string",
+      "description": "Resolves a document page label.",
+      "parameters": [
+        {
+          "name": "page",
+          "type": "SigningDocumentPage?"
+        },
+        {
+          "name": "culture",
+          "type": "string?"
+        },
+        {
+          "name": "fallbackCulture",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "finalFallback",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ResolveRoleName",
+      "kind": "Method",
+      "type": "string",
+      "description": "Resolves a submitter role display name.",
+      "parameters": [
+        {
+          "name": "role",
+          "type": "SigningSubmitterRole?"
+        },
+        {
+          "name": "culture",
+          "type": "string?"
+        },
+        {
+          "name": "fallbackCulture",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "finalFallback",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ResolveText",
+      "kind": "Method",
+      "type": "string",
+      "description": "Resolves localized text using requested culture, fallback culture, default text, and legacy fallback.",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "SigningLocalizedText?"
+        },
+        {
+          "name": "culture",
+          "type": "string?"
+        },
+        {
+          "name": "fallbackCulture",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "legacyFallback",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "finalFallback",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ResolveValidationMessage",
+      "kind": "Method",
+      "type": "string",
+      "description": "Resolves a validation message.",
+      "parameters": [
+        {
+          "name": "validation",
+          "type": "SigningFieldValidation?"
+        },
+        {
+          "name": "culture",
+          "type": "string?"
+        },
+        {
+          "name": "fallbackCulture",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "finalFallback",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    }
+  ],
+  "itemName": "SigningLocalizationResolver"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "Options for a paste-special operation: which content to transfer, an optional arithmetic operation against the existing target values, whether to skip blank source cells, and whether to transpose the copied block (swap rows and columns).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetPasteSpecial.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetPasteSpecialOptions"
+}

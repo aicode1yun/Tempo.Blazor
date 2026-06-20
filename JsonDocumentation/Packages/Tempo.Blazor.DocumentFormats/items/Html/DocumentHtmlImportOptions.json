@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Html",
+  "namespace": "Tempo.Blazor.DocumentFormats.Html",
+  "description": "Options used when importing HTML into the editor document model.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Html/DocumentHtmlImporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentHtmlImportOptions"
+}

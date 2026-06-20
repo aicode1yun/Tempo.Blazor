@@ -60,19 +60,25 @@ window.tmDiagramEditor = {
         container.id = id;
 
         const svg = container.querySelector('.tm-diagram-canvas__svg');
-        const htmlLayer = container.querySelector('.tm-diagram-canvas__overlay .tm-diagram-transform-layer');
-        const interactionLayer = container.querySelector('.tm-diagram-canvas__interaction');
-        const selectionLayer = container.querySelector('.tm-diagram-selection-layer');
-
         if (!svg) throw new Error('TmDiagramCanvas requires an SVG element with class tm-diagram-canvas__svg');
+
+        // F2 — 4-pane SVG structure (see planning/DIAGRAM_UNIFIED_SVG_PLAN.md §5.1).
+        // The panes are rendered by Blazor as direct <g> children of the SVG and
+        // live inside the same coordinate system, so no per-pane transform is
+        // needed.
+        const bgPane = svg.querySelector('.tm-diagram-bg-pane');
+        const scenePane = svg.querySelector('.tm-diagram-scene-pane');
+        const overlayPane = svg.querySelector('.tm-diagram-overlay-pane');
+        const decoratorPane = svg.querySelector('.tm-diagram-decorator-pane');
 
         const opts = options || {};
         const inst = {
             container: container,
             svg: svg,
-            htmlLayer: htmlLayer,
-            interactionLayer: interactionLayer,
-            selectionLayer: selectionLayer,
+            bgPane: bgPane,
+            scenePane: scenePane,
+            overlayPane: overlayPane,
+            decoratorPane: decoratorPane,
             dotNetRef: dotNetRef,
 
             readOnly: !!opts.readOnly,
@@ -157,14 +163,10 @@ window.tmDiagramEditor = {
 
             // magnetic guidelines
             guideLines: [],
-
-            // group bounds
-            groupBoundsEls: [],
         };
 
         this.instances.set(id, inst);
         this._attachEvents(inst);
-        this._syncHtmlTransform(inst);
 
         // Auto-fit the content into the visible canvas on first initialization.
         // Without this, the default viewBox (e.g. 0 0 3000 2000) is much larger
@@ -202,8 +204,11 @@ window.tmDiagramEditor = {
         }
 
         inst.svg = null;
-        inst.htmlLayer = null;
-        inst.interactionLayer = null;
+        inst.bgPane = null;
+        inst.scenePane = null;
+        inst.overlayPane = null;
+        inst.decoratorPane = null;
+        inst.scenePane = null;
         inst.dotNetRef = null;
         this.instances.delete(id);
     },
@@ -360,8 +365,11 @@ window.tmDiagramEditor = {
 
     _setViewBox: function (inst, x, y, w, h) {
         inst.svg.setAttribute('viewBox', x + ' ' + y + ' ' + w + ' ' + h);
+        // After F2 the HTML nodes live inside a <foreignObject> in the scene
+        // pane, so they share the SVG's viewBox. inst.scale tracks the effective
+        // screen-to-doc ratio (still derived from the SVG's rendered width) for
+        // callers that want "zoom level" independent of getScreenCTM.
         inst.scale = Math.max(inst.svg.getBoundingClientRect().width, 1) / w;
-        this._syncHtmlTransform(inst);
         // Keep the Blazor-side `_viewBox` string in sync so any subsequent
         // parent re-render (which would otherwise reset the viewBox attribute
         // from stale Blazor state) preserves the current view. Without this,
@@ -369,20 +377,6 @@ window.tmDiagramEditor = {
         // re-computes _viewBox from the document dimensions.
         if (inst.dotNetRef)
             inst.dotNetRef.invokeMethodAsync('OnViewBoxChanged', x, y, w, h);
-    },
-
-    _syncHtmlTransform: function (inst) {
-        if (!inst.htmlLayer) return;
-        const vb = this._getViewBox(inst);
-        const rect = inst.svg.getBoundingClientRect();
-        const scale = Math.max(rect.width, 1) / vb.w;
-        inst.scale = scale;
-        const tx = -vb.x * scale;
-        const ty = -vb.y * scale;
-        var newTransform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
-        if (inst.htmlLayer.style.transform !== newTransform) {
-            inst.htmlLayer.style.transform = newTransform;
-        }
     },
 
     _snap: function (inst, v) {
@@ -403,32 +397,59 @@ window.tmDiagramEditor = {
     // ── Node lookup helpers ───────────────────────────────────────────────────
 
     _nodeEl: function (inst, id) {
-        return inst.htmlLayer ? inst.htmlLayer.querySelector('[data-node-id="' + id + '"]') : null;
+        if (!inst.scenePane) return null;
+        return inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + id + '"]');
+    },
+
+    // Post-F3 node position/rotation live in the SVG `transform` attribute on
+    // the `<g class="tm-diagram-node">`. The stored format is:
+    //   translate(X,Y) rotate(θ cx cy)
+    // where (cx, cy) is the node centre (W/2, H/2) so the rotation pivot
+    // stays at the node's centre regardless of X/Y. The parsers below cover
+    // both F3's canonical format and any legacy single-part transforms.
+    _parseNodeTransform: function (el) {
+        const t = el ? (el.getAttribute('transform') || '') : '';
+        const tm = t.match(/translate\(\s*([-\d.e+]+)\s*[,\s]\s*([-\d.e+]+)\s*\)/);
+        const rm = t.match(/rotate\(\s*([-\d.e+]+)(?:\s*[,\s]\s*([-\d.e+]+)\s*[,\s]\s*([-\d.e+]+))?\s*\)/);
+        return {
+            x: tm ? parseFloat(tm[1]) : 0,
+            y: tm ? parseFloat(tm[2]) : 0,
+            rot: rm ? parseFloat(rm[1]) : 0,
+            cx: (rm && rm[2] !== undefined) ? parseFloat(rm[2]) : null,
+            cy: (rm && rm[3] !== undefined) ? parseFloat(rm[3]) : null,
+        };
+    },
+
+    _buildNodeTransform: function (x, y, rot, w, h) {
+        let t = 'translate(' + x + ',' + y + ')';
+        if (rot) {
+            const cx = (w != null ? w : 0) / 2;
+            const cy = (h != null ? h : 0) / 2;
+            t += ' rotate(' + rot + ' ' + cx + ' ' + cy + ')';
+        }
+        return t;
     },
 
     _nodeRect: function (inst, id) {
         const el = this._nodeEl(inst, id);
         if (!el) return null;
-        const style = el.style.transform || '';
-        const m = style.match(/translate\(\s*([-\d.e+]+)px\s*,\s*([-\d.e+]+)px\s*\)/);
-        const x = m ? parseFloat(m[1]) : 0;
-        const y = m ? parseFloat(m[2]) : 0;
-        const dw = parseFloat(el.getAttribute('data-w') || el.style.width || '0');
-        const dh = parseFloat(el.getAttribute('data-h') || el.style.height || '0');
-        return { x, y, w: dw, h: dh };
+        const p = this._parseNodeTransform(el);
+        const dw = parseFloat(el.getAttribute('data-w') || '0');
+        const dh = parseFloat(el.getAttribute('data-h') || '0');
+        return { x: p.x, y: p.y, w: dw, h: dh };
     },
 
     _getNodeRotation: function (el) {
-        const style = el ? el.style.transform : '';
-        const m = style.match(/rotate\(([-\d.e+]+)deg\)/);
-        return m ? parseFloat(m[1]) : 0;
+        return this._parseNodeTransform(el).rot;
     },
 
     _setNodeTranslate: function (inst, id, x, y) {
         const el = this._nodeEl(inst, id);
         if (!el) return;
         const rot = this._getNodeRotation(el);
-        el.style.transform = 'translate(' + x + 'px, ' + y + 'px)' + (rot ? ' rotate(' + rot + 'deg)' : '');
+        const w = parseFloat(el.getAttribute('data-w') || '0');
+        const h = parseFloat(el.getAttribute('data-h') || '0');
+        el.setAttribute('transform', this._buildNodeTransform(x, y, rot, w, h));
     },
 
     _isNodeInActiveGroup: function (inst, nodeEl) {
@@ -483,8 +504,8 @@ window.tmDiagramEditor = {
             const gid = el.getAttribute('data-group-id');
             if (gid) groupIds.add(gid);
         });
-        if (groupIds.size > 0 && inst.htmlLayer) {
-            inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
+        if (groupIds.size > 0 && inst.scenePane) {
+            inst.scenePane.querySelectorAll('g.tm-diagram-node[data-node-id]').forEach(el => {
                 const nid = el.getAttribute('data-node-id');
                 if (!nid || allIds.has(nid)) return;
                 const parentGroupId = el.getAttribute('data-parent-group-id') || null;
@@ -507,47 +528,12 @@ window.tmDiagramEditor = {
     },
 
     // ── Group bounds ─────────────────────────────────────────────────────────
-
-    _renderGroupBounds: function (inst) {
-        this._clearGroupBounds(inst);
-        if (!inst.htmlLayer) return;
-        const groupMap = {};
-        inst.selectedIds.forEach(id => {
-            const el = this._nodeEl(inst, id);
-            const gid = el ? el.getAttribute('data-group-id') : null;
-            if (!gid) return;
-            if (!groupMap[gid]) groupMap[gid] = [];
-            const r = this._nodeRect(inst, id);
-            if (r) groupMap[gid].push(r);
-        });
-
-        Object.keys(groupMap).forEach(gid => {
-            const rects = groupMap[gid];
-            if (rects.length === 0) return;
-            const minX = Math.min(...rects.map(r => r.x)) - 6;
-            const minY = Math.min(...rects.map(r => r.y)) - 6;
-            const maxX = Math.max(...rects.map(r => r.x + r.w)) + 6;
-            const maxY = Math.max(...rects.map(r => r.y + r.h)) + 6;
-            const el = document.createElement('div');
-            el.className = 'tm-diagram-group-bounds';
-            el.style.position = 'absolute';
-            el.style.left = minX + 'px';
-            el.style.top = minY + 'px';
-            el.style.width = (maxX - minX) + 'px';
-            el.style.height = (maxY - minY) + 'px';
-            el.style.border = '1px dashed var(--tm-color-primary, #3b82f6)';
-            el.style.borderRadius = '4px';
-            el.style.pointerEvents = 'none';
-            inst.htmlLayer.appendChild(el);
-            inst.groupBoundsEls.push(el);
-        });
-    },
-
-    _clearGroupBounds: function (inst) {
-        if (!inst.htmlLayer) return;
-        inst.htmlLayer.querySelectorAll('.tm-diagram-group-bounds').forEach(el => el.remove());
-        inst.groupBoundsEls = [];
-    },
+    //
+    // F6: No JS imperative group-bounds (no scenePane.appendChild div/rect).
+    // Razor emits <rect class="tm-diagram-group-bounds"> in .tm-diagram-bg-pane
+    // from Document.Nodes — model → view. Bounds update when Blazor re-renders
+    // after drag/resize commit; during live drag they stay at last committed
+    // geometry (less visual noise than a constantly resizing dashed frame).
 
     // ── Hit-path helper (HTML overlay may block SVG hit-path, use elementFromPoint fallback)
     _findHitPath: function (e) {
@@ -569,8 +555,8 @@ window.tmDiagramEditor = {
     _onMouseDown: function (e, inst) {
         if (inst.readOnly && e.button !== 1) return;
 
-        // Ignore when interacting with inline edit inputs so text selection and cursor work
-        if (e.target.closest('.tm-diagram-node__inline-input, .tm-diagram-node__inline-textarea, .tm-diagram-edge-label-input')) {
+        // Ignore when interacting with inline edit inputs or edge toolbars
+        if (e.target.closest('.tm-diagram-node__inline-input, .tm-diagram-node__inline-textarea, .tm-diagram-edge-label-input, .tm-diagram-edge-toolbar')) {
             return;
         }
 
@@ -923,8 +909,8 @@ window.tmDiagramEditor = {
             // Include children of selected nodes
             const allIds = new Set(inst.dragNodeIds);
             inst.dragNodeIds.forEach(nid => {
-                if (inst.htmlLayer) {
-                    inst.htmlLayer.querySelectorAll('[data-parent-id="' + nid + '"]').forEach(childEl => {
+                if (inst.scenePane) {
+                    inst.scenePane.querySelectorAll('[data-parent-id="' + nid + '"]').forEach(childEl => {
                         const cid = childEl.getAttribute('data-node-id');
                         if (cid && this._isNodeInActiveGroup(inst, childEl)) allIds.add(cid);
                     });
@@ -1135,7 +1121,7 @@ window.tmDiagramEditor = {
                 if (inst.dragDanglingHoverNodeId !== hoverNodeId) {
                     // Clear previous highlight and timer
                     if (inst.dragDanglingHoverNodeId) {
-                        const prev = inst.htmlLayer.querySelector('[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
+                        const prev = inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
                         if (prev) {
                             prev.classList.remove('tm-diagram-node--drop-target');
                             prev.classList.remove('tm-diagram-node--outline-connect');
@@ -1151,14 +1137,14 @@ window.tmDiagramEditor = {
                     // Start 2s timer for outline connect
                     inst.danglingOutlineTimer = setTimeout(function () {
                         if (inst.dragDanglingHoverNodeId === hoverNodeId) {
-                            const stillNode = inst.htmlLayer.querySelector('[data-node-id="' + hoverNodeId + '"]');
+                            const stillNode = inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + hoverNodeId + '"]');
                             if (stillNode) stillNode.classList.add('tm-diagram-node--outline-connect');
                             inst.danglingOutlineConnect = true;
                         }
                     }, 2000);
                 }
             } else if (inst.dragDanglingHoverNodeId) {
-                const prev = inst.htmlLayer.querySelector('[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
+                const prev = inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
                 if (prev) {
                     prev.classList.remove('tm-diagram-node--drop-target');
                     prev.classList.remove('tm-diagram-node--outline-connect');
@@ -1313,7 +1299,7 @@ window.tmDiagramEditor = {
     /// table. Mirrors the drag-setup block from _onMouseDown.
     _beginNodeDragFromCell: function (inst, nodeId, startScreenX, startScreenY) {
         if (inst.readOnly) return;
-        const nodeEl = inst.htmlLayer ? inst.htmlLayer.querySelector('[data-node-id="' + nodeId + '"]') : null;
+        const nodeEl = inst.scenePane ? inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + nodeId + '"]') : null;
         if (nodeEl && nodeEl.getAttribute('data-locked') === 'true') return;
         if (!inst.selectedIds.has(nodeId)) return;
 
@@ -1322,8 +1308,8 @@ window.tmDiagramEditor = {
 
         const allIds = new Set(inst.dragNodeIds);
         inst.dragNodeIds.forEach(nid => {
-            if (inst.htmlLayer) {
-                inst.htmlLayer.querySelectorAll('[data-parent-id="' + nid + '"]').forEach(childEl => {
+            if (inst.scenePane) {
+                inst.scenePane.querySelectorAll('[data-parent-id="' + nid + '"]').forEach(childEl => {
                     const cid = childEl.getAttribute('data-node-id');
                     if (cid && this._isNodeInActiveGroup(inst, childEl)) allIds.add(cid);
                 });
@@ -1595,7 +1581,7 @@ window.tmDiagramEditor = {
 
         if (inst.isDraggingDangling) {
             if (inst.dragDanglingHoverNodeId) {
-                const nodeEl = inst.htmlLayer.querySelector('[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
+                const nodeEl = inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
                 if (nodeEl) {
                     nodeEl.classList.remove('tm-diagram-node--drop-target');
                     nodeEl.classList.remove('tm-diagram-node--outline-connect');
@@ -1768,8 +1754,8 @@ window.tmDiagramEditor = {
                     const height = Math.abs(docBottomRight.y - docTopLeft.y);
 
                     const hits = [];
-                    if (inst.htmlLayer) {
-                        inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
+                    if (inst.scenePane) {
+                        inst.scenePane.querySelectorAll('g.tm-diagram-node[data-node-id]').forEach(el => {
                             if (!this._isNodeInActiveGroup(inst, el)) return;
                             const id = el.getAttribute('data-node-id');
                             const r = this._nodeRect(inst, id);
@@ -1888,8 +1874,8 @@ window.tmDiagramEditor = {
             // Include children of selected nodes
             const allIds = new Set(inst.dragNodeIds);
             inst.dragNodeIds.forEach(nid => {
-                if (inst.htmlLayer) {
-                    inst.htmlLayer.querySelectorAll('[data-parent-id="' + nid + '"]').forEach(childEl => {
+                if (inst.scenePane) {
+                    inst.scenePane.querySelectorAll('[data-parent-id="' + nid + '"]').forEach(childEl => {
                         const cid = childEl.getAttribute('data-node-id');
                         if (cid) allIds.add(cid);
                     });
@@ -2092,13 +2078,13 @@ window.tmDiagramEditor = {
         inst.drawTempPath = path;
 
         // Highlight source port
-        const portEl = inst.htmlLayer?.querySelector('.tm-diagram-port[data-port-id="' + portId + '"]');
+        const portEl = inst.scenePane?.querySelector('.tm-diagram-port[data-port-id="' + portId + '"]');
         if (portEl) portEl.classList.add('tm-diagram-port--active');
 
         // Highlight source connection point
         if (inst.drawSource.constraintRx !== null) {
             const cpSelector = '.tm-diagram-connection-point[data-cp-rx="' + inst.drawSource.constraintRx + '"][data-cp-ry="' + inst.drawSource.constraintRy + '"]'; 
-            const cpEls = nodeId ? inst.htmlLayer?.querySelectorAll('[data-node-id="' + nodeId + '"] ' + cpSelector) : null;
+            const cpEls = nodeId ? inst.scenePane?.querySelectorAll('[data-node-id="' + nodeId + '"] ' + cpSelector) : null;
             if (cpEls && cpEls.length > 0) cpEls[0].classList.add('tm-diagram-connection-point--active');
         }
     },
@@ -2139,10 +2125,10 @@ window.tmDiagramEditor = {
         const isOwnSource = hoverNodeId && inst.drawSource && hoverNodeId === inst.drawSource.nodeId;
         const nextDrop = (hoverNodeId && !isOwnSource) ? hoverNodeId : null;
         if (prevDrop && prevDrop !== nextDrop) {
-            inst.htmlLayer?.querySelectorAll('.tm-diagram-node--drop-target').forEach(n => n.classList.remove('tm-diagram-node--drop-target'));
+            inst.scenePane?.querySelectorAll('.tm-diagram-node--drop-target').forEach(n => n.classList.remove('tm-diagram-node--drop-target'));
         }
         if (nextDrop && nextDrop !== prevDrop) {
-            const target = inst.htmlLayer?.querySelector('[data-node-id="' + nextDrop + '"]');
+            const target = inst.scenePane?.querySelector('g.tm-diagram-node[data-node-id="' + nextDrop + '"]');
             if (target) target.classList.add('tm-diagram-node--drop-target');
         }
         inst.__dropTargetNodeId = nextDrop;
@@ -2160,7 +2146,7 @@ window.tmDiagramEditor = {
             const nearest = this._findNearestPortOnNode(inst, hoverNodeId, docPt.x, docPt.y, 15 / Math.max(inst.scale, 0.01));
             if (nearest && nearest.portEl) portEl = nearest.portEl;
         }
-        inst.htmlLayer?.querySelectorAll('.tm-diagram-port.tm-diagram-port--target').forEach(p => p.classList.remove('tm-diagram-port--target'));
+        inst.scenePane?.querySelectorAll('.tm-diagram-port.tm-diagram-port--target').forEach(p => p.classList.remove('tm-diagram-port--target'));
         if (portEl) {
             const nid = portEl.closest('[data-node-id]')?.getAttribute('data-node-id');
             const pid = portEl.getAttribute('data-port-id');
@@ -2237,17 +2223,15 @@ window.tmDiagramEditor = {
     // endpoint and port highlight both snap even when the cursor is
     // slightly off the port circle.
     _findNearestPortOnNode: function (inst, nodeId, x, y, maxDistDoc) {
-        if (!nodeId || !inst.htmlLayer) return null;
-        const nodeEl = inst.htmlLayer.querySelector('[data-node-id="' + nodeId + '"]');
+        if (!nodeId || !inst.scenePane) return null;
+        const nodeEl = inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + nodeId + '"]');
         if (!nodeEl) return null;
         const portEls = nodeEl.querySelectorAll('.tm-diagram-port[data-port-id]');
         if (!portEls || portEls.length === 0) return null;
         // Map every port's screen-space center through the same _screenToDoc
-        // transform used for the cursor. This keeps the two coordinate
-        // systems consistent even if the SVG's screen-CTM and the
-        // htmlLayer's CSS transform (driven by `inst.scale`) drift apart —
-        // which happens in practice when the SVG viewBox and its rendered
-        // client width imply a different scale than `inst.scale`.
+        // transform used for the cursor. In the unified SVG canvas (F2+)
+        // there is only one coordinate system (viewBox), so drift is
+        // impossible; the comment is kept as historical context.
         let best = null;
         let bestD2 = Infinity;
         const maxD2 = maxDistDoc * maxDistDoc;
@@ -2428,17 +2412,17 @@ window.tmDiagramEditor = {
             inst.drawTempPath = null;
         }
         if (inst.drawSource) {
-            const portEl = inst.htmlLayer?.querySelector('.tm-diagram-port[data-port-id="' + inst.drawSource.portId + '"]');
+            const portEl = inst.scenePane?.querySelector('.tm-diagram-port[data-port-id="' + inst.drawSource.portId + '"]');
             if (portEl) portEl.classList.remove('tm-diagram-port--active');
             // Remove connection point active highlight
-            inst.htmlLayer?.querySelectorAll('.tm-diagram-connection-point--active').forEach(cp => cp.classList.remove('tm-diagram-connection-point--active'));
+            inst.scenePane?.querySelectorAll('.tm-diagram-connection-point--active').forEach(cp => cp.classList.remove('tm-diagram-connection-point--active'));
             inst.drawSource = null;
         }
         inst.drawHoverEdgeId = null;
         inst.drawHoverEdgeT = null;
         this._highlightEdgeTarget(inst, null);
-        inst.htmlLayer?.querySelectorAll('.tm-diagram-port.tm-diagram-port--target').forEach(p => p.classList.remove('tm-diagram-port--target'));
-        inst.htmlLayer?.querySelectorAll('.tm-diagram-node--drop-target').forEach(n => n.classList.remove('tm-diagram-node--drop-target'));
+        inst.scenePane?.querySelectorAll('.tm-diagram-port.tm-diagram-port--target').forEach(p => p.classList.remove('tm-diagram-port--target'));
+        inst.scenePane?.querySelectorAll('.tm-diagram-node--drop-target').forEach(n => n.classList.remove('tm-diagram-node--drop-target'));
         inst.__dropTargetNodeId = null;
 
         // Return to select mode after using edge tool
@@ -2920,52 +2904,68 @@ window.tmDiagramEditor = {
 
     _updateSelection: function (inst) {
         this._clearSelectionOutlines(inst);
-        if (!inst.htmlLayer) return;
+        if (!inst.scenePane) return;
 
-        // Sync selected class on node elements for port visibility
-        inst.htmlLayer.querySelectorAll('.tm-diagram-node--selected').forEach(function (el) {
+        // Sync the .tm-diagram-node--selected modifier on the <g> so the CSS
+        // visibility rules for ports / connection points fire on selected nodes.
+        inst.scenePane.querySelectorAll('.tm-diagram-node--selected').forEach(function (el) {
             el.classList.remove('tm-diagram-node--selected');
         });
 
+        if (!inst.overlayPane) return;
+        const SVG_NS = 'http://www.w3.org/2000/svg';
         inst.selectedIds.forEach(id => {
             const nodeEl = this._nodeEl(inst, id);
             if (nodeEl) nodeEl.classList.add('tm-diagram-node--selected');
             const r = this._nodeRect(inst, id);
             if (!r) return;
             const rot = this._getNodeRotation(nodeEl);
-            const el = document.createElement('div');
-            el.className = 'tm-diagram-selection-outline';
-            el.style.position = 'absolute';
-            el.style.left = '-4px';
-            el.style.top = '-4px';
-            el.style.width = (r.w + 8) + 'px';
-            el.style.height = (r.h + 8) + 'px';
-            el.style.transformOrigin = 'center center';
-            el.style.transform = 'translate(' + r.x + 'px, ' + r.y + 'px)' + (rot ? ' rotate(' + rot + 'deg)' : '');
-            el.style.pointerEvents = 'none';
-            el.style.boxSizing = 'border-box';
-            el.setAttribute('data-sel-for', id);
-            var selLayer = inst.htmlLayer.querySelector('.tm-diagram-selection-layer');
-            (selLayer || inst.htmlLayer).appendChild(el);
+            // Selection outline sits in the overlay-pane as an SVG <rect> with
+            // the same translate+rotate as the node, sized 8 px larger so it
+            // visually frames the shape rather than overlapping it.
+            const rect = document.createElementNS(SVG_NS, 'rect');
+            rect.setAttribute('class', 'tm-diagram-selection-outline');
+            rect.setAttribute('x', '-4');
+            rect.setAttribute('y', '-4');
+            rect.setAttribute('width', String(r.w + 8));
+            rect.setAttribute('height', String(r.h + 8));
+            rect.setAttribute('fill', 'none');
+            rect.setAttribute('pointer-events', 'none');
+            rect.setAttribute('transform', this._buildNodeTransform(r.x, r.y, rot, r.w, r.h));
+            rect.setAttribute('data-sel-for', id);
+            inst.overlayPane.appendChild(rect);
         });
     },
 
     _updateSelectionTransforms: function (inst) {
-        if (!inst.htmlLayer) return;
+        if (!inst.overlayPane && !inst.decoratorPane) return;
         inst.selectedIds.forEach(id => {
             const r = this._nodeRect(inst, id);
             if (!r) return;
-            const outline = inst.htmlLayer.querySelector('[data-sel-for="' + id + '"]');
-            if (!outline) return;
             const nodeEl = this._nodeEl(inst, id);
             const rot = this._getNodeRotation(nodeEl);
-            outline.style.transform = 'translate(' + r.x + 'px, ' + r.y + 'px)' + (rot ? ' rotate(' + rot + 'deg)' : '');
+            const tr = this._buildNodeTransform(r.x, r.y, rot, r.w, r.h);
+
+            if (inst.overlayPane) {
+                const outline = inst.overlayPane.querySelector('[data-sel-for="' + id + '"]');
+                if (outline) outline.setAttribute('transform', tr);
+            }
+            // F5: keep the decorator-pane per-node handles group (resize rects,
+            // rotate circle, connect-arrow foreignObjects) in sync with the
+            // live node during JS-driven drags. Blazor re-renders it after the
+            // drag commits, but during the drag we must update the DOM directly
+            // otherwise the handles would lag behind the node.
+            if (inst.decoratorPane) {
+                const handles = inst.decoratorPane.querySelector('g.tm-diagram-node-handles[data-node-id="' + id + '"]');
+                if (handles) handles.setAttribute('transform', tr);
+            }
         });
     },
 
     _clearSelectionOutlines: function (inst) {
-        if (!inst.htmlLayer) return;
-        inst.htmlLayer.querySelectorAll('.tm-diagram-selection-outline').forEach(el => el.remove());
+        if (inst.overlayPane) {
+            inst.overlayPane.querySelectorAll('.tm-diagram-selection-outline').forEach(el => el.remove());
+        }
     },
 
     _updateWaypointVisuals: function (inst, edgeId, waypointIndex, x, y) {
@@ -3393,10 +3393,16 @@ window.tmDiagramEditor = {
         inst.activeGroupId = activeGroupId || null;
     },
 
-    syncHtmlTransform: function (container) {
+    setRulerUnit: function (container, unit) {
         const inst = this.instances.get(container.id);
         if (!inst) return;
-        this._syncHtmlTransform(inst);
+        inst.rulerUnit = unit || 'px';
+    },
+
+    setPageScale: function (container, scale) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        inst.pageScale = scale || 1.0;
     },
 
     zoomTo: function (container, scale) {
@@ -3425,8 +3431,8 @@ window.tmDiagramEditor = {
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         let hasNodes = false;
 
-        if (inst.htmlLayer) {
-            inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
+        if (inst.scenePane) {
+            inst.scenePane.querySelectorAll('g.tm-diagram-node[data-node-id]').forEach(el => {
                 const id = el.getAttribute('data-node-id');
                 const r = this._nodeRect(inst, id);
                 if (!r) return;
@@ -3595,10 +3601,17 @@ window.tmDiagramEditor = {
     _applyNodeRotation: function (inst, nodeId, angle) {
         const el = this._nodeEl(inst, nodeId);
         if (!el) return;
-        const style = el.style.transform || '';
-        const m = style.match(/translate\(\s*([-\d.e+]+)px\s*,\s*([-\d.e+]+)px\s*\)/);
-        const translate = m ? 'translate(' + m[1] + 'px, ' + m[2] + 'px)' : 'translate(0px, 0px)';
-        el.style.transform = translate + ' rotate(' + angle + 'deg)';
+        const p = this._parseNodeTransform(el);
+        const w = parseFloat(el.getAttribute('data-w') || '0');
+        const h = parseFloat(el.getAttribute('data-h') || '0');
+        const tr = this._buildNodeTransform(p.x, p.y, angle, w, h);
+        el.setAttribute('transform', tr);
+        // F5: also rotate the handles group in decorator-pane so the resize
+        // squares, rotate knob and connect arrows track the live rotation.
+        if (inst.decoratorPane) {
+            const handles = inst.decoratorPane.querySelector('g.tm-diagram-node-handles[data-node-id="' + nodeId + '"]');
+            if (handles) handles.setAttribute('transform', tr);
+        }
         this._updateSelection(inst);
     },
 
@@ -3626,9 +3639,9 @@ window.tmDiagramEditor = {
 
         // If rotating a group, cache member start rotations for real-time updates
         const nodeEl = this._nodeEl(inst, nodeId);
-        if (nodeEl && nodeEl.getAttribute('data-stencil-id') === 'general.group' && inst.htmlLayer) {
+        if (nodeEl && nodeEl.getAttribute('data-stencil-id') === 'general.group' && inst.scenePane) {
             inst.rotateGroupMembers = [];
-            inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
+            inst.scenePane.querySelectorAll('g.tm-diagram-node[data-node-id]').forEach(el => {
                 if (el.getAttribute('data-parent-group-id') === nodeId) {
                     const memberId = el.getAttribute('data-node-id');
                     const memberRot = this._getNodeRotation(el);
@@ -3689,7 +3702,7 @@ window.tmDiagramEditor = {
     _computeSnapGuides: function (inst, dragNodeIds, dragStartPositions, dxDoc, dyDoc) {
         const threshold = 8 / inst.scale; // 8 screen px
         const guides = { x: null, y: null, distances: { x: null, y: null } };
-        if (!inst.htmlLayer) return guides;
+        if (!inst.scenePane) return guides;
 
         const draggedRects = dragNodeIds.map(id => {
             const start = dragStartPositions[id];
@@ -3708,7 +3721,7 @@ window.tmDiagramEditor = {
         }).filter(Boolean);
 
         const allRects = [];
-        inst.htmlLayer.querySelectorAll('.tm-diagram-node').forEach(el => {
+        inst.scenePane.querySelectorAll('.tm-diagram-node').forEach(el => {
             const id = el.getAttribute('data-node-id');
             if (!id || dragNodeIds.includes(id)) return;
             const r = this._nodeRect(inst, id);
@@ -3823,13 +3836,13 @@ window.tmDiagramEditor = {
     _computeSnapGuidesForPoint: function (inst, x, y) {
         const threshold = 8 / inst.scale;
         const guides = { x: null, y: null, distances: { x: null, y: null } };
-        if (!inst.htmlLayer) return guides;
+        if (!inst.scenePane) return guides;
 
         let xBest = null;
         let yBest = null;
         const self = this;
 
-        inst.htmlLayer.querySelectorAll('.tm-diagram-node').forEach(function (el) {
+        inst.scenePane.querySelectorAll('.tm-diagram-node').forEach(function (el) {
             const id = el.getAttribute('data-node-id');
             if (!id) return;
             const r = self._nodeRect(inst, id);
@@ -4164,6 +4177,45 @@ window.tmDiagramEditor = {
         });
 
         return result;
+    },
+
+    // ── Export ───────────────────────────────────────────────────────────────
+
+    exportViewportAsSvg: function (container) {
+        const inst = this.instances.get(container.id);
+        if (!inst || !inst.svg) return null;
+        const clone = inst.svg.cloneNode(true);
+        // Remove interactive / transient layers that should not appear in export
+        clone.querySelector('.tm-diagram-decorator-pane')?.remove();
+        clone.querySelector('.tm-diagram-overlay-pane')?.remove();
+        // Remove any temporary draw path
+        clone.querySelectorAll('.tm-diagram-edge-draw-path').forEach(function (el) { el.remove(); });
+        // Wrap every foreignObject in <switch> with a <rect> fallback so viewers
+        // that do not support foreignObject still render a visible placeholder.
+        // (draw.io/mxGraph pattern — see planning/DIAGRAM_UNIFIED_SVG_PLAN.md §11.5)
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        clone.querySelectorAll('foreignObject').forEach(function (fo) {
+            var parent = fo.parentNode;
+            if (!parent) return;
+            var sw = document.createElementNS(SVG_NS, 'switch');
+            fo.setAttribute('requiredFeatures', 'http://www.w3.org/TR/SVG11/feature#Extensibility');
+            var fallback = document.createElementNS(SVG_NS, 'rect');
+            fallback.setAttribute('x', fo.getAttribute('x') || '0');
+            fallback.setAttribute('y', fo.getAttribute('y') || '0');
+            fallback.setAttribute('width', fo.getAttribute('width') || '0');
+            fallback.setAttribute('height', fo.getAttribute('height') || '0');
+            fallback.setAttribute('fill', '#f9fafb');
+            fallback.setAttribute('stroke', '#d1d5db');
+            fallback.setAttribute('stroke-width', '1');
+            parent.insertBefore(sw, fo);
+            sw.appendChild(fo);
+            sw.appendChild(fallback);
+        });
+        // Ensure the clone has explicit xmlns for standalone SVG serialization
+        if (!clone.getAttribute('xmlns')) {
+            clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        }
+        return new XMLSerializer().serializeToString(clone);
     },
 };
 

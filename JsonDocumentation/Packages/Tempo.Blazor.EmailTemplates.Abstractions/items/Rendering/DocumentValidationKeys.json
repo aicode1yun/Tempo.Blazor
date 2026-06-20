@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Rendering",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+  "description": "Localization keys for block-level document validation findings.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/DocumentValidationKeys.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentValidationKeys"
+}

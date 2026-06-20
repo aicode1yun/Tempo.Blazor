@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Docx",
+  "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+  "description": "Maps document image data to DOCX image part metadata.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocxImageContentTypeMapper.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocxImageContentTypeMapper"
+}

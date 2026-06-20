@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Markdown",
+  "namespace": "Tempo.Blazor.DocumentFormats.Markdown",
+  "description": "Options used when importing Markdown into the editor document model.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Markdown/DocumentMarkdownImporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentMarkdownImportOptions"
+}

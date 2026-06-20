@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Result of importing SQL DDL into an ER diagram.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/SqlImportResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Document",
+      "kind": "Property",
+      "type": "DiagramDocument"
+    },
+    {
+      "name": "LayoutDirection",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "SqlImportResult"
+}

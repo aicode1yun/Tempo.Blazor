@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Formula",
+  "description": "Tokenizes an Excel-like formula string into a sequence of s.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Formula/FormulaLexer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Tokenize",
+      "kind": "Method",
+      "type": "List<FormulaToken>",
+      "description": "Tokenizes the given formula string.",
+      "parameters": [
+        {
+          "name": "formula",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "FormulaLexer"
+}

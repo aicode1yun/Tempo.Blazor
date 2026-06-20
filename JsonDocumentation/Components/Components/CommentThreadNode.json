@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Models",
+  "description": "Represents a node in a nested comment thread tree.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Models/CommentThreadNode.cs",
+  "documentationStatus": "generated",
+  "itemName": "CommentThreadNode"
+}

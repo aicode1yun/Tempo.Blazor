@@ -1,0 +1,15 @@
+{
+  "itemName": "TmCommentMentionInput",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmCommentMentionInput Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/UI/TmCommentMentionInput.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor"
+  ],
+  "parameters": [],
+  "subcategory": "UI"
+}

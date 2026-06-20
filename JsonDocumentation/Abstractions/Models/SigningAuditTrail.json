@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Complete provider-agnostic audit trail payload.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningAuditTrail.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AuditPdfUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional audit PDF download URL."
+    },
+    {
+      "name": "Documents",
+      "kind": "Property",
+      "type": "IReadOnlyList<SigningAuditTrailDocument>",
+      "description": "Documents and checksums included in the trail."
+    },
+    {
+      "name": "Events",
+      "kind": "Property",
+      "type": "IReadOnlyList<SigningAuditTrailEvent>",
+      "description": "Chronological audit events."
+    },
+    {
+      "name": "Signers",
+      "kind": "Property",
+      "type": "IReadOnlyList<SigningAuditTrailSigner>",
+      "description": "Signer identities included in the trail."
+    }
+  ],
+  "itemName": "SigningAuditTrail"
+}

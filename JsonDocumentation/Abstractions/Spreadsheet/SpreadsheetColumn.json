@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Represents metadata for a single column in a spreadsheet sheet.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Models/SpreadsheetColumn.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Index",
+      "kind": "Property",
+      "type": "int",
+      "description": "The zero-based column index."
+    },
+    {
+      "name": "IsHidden",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the column is hidden."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "double?",
+      "description": "The column width in pixels. Null means use the sheet default."
+    }
+  ],
+  "itemName": "SpreadsheetColumn"
+}
