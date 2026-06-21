@@ -36,7 +36,7 @@
 @inject DemoNotionPublicShareProvider PublicShareProvider
 @inject DemoNotionAuditProvider AuditProvider
 @inject DemoSmartLinkProvider SmartLinkProvider
-@inject WorkItemProviderRegistry WorkItemProviders
+@inject Tempo.Blazor.Abstractions.WorkItems.TmWorkItemProviderRegistry WorkItemProviders
 
 <PageTitle>Notion Editor – Tempo.Blazor</PageTitle>
 
@@ -103,7 +103,7 @@
                             FileProvider="@(IsProviderDisabled("disableFileProvider") ? null : FileProvider)"
                             TokenProvider="@TokenProvider"
                             AIProvider="@(IsProviderDisabled("disableAIProvider") ? null : AIProvider)"
-                            TaskProvider="@(IsProviderDisabled("disableTaskProvider") ? null : TaskProvider)"
+                            WorkItemSource="@(IsProviderDisabled("disableTaskProvider") ? null : TaskProvider)"
                             WorkItemProviders="@(IsProviderDisabled("disableWorkItemProvider") ? null : WorkItemProviders)"
                             ReactionProvider="@(IsProviderDisabled("disableReactionProvider") ? null : ReactionProvider)"
                             AnalyticsProvider="@(IsProviderDisabled("disableAnalyticsProvider") ? null : AnalyticsProvider)"

@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Work Items",
+  "namespace": "Tempo.Blazor.Abstractions.WorkItems",
+  "description": "Registry of s discovered through dependency injection, keyed by . Components resolve a provider by key (or use the single registered provider) so they all share the same task source.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemProviderRegistry.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Count",
+      "kind": "Field",
+      "type": "int",
+      "description": "Total number of usable providers."
+    },
+    {
+      "name": "GetAll",
+      "kind": "Method",
+      "type": "IReadOnlyCollection<ITmWorkItemProvider>",
+      "description": "Returns all providers in stable display order."
+    },
+    {
+      "name": "GetDefault",
+      "kind": "Method",
+      "type": "ITmWorkItemProvider?",
+      "description": "Returns the single registered provider when exactly one exists, otherwise null. Convenient for the common case where an application has one task source."
+    },
+    {
+      "name": "GetProvider",
+      "kind": "Method",
+      "type": "ITmWorkItemProvider?",
+      "description": "Returns a provider by key, or null when not registered.",
+      "parameters": [
+        {
+          "name": "sourceKey",
+          "type": "string?"
+        }
+      ]
+    }
+  ],
+  "itemName": "TmWorkItemProviderRegistry"
+}

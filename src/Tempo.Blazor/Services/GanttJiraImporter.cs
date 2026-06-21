@@ -13,7 +13,7 @@ public sealed class GanttJiraImporter : IDisposable
 
     public GanttJiraImporter(HttpClient httpClient) => _http = httpClient;
 
-    public async Task<IReadOnlyList<GanttTask>> ImportAsync(
+    public async Task<IReadOnlyList<TmWorkItem>> ImportAsync(
         string baseUrl, string token, string projectKey,
         CancellationToken cancellationToken = default)
     {
@@ -32,12 +32,12 @@ public sealed class GanttJiraImporter : IDisposable
         var root   = JsonDocument.Parse(json).RootElement;
         var issues = root.GetProperty("issues");
 
-        var result = new List<GanttTask>();
+        var result = new List<TmWorkItem>();
         foreach (var issue in issues.EnumerateArray())
         {
             var fields  = issue.GetProperty("fields");
             var summary = fields.GetProperty("summary").GetString() ?? "";
-            var task    = new GanttTask { Title = summary };
+            var task    = new TmWorkItem { Title = summary };
 
             if (fields.TryGetProperty("duedate", out var dd) && dd.ValueKind == JsonValueKind.String)
             {
@@ -63,7 +63,7 @@ public sealed class GanttJiraImporter : IDisposable
                 var name = assignee.TryGetProperty("displayName", out var dn) ? dn.GetString() ?? "" : "";
                 var id   = assignee.TryGetProperty("accountId",   out var ai) ? ai.GetString() ?? "" : "";
                 if (!string.IsNullOrEmpty(id))
-                    task.Assignees.Add(new GanttAssignee { Id = id, Name = name });
+                    task.Assignees.Add(new TmWorkItemAssignee { Id = id, Name = name });
             }
 
             result.Add(task);
@@ -71,22 +71,22 @@ public sealed class GanttJiraImporter : IDisposable
         return result;
     }
 
-    private static GanttTaskPriority MapPriority(string? name) => name?.ToLowerInvariant() switch
+    private static TmWorkItemPriority MapPriority(string? name) => name?.ToLowerInvariant() switch
     {
-        "highest" => GanttTaskPriority.Highest,
-        "high"    => GanttTaskPriority.High,
-        "medium"  => GanttTaskPriority.Medium,
-        "low"     => GanttTaskPriority.Low,
-        "lowest"  => GanttTaskPriority.Lowest,
-        _         => GanttTaskPriority.Medium
+        "highest" => TmWorkItemPriority.Highest,
+        "high"    => TmWorkItemPriority.High,
+        "medium"  => TmWorkItemPriority.Medium,
+        "low"     => TmWorkItemPriority.Low,
+        "lowest"  => TmWorkItemPriority.Lowest,
+        _         => TmWorkItemPriority.Medium
     };
 
-    private static GanttTaskStatus MapStatus(string? name) => name?.ToLowerInvariant() switch
+    private static TmWorkItemStatus MapStatus(string? name) => name?.ToLowerInvariant() switch
     {
-        "done"        => GanttTaskStatus.Done,
-        "in progress" => GanttTaskStatus.InProgress,
-        "closed"      => GanttTaskStatus.Closed,
-        _             => GanttTaskStatus.Open
+        "done"        => TmWorkItemStatus.Done,
+        "in progress" => TmWorkItemStatus.InProgress,
+        "closed"      => TmWorkItemStatus.Closed,
+        _             => TmWorkItemStatus.Open
     };
 
     public void Dispose() => _http.Dispose();

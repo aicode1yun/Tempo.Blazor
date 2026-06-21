@@ -205,7 +205,7 @@
                     </button>
                 }
 
-                @if (_context.TaskProvider is not null && !IsReadOnlyViewMode)
+                @if (_context.WorkItemSource is not null && !IsReadOnlyViewMode)
                 {
                     <button class="tm-notion-topbar__tasks"
                             type="button"
@@ -249,11 +249,11 @@
 
             </header>
 
-            @if (_context.TaskProvider is not null && _tasksPanelOpen)
+            @if (_context.WorkItemSource is not null && _tasksPanelOpen)
             {
                 <aside class="tm-notion-tasks-panel"
                        aria-label="@Loc["Notion_Tasks_Title"]">
-                    <TmNotionMyTasks TaskProvider="_context.TaskProvider"
+                    <TmNotionMyTasks WorkItemSource="_context.WorkItemSource"
                                      CurrentUserId="@CurrentUserId"
                                      OnClosed="CloseTasksPanel"
                                      OnNavigateToBlock="NavigateToTaskBlockAsync" />

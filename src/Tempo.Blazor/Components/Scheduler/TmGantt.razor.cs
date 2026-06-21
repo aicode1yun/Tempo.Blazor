@@ -79,7 +79,7 @@ public partial class TmGantt : IDisposable
     private bool _contextMenuVisible;
     private double _contextMenuX;
     private double _contextMenuY;
-    private GanttTask? _contextMenuTask;
+    private TmWorkItem? _contextMenuTask;
 
     // Drag & drop state
     private string? _draggedTaskId;
@@ -97,17 +97,37 @@ public partial class TmGantt : IDisposable
 
     // ── Parameters ───────────────────────────────────────────────
 
-    [Parameter] public IReadOnlyList<GanttTask> Data { get; set; } = [];
-    [Parameter] public IReadOnlyList<GanttDependency> Dependencies { get; set; } = [];
+    /// <summary>In-memory work items. Used when <see cref="WorkItemSource"/> is null.</summary>
+    [Parameter] public IReadOnlyList<TmWorkItem> Items { get; set; } = [];
+
+    /// <summary>In-memory dependencies. Used when <see cref="WorkItemSource"/> is null.</summary>
+    [Parameter] public IReadOnlyList<GanttDependency> DependencyItems { get; set; } = [];
+
+    /// <summary>
+    /// Unified work-item source shared with other components. When set, the chart loads its
+    /// items and dependencies from this provider instead of <see cref="Items"/>/<see cref="DependencyItems"/>,
+    /// and routes task mutations back through it (when the provider declares the matching capability).
+    /// </summary>
+    [Parameter] public ITmWorkItemProvider? WorkItemSource { get; set; }
+
+    private IReadOnlyList<TmWorkItem> _providerTasks = [];
+    private IReadOnlyList<GanttDependency> _providerDeps = [];
+    private ITmWorkItemProvider? _loadedSource;
+
+    /// <summary>Effective task list: provider data when <see cref="WorkItemSource"/> is set, otherwise <see cref="Items"/>.</summary>
+    private IReadOnlyList<TmWorkItem> Data => WorkItemSource is null ? Items : _providerTasks;
+
+    /// <summary>Effective dependency list: provider data when <see cref="WorkItemSource"/> is set, otherwise <see cref="DependencyItems"/>.</summary>
+    private IReadOnlyList<GanttDependency> Dependencies => WorkItemSource is null ? DependencyItems : _providerDeps;
     [Parameter] public GanttView View { get; set; } = GanttView.Week;
     [Parameter] public EventCallback<GanttView> ViewChanged { get; set; }
-    [Parameter] public GanttTask? SelectedTask { get; set; }
-    [Parameter] public EventCallback<GanttTask> OnTaskSelected { get; set; }
+    [Parameter] public TmWorkItem? SelectedTask { get; set; }
+    [Parameter] public EventCallback<TmWorkItem> OnTaskSelected { get; set; }
     [Parameter] public bool ShowTaskPanel { get; set; }
-    [Parameter] public EventCallback<GanttTask> OnTaskUpdated { get; set; }
+    [Parameter] public EventCallback<TmWorkItem> OnTaskUpdated { get; set; }
     [Parameter] public EventCallback<GanttDependency> OnDependencyAdded { get; set; }
     [Parameter] public EventCallback<string> OnDependencyRemoved { get; set; }
-    [Parameter] public EventCallback<GanttTask> OnTaskAdded { get; set; }
+    [Parameter] public EventCallback<TmWorkItem> OnTaskAdded { get; set; }
     [Parameter] public EventCallback<GanttTaskInsertedArgs> OnTaskInserted { get; set; }
     [Parameter] public EventCallback<string> OnTaskRemoved { get; set; }
     [Parameter] public EventCallback<GanttTaskReorderedArgs> OnTaskReordered { get; set; }
@@ -143,7 +163,7 @@ public partial class TmGantt : IDisposable
     [Parameter] public EventCallback<BulkUpdateArgs> OnBulkUpdate { get; set; }
 
     /// <summary>Fires when the data order changes via cascade sort.</summary>
-    [Parameter] public EventCallback<IReadOnlyList<GanttTask>> OnDataSorted { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<TmWorkItem>> OnDataSorted { get; set; }
 
     // ── Phase 3 Parameters ────────────────────────────────────────
 
@@ -151,7 +171,7 @@ public partial class TmGantt : IDisposable
     [Parameter] public bool AutoSchedule { get; set; }
 
     /// <summary>Fires after auto-scheduling with the updated task list.</summary>
-    [Parameter] public EventCallback<IReadOnlyList<GanttTask>> OnAutoScheduled { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<TmWorkItem>> OnAutoScheduled { get; set; }
 
     /// <summary>When true, highlights critical-path tasks with a distinct bar color.</summary>
     [Parameter] public bool ShowCriticalPath { get; set; }
@@ -183,7 +203,7 @@ public partial class TmGantt : IDisposable
     [Parameter] public EventCallback<GanttExportOptions> OnExportRequested { get; set; }
 
     /// <summary>Fires when an import operation completes successfully.</summary>
-    [Parameter] public EventCallback<IReadOnlyList<GanttTask>> OnImportCompleted { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<TmWorkItem>> OnImportCompleted { get; set; }
 
     /// <summary>Fires when an import operation fails (contains error message).</summary>
     [Parameter] public EventCallback<string> OnImportError { get; set; }
@@ -212,7 +232,7 @@ public partial class TmGantt : IDisposable
     [Parameter] public GanttNotificationSettings? NotificationSettings { get; set; }
 
     /// <summary>Fires when a task's status is changed from the board view.</summary>
-    [Parameter] public EventCallback<(string TaskId, GanttTaskStatus NewStatus)> OnStatusChanged { get; set; }
+    [Parameter] public EventCallback<(string TaskId, TmWorkItemStatus NewStatus)> OnStatusChanged { get; set; }
 
     /// <summary>Fires when a notification condition is met (assign, mention, deadline).</summary>
     [Parameter] public EventCallback<GanttNotification> OnNotificationTriggered { get; set; }
@@ -224,7 +244,7 @@ public partial class TmGantt : IDisposable
     [Parameter] public EventCallback<IReadOnlyList<GanttResourceCalendar>> OnResourceCalendarChanged { get; set; }
 
     /// <summary>Fires when the user creates a new virtual (placeholder) resource.</summary>
-    [Parameter] public EventCallback<GanttAssignee> OnVirtualResourceAdded { get; set; }
+    [Parameter] public EventCallback<TmWorkItemAssignee> OnVirtualResourceAdded { get; set; }
 
     /// <summary>Task ID of the currently running stopwatch timer. Null = no active timer.</summary>
     [Parameter] public string? ActiveTimerTaskId { get; set; }
@@ -255,6 +275,21 @@ public partial class TmGantt : IDisposable
     // ── Lifecycle ────────────────────────────────────────────────
 
     protected override void OnParametersSet()
+    {
+        if (WorkItemSource is null)
+            ApplyState();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (WorkItemSource is not null)
+        {
+            await LoadFromProviderAsync();
+            ApplyState();
+        }
+    }
+
+    private void ApplyState()
     {
         _treeRoots = GanttHelper.BuildTree(Data).ToList();
         _activeFilters = Filters;
@@ -304,7 +339,75 @@ public partial class TmGantt : IDisposable
         RefreshVisibleData();
     }
 
-    private void HandleRealtimeTaskUpdated(GanttTask updatedTask)
+    private async Task LoadFromProviderAsync()
+    {
+        if (WorkItemSource is null || ReferenceEquals(_loadedSource, WorkItemSource))
+            return;
+
+        _loadedSource = WorkItemSource;
+        var result = await WorkItemSource.SearchAsync(new TmWorkItemQuery { IncludeCompleted = true, Take = 1000 });
+        _providerTasks = result.Items;
+
+        if (WorkItemSource.Capabilities.HasFlag(TmWorkItemCapabilities.Dependencies))
+        {
+            var deps = await WorkItemSource.GetDependenciesAsync(_providerTasks.Select(t => t.Id).ToArray());
+            _providerDeps = deps.Select(MapDependency).ToList();
+        }
+    }
+
+    private static GanttDependency MapDependency(TmWorkItemDependency d) => new()
+    {
+        Id = d.Id,
+        FromId = d.FromId,
+        ToId = d.ToId,
+        LagDays = d.LagDays,
+        DepType = (GanttDependencyType)(int)d.Type
+    };
+
+    // ── Mutation routing (persists through WorkItemSource when capable) ────────
+
+    private async Task RaiseTaskUpdatedAsync(TmWorkItem task)
+    {
+        if (WorkItemSource is not null && WorkItemSource.Capabilities.HasFlag(TmWorkItemCapabilities.Update))
+        {
+            var saved = await WorkItemSource.UpdateAsync(task);
+            ReplaceProviderTask(saved);
+            ApplyState();
+        }
+        await OnTaskUpdated.InvokeAsync(task);
+    }
+
+    private async Task RaiseTaskAddedAsync(TmWorkItem task)
+    {
+        if (WorkItemSource is not null && WorkItemSource.Capabilities.HasFlag(TmWorkItemCapabilities.Create))
+        {
+            var saved = await WorkItemSource.CreateAsync(task);
+            _providerTasks = _providerTasks.Append(saved).ToList();
+            ApplyState();
+        }
+        await OnTaskAdded.InvokeAsync(task);
+    }
+
+    private async Task RaiseTaskRemovedAsync(string id)
+    {
+        if (WorkItemSource is not null && WorkItemSource.Capabilities.HasFlag(TmWorkItemCapabilities.Delete))
+        {
+            await WorkItemSource.DeleteAsync(id);
+            _providerTasks = _providerTasks.Where(t => t.Id != id).ToList();
+            ApplyState();
+        }
+        await OnTaskRemoved.InvokeAsync(id);
+    }
+
+    private void ReplaceProviderTask(TmWorkItem saved)
+    {
+        var list = _providerTasks.ToList();
+        var idx = list.FindIndex(t => t.Id == saved.Id);
+        if (idx >= 0) list[idx] = saved; else list.Add(saved);
+        _providerTasks = list;
+    }
+
+    private void HandleRealtimeTaskUpdated(TmWorkItem updatedTask)
     {
         var existing = Data.FirstOrDefault(t => t.Id == updatedTask.Id);
         if (existing is null) return;
@@ -397,7 +500,7 @@ public partial class TmGantt : IDisposable
                .OrderBy(id => id)
                .ToList();
 
-    private async Task ChangeBoardStatusAsync(string taskId, GanttTaskStatus newStatus)
+    private async Task ChangeBoardStatusAsync(string taskId, TmWorkItemStatus newStatus)
     {
         var task = Data.FirstOrDefault(t => t.Id == taskId);
         if (task is null) return;
@@ -457,13 +560,13 @@ public partial class TmGantt : IDisposable
 
     // ── Interaction ──────────────────────────────────────────────
 
-    private async Task ToggleExpandAsync(GanttTask task)
+    private async Task ToggleExpandAsync(TmWorkItem task)
     {
         task.IsExpanded = !task.IsExpanded;
         RefreshVisibleData();
     }
 
-    private async Task SelectTaskAsync(GanttTask task)
+    private async Task SelectTaskAsync(TmWorkItem task)
     {
         SelectedTask = task;
         await OnTaskSelected.InvokeAsync(task);
@@ -487,7 +590,7 @@ public partial class TmGantt : IDisposable
         if (SelectedTask is not null)
             parentId = SelectedTask.ParentId;
 
-        var newTask = new GanttTask
+        var newTask = new TmWorkItem
         {
             Id = Guid.NewGuid().ToString(),
             Title = Loc["TmGantt_NewTaskTitle"],
@@ -499,11 +602,11 @@ public partial class TmGantt : IDisposable
 
         var args = new GanttTaskInsertedArgs { Task = newTask, Position = GanttInsertPosition.End };
         await OnTaskInserted.InvokeAsync(args);
-        await OnTaskAdded.InvokeAsync(newTask);
+        await RaiseTaskAddedAsync(newTask);
         await SelectTaskAsync(newTask);
     }
 
-    private void ShowContextMenu(MouseEventArgs e, GanttTask task)
+    private void ShowContextMenu(MouseEventArgs e, TmWorkItem task)
     {
         _contextMenuX = e.ClientX;
         _contextMenuY = e.ClientY;
@@ -521,7 +624,7 @@ public partial class TmGantt : IDisposable
     {
         if (_contextMenuTask is null) return;
 
-        var newTask = new GanttTask
+        var newTask = new TmWorkItem
         {
             Id = Guid.NewGuid().ToString(),
             Title = Loc["TmGantt_NewTaskTitle"],
@@ -539,7 +642,7 @@ public partial class TmGantt : IDisposable
         };
 
         await OnTaskInserted.InvokeAsync(args);
-        await OnTaskAdded.InvokeAsync(newTask);
+        await RaiseTaskAddedAsync(newTask);
         HideContextMenu();
         await SelectTaskAsync(newTask);
     }
@@ -548,7 +651,7 @@ public partial class TmGantt : IDisposable
     {
         if (_contextMenuTask is null) return;
         var removedId = _contextMenuTask.Id;
-        await OnTaskRemoved.InvokeAsync(removedId);
+        await RaiseTaskRemovedAsync(removedId);
         HideContextMenu();
 
         if (SelectedTask?.Id == removedId)
@@ -560,14 +663,14 @@ public partial class TmGantt : IDisposable
 
     // ── Drag & Drop ──────────────────────────────────────────────
 
-    private void OnDragStart(GanttTask task)
+    private void OnDragStart(TmWorkItem task)
     {
         _draggedTaskId = task.Id;
         _dropTargetId = null;
         _dropPosition = GanttDropPosition.None;
     }
 
-    private void OnDragOver(GanttTask targetTask, DragEventArgs e)
+    private void OnDragOver(TmWorkItem targetTask, DragEventArgs e)
     {
         if (_draggedTaskId == targetTask.Id) return;
         var offsetY = e.OffsetY;
@@ -586,7 +689,7 @@ public partial class TmGantt : IDisposable
         _dropPosition = GanttDropPosition.None;
     }
 
-    private async Task OnDropAsync(GanttTask targetTask)
+    private async Task OnDropAsync(TmWorkItem targetTask)
     {
         if (string.IsNullOrEmpty(_draggedTaskId) || _draggedTaskId == targetTask.Id || _dropPosition == GanttDropPosition.None)
         {
@@ -615,24 +718,24 @@ public partial class TmGantt : IDisposable
     // ── Board Kanban ─────────────────────────────────────────────
     // D&D moves card between columns → changes Status
 
-    private async Task OnBoardItemMovedAsync(KanbanMoveEvent<GanttTask> e)
+    private async Task OnBoardItemMovedAsync(KanbanMoveEvent<TmWorkItem> e)
     {
-        if (!Enum.TryParse<GanttTaskStatus>(e.ToColumn, out var newStatus)) return;
-        var updated = new GanttTask
+        if (!Enum.TryParse<TmWorkItemStatus>(e.ToColumn, out var newStatus)) return;
+        var updated = new TmWorkItem
         {
             Id = e.Item.Id, Title = e.Item.Title, Start = e.Item.Start, End = e.Item.End,
             PercentComplete = e.Item.PercentComplete, IsMilestone = e.Item.IsMilestone,
-            ParentId = e.Item.ParentId, Deadline = e.Item.Deadline,
+            ParentId = e.Item.ParentId, DueDate = e.Item.DueDate,
             EstimationHours = e.Item.EstimationHours, LoggedHours = e.Item.LoggedHours,
             Color = e.Item.Color, Description = e.Item.Description,
             BudgetHours = e.Item.BudgetHours, ActualCost = e.Item.ActualCost,
             Status = newStatus,
             Priority = e.Item.Priority, Assignees = e.Item.Assignees,
-            CustomValues = e.Item.CustomValues, Attachments = e.Item.Attachments,
+            CustomFields = e.Item.CustomFields, Attachments = e.Item.Attachments,
             Comments = e.Item.Comments, TimeLog = e.Item.TimeLog,
             UseManualDates = e.Item.UseManualDates,
         };
-        await OnTaskUpdated.InvokeAsync(updated);
+        await RaiseTaskUpdatedAsync(updated);
     }
 
     // ── Calendar (TmScheduler) ────────────────────────────────────
@@ -646,21 +749,21 @@ public partial class TmGantt : IDisposable
     {
         var task = Data.FirstOrDefault(t => t.Id == e.Id);
         if (task is null) return;
-        var updated = new GanttTask
+        var updated = new TmWorkItem
         {
             Id = task.Id, Title = task.Title,
             Start = e.Start, End = e.End,
             PercentComplete = task.PercentComplete, IsMilestone = task.IsMilestone,
-            ParentId = task.ParentId, Deadline = task.Deadline,
+            ParentId = task.ParentId, DueDate = task.DueDate,
             EstimationHours = task.EstimationHours, LoggedHours = task.LoggedHours,
             Color = task.Color, Description = task.Description,
             BudgetHours = task.BudgetHours, ActualCost = task.ActualCost,
             Status = task.Status, Priority = task.Priority, Assignees = task.Assignees,
-            CustomValues = task.CustomValues, Attachments = task.Attachments,
+            CustomFields = task.CustomFields, Attachments = task.Attachments,
             Comments = task.Comments, TimeLog = task.TimeLog,
             UseManualDates = task.UseManualDates,
         };
-        await OnTaskUpdated.InvokeAsync(updated);
+        await RaiseTaskUpdatedAsync(updated);
     }
 
     private async Task OnCalendarEventClickAsync(TmScheduleEvent e)
@@ -687,7 +790,7 @@ public partial class TmGantt : IDisposable
         if (task is not null && _inlineEditColumn == GanttColumnKey.Title)
         {
             task.Title = _inlineEditValue;
-            await OnTaskUpdated.InvokeAsync(task);
+            await RaiseTaskUpdatedAsync(task);
         }
 
         CancelInlineEdit();
@@ -760,7 +863,7 @@ public partial class TmGantt : IDisposable
         else _selectedTaskIds.Remove(taskId);
     }
 
-    private async Task ExecuteBulkStatusUpdateAsync(GanttTaskStatus status)
+    private async Task ExecuteBulkStatusUpdateAsync(TmWorkItemStatus status)
     {
         if (_selectedTaskIds.Count == 0) return;
 
@@ -828,7 +931,7 @@ public partial class TmGantt : IDisposable
         await OnExportRequested.InvokeAsync(opts);
     }
 
-    private async Task HandleImportCompletedAsync(IReadOnlyList<GanttTask> tasks)
+    private async Task HandleImportCompletedAsync(IReadOnlyList<TmWorkItem> tasks)
     {
         _importDialogOpen = false;
         await OnImportCompleted.InvokeAsync(tasks);
@@ -849,7 +952,7 @@ public partial class TmGantt : IDisposable
         var task    = Data.FirstOrDefault(t => t.Id == taskId);
         if (task is not null)
         {
-            task.CustomValues[fieldId] = value;
+            task.CustomFields[fieldId] = value;
             await OnCustomFieldChanged.InvokeAsync((taskId, fieldId, value));
         }
         CancelInlineEdit();
@@ -947,7 +1050,7 @@ public partial class TmGantt : IDisposable
         // Apply ShowClosedTasks filter
         _visibleNodes = ViewSettings.ShowClosedTasks
             ? allVisible
-            : allVisible.Where(n => n.Task.Status != GanttTaskStatus.Done && n.Task.Status != GanttTaskStatus.Closed).ToList();
+            : allVisible.Where(n => n.Task.Status != TmWorkItemStatus.Done && n.Task.Status != TmWorkItemStatus.Closed).ToList();
 
         var (timelineStart, timelineEnd) = GanttHelper.GetTimeRange(Data);
         var pixelPerDay = GetPixelPerDay();
@@ -1034,7 +1137,7 @@ public partial class TmGantt : IDisposable
 
             var (left, width) = GanttHelper.CalculateBarPosition(
                 effectiveStart, effectiveEnd, timelineStart, timelineEnd, _totalTimelineWidth);
-            var isDeadlineExceeded = task.Deadline.HasValue && task.End > task.Deadline.Value;
+            var isDeadlineExceeded = task.DueDate.HasValue && task.End > task.DueDate.Value;
             var barTop = i * RowHeight + (RowHeight - 20) / 2;
 
             double? baselineLeft  = null;
@@ -1134,9 +1237,9 @@ public partial class TmGantt : IDisposable
         return string.Join(" ", classes);
     }
 
-    private static bool IsOverdue(GanttTask task) =>
+    private static bool IsOverdue(TmWorkItem task) =>
         task.End < DateTime.Today &&
-        task.Status is not GanttTaskStatus.Done and not GanttTaskStatus.Closed;
+        task.Status is not TmWorkItemStatus.Done and not TmWorkItemStatus.Closed;
 
     private string GetDragClass(GanttTaskNode node)
     {
@@ -1161,7 +1264,7 @@ public partial class TmGantt : IDisposable
         if (bar.IsGroup)
             classes.Add("tm-gantt__bar--group");
 
-        if (bar.Task.Status is GanttTaskStatus.Done or GanttTaskStatus.Closed)
+        if (bar.Task.Status is TmWorkItemStatus.Done or TmWorkItemStatus.Closed)
             classes.Add("tm-gantt__bar--completed");
 
         if (ShowOverdueHighlight && IsOverdue(bar.Task))
@@ -1172,11 +1275,11 @@ public partial class TmGantt : IDisposable
 
         var priorityClass = bar.Task.Priority switch
         {
-            GanttTaskPriority.Highest => "tm-gantt__bar--priority-highest",
-            GanttTaskPriority.High => "tm-gantt__bar--priority-high",
-            GanttTaskPriority.Medium => "tm-gantt__bar--priority-medium",
-            GanttTaskPriority.Low => "tm-gantt__bar--priority-low",
-            GanttTaskPriority.Lowest => "tm-gantt__bar--priority-lowest",
+            TmWorkItemPriority.Highest => "tm-gantt__bar--priority-highest",
+            TmWorkItemPriority.High => "tm-gantt__bar--priority-high",
+            TmWorkItemPriority.Medium => "tm-gantt__bar--priority-medium",
+            TmWorkItemPriority.Low => "tm-gantt__bar--priority-low",
+            TmWorkItemPriority.Lowest => "tm-gantt__bar--priority-lowest",
             _ => ""
         };
         if (!string.IsNullOrEmpty(priorityClass))
@@ -1202,22 +1305,22 @@ public partial class TmGantt : IDisposable
         return $"--tm-gantt-task-color: {color};";
     }
 
-    private string GetStatusBadgeClass(GanttTaskStatus status) => status switch
+    private string GetStatusBadgeClass(TmWorkItemStatus status) => status switch
     {
-        GanttTaskStatus.Open => "tm-gantt__status-badge--open",
-        GanttTaskStatus.InProgress => "tm-gantt__status-badge--inprogress",
-        GanttTaskStatus.Done => "tm-gantt__status-badge--done",
-        GanttTaskStatus.Closed => "tm-gantt__status-badge--closed",
+        TmWorkItemStatus.Open => "tm-gantt__status-badge--open",
+        TmWorkItemStatus.InProgress => "tm-gantt__status-badge--inprogress",
+        TmWorkItemStatus.Done => "tm-gantt__status-badge--done",
+        TmWorkItemStatus.Closed => "tm-gantt__status-badge--closed",
         _ => ""
     };
 
-    private string GetPriorityIconClass(GanttTaskPriority priority) => priority switch
+    private string GetPriorityIconClass(TmWorkItemPriority priority) => priority switch
     {
-        GanttTaskPriority.Highest => "tm-gantt__priority-icon--highest",
-        GanttTaskPriority.High => "tm-gantt__priority-icon--high",
-        GanttTaskPriority.Medium => "tm-gantt__priority-icon--medium",
-        GanttTaskPriority.Low => "tm-gantt__priority-icon--low",
-        GanttTaskPriority.Lowest => "tm-gantt__priority-icon--lowest",
+        TmWorkItemPriority.Highest => "tm-gantt__priority-icon--highest",
+        TmWorkItemPriority.High => "tm-gantt__priority-icon--high",
+        TmWorkItemPriority.Medium => "tm-gantt__priority-icon--medium",
+        TmWorkItemPriority.Low => "tm-gantt__priority-icon--low",
+        TmWorkItemPriority.Lowest => "tm-gantt__priority-icon--lowest",
         _ => ""
     };
 
@@ -1236,10 +1339,10 @@ public partial class TmGantt : IDisposable
         return string.Join(" ", classes);
     }
 
-    private string GetAvatarInitial(GanttAssignee a) =>
+    private string GetAvatarInitial(TmWorkItemAssignee a) =>
         string.IsNullOrEmpty(a.Name) ? "?" : a.Name[0].ToString().ToUpperInvariant();
 
-    private string GetAvatarStyle(GanttAssignee a)
+    private string GetAvatarStyle(TmWorkItemAssignee a)
     {
         if (!string.IsNullOrEmpty(a.AvatarUrl))
             return $"background-image: url('{a.AvatarUrl}'); background-size: cover;";
@@ -1256,7 +1359,7 @@ public enum GanttInsertPosition { Above, Below, Child, End }
 
 public class GanttTaskInsertedArgs
 {
-    public GanttTask Task { get; set; } = new();
+    public TmWorkItem Task { get; set; } = new();
     public string? ReferenceTaskId { get; set; }
     public GanttInsertPosition Position { get; set; }
 }
@@ -1273,7 +1376,7 @@ public class GanttTaskReorderedArgs
 // ── Internal view-model records ──────────────────────────────────
 
 internal record TaskBarInfo(
-    GanttTask Task,
+    TmWorkItem Task,
     double Left,
     double Width,
     double Top,

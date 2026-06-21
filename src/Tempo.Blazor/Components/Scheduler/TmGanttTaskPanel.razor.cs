@@ -59,16 +59,16 @@ public partial class TmGanttTaskPanel
     };
 
     /// <summary>The task being edited.</summary>
-    [Parameter] public GanttTask? Task { get; set; }
+    [Parameter] public TmWorkItem? Task { get; set; }
 
     /// <summary>All tasks for parent selection.</summary>
-    [Parameter] public IReadOnlyList<GanttTask> AllTasks { get; set; } = [];
+    [Parameter] public IReadOnlyList<TmWorkItem> AllTasks { get; set; } = [];
 
     /// <summary>Existing dependencies.</summary>
     [Parameter] public IReadOnlyList<GanttDependency> Dependencies { get; set; } = [];
 
     /// <summary>Fires when the task is saved with valid data.</summary>
-    [Parameter] public EventCallback<GanttTask> OnTaskUpdated { get; set; }
+    [Parameter] public EventCallback<TmWorkItem> OnTaskUpdated { get; set; }
 
     /// <summary>Fires when a new dependency is added.</summary>
     [Parameter] public EventCallback<GanttDependency> OnDependencyAdded { get; set; }
@@ -112,7 +112,7 @@ public partial class TmGanttTaskPanel
             _editPercent = Task.PercentComplete;
             _editIsMilestone = Task.IsMilestone;
             _editParentId = Task.ParentId;
-            _editDeadline = Task.Deadline?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            _editDeadline = Task.DueDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             _editEstimation = Task.EstimationHours;
             _editLoggedHours = Task.LoggedHours;
             _editColor       = Task.Color;
@@ -262,7 +262,7 @@ public partial class TmGanttTaskPanel
             DateTime.TryParseExact(_editDeadline, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dl))
             deadline = dl;
 
-        var updated = new GanttTask
+        var updated = new TmWorkItem
         {
             Id              = Task.Id,
             Title           = _editTitle,
@@ -271,7 +271,7 @@ public partial class TmGanttTaskPanel
             PercentComplete = _editPercent ?? 0,
             IsMilestone     = _editIsMilestone,
             ParentId        = _editParentId,
-            Deadline        = deadline,
+            DueDate         = deadline,
             EstimationHours = _editEstimation,
             LoggedHours     = _editLoggedHours,
             Color           = _editColor,
@@ -281,7 +281,7 @@ public partial class TmGanttTaskPanel
             Status          = Task.Status,
             Priority        = Task.Priority,
             Assignees       = Task.Assignees,
-            CustomValues    = Task.CustomValues,
+            CustomFields    = Task.CustomFields,
             Attachments     = Task.Attachments,
             Comments        = Task.Comments,
             TimeLog         = Task.TimeLog,

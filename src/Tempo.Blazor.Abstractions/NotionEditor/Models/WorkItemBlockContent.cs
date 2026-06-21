@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.NotionEditor.Enums;
 
 namespace Tempo.Blazor.NotionEditor.Models;
@@ -6,13 +7,13 @@ namespace Tempo.Blazor.NotionEditor.Models;
 public sealed class WorkItemBlockContent : IWorkItemBlockContent
 {
     /// <inheritdoc />
-    public string ProviderKey { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
 
     /// <inheritdoc />
     public string ExternalId { get; set; } = string.Empty;
 
     /// <inheritdoc />
-    public WorkItemDto? CachedSnapshot { get; set; }
+    public TmWorkItem? CachedSnapshot { get; set; }
 
     /// <inheritdoc />
     public WorkItemDisplayMode DisplayMode { get; set; } = WorkItemDisplayMode.Card;

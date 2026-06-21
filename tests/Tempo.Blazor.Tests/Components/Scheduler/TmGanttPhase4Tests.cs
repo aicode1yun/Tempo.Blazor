@@ -19,10 +19,10 @@ namespace Tempo.Blazor.Tests.Components.Scheduler;
 /// </summary>
 public class TmGanttPhase4Tests : LocalizationTestBase
 {
-    private static GanttTask MakeTask(string id, string title = "Task",
+    private static TmWorkItem MakeTask(string id, string title = "Task",
         string? parentId = null, int attachments = 0, int comments = 0)
     {
-        var t = new GanttTask
+        var t = new TmWorkItem
         {
             Id = id, Title = title,
             Start = new DateTime(2024, 1, 1),
@@ -43,7 +43,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     [Fact]
     public void GanttTask_Has_Description_Property()
     {
-        var task = new GanttTask();
+        var task = new TmWorkItem();
         task.Description = "Some rich description";
         task.Description.Should().Be("Some rich description");
     }
@@ -81,7 +81,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     [Fact]
     public void GanttTask_Has_Attachments_Property()
     {
-        var task = new GanttTask();
+        var task = new TmWorkItem();
         task.Attachments.Should().NotBeNull();
         task.Attachments.Should().BeEmpty();
     }
@@ -100,7 +100,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     public void TmGantt_Tree_Row_Shows_Attachment_Count_Icon_When_Task_Has_Attachments()
     {
         var task = MakeTask("1", attachments: 2);
-        var cut = RenderComponent<TmGantt>(p => p.Add(x => x.Data, new[] { task }));
+        var cut = RenderComponent<TmGantt>(p => p.Add(x => x.Items, new[] { task }));
 
         cut.Find("[data-testid='attachment-count-1']").Should().NotBeNull();
     }
@@ -126,7 +126,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     [Fact]
     public void GanttTask_Has_Comments_Property()
     {
-        var task = new GanttTask();
+        var task = new TmWorkItem();
         task.Comments.Should().NotBeNull();
         task.Comments.Should().BeEmpty();
     }
@@ -158,7 +158,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     public void TmGantt_Tree_Row_Shows_Comment_Count_Icon_When_Task_Has_Comments()
     {
         var task = MakeTask("1", comments: 3);
-        var cut = RenderComponent<TmGantt>(p => p.Add(x => x.Data, new[] { task }));
+        var cut = RenderComponent<TmGantt>(p => p.Add(x => x.Items, new[] { task }));
 
         cut.Find("[data-testid='comment-count-1']").Should().NotBeNull();
     }
@@ -243,7 +243,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     {
         var fired = false;
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, Array.Empty<GanttTask>())
+            .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.OnExportRequested, EventCallback.Factory.Create<GanttExportOptions>(this, _ => fired = true)));
 
         cut.Instance.OnExportRequested.HasDelegate.Should().BeTrue();
@@ -332,7 +332,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task GanttJiraImporter_Maps_Jira_Priority_To_GanttTaskPriority()
+    public async Task GanttJiraImporter_Maps_Jira_Priority_To_TmWorkItemPriority()
     {
         const string json = """
             { "issues": [{ "key": "P-1", "fields": {
@@ -349,7 +349,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
 
         result.Should().HaveCount(1);
         result[0].Title.Should().Be("Jira Task Highest");
-        result[0].Priority.Should().Be(GanttTaskPriority.Highest);
+        result[0].Priority.Should().Be(TmWorkItemPriority.Highest);
     }
 
     [Fact]
@@ -388,8 +388,8 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     public void TmGantt_Has_OnImportCompleted_And_OnImportError_Parameters()
     {
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, Array.Empty<GanttTask>())
-            .Add(x => x.OnImportCompleted, EventCallback.Factory.Create<IReadOnlyList<GanttTask>>(this, _ => { }))
+            .Add(x => x.Items, Array.Empty<TmWorkItem>())
+            .Add(x => x.OnImportCompleted, EventCallback.Factory.Create<IReadOnlyList<TmWorkItem>>(this, _ => { }))
             .Add(x => x.OnImportError,     EventCallback.Factory.Create<string>(this, _ => { })));
 
         cut.Instance.OnImportCompleted.HasDelegate.Should().BeTrue();
@@ -437,7 +437,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
             new GanttHistoryEntry("h2", DateTime.UtcNow, "Bob",   "PriorityChanged", "t2", "Low", "High"),
         };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, Array.Empty<GanttTask>())
+            .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.History, history));
 
         cut.Instance.History.Should().HaveCount(2);
@@ -464,7 +464,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     public void TmGantt_Has_OnTimeTravelRequested_And_OnRollbackRequested_Parameters()
     {
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, Array.Empty<GanttTask>())
+            .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.OnTimeTravelRequested,  EventCallback.Factory.Create<DateTime>(this, _ => { }))
             .Add(x => x.OnRollbackRequested,    EventCallback.Factory.Create<GanttHistoryEntry>(this, _ => { })));
 

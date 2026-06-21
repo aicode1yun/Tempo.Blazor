@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.Components.Notifications;
 using Tempo.Blazor.Interfaces;
@@ -39,8 +40,8 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     [Parameter] public INotionCollaborationProvider? CollaborationProvider { get; set; }
     [Parameter] public INotionMentionProvider?       MentionProvider       { get; set; }
     [Parameter] public INotionAIProvider?            AIProvider            { get; set; }
-    [Parameter] public INotionTaskProvider?          TaskProvider          { get; set; }
-    [Parameter] public WorkItemProviderRegistry?     WorkItemProviders     { get; set; }
+    [Parameter] public ITmWorkItemProvider?          WorkItemSource        { get; set; }
+    [Parameter] public TmWorkItemProviderRegistry?   WorkItemProviders     { get; set; }
     [Parameter] public INotionReactionProvider?      ReactionProvider      { get; set; }
     [Parameter] public INotionAnalyticsProvider?     AnalyticsProvider     { get; set; }
     [Parameter] public INotionBlogProvider?          BlogProvider          { get; set; }
@@ -573,7 +574,7 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
         CollaborationSync     = _collabSync,
         MentionProvider       = MentionProvider,
         AIProvider            = AIProvider,
-        TaskProvider          = TaskProvider,
+        WorkItemSource        = WorkItemSource,
         WorkItemProviders     = WorkItemProviders,
         ReactionProvider      = ReactionProvider,
         AnalyticsProvider     = AnalyticsProvider,

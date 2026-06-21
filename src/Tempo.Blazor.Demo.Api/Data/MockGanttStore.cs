@@ -1,4 +1,5 @@
-﻿using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.WorkItems;
 
 namespace Tempo.Blazor.Demo.Api.Data;
 
@@ -10,7 +11,7 @@ namespace Tempo.Blazor.Demo.Api.Data;
 /// </summary>
 public class MockGanttStore
 {
-    private readonly List<GanttTask>             _tasks;
+    private readonly List<TmWorkItem>             _tasks;
     private readonly List<GanttDependency>        _dependencies;
     private readonly List<GanttBaseline>          _baselines;
     private readonly List<GanttCustomField>       _customFields;
@@ -18,7 +19,7 @@ public class MockGanttStore
     private readonly List<GanttResourceCalendar>  _resourceCalendars;
     private readonly List<GanttReport>            _reports;
     private readonly WorkingSchedule              _workingSchedule;
-    private readonly List<GanttAssignee>          _assignees;
+    private readonly List<TmWorkItemAssignee>          _assignees;
 
     public MockGanttStore()
     {
@@ -35,7 +36,7 @@ public class MockGanttStore
             new() { Id = "v2", Name = "DevOps Resource", AvatarUrl = null, HourlyRate = 130m, IsVirtual = true },
         ];
 
-        GanttAssignee A(string id) => _assignees.First(x => x.Id == id);
+        TmWorkItemAssignee A(string id) => _assignees.First(x => x.Id == id);
 
         // â”€â”€ Custom Fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _customFields =
@@ -56,11 +57,11 @@ public class MockGanttStore
             {
                 Id = "1", Title = "Project Alpha", ParentId = null,
                 Start = today.AddDays(-21), End = today.AddDays(42),
-                PercentComplete = 38, Status = GanttTaskStatus.InProgress,
-                Priority = GanttTaskPriority.Highest, Color = "#6366f1",
+                PercentComplete = 38, Status = TmWorkItemStatus.InProgress,
+                Priority = TmWorkItemPriority.Highest, Color = "#6366f1",
                 UseManualDates = false,
                 Description = "Full product delivery â€” Phase 1 through Go-Live.",
-                CustomValues = new() { ["cf3"] = "Alpha Platform", ["cf4"] = "true" },
+                CustomFields = new() { ["cf3"] = "Alpha Platform", ["cf4"] = "true" },
             },
 
             // â”€â”€ Planning Phase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -68,20 +69,20 @@ public class MockGanttStore
             {
                 Id = "2", Title = "Planning Phase", ParentId = "1",
                 Start = today.AddDays(-21), End = today.AddDays(-9),
-                PercentComplete = 100, Status = GanttTaskStatus.Done,
-                Priority = GanttTaskPriority.High, Color = "#10b981",
-                CustomValues = new() { ["cf1"] = "Sprint 1", ["cf5"] = "Backend" },
+                PercentComplete = 100, Status = TmWorkItemStatus.Done,
+                Priority = TmWorkItemPriority.High, Color = "#10b981",
+                CustomFields = new() { ["cf1"] = "Sprint 1", ["cf5"] = "Backend" },
             },
             new()
             {
                 Id = "3", Title = "Project Charter", ParentId = "2",
                 Start = today.AddDays(-21), End = today.AddDays(-18),
-                PercentComplete = 100, Status = GanttTaskStatus.Done,
-                Priority = GanttTaskPriority.High,
+                PercentComplete = 100, Status = TmWorkItemStatus.Done,
+                Priority = TmWorkItemPriority.High,
                 Assignees = [A("a1"), A("a3")],
                 BudgetHours = 16, ActualCost = 1800m,
                 EstimationHours = 16, LoggedHours = 14.5,
-                CustomValues = new() { ["cf1"] = "Sprint 1", ["cf2"] = "5", ["cf4"] = "true" },
+                CustomFields = new() { ["cf1"] = "Sprint 1", ["cf2"] = "5", ["cf4"] = "true" },
                 TimeLog =
                 [
                     new() { Id = "tl1", TaskId = "3", AssigneeId = "a1",
@@ -105,21 +106,21 @@ public class MockGanttStore
             {
                 Id = "4", Title = "Stakeholder Analysis", ParentId = "2",
                 Start = today.AddDays(-18), End = today.AddDays(-14),
-                PercentComplete = 100, Status = GanttTaskStatus.Done,
-                Priority = GanttTaskPriority.Medium,
+                PercentComplete = 100, Status = TmWorkItemStatus.Done,
+                Priority = TmWorkItemPriority.Medium,
                 Assignees = [A("a2"), A("v1")],
                 BudgetHours = 24, ActualCost = 2100m,
                 EstimationHours = 24, LoggedHours = 22,
-                CustomValues = new() { ["cf1"] = "Sprint 1", ["cf2"] = "8", ["cf5"] = "Design" },
+                CustomFields = new() { ["cf1"] = "Sprint 1", ["cf2"] = "8", ["cf5"] = "Design" },
             },
             new()
             {
                 Id = "5", Title = "Design Phase", ParentId = "2",
                 Start = today.AddDays(-11), End = today.AddDays(-9),
-                PercentComplete = 100, Status = GanttTaskStatus.Done,
-                Priority = GanttTaskPriority.Highest, IsMilestone = true,
+                PercentComplete = 100, Status = TmWorkItemStatus.Done,
+                Priority = TmWorkItemPriority.Highest, IsMilestone = true,
                 Assignees = [A("a1"), A("a2"), A("a3")],
-                CustomValues = new() { ["cf1"] = "Sprint 1" },
+                CustomFields = new() { ["cf1"] = "Sprint 1" },
             },
 
             // â”€â”€ Design Phase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -127,20 +128,20 @@ public class MockGanttStore
             {
                 Id = "6", Title = "UI/UX Design", ParentId = "1",
                 Start = today.AddDays(-9), End = today.AddDays(6),
-                PercentComplete = 65, Status = GanttTaskStatus.InProgress,
-                Priority = GanttTaskPriority.High, Color = "#f59e0b",
-                CustomValues = new() { ["cf1"] = "Sprint 2", ["cf5"] = "Design,Frontend" },
+                PercentComplete = 65, Status = TmWorkItemStatus.InProgress,
+                Priority = TmWorkItemPriority.High, Color = "#f59e0b",
+                CustomFields = new() { ["cf1"] = "Sprint 2", ["cf5"] = "Design,Frontend" },
             },
             new()
             {
                 Id = "7", Title = "UI/UX Mockups", ParentId = "6",
                 Start = today.AddDays(-9), End = today.AddDays(-1),
-                PercentComplete = 100, Status = GanttTaskStatus.Done,
-                Priority = GanttTaskPriority.High,
+                PercentComplete = 100, Status = TmWorkItemStatus.Done,
+                Priority = TmWorkItemPriority.High,
                 Assignees = [A("v1"), A("a3")],
                 BudgetHours = 40, ActualCost = 4200m,
                 EstimationHours = 40, LoggedHours = 38,
-                CustomValues = new() { ["cf1"] = "Sprint 2", ["cf2"] = "13", ["cf5"] = "Design", ["cf6"] = "https://figma.com/project-alpha-mockups" },
+                CustomFields = new() { ["cf1"] = "Sprint 2", ["cf2"] = "13", ["cf5"] = "Design", ["cf6"] = "https://figma.com/project-alpha-mockups" },
                 Attachments =
                 [
                     new() { Id = "at2", FileName = "alpha-mockups-v2.fig", ContentType = "application/octet-stream",
@@ -159,33 +160,33 @@ public class MockGanttStore
             {
                 Id = "8", Title = "Database Schema Design", ParentId = "6",
                 Start = today.AddDays(-7), End = today.AddDays(2),
-                PercentComplete = 80, Status = GanttTaskStatus.InProgress,
-                Priority = GanttTaskPriority.High,
+                PercentComplete = 80, Status = TmWorkItemStatus.InProgress,
+                Priority = TmWorkItemPriority.High,
                 Assignees = [A("a2")],
                 BudgetHours = 20, ActualCost = 950m,
                 EstimationHours = 20, LoggedHours = 16,
-                Deadline = today.AddDays(2),
-                CustomValues = new() { ["cf1"] = "Sprint 2", ["cf2"] = "8", ["cf5"] = "Backend" },
+                DueDate = today.AddDays(2),
+                CustomFields = new() { ["cf1"] = "Sprint 2", ["cf2"] = "8", ["cf5"] = "Backend" },
             },
             new()
             {
                 Id = "9", Title = "API Contract Definition", ParentId = "6",
                 Start = today.AddDays(-5), End = today.AddDays(3),
-                PercentComplete = 60, Status = GanttTaskStatus.InProgress,
-                Priority = GanttTaskPriority.Medium,
+                PercentComplete = 60, Status = TmWorkItemStatus.InProgress,
+                Priority = TmWorkItemPriority.Medium,
                 Assignees = [A("a1"), A("a2")],
                 BudgetHours = 16, ActualCost = 700m,
                 EstimationHours = 16, LoggedHours = 9.5,
-                CustomValues = new() { ["cf1"] = "Sprint 2", ["cf2"] = "5", ["cf5"] = "Backend" },
+                CustomFields = new() { ["cf1"] = "Sprint 2", ["cf2"] = "5", ["cf5"] = "Backend" },
             },
             new()
             {
                 Id = "10", Title = "Design Review Sign-off", ParentId = "6",
                 Start = today.AddDays(5), End = today.AddDays(6),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.Highest, IsMilestone = true,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.Highest, IsMilestone = true,
                 Assignees = [A("a1"), A("a3")],
-                CustomValues = new() { ["cf1"] = "Sprint 2" },
+                CustomFields = new() { ["cf1"] = "Sprint 2" },
             },
 
             // â”€â”€ Development Phase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -193,65 +194,65 @@ public class MockGanttStore
             {
                 Id = "11", Title = "Development Phase", ParentId = "1",
                 Start = today.AddDays(5), End = today.AddDays(28),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.Highest, Color = "#ef4444",
-                CustomValues = new() { ["cf1"] = "Sprint 3", ["cf5"] = "Backend,Frontend" },
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.Highest, Color = "#ef4444",
+                CustomFields = new() { ["cf1"] = "Sprint 3", ["cf5"] = "Backend,Frontend" },
             },
             new()
             {
                 Id = "12", Title = "Backend Core Services", ParentId = "11",
                 Start = today.AddDays(5), End = today.AddDays(17),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.High,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.High,
                 Assignees = [A("a2"), A("a4")],
                 BudgetHours = 80, ActualCost = 0m,
                 EstimationHours = 80, LoggedHours = 0,
-                Deadline = today.AddDays(18),
-                CustomValues = new() { ["cf1"] = "Sprint 3", ["cf2"] = "21", ["cf5"] = "Backend", ["cf4"] = "true" },
+                DueDate = today.AddDays(18),
+                CustomFields = new() { ["cf1"] = "Sprint 3", ["cf2"] = "21", ["cf5"] = "Backend", ["cf4"] = "true" },
             },
             new()
             {
                 Id = "13", Title = "Frontend Components", ParentId = "11",
                 Start = today.AddDays(7), End = today.AddDays(21),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.High,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.High,
                 Assignees = [A("a3"), A("v1")],
                 BudgetHours = 72, ActualCost = 0m,
                 EstimationHours = 72, LoggedHours = 0,
-                CustomValues = new() { ["cf1"] = "Sprint 3", ["cf2"] = "13", ["cf5"] = "Frontend,Design" },
+                CustomFields = new() { ["cf1"] = "Sprint 3", ["cf2"] = "13", ["cf5"] = "Frontend,Design" },
             },
             new()
             {
                 Id = "14", Title = "Integration Layer", ParentId = "11",
                 Start = today.AddDays(14), End = today.AddDays(24),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.Medium,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.Medium,
                 Assignees = [A("a1"), A("a2")],
                 BudgetHours = 40, ActualCost = 0m,
                 EstimationHours = 40, LoggedHours = 0,
-                CustomValues = new() { ["cf1"] = "Sprint 3", ["cf2"] = "8", ["cf5"] = "Backend" },
+                CustomFields = new() { ["cf1"] = "Sprint 3", ["cf2"] = "8", ["cf5"] = "Backend" },
             },
             new()
             {
                 Id = "15", Title = "Feature A â€“ Search & Filter", ParentId = "11",
                 Start = today.AddDays(7), End = today.AddDays(20),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.Medium,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.Medium,
                 Assignees = [A("a4")],
                 BudgetHours = 32, ActualCost = 0m,
                 EstimationHours = 32, LoggedHours = 0,
-                CustomValues = new() { ["cf1"] = "Sprint 3", ["cf2"] = "8", ["cf5"] = "Frontend,Backend" },
+                CustomFields = new() { ["cf1"] = "Sprint 3", ["cf2"] = "8", ["cf5"] = "Frontend,Backend" },
             },
             new()
             {
                 Id = "16", Title = "Feature B â€“ Notifications", ParentId = "11",
                 Start = today.AddDays(12), End = today.AddDays(28),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.Low,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.Low,
                 Assignees = [A("a4"), A("v2")],
                 BudgetHours = 24, ActualCost = 0m,
                 EstimationHours = 24, LoggedHours = 0,
-                CustomValues = new() { ["cf1"] = "Sprint 4", ["cf2"] = "5", ["cf5"] = "Backend,DevOps" },
+                CustomFields = new() { ["cf1"] = "Sprint 4", ["cf2"] = "5", ["cf5"] = "Backend,DevOps" },
             },
 
             // â”€â”€ Testing Phase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -259,59 +260,59 @@ public class MockGanttStore
             {
                 Id = "17", Title = "Testing Phase", ParentId = "1",
                 Start = today.AddDays(26), End = today.AddDays(38),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.High, Color = "#8b5cf6",
-                CustomValues = new() { ["cf1"] = "Sprint 4", ["cf5"] = "QA" },
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.High, Color = "#8b5cf6",
+                CustomFields = new() { ["cf1"] = "Sprint 4", ["cf5"] = "QA" },
             },
             new()
             {
                 Id = "18", Title = "Unit Testing", ParentId = "17",
                 Start = today.AddDays(26), End = today.AddDays(30),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.High,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.High,
                 Assignees = [A("a2"), A("a4")],
                 BudgetHours = 24, EstimationHours = 24,
-                CustomValues = new() { ["cf1"] = "Sprint 4", ["cf2"] = "5", ["cf5"] = "QA,Backend" },
+                CustomFields = new() { ["cf1"] = "Sprint 4", ["cf2"] = "5", ["cf5"] = "QA,Backend" },
             },
             new()
             {
                 Id = "19", Title = "Integration Testing", ParentId = "17",
                 Start = today.AddDays(29), End = today.AddDays(34),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.High,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.High,
                 Assignees = [A("a1"), A("a4")],
                 BudgetHours = 32, EstimationHours = 32,
-                CustomValues = new() { ["cf1"] = "Sprint 4", ["cf2"] = "8", ["cf5"] = "QA" },
+                CustomFields = new() { ["cf1"] = "Sprint 4", ["cf2"] = "8", ["cf5"] = "QA" },
             },
             new()
             {
                 Id = "20", Title = "Performance Testing", ParentId = "17",
                 Start = today.AddDays(30), End = today.AddDays(35),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.Medium,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.Medium,
                 Assignees = [A("v2")],
                 BudgetHours = 16, EstimationHours = 16,
-                CustomValues = new() { ["cf1"] = "Sprint 4", ["cf2"] = "5", ["cf5"] = "QA,DevOps" },
+                CustomFields = new() { ["cf1"] = "Sprint 4", ["cf2"] = "5", ["cf5"] = "QA,DevOps" },
             },
             new()
             {
                 Id = "21", Title = "User Acceptance Testing", ParentId = "17",
                 Start = today.AddDays(34), End = today.AddDays(38),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.Highest,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.Highest,
                 Assignees = [A("a1"), A("a3")],
                 BudgetHours = 24, EstimationHours = 24,
-                Deadline = today.AddDays(38),
-                CustomValues = new() { ["cf1"] = "Sprint 4", ["cf2"] = "13", ["cf5"] = "QA" },
+                DueDate = today.AddDays(38),
+                CustomFields = new() { ["cf1"] = "Sprint 4", ["cf2"] = "13", ["cf5"] = "QA" },
             },
             new()
             {
                 Id = "22", Title = "QA Sign-off", ParentId = "17",
                 Start = today.AddDays(38), End = today.AddDays(38),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.Highest, IsMilestone = true,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.Highest, IsMilestone = true,
                 Assignees = [A("a1")],
-                CustomValues = new() { ["cf1"] = "Sprint 4" },
+                CustomFields = new() { ["cf1"] = "Sprint 4" },
             },
 
             // â”€â”€ Deployment Phase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -319,39 +320,39 @@ public class MockGanttStore
             {
                 Id = "23", Title = "Deployment Phase", ParentId = "1",
                 Start = today.AddDays(37), End = today.AddDays(42),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.Highest, Color = "#ec4899",
-                CustomValues = new() { ["cf1"] = "Sprint 4", ["cf5"] = "DevOps" },
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.Highest, Color = "#ec4899",
+                CustomFields = new() { ["cf1"] = "Sprint 4", ["cf5"] = "DevOps" },
             },
             new()
             {
                 Id = "24", Title = "Staging Deployment", ParentId = "23",
                 Start = today.AddDays(37), End = today.AddDays(39),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.High,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.High,
                 Assignees = [A("v2"), A("a4")],
                 BudgetHours = 8, EstimationHours = 8,
-                CustomValues = new() { ["cf1"] = "Sprint 4", ["cf5"] = "DevOps", ["cf4"] = "true" },
+                CustomFields = new() { ["cf1"] = "Sprint 4", ["cf5"] = "DevOps", ["cf4"] = "true" },
             },
             new()
             {
                 Id = "25", Title = "Production Deployment", ParentId = "23",
                 Start = today.AddDays(40), End = today.AddDays(41),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.Highest,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.Highest,
                 Assignees = [A("v2"), A("a2")],
                 BudgetHours = 8, EstimationHours = 8,
-                Deadline = today.AddDays(42),
-                CustomValues = new() { ["cf1"] = "Sprint 4", ["cf5"] = "DevOps", ["cf4"] = "true" },
+                DueDate = today.AddDays(42),
+                CustomFields = new() { ["cf1"] = "Sprint 4", ["cf5"] = "DevOps", ["cf4"] = "true" },
             },
             new()
             {
                 Id = "26", Title = "Go-Live!", ParentId = "23",
                 Start = today.AddDays(42), End = today.AddDays(42),
-                PercentComplete = 0, Status = GanttTaskStatus.Open,
-                Priority = GanttTaskPriority.Highest, IsMilestone = true,
+                PercentComplete = 0, Status = TmWorkItemStatus.Open,
+                Priority = TmWorkItemPriority.Highest, IsMilestone = true,
                 Assignees = [A("a1"), A("a2"), A("a3")],
-                CustomValues = new() { ["cf1"] = "Sprint 4" },
+                CustomFields = new() { ["cf1"] = "Sprint 4" },
             },
 
             // â”€â”€ Extra scenarios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -359,12 +360,12 @@ public class MockGanttStore
             {
                 Id = "27", Title = "Overdue â€“ Security Audit", ParentId = "1",
                 Start = today.AddDays(-8), End = today.AddDays(-1),
-                PercentComplete = 45, Status = GanttTaskStatus.InProgress,
-                Priority = GanttTaskPriority.Highest, Color = "#dc2626",
+                PercentComplete = 45, Status = TmWorkItemStatus.InProgress,
+                Priority = TmWorkItemPriority.Highest, Color = "#dc2626",
                 Assignees = [A("a1")],
                 BudgetHours = 20, ActualCost = 600m, EstimationHours = 20, LoggedHours = 9,
-                Deadline = today.AddDays(-2),
-                CustomValues = new() { ["cf5"] = "Backend", ["cf2"] = "8", ["cf4"] = "true" },
+                DueDate = today.AddDays(-2),
+                CustomFields = new() { ["cf5"] = "Backend", ["cf2"] = "8", ["cf4"] = "true" },
                 TimeLog =
                 [
                     new() { Id = "tl3", TaskId = "27", AssigneeId = "a1",
@@ -386,12 +387,12 @@ public class MockGanttStore
             {
                 Id = "28", Title = "DevOps Infrastructure Setup", ParentId = "1",
                 Start = today, End = today.AddDays(10),
-                PercentComplete = 15, Status = GanttTaskStatus.InProgress,
-                Priority = GanttTaskPriority.High, Color = "#0ea5e9",
+                PercentComplete = 15, Status = TmWorkItemStatus.InProgress,
+                Priority = TmWorkItemPriority.High, Color = "#0ea5e9",
                 Assignees = [A("v2")],
                 BudgetHours = 32, EstimationHours = 32, LoggedHours = 5,
                 UseManualDates = true,
-                CustomValues = new() { ["cf5"] = "DevOps", ["cf2"] = "13" },
+                CustomFields = new() { ["cf5"] = "DevOps", ["cf2"] = "13" },
                 TimeLog =
                 [
                     new() { Id = "tl5", TaskId = "28", AssigneeId = "v2",
@@ -538,7 +539,7 @@ public class MockGanttStore
 
     // â”€â”€ Read accessors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    public IReadOnlyList<GanttTask>             GetTasks()              => _tasks;
+    public IReadOnlyList<TmWorkItem>             GetTasks()              => _tasks;
     public IReadOnlyList<GanttDependency>        GetDependencies()       => _dependencies;
     public IReadOnlyList<GanttBaseline>          GetBaselines()          => _baselines;
     public IReadOnlyList<GanttCustomField>       GetCustomFields()       => _customFields;
@@ -546,11 +547,11 @@ public class MockGanttStore
     public IReadOnlyList<GanttResourceCalendar>  GetResourceCalendars()  => _resourceCalendars;
     public IReadOnlyList<GanttReport>            GetReports()            => _reports;
     public WorkingSchedule                       GetWorkingSchedule()    => _workingSchedule;
-    public IReadOnlyList<GanttAssignee>          GetAssignees()          => _assignees;
+    public IReadOnlyList<TmWorkItemAssignee>          GetAssignees()          => _assignees;
 
     // â”€â”€ Mutations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    public bool UpdateTask(string id, GanttTask updated)
+    public bool UpdateTask(string id, TmWorkItem updated)
     {
         var idx = _tasks.FindIndex(t => t.Id == id);
         if (idx < 0) return false;
@@ -559,7 +560,7 @@ public class MockGanttStore
         return true;
     }
 
-    public GanttTask AddTask(GanttTask task)
+    public TmWorkItem AddTask(TmWorkItem task)
     {
         task.Id = Guid.NewGuid().ToString();
         _tasks.Add(task);

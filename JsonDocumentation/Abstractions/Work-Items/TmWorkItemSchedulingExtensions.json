@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Work Items",
+  "namespace": "Tempo.Blazor.Abstractions.WorkItems",
+  "description": "Date-coercion helpers for components that require a scheduled item (e.g. the Gantt chart), where / are conceptually required even though the unified model keeps them nullable for unscheduled sources (Notion tasks).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemSchedulingExtensions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ScheduledDuration",
+      "kind": "Method",
+      "type": "TimeSpan",
+      "description": "Duration between scheduled start and end.",
+      "parameters": [
+        {
+          "name": "item",
+          "type": "this TmWorkItem"
+        }
+      ]
+    },
+    {
+      "name": "ScheduledEnd",
+      "kind": "Method",
+      "type": "DateTime",
+      "description": "Scheduled end (passthrough for ).",
+      "parameters": [
+        {
+          "name": "item",
+          "type": "this TmWorkItem"
+        }
+      ]
+    },
+    {
+      "name": "ScheduledStart",
+      "kind": "Method",
+      "type": "DateTime",
+      "description": "Scheduled start (passthrough for ).",
+      "parameters": [
+        {
+          "name": "item",
+          "type": "this TmWorkItem"
+        }
+      ]
+    }
+  ],
+  "itemName": "TmWorkItemSchedulingExtensions"
+}

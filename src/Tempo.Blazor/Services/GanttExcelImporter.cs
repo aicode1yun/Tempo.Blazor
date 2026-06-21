@@ -22,7 +22,7 @@ public static class GanttExcelImporter
             ["priority"] = GanttColumnKey.Priority,
         };
 
-    public static IReadOnlyList<GanttTask> Import(Stream stream,
+    public static IReadOnlyList<TmWorkItem> Import(Stream stream,
         IEnumerable<GanttColumnMapping>? mappings = null)
     {
         var userMappings = mappings?
@@ -48,11 +48,11 @@ public static class GanttExcelImporter
                 colMap[i] = defaultKey;
         }
 
-        var result = new List<GanttTask>();
+        var result = new List<TmWorkItem>();
         for (var rowIdx = 1; rowIdx < rows.Count; rowIdx++)
         {
             var cells = ReadRow(rows[rowIdx], sharedStrings);
-            var task = new GanttTask();
+            var task = new TmWorkItem();
             for (var col = 0; col < cells.Count; col++)
             {
                 if (!colMap.TryGetValue(col, out var key)) continue;
@@ -68,9 +68,9 @@ public static class GanttExcelImporter
                     case GanttColumnKey.Progress:
                         if (int.TryParse(val, out var p)) task.PercentComplete = Math.Clamp(p, 0, 100); break;
                     case GanttColumnKey.Status:
-                        if (Enum.TryParse<GanttTaskStatus>(val, true, out var st)) task.Status = st; break;
+                        if (Enum.TryParse<TmWorkItemStatus>(val, true, out var st)) task.Status = st; break;
                     case GanttColumnKey.Priority:
-                        if (Enum.TryParse<GanttTaskPriority>(val, true, out var pr)) task.Priority = pr; break;
+                        if (Enum.TryParse<TmWorkItemPriority>(val, true, out var pr)) task.Priority = pr; break;
                 }
             }
             if (!string.IsNullOrWhiteSpace(task.Title))

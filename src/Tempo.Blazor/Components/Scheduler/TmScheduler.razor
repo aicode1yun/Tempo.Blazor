@@ -21,7 +21,7 @@
                                       ShowAdjacentMonthEvents="@ShowAdjacentMonthEvents"
                                       OnSlotClick="@OnSlotClick"
                                       OnEventClick="@OnEventClick"
-                                      OnEventChanged="@OnEventChanged"
+                                      OnEventChanged="@HandleEventChangedAsync"
                                       OnSlotContextMenu="@OnSlotContextMenu"
                                       OnEventContextMenu="@OnEventContextMenu" />
                 break;
@@ -35,7 +35,7 @@
                                     HideTimeGrid="@HideTimeGrid"
                                     OnSlotClick="@OnSlotClick"
                                     OnEventClick="@OnEventClick"
-                                    OnEventChanged="@OnEventChanged"
+                                    OnEventChanged="@HandleEventChangedAsync"
                                     OnSlotContextMenu="@OnSlotContextMenu"
                                     OnEventContextMenu="@OnEventContextMenu"
                                     EventTemplate="@EventTemplate" />
@@ -51,7 +51,7 @@
                                      HideTimeGrid="@HideTimeGrid"
                                      OnSlotClick="@OnSlotClick"
                                      OnEventClick="@OnEventClick"
-                                     OnEventChanged="@OnEventChanged"
+                                     OnEventChanged="@HandleEventChangedAsync"
                                      OnSlotContextMenu="@OnSlotContextMenu"
                                      OnEventContextMenu="@OnEventContextMenu"
                                      EventTemplate="@EventTemplate" />
@@ -71,7 +71,7 @@
                                          ReadOnly="@ReadOnly"
                                          OnSlotClick="@OnSlotClick"
                                          OnEventClick="@OnEventClick"
-                                         OnEventChanged="@OnEventChanged"
+                                         OnEventChanged="@HandleEventChangedAsync"
                                          OnSlotContextMenu="@OnSlotContextMenu"
                                          OnEventContextMenu="@OnEventContextMenu" />
                 break;
@@ -85,8 +85,16 @@
     /// <summary>Client-side event list. Alternative to DataProvider.</summary>
     [Parameter] public IReadOnlyList<TmScheduleEvent>? Events { get; set; }
 
-    /// <summary>Server-side data provider. Takes priority over Events if both are set.</summary>
+    /// <summary>Server-side calendar-event provider. Takes priority over Events if both are set.</summary>
     [Parameter] public IScheduleDataProvider? DataProvider { get; set; }
+
+    /// <summary>
+    /// Unified work-item source shared with other components (Gantt, Notion). When set (and no
+    /// <see cref="DataProvider"/> is given), scheduled work items overlapping the visible range are
+    /// loaded and shown as calendar events, and drag/resize changes are persisted back through it
+    /// (when the provider declares the Update capability).
+    /// </summary>
+    [Parameter] public ITmWorkItemProvider? WorkItemSource { get; set; }
 
     /// <summary>Active view type.</summary>
     [Parameter] public TmScheduleViewType View { get; set; } = TmScheduleViewType.Month;
@@ -164,6 +172,20 @@
         {
             _loadedEvents = await DataProvider.GetEventsAsync(new TmScheduleQuery(rangeStart, rangeEnd));
         }
+        else if (WorkItemSource is not null)
+        {
+            var result = await WorkItemSource.SearchAsync(new TmWorkItemQuery
+            {
+                RangeStart = rangeStart,
+                RangeEnd = rangeEnd,
+                IncludeCompleted = true,
+                Take = 1000
+            });
+            _loadedEvents = result.Items
+                .Where(w => w.Start < rangeEnd && w.End > rangeStart)
+                .Select(MapToEvent)
+                .ToList();
+        }
         else if (Events is not null)
         {
             _loadedEvents = Events
@@ -174,6 +196,33 @@
         {
             _loadedEvents = [];
         }
+    }
+
+    private static TmScheduleEvent MapToEvent(TmWorkItem item) => new()
+    {
+        Id = item.Id,
+        Title = item.Title,
+        Start = item.Start,
+        End = item.End,
+        Description = item.Description,
+        Color = item.Color ?? item.StatusColor
+    };
+
+    private async Task HandleEventChangedAsync(TmScheduleEvent e)
+    {
+        if (WorkItemSource is not null && WorkItemSource.Capabilities.HasFlag(TmWorkItemCapabilities.Update))
+        {
+            var item = await WorkItemSource.GetByIdAsync(e.Id);
+            if (item is not null)
+            {
+                item.Start = e.Start;
+                item.End = e.End;
+                await WorkItemSource.UpdateAsync(item);
+                await LoadEventsAsync();
+            }
+        }
+
+        await OnEventChanged.InvokeAsync(e);
     }
 
     private (DateTime Start, DateTime End) GetVisibleRange()

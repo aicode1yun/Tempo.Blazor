@@ -10,7 +10,7 @@ namespace Tempo.Blazor.Tests.Components.Scheduler;
 
 public class TmGanttDragTests : LocalizationTestBase
 {
-    private static IReadOnlyList<GanttTask> GetSampleTasks() => new List<GanttTask>
+    private static IReadOnlyList<TmWorkItem> GetSampleTasks() => new List<TmWorkItem>
     {
         new() { Id = "1", Title = "Project", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 30), PercentComplete = 0 },
         new() { Id = "2", Title = "Design", ParentId = "1", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10), PercentComplete = 100 },
@@ -21,7 +21,7 @@ public class TmGanttDragTests : LocalizationTestBase
     public void TmGantt_TreeRow_HasDragHandle()
     {
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, GetSampleTasks()));
+            .Add(c => c.Items, GetSampleTasks()));
 
         var handles = cut.FindAll(".tm-gantt__drag-handle");
         handles.Count.Should().Be(3, "each visible row should have a drag handle");
@@ -31,7 +31,7 @@ public class TmGanttDragTests : LocalizationTestBase
     public void TmGantt_TreeRow_IsDraggable()
     {
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, GetSampleTasks()));
+            .Add(c => c.Items, GetSampleTasks()));
 
         var row = cut.Find(".tm-gantt__tree-row");
         row.GetAttribute("draggable").Should().Be("true");
@@ -41,7 +41,7 @@ public class TmGanttDragTests : LocalizationTestBase
     public void TmGantt_DragStart_SetsDraggingClass()
     {
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, GetSampleTasks()));
+            .Add(c => c.Items, GetSampleTasks()));
 
         var row = cut.Find(".tm-gantt__tree-row");
         row.TriggerEvent("ondragstart", new DragEventArgs());
@@ -58,7 +58,7 @@ public class TmGanttDragTests : LocalizationTestBase
     {
         GanttTaskReorderedArgs? reordered = null;
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, GetSampleTasks())
+            .Add(c => c.Items, GetSampleTasks())
             .Add(c => c.OnTaskReordered, args => reordered = args));
 
         var rows = cut.FindAll(".tm-gantt__tree-row");

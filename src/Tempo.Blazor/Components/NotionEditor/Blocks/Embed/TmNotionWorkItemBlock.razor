@@ -1,6 +1,6 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Blocks.Embed
+@using Tempo.Blazor.Abstractions.WorkItems
 @using Tempo.Blazor.NotionEditor.Enums
-@using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.Components.NotionEditor.Services
 
@@ -16,11 +16,11 @@
                         <label class="tm-work-item-picker__provider">
                             <span>@Loc["Notion_WorkItem_Provider"]</span>
                             <select class="tm-work-item-picker__select"
-                                    value="@_selectedProviderKey"
+                                    value="@_selectedSourceKey"
                                     @onchange="HandleProviderChangedAsync">
                                 @foreach (var provider in Providers)
                                 {
-                                    <option value="@provider.ProviderKey">@provider.DisplayName</option>
+                                    <option value="@provider.SourceKey">@provider.DisplayName</option>
                                 }
                             </select>
                         </label>
@@ -62,9 +62,9 @@
                                     type="button"
                                     role="option"
                                     @onclick="() => SelectWorkItemAsync(item)">
-                                <span class="tm-work-item-picker__result-id">@item.ExternalId</span>
+                                <span class="tm-work-item-picker__result-id">@ExternalRef(item)</span>
                                 <span class="tm-work-item-picker__result-title">@item.Title</span>
-                                <span class="tm-work-item-picker__result-status">@item.Status</span>
+                                <span class="tm-work-item-picker__result-status">@StatusText(item)</span>
                             </button>
                         }
                     </div>
@@ -95,7 +95,7 @@
 </div>
 
 @code {
-    private RenderFragment RenderWorkItem(WorkItemDto item) => builder =>
+    private RenderFragment RenderWorkItem(TmWorkItem item) => builder =>
     {
         switch (CurrentDisplayMode)
         {

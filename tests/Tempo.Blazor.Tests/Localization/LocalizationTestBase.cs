@@ -1,4 +1,4 @@
-﻿using Bunit;
+using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
 using Tempo.Blazor.Components.DocumentEditor;
@@ -3114,7 +3114,7 @@ public abstract class LocalizationTestBase : TestContext
         // F5.9 Budget
         ["GanttTask_Budget"]            = "Budget Hours",
         ["GanttTask_ActualCost"]        = "Actual Cost",
-        ["GanttAssignee_HourlyRate"]    = "Hourly Rate",
+        ["TmWorkItemAssignee_HourlyRate"]    = "Hourly Rate",
 
         // F5.10 People view
         ["TmGantt_PeopleView"]          = "People",

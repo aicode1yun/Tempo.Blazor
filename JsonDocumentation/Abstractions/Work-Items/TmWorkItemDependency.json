@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Work Items",
+  "namespace": "Tempo.Blazor.Abstractions.WorkItems",
+  "description": "Describes a dependency relationship between two s.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemDependency.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "FromId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Source (predecessor) work item identifier."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier of the dependency."
+    },
+    {
+      "name": "LagDays",
+      "kind": "Property",
+      "type": "int",
+      "description": "Lag (positive) or lead (negative) in calendar days."
+    },
+    {
+      "name": "ToId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Target (successor) work item identifier."
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "TmWorkItemDependencyType",
+      "description": "Type of dependency."
+    }
+  ],
+  "itemName": "TmWorkItemDependency"
+}

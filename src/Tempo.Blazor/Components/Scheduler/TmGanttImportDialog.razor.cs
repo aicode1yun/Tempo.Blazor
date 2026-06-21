@@ -23,7 +23,7 @@ public partial class TmGanttImportDialog
     [Parameter] public bool IsOpen { get; set; }
 
     /// <summary>Fires when import completes successfully.</summary>
-    [Parameter] public EventCallback<IReadOnlyList<GanttTask>> OnImportCompleted { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<TmWorkItem>> OnImportCompleted { get; set; }
 
     /// <summary>Fires when import fails with an error message.</summary>
     [Parameter] public EventCallback<string> OnImportError { get; set; }
@@ -44,7 +44,7 @@ public partial class TmGanttImportDialog
         _isImporting = true;
         try
         {
-            IReadOnlyList<GanttTask> tasks;
+            IReadOnlyList<TmWorkItem> tasks;
             if (_tab == ImportTab.Excel)
             {
                 if (_selectedFile is null) return;

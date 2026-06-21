@@ -9,19 +9,19 @@ public static class GanttMppImporter
 {
     private static readonly XNamespace MsNs = "http://schemas.microsoft.com/project";
 
-    public static IReadOnlyList<GanttTask> Import(Stream stream)
+    public static IReadOnlyList<TmWorkItem> Import(Stream stream)
     {
         var doc = XDocument.Load(stream);
         var tasksEl = doc.Root?.Element(MsNs + "Tasks");
         if (tasksEl is null) return [];
 
-        var result = new List<GanttTask>();
+        var result = new List<TmWorkItem>();
         foreach (var taskEl in tasksEl.Elements(MsNs + "Task"))
         {
             var name = taskEl.Element(MsNs + "Name")?.Value;
             if (string.IsNullOrWhiteSpace(name)) continue;
 
-            var task = new GanttTask { Title = name };
+            var task = new TmWorkItem { Title = name };
 
             var startStr  = taskEl.Element(MsNs + "Start")?.Value;
             var finishStr = taskEl.Element(MsNs + "Finish")?.Value;

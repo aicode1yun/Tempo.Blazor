@@ -9,7 +9,7 @@ namespace Tempo.Blazor.Tests.Components.Scheduler;
 
 public class TmGanttAddTaskTests : LocalizationTestBase
 {
-    private static IReadOnlyList<GanttTask> GetSampleTasks() => new List<GanttTask>
+    private static IReadOnlyList<TmWorkItem> GetSampleTasks() => new List<TmWorkItem>
     {
         new() { Id = "1", Title = "Project", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 30), PercentComplete = 0 },
         new() { Id = "2", Title = "Design", ParentId = "1", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10), PercentComplete = 100 },
@@ -19,7 +19,7 @@ public class TmGanttAddTaskTests : LocalizationTestBase
     public void TmGantt_Renders_AddTaskButton()
     {
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, GetSampleTasks()));
+            .Add(c => c.Items, GetSampleTasks()));
 
         var addBtn = cut.Find("button[data-testid='gantt-add-task']");
         addBtn.Should().NotBeNull();
@@ -30,7 +30,7 @@ public class TmGanttAddTaskTests : LocalizationTestBase
     {
         GanttTaskInsertedArgs? inserted = null;
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, GetSampleTasks())
+            .Add(c => c.Items, GetSampleTasks())
             .Add(c => c.OnTaskInserted, args => inserted = args));
 
         var addBtn = cut.Find("button[data-testid='gantt-add-task']");
@@ -47,7 +47,7 @@ public class TmGanttAddTaskTests : LocalizationTestBase
         GanttTaskInsertedArgs? inserted = null;
         var tasks = GetSampleTasks();
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, tasks)
+            .Add(c => c.Items, tasks)
             .Add(c => c.OnTaskInserted, args => inserted = args));
 
         // Right-click on first row to open context menu
@@ -69,7 +69,7 @@ public class TmGanttAddTaskTests : LocalizationTestBase
         string? removedId = null;
         var tasks = GetSampleTasks();
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, tasks)
+            .Add(c => c.Items, tasks)
             .Add(c => c.OnTaskRemoved, id => removedId = id));
 
         var row = cut.Find(".tm-gantt__tree-row");

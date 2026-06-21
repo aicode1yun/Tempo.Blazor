@@ -268,7 +268,7 @@
             <div class="tm-gantt__sidebar-drawer-body">
                 @foreach (var task in Data)
                 {
-                    <div class="tm-gantt__sidebar-task-row @(task.Status == GanttTaskStatus.Done || task.Status == GanttTaskStatus.Closed ? "tm-gantt__sidebar-task-row--done" : "")">
+                    <div class="tm-gantt__sidebar-task-row @(task.Status == TmWorkItemStatus.Done || task.Status == TmWorkItemStatus.Closed ? "tm-gantt__sidebar-task-row--done" : "")">
                         <span class="tm-gantt__sidebar-task-dot" style="background: @(task.Color ?? "var(--tm-color-primary)")"></span>
                         <span class="tm-gantt__sidebar-task-title">@task.Title</span>
                         <span class="tm-gantt__sidebar-task-pct">@task.PercentComplete%</span>
@@ -401,13 +401,13 @@
     {
         var kanbanColumns = new[]
         {
-            new KanbanColumn(nameof(GanttTaskStatus.Open),       Loc[$"GanttStatus_{GanttTaskStatus.Open}"],       "#e5e7eb"),
-            new KanbanColumn(nameof(GanttTaskStatus.InProgress),  Loc[$"GanttStatus_{GanttTaskStatus.InProgress}"],  "#dbeafe"),
-            new KanbanColumn(nameof(GanttTaskStatus.Done),        Loc[$"GanttStatus_{GanttTaskStatus.Done}"],        "#dcfce7"),
-            new KanbanColumn(nameof(GanttTaskStatus.Closed),      Loc[$"GanttStatus_{GanttTaskStatus.Closed}"],      "#f3f4f6"),
+            new KanbanColumn(nameof(TmWorkItemStatus.Open),       Loc[$"GanttStatus_{TmWorkItemStatus.Open}"],       "#e5e7eb"),
+            new KanbanColumn(nameof(TmWorkItemStatus.InProgress),  Loc[$"GanttStatus_{TmWorkItemStatus.InProgress}"],  "#dbeafe"),
+            new KanbanColumn(nameof(TmWorkItemStatus.Done),        Loc[$"GanttStatus_{TmWorkItemStatus.Done}"],        "#dcfce7"),
+            new KanbanColumn(nameof(TmWorkItemStatus.Closed),      Loc[$"GanttStatus_{TmWorkItemStatus.Closed}"],      "#f3f4f6"),
         };
         <div class="tm-gantt__board-view" data-testid="gantt-board-view">
-            <TmKanbanBoard TItem="GanttTask"
+            <TmKanbanBoard TItem="TmWorkItem"
                            Columns="kanbanColumns"
                            Items="Data"
                            ColumnSelector="t => t.Status.ToString()"
@@ -493,7 +493,7 @@
                         }
                         else
                         {
-                            <span class="tm-gantt__bar-avatar" style="@GetAvatarStyle(assignee ?? new GanttAssignee { Name = displayName })" title="@displayName">
+                            <span class="tm-gantt__bar-avatar" style="@GetAvatarStyle(assignee ?? new TmWorkItemAssignee { Name = displayName })" title="@displayName">
                                 @(string.IsNullOrEmpty(displayName) ? "?" : displayName[0].ToString().ToUpperInvariant())
                             </span>
                         }
@@ -727,7 +727,7 @@
 
                         @foreach (var cf in CustomFields)
                         {
-                            var cfVal = node.Task.CustomValues.TryGetValue(cf.Id, out var v) ? v : null;
+                            var cfVal = node.Task.CustomFields.TryGetValue(cf.Id, out var v) ? v : null;
                             @if (_inlineEditTaskId == node.Task.Id && _inlineEditCustomFieldId == cf.Id)
                             {
                                 <span class="tm-gantt__tree-cell tm-gantt__custom-field-cell">
@@ -760,12 +760,12 @@
                 <div class="tm-gantt__bulk-toolbar">
                     <span class="tm-gantt__bulk-toolbar-count">@_selectedTaskIds.Count @Loc["TmGantt_BulkSelected"]</span>
                     <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost"
-                              OnClick="() => ExecuteBulkStatusUpdateAsync(GanttTaskStatus.Done)"
+                              OnClick="() => ExecuteBulkStatusUpdateAsync(TmWorkItemStatus.Done)"
                               data-testid="bulk-status-done">
                         @Loc["TmGantt_BulkMarkDone"]
                     </TmButton>
                     <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost"
-                              OnClick="() => ExecuteBulkStatusUpdateAsync(GanttTaskStatus.InProgress)"
+                              OnClick="() => ExecuteBulkStatusUpdateAsync(TmWorkItemStatus.InProgress)"
                               data-testid="bulk-status-inprogress">
                         @Loc["TmGantt_BulkMarkInProgress"]
                     </TmButton>

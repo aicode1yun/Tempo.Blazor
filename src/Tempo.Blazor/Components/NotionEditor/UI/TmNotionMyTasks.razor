@@ -1,5 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
-@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.Abstractions.WorkItems
 
 <section class="tm-my-tasks @Class" aria-label="@Loc["Notion_Tasks_Title"]">
     <header class="tm-my-tasks__header">
@@ -150,12 +150,13 @@
                                 <button type="button"
                                         class="tm-my-tasks__body"
                                         @onclick="() => NavigateAsync(task)">
-                                    <span class="tm-my-tasks__text">@task.Text</span>
+                                    <span class="tm-my-tasks__text">@task.Title</span>
                                     <span class="tm-my-tasks__meta">
-                                        <span class="tm-my-tasks__page">@task.PageTitle</span>
-                                        @if (!string.IsNullOrWhiteSpace(task.AssigneeDisplayName))
+                                        <span class="tm-my-tasks__page">@PageTitle(task)</span>
+                                        @{ var assigneeName = AssigneeName(task); }
+                                        @if (!string.IsNullOrWhiteSpace(assigneeName))
                                         {
-                                            <span class="tm-my-tasks__assignee">@task.AssigneeDisplayName</span>
+                                            <span class="tm-my-tasks__assignee">@assigneeName</span>
                                         }
                                         @if (task.DueDate is not null)
                                         {

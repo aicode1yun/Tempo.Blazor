@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.Web;
+using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
-using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.Blocks.Embed;
@@ -15,8 +15,8 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
     /// <summary>Work-item block content.</summary>
     [Parameter] public IWorkItemBlockContent? Content { get; set; }
 
-    /// <summary>Registry of available work-item providers.</summary>
-    [Parameter] public WorkItemProviderRegistry? WorkItemProviders { get; set; }
+    /// <summary>Registry of available work-item sources.</summary>
+    [Parameter] public TmWorkItemProviderRegistry? WorkItemProviders { get; set; }
 
     /// <summary>Whether editing controls are disabled.</summary>
     [Parameter] public bool ReadOnly { get; set; }
@@ -29,27 +29,27 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
 
     [CascadingParameter] private NotionEditorContext? Context { get; set; }
 
-    private WorkItemDto? _liveItem;
+    private TmWorkItem? _liveItem;
     private string? _loadError;
-    private string _selectedProviderKey = string.Empty;
+    private string _selectedSourceKey = string.Empty;
     private string _searchText = string.Empty;
     private string? _pickerError;
     private bool _searching;
     private bool _searched;
-    private IReadOnlyList<WorkItemDto> _searchResults = [];
+    private IReadOnlyList<TmWorkItem> _searchResults = [];
     private string? _lastRefreshKey;
 
-    private WorkItemProviderRegistry? Registry => WorkItemProviders ?? Context?.WorkItemProviders;
-    private IReadOnlyList<IWorkItemProvider> Providers => Registry?.GetAll().ToArray() ?? [];
-    private WorkItemDto? Snapshot => _liveItem ?? Content?.CachedSnapshot;
+    private TmWorkItemProviderRegistry? Registry => WorkItemProviders ?? Context?.WorkItemProviders;
+    private IReadOnlyList<ITmWorkItemProvider> Providers => Registry?.GetAll().ToArray() ?? [];
+    private TmWorkItem? Snapshot => _liveItem ?? Content?.CachedSnapshot;
     private WorkItemDisplayMode CurrentDisplayMode => Content?.DisplayMode ?? WorkItemDisplayMode.Card;
-    private bool NeedsPicker => string.IsNullOrWhiteSpace(Content?.ProviderKey) || string.IsNullOrWhiteSpace(Content?.ExternalId);
+    private bool NeedsPicker => string.IsNullOrWhiteSpace(Content?.SourceKey) || string.IsNullOrWhiteSpace(Content?.ExternalId);
 
     protected override async Task OnParametersSetAsync()
     {
         var providers = Providers;
-        if (string.IsNullOrWhiteSpace(_selectedProviderKey))
-            _selectedProviderKey = Content?.ProviderKey ?? providers.FirstOrDefault()?.ProviderKey ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(_selectedSourceKey))
+            _selectedSourceKey = Content?.SourceKey ?? providers.FirstOrDefault()?.SourceKey ?? string.Empty;
 
         if (NeedsPicker)
         {
@@ -59,7 +59,7 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
             return;
         }
 
-        var refreshKey = $"{Content!.ProviderKey}\u001f{Content.ExternalId}";
+        var refreshKey = $"{Content!.SourceKey}{Content.ExternalId}";
         if (string.Equals(refreshKey, _lastRefreshKey, StringComparison.Ordinal))
             return;
 
@@ -69,10 +69,10 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
 
     private async Task RefreshAsync(bool updateContent)
     {
-        if (Content is null || string.IsNullOrWhiteSpace(Content.ProviderKey) || string.IsNullOrWhiteSpace(Content.ExternalId))
+        if (Content is null || string.IsNullOrWhiteSpace(Content.SourceKey) || string.IsNullOrWhiteSpace(Content.ExternalId))
             return;
 
-        var provider = Registry?.GetProvider(Content.ProviderKey);
+        var provider = Registry?.GetProvider(Content.SourceKey);
         if (provider is null)
         {
             _loadError = Loc["Notion_WorkItem_LoadError"];
@@ -91,10 +91,10 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
             }
 
             _loadError = null;
-            _liveItem = NormalizeProviderSnapshot(item, Content.ProviderKey);
+            _liveItem = NormalizeProviderSnapshot(item, Content.SourceKey);
 
             if (updateContent && !SnapshotsEqual(Content.CachedSnapshot, _liveItem))
-                await OnContentChanged.InvokeAsync(CloneContent(Content.ProviderKey, Content.ExternalId, _liveItem, CurrentDisplayMode));
+                await OnContentChanged.InvokeAsync(CloneContent(Content.SourceKey, Content.ExternalId, _liveItem, CurrentDisplayMode));
         }
         catch when (!_disposeCts.IsCancellationRequested)
         {
@@ -105,7 +105,7 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
 
     private async Task HandleProviderChangedAsync(ChangeEventArgs args)
     {
-        _selectedProviderKey = args.Value?.ToString() ?? string.Empty;
+        _selectedSourceKey = args.Value?.ToString() ?? string.Empty;
         _searched = false;
         _searchResults = [];
         _pickerError = null;
@@ -128,7 +128,7 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
 
     private async Task SearchAsync()
     {
-        var provider = Registry?.GetProvider(_selectedProviderKey);
+        var provider = Registry?.GetProvider(_selectedSourceKey);
         if (provider is null)
         {
             _pickerError = Loc["Notion_WorkItem_LoadError"];
@@ -142,9 +142,9 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
 
         try
         {
-            var query = new WorkItemQuery
+            var query = new TmWorkItemQuery
             {
-                ProviderKey = provider.ProviderKey,
+                SourceKey = provider.SourceKey,
                 FreeText = _searchText.Trim(),
                 Ids = [],
                 Take = 12
@@ -162,20 +162,20 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
         }
     }
 
-    private async Task SelectWorkItemAsync(WorkItemDto item)
+    private async Task SelectWorkItemAsync(TmWorkItem item)
     {
-        var snapshot = NormalizeProviderSnapshot(item, item.ProviderKey);
+        var snapshot = NormalizeProviderSnapshot(item, item.SourceKey);
         _liveItem = snapshot;
         _loadError = null;
         _searchResults = [];
         _searched = false;
-        _searchText = snapshot.ExternalId;
-        _selectedProviderKey = snapshot.ProviderKey;
-        _lastRefreshKey = $"{snapshot.ProviderKey}\u001f{snapshot.ExternalId}";
+        _searchText = snapshot.ExternalId ?? string.Empty;
+        _selectedSourceKey = snapshot.SourceKey;
+        _lastRefreshKey = $"{snapshot.SourceKey}{snapshot.ExternalId}";
 
         await OnContentChanged.InvokeAsync(CloneContent(
-            snapshot.ProviderKey,
-            snapshot.ExternalId,
+            snapshot.SourceKey,
+            snapshot.ExternalId ?? string.Empty,
             snapshot,
             Content?.DisplayMode ?? WorkItemDisplayMode.Card));
     }
@@ -186,7 +186,7 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
             return;
 
         await OnContentChanged.InvokeAsync(CloneContent(
-            Content.ProviderKey,
+            Content.SourceKey,
             Content.ExternalId,
             Snapshot ?? Content.CachedSnapshot,
             mode));
@@ -200,13 +200,26 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
 
     private Task HandleFocusAsync() => OnFocused.InvokeAsync();
 
-    private void RenderCard(RenderTreeBuilder builder, WorkItemDto item)
+    // ── Field accessors mapping TmWorkItem to the display strings used below ──
+    private static string StatusText(TmWorkItem item)
+        => string.IsNullOrWhiteSpace(item.StatusLabel) ? item.Status.ToString() : item.StatusLabel!;
+
+    private static string? PriorityText(TmWorkItem item)
+        => string.IsNullOrWhiteSpace(item.PriorityLabel) ? null : item.PriorityLabel;
+
+    private static string? AssigneeText(TmWorkItem item)
+        => item.Assignees.FirstOrDefault()?.Name;
+
+    private static string ExternalRef(TmWorkItem item)
+        => item.ExternalId ?? item.Id;
+
+    private void RenderCard(RenderTreeBuilder builder, TmWorkItem item)
     {
         var seq = 0;
         builder.OpenElement(seq++, "article");
         builder.AddAttribute(seq++, "class", "tm-work-item tm-work-item--card");
-        builder.AddAttribute(seq++, "data-work-item-provider", item.ProviderKey);
-        builder.AddAttribute(seq++, "data-work-item-id", item.ExternalId);
+        builder.AddAttribute(seq++, "data-work-item-provider", item.SourceKey);
+        builder.AddAttribute(seq++, "data-work-item-id", ExternalRef(item));
 
         builder.OpenElement(seq++, "div");
         builder.AddAttribute(seq++, "class", "tm-work-item__header");
@@ -225,13 +238,13 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
         builder.CloseElement();
     }
 
-    private void RenderList(RenderTreeBuilder builder, WorkItemDto item)
+    private void RenderList(RenderTreeBuilder builder, TmWorkItem item)
     {
         var seq = 0;
         builder.OpenElement(seq++, "article");
         builder.AddAttribute(seq++, "class", "tm-work-item tm-work-item--list");
-        builder.AddAttribute(seq++, "data-work-item-provider", item.ProviderKey);
-        builder.AddAttribute(seq++, "data-work-item-id", item.ExternalId);
+        builder.AddAttribute(seq++, "data-work-item-provider", item.SourceKey);
+        builder.AddAttribute(seq++, "data-work-item-id", ExternalRef(item));
         RenderTypeIcon(builder, ref seq, item);
         RenderLinkTitle(builder, ref seq, item);
         RenderStatus(builder, ref seq, item);
@@ -239,7 +252,7 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
         builder.CloseElement();
     }
 
-    private void RenderInline(RenderTreeBuilder builder, WorkItemDto item)
+    private void RenderInline(RenderTreeBuilder builder, TmWorkItem item)
     {
         var seq = 0;
         builder.OpenElement(seq++, "a");
@@ -247,12 +260,12 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
         builder.AddAttribute(seq++, "href", item.Url);
         builder.AddAttribute(seq++, "target", "_blank");
         builder.AddAttribute(seq++, "rel", "noopener noreferrer");
-        builder.AddAttribute(seq++, "data-work-item-provider", item.ProviderKey);
-        builder.AddAttribute(seq++, "data-work-item-id", item.ExternalId);
+        builder.AddAttribute(seq++, "data-work-item-provider", item.SourceKey);
+        builder.AddAttribute(seq++, "data-work-item-id", ExternalRef(item));
         RenderTypeIcon(builder, ref seq, item);
         builder.OpenElement(seq++, "span");
         builder.AddAttribute(seq++, "class", "tm-work-item__chip-id");
-        builder.AddContent(seq++, item.ExternalId);
+        builder.AddContent(seq++, ExternalRef(item));
         builder.CloseElement();
         builder.OpenElement(seq++, "span");
         builder.AddAttribute(seq++, "class", "tm-work-item__chip-title");
@@ -262,7 +275,7 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
         builder.CloseElement();
     }
 
-    private void RenderTypeIcon(RenderTreeBuilder builder, ref int seq, WorkItemDto item)
+    private void RenderTypeIcon(RenderTreeBuilder builder, ref int seq, TmWorkItem item)
     {
         if (!string.IsNullOrWhiteSpace(item.TypeIconUrl))
         {
@@ -277,11 +290,11 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
         builder.OpenElement(seq++, "span");
         builder.AddAttribute(seq++, "class", "tm-work-item__type-fallback");
         builder.AddAttribute(seq++, "aria-hidden", "true");
-        builder.AddContent(seq++, Initial(item.TypeLabel ?? item.ProviderKey));
+        builder.AddContent(seq++, Initial(item.TypeLabel ?? item.SourceKey));
         builder.CloseElement();
     }
 
-    private void RenderLinkTitle(RenderTreeBuilder builder, ref int seq, WorkItemDto item)
+    private void RenderLinkTitle(RenderTreeBuilder builder, ref int seq, TmWorkItem item)
     {
         builder.OpenElement(seq++, "a");
         builder.AddAttribute(seq++, "class", "tm-work-item__link");
@@ -291,7 +304,7 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
         builder.AddAttribute(seq++, "aria-label", Loc["Notion_WorkItem_Open"]);
         builder.OpenElement(seq++, "span");
         builder.AddAttribute(seq++, "class", "tm-work-item__external-id");
-        builder.AddContent(seq++, item.ExternalId);
+        builder.AddContent(seq++, ExternalRef(item));
         builder.CloseElement();
         builder.OpenElement(seq++, "span");
         builder.AddAttribute(seq++, "class", "tm-work-item__title");
@@ -300,16 +313,18 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
         builder.CloseElement();
     }
 
-    private void RenderMeta(RenderTreeBuilder builder, ref int seq, WorkItemDto item)
+    private void RenderMeta(RenderTreeBuilder builder, ref int seq, TmWorkItem item)
     {
         builder.OpenElement(seq++, "div");
         builder.AddAttribute(seq++, "class", "tm-work-item__meta");
         if (!string.IsNullOrWhiteSpace(item.TypeLabel))
             RenderMetaItem(builder, ref seq, item.TypeLabel);
-        if (!string.IsNullOrWhiteSpace(item.AssigneeDisplayName))
-            RenderMetaItem(builder, ref seq, item.AssigneeDisplayName);
-        if (!string.IsNullOrWhiteSpace(item.Priority))
-            RenderMetaItem(builder, ref seq, item.Priority);
+        var assignee = AssigneeText(item);
+        if (!string.IsNullOrWhiteSpace(assignee))
+            RenderMetaItem(builder, ref seq, assignee);
+        var priority = PriorityText(item);
+        if (!string.IsNullOrWhiteSpace(priority))
+            RenderMetaItem(builder, ref seq, priority);
         builder.CloseElement();
     }
 
@@ -321,17 +336,17 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
         builder.CloseElement();
     }
 
-    private void RenderStatus(RenderTreeBuilder builder, ref int seq, WorkItemDto item)
+    private void RenderStatus(RenderTreeBuilder builder, ref int seq, TmWorkItem item)
     {
         builder.OpenElement(seq++, "span");
         builder.AddAttribute(seq++, "class", "tm-work-item__status");
         builder.AddAttribute(seq++, "style", StatusStyle(item.StatusColor));
         builder.AddAttribute(seq++, "aria-label", Loc["Notion_WorkItem_Status"]);
-        builder.AddContent(seq++, item.Status);
+        builder.AddContent(seq++, StatusText(item));
         builder.CloseElement();
     }
 
-    private void RenderCardDetails(RenderTreeBuilder builder, ref int seq, WorkItemDto item)
+    private void RenderCardDetails(RenderTreeBuilder builder, ref int seq, TmWorkItem item)
     {
         if (item.UpdatedAt is null && item.Fields.Count == 0)
             return;
@@ -396,41 +411,50 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
     }
 
     private static WorkItemBlockContent CloneContent(
-        string providerKey,
+        string sourceKey,
         string externalId,
-        WorkItemDto? snapshot,
+        TmWorkItem? snapshot,
         WorkItemDisplayMode mode)
         => new()
         {
-            ProviderKey = providerKey,
+            SourceKey = sourceKey,
             ExternalId = externalId,
             CachedSnapshot = snapshot,
             DisplayMode = mode
         };
 
-    private static WorkItemDto NormalizeProviderSnapshot(WorkItemDto item, string providerKey)
+    private static TmWorkItem NormalizeProviderSnapshot(TmWorkItem item, string sourceKey)
         => new()
         {
-            ProviderKey = string.IsNullOrWhiteSpace(item.ProviderKey) ? providerKey : item.ProviderKey,
+            Id = item.Id,
+            SourceKey = string.IsNullOrWhiteSpace(item.SourceKey) ? sourceKey : item.SourceKey,
             ExternalId = item.ExternalId,
             Url = item.Url,
             Title = item.Title,
             Status = item.Status,
+            StatusLabel = item.StatusLabel,
             StatusColor = item.StatusColor,
             TypeLabel = item.TypeLabel,
             TypeIconUrl = item.TypeIconUrl,
-            AssigneeDisplayName = item.AssigneeDisplayName,
+            Assignees = item.Assignees.Select(a => new TmWorkItemAssignee
+            {
+                Id = a.Id,
+                Name = a.Name,
+                AvatarUrl = a.AvatarUrl,
+                Email = a.Email
+            }).ToList(),
             Priority = item.Priority,
+            PriorityLabel = item.PriorityLabel,
             UpdatedAt = item.UpdatedAt,
             Fields = new Dictionary<string, string>(item.Fields, StringComparer.OrdinalIgnoreCase)
         };
 
-    private static bool SnapshotsEqual(WorkItemDto? left, WorkItemDto? right)
+    private static bool SnapshotsEqual(TmWorkItem? left, TmWorkItem? right)
         => left is not null && right is not null
-            && string.Equals(left.ProviderKey, right.ProviderKey, StringComparison.Ordinal)
+            && string.Equals(left.SourceKey, right.SourceKey, StringComparison.Ordinal)
             && string.Equals(left.ExternalId, right.ExternalId, StringComparison.Ordinal)
             && string.Equals(left.Title, right.Title, StringComparison.Ordinal)
-            && string.Equals(left.Status, right.Status, StringComparison.Ordinal)
+            && string.Equals(left.StatusLabel, right.StatusLabel, StringComparison.Ordinal)
             && string.Equals(left.StatusColor, right.StatusColor, StringComparison.Ordinal)
             && string.Equals(left.Url, right.Url, StringComparison.Ordinal);
 

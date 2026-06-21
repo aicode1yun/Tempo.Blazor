@@ -1016,45 +1016,46 @@ public sealed class Eb1BaselineRenderer
 
         AddTo(Guid.Parse("cf500000-0000-0000-0000-000000000010"), MockNotionDataStore.Page1Id, BlockType.WorkItem, 0, new WorkItemBlockContent
         {
-            ProviderKey = "demo",
+            SourceKey = "demo",
             ExternalId = "DEMO-101",
             DisplayMode = WorkItemDisplayMode.Card
         });
         AddTo(Guid.Parse("cf500000-0000-0000-0000-000000000020"), MockNotionDataStore.Page1Id, BlockType.WorkItem, 1, new WorkItemBlockContent
         {
-            ProviderKey = "demo",
+            SourceKey = "demo",
             ExternalId = "DEMO-202",
             DisplayMode = WorkItemDisplayMode.List
         });
         AddTo(Guid.Parse("cf500000-0000-0000-0000-000000000030"), MockNotionDataStore.Page1Id, BlockType.WorkItem, 2, new WorkItemBlockContent
         {
-            ProviderKey = "demo",
+            SourceKey = "demo",
             ExternalId = "DEMO-303",
             DisplayMode = WorkItemDisplayMode.Inline
         });
         AddTo(Guid.Parse("cf500000-0000-0000-0000-000000000040"), MockNotionDataStore.Page1Id, BlockType.WorkItem, 3, new WorkItemBlockContent
         {
-            ProviderKey = "demo",
+            SourceKey = "demo",
             ExternalId = "DEMO-999",
             DisplayMode = WorkItemDisplayMode.Card
         });
         AddTo(Guid.Parse("cf500000-0000-0000-0000-000000000050"), MockNotionDataStore.Page1Id, BlockType.WorkItem, 4, new WorkItemBlockContent
         {
-            ProviderKey = "offline",
+            SourceKey = "offline",
             ExternalId = "OFFLINE-1",
             DisplayMode = WorkItemDisplayMode.Card,
-            CachedSnapshot = new WorkItemDto
+            CachedSnapshot = new Tempo.Blazor.Abstractions.WorkItems.TmWorkItem
             {
-                ProviderKey = "offline",
+                Id = "OFFLINE-1",
+                SourceKey = "offline",
                 ExternalId = "OFFLINE-1",
                 Url = "https://tracker.demo.local/work/OFFLINE-1",
                 Title = "Cached fallback survives provider outage",
-                Status = "Cached",
+                StatusLabel = "Cached",
                 StatusColor = "#64748b",
                 TypeLabel = "Incident",
-                AssigneeDisplayName = "Demo User",
-                Priority = "High",
-                UpdatedAt = new DateTimeOffset(2026, 6, 1, 11, 0, 0, TimeSpan.Zero)
+                Assignees = [new Tempo.Blazor.Abstractions.WorkItems.TmWorkItemAssignee { Id = "demo-user", Name = "Demo User" }],
+                PriorityLabel = "High",
+                UpdatedAt = new DateTime(2026, 6, 1, 11, 0, 0, DateTimeKind.Utc)
             }
         });
     }

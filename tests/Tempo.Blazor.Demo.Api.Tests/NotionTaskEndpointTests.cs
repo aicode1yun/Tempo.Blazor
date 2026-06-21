@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Demo.Api.Data;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
@@ -20,7 +21,7 @@ public class NotionTaskEndpointTests : IClassFixture<WebApplicationFactory<Progr
     {
         await SeedActionItemsAsync();
 
-        var response = await _client.PostAsJsonAsync("/api/notion/tasks/query", new NotionTaskQuery
+        var response = await _client.PostAsJsonAsync("/api/notion/tasks/query", new TmWorkItemQuery
         {
             IncludeCompleted = true,
             Skip = 0,
@@ -28,14 +29,14 @@ public class NotionTaskEndpointTests : IClassFixture<WebApplicationFactory<Progr
         });
 
         response.EnsureSuccessStatusCode();
-        var tasks = await response.Content.ReadFromJsonAsync<PagedResult<NotionTaskDto>>();
+        var tasks = await response.Content.ReadFromJsonAsync<Tempo.Blazor.Models.PagedResult<TmWorkItem>>();
 
         Assert.NotNull(tasks);
         Assert.True(tasks.TotalCount >= 4);
-        Assert.Contains(tasks.Items, task => task.Text == "Overdue task with an owner"
-            && task.AssigneeId == "alice"
-            && task.PageTitle == "CF3 Action Items");
-        Assert.Contains(tasks.Items, task => task.Text == "Completed historical action item"
+        Assert.Contains(tasks.Items, task => task.Title == "Overdue task with an owner"
+            && task.Assignees.Any(a => a.Id == "alice")
+            && task.OriginPageTitle == "CF3 Action Items");
+        Assert.Contains(tasks.Items, task => task.Title == "Completed historical action item"
             && task.IsCompleted);
     }
 
@@ -48,12 +49,12 @@ public class NotionTaskEndpointTests : IClassFixture<WebApplicationFactory<Progr
         var updateResponse = await _client.PutAsJsonAsync($"/api/notion/tasks/{taskId}/completed", new { completed = true });
         Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
 
-        var tasks = await (await _client.PostAsJsonAsync("/api/notion/tasks/query", new NotionTaskQuery
+        var tasks = await (await _client.PostAsJsonAsync("/api/notion/tasks/query", new TmWorkItemQuery
         {
             IncludeCompleted = true,
             Skip = 0,
             Take = 20
-        })).Content.ReadFromJsonAsync<PagedResult<NotionTaskDto>>();
+        })).Content.ReadFromJsonAsync<Tempo.Blazor.Models.PagedResult<TmWorkItem>>();
 
         Assert.NotNull(tasks);
         Assert.Contains(tasks.Items, task => task.Id == taskId && task.IsCompleted);
@@ -73,14 +74,14 @@ public class NotionTaskEndpointTests : IClassFixture<WebApplicationFactory<Progr
         }, null);
 
         var provider = new DemoNotionTaskProvider(pageStore, blockStore);
-        var result = await provider.GetTasksAsync(new NotionTaskQuery
+        var result = await provider.SearchAsync(new TmWorkItemQuery
         {
             IncludeCompleted = true,
             Take = 100
         });
 
-        Assert.DoesNotContain(result.Items, task => task.Text == "Hidden navigation task");
-        Assert.DoesNotContain(result.Items, task => Guid.TryParse(task.PageTitle, out _));
+        Assert.DoesNotContain(result.Items, task => task.Title == "Hidden navigation task");
+        Assert.DoesNotContain(result.Items, task => Guid.TryParse(task.OriginPageTitle, out _));
     }
 
     private async Task SeedActionItemsAsync()

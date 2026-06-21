@@ -9,7 +9,7 @@ public class GanttHelperTests
     [Fact]
     public void BuildTree_Flat_Data_With_ParentId_Creates_Hierarchy()
     {
-        var tasks = new List<GanttTask>
+        var tasks = new List<TmWorkItem>
         {
             new() { Id = "1", Title = "Project", Start = DateTime.Today, End = DateTime.Today.AddDays(7) },
             new() { Id = "2", Title = "Task A", ParentId = "1", Start = DateTime.Today, End = DateTime.Today.AddDays(3) },
@@ -31,9 +31,9 @@ public class GanttHelperTests
     [Fact]
     public void FlattenVisible_Respects_Expanded_State()
     {
-        var root = new GanttTaskNode(new GanttTask { Id = "1", Title = "Root", IsExpanded = true });
-        var child = new GanttTaskNode(new GanttTask { Id = "2", Title = "Child", IsExpanded = false });
-        var grandChild = new GanttTaskNode(new GanttTask { Id = "3", Title = "GrandChild" });
+        var root = new GanttTaskNode(new TmWorkItem { Id = "1", Title = "Root", IsExpanded = true });
+        var child = new GanttTaskNode(new TmWorkItem { Id = "2", Title = "Child", IsExpanded = false });
+        var grandChild = new GanttTaskNode(new TmWorkItem { Id = "3", Title = "GrandChild" });
         root.Children.Add(child);
         child.Children.Add(grandChild);
 
@@ -47,7 +47,7 @@ public class GanttHelperTests
     [Fact]
     public void GetTimeRange_Computes_Min_Max()
     {
-        var tasks = new List<GanttTask>
+        var tasks = new List<TmWorkItem>
         {
             new() { Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5) },
             new() { Start = new DateTime(2024, 6, 10), End = new DateTime(2024, 6, 15) },

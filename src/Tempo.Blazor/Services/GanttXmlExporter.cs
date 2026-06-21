@@ -8,7 +8,7 @@ public static class GanttXmlExporter
 {
     private const string Ns = "http://schemas.microsoft.com/project";
 
-    public static string Export(IEnumerable<GanttTask> tasks, IEnumerable<GanttDependency> dependencies)
+    public static string Export(IEnumerable<TmWorkItem> tasks, IEnumerable<GanttDependency> dependencies)
     {
         var taskList = tasks.ToList();
         var depList  = dependencies.ToList();

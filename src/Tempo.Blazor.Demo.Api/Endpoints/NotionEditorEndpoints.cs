@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Components.Spreadsheet.Models;
 using Tempo.Blazor.Demo.Api.Data;
 using Tempo.Blazor.Demo.Api.Hubs;
@@ -43,7 +44,7 @@ public static class NotionEditorEndpoints
             return workItem is null ? Results.NotFound() : Results.Ok(workItem);
         });
 
-        workItemGroup.MapPost("/query", (WorkItemQuery query, DemoWorkItemStore store) =>
+        workItemGroup.MapPost("/query", (TmWorkItemQuery query, DemoWorkItemStore store) =>
             Results.Ok(store.Search(query)));
 
         bookmarkGroup.MapPost("/resolve", (BookmarkResolveRequest request, MockNotionBookmarkStore store) =>
@@ -714,11 +715,11 @@ public static class NotionEditorEndpoints
 
         // ── Tasks ────────────────────────────────────────────────────────────
         taskGroup.MapPost("/query", async (
-            NotionTaskQuery query,
+            TmWorkItemQuery query,
             DemoNotionTaskProvider taskProvider,
             CancellationToken cancellationToken) =>
         {
-            var result = await taskProvider.GetTasksAsync(query, cancellationToken);
+            var result = await taskProvider.SearchAsync(query, cancellationToken);
             return Results.Ok(result);
         });
 

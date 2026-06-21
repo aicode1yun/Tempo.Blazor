@@ -1,14 +1,13 @@
 using Microsoft.AspNetCore.Components;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Abstractions.WorkItems;
 
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
-/// <summary>Aggregated task panel for Notion action items.</summary>
+/// <summary>Aggregated task panel for Notion action items, backed by the unified work-item provider.</summary>
 public partial class TmNotionMyTasks : ComponentBase
 {
-    /// <summary>Task provider used to query and update tasks.</summary>
-    [Parameter, EditorRequired] public INotionTaskProvider TaskProvider { get; set; } = default!;
+    /// <summary>Unified work-item source used to query and update tasks.</summary>
+    [Parameter, EditorRequired] public ITmWorkItemProvider WorkItemSource { get; set; } = default!;
 
     /// <summary>Current user id used by the "my tasks" filter.</summary>
     [Parameter] public string? CurrentUserId { get; set; }
@@ -22,8 +21,8 @@ public partial class TmNotionMyTasks : ComponentBase
     /// <summary>Raised when a source task is selected for navigation. Args are page id and block id.</summary>
     [Parameter] public EventCallback<(string PageId, string BlockId)> OnNavigateToBlock { get; set; }
 
-    private readonly List<NotionTaskDto> _tasks = [];
-    private readonly List<NotionTaskDto> _visibleTasks = [];
+    private readonly List<TmWorkItem> _tasks = [];
+    private readonly List<TmWorkItem> _visibleTasks = [];
     private readonly List<TaskGroup> _groups = [];
     private bool _isLoading;
     private string? _loadError;
@@ -49,7 +48,7 @@ public partial class TmNotionMyTasks : ComponentBase
         try
         {
             var query = BuildQuery();
-            var result = await TaskProvider.GetTasksAsync(query);
+            var result = await WorkItemSource.SearchAsync(query);
             _tasks.Clear();
             _tasks.AddRange(result.Items);
             RebuildVisibleTasks();
@@ -68,10 +67,10 @@ public partial class TmNotionMyTasks : ComponentBase
         }
     }
 
-    private NotionTaskQuery BuildQuery()
+    private TmWorkItemQuery BuildQuery()
     {
         var today = DateTime.Today;
-        return new NotionTaskQuery
+        return new TmWorkItemQuery
         {
             AssigneeId = _scope == TaskScope.Mine ? CurrentUserId : null,
             IncludeCompleted = _status != TaskStatusFilter.Open,
@@ -111,10 +110,10 @@ public partial class TmNotionMyTasks : ComponentBase
         RebuildVisibleTasks();
     }
 
-    private async Task ToggleTaskAsync(NotionTaskDto task)
+    private async Task ToggleTaskAsync(TmWorkItem task)
     {
         var completed = !task.IsCompleted;
-        await TaskProvider.SetCompletedAsync(task.Id, completed);
+        await WorkItemSource.SetCompletedAsync(task.Id, completed);
         task.IsCompleted = completed;
 
         if (_status == TaskStatusFilter.Open && completed)
@@ -125,8 +124,8 @@ public partial class TmNotionMyTasks : ComponentBase
         RebuildVisibleTasks();
     }
 
-    private Task NavigateAsync(NotionTaskDto task)
-        => OnNavigateToBlock.InvokeAsync((task.PageId, task.BlockId));
+    private Task NavigateAsync(TmWorkItem task)
+        => OnNavigateToBlock.InvokeAsync((task.OriginPageId ?? string.Empty, task.OriginBlockId ?? string.Empty));
 
     private void RebuildVisibleTasks()
     {
@@ -136,7 +135,7 @@ public partial class TmNotionMyTasks : ComponentBase
         _groups.AddRange(BuildGroups(_visibleTasks));
     }
 
-    private bool MatchesClientFilters(NotionTaskDto task)
+    private bool MatchesClientFilters(TmWorkItem task)
         => _status switch
         {
             TaskStatusFilter.Open => !task.IsCompleted,
@@ -144,12 +143,12 @@ public partial class TmNotionMyTasks : ComponentBase
             _ => true
         };
 
-    private IEnumerable<TaskGroup> BuildGroups(IReadOnlyList<NotionTaskDto> tasks)
+    private IEnumerable<TaskGroup> BuildGroups(IReadOnlyList<TmWorkItem> tasks)
     {
         if (_groupBy == TaskGroupBy.Page)
         {
             return tasks
-                .GroupBy(task => task.PageTitle)
+                .GroupBy(task => PageTitle(task))
                 .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
                 .Select(group => new TaskGroup(group.Key, group.Key, group.ToList()));
         }
@@ -160,7 +159,7 @@ public partial class TmNotionMyTasks : ComponentBase
             .Select(group => new TaskGroup(group.Key, GetDueGroupTitle(group.Key), group.ToList()));
     }
 
-    private static string GetDueGroupKey(NotionTaskDto task)
+    private static string GetDueGroupKey(TmWorkItem task)
     {
         if (task.DueDate is null) return "none";
         var date = task.DueDate.Value.Date;
@@ -198,13 +197,19 @@ public partial class TmNotionMyTasks : ComponentBase
         return date.ToString("d");
     }
 
+    private static string PageTitle(TmWorkItem task)
+        => string.IsNullOrWhiteSpace(task.OriginPageTitle) ? (task.OriginPageId ?? string.Empty) : task.OriginPageTitle;
+
+    private static string? AssigneeName(TmWorkItem task)
+        => task.Assignees.FirstOrDefault()?.Name;
+
     private static string FilterClass(bool active)
         => active ? "tm-my-tasks__filter tm-my-tasks__filter--active" : "tm-my-tasks__filter";
 
-    private static string TaskClass(NotionTaskDto task)
+    private static string TaskClass(TmWorkItem task)
         => task.IsCompleted ? "tm-my-tasks__item tm-my-tasks__item--completed" : "tm-my-tasks__item";
 
-    private static string DueClass(NotionTaskDto task)
+    private static string DueClass(TmWorkItem task)
         => task.DueDate is DateTime dueDate && dueDate.Date < DateTime.Today && !task.IsCompleted
             ? "tm-my-tasks__due tm-my-tasks__due--overdue"
             : "tm-my-tasks__due";
@@ -214,5 +219,5 @@ public partial class TmNotionMyTasks : ComponentBase
     private enum TaskDueFilter { All, Overdue, Upcoming }
     private enum TaskGroupBy { DueDate, Page }
 
-    private sealed record TaskGroup(string Key, string Title, IReadOnlyList<NotionTaskDto> Tasks);
+    private sealed record TaskGroup(string Key, string Title, IReadOnlyList<TmWorkItem> Tasks);
 }

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Work Items",
+  "namespace": "Tempo.Blazor.Abstractions.WorkItems",
+  "description": "Type of dependency relationship between two work items.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemDependencyType.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmWorkItemDependencyType"
+}

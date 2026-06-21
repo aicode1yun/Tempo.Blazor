@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Work Items",
+  "namespace": "Tempo.Blazor.Abstractions.WorkItems",
+  "description": "A person (or virtual resource) assigned to a . Unifies the previous TmWorkItemAssignee and the mention-user concept so the same person can be referenced across Gantt, Notion tasks and the scheduler.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemAssignee.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AvatarUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional avatar URL."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional CSS color used to tint the person in timelines/avatars."
+    },
+    {
+      "name": "Email",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional e-mail address."
+    },
+    {
+      "name": "HourlyRate",
+      "kind": "Property",
+      "type": "decimal?",
+      "description": "Hourly billing rate for cost tracking. Null = not specified."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable user identifier."
+    },
+    {
+      "name": "IsVirtual",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When true, this is a generic placeholder resource (not a real user account)."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name."
+    }
+  ],
+  "itemName": "TmWorkItemAssignee"
+}

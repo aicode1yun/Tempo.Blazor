@@ -1,9 +1,10 @@
 using Bunit;
 using FluentAssertions;
 using System.Reflection;
+using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Components.NotionEditor.Blocks.Embed;
+using Tempo.Blazor.Models;
 using Tempo.Blazor.NotionEditor.Enums;
-using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 using Tempo.Blazor.Tests.Localization;
 
@@ -38,7 +39,7 @@ public sealed class TmNotionWorkItemBlockTests : LocalizationTestBase
         var item = SampleItem();
         var cut = RenderWorkItem(new WorkItemBlockContent
         {
-            ProviderKey = "demo",
+            SourceKey = "demo",
             ExternalId = "DEMO-101",
             DisplayMode = WorkItemDisplayMode.Card,
             CachedSnapshot = item
@@ -60,7 +61,7 @@ public sealed class TmNotionWorkItemBlockTests : LocalizationTestBase
         var item = SampleItem();
         var cut = RenderWorkItem(new WorkItemBlockContent
         {
-            ProviderKey = "demo",
+            SourceKey = "demo",
             ExternalId = "DEMO-101",
             DisplayMode = WorkItemDisplayMode.Inline,
             CachedSnapshot = item
@@ -81,7 +82,7 @@ public sealed class TmNotionWorkItemBlockTests : LocalizationTestBase
         var cut = RenderWorkItem(new WorkItemBlockContent(), [provider]);
 
         SetPrivateField(cut.Instance, "_searchText", "release");
-        SetPrivateField(cut.Instance, "_selectedProviderKey", "demo");
+        SetPrivateField(cut.Instance, "_selectedSourceKey", "demo");
 
         var search = typeof(TmNotionWorkItemBlock).GetMethod("SearchAsync", BindingFlags.Instance | BindingFlags.NonPublic);
         search.Should().NotBeNull();
@@ -104,47 +105,48 @@ public sealed class TmNotionWorkItemBlockTests : LocalizationTestBase
 
     private IRenderedComponent<TmNotionWorkItemBlock> RenderWorkItem(
         WorkItemBlockContent content,
-        IReadOnlyList<IWorkItemProvider> providers)
+        IReadOnlyList<ITmWorkItemProvider> providers)
         => RenderComponent<TmNotionWorkItemBlock>(parameters => parameters
             .Add(component => component.Content, content)
-            .Add(component => component.WorkItemProviders, new WorkItemProviderRegistry(providers))
+            .Add(component => component.WorkItemProviders, new TmWorkItemProviderRegistry(providers))
             .Add(component => component.ReadOnly, false));
 
-    private static WorkItemDto SampleItem() => new()
+    private static TmWorkItem SampleItem() => new()
     {
-        ProviderKey = "demo",
+        Id = "DEMO-101",
+        SourceKey = "demo",
         ExternalId = "DEMO-101",
         Url = "https://tracker.example/work/DEMO-101",
         Title = "Prepare release checklist",
-        Status = "Done",
+        StatusLabel = "Done",
         StatusColor = "#22c55e",
         TypeLabel = "Story",
         TypeIconUrl = "https://tracker.example/icons/story.svg",
-        AssigneeDisplayName = "Ada Lovelace",
-        Priority = "High",
-        UpdatedAt = new DateTimeOffset(2026, 6, 1, 10, 15, 0, TimeSpan.Zero)
+        Assignees = [new TmWorkItemAssignee { Id = "ada", Name = "Ada Lovelace" }],
+        PriorityLabel = "High",
+        UpdatedAt = new DateTime(2026, 6, 1, 10, 15, 0, DateTimeKind.Utc)
     };
 
-    private sealed class StaticWorkItemProvider : IWorkItemProvider
+    private sealed class StaticWorkItemProvider : TmWorkItemProviderBase
     {
-        private readonly IReadOnlyList<WorkItemDto> _items;
+        private readonly IReadOnlyList<TmWorkItem> _items;
 
-        public StaticWorkItemProvider(string providerKey, string displayName, IReadOnlyList<WorkItemDto> items)
+        public StaticWorkItemProvider(string sourceKey, string displayName, IReadOnlyList<TmWorkItem> items)
         {
-            ProviderKey = providerKey;
+            SourceKey = sourceKey;
             DisplayName = displayName;
             _items = items;
         }
 
-        public string ProviderKey { get; }
-        public string DisplayName { get; }
+        public override string SourceKey { get; }
+        public override string DisplayName { get; }
 
-        public Task<WorkItemDto?> GetByIdAsync(string externalId, CancellationToken cancellationToken)
+        public override Task<TmWorkItem?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
             => Task.FromResult(_items.FirstOrDefault(item =>
-                string.Equals(item.ExternalId, externalId, StringComparison.OrdinalIgnoreCase)));
+                string.Equals(item.ExternalId ?? item.Id, id, StringComparison.OrdinalIgnoreCase)));
 
-        public Task<PagedResult<WorkItemDto>> SearchAsync(WorkItemQuery query, CancellationToken cancellationToken)
-            => Task.FromResult(new PagedResult<WorkItemDto>
+        public override Task<Tempo.Blazor.Models.PagedResult<TmWorkItem>> SearchAsync(TmWorkItemQuery query, CancellationToken cancellationToken = default)
+            => Task.FromResult(new Tempo.Blazor.Models.PagedResult<TmWorkItem>
             {
                 Items = _items,
                 TotalCount = _items.Count,
@@ -153,35 +155,35 @@ public sealed class TmNotionWorkItemBlockTests : LocalizationTestBase
             });
     }
 
-    private sealed class CapturingWorkItemProvider : IWorkItemProvider
+    private sealed class CapturingWorkItemProvider : TmWorkItemProviderBase
     {
-        private readonly IReadOnlyList<WorkItemDto> _items;
+        private readonly IReadOnlyList<TmWorkItem> _items;
 
-        public CapturingWorkItemProvider(string providerKey, string displayName, IReadOnlyList<WorkItemDto> items)
+        public CapturingWorkItemProvider(string sourceKey, string displayName, IReadOnlyList<TmWorkItem> items)
         {
-            ProviderKey = providerKey;
+            SourceKey = sourceKey;
             DisplayName = displayName;
             _items = items;
         }
 
-        public string ProviderKey { get; }
-        public string DisplayName { get; }
-        public WorkItemQuery? LastQuery { get; private set; }
+        public override string SourceKey { get; }
+        public override string DisplayName { get; }
+        public TmWorkItemQuery? LastQuery { get; private set; }
 
-        public Task<WorkItemDto?> GetByIdAsync(string externalId, CancellationToken cancellationToken)
+        public override Task<TmWorkItem?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
             => Task.FromResult(_items.FirstOrDefault(item =>
-                string.Equals(item.ExternalId, externalId, StringComparison.OrdinalIgnoreCase)));
+                string.Equals(item.ExternalId ?? item.Id, id, StringComparison.OrdinalIgnoreCase)));
 
-        public Task<PagedResult<WorkItemDto>> SearchAsync(WorkItemQuery query, CancellationToken cancellationToken)
+        public override Task<Tempo.Blazor.Models.PagedResult<TmWorkItem>> SearchAsync(TmWorkItemQuery query, CancellationToken cancellationToken = default)
         {
             LastQuery = query;
             var term = query.FreeText?.Trim() ?? string.Empty;
             var items = _items
                 .Where(item => item.Title.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                               item.ExternalId.Contains(term, StringComparison.OrdinalIgnoreCase))
+                               (item.ExternalId ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase))
                 .ToArray();
 
-            return Task.FromResult(new PagedResult<WorkItemDto>
+            return Task.FromResult(new Tempo.Blazor.Models.PagedResult<TmWorkItem>
             {
                 Items = items,
                 TotalCount = items.Length,

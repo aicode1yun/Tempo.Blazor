@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
@@ -23,8 +24,8 @@ public sealed class NotionEditorContext
     public INotionCollaborationProvider? CollaborationProvider { get; init; }
     public INotionMentionProvider?     MentionProvider       { get; init; }
     public INotionAIProvider?          AIProvider            { get; init; }
-    public INotionTaskProvider?        TaskProvider          { get; init; }
-    public WorkItemProviderRegistry?   WorkItemProviders     { get; init; }
+    public ITmWorkItemProvider?        WorkItemSource        { get; init; }
+    public TmWorkItemProviderRegistry? WorkItemProviders     { get; init; }
     public INotionReactionProvider?    ReactionProvider      { get; init; }
     public INotionAnalyticsProvider?   AnalyticsProvider     { get; init; }
     public INotionBlogProvider?        BlogProvider          { get; init; }

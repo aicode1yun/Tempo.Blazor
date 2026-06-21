@@ -16,7 +16,7 @@ public static class GanttXlsxExporter
     ];
 
     public static byte[] Export(
-        IEnumerable<GanttTask> tasks,
+        IEnumerable<TmWorkItem> tasks,
         IEnumerable<GanttDependency> dependencies,
         GanttExportOptions options)
     {
@@ -61,7 +61,7 @@ public static class GanttXlsxExporter
         return row;
     }
 
-    private static string GetCellValue(GanttTask task, GanttColumnKey col) => col switch
+    private static string GetCellValue(TmWorkItem task, GanttColumnKey col) => col switch
     {
         GanttColumnKey.Title     => task.Title,
         GanttColumnKey.Start     => task.Start.ToString("yyyy-MM-dd"),
@@ -70,7 +70,7 @@ public static class GanttXlsxExporter
         GanttColumnKey.Status    => task.Status.ToString(),
         GanttColumnKey.Priority  => task.Priority.ToString(),
         GanttColumnKey.Duration  => ((int)task.Duration.TotalDays).ToString(),
-        GanttColumnKey.Deadline  => task.Deadline?.ToString("yyyy-MM-dd") ?? "",
+        GanttColumnKey.Deadline  => task.DueDate?.ToString("yyyy-MM-dd") ?? "",
         GanttColumnKey.Estimation => task.EstimationHours?.ToString("F1") ?? "",
         GanttColumnKey.TimeLog   => task.LoggedHours?.ToString("F1") ?? "",
         GanttColumnKey.Assignees => string.Join(", ", task.Assignees.Select(a => a.Name)),

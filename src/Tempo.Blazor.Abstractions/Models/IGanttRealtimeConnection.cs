@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.WorkItems;
 namespace Tempo.Blazor.Abstractions.Models;
 
 /// <summary>
@@ -7,8 +8,8 @@ namespace Tempo.Blazor.Abstractions.Models;
 public interface IGanttRealtimeConnection
 {
     /// <summary>Raised when a remote task update arrives.</summary>
-    event Action<GanttTask> OnTaskUpdated;
+    event Action<TmWorkItem> OnTaskUpdated;
 
     /// <summary>Broadcasts a local task change to the hub.</summary>
-    Task SendTaskUpdate(GanttTask task);
+    Task SendTaskUpdate(TmWorkItem task);
 }
