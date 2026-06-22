@@ -1,0 +1,102 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Shared comment thread attached to an entity.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCommentThread.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Anchor",
+      "kind": "Property",
+      "type": "TmCommentAnchor?",
+      "description": "Optional structured anchor within the entity."
+    },
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTimeOffset",
+      "description": "Creation timestamp."
+    },
+    {
+      "name": "EntityRef",
+      "kind": "Property",
+      "type": "TmEntityRef",
+      "description": "Entity this thread belongs to."
+    },
+    {
+      "name": "Entries",
+      "kind": "Property",
+      "type": "List<TmCommentEntry>",
+      "description": "Entries in this thread."
+    },
+    {
+      "name": "ExternalId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "External id from an imported or host-owned system."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable thread identifier."
+    },
+    {
+      "name": "Metadata",
+      "kind": "Property",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for consumer use."
+    },
+    {
+      "name": "ReadByUserIds",
+      "kind": "Property",
+      "type": "List<string>",
+      "description": "User ids that have read this thread."
+    },
+    {
+      "name": "ResolvedAt",
+      "kind": "Property",
+      "type": "DateTimeOffset?",
+      "description": "Timestamp when the thread was resolved."
+    },
+    {
+      "name": "ResolvedBy",
+      "kind": "Property",
+      "type": "TmUserRef?",
+      "description": "User that resolved the thread, when available."
+    },
+    {
+      "name": "SourceFormat",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Source format when imported from an external system."
+    },
+    {
+      "name": "Status",
+      "kind": "Property",
+      "type": "TmCommentThreadStatus",
+      "description": "Thread status."
+    },
+    {
+      "name": "SubscribedUserIds",
+      "kind": "Property",
+      "type": "List<string>",
+      "description": "User ids subscribed to this thread."
+    },
+    {
+      "name": "UpdatedAt",
+      "kind": "Property",
+      "type": "DateTimeOffset?",
+      "description": "Last update timestamp."
+    },
+    {
+      "name": "Visibility",
+      "kind": "Property",
+      "type": "TmCommentVisibility?",
+      "description": "Optional visibility scope."
+    }
+  ],
+  "itemName": "TmCommentThread"
+}

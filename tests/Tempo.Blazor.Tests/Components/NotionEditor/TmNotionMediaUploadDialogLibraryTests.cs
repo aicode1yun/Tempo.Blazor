@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using NSubstitute;
 using NSubstitute.ReturnsExtensions;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.Components.NotionEditor.UI;
 using Tempo.Blazor.NotionEditor.Interfaces;
@@ -22,7 +23,7 @@ public class TmNotionMediaUploadDialogLibraryTests : LocalizationTestBase
 
     private NotionEditorContext BuildContext(
         INotionMediaLibraryProvider? library  = null,
-        INotionFileProvider?         file     = null)
+        ITmFileProvider?             file     = null)
         => new()
         {
             DataProvider         = Substitute.For<INotionDataProvider>(),

@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Abstractions.WorkItems;
@@ -9,20 +10,17 @@ namespace Tempo.Blazor.Abstractions.WorkItems;
 /// so the same item stays consistent across them.
 /// </summary>
 /// <remarks>
-/// Write operations are optional and gated by <see cref="Capabilities"/>. A read-only
+/// Write operations are optional and gated by capability flags. A read-only
 /// provider should declare only <see cref="TmWorkItemCapabilities.Read"/> and may throw
 /// <see cref="NotSupportedException"/> from mutating methods.
 /// </remarks>
-public interface ITmWorkItemProvider
+public interface ITmWorkItemProvider : ITmCapabilityProvider<TmWorkItemCapabilities>
 {
     /// <summary>Stable source key used by the registry and by queries.</summary>
     string SourceKey { get; }
 
     /// <summary>User-visible source name.</summary>
     string DisplayName { get; }
-
-    /// <summary>Operations this provider supports.</summary>
-    TmWorkItemCapabilities Capabilities { get; }
 
     /// <summary>Returns a paged set of work items matching the query.</summary>
     Task<PagedResult<TmWorkItem>> SearchAsync(TmWorkItemQuery query, CancellationToken cancellationToken = default);

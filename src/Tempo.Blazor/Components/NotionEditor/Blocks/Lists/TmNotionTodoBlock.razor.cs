@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Enums;
@@ -78,7 +79,7 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
     private bool                                        _showAssigneePicker;
     private bool                                        _showDatePicker;
     private string                                      _assigneeQuery = string.Empty;
-    private IReadOnlyList<IMentionUser>                 _assignees = [];
+    private IReadOnlyList<TmUser>                       _assignees = [];
     private bool                                        _loadingAssignees;
 
     [CascadingParameter] private NotionEditorContext Context { get; set; } = default!;
@@ -268,7 +269,7 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
         _loadingAssignees = true;
         try
         {
-            _assignees = (await Context.MentionProvider.SearchUsersAsync(_assigneeQuery)).ToArray();
+            _assignees = await Context.MentionProvider.SearchAsync(new TmPeopleQuery { SearchText = _assigneeQuery, Take = 8 });
         }
         finally
         {
@@ -276,10 +277,10 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
         }
     }
 
-    private async Task SelectAssigneeAsync(IMentionUser user)
+    private async Task SelectAssigneeAsync(TmUser user)
     {
         _showAssigneePicker = false;
-        await OnAssigneeChanged.InvokeAsync((user.UserId, user.DisplayName));
+        await OnAssigneeChanged.InvokeAsync((user.Id, string.IsNullOrWhiteSpace(user.DisplayName) ? user.Id : user.DisplayName));
     }
 
     private async Task ClearAssigneeAsync()

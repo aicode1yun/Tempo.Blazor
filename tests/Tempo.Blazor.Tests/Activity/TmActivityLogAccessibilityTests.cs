@@ -1,5 +1,6 @@
 using Bunit;
 using FluentAssertions;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Activity;
 using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.Tests.Localization;
@@ -17,8 +18,8 @@ public class TmActivityLogAccessibilityTests : LocalizationTestBase
             .Add(x => x.ShowComments, true)
             .Add(x => x.ShowAttachments, true)
             .Add(x => x.TimelineEntries, Array.Empty<ITimelineEntry>())
-            .Add(x => x.Comments, Array.Empty<ICommentEntry>())
-            .Add(x => x.Attachments, Array.Empty<IFileAttachment>()));
+            .Add(x => x.Comments, Array.Empty<TmCommentEntry>())
+            .Add(x => x.Attachments, Array.Empty<TmAttachment>()));
 
         var timelineTab = cut.Find("button#tm-activity-tab-timeline");
         timelineTab.Should().NotBeNull();
@@ -41,8 +42,8 @@ public class TmActivityLogAccessibilityTests : LocalizationTestBase
             .Add(x => x.ShowComments, true)
             .Add(x => x.ShowAttachments, true)
             .Add(x => x.TimelineEntries, Array.Empty<ITimelineEntry>())
-            .Add(x => x.Comments, Array.Empty<ICommentEntry>())
-            .Add(x => x.Attachments, Array.Empty<IFileAttachment>()));
+            .Add(x => x.Comments, Array.Empty<TmCommentEntry>())
+            .Add(x => x.Attachments, Array.Empty<TmAttachment>()));
 
         var panel = cut.Find("div[role='tabpanel']");
         panel.GetAttribute("aria-labelledby").Should().Be("tm-activity-tab-timeline");

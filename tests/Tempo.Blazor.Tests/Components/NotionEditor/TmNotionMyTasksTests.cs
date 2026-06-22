@@ -357,6 +357,7 @@ public class TmNotionMyTasksTests : LocalizationTestBase
             DueDate = task.DueDate,
             IsCompleted = task.IsCompleted,
             Status = task.Status,
+            Tags = task.Tags.ToList(),
             CreatedAt = task.CreatedAt
         };
     }

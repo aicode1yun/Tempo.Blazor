@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Models;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Helpers;
-using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
@@ -34,7 +34,7 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
 
     // ── State ─────────────────────────────────────────────────────────────────
 
-    private IReadOnlyList<IBlockComment> _comments        = [];
+    private IReadOnlyList<TmCommentThread> _comments      = [];
     private int                          _unresolvedCount;
     private bool                         _loading;
     private bool                         _submitting;
@@ -42,17 +42,17 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
 
     private string _newCommentText    = string.Empty;
     private string _replyText         = string.Empty;
-    private Guid?  _replyingToCommentId;
+    private string? _replyingToCommentId;
 
-    private Guid?  _editingEntryId;
+    private string? _editingEntryId;
     private string _editText = string.Empty;
     private bool   _showDeleteConfirm;
-    private IBlockComment?       _pendingDeleteComment;
-    private INotionCommentEntry? _pendingDeleteEntry;
+    private TmCommentThread?     _pendingDeleteComment;
+    private TmCommentEntry?      _pendingDeleteEntry;
 
-    private Guid?  _replyingToEntryId;
+    private string? _replyingToEntryId;
     private string _inlineReplyText = string.Empty;
-    private IBlockComment? _inlineReplyComment;
+    private TmCommentThread? _inlineReplyComment;
 
     private bool   _initialized;
     private ElementReference _panelRef;
@@ -109,7 +109,7 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
         {
             var list = await Context.CommentProvider.GetPageCommentsAsync(PageId);
             _comments        = list.ToList();
-            _unresolvedCount = _comments.Count(c => !c.IsResolved);
+            _unresolvedCount = _comments.Count(c => !c.IsResolved());
         }
         catch
         {
@@ -164,10 +164,10 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
 
             // Re-load to get the created entry for notification
             await LoadAsync();
-            var comment = _comments.LastOrDefault(c => c.BlockId.ToString() == PageId);
-            var entry = comment?.Thread.LastOrDefault();
+            var comment = _comments.LastOrDefault(c => c.EntityRef.EntityId == PageId);
+            var entry = comment?.Entries.LastOrDefault();
             if (entry is not null && comment is not null)
-                await CommentMentionHelper.NotifyAsync(rawText, entry, comment.Id.ToString(), PageId, Context.MentionProvider, NotificationOrchestrator);
+                await CommentMentionHelper.NotifyAsync(rawText, entry, comment.Id, PageId, Context.MentionProvider, NotificationOrchestrator);
 
             _newCommentText  = string.Empty;
         }
@@ -189,7 +189,7 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
 
     // ── Reply to thread ───────────────────────────────────────────────────────
 
-    private void StartReply(IBlockComment comment)
+    private void StartReply(TmCommentThread comment)
     {
         _replyingToCommentId = comment.Id;
         _replyText           = string.Empty;
@@ -216,12 +216,12 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
             var rawText = _replyText.Trim();
             var encoded = await CommentMentionHelper.EncodeAsync(rawText, Context.MentionProvider);
 
-            await Context.CommentProvider.ReplyToCommentAsync(_replyingToCommentId.ToString()!, encoded);
+            await Context.CommentProvider.ReplyToCommentAsync(_replyingToCommentId, encoded);
 
             var comment = _comments.FirstOrDefault(c => c.Id == _replyingToCommentId);
-            var entry = comment?.Thread.LastOrDefault();
+            var entry = comment?.Entries.LastOrDefault();
             if (entry is not null && comment is not null)
-                await CommentMentionHelper.NotifyAsync(rawText, entry, comment.Id.ToString(), PageId, Context.MentionProvider, NotificationOrchestrator);
+                await CommentMentionHelper.NotifyAsync(rawText, entry, comment.Id, PageId, Context.MentionProvider, NotificationOrchestrator);
 
             _replyingToCommentId = null;
             _replyText           = string.Empty;
@@ -247,7 +247,7 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
 
     // ── Inline reply to entry ─────────────────────────────────────────────────
 
-    private void HandleEntryKeyDownAsync(KeyboardEventArgs e, INotionCommentEntry entry, IBlockComment comment)
+    private void HandleEntryKeyDownAsync(KeyboardEventArgs e, TmCommentEntry entry, TmCommentThread comment)
     {
         if (e.Key == "Enter" && _replyingToEntryId != entry.Id)
         {
@@ -263,7 +263,7 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
         }
     }
 
-    private void StartReplyToEntry(INotionCommentEntry entry, IBlockComment comment)
+    private void StartReplyToEntry(TmCommentEntry entry, TmCommentThread comment)
     {
         _replyingToEntryId  = entry.Id;
         _inlineReplyComment = comment;
@@ -294,13 +294,13 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
             var encoded = await CommentMentionHelper.EncodeAsync(rawText, Context.MentionProvider);
 
             await Context.CommentProvider.ReplyToCommentAsync(
-                _inlineReplyComment.Id.ToString(),
+                _inlineReplyComment.Id,
                 encoded,
-                _replyingToEntryId.ToString());
+                _replyingToEntryId);
 
-            var entry = _inlineReplyComment.Thread.LastOrDefault();
+            var entry = _inlineReplyComment.Entries.LastOrDefault();
             if (entry is not null)
-                await CommentMentionHelper.NotifyAsync(rawText, entry, _inlineReplyComment.Id.ToString(), PageId, Context.MentionProvider, NotificationOrchestrator);
+                await CommentMentionHelper.NotifyAsync(rawText, entry, _inlineReplyComment.Id, PageId, Context.MentionProvider, NotificationOrchestrator);
 
             _replyingToEntryId  = null;
             _inlineReplyComment = null;
@@ -333,7 +333,7 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.MarkAllThreadsAsReadAsync(PageId, "demo");
+            await Context.CommentProvider.MarkAllPageThreadsAsReadAsync(PageId, "demo");
             await LoadAsync();
         }
         catch
@@ -344,13 +344,13 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
 
     // ── Resolve / Unresolve ───────────────────────────────────────────────────
 
-    private async Task ResolveAsync(IBlockComment comment)
+    private async Task ResolveAsync(TmCommentThread comment)
     {
         if (Context.CommentProvider is null) return;
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.ResolveCommentAsync(comment.Id.ToString());
+            await Context.CommentProvider.ResolveCommentAsync(comment.Id);
             await LoadAsync();
         }
         catch
@@ -359,13 +359,13 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
         }
     }
 
-    private async Task UnresolveAsync(IBlockComment comment)
+    private async Task UnresolveAsync(TmCommentThread comment)
     {
         if (Context.CommentProvider is null) return;
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.UnresolveCommentAsync(comment.Id.ToString());
+            await Context.CommentProvider.UnresolveCommentAsync(comment.Id);
             await LoadAsync();
         }
         catch
@@ -376,10 +376,10 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
 
     // ── Edit ──────────────────────────────────────────────────────────────────
 
-    private void StartEdit(INotionCommentEntry entry)
+    private void StartEdit(TmCommentEntry entry)
     {
         _editingEntryId = entry.Id;
-        _editText       = StripHtml(entry.HtmlContent);
+        _editText       = StripHtml(entry.HtmlContent());
         StateHasChanged();
     }
 
@@ -399,7 +399,11 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
         {
             var rawText = _editText.Trim();
             var encoded = await CommentMentionHelper.EncodeAsync(rawText, Context.MentionProvider);
-            await Context.CommentProvider.EditCommentAsync(_editingEntryId.ToString()!, encoded);
+            var thread = _comments.FirstOrDefault(comment => comment.Entries.Any(entry => entry.Id == _editingEntryId));
+            if (thread is null)
+                return;
+
+            await Context.CommentProvider.EditCommentAsync(thread.Id, _editingEntryId, encoded);
             _editingEntryId = null;
             _editText       = string.Empty;
             await LoadAsync();
@@ -410,7 +414,7 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
         }
     }
 
-    private void DeleteEntryAsync(IBlockComment comment, INotionCommentEntry entry)
+    private void DeleteEntryAsync(TmCommentThread comment, TmCommentEntry entry)
     {
         if (Context.CommentProvider is null) return;
         _pendingDeleteComment = comment;
@@ -432,14 +436,14 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
         _error = string.Empty;
         try
         {
-            var isOnlyEntry = _pendingDeleteComment.Thread.Count <= 1;
+            var isOnlyEntry = _pendingDeleteComment.Entries.Count <= 1;
             if (isOnlyEntry)
             {
-                await Context.CommentProvider.DeleteCommentAsync(_pendingDeleteComment.Id.ToString());
+                await Context.CommentProvider.DeleteCommentAsync(_pendingDeleteComment.Id);
             }
             else
             {
-                await Context.CommentProvider.DeleteCommentEntryAsync(_pendingDeleteEntry?.Id.ToString()!);
+                await Context.CommentProvider.DeleteCommentEntryAsync(_pendingDeleteComment.Id, _pendingDeleteEntry?.Id!);
             }
             await LoadAsync();
         }
@@ -456,20 +460,18 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
 
     // ── Subscribe / Unsubscribe ───────────────────────────────────────────────
 
-    private static bool IsSubscribed(IBlockComment comment)
+    private static bool IsSubscribed(TmCommentThread comment)
         => comment.SubscribedUserIds.Contains(CurrentUserId);
 
-    private async Task SubscribeAsync(IBlockComment comment)
+    private async Task SubscribeAsync(TmCommentThread comment)
     {
         if (Context.CommentProvider is null) return;
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.SubscribeToThreadAsync(comment.Id.ToString(), CurrentUserId);
-            if (comment is BlockComment bc && !bc.SubscribedUserIds.Contains(CurrentUserId))
-                bc.SubscribedUserIds.Add(CurrentUserId);
-            else if (comment is Tempo.Blazor.NotionEditor.Models.BlockComment bc2 && !bc2.SubscribedUserIds.Contains(CurrentUserId))
-                bc2.SubscribedUserIds.Add(CurrentUserId);
+            await Context.CommentProvider.SubscribeToThreadAsync(comment.Id, CurrentUserId);
+            if (!comment.SubscribedUserIds.Contains(CurrentUserId))
+                comment.SubscribedUserIds.Add(CurrentUserId);
         }
         catch
         {
@@ -477,17 +479,14 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
         }
     }
 
-    private async Task UnsubscribeAsync(IBlockComment comment)
+    private async Task UnsubscribeAsync(TmCommentThread comment)
     {
         if (Context.CommentProvider is null) return;
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.UnsubscribeFromThreadAsync(comment.Id.ToString(), CurrentUserId);
-            if (comment is BlockComment bc)
-                bc.SubscribedUserIds.Remove(CurrentUserId);
-            else if (comment is Tempo.Blazor.NotionEditor.Models.BlockComment bc2)
-                bc2.SubscribedUserIds.Remove(CurrentUserId);
+            await Context.CommentProvider.UnsubscribeFromThreadAsync(comment.Id, CurrentUserId);
+            comment.SubscribedUserIds.Remove(CurrentUserId);
         }
         catch
         {
@@ -510,9 +509,9 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
     private static string AvatarInitial(string name)
         => name.Length > 0 ? name[0].ToString().ToUpperInvariant() : "?";
 
-    private static string FormatTime(DateTime dt)
+    private static string FormatTime(DateTimeOffset dt)
     {
-        var diff = DateTime.UtcNow - dt.ToUniversalTime();
+        var diff = DateTimeOffset.UtcNow - dt.ToUniversalTime();
         if (diff.TotalMinutes < 1)  return "just now";
         if (diff.TotalHours   < 1)  return $"{(int)diff.TotalMinutes}m ago";
         if (diff.TotalDays    < 1)  return $"{(int)diff.TotalHours}h ago";
@@ -526,10 +525,10 @@ public partial class TmNotionPageCommentPanel : ComponentBase, IDisposable
         return System.Text.RegularExpressions.Regex.Replace(html, "<[^>]*>", string.Empty);
     }
 
-    private static string QuoteReply(INotionCommentEntry entry)
+    private static string QuoteReply(TmCommentEntry entry)
     {
-        var text = StripHtml(entry.HtmlContent).Trim();
+        var text = StripHtml(entry.HtmlContent()).Trim();
         if (text.Length > 120) text = text[..120] + "…";
-        return $"> {entry.AuthorDisplayName}: \"{text}\"\n\n";
+        return $"> {entry.AuthorDisplayName()}: \"{text}\"\n\n";
     }
 }

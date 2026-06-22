@@ -39,7 +39,7 @@
     },
     {
       "name": "MentionProvider",
-      "type": "IMentionDataProvider?",
+      "type": "ITmPeopleProvider?",
       "isRequired": false,
       "description": "Cancel test id."
     },

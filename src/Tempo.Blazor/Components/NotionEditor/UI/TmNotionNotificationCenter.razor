@@ -1,8 +1,6 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.Components.Icons
-@using Tempo.Blazor.NotionEditor.Enums
-@using Tempo.Blazor.NotionEditor.Interfaces
-@using Tempo.Blazor.NotionEditor.Models
 @implements IDisposable
 
 <div class="tm-notification-bell tm-notion-notifications @Class @(_hasNew ? "tm-notification-bell--pulse" : "")"
@@ -60,18 +58,18 @@
                                 data-testid="notion-notification-item"
                                 @onclick="() => OnItemClickAsync(n)">
                             <span class="tm-notification-bell__avatar" aria-hidden="true">
-                                @if (!string.IsNullOrEmpty(n.Event.SenderAvatarUrl))
+                                @if (!string.IsNullOrEmpty(n.Actor?.AvatarUrl))
                                 {
-                                    <img src="@n.Event.SenderAvatarUrl" alt="" />
+                                    <img src="@n.Actor.AvatarUrl" alt="" />
                                 }
                                 else
                                 {
-                                    <TmIcon Name="@TypeIcon(n.Event.Type)" Size="IconSize.Sm" />
+                                    <TmIcon Name="@TypeIcon(n.Type)" Size="IconSize.Sm" />
                                 }
                             </span>
                             <span class="tm-notification-bell__content">
-                                <span class="tm-notification-bell__message">@n.Event.Message</span>
-                                <span class="tm-notification-bell__time">@FormatTime(n.Event.CreatedAt)</span>
+                                <span class="tm-notification-bell__message">@n.Title</span>
+                                <span class="tm-notification-bell__time">@FormatTime(n.CreatedAt)</span>
                             </span>
                             @if (!n.IsRead)
                             {
@@ -92,8 +90,7 @@
 </div>
 
 @code {
-    [Inject] private INotificationService NotificationService { get; set; } = default!;
-    [Inject] private INotificationBadgeState BadgeState { get; set; } = default!;
+    [Inject] private ITmNotificationService NotificationService { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
 
     /// <summary>Additional CSS class on the notification center root.</summary>
@@ -116,22 +113,22 @@
     private bool _showOnlyUnread;
     private bool _loading;
     private int _unreadCount;
-    private List<INotification> _notifications = new();
+    private List<TmNotification> _notifications = new();
     private PeriodicTimer? _timer;
     private CancellationTokenSource? _pollCts;
 
-    private int BadgeCount => Math.Max(_unreadCount, BadgeState.UnreadCount);
+    private int BadgeCount => _unreadCount;
 
     private string AriaLabelText => BadgeCount > 0
         ? Loc["TmNotificationBell_NewCount", BadgeCount]
         : Loc["Notion_Notifications_Title"];
 
-    private IEnumerable<INotification> VisibleNotifications =>
+    private IEnumerable<TmNotification> VisibleNotifications =>
         _showOnlyUnread ? _notifications.Where(n => !n.IsRead) : _notifications;
 
     protected override async Task OnInitializedAsync()
     {
-        BadgeState.OnChanged += OnBadgeChanged;
+        NotificationService.OnChanged += OnNotificationsChanged;
         await RefreshUnreadCountAsync(forceRender: false);
         StartPolling();
     }
@@ -168,7 +165,7 @@
         }
     }
 
-    private async void OnBadgeChanged()
+    private async void OnNotificationsChanged()
     {
         await InvokeAsync(async () =>
         {
@@ -215,7 +212,11 @@
 
         try
         {
-            _notifications = (await NotificationService.GetNotificationsAsync(CurrentUserId, limit: 50)).ToList();
+            _notifications = (await NotificationService.GetNotificationsAsync(new TmNotificationQuery
+            {
+                RecipientUserId = CurrentUserId,
+                Take = 50
+            })).ToList();
             _unreadCount = _notifications.Count(n => !n.IsRead);
         }
         finally
@@ -232,21 +233,21 @@
         await RefreshUnreadCountAsync(forceRender: true);
     }
 
-    private async Task OnItemClickAsync(INotification notification)
+    private async Task OnItemClickAsync(TmNotification notification)
     {
         if (!notification.IsRead)
             await NotificationService.MarkAsReadAsync(notification.Id, CurrentUserId);
 
-        if (!string.IsNullOrEmpty(notification.Event.DeepLink))
-            Navigation.NavigateTo(notification.Event.DeepLink);
+        if (!string.IsNullOrEmpty(notification.ActionUrl))
+            Navigation.NavigateTo(notification.ActionUrl);
 
         await LoadNotificationsAsync();
         await RefreshUnreadCountAsync(forceRender: true);
     }
 
-    private string FormatTime(DateTime dt)
+    private string FormatTime(DateTimeOffset dt)
     {
-        var diff = DateTime.UtcNow - dt.ToUniversalTime();
+        var diff = DateTimeOffset.UtcNow - dt.ToUniversalTime();
         if (diff.TotalMinutes < 1) return Loc["Notion_Notifications_JustNow"];
         if (diff.TotalHours < 1) return Loc["Notion_Notifications_MinutesAgo", (int)diff.TotalMinutes];
         if (diff.TotalDays < 1) return Loc["Notion_Notifications_HoursAgo", (int)diff.TotalHours];
@@ -254,23 +255,23 @@
         return dt.ToLocalTime().ToString("d");
     }
 
-    private static string TypeIcon(NotificationType type) => type switch
+    private static string TypeIcon(string type) => type switch
     {
-        NotificationType.Mention => IconNames.AtSign,
-        NotificationType.Reply => IconNames.MessageSquare,
-        NotificationType.Reaction => IconNames.ThumbsUp,
-        NotificationType.ThreadResolved => IconNames.CheckCircle,
-        NotificationType.NewThread => IconNames.PlusCircle,
-        NotificationType.PageEdited => IconNames.Edit,
-        NotificationType.PageCommentAdded => IconNames.MessageSquare,
-        NotificationType.TaskAssigned => IconNames.CheckSquare,
-        NotificationType.PageShared => IconNames.Share,
+        TmNotificationTypes.Mention => IconNames.AtSign,
+        TmNotificationTypes.Reply => IconNames.MessageSquare,
+        TmNotificationTypes.Reaction => IconNames.ThumbsUp,
+        TmNotificationTypes.ThreadResolved => IconNames.CheckCircle,
+        TmNotificationTypes.NewThread => IconNames.PlusCircle,
+        TmNotificationTypes.PageEdited => IconNames.Edit,
+        TmNotificationTypes.PageCommentAdded => IconNames.MessageSquare,
+        TmNotificationTypes.TaskAssigned => IconNames.CheckSquare,
+        TmNotificationTypes.PageShared => IconNames.Share,
         _ => IconNames.Bell
     };
 
     public void Dispose()
     {
-        BadgeState.OnChanged -= OnBadgeChanged;
+        NotificationService.OnChanged -= OnNotificationsChanged;
         _pollCts?.Cancel();
         _timer?.Dispose();
         _pollCts?.Dispose();

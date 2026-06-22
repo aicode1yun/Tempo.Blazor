@@ -34,7 +34,7 @@
     {
       "name": "Attachments",
       "kind": "Property",
-      "type": "List<GanttAttachment>",
+      "type": "List<TmAttachment>",
       "description": "Files attached to this item."
     },
     {

@@ -1,6 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
-@using Tempo.Blazor.NotionEditor.Interfaces
-@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.Components.NotionEditor.Models
 @using Tempo.Blazor.Components.NotionEditor.Services
 @using Tempo.Blazor.Components.Feedback
@@ -64,13 +63,13 @@
                 <div class="tm-npcp__threads" role="list" aria-label="@Loc["TmNotionPageComment_Thread"]">
                     @foreach (var comment in _comments)
                     {
-                        var threadTree = CommentThreadHelper.BuildTree(comment.Thread);
-                        <div class="tm-npcp__thread @(comment.IsResolved ? "tm-npcp__thread--resolved" : "")"
+                        var threadTree = CommentThreadHelper.BuildTree(comment.Entries);
+                        <div class="tm-npcp__thread @(comment.IsResolved() ? "tm-npcp__thread--resolved" : "")"
                              role="listitem">
 
                             @* ── Thread header ────────────────────────────── *@
                             <div class="tm-npcp__thread-header">
-                                @if (comment.IsResolved)
+                                @if (comment.IsResolved())
                                 {
                                     <span class="tm-npcp__thread-resolved-badge">
                                         <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
@@ -101,7 +100,7 @@
                                             @Loc["TmNotionPageComment_Watch"]
                                         </button>
                                     }
-                                    @if (!comment.IsResolved)
+                                    @if (!comment.IsResolved())
                                     {
                                         <button class="tm-npcp__thread-action"
                                                 type="button"
@@ -136,18 +135,18 @@
                                         <div class="tm-npcp__entry-indent"></div>
                                         <div class="tm-npcp__entry-content">
                                             <div class="tm-npcp__avatar" aria-hidden="true">
-                                                @if (!string.IsNullOrEmpty(node.Entry.AuthorAvatarUrl))
+                                                @if (!string.IsNullOrEmpty(node.Entry.AuthorAvatarUrl()))
                                                 {
-                                                    <img class="tm-npcp__avatar-img" src="@node.Entry.AuthorAvatarUrl" alt="" />
+                                                    <img class="tm-npcp__avatar-img" src="@node.Entry.AuthorAvatarUrl()" alt="" />
                                                 }
                                                 else
                                                 {
-                                                    <span class="tm-npcp__avatar-fallback">@AvatarInitial(node.Entry.AuthorDisplayName)</span>
+                                                    <span class="tm-npcp__avatar-fallback">@AvatarInitial(node.Entry.AuthorDisplayName())</span>
                                                 }
                                             </div>
                                             <div class="tm-npcp__entry-body">
                                                 <div class="tm-npcp__entry-meta">
-                                                    <span class="tm-npcp__entry-author">@node.Entry.AuthorDisplayName</span>
+                                                    <span class="tm-npcp__entry-author">@node.Entry.AuthorDisplayName()</span>
                                                     <time class="tm-npcp__entry-time" datetime="@node.Entry.CreatedAt.ToString("O")">
                                                         @FormatTime(node.Entry.CreatedAt)
                                                     </time>
@@ -172,15 +171,15 @@
                                                 }
                                                 else
                                                 {
-                                                    <div class="tm-npcp__entry-text">@((MarkupString)CommentHtmlFormatter.Format(node.Entry.HtmlContent))</div>
-                                                    @if (node.Entry.CreatedAt != node.Entry.UpdatedAt)
+                                                    <div class="tm-npcp__entry-text">@((MarkupString)CommentHtmlFormatter.Format(node.Entry.HtmlContent()))</div>
+                                                    @if (node.Entry.EditedAt.HasValue)
                                                     {
                                                         <span class="tm-npcp__entry-edited">@Loc["TmNotionPageComment_Edited"]</span>
                                                     }
                                                     <TmCommentReactions Reactions="node.Entry.Reactions"
-                                                                        EntryId="@node.Entry.Id.ToString()"
+                                                                        EntryId="@node.Entry.Id"
                                                                         CurrentUserId="@CurrentUserId"
-                                                                        Provider="Context.CommentProvider!"
+                                                                        Provider="@(Context.CommentProvider as ITmCommentReactionProvider)"
                                                                         OnChanged="StateHasChanged" />
                                                 }
 
@@ -259,7 +258,7 @@
                             }
 
                             @* ── Thread reply ────────────────────────────── *@
-                            @if (!comment.IsResolved && _replyingToEntryId is null)
+                            @if (!comment.IsResolved() && _replyingToEntryId is null)
                             {
                                 @if (_replyingToCommentId == comment.Id)
                                 {

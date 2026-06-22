@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor;
 using Tempo.Blazor.Components.NotionEditor.Page;
 using Tempo.Blazor.NotionEditor.Enums;
@@ -44,8 +45,7 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
         });
 
         var notifications = new InMemoryNotificationStore();
-        Services.AddSingleton<INotificationService>(notifications);
-        Services.AddSingleton<INotificationBadgeState>(notifications);
+        Services.AddSingleton<ITmNotificationService>(notifications);
         Services.AddSingleton<CommentNotificationOrchestrator>();
         Services.AddSingleton<PageNotificationOrchestrator>();
         Services.AddSingleton<NavigationManager>(new RestrictionNavigationManager());
@@ -107,6 +107,88 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
             cut.Find(".tm-notion-editor").ClassList.Should().Contain("tm-notion-editor--locked");
             cut.Find(".tm-notion-page").ClassList.Should().Contain("tm-notion-page--readonly");
             cut.Find(".tm-notion-restricted-badge").TextContent.Should().Contain("Restricted");
+        });
+    }
+
+    [Fact]
+    public void Editor_UsesSharedAuthorizationProviderWhenRestrictionProviderIsAbsent()
+    {
+        var provider = new RestrictionProvider();
+        var authorization = new PageAuthorizationProvider(new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            TmAuthorizationActions.View
+        });
+        var expectedGroups = new[] { "readers" };
+
+        var cut = RenderComponent<TmNotionEditor>(parameters => parameters
+            .Add(component => component.DataProvider, provider)
+            .Add(component => component.BlockProvider, provider)
+            .Add(component => component.AuthorizationProvider, authorization)
+            .Add(component => component.CurrentUserId, "bob")
+            .Add(component => component.CurrentUserGroupIds, ["readers"])
+            .Add(component => component.InitialPageId, RestrictionProvider.PageId.ToString("D"))
+            .Add(component => component.ShowSidebar, true));
+
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find(".tm-notion-editor").ClassList.Should().Contain("tm-notion-editor--locked");
+            cut.Find(".tm-notion-page").ClassList.Should().Contain("tm-notion-page--readonly");
+        });
+
+        authorization.Requests.Any(request =>
+            request.Action == TmAuthorizationActions.Edit &&
+            request.User is not null &&
+            request.User.Id == "bob" &&
+            request.GroupIds.SequenceEqual(expectedGroups) &&
+            request.EntityRef.EntityType == "notion-page" &&
+            request.EntityRef.EntityId == RestrictionProvider.PageId.ToString("D")).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Editor_ResolvesCurrentUserFromDiWhenCurrentUserIdIsBlank()
+    {
+        var expectedGroups = new[] { "editors" };
+        Services.AddSingleton<ITmCurrentUser>(new StaticCurrentUser("ada", expectedGroups));
+
+        var provider = new RestrictionProvider();
+        var authorization = new PageAuthorizationProvider(new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            TmAuthorizationActions.Edit
+        });
+
+        var cut = RenderComponent<TmNotionEditor>(parameters => parameters
+            .Add(component => component.DataProvider, provider)
+            .Add(component => component.BlockProvider, provider)
+            .Add(component => component.AuthorizationProvider, authorization)
+            .Add(component => component.InitialPageId, RestrictionProvider.PageId.ToString("D"))
+            .Add(component => component.ShowSidebar, true));
+
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find(".tm-notion-editor").ClassList.Should().NotContain("tm-notion-editor--locked");
+            authorization.Requests.Any(request =>
+                request.User is not null &&
+                request.User.Id == "ada" &&
+                request.GroupIds.SequenceEqual(expectedGroups)).Should().BeTrue();
+        });
+    }
+
+    [Fact]
+    public void Editor_WithoutAuthorizationProviderHonorsExplicitReadOnly()
+    {
+        var provider = new RestrictionProvider();
+
+        var cut = RenderComponent<TmNotionEditor>(parameters => parameters
+            .Add(component => component.DataProvider, provider)
+            .Add(component => component.BlockProvider, provider)
+            .Add(component => component.ReadOnly, true)
+            .Add(component => component.InitialPageId, RestrictionProvider.PageId.ToString("D"))
+            .Add(component => component.ShowSidebar, true));
+
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find(".tm-notion-editor").ClassList.Should().Contain("tm-notion-editor--locked");
+            cut.Find(".tm-notion-page").ClassList.Should().Contain("tm-notion-page--readonly");
         });
     }
 
@@ -300,6 +382,29 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
                 UserId = userId,
                 Permission = PageRestrictionPermission.Edit
             });
+    }
+
+    private sealed class PageAuthorizationProvider(IReadOnlySet<string> allowedActions) : ITmAuthorizationProvider
+    {
+        public List<TmAuthorizationRequest> Requests { get; } = [];
+
+        public ValueTask<TmAuthorizationResult> AuthorizeAsync(
+            TmAuthorizationRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            Requests.Add(request);
+            return ValueTask.FromResult(allowedActions.Contains(request.Action)
+                ? TmAuthorizationResult.Allow()
+                : TmAuthorizationResult.Deny());
+        }
+    }
+
+    private sealed class StaticCurrentUser(string userId, IReadOnlyList<string> groupIds) : ITmCurrentUser
+    {
+        public ValueTask<TmCurrentUserState> GetCurrentUserAsync(CancellationToken cancellationToken = default)
+            => ValueTask.FromResult(TmCurrentUserState.FromUser(
+                new TmUserRef { Id = userId, DisplayName = userId },
+                groupIds));
     }
 
     private sealed class RestrictionNavigationManager : NavigationManager

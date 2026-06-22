@@ -1,6 +1,7 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Page;
 using Tempo.Blazor.NotionEditor.Helpers;
 using Tempo.Blazor.NotionEditor.Enums;
@@ -17,8 +18,7 @@ public sealed class TmNotionShareDialogTests : LocalizationTestBase
 
     public TmNotionShareDialogTests()
     {
-        Services.AddSingleton<INotificationService, NoOpNotificationService>();
-        Services.AddSingleton<INotificationBadgeState, NotificationBadgeState>();
+        Services.AddSingleton<ITmNotificationService, NoOpNotificationService>();
         Services.AddSingleton<CommentNotificationOrchestrator>();
 
         UseCustomLocalization(new Dictionary<string, string>

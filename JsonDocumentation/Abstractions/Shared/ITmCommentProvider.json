@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Minimal provider contract for shared comment threads.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmCommentProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITmCommentProvider"
+}

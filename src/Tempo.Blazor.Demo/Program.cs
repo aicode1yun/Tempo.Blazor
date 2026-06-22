@@ -8,6 +8,7 @@ using Tempo.Blazor.Modeling;
 using Tempo.Blazor.Demo.Services;
 using Tempo.Blazor.Demo.SharedUI;
 using Tempo.Blazor.EmailTemplates;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Services;
@@ -92,8 +93,7 @@ builder.Services.AddTempoBlazor();
 builder.Services.AddSingleton<IModelingNotationProfile, ErdNotationProfile>();
 builder.Services.AddInMemoryNotifications();
 builder.Services.AddScoped<DemoNotionNotificationService>();
-builder.Services.AddScoped<INotificationService>(sp => sp.GetRequiredService<DemoNotionNotificationService>());
-builder.Services.AddScoped<INotificationBadgeState>(sp => sp.GetRequiredService<DemoNotionNotificationService>());
+builder.Services.AddScoped<ITmNotificationService>(sp => sp.GetRequiredService<DemoNotionNotificationService>());
 
 // Register Dashboard services
 builder.Services.AddSingleton<IWidgetRegistry, InMemoryWidgetRegistry>();
@@ -109,7 +109,7 @@ builder.Services.AddScoped<Tempo.Blazor.Demo.Services.IEmailTemplateApiClient, T
 var host = builder.Build();
 
 // Initialize E2E test helper
-DemoJsInterop.Initialize(host.Services.GetRequiredService<INotificationService>());
+DemoJsInterop.Initialize(host.Services.GetRequiredService<ITmNotificationService>());
 
 // Apply persisted culture preference from localStorage before rendering
 try

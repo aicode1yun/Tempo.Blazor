@@ -1,11 +1,13 @@
 using System.Security.Cryptography;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
+using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.DocumentEditor.Services;
 
 /// <summary>In-memory document editor provider intended for tests and demos.</summary>
-public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocumentAuditSink
+public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, ITmActivityProvider
 {
     /// <summary>Stable document id for the 2026-05-23 Google Docs engine recovery baseline.</summary>
     public const string Recovery20260523DocumentId = "recovery-2026-05-23";
@@ -21,17 +23,35 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
     private const string RecoveryProviderAssetId = "contract-evidence-asset";
     private readonly Dictionary<string, StoredDocument> _documents = [];
     private readonly Dictionary<string, List<DocumentVersion>> _versions = [];
-    private readonly List<DocumentEditorAuditEvent> _auditEvents = [];
+    private readonly List<TmActivityEntry> _activityEntries = [];
 
-    /// <summary>Recorded audit events.</summary>
-    public IReadOnlyList<DocumentEditorAuditEvent> AuditEvents => _auditEvents;
+    /// <summary>Recorded activity entries.</summary>
+    public IReadOnlyList<TmActivityEntry> ActivityEntries => _activityEntries;
+
+    /// <inheritdoc />
+    public virtual TmCommentProviderCapabilities Capabilities
+        => TmCommentProviderCapabilities.Read
+        | TmCommentProviderCapabilities.CreateThread
+        | TmCommentProviderCapabilities.Reply
+        | TmCommentProviderCapabilities.EditEntry
+        | TmCommentProviderCapabilities.Delete
+        | TmCommentProviderCapabilities.Resolve
+        | TmCommentProviderCapabilities.RichText;
+
+    TmActivityProviderCapabilities ITmActivityProvider.Capabilities
+        => TmActivityProviderCapabilities.Read
+        | TmActivityProviderCapabilities.Query
+        | TmActivityProviderCapabilities.Append;
+
+    TmActivityProviderCapabilities ITmCapabilityProvider<TmActivityProviderCapabilities>.Capabilities
+        => ((ITmActivityProvider)this).Capabilities;
 
     /// <summary>Clears all in-memory documents, versions, and audit events.</summary>
     protected void ClearStore()
     {
         _documents.Clear();
         _versions.Clear();
-        _auditEvents.Clear();
+        _activityEntries.Clear();
     }
 
     /// <summary>Seeds a new empty document.</summary>
@@ -1208,10 +1228,174 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
     }
 
     /// <inheritdoc />
-    public Task RecordAsync(DocumentEditorAuditEvent auditEvent, CancellationToken cancellationToken = default)
+    public virtual async Task<IReadOnlyList<TmCommentThread>> GetForEntityAsync(
+        TmEntityRef entityRef,
+        CancellationToken cancellationToken = default)
     {
-        _auditEvents.Add(Clone(auditEvent));
+        if (!string.Equals(entityRef.EntityType, DocumentCommentBridge.EntityType, StringComparison.OrdinalIgnoreCase)
+            || string.IsNullOrWhiteSpace(entityRef.EntityId))
+        {
+            return [];
+        }
+
+        var comments = await GetCommentsAsync(entityRef.EntityId, cancellationToken);
+        return comments
+            .Select(comment => DocumentCommentBridge.ToTmCommentThread(comment, entityRef.EntityId))
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<TmCommentThread> CreateThreadAsync(
+        TmCommentThread thread,
+        CancellationToken cancellationToken = default)
+    {
+        var documentId = thread.EntityRef.EntityId;
+        var created = await CreateCommentAsync(
+            documentId,
+            DocumentCommentBridge.ToDocumentComment(thread),
+            cancellationToken);
+
+        return DocumentCommentBridge.ToTmCommentThread(created, documentId);
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<TmCommentEntry> ReplyAsync(
+        string threadId,
+        TmCommentEntry entry,
+        CancellationToken cancellationToken = default)
+    {
+        FindStoredDocumentByCommentId(threadId, out var documentId);
+        entry.ThreadId = threadId;
+        var documentEntry = DocumentCommentBridge.ToDocumentCommentEntry(entry);
+        var updated = await AddCommentReplyAsync(documentId, threadId, documentEntry, cancellationToken);
+        var storedEntry = updated.Entries.First(item => item.Id == documentEntry.Id);
+        return DocumentCommentBridge.ToTmCommentEntry(storedEntry, threadId);
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<TmCommentEntry> UpdateEntryAsync(
+        string threadId,
+        string entryId,
+        TmCommentEntry entry,
+        CancellationToken cancellationToken = default)
+    {
+        FindStoredDocumentByCommentId(threadId, out var documentId);
+        var updated = await UpdateCommentEntryAsync(
+            documentId,
+            threadId,
+            entryId,
+            entry.Body,
+            DocumentCommentBridge.ToDocumentEditorAuthor(entry.Author),
+            cancellationToken);
+
+        var storedEntry = updated.Entries.First(item => item.Id == entryId);
+        return DocumentCommentBridge.ToTmCommentEntry(storedEntry, threadId);
+    }
+
+    /// <inheritdoc />
+    public virtual async Task DeleteThreadAsync(
+        string threadId,
+        CancellationToken cancellationToken = default)
+    {
+        FindStoredDocumentByCommentId(threadId, out var documentId);
+        await DeleteCommentAsync(documentId, threadId, new DocumentEditorAuthor(), cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public virtual Task DeleteEntryAsync(
+        string threadId,
+        string entryId,
+        CancellationToken cancellationToken = default)
+    {
+        var stored = FindStoredDocumentByCommentId(threadId, out _);
+        var comment = stored.Document.Comments.First(item => item.Id == threadId);
+        comment.Entries.RemoveAll(item => item.Id == entryId);
+        StoreDocument(stored.Document, stored.ConcurrencyToken);
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<TmCommentThread> ResolveAsync(
+        string threadId,
+        TmUserRef? resolvedBy = null,
+        CancellationToken cancellationToken = default)
+    {
+        FindStoredDocumentByCommentId(threadId, out var documentId);
+        var updated = await ResolveCommentAsync(
+            documentId,
+            threadId,
+            resolvedBy is null ? new DocumentEditorAuthor() : DocumentCommentBridge.ToDocumentEditorAuthor(resolvedBy),
+            cancellationToken);
+
+        return DocumentCommentBridge.ToTmCommentThread(updated, documentId);
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<TmCommentThread> ReopenAsync(
+        string threadId,
+        TmUserRef? reopenedBy = null,
+        CancellationToken cancellationToken = default)
+    {
+        FindStoredDocumentByCommentId(threadId, out var documentId);
+        var updated = await ReopenCommentAsync(
+            documentId,
+            threadId,
+            reopenedBy is null ? new DocumentEditorAuthor() : DocumentCommentBridge.ToDocumentEditorAuthor(reopenedBy),
+            cancellationToken);
+
+        return DocumentCommentBridge.ToTmCommentThread(updated, documentId);
+    }
+
+    /// <inheritdoc />
+    async Task<IReadOnlyList<TmActivityEntry>> ITmActivityProvider.GetForEntityAsync(
+        TmEntityRef entityRef,
+        CancellationToken cancellationToken)
+    {
+        var result = await ((ITmActivityProvider)this).QueryAsync(new TmActivityQuery
+        {
+            EntityRef = entityRef,
+            Take = 500
+        }, cancellationToken);
+
+        return result.Items;
+    }
+
+    /// <inheritdoc />
+    Task<PagedResult<TmActivityEntry>> ITmActivityProvider.QueryAsync(
+        TmActivityQuery query,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(query);
+
+        var skip = Math.Max(0, query.Skip);
+        var take = Math.Clamp(query.Take, 1, 500);
+        var matches = _activityEntries
+            .Where(entry => MatchesActivity(entry, query))
+            .OrderByDescending(entry => entry.Timestamp)
+            .ThenByDescending(entry => entry.Id, StringComparer.Ordinal)
+            .ToArray();
+
+        return Task.FromResult(new PagedResult<TmActivityEntry>
+        {
+            Items = matches.Skip(skip).Take(take).Select(Clone).ToArray(),
+            TotalCount = matches.Length,
+            Page = skip / take + 1,
+            PageSize = take
+        });
+    }
+
+    /// <inheritdoc />
+    Task<TmActivityEntry> ITmActivityProvider.AppendAsync(
+        TmActivityEntry entry,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(entry);
+
+        var normalized = NormalizeActivity(entry);
+        _activityEntries.Add(Clone(normalized));
+        return Task.FromResult(Clone(normalized));
     }
 
     /// <summary>Stores a document snapshot in memory.</summary>
@@ -1270,6 +1454,66 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         }
 
         return entry;
+    }
+
+    private static TmActivityEntry NormalizeActivity(TmActivityEntry entry)
+    {
+        var clone = Clone(entry);
+        clone.Id = string.IsNullOrWhiteSpace(clone.Id) ? Guid.NewGuid().ToString("N") : clone.Id.Trim();
+        clone.Action = string.IsNullOrWhiteSpace(clone.Action) ? "unknown" : clone.Action.Trim();
+        clone.Timestamp = clone.Timestamp == default ? DateTimeOffset.UtcNow : clone.Timestamp.ToUniversalTime();
+        clone.EntityRef = clone.EntityRef.IsValid
+            ? clone.EntityRef.Normalize()
+            : TmEntityRef.Create(DocumentEditorActivityBridge.EntityType, "unknown");
+
+        return clone;
+    }
+
+    private static bool MatchesActivity(TmActivityEntry entry, TmActivityQuery query)
+    {
+        if (query.EntityRef?.IsValid == true && !entry.EntityRef.Equals(query.EntityRef))
+            return false;
+
+        if (!string.IsNullOrWhiteSpace(query.EntityType) && !string.Equals(entry.EntityRef.EntityType, query.EntityType, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (!string.IsNullOrWhiteSpace(query.EntityId) && !string.Equals(entry.EntityRef.EntityId, query.EntityId, StringComparison.Ordinal))
+            return false;
+
+        if (!string.IsNullOrWhiteSpace(query.ActorId) && !string.Equals(entry.Actor?.Id, query.ActorId, StringComparison.Ordinal))
+            return false;
+
+        if (!string.IsNullOrWhiteSpace(query.SearchText)
+            && !Contains(entry.Actor?.Id ?? string.Empty, query.SearchText)
+            && !Contains(entry.Actor?.DisplayName ?? string.Empty, query.SearchText)
+            && !Contains(entry.Summary ?? string.Empty, query.SearchText))
+            return false;
+
+        if (!string.IsNullOrWhiteSpace(query.Action) && !string.Equals(entry.Action, query.Action, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (!string.IsNullOrWhiteSpace(query.CorrelationId) && !string.Equals(entry.CorrelationId, query.CorrelationId, StringComparison.Ordinal))
+            return false;
+
+        return (query.From is null || entry.Timestamp >= query.From.Value)
+            && (query.To is null || entry.Timestamp <= query.To.Value);
+    }
+
+    private static bool Contains(string value, string filter)
+        => value.Contains(filter.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    private StoredDocument FindStoredDocumentByCommentId(string commentId, out string documentId)
+    {
+        foreach (var pair in _documents)
+        {
+            if (pair.Value.Document.Comments.Any(comment => comment.Id == commentId))
+            {
+                documentId = pair.Key;
+                return pair.Value;
+            }
+        }
+
+        throw new KeyNotFoundException($"Comment '{commentId}' was not found.");
     }
 
     // B10: the demo footer must use real page-number / page-count fields (it printed the literal "Page 1" on

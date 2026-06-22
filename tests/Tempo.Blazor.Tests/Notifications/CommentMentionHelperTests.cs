@@ -1,9 +1,7 @@
 using FluentAssertions;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Models;
-using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Helpers;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
 using Tempo.Blazor.Services;
 
 namespace Tempo.Blazor.Tests.Notifications;
@@ -41,13 +39,13 @@ public class CommentMentionHelperTests
         var store = new InMemoryNotificationStore();
         var orchestrator = new CommentNotificationOrchestrator(store);
         var provider = new FakeMentionProvider();
-        var entry = new FakeEntry(Guid.NewGuid(), "author", "Author Name", null);
+        var entry = Entry("author", "Author Name");
 
         await CommentMentionHelper.NotifyAsync("Hi @alice", entry, "t1", "page-1", provider, orchestrator);
 
-        var notes = await store.GetNotificationsAsync("alice");
+        var notes = await store.GetNotificationsAsync(new TmNotificationQuery { RecipientUserId = "alice" });
         notes.Should().ContainSingle();
-        notes[0].Event.Type.Should().Be(NotificationType.Mention);
+        notes[0].Type.Should().Be(TmNotificationTypes.Mention);
     }
 
     [Fact]
@@ -55,11 +53,11 @@ public class CommentMentionHelperTests
     {
         var store = new InMemoryNotificationStore();
         var orchestrator = new CommentNotificationOrchestrator(store);
-        var entry = new FakeEntry(Guid.NewGuid(), "author", "Author Name", null);
+        var entry = Entry("author", "Author Name");
 
         await orchestrator.OnMentionAsync(entry, new[] { "alice" }, "t1", "page-1");
 
-        var notes = await store.GetNotificationsAsync("alice");
+        var notes = await store.GetNotificationsAsync(new TmNotificationQuery { RecipientUserId = "alice" });
         notes.Should().ContainSingle();
     }
 
@@ -69,68 +67,52 @@ public class CommentMentionHelperTests
         var store = new InMemoryNotificationStore();
         var orchestrator = new CommentNotificationOrchestrator(store);
         var provider = new FakeMentionProvider();
-        var entry = new FakeEntry(Guid.NewGuid(), "alice", "Alice", null);
+        var entry = Entry("alice", "Alice");
 
         await CommentMentionHelper.NotifyAsync("Hi @alice", entry, "t1", "page-1", provider, orchestrator);
 
-        var notes = await store.GetNotificationsAsync("alice");
+        var notes = await store.GetNotificationsAsync(new TmNotificationQuery { RecipientUserId = "alice" });
         notes.Should().BeEmpty();
     }
 
     // ─── Fakes ──────────────────────────────────────────────────────────────
 
-    private class FakeMentionProvider : INotionMentionProvider
+    private class FakeMentionProvider : TmPeopleProviderBase
     {
-        private readonly List<FakeUser> _users = new()
-        {
-            new FakeUser("u1", "alice", "Alice Johnson"),
-            new FakeUser("u2", "bob", "Bob Smith"),
-        };
+        private readonly List<TmUser> _users =
+        [
+            new() { Id = "alice", UserName = "alice", DisplayName = "Alice Johnson" },
+            new() { Id = "bob", UserName = "bob", DisplayName = "Bob Smith" },
+        ];
 
-        public Task<IEnumerable<IMentionUser>> SearchUsersAsync(string query)
+        public override Task<IReadOnlyList<TmUser>> SearchAsync(TmPeopleQuery query, CancellationToken cancellationToken = default)
         {
-            var results = string.IsNullOrWhiteSpace(query)
+            var searchText = query.SearchText ?? string.Empty;
+            IEnumerable<TmUser> results = string.IsNullOrWhiteSpace(searchText)
                 ? _users
-                : _users.Where(u => u.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase));
-            return Task.FromResult(results.Cast<IMentionUser>());
-        }
+                : _users.Where(u =>
+                    u.Id.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                    u.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+            if (query.Ids.Count > 0)
+            {
+                var ids = query.Ids.ToHashSet(StringComparer.Ordinal);
+                results = results.Where(user => ids.Contains(user.Id));
+            }
 
-        public Task<IEnumerable<INotionPage>> SearchPagesAsync(string query) => Task.FromResult(Enumerable.Empty<INotionPage>());
+            return Task.FromResult<IReadOnlyList<TmUser>>(results.ToArray());
+        }
     }
 
-    private class FakeUser : IMentionUser
-    {
-        public string UserId { get; }
-        public string DisplayName { get; }
-        public string? AvatarUrl => null;
-        public string? Email => null;
-
-        public FakeUser(string id, string userId, string displayName)
+    private static TmCommentEntry Entry(string userId, string name)
+        => new()
         {
-            UserId = userId;
-            DisplayName = displayName;
-        }
-    }
-
-    private class FakeEntry : INotionCommentEntry
-    {
-        public Guid Id { get; }
-        public string AuthorUserId { get; }
-        public string AuthorDisplayName { get; }
-        public string? AuthorAvatarUrl => "";
-        public string HtmlContent => "<p>test</p>";
-        public DateTime CreatedAt => DateTime.UtcNow;
-        public DateTime UpdatedAt => DateTime.UtcNow;
-        public Guid? ParentEntryId => null;
-        public bool CanEdit => true;
-        public bool CanDelete => true;
-        public IReadOnlyList<ICommentReaction> Reactions => Array.Empty<ICommentReaction>();
-
-        public FakeEntry(Guid id, string userId, string name, Guid? parentId)
-        {
-            Id = id;
-            AuthorUserId = userId;
-            AuthorDisplayName = name;
-        }
-    }
+            Id = Guid.NewGuid().ToString("N"),
+            ThreadId = "t1",
+            Author = new TmUserRef { Id = userId, DisplayName = name },
+            Body = "<p>test</p>",
+            BodyFormat = TmCommentBodyFormat.Html,
+            CreatedAt = DateTimeOffset.UtcNow,
+            CanEdit = true,
+            CanDelete = true
+        };
 }

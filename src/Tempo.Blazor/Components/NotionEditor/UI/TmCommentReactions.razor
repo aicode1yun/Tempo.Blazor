@@ -1,6 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
-@using Tempo.Blazor.NotionEditor.Interfaces
-@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.Abstractions.Shared
 
 @if (Reactions is null) return;
 
@@ -12,7 +11,7 @@
                 type="button"
                 title="@TooltipFor(reaction)"
                 @onclick="() => ToggleAsync(reaction)">
-            <span class="tm-comment-reaction__emoji">@reaction.Emoji</span>
+            <span class="tm-comment-reaction__emoji">@reaction.Value</span>
             <span class="tm-comment-reaction__count">@reaction.UserIds.Count</span>
         </button>
     }
@@ -46,13 +45,13 @@
     private static readonly string[] DefaultEmojis = { "👍", "🔥", "❤️", "👀", "🎉" };
     private bool _showPicker;
 
-    [Parameter] public IReadOnlyList<ICommentReaction> Reactions { get; set; } = Array.Empty<ICommentReaction>();
+    [Parameter] public IReadOnlyList<TmCommentReaction> Reactions { get; set; } = Array.Empty<TmCommentReaction>();
     [Parameter] public string EntryId { get; set; } = string.Empty;
     [Parameter] public string CurrentUserId { get; set; } = string.Empty;
-    [Parameter] public INotionCommentProvider Provider { get; set; } = default!;
+    [Parameter] public ITmCommentReactionProvider? Provider { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
-    private string TooltipFor(ICommentReaction r)
+    private string TooltipFor(TmCommentReaction r)
     {
         var names = r.UserIds.Select(id => id == CurrentUserId ? Loc["TmCommentReactions_You"] : id).ToList();
         if (names.Count <= 3)
@@ -60,12 +59,15 @@
         return string.Join(", ", names.Take(3)) + " " + string.Format(Loc["TmCommentReactions_More"], names.Count - 3);
     }
 
-    private async Task ToggleAsync(ICommentReaction reaction)
+    private async Task ToggleAsync(TmCommentReaction reaction)
     {
+        if (Provider is null)
+            return;
+
         if (reaction.UserIds.Contains(CurrentUserId))
-            await Provider.RemoveReactionAsync(EntryId, reaction.Emoji, CurrentUserId);
+            await Provider.RemoveReactionAsync(EntryId, reaction.Value, CurrentUserId);
         else
-            await Provider.AddReactionAsync(EntryId, reaction.Emoji, CurrentUserId);
+            await Provider.AddReactionAsync(EntryId, reaction.Value, CurrentUserId);
 
         _showPicker = false;
         await OnChanged.InvokeAsync();
@@ -73,6 +75,9 @@
 
     private async Task AddAsync(string emoji)
     {
+        if (Provider is null)
+            return;
+
         await Provider.AddReactionAsync(EntryId, emoji, CurrentUserId);
         _showPicker = false;
         await OnChanged.InvokeAsync();

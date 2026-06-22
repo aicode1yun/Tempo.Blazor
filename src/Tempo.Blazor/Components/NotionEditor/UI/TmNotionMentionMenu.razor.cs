@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using System.Globalization;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -47,7 +48,7 @@ public partial class TmNotionMentionMenu : ComponentBase
     private bool       _needsPositionAdjustment;
     private int        _selectedIndex;
 
-    private IReadOnlyList<IMentionUser> _people = [];
+    private IReadOnlyList<TmUser> _people = [];
     private IReadOnlyList<INotionPage>  _pages  = [];
 
     private ElementReference _menuRef;
@@ -126,16 +127,22 @@ public partial class TmNotionMentionMenu : ComponentBase
 
     private async Task SearchAsync()
     {
-        if (Context.MentionProvider is null) return;
-
         _loading = true;
         StateHasChanged();
         try
         {
             if (_tab == MentionTab.People && !PagesOnly)
-                _people = (await Context.MentionProvider.SearchUsersAsync(_query)).ToList();
+            {
+                _people = Context.MentionProvider is null
+                    ? []
+                    : await Context.MentionProvider.SearchAsync(new TmPeopleQuery { SearchText = _query, Take = 8 });
+            }
             else if (_tab == MentionTab.Pages)
-                _pages = (await Context.MentionProvider.SearchPagesAsync(_query)).ToList();
+            {
+                _pages = Context.SearchProvider is null
+                    ? []
+                    : (await Context.SearchProvider.SearchPagesAsync(_query, null)).ToList();
+            }
         }
         catch { }
         finally
@@ -188,8 +195,8 @@ public partial class TmNotionMentionMenu : ComponentBase
             await SelectDateByIndexAsync(_selectedIndex);
     }
 
-    internal async Task SelectUserAsync(IMentionUser user) =>
-        await OnItemSelected.InvokeAsync(("user", user.UserId, "@" + user.DisplayName));
+    internal async Task SelectUserAsync(TmUser user) =>
+        await OnItemSelected.InvokeAsync(("user", user.Id, "@" + UserDisplayName(user)));
 
     internal async Task SelectPageAsync(INotionPage page)
     {
@@ -226,6 +233,9 @@ public partial class TmNotionMentionMenu : ComponentBase
         "<path d=\"M1 5.5h12\" stroke=\"currentColor\" stroke-width=\"1.25\"/>" +
         "<path d=\"M4.5 1v3M9.5 1v3\" stroke=\"currentColor\" stroke-width=\"1.25\" stroke-linecap=\"round\"/>" +
         "</svg>");
+
+    private static string UserDisplayName(TmUser user)
+        => string.IsNullOrWhiteSpace(user.DisplayName) ? user.Id : user.DisplayName;
 
     private static string GetPageIcon(INotionPage page) =>
         string.IsNullOrEmpty(page.IconEmoji) ? "📄" : page.IconEmoji;

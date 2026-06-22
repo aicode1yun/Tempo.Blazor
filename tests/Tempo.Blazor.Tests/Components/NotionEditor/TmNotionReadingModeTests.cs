@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Helpers;
@@ -18,8 +19,7 @@ public sealed class TmNotionReadingModeTests : LocalizationTestBase
     public TmNotionReadingModeTests()
     {
         var notifications = new InMemoryNotificationStore();
-        Services.AddSingleton<INotificationService>(notifications);
-        Services.AddSingleton<INotificationBadgeState>(notifications);
+        Services.AddSingleton<ITmNotificationService>(notifications);
         Services.AddSingleton<CommentNotificationOrchestrator>();
         Services.AddSingleton<NavigationManager>(new ReadingModeNavigationManager());
         UseCustomLocalization(new Dictionary<string, string>

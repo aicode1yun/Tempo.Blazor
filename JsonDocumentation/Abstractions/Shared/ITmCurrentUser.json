@@ -1,0 +1,18 @@
+{
+  "kind": "Interface",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Provider for resolving the current user in host applications.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmCurrentUser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetCurrentUserAsync",
+      "kind": "Method",
+      "type": "ValueTask<TmCurrentUserState>",
+      "description": "Returns the current user state for this request or circuit."
+    }
+  ],
+  "itemName": "ITmCurrentUser"
+}

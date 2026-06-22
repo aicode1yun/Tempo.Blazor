@@ -2,22 +2,40 @@
   "itemName": "TmAttachmentManager",
   "kind": "Component",
   "category": "Files",
-  "description": "Complete attachment management component that combines TmFileDropZone with a list of existing attachments loaded via IFileAttachmentProvider. Supports download, delete, and upload with progress indication.",
+  "description": "Complete attachment management component that combines TmFileDropZone with a list of existing attachments loaded via ITmAttachmentProvider. Upload and URL resolution are handled through ITmFileProvider.",
   "requiredImports": [
     "@using Tempo.Blazor.Components.Files"
   ],
   "parameters": [
     {
-      "name": "Provider",
-      "type": "IFileAttachmentProvider?",
+      "name": "AttachmentProvider",
+      "type": "ITmAttachmentProvider?",
       "isRequired": false,
-      "description": "Data provider for loading, downloading, deleting, and uploading attachments."
+      "description": "Provider for loading and linking attachments to an entity."
+    },
+    {
+      "name": "FileProvider",
+      "type": "ITmFileProvider?",
+      "isRequired": false,
+      "description": "Provider for uploading files and resolving asset URLs."
+    },
+    {
+      "name": "EntityRef",
+      "type": "TmEntityRef?",
+      "isRequired": false,
+      "description": "Entity reference used to load and upload attachments."
     },
     {
       "name": "EntityId",
       "type": "string?",
       "isRequired": false,
       "description": "Entity ID used to load and upload attachments."
+    },
+    {
+      "name": "EntityType",
+      "type": "string",
+      "isRequired": false,
+      "description": "Entity type used with EntityId. Defaults to attachment-manager-entity."
     },
     {
       "name": "Disabled",
@@ -33,7 +51,7 @@
     },
     {
       "name": "OnDeleted",
-      "type": "EventCallback<IFileAttachment>",
+      "type": "EventCallback<TmAttachment>",
       "isRequired": false,
       "description": "Fires when an attachment is deleted."
     }
@@ -53,24 +71,29 @@
   ],
   "usedAbstractions": [
     {
-      "name": "IFileAttachmentProvider",
-      "description": "Provider for file upload and attachment management",
-      "parameter": "Provider"
+      "name": "ITmAttachmentProvider",
+      "description": "Provider for attachment links",
+      "parameter": "AttachmentProvider"
     },
     {
-      "name": "IFileAttachment",
-      "description": "Interface representing a file attachment",
+      "name": "ITmFileProvider",
+      "description": "Provider for file upload and URL resolution",
+      "parameter": "FileProvider"
+    },
+    {
+      "name": "TmAttachment",
+      "description": "Shared model representing a file attachment",
       "usedIn": "File list"
     }
   ],
   "examples": [
     {
       "title": "Attachment manager with data provider",
-      "code": "<TmAttachmentManager Provider=\"@attachmentProvider\" EntityId=\"@recordId\"\n    OnDeleted=\"HandleAttachmentDeleted\" />"
+      "code": "<TmAttachmentManager AttachmentProvider=\"@attachmentProvider\"\n                     FileProvider=\"@fileProvider\"\n                     EntityId=\"@recordId\"\n                     OnDeleted=\"HandleAttachmentDeleted\" />"
     },
     {
       "title": "Read-only attachment list",
-      "code": "<TmAttachmentManager Provider=\"@attachmentProvider\" EntityId=\"@recordId\" Disabled=\"true\" />"
+      "code": "<TmAttachmentManager AttachmentProvider=\"@attachmentProvider\"\n                     FileProvider=\"@fileProvider\"\n                     EntityId=\"@recordId\"\n                     Disabled=\"true\" />"
     }
   ]
 }

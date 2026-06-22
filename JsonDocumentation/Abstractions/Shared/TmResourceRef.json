@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Lightweight resource snapshot embedded in scheduling and workflow models.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmResourceRef.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable resource identifier within the source and tenant scope."
+    },
+    {
+      "name": "DisplayName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name captured at the time the reference was created."
+    },
+    {
+      "name": "ResourceType",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional resource type, for example person, team, room, or equipment."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional color token or sanitized CSS color used for resource labels and timelines."
+    },
+    {
+      "name": "SourceKey",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional provider/source discriminator for applications with multiple resource sources."
+    },
+    {
+      "name": "TenantId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional tenant, workspace, or application scope identifier."
+    },
+    {
+      "name": "FromResource",
+      "kind": "Method",
+      "type": "TmResourceRef",
+      "description": "Creates a reference snapshot from a full resource model."
+    }
+  ],
+  "itemName": "TmResourceRef"
+}

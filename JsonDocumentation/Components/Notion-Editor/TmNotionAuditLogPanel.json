@@ -12,11 +12,17 @@
   ],
   "parameters": [
     {
-      "name": "Class",
-      "type": "string?",
+      "name": "ActivityProvider",
+      "type": "ITmActivityProvider",
       "isRequired": true,
       "description": "Provider used to query audit entries.",
       "editorRequired": true
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class."
     },
     {
       "name": "OnClosed",

@@ -1,4 +1,5 @@
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 
 namespace Tempo.Blazor.Abstractions.WorkItems;
 
@@ -137,8 +138,22 @@ public class TmWorkItem
 
     // ── Extensibility ───────────────────────────────────────────────────────
 
-    /// <summary>Free-form tags / labels.</summary>
-    public List<string> Tags { get; set; } = [];
+    /// <summary>Free-form tags / labels captured as shared tag references.</summary>
+    public List<TmTagRef> Tags { get; set; } = [];
+
+    /// <summary>Returns tag labels for consumers that only need a simple string view.</summary>
+    public IReadOnlyList<string> TagLabels => Tags.Select(tag => tag.Label).Where(label => !string.IsNullOrWhiteSpace(label)).ToArray();
+
+    /// <summary>Replaces tag references from simple labels.</summary>
+    /// <param name="labels">Labels to convert to tag references.</param>
+    public void SetTagLabels(IEnumerable<string> labels)
+    {
+        ArgumentNullException.ThrowIfNull(labels);
+        Tags = labels
+            .Where(label => !string.IsNullOrWhiteSpace(label))
+            .Select(label => TmTagRef.FromLabel(label))
+            .ToList();
+    }
 
     /// <summary>User-defined custom field values keyed by field id.</summary>
     public Dictionary<string, string?> CustomFields { get; set; } = [];
@@ -147,10 +162,10 @@ public class TmWorkItem
     public Dictionary<string, string> Fields { get; set; } = [];
 
     /// <summary>Files attached to this item.</summary>
-    public List<GanttAttachment> Attachments { get; set; } = [];
+    public List<TmAttachment> Attachments { get; set; } = [];
 
-    /// <summary>Comments on this item.</summary>
-    public List<GanttComment> Comments { get; set; } = [];
+    /// <summary>Comment entries on this item.</summary>
+    public List<TmCommentEntry> Comments { get; set; } = [];
 
     /// <summary>Time log entries recorded against this item.</summary>
     public List<GanttTimeLogEntry> TimeLog { get; set; } = [];

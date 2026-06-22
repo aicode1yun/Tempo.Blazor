@@ -2,24 +2,40 @@
   "itemName": "TmActivityAttachments",
   "kind": "Component",
   "category": "Activity",
-  "description": "File attachment manager that lists uploaded files with type-specific icons, file sizes, and uploader names. Supports chunked file upload with progress bar, download via IFileAttachmentProvider, deletion, duplicate detection, and configurable max file size and accepted types.",
+  "description": "File attachment manager that lists uploaded files with type-specific icons, file sizes, and uploader names. Supports chunked file upload with progress bar through ITmFileProvider, attachment links through ITmAttachmentProvider, deletion, duplicate detection, and configurable max file size and accepted types.",
   "requiredImports": [
     "@using Tempo.Blazor.Components.Activity"
   ],
   "parameters": [
+    {
+      "name": "EntityRef",
+      "type": "TmEntityRef?",
+      "isRequired": false
+    },
     {
       "name": "EntityId",
       "type": "string?",
       "isRequired": false
     },
     {
-      "name": "Provider",
-      "type": "IFileAttachmentProvider?",
+      "name": "EntityType",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"activity-entity\""
+    },
+    {
+      "name": "AttachmentProvider",
+      "type": "ITmAttachmentProvider?",
+      "isRequired": false
+    },
+    {
+      "name": "FileProvider",
+      "type": "ITmFileProvider?",
       "isRequired": false
     },
     {
       "name": "Attachments",
-      "type": "IReadOnlyList<IFileAttachment>?",
+      "type": "IReadOnlyList<TmAttachment>?",
       "isRequired": false
     },
     {
@@ -70,7 +86,7 @@
   "examples": [
     {
       "title": "Attachment list with upload",
-      "code": "<TmActivityAttachments EntityId=\"@entityId\"\n                        Provider=\"@attachmentProvider\"\n                        Attachments=\"@attachments\"\n                        AllowUpload=\"true\"\n                        MaxFileSizeBytes=\"52428800\"\n                        AcceptedFileTypes=\".pdf,.docx,.xlsx,.jpg,.png\" />"
+      "code": "<TmActivityAttachments EntityId=\"@entityId\"\n                        AttachmentProvider=\"@attachmentProvider\"\n                        FileProvider=\"@fileProvider\"\n                        Attachments=\"@attachments\"\n                        AllowUpload=\"true\"\n                        MaxFileSizeBytes=\"52428800\"\n                        AcceptedFileTypes=\".pdf,.docx,.xlsx,.jpg,.png\" />"
     },
     {
       "title": "Read-only attachment list",

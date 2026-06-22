@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Components.Web;
 using System.Reflection;
 using Tempo.Blazor.Abstractions.Interfaces;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Files;
 using Tempo.Blazor.Models;
 using Tempo.Blazor.Tests.Localization;
@@ -432,10 +433,10 @@ public class TmDocumentManagerTests : LocalizationTestBase
         var rootfile = allItems?.First(i => i.Id == "rootfile");
         if (rootfile is not null)
         {
-            rootfile.Attachments = new List<FileAttachment>
+            rootfile.Attachments = new List<TmAttachment>
             {
-                new() { Id = "a1", Name = "attachment1.txt", Size = 100 },
-                new() { Id = "a2", Name = "attachment2.txt", Size = 200 }
+                new() { Id = "a1", EntityRef = TmEntityRef.Create("document-manager-item", "rootfile"), FileName = "attachment1.txt", SizeBytes = 100 },
+                new() { Id = "a2", EntityRef = TmEntityRef.Create("document-manager-item", "rootfile"), FileName = "attachment2.txt", SizeBytes = 200 }
             };
         }
 
@@ -499,9 +500,9 @@ public class TmDocumentManagerTests : LocalizationTestBase
         var rootfile = allItems?.First(i => i.Id == "rootfile");
         if (rootfile is not null)
         {
-            rootfile.Attachments = new List<FileAttachment>
+            rootfile.Attachments = new List<TmAttachment>
             {
-                new() { Id = "a1", Name = "old.txt", Size = 100 }
+                new() { Id = "a1", EntityRef = TmEntityRef.Create("document-manager-item", "rootfile"), FileName = "old.txt", SizeBytes = 100 }
             };
         }
 
@@ -665,7 +666,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     private sealed class MockDocumentManagerDataProvider : IDocumentManagerDataProvider<TestMetadata>
     {
         private readonly List<DocumentManagerItem<TestMetadata>> _allItems;
-        private readonly Dictionary<string, List<FileAttachment>> _attachments = new();
+        private readonly Dictionary<string, List<TmAttachment>> _attachments = new();
 
         public MockDocumentManagerDataProvider(List<DocumentManagerItem<TestMetadata>> items)
         {
@@ -764,16 +765,18 @@ public class TmDocumentManagerTests : LocalizationTestBase
                     Metadata = metadata
                 };
 
-                var attachments = new List<FileAttachment>();
+                var attachments = new List<TmAttachment>();
                 foreach (var file in files)
                 {
-                    attachments.Add(new FileAttachment
+                    attachments.Add(new TmAttachment
                     {
                         Id = Guid.NewGuid().ToString(),
-                        Name = file.FileName,
-                        Size = file.Size,
+                        EntityRef = TmEntityRef.Create("document-manager-item", entity.Id),
+                        FileName = file.FileName,
+                        SizeBytes = file.Size,
                         ContentType = file.ContentType,
-                        CreatedDate = DateTime.Now
+                        UploadedAt = DateTimeOffset.Now,
+                        Purpose = "document-manager"
                     });
                     file.Stream.Dispose();
                 }
@@ -847,19 +850,19 @@ public class TmDocumentManagerTests : LocalizationTestBase
             return Task.FromResult(copy);
         }
 
-        public Task<string?> UploadChunkAsync(FileChunkData chunk, CancellationToken cancellationToken = default)
+        public Task<TmFileUploadResult> UploadChunkAsync(TmFileChunk chunk, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult<string?>(null);
+            return Task.FromResult(new TmFileUploadResult { Success = true, IsComplete = chunk.IsLast });
         }
 
-        public Task<IReadOnlyList<FileAttachment>> GetAttachmentsAsync(string itemId, CancellationToken cancellationToken = default)
+        public Task<IReadOnlyList<TmAttachment>> GetAttachmentsAsync(string itemId, CancellationToken cancellationToken = default)
         {
             if (_attachments.TryGetValue(itemId, out var list))
-                return Task.FromResult<IReadOnlyList<FileAttachment>>(list);
-            return Task.FromResult<IReadOnlyList<FileAttachment>>([]);
+                return Task.FromResult<IReadOnlyList<TmAttachment>>(list);
+            return Task.FromResult<IReadOnlyList<TmAttachment>>([]);
         }
 
-        public Task<IReadOnlyList<FileAttachment>> AddAttachmentsAsync(
+        public Task<IReadOnlyList<TmAttachment>> AddAttachmentsAsync(
             string itemId, IReadOnlyList<FileUploadInfo> files, CancellationToken cancellationToken = default)
         {
             AddAttachmentsCalled = true;
@@ -869,13 +872,15 @@ public class TmDocumentManagerTests : LocalizationTestBase
             var list = _attachments[itemId];
             foreach (var file in files)
             {
-                list.Add(new FileAttachment
+                list.Add(new TmAttachment
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Name = file.FileName,
-                    Size = file.Size,
+                    EntityRef = TmEntityRef.Create("document-manager-item", itemId),
+                    FileName = file.FileName,
+                    SizeBytes = file.Size,
                     ContentType = file.ContentType,
-                    CreatedDate = DateTime.Now
+                    UploadedAt = DateTimeOffset.Now,
+                    Purpose = "document-manager"
                 });
                 file.Stream.Dispose();
             }
@@ -884,7 +889,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
             if (item is not null)
                 item.Attachments = list;
 
-            return Task.FromResult<IReadOnlyList<FileAttachment>>(list);
+            return Task.FromResult<IReadOnlyList<TmAttachment>>(list);
         }
 
         public Task RemoveAttachmentAsync(string itemId, string attachmentId, CancellationToken cancellationToken = default)

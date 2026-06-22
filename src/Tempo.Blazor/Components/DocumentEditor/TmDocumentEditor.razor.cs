@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.DocumentEditor.Clipboard;
 using Tempo.Blazor.Components.DocumentEditor.Commands;
 using Tempo.Blazor.Components.DocumentEditor.Features;
@@ -112,7 +113,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     [Parameter] public bool CanDeleteOwnComments { get; set; }
 
     /// <summary>Optional mention provider reused by the comment composer.</summary>
-    [Parameter] public IMentionDataProvider? MentionProvider { get; set; }
+    [Parameter] public ITmPeopleProvider? MentionProvider { get; set; }
 
     /// <summary>Optional token provider reused by the document token autocomplete menu.</summary>
     [Parameter] public ITokenDataProvider? TokenProvider { get; set; }
@@ -175,10 +176,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     /// <summary>Author used for save requests and audit events.</summary>
     [Parameter] public DocumentEditorAuthor? Author { get; set; }
 
-    /// <summary>Optional audit sink used to record document save events.</summary>
-    [Parameter] public IDocumentAuditSink? AuditSink { get; set; }
+    /// <summary>Optional activity provider used to record document editor audit events.</summary>
+    [Parameter] public ITmActivityProvider? ActivityProvider { get; set; }
 
-    /// <summary>Determines whether audit sink failures block editor workflows.</summary>
+    /// <summary>Determines whether activity provider failures block editor workflows.</summary>
     [Parameter] public DocumentEditorAuditFailureMode AuditFailureMode { get; set; } = DocumentEditorAuditFailureMode.NonBlocking;
 
     /// <summary>Raised immediately before a save request is sent to the provider.</summary>
@@ -11193,15 +11194,15 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task DispatchAuditAsync(DocumentEditorAuditEvent auditEvent)
     {
-        var auditSink = AuditSink ?? Provider as IDocumentAuditSink;
-        if (auditSink is null)
+        var activityProvider = ActivityProvider ?? Provider as ITmActivityProvider;
+        if (activityProvider is null)
         {
             return;
         }
 
         try
         {
-            await auditSink.RecordAsync(auditEvent);
+            await activityProvider.AppendAsync(DocumentEditorActivityBridge.ToTmActivityEntry(auditEvent));
         }
         catch when (AuditFailureMode == DocumentEditorAuditFailureMode.NonBlocking)
         {

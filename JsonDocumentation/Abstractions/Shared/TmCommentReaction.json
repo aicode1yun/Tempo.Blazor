@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Reaction metadata stored with a comment entry.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCommentReaction.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "IsValid",
+      "kind": "Field",
+      "type": "bool",
+      "description": "Returns true when the reaction has a value."
+    },
+    {
+      "name": "UserIds",
+      "kind": "Property",
+      "type": "List<string>",
+      "description": "User ids that applied this reaction."
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "string",
+      "description": "Emoji or compact reaction value."
+    }
+  ],
+  "itemName": "TmCommentReaction"
+}

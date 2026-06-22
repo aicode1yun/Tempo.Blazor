@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Components.Spreadsheet.Models;
 using Tempo.Blazor.Demo.Api.Data;
@@ -155,10 +156,10 @@ public static class NotionEditorEndpoints
             return Results.Ok(await permissionProvider.GetEffectivePermissionAsync(pageId, userId, groupIds, cancellationToken));
         });
 
-        auditGroup.MapPost("/entries", async (AuditEntryDto entry, DemoNotionAuditProvider auditProvider, CancellationToken cancellationToken) =>
+        auditGroup.MapPost("/entries", async (TmActivityEntry entry, DemoNotionAuditProvider auditProvider, CancellationToken cancellationToken) =>
         {
-            await auditProvider.LogAsync(entry, cancellationToken);
-            return Results.NoContent();
+            var created = await auditProvider.AppendAsync(entry, cancellationToken);
+            return Results.Ok(created);
         });
 
         auditGroup.MapGet("/entries", async (
@@ -166,28 +167,27 @@ public static class NotionEditorEndpoints
             string? action,
             string? targetType,
             string? targetId,
-            DateOnly? from,
-            DateOnly? to,
+            DateTimeOffset? from,
+            DateTimeOffset? to,
+            string? correlationId,
             int? skip,
             int? take,
             DemoNotionAuditProvider auditProvider,
             CancellationToken cancellationToken) =>
         {
-            var filter = new AuditLogFilter
+            var query = new TmActivityQuery
             {
-                UserId = userId,
+                SearchText = userId,
                 Action = action,
-                TargetType = targetType,
-                TargetId = targetId,
+                EntityType = targetType,
+                EntityId = targetId,
+                CorrelationId = correlationId,
                 From = from,
-                To = to
-            };
-            var paging = new NotionAuditQuery
-            {
+                To = to,
                 Skip = Math.Max(0, skip.GetValueOrDefault()),
                 Take = Math.Clamp(take.GetValueOrDefault(10), 1, 100)
             };
-            return Results.Ok(await auditProvider.GetEntriesAsync(filter, paging, cancellationToken));
+            return Results.Ok(await auditProvider.QueryAsync(query, cancellationToken));
         });
 
         publicShareGroup.MapPost("/pages/{pageId:guid}", async (
@@ -919,16 +919,27 @@ public static class NotionEditorEndpoints
             Results.Ok(await watchProvider.IsWatchingAsync(pageId, userId, cancellationToken)));
 
         notificationGroup.MapPost("/", async (
-            NotificationEvent notification,
+            TmNotification notification,
             DemoNotionNotificationStore notificationStore,
             CancellationToken cancellationToken) =>
         {
-            await notificationStore.NotifyAsync(notification, cancellationToken);
-            return Results.NoContent();
+            var created = await notificationStore.PublishAsync(notification, cancellationToken);
+            return Results.Ok(created);
         });
 
-        notificationGroup.MapGet("/users/{userId}", (string userId, int? limit, DemoNotionNotificationStore notificationStore) =>
-            Results.Ok(notificationStore.GetNotificationDtos(userId, limit.GetValueOrDefault(20))));
+        notificationGroup.MapGet("/users/{userId}", (
+            string userId,
+            int? skip,
+            int? take,
+            bool? includeRead,
+            DemoNotionNotificationStore notificationStore) =>
+            Results.Ok(notificationStore.GetNotifications(new TmNotificationQuery
+            {
+                RecipientUserId = userId,
+                Skip = skip.GetValueOrDefault(0),
+                Take = take.GetValueOrDefault(20),
+                IncludeRead = includeRead.GetValueOrDefault(true)
+            })));
 
         notificationGroup.MapGet("/users/{userId}/unread-count", async (
             string userId,
@@ -1302,14 +1313,12 @@ public static class NotionEditorEndpoints
         CancellationToken cancellationToken)
     {
         var user = GetAuditUser(request);
-        await auditProvider.LogAsync(new AuditEntryDto
+        await auditProvider.AppendAsync(new TmActivityEntry
         {
-            UserId = user.UserId,
-            UserDisplayName = user.DisplayName,
+            Actor = new TmUserRef { Id = user.UserId, DisplayName = user.DisplayName },
             Action = action,
-            TargetType = "page",
-            TargetId = pageId.ToString("D"),
-            Details = details
+            EntityRef = TmEntityRef.Create("page", pageId.ToString("D")),
+            Metadata = details.ToDictionary(pair => pair.Key, pair => (object)pair.Value, StringComparer.OrdinalIgnoreCase)
         }, cancellationToken);
     }
 
@@ -1416,15 +1425,15 @@ public static class NotionEditorEndpoints
         var watchers = await watchProvider.GetWatchersAsync(pageId.ToString("D"), cancellationToken);
         foreach (var watcher in watchers.Where(w => !string.Equals(w.UserId, actorUserId, StringComparison.OrdinalIgnoreCase)))
         {
-            await notificationStore.NotifyAsync(new NotificationEvent
+            await notificationStore.PublishAsync(new TmNotification
             {
-                Type = NotificationType.PageEdited,
+                Type = TmNotificationTypes.PageEdited,
                 RecipientUserId = watcher.UserId,
-                SenderUserId = actorUserId,
-                SenderName = actorUserId,
-                Message = "Page edited",
-                DeepLink = $"/notion-editor?page={pageId:D}",
-                CreatedAt = DateTime.UtcNow
+                Actor = new TmUserRef { Id = actorUserId, DisplayName = actorUserId },
+                Title = "Page edited",
+                ActionUrl = $"/notion-editor?page={pageId:D}",
+                EntityRef = TmEntityRef.Create("page", pageId.ToString("D")),
+                CreatedAt = DateTimeOffset.UtcNow
             }, cancellationToken);
         }
     }

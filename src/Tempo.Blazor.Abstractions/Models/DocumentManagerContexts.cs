@@ -1,3 +1,5 @@
+using Tempo.Blazor.Abstractions.Shared;
+
 namespace Tempo.Blazor.Abstractions.Models;
 
 /// <summary>
@@ -90,7 +92,7 @@ public class AttachmentListContext<TMetadata> where TMetadata : class
     public DocumentManagerItem<TMetadata> Item { get; set; } = null!;
 
     /// <summary>Current attachments.</summary>
-    public IReadOnlyList<FileAttachment> Attachments { get; set; } = [];
+    public IReadOnlyList<TmAttachment> Attachments { get; set; } = [];
 
     /// <summary>Called when the user uploads new attachments.</summary>
     public Func<IReadOnlyList<FileUploadInfo>, Task>? OnAddAttachment { get; set; }

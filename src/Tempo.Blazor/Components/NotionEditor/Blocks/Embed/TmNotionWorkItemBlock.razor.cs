@@ -445,6 +445,7 @@ public partial class TmNotionWorkItemBlock : ComponentBase, IDisposable
             }).ToList(),
             Priority = item.Priority,
             PriorityLabel = item.PriorityLabel,
+            Tags = item.Tags.ToList(),
             UpdatedAt = item.UpdatedAt,
             Fields = new Dictionary<string, string>(item.Fields, StringComparer.OrdinalIgnoreCase)
         };

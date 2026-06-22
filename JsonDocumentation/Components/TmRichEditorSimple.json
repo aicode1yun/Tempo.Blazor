@@ -35,7 +35,7 @@
     },
     {
       "name": "MentionProvider",
-      "type": "IMentionDataProvider?",
+      "type": "ITmPeopleProvider?",
       "isRequired": false
     },
     {
@@ -150,14 +150,14 @@
       "parameter": "OnTokenHover"
     },
     {
-      "name": "IMentionDataProvider",
+      "name": "ITmPeopleProvider",
       "description": "Data provider for @mention user search.",
       "parameter": "MentionProvider"
     },
     {
-      "name": "IMentionUser",
-      "description": "Interface representing a user for @mentions.",
-      "usedIn": "IMentionDataProvider"
+      "name": "TmUser",
+      "description": "Shared user model returned by ITmPeopleProvider for @mentions.",
+      "usedIn": "ITmPeopleProvider"
     }
   ],
   "examples": [

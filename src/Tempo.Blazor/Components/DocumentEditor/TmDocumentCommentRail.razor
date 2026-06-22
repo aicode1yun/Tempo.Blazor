@@ -1,6 +1,6 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.DocumentEditor.Models
-@using Tempo.Blazor.Interfaces
 
 <aside class="tm-document-editor__comment-rail"
        data-testid="document-comment-rail"
@@ -153,7 +153,7 @@
     [Parameter] public bool CanStartComment { get; set; } = true;
 
     /// <summary>Optional mention provider reused by comment composers.</summary>
-    [Parameter] public IMentionDataProvider? MentionProvider { get; set; }
+    [Parameter] public ITmPeopleProvider? MentionProvider { get; set; }
 
     /// <summary>Optional status message.</summary>
     [Parameter] public string? StatusMessage { get; set; }

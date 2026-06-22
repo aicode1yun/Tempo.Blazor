@@ -1,4 +1,5 @@
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Demo.Api.Data;
 
@@ -70,7 +71,7 @@ public static class GanttEndpoints
 
         // ── History ───────────────────────────────────────────────
 
-        group.MapPost("/history", (GanttHistoryEntry entry, MockGanttStore s) =>
+        group.MapPost("/history", (TmActivityEntry entry, MockGanttStore s) =>
         {
             var created = s.AddHistory(entry);
             return Results.Created($"/api/gantt/history/{created.Id}", created);

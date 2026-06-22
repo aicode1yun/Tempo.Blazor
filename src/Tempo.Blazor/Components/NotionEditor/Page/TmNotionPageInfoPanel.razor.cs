@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -134,9 +135,15 @@ public partial class TmNotionPageInfoPanel : ComponentBase
         {
             try
             {
-                var users = await Context.MentionProvider.SearchUsersAsync(userId!);
-                var match = users.FirstOrDefault(user =>
-                    string.Equals(user.UserId, userId, StringComparison.OrdinalIgnoreCase));
+                var match = await Context.MentionProvider.GetByIdAsync(userId!);
+                if (match is null)
+                {
+                    var users = await Context.MentionProvider.SearchAsync(new TmPeopleQuery { SearchText = userId, Take = 8 });
+                    match = users.FirstOrDefault(user =>
+                        string.Equals(user.Id, userId, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(user.UserName, userId, StringComparison.OrdinalIgnoreCase));
+                }
+
                 if (match is not null && !string.IsNullOrWhiteSpace(match.DisplayName))
                 {
                     result[userId!] = match.DisplayName;

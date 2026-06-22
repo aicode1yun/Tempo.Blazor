@@ -11,7 +11,7 @@
     },
     {
       "name": "Tempo.Blazor.Abstractions",
-      "description": "Interfaces and models (zero UI dependencies). Safe to reference from API/service projects for shared contracts like IFileAttachmentProvider, IDashboardProvider, etc.",
+      "description": "Interfaces and models (zero UI dependencies). Safe to reference from API/service projects for shared contracts like ITmAttachmentProvider, ITmFileProvider, IDashboardProvider, etc.",
       "required": false
     },
     {

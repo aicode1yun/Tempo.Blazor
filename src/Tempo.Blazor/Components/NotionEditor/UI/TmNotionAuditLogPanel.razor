@@ -1,5 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
-@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.Abstractions.Shared
 
 <section class="tm-notion-audit @Class" aria-label="@Loc["Notion_Audit_Title"]" data-testid="notion-audit-panel">
     <header class="tm-notion-audit__header">
@@ -112,13 +112,13 @@
                     </div>
                     <div class="tm-notion-audit__entry-main">
                         <strong>@GetUserDisplay(entry)</strong>
-                        <span>@entry.TargetType</span>
-                        <code>@ShortenTargetId(entry.TargetId)</code>
+                        <span>@entry.EntityRef.EntityType</span>
+                        <code>@ShortenTargetId(entry.EntityRef.EntityId)</code>
                     </div>
-                    @if (entry.Details.Count > 0)
+                    @if (entry.Metadata?.Count > 0)
                     {
                         <dl class="tm-notion-audit__details">
-                            @foreach (var detail in entry.Details.OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase))
+                            @foreach (var detail in entry.Metadata.OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase))
                             {
                                 <div>
                                     <dt>@detail.Key</dt>

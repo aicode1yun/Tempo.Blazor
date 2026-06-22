@@ -1,6 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
-@using Tempo.Blazor.NotionEditor.Interfaces
-@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.Components.NotionEditor.Models
 @using Tempo.Blazor.Components.NotionEditor.Services
 @using Tempo.Blazor.Components.Feedback
@@ -54,7 +53,7 @@
                             @Loc["TmNotionTextComment_Watch"]
                         </button>
                     }
-                    @if (_comment.IsResolved)
+                    @if (_comment.IsResolved())
                     {
                         <button class="tm-ntcp__resolve-btn tm-ntcp__resolve-btn--unresolve"
                                 type="button"
@@ -93,7 +92,7 @@
         </div>
 
         @* ── Resolved banner ──────────────────────────────────────────────── *@
-        @if (_comment?.IsResolved == true)
+        @if (_comment?.IsResolved() == true)
         {
             <div class="tm-ntcp__resolved-banner" role="status">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -120,7 +119,7 @@
             }
             else
             {
-                var threadTree = CommentThreadHelper.BuildTree(_comment.Thread);
+                var threadTree = CommentThreadHelper.BuildTree(_comment.Entries);
                 foreach (var node in FlattenTree(threadTree))
                 {
                     <div class="tm-ntcp__entry tm-ntcp__entry--level-@node.Level @(_replyingToEntryId == node.Entry.Id ? "tm-ntcp__entry--replying" : "")"
@@ -130,18 +129,18 @@
                             <div class="tm-ntcp__entry-indent"></div>
                             <div class="tm-ntcp__entry-content">
                                 <div class="tm-ntcp__avatar" aria-hidden="true">
-                                    @if (!string.IsNullOrEmpty(node.Entry.AuthorAvatarUrl))
+                                    @if (!string.IsNullOrEmpty(node.Entry.AuthorAvatarUrl()))
                                     {
-                                        <img class="tm-ntcp__avatar-img" src="@node.Entry.AuthorAvatarUrl" alt="" />
+                                        <img class="tm-ntcp__avatar-img" src="@node.Entry.AuthorAvatarUrl()" alt="" />
                                     }
                                     else
                                     {
-                                        <span class="tm-ntcp__avatar-fallback">@AvatarInitial(node.Entry.AuthorDisplayName)</span>
+                                        <span class="tm-ntcp__avatar-fallback">@AvatarInitial(node.Entry.AuthorDisplayName())</span>
                                     }
                                 </div>
                                 <div class="tm-ntcp__entry-body">
                                     <div class="tm-ntcp__entry-meta">
-                                        <span class="tm-ntcp__entry-author">@node.Entry.AuthorDisplayName</span>
+                                        <span class="tm-ntcp__entry-author">@node.Entry.AuthorDisplayName()</span>
                                         <time class="tm-ntcp__entry-time" datetime="@node.Entry.CreatedAt.ToString("O")">
                                             @FormatTime(node.Entry.CreatedAt)
                                         </time>
@@ -166,15 +165,15 @@
                                     }
                                     else
                                     {
-                                        <div class="tm-ntcp__entry-text">@((MarkupString)CommentHtmlFormatter.Format(node.Entry.HtmlContent))</div>
-                                        @if (node.Entry.CreatedAt != node.Entry.UpdatedAt)
+                                        <div class="tm-ntcp__entry-text">@((MarkupString)CommentHtmlFormatter.Format(node.Entry.HtmlContent()))</div>
+                                        @if (node.Entry.EditedAt.HasValue)
                                         {
                                             <span class="tm-ntcp__entry-edited">@Loc["TmNotionTextComment_Edited"]</span>
                                         }
                                         <TmCommentReactions Reactions="node.Entry.Reactions"
-                                                            EntryId="@node.Entry.Id.ToString()"
+                                                            EntryId="@node.Entry.Id"
                                                             CurrentUserId="@CurrentUserId"
-                                                            Provider="Context.CommentProvider!"
+                                                            Provider="@(Context.CommentProvider as ITmCommentReactionProvider)"
                                                             OnChanged="StateHasChanged" />
                                     }
 
@@ -255,7 +254,7 @@
         </div>
 
         @* ── Reply input ─────────────────────────────────────────────────── *@
-        @if ((_comment is null || !_comment.IsResolved) && _replyingToEntryId is null)
+        @if ((_comment is null || !_comment.IsResolved()) && _replyingToEntryId is null)
         {
             <div class="tm-ntcp__reply">
                 <textarea class="tm-ntcp__reply-input"

@@ -2,6 +2,7 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Blocks.Lists;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Interfaces;
@@ -120,7 +121,7 @@ public class TmNotionTodoActionItemTests : LocalizationTestBase
 
     private IRenderedComponent<CascadingValue<NotionEditorContext>> RenderTodo(
         TodoBlockContent content,
-        INotionMentionProvider? mentionProvider = null,
+        ITmPeopleProvider? mentionProvider = null,
         EventCallback<(string?, string?)> assigneeChanged = default)
     {
         var context = new NotionEditorContext { MentionProvider = mentionProvider };
@@ -133,17 +134,16 @@ public class TmNotionTodoActionItemTests : LocalizationTestBase
                 .Add(x => x.OnAssigneeChanged, assigneeChanged)));
     }
 
-    private sealed class FakeMentionProvider : INotionMentionProvider
+    private sealed class FakeMentionProvider : TmPeopleProviderBase
     {
-        public Task<IEnumerable<IMentionUser>> SearchUsersAsync(string query) =>
-            Task.FromResult<IEnumerable<IMentionUser>>([new FakeUser("alice", "Alice Johnson", "alice@example.test")]);
+        public override Task<IReadOnlyList<TmUser>> SearchAsync(TmPeopleQuery query, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<TmUser>>([new TmUser
+            {
+                Id = "alice",
+                UserName = "alice",
+                DisplayName = "Alice Johnson",
+                Email = "alice@example.test"
+            }]);
 
-        public Task<IEnumerable<INotionPage>> SearchPagesAsync(string query) =>
-            Task.FromResult<IEnumerable<INotionPage>>([]);
-    }
-
-    private sealed record FakeUser(string UserId, string DisplayName, string? Email) : IMentionUser
-    {
-        public string? AvatarUrl => null;
     }
 }

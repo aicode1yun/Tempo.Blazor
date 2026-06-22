@@ -447,10 +447,13 @@ Toast.Show("Saved!", ToastSeverity.Success);
 
 **TmAttachmentManager** — Full attachment CRUD
 ```razor
-<TmAttachmentManager Provider="attachmentProvider" EntityId="@entityId"
+<TmAttachmentManager AttachmentProvider="attachmentProvider"
+                     FileProvider="fileProvider"
+                     EntityId="@entityId"
                      OnDeleted="HandleDeleted" />
 ```
-- `Provider`: `IFileAttachmentProvider`
+- `AttachmentProvider`: `ITmAttachmentProvider`
+- `FileProvider`: `ITmFileProvider`
 
 **TmImageGallery** — Gallery with lightbox
 ```razor
@@ -479,7 +482,7 @@ Toast.Show("Saved!", ToastSeverity.Success);
                   Placeholder="Type something..." />
 ```
 - Toolbar: bold, italic, underline, strikethrough, lists, headings, links, images, tables, video, find/replace
-- `MentionProvider`: `IMentionDataProvider` — for @mention autocomplete
+- `MentionProvider`: `ITmPeopleProvider` — for @mention autocomplete
 
 **TmRichEditorSimple** — Simplified editor (bold, italic, lists only)
 
@@ -666,13 +669,19 @@ public interface IImageGalleryDataProvider
     Task DeleteImageAsync(string imageId, CancellationToken ct = default);
 }
 
-// File attachments with chunked upload
-public interface IFileAttachmentProvider
+// File attachments and asset storage
+public interface ITmAttachmentProvider
 {
-    Task<IReadOnlyList<IFileAttachment>> GetAttachmentsAsync(string entityId, CancellationToken ct = default);
-    Task<string> GetDownloadUrlAsync(string attachmentId, CancellationToken ct = default);
-    Task DeleteAttachmentAsync(string attachmentId, CancellationToken ct = default);
-    Task<string?> UploadChunkAsync(FileChunkData chunk, CancellationToken ct = default);
+    Task<IReadOnlyList<TmAttachment>> GetForEntityAsync(TmEntityRef entityRef, CancellationToken ct = default);
+    Task<TmAttachment> AddAsync(TmAttachment attachment, CancellationToken ct = default);
+    Task RemoveAsync(TmEntityRef entityRef, string attachmentId, CancellationToken ct = default);
+}
+
+public interface ITmFileProvider
+{
+    Task<TmFileUploadResult> UploadAsync(TmFileUploadRequest request, Stream content, CancellationToken ct = default);
+    Task<TmFileResolveResult> ResolveAsync(TmFileResolveRequest request, CancellationToken ct = default);
+    Task DeleteAsync(string assetId, CancellationToken ct = default);
 }
 
 // Saved table views
@@ -720,12 +729,12 @@ public interface ITag                    { string Id; string Name; string Color;
 public interface IStepItem               { string Id; string Label; string? Description; string? Icon; }
 public interface IUserInfo               { string Id; string DisplayName; string? AvatarSrc; string? Email; }
 public interface IGalleryImage           { string Id; string? Url; string? ThumbnailUrl; string? Title; string? Description; IEnumerable<string> Tags; DateTime? UploadedAt; string? UploadedBy; long? FileSizeBytes; }
-public interface IFileAttachment         { string Id; string FileName; string ContentType; long FileSizeBytes; DateTimeOffset UploadedAt; string? UploadedByName; bool CanDelete; bool IsImage; }
+public sealed class TmAttachment         { string Id; TmEntityRef EntityRef; string FileName; string? ContentType; long SizeBytes; string? Url; string? AssetId; TmUserRef? UploadedBy; DateTimeOffset UploadedAt; bool CanDelete; bool CanDownload; }
 public interface ITimelineEntry          { string Id; string EntryType; string AuthorName; string? AuthorAvatarUrl; DateTimeOffset CreatedAt; string? HtmlContent; string? PlainContent; bool IsInternal; IReadOnlyDictionary<string, string>? Metadata; }
-public interface ICommentEntry           { string Id; string AuthorName; string? AuthorAvatarUrl; DateTimeOffset CreatedAt; DateTimeOffset? UpdatedAt; string HtmlContent; bool CanEdit; bool CanDelete; }
-public interface INotificationItem       { string Id; string Title; string? Body; DateTimeOffset CreatedAt; bool IsRead; string? IconName; NotificationSeverity Severity; string? ActionUrl; }
-public interface IMentionUser            { string Id; string UserName; string DisplayName; string? AvatarUrl; }
-public interface IMentionDataProvider    { Task<IEnumerable<IMentionUser>> SearchUsersAsync(string query, CancellationToken ct = default); }
+public sealed class TmCommentEntry       { string Id; TmUserRef Author; DateTimeOffset CreatedAt; DateTimeOffset? EditedAt; string Body; TmCommentBodyFormat BodyFormat; bool CanEdit; bool CanDelete; }
+public sealed class TmNotification       { string Id; string RecipientUserId; TmUserRef? Actor; string Type; string Title; string? Body; TmNotificationSeverity Severity; DateTimeOffset CreatedAt; DateTimeOffset? ReadAt; string? ActionUrl; TmEntityRef? EntityRef; }
+public sealed class TmUser               { public string Id { get; set; } = ""; public string DisplayName { get; set; } = ""; public string? UserName { get; set; } public string? AvatarUrl { get; set; } }
+public interface ITmPeopleProvider       { Task<IReadOnlyList<TmUser>> SearchAsync(TmPeopleQuery query, CancellationToken ct = default); }
 public interface IMultiViewListItem      { string Id; string Title; string? SubTitle; string? AvatarUrl; IReadOnlyList<ITag>? Tags; string? StatusLabel; string? StatusColor; DateTimeOffset? Date; }
 public interface IImageUrlResolver       { Task<string> ResolveAsync(string imageId, CancellationToken ct = default); }
 public interface IIconProvider           { string? GetSvg(string iconName); bool HasIcon(string iconName); }
@@ -748,7 +757,7 @@ record SelectOption<TValue> : ISelectOption<TValue> { TValue Value; string Label
 record DropdownItem<TValue> : IDropdownItem<TValue> { /* extends SelectOption + Description, AvatarSrc, AvatarInitials */ }
 
 // Files
-record FileChunkData(string FileName, string ContentType, long TotalSize, int ChunkIndex, int TotalChunks, byte[] Data, string? EntityId = null) { bool IsLast; }
+class TmFileChunk { string FileName; string? ContentType; long TotalSizeBytes; int ChunkIndex; int TotalChunks; byte[] Data; TmEntityRef? EntityRef; bool IsLast; }
 
 // Dates
 record DateRangePreset(string Label, DateOnly Start, DateOnly End);

@@ -1,23 +1,39 @@
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Abstractions.Shared;
 
 namespace Tempo.Blazor.Services;
 
-/// <summary>Default no-op implementation of <see cref="INotificationService"/>. Does nothing.</summary>
-public class NoOpNotificationService : INotificationService
+/// <summary>Default no-op implementation of <see cref="ITmNotificationService"/>. Does nothing.</summary>
+public class NoOpNotificationService : ITmNotificationService
 {
-    public Task NotifyAsync(INotificationEvent notificationEvent, CancellationToken ct = default)
+    /// <inheritdoc />
+    public event Action? OnChanged
+    {
+        add { }
+        remove { }
+    }
+
+    /// <inheritdoc />
+    public TmNotificationServiceCapabilities Capabilities => TmNotificationServiceCapabilities.None;
+
+    TmNotificationServiceCapabilities ITmCapabilityProvider<TmNotificationServiceCapabilities>.Capabilities => Capabilities;
+
+    /// <inheritdoc />
+    public Task<TmNotification> PublishAsync(TmNotification notification, CancellationToken cancellationToken = default)
+        => Task.FromResult(notification);
+
+    /// <inheritdoc />
+    public Task MarkAsReadAsync(string notificationId, string recipientUserId, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
-    public Task MarkAsReadAsync(string notificationId, string userId, CancellationToken ct = default)
+    /// <inheritdoc />
+    public Task MarkAllAsReadAsync(string recipientUserId, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
-    public Task MarkAllAsReadAsync(string userId, CancellationToken ct = default)
-        => Task.CompletedTask;
+    /// <inheritdoc />
+    public Task<IReadOnlyList<TmNotification>> GetNotificationsAsync(TmNotificationQuery query, CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<TmNotification>>(Array.Empty<TmNotification>());
 
-    public Task<IReadOnlyList<INotification>> GetNotificationsAsync(string userId, int limit = 20, CancellationToken ct = default)
-        => Task.FromResult<IReadOnlyList<INotification>>(Array.Empty<INotification>());
-
-    public Task<int> GetUnreadCountAsync(string userId, CancellationToken ct = default)
+    /// <inheritdoc />
+    public Task<int> GetUnreadCountAsync(string recipientUserId, CancellationToken cancellationToken = default)
         => Task.FromResult(0);
 }

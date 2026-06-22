@@ -241,7 +241,7 @@ public class DocumentEditorPermissions
     public bool CanViewAudit { get; set; } = false;
 }
 
-/// <summary>Behavior used when an audit sink fails while recording an editor event.</summary>
+/// <summary>Behavior used when an activity provider fails while recording an editor event.</summary>
 public enum DocumentEditorAuditFailureMode
 {
     /// <summary>Audit failures are propagated to the triggering editor workflow.</summary>

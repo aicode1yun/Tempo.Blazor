@@ -1,4 +1,5 @@
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Abstractions.WorkItems;
 
 namespace Tempo.Blazor.Demo.Api.Data;
@@ -14,8 +15,8 @@ public class MockGanttStore
     private readonly List<TmWorkItem>             _tasks;
     private readonly List<GanttDependency>        _dependencies;
     private readonly List<GanttBaseline>          _baselines;
-    private readonly List<GanttCustomField>       _customFields;
-    private readonly List<GanttHistoryEntry>      _history;
+    private readonly List<TmCustomFieldDefinition> _customFields;
+    private readonly List<TmActivityEntry>        _history;
     private readonly List<GanttResourceCalendar>  _resourceCalendars;
     private readonly List<GanttReport>            _reports;
     private readonly WorkingSchedule              _workingSchedule;
@@ -41,12 +42,12 @@ public class MockGanttStore
         // â”€â”€ Custom Fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _customFields =
         [
-            new() { Id = "cf1", Name = "Sprint",       Type = GanttFieldType.List,      Options = ["Sprint 1", "Sprint 2", "Sprint 3", "Sprint 4"] },
-            new() { Id = "cf2", Name = "Story Points", Type = GanttFieldType.Number },
-            new() { Id = "cf3", Name = "Epic",         Type = GanttFieldType.Text },
-            new() { Id = "cf4", Name = "Billable",     Type = GanttFieldType.Checkbox },
-            new() { Id = "cf5", Name = "Team",         Type = GanttFieldType.Labels,    Options = ["Frontend", "Backend", "QA", "DevOps", "Design"] },
-            new() { Id = "cf6", Name = "Review URL",   Type = GanttFieldType.Text },
+            new() { Id = "cf1", Name = "Sprint",       Type = TmCustomFieldType.List,      Options = ["Sprint 1", "Sprint 2", "Sprint 3", "Sprint 4"], AppliesToEntityTypes = ["work-item"] },
+            new() { Id = "cf2", Name = "Story Points", Type = TmCustomFieldType.Number,    AppliesToEntityTypes = ["work-item"] },
+            new() { Id = "cf3", Name = "Epic",         Type = TmCustomFieldType.Text,      AppliesToEntityTypes = ["work-item"] },
+            new() { Id = "cf4", Name = "Billable",     Type = TmCustomFieldType.Checkbox,  AppliesToEntityTypes = ["work-item"] },
+            new() { Id = "cf5", Name = "Team",         Type = TmCustomFieldType.Labels,    Options = ["Frontend", "Backend", "QA", "DevOps", "Design"], AppliesToEntityTypes = ["work-item"] },
+            new() { Id = "cf6", Name = "Review URL",   Type = TmCustomFieldType.Text,      AppliesToEntityTypes = ["work-item"] },
         ];
 
         // â”€â”€ Tasks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -472,20 +473,20 @@ public class MockGanttStore
         // â”€â”€ History â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _history =
         [
-            new("h1",  today.AddDays(-21).AddHours(8),    "Alice Johnson", "Created",       "1",  null,         "Project Alpha"),
-            new("h2",  today.AddDays(-21).AddHours(8.5),  "Alice Johnson", "Created",       "3",  null,         "Project Charter"),
-            new("h3",  today.AddDays(-19).AddHours(10),   "Bob Smith",     "StatusChanged", "3",  "Open",       "InProgress"),
-            new("h4",  today.AddDays(-18).AddHours(16),   "Carol White",   "StatusChanged", "3",  "InProgress", "Done"),
-            new("h5",  today.AddDays(-18).AddHours(16),   "Alice Johnson", "ProgressSet",   "3",  "80",         "100"),
-            new("h6",  today.AddDays(-14).AddHours(9),    "Alice Johnson", "Created",       "6",  null,         "Design Phase"),
-            new("h7",  today.AddDays(-9).AddHours(11),    "Carol White",   "StatusChanged", "7",  "Open",       "InProgress"),
-            new("h8",  today.AddDays(-7).AddHours(14),    "Bob Smith",     "AssigneeAdded", "8",  null,         "Bob Smith"),
-            new("h9",  today.AddDays(-5).AddHours(9),     "Alice Johnson", "DeadlineSet",   "8",  null,         today.AddDays(2).ToString("yyyy-MM-dd")),
-            new("h10", today.AddDays(-3).AddHours(10),    "Carol White",   "StatusChanged", "7",  "InProgress", "Done"),
-            new("h11", today.AddDays(-3).AddHours(10),    "Carol White",   "ProgressSet",   "7",  "90",         "100"),
-            new("h12", today.AddDays(-2).AddHours(11),    "Alice Johnson", "CommentAdded",  "27", null,         "Blocked on vendor response. Escalating."),
-            new("h13", today.AddDays(-1).AddHours(16),    "Bob Smith",     "CommentAdded",  "27", null,         "Moving deadline out by 3 days, awaiting approval."),
-            new("h14", today.AddHours(9),                  "David Lee",     "StatusChanged", "28", "Open",       "InProgress"),
+            History("h1",  today.AddDays(-21).AddHours(8),    "Alice Johnson", "Created",       "1",  null,         "Project Alpha"),
+            History("h2",  today.AddDays(-21).AddHours(8.5),  "Alice Johnson", "Created",       "3",  null,         "Project Charter"),
+            History("h3",  today.AddDays(-19).AddHours(10),   "Bob Smith",     "StatusChanged", "3",  "Open",       "InProgress"),
+            History("h4",  today.AddDays(-18).AddHours(16),   "Carol White",   "StatusChanged", "3",  "InProgress", "Done"),
+            History("h5",  today.AddDays(-18).AddHours(16),   "Alice Johnson", "ProgressSet",   "3",  "80",         "100"),
+            History("h6",  today.AddDays(-14).AddHours(9),    "Alice Johnson", "Created",       "6",  null,         "Design Phase"),
+            History("h7",  today.AddDays(-9).AddHours(11),    "Carol White",   "StatusChanged", "7",  "Open",       "InProgress"),
+            History("h8",  today.AddDays(-7).AddHours(14),    "Bob Smith",     "AssigneeAdded", "8",  null,         "Bob Smith"),
+            History("h9",  today.AddDays(-5).AddHours(9),     "Alice Johnson", "DeadlineSet",   "8",  null,         today.AddDays(2).ToString("yyyy-MM-dd")),
+            History("h10", today.AddDays(-3).AddHours(10),    "Carol White",   "StatusChanged", "7",  "InProgress", "Done"),
+            History("h11", today.AddDays(-3).AddHours(10),    "Carol White",   "ProgressSet",   "7",  "90",         "100"),
+            History("h12", today.AddDays(-2).AddHours(11),    "Alice Johnson", "CommentAdded",  "27", null,         "Blocked on vendor response. Escalating."),
+            History("h13", today.AddDays(-1).AddHours(16),    "Bob Smith",     "CommentAdded",  "27", null,         "Moving deadline out by 3 days, awaiting approval."),
+            History("h14", today.AddHours(9),                  "David Lee",     "StatusChanged", "28", "Open",       "InProgress"),
         ];
 
         // â”€â”€ Resource Calendars â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -537,13 +538,35 @@ public class MockGanttStore
         };
     }
 
+    private static TmActivityEntry History(
+        string id,
+        DateTime timestamp,
+        string author,
+        string action,
+        string taskId,
+        string? before,
+        string? after)
+    {
+        var actorId = author.ToLowerInvariant().Replace(' ', '.');
+        return new TmActivityEntry
+        {
+            Id = id,
+            EntityRef = TmEntityRef.Create("work-item", taskId, sourceKey: "gantt-demo"),
+            Actor = new TmUserRef { Id = actorId, DisplayName = author },
+            Action = action,
+            Timestamp = new DateTimeOffset(DateTime.SpecifyKind(timestamp, DateTimeKind.Local)).ToUniversalTime(),
+            Before = before,
+            After = after
+        };
+    }
+
     // â”€â”€ Read accessors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public IReadOnlyList<TmWorkItem>             GetTasks()              => _tasks;
     public IReadOnlyList<GanttDependency>        GetDependencies()       => _dependencies;
     public IReadOnlyList<GanttBaseline>          GetBaselines()          => _baselines;
-    public IReadOnlyList<GanttCustomField>       GetCustomFields()       => _customFields;
-    public IReadOnlyList<GanttHistoryEntry>      GetHistory()            => _history;
+    public IReadOnlyList<TmCustomFieldDefinition> GetCustomFields()      => _customFields;
+    public IReadOnlyList<TmActivityEntry>        GetHistory()            => _history;
     public IReadOnlyList<GanttResourceCalendar>  GetResourceCalendars()  => _resourceCalendars;
     public IReadOnlyList<GanttReport>            GetReports()            => _reports;
     public WorkingSchedule                       GetWorkingSchedule()    => _workingSchedule;
@@ -610,7 +633,7 @@ public class MockGanttStore
             _resourceCalendars.Add(calendar);
     }
 
-    public GanttHistoryEntry AddHistory(GanttHistoryEntry entry)
+    public TmActivityEntry AddHistory(TmActivityEntry entry)
     {
         _history.Add(entry);
         return entry;
@@ -629,4 +652,3 @@ public class MockGanttStore
         _assignees.Clear();         _assignees.AddRange(fresh._assignees);
     }
 }
-

@@ -58,7 +58,7 @@
     },
     {
       "name": "MentionProvider",
-      "type": "IMentionDataProvider?",
+      "type": "ITmPeopleProvider?",
       "isRequired": false,
       "description": "Whether resolved threads are collapsed by default."
     },

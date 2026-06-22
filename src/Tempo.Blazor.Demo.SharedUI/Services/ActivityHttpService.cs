@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Demo.Shared;
 
 namespace Tempo.Blazor.Demo.Services;
@@ -14,18 +15,23 @@ public class ActivityHttpService
         => await _http.GetFromJsonAsync<List<TimelineEntryDto>>($"/api/activity/{entityId}/timeline", ct)
            ?? [];
 
-    public async Task<IReadOnlyList<CommentDto>> GetCommentsAsync(string entityId, CancellationToken ct = default)
-        => await _http.GetFromJsonAsync<List<CommentDto>>($"/api/activity/{entityId}/comments", ct)
-           ?? [];
+    public async Task<IReadOnlyList<TmCommentEntry>> GetCommentsAsync(string entityId, CancellationToken ct = default)
+    {
+        var comments = await _http.GetFromJsonAsync<List<CommentDto>>($"/api/activity/{entityId}/comments", ct)
+            ?? [];
 
-    public async Task<CommentDto?> AddCommentAsync(string entityId, string htmlContent, CancellationToken ct = default)
+        return comments.Select(comment => comment.ToCommentEntry()).ToList();
+    }
+
+    public async Task<TmCommentEntry?> AddCommentAsync(string entityId, string htmlContent, CancellationToken ct = default)
     {
         var response = await _http.PostAsJsonAsync(
             $"/api/activity/{entityId}/comments",
             new { htmlContent },
             ct);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<CommentDto>(ct);
+        var comment = await response.Content.ReadFromJsonAsync<CommentDto>(ct);
+        return comment?.ToCommentEntry();
     }
 
     public async Task UpdateCommentAsync(string entityId, string commentId, string htmlContent, CancellationToken ct = default)

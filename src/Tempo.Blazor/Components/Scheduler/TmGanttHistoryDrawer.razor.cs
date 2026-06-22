@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Components;
-using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 
 namespace Tempo.Blazor.Components.Scheduler;
 
 /// <summary>Side drawer showing the Gantt audit log with time-travel and rollback.</summary>
 public partial class TmGanttHistoryDrawer
 {
-    /// <summary>Audit history entries to display.</summary>
-    [Parameter] public IReadOnlyList<GanttHistoryEntry>? History { get; set; }
+    /// <summary>Activity history entries to display.</summary>
+    [Parameter] public IReadOnlyList<TmActivityEntry>? History { get; set; }
 
     /// <summary>Whether the drawer is visible.</summary>
     [Parameter] public bool IsOpen { get; set; }
@@ -16,7 +16,7 @@ public partial class TmGanttHistoryDrawer
     [Parameter] public EventCallback<DateTime> OnTimeTravelRequested { get; set; }
 
     /// <summary>Fires when the user requests rollback to a specific history entry.</summary>
-    [Parameter] public EventCallback<GanttHistoryEntry> OnRollbackRequested { get; set; }
+    [Parameter] public EventCallback<TmActivityEntry> OnRollbackRequested { get; set; }
 
     /// <summary>Fires when the drawer should close.</summary>
     [Parameter] public EventCallback OnClose { get; set; }
@@ -30,9 +30,9 @@ public partial class TmGanttHistoryDrawer
         _                   => changeType
     };
 
-    private async Task TimeTravelAsync(DateTime timestamp) =>
-        await OnTimeTravelRequested.InvokeAsync(timestamp);
+    private async Task TimeTravelAsync(DateTimeOffset timestamp) =>
+        await OnTimeTravelRequested.InvokeAsync(timestamp.UtcDateTime);
 
-    private async Task RollbackAsync(GanttHistoryEntry entry) =>
+    private async Task RollbackAsync(TmActivityEntry entry) =>
         await OnRollbackRequested.InvokeAsync(entry);
 }

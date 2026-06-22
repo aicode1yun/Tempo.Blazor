@@ -24,7 +24,7 @@
       "name": "SearchProvider",
       "type": "INotionSearchProvider?",
       "isRequired": false,
-      "description": "Enables the Ctrl+P full-screen page search dialog."
+      "description": "Enables the Ctrl+P full-screen page search dialog and [[ page link autocomplete."
     },
     {
       "name": "DatabaseProvider",
@@ -34,15 +34,21 @@
     },
     {
       "name": "CommentProvider",
-      "type": "INotionCommentProvider?",
+      "type": "ITmCommentProvider?",
       "isRequired": false,
-      "description": "Enables block-level and text-anchor comments with threads and reactions."
+      "description": "Enables block-level and text-anchor comments with threads and reactions through the shared comment provider."
     },
     {
       "name": "HistoryProvider",
-      "type": "INotionHistoryProvider?",
+      "type": "INotionVersionProvider?",
       "isRequired": false,
       "description": "Enables page version history with diff view and restore."
+    },
+    {
+      "name": "AuditProvider",
+      "type": "ITmActivityProvider?",
+      "isRequired": false,
+      "description": "Enables workspace activity/audit log queries through the shared activity provider."
     },
     {
       "name": "CollaborationProvider",
@@ -52,9 +58,9 @@
     },
     {
       "name": "MentionProvider",
-      "type": "INotionMentionProvider?",
+      "type": "ITmPeopleProvider?",
       "isRequired": false,
-      "description": "Enables @@ user mentions and [[ page link autocomplete."
+      "description": "Enables @@ user mentions through the shared people provider."
     },
     {
       "name": "BookmarkProvider",
@@ -64,7 +70,7 @@
     },
     {
       "name": "FileProvider",
-      "type": "INotionFileProvider?",
+      "type": "ITmFileProvider?",
       "isRequired": false,
       "description": "Enables file upload for image, PDF, audio, and file blocks via drag-and-drop or the Upload tab."
     },
@@ -185,7 +191,7 @@
       "parameter": "TokenProvider"
     },
     {
-      "name": "INotionFileProvider",
+      "name": "ITmFileProvider",
       "description": "Optional — enables file/image upload via drag-and-drop and the Upload tab.",
       "parameter": "FileProvider"
     },
@@ -195,13 +201,13 @@
       "parameter": "MediaLibraryProvider"
     },
     {
-      "name": "INotionMentionProvider",
-      "description": "Optional — enables @@ user mentions and [[ page link autocomplete.",
+      "name": "ITmPeopleProvider",
+      "description": "Optional — enables @@ user mention autocomplete through the shared people provider.",
       "parameter": "MentionProvider"
     },
     {
-      "name": "INotionCommentProvider",
-      "description": "Optional — enables block and text-anchor comments.",
+      "name": "ITmCommentProvider",
+      "description": "Optional — enables block and text-anchor comments through the shared comment provider.",
       "parameter": "CommentProvider"
     }
   ],

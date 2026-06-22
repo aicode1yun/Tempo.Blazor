@@ -429,17 +429,17 @@ public static class GanttHelper
     };
 
     /// <summary>
-    /// Filters an audit-log sequence to only entries whose <see cref="GanttHistoryEntry.ChangeType"/>
+    /// Filters an activity-log sequence to only entries whose <see cref="Tempo.Blazor.Abstractions.Shared.TmActivityEntry.Action"/>
     /// is in <paramref name="changeTypes"/>. Passing an empty collection returns all entries.
     /// </summary>
-    public static IReadOnlyList<GanttHistoryEntry> FilterHistory(
-        IEnumerable<GanttHistoryEntry> history,
+    public static IReadOnlyList<Tempo.Blazor.Abstractions.Shared.TmActivityEntry> FilterHistory(
+        IEnumerable<Tempo.Blazor.Abstractions.Shared.TmActivityEntry> history,
         IEnumerable<string> changeTypes)
     {
         var types = changeTypes.ToHashSet(StringComparer.OrdinalIgnoreCase);
         return types.Count == 0
             ? history.ToList()
-            : history.Where(e => types.Contains(e.ChangeType)).ToList();
+            : history.Where(e => types.Contains(e.Action)).ToList();
     }
 
     /// <summary>

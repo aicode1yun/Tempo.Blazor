@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 
 namespace Tempo.Blazor.Tests.Models;
 
@@ -113,5 +114,54 @@ public class DocumentCommentModelTests
 
         DocumentCommentGeometryHelper.ToPointStyle(point).Should().Be("left: 25%; top: 40%;");
         DocumentCommentGeometryHelper.ToAreaStyle(area).Should().Be("left: 12.5%; top: 40%; width: 20%; height: 10%;");
+    }
+
+    [Fact]
+    public void DocumentViewerCommentBridge_RoundTripsAreaThread()
+    {
+        var thread = new DocumentCommentThread
+        {
+            Id = "thread-1",
+            Anchor = DocumentCommentAnchor.Area(4, 0.2, 0.3, 0.4, 0.25),
+            Status = DocumentCommentThreadStatus.Resolved,
+            ResolvedByUserId = "resolver",
+            ResolvedByName = "Resolver",
+            ResolvedAt = new DateTimeOffset(2026, 6, 21, 12, 0, 0, TimeSpan.Zero),
+            Comments =
+            [
+                new DocumentComment
+                {
+                    Id = "comment-1",
+                    AuthorId = "alice",
+                    AuthorName = "Alice",
+                    Body = "Please check this area.",
+                    CreatedAt = new DateTimeOffset(2026, 6, 21, 11, 0, 0, TimeSpan.Zero),
+                    EditedAt = new DateTimeOffset(2026, 6, 21, 11, 30, 0, TimeSpan.Zero),
+                    Mentions = [new DocumentCommentMention { UserId = "bob", DisplayName = "Bob" }],
+                    Reactions = [new DocumentCommentReaction { Value = "like", UserIds = ["bob"] }],
+                    CanEdit = true,
+                    CanDelete = true
+                }
+            ]
+        };
+
+        var shared = DocumentViewerCommentBridge.ToTmCommentThread(thread, "doc-1");
+        var restored = DocumentViewerCommentBridge.ToDocumentCommentThread(shared);
+
+        shared.EntityRef.EntityType.Should().Be(DocumentViewerCommentBridge.EntityType);
+        shared.Anchor!.Kind.Should().Be(TmCommentAnchorKind.PageArea);
+        shared.Anchor.PageNumber.Should().Be(4);
+        shared.Anchor.Width.Should().BeApproximately(0.4, 0.001);
+        shared.Status.Should().Be(TmCommentThreadStatus.Resolved);
+        shared.ResolvedBy!.Id.Should().Be("resolver");
+        shared.UpdatedAt.Should().Be(thread.ResolvedAt);
+        shared.Entries.Single().BodyFormat.Should().Be(TmCommentBodyFormat.PlainText);
+        shared.Entries.Single().Mentions.Single().User.Id.Should().Be("bob");
+        shared.Entries.Single().Reactions.Single().Value.Should().Be("like");
+        restored.Anchor.Kind.Should().Be(DocumentCommentAnchorKind.Area);
+        restored.Anchor.PageNumber.Should().Be(4);
+        restored.Status.Should().Be(DocumentCommentThreadStatus.Resolved);
+        restored.Comments.Single().CanEdit.Should().BeTrue();
+        restored.Comments.Single().Reactions.Single().UserIds.Should().ContainSingle("bob");
     }
 }

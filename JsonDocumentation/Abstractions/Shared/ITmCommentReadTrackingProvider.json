@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Optional comment provider contract for read tracking.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmCommentReadTrackingProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITmCommentReadTrackingProvider"
+}

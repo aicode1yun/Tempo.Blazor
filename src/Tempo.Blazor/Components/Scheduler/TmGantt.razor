@@ -1,5 +1,6 @@
 @namespace Tempo.Blazor.Components.Scheduler
 @using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.Models
 @using Tempo.Blazor.Components.DataDisplay
 @inject ITmLocalizer Loc
@@ -321,9 +322,9 @@
                 @foreach (var entry in History.OrderByDescending(h => h.Timestamp).Take(50))
                 {
                     <div class="tm-gantt__sidebar-history-row">
-                        <span class="tm-gantt__sidebar-history-action">@entry.ChangeType</span>
-                        <span class="tm-gantt__sidebar-history-task">@(Data.FirstOrDefault(t => t.Id == entry.TaskId)?.Title ?? entry.TaskId)</span>
-                        <span class="tm-gantt__sidebar-history-date">@entry.Timestamp.ToString("dd.MM HH:mm")</span>
+                        <span class="tm-gantt__sidebar-history-action">@entry.Action</span>
+                        <span class="tm-gantt__sidebar-history-task">@(Data.FirstOrDefault(t => t.Id == entry.EntityRef.EntityId)?.Title ?? entry.EntityRef.EntityId)</span>
+                        <span class="tm-gantt__sidebar-history-date">@entry.Timestamp.ToLocalTime().ToString("dd.MM HH:mm")</span>
                     </div>
                 }
             </div>
@@ -1001,6 +1002,7 @@
                           OnTaskUpdated="OnTaskUpdated"
                           OnDependencyAdded="OnDependencyAdded"
                           OnDependencyRemoved="OnDependencyRemoved"
+                          OnCommentAdded="HandleTaskCommentAddedAsync"
                           OnClose="() => ShowTaskPanel = false" />
     }
 

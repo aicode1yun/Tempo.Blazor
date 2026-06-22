@@ -2,6 +2,7 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Scheduler;
 using Tempo.Blazor.Tests.Localization;
 using Xunit;
@@ -162,9 +163,9 @@ public class TmGanttPhase5Tests : LocalizationTestBase
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void GanttNotificationSettings_Has_Required_Properties()
+    public void TmNotificationPreferences_Has_Required_Properties()
     {
-        var settings = new GanttNotificationSettings
+        var settings = new TmNotificationPreferences
         {
             EmailOnAssign  = true,
             EmailOnMention = false,
@@ -186,7 +187,7 @@ public class TmGanttPhase5Tests : LocalizationTestBase
         var tasks = new List<TmWorkItem> { MakeTask("1") };
         var cut = RenderComponent<TmGantt>(p => p
             .Add(x => x.Items, tasks)
-            .Add(x => x.NotificationSettings, new GanttNotificationSettings()));
+            .Add(x => x.NotificationSettings, new TmNotificationPreferences()));
 
         cut.Should().NotBeNull();
     }
@@ -868,7 +869,7 @@ public class TmGanttPhase5Tests : LocalizationTestBase
         var tasks = new List<TmWorkItem> { MakeTask("1") };
         var cut = RenderComponent<TmGantt>(p => p
             .Add(x => x.Items, tasks)
-            .Add(x => x.NotificationSettings, new GanttNotificationSettings
+            .Add(x => x.NotificationSettings, new TmNotificationPreferences
             {
                 EmailOnAssign  = true,
                 PushOnDeadline = true

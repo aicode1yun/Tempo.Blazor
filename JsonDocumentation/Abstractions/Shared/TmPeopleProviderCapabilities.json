@@ -1,0 +1,37 @@
+{
+  "kind": "Enum",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Operations supported by an ITmPeopleProvider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmPeopleProviderCapabilities.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "None",
+      "kind": "Field",
+      "description": "No optional operations are supported."
+    },
+    {
+      "name": "Search",
+      "kind": "Field",
+      "description": "Provider supports free-text people search."
+    },
+    {
+      "name": "Resolve",
+      "kind": "Field",
+      "description": "Provider supports resolving users by id."
+    },
+    {
+      "name": "Read",
+      "kind": "Field",
+      "description": "Provider supports search and resolve operations."
+    },
+    {
+      "name": "All",
+      "kind": "Field",
+      "description": "Provider supports all current people operations."
+    }
+  ],
+  "itemName": "TmPeopleProviderCapabilities"
+}

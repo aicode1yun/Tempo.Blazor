@@ -62,7 +62,7 @@
     {
       "name": "AuditProvider",
       "kind": "Property",
-      "type": "INotionAuditProvider?"
+      "type": "ITmActivityProvider?"
     },
     {
       "name": "BlockCreated",
@@ -99,7 +99,7 @@
     {
       "name": "CommentProvider",
       "kind": "Property",
-      "type": "INotionCommentProvider?"
+      "type": "ITmCommentProvider?"
     },
     {
       "name": "CurrentPageId",
@@ -152,12 +152,12 @@
     {
       "name": "FileProvider",
       "kind": "Property",
-      "type": "INotionFileProvider?"
+      "type": "ITmFileProvider?"
     },
     {
       "name": "HistoryProvider",
       "kind": "Property",
-      "type": "INotionHistoryProvider?"
+      "type": "INotionVersionProvider?"
     },
     {
       "name": "ImportExportProvider",
@@ -172,7 +172,7 @@
     {
       "name": "MentionProvider",
       "kind": "Property",
-      "type": "INotionMentionProvider?"
+      "type": "ITmPeopleProvider?"
     },
     {
       "name": "NavigateTo",

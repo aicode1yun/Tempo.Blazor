@@ -2,7 +2,7 @@
   "kind": "Interface",
   "category": "Interfaces",
   "namespace": "Tempo.Blazor.Interfaces",
-  "description": "Represents a tag in TmTagPicker and TmTagEditorDialog.",
+  "description": "Minimal tag contract consumed by TmTagPicker. Shared TmTag and TmTagRef implement this interface.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ITag.cs",
   "documentationStatus": "generated",

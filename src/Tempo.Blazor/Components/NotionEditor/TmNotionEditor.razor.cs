@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.Components.Notifications;
@@ -21,6 +23,8 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
+    [Inject] private IServiceProvider ServiceProvider { get; set; } = default!;
+
     // ── Required parameters ──────────────────────────────────────────────────
 
     /// <summary>Core page data provider (required).</summary>
@@ -35,10 +39,10 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
 
     [Parameter] public INotionSearchProvider?        SearchProvider        { get; set; }
     [Parameter] public INotionDatabaseProvider?      DatabaseProvider      { get; set; }
-    [Parameter] public INotionCommentProvider?       CommentProvider       { get; set; }
-    [Parameter] public INotionHistoryProvider?       HistoryProvider       { get; set; }
+    [Parameter] public ITmCommentProvider?           CommentProvider       { get; set; }
+    [Parameter] public INotionVersionProvider?       HistoryProvider       { get; set; }
     [Parameter] public INotionCollaborationProvider? CollaborationProvider { get; set; }
-    [Parameter] public INotionMentionProvider?       MentionProvider       { get; set; }
+    [Parameter] public ITmPeopleProvider?            MentionProvider       { get; set; }
     [Parameter] public INotionAIProvider?            AIProvider            { get; set; }
     [Parameter] public ITmWorkItemProvider?          WorkItemSource        { get; set; }
     [Parameter] public TmWorkItemProviderRegistry?   WorkItemProviders     { get; set; }
@@ -50,11 +54,12 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     [Parameter] public INotionPagePropertiesProvider? PagePropertiesProvider { get; set; }
     [Parameter] public INotionTemplateProvider?      TemplateProvider       { get; set; }
     [Parameter] public ISmartLinkProvider?           SmartLinkProvider      { get; set; }
+    [Parameter] public ITmAuthorizationProvider?      AuthorizationProvider  { get; set; }
     [Parameter] public INotionPermissionProvider?    PermissionProvider     { get; set; }
     [Parameter] public INotionPublicShareProvider?   PublicShareProvider    { get; set; }
-    [Parameter] public INotionAuditProvider?         AuditProvider          { get; set; }
+    [Parameter] public ITmActivityProvider?          AuditProvider          { get; set; }
     [Parameter] public INotionBookmarkProvider?      BookmarkProvider       { get; set; }
-    [Parameter] public INotionFileProvider?          FileProvider           { get; set; }
+    [Parameter] public ITmFileProvider?              FileProvider           { get; set; }
     [Parameter] public INotionImportExportProvider?  ImportExportProvider   { get; set; }
     [Parameter] public IDiagramDocumentProvider?     DiagramDocumentProvider  { get; set; }
     [Parameter] public IWireframeDocumentProvider?   WireframeDocumentProvider   { get; set; }
@@ -82,8 +87,11 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     /// <summary>Prevents all editing interactions.</summary>
     [Parameter] public bool ReadOnly { get; set; }
 
-    /// <summary>Identifier of the current user for collaboration, reactions, and user-scoped actions.</summary>
-    [Parameter] public string CurrentUserId { get; set; } = "demo";
+    /// <summary>
+    /// Explicit current user identifier for collaboration, reactions, and user-scoped actions.
+    /// When blank, the editor resolves <see cref="ITmCurrentUser"/> from DI and falls back to <c>demo</c>.
+    /// </summary>
+    [Parameter] public string CurrentUserId { get; set; } = string.Empty;
 
     /// <summary>Group identifiers used for permission checks for the current user.</summary>
     [Parameter] public IReadOnlyList<string> CurrentUserGroupIds { get; set; } = [];
@@ -133,6 +141,7 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     private NotionEditorViewMode       _viewMode = NotionEditorViewMode.Normal;
     private string?                    _scrollSpyBlockId;
     private PageEffectivePermissionDto? _effectivePermission;
+    private TmCurrentUserState?        _resolvedCurrentUser;
 
     // ── Computed ─────────────────────────────────────────────────────────────
 
@@ -149,6 +158,31 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     private bool IsEffectivelyReadOnly => ReadOnly || IsReadOnlyViewMode || _currentPage?.IsLocked == true || _effectivePermission?.Permission is PageRestrictionPermission.View or PageRestrictionPermission.Comment;
     private string ViewModeName => _viewMode.ToString();
     private string CurrentSpaceId => _selectedSpaceId ?? _currentPage?.SpaceId ?? "team";
+    private string EffectiveCurrentUserId
+    {
+        get
+        {
+            if (_resolvedCurrentUser is not null)
+                return string.IsNullOrWhiteSpace(_resolvedCurrentUser.User?.Id) ? "anonymous" : _resolvedCurrentUser.User.Id;
+
+            return string.IsNullOrWhiteSpace(CurrentUserId) ? "demo" : CurrentUserId.Trim();
+        }
+    }
+
+    private TmUserRef? EffectiveCurrentUser
+    {
+        get
+        {
+            if (_resolvedCurrentUser is not null)
+                return _resolvedCurrentUser.User;
+
+            var userId = string.IsNullOrWhiteSpace(CurrentUserId) ? "demo" : CurrentUserId.Trim();
+            return new TmUserRef { Id = userId, DisplayName = userId };
+        }
+    }
+
+    private IReadOnlyList<string> EffectiveCurrentUserGroupIds
+        => _resolvedCurrentUser is not null ? _resolvedCurrentUser.GroupIds : CurrentUserGroupIds;
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -160,8 +194,9 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
         _context = BuildContext();
     }
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
+        await ResolveCurrentUserAsync();
         _context = BuildContext();
     }
 
@@ -207,7 +242,7 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
             {
                 try
                 {
-                    await AnalyticsProvider.RecordViewAsync(page.Id, CurrentUserId);
+                    await AnalyticsProvider.RecordViewAsync(page.Id, EffectiveCurrentUserId);
                 }
                 catch
                 {
@@ -215,12 +250,10 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
                 }
             }
 
-            _effectivePermission = PermissionProvider is null
-                ? null
-                : await PermissionProvider.GetEffectivePermissionAsync(page.Id, CurrentUserId, CurrentUserGroupIds);
+            _effectivePermission = await GetEffectivePermissionAsync(page.Id);
 
             if (_collabSync is not null && CollaborationProvider is not null)
-                await _collabSync.JoinAsync(CollaborationProvider, pageId, CurrentUserId);
+                await _collabSync.JoinAsync(CollaborationProvider, pageId, EffectiveCurrentUserId);
 
             _context = BuildContext();
             await OnPageChanged.InvokeAsync(page);
@@ -497,15 +530,91 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
 
     private async Task OnPagePermissionsChangedAsync()
     {
-        if (_currentPage is null || PermissionProvider is null)
+        if (_currentPage is null)
             return;
 
-        _effectivePermission = await PermissionProvider.GetEffectivePermissionAsync(
-            _currentPage.Id,
-            CurrentUserId,
-            CurrentUserGroupIds);
+        _effectivePermission = await GetEffectivePermissionAsync(_currentPage.Id);
 
         StateHasChanged();
+    }
+
+    private async Task ResolveCurrentUserAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(CurrentUserId))
+        {
+            _resolvedCurrentUser = null;
+            return;
+        }
+
+        var currentUserProvider = ServiceProvider.GetService<ITmCurrentUser>();
+        if (currentUserProvider is null)
+        {
+            _resolvedCurrentUser = null;
+            return;
+        }
+
+        try
+        {
+            _resolvedCurrentUser = await currentUserProvider.GetCurrentUserAsync();
+        }
+        catch
+        {
+            _resolvedCurrentUser = null;
+        }
+    }
+
+    private async Task<PageEffectivePermissionDto?> GetEffectivePermissionAsync(Guid pageId)
+    {
+        if (PermissionProvider is not null)
+        {
+            return await PermissionProvider.GetEffectivePermissionAsync(
+                pageId,
+                EffectiveCurrentUserId,
+                EffectiveCurrentUserGroupIds);
+        }
+
+        if (AuthorizationProvider is null)
+            return null;
+
+        return await GetEffectivePermissionFromAuthorizationAsync(pageId);
+    }
+
+    private async Task<PageEffectivePermissionDto> GetEffectivePermissionFromAuthorizationAsync(Guid pageId)
+    {
+        var permission = PageRestrictionPermission.None;
+        if (await IsAuthorizedForPageAsync(pageId, TmAuthorizationActions.Edit))
+            permission = PageRestrictionPermission.Edit;
+        else if (await IsAuthorizedForPageAsync(pageId, TmAuthorizationActions.Comment))
+            permission = PageRestrictionPermission.Comment;
+        else if (await IsAuthorizedForPageAsync(pageId, TmAuthorizationActions.View))
+            permission = PageRestrictionPermission.View;
+
+        return new PageEffectivePermissionDto
+        {
+            PageId = pageId,
+            UserId = EffectiveCurrentUserId,
+            Permission = permission,
+            Mode = PageRestrictionMode.Open
+        };
+    }
+
+    private async Task<bool> IsAuthorizedForPageAsync(Guid pageId, string action)
+    {
+        if (AuthorizationProvider is null)
+            return false;
+
+        var request = TmAuthorizationRequest.Create(
+            EffectiveCurrentUser,
+            action,
+            TmEntityRef.Create("notion-page", pageId.ToString("D")),
+            EffectiveCurrentUserGroupIds,
+            new Dictionary<string, object>
+            {
+                ["component"] = nameof(TmNotionEditor)
+            });
+
+        var result = await AuthorizationProvider.AuthorizeAsync(request);
+        return result.Allowed;
     }
 
     private async Task OnTrashRequestedAsync()
@@ -562,7 +671,7 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
 
     private NotionEditorContext BuildContext() => new()
     {
-        CurrentUserId        = CurrentUserId,
+        CurrentUserId        = EffectiveCurrentUserId,
         CurrentPageId        = _currentPageId,
         DataProvider          = DataProvider,
         BlockProvider         = BlockProvider,
@@ -584,10 +693,11 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
         PagePropertiesProvider = PagePropertiesProvider,
         TemplateProvider       = TemplateProvider,
         SmartLinkProvider      = SmartLinkProvider,
+        AuthorizationProvider  = AuthorizationProvider,
         PermissionProvider     = PermissionProvider,
         PublicShareProvider    = PublicShareProvider,
         AuditProvider          = AuditProvider,
-        CurrentUserGroupIds    = CurrentUserGroupIds,
+        CurrentUserGroupIds    = EffectiveCurrentUserGroupIds,
         BookmarkProvider          = BookmarkProvider,
         FileProvider              = FileProvider,
         ImportExportProvider      = ImportExportProvider,

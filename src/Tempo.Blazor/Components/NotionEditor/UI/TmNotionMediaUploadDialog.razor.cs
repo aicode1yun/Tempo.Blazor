@@ -171,9 +171,8 @@ public partial class TmNotionMediaUploadDialog : ComponentBase, IAsyncDisposable
         try
         {
             await using var stream = file.OpenReadStream(maxAllowedSize: NotionMediaUploadValidation.MaxFileSizeBytes);
-            var fileId = await Context.FileProvider.UploadFileAsync(stream, file.Name, file.ContentType);
-            var url    = await Context.FileProvider.GetFileUrlAsync(fileId);
-            await OnConfirmed.InvokeAsync((fileId, url));
+            var media = await Context.FileProvider.UploadNotionFileAsync(stream, file.Name, file.ContentType);
+            await OnConfirmed.InvokeAsync((media.AssetId, media.Url));
         }
         catch
         {

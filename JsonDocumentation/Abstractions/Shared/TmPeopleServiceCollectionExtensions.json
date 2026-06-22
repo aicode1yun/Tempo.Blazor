@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Dependency injection helpers for shared people providers.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmPeopleServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AddTmPeople",
+      "kind": "Method",
+      "type": "IServiceCollection",
+      "description": "Registers shared people services. Safe to call multiple times."
+    },
+    {
+      "name": "AddTmPeopleProvider",
+      "kind": "Method",
+      "type": "IServiceCollection",
+      "description": "Registers an ITmPeopleProvider implementation or instance."
+    },
+    {
+      "name": "AddTmCurrentUser",
+      "kind": "Method",
+      "type": "IServiceCollection",
+      "description": "Registers an ITmCurrentUser implementation if none is registered yet."
+    }
+  ],
+  "itemName": "TmPeopleServiceCollectionExtensions"
+}

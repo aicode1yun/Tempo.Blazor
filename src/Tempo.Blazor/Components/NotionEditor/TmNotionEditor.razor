@@ -118,7 +118,7 @@
                 {
                     <TmNotionWatchButton Provider="_context.WatchProvider"
                                          PageId="@_currentPage.Id.ToString("D")"
-                                         UserId="@CurrentUserId" />
+                                         UserId="@EffectiveCurrentUserId" />
                 }
 
                 @if (_context.AuditProvider is not null && !IsReadOnlyViewMode)
@@ -221,7 +221,7 @@
                 }
 
                 @* ── Notification bell ─────────────────────────────────── *@
-                <TmNotionNotificationCenter CurrentUserId="@CurrentUserId"
+                <TmNotionNotificationCenter CurrentUserId="@EffectiveCurrentUserId"
                                             OnDropdownOpenChanged="OnNotificationDropdownOpenChanged" />
 
                 @if (IsPermissionRestricted)
@@ -254,7 +254,7 @@
                 <aside class="tm-notion-tasks-panel"
                        aria-label="@Loc["Notion_Tasks_Title"]">
                     <TmNotionMyTasks WorkItemSource="_context.WorkItemSource"
-                                     CurrentUserId="@CurrentUserId"
+                                     CurrentUserId="@EffectiveCurrentUserId"
                                      OnClosed="CloseTasksPanel"
                                      OnNavigateToBlock="NavigateToTaskBlockAsync" />
                 </aside>
@@ -265,7 +265,7 @@
                 <aside class="tm-notion-shell-panel tm-notion-shell-panel--wide">
                     <TmNotionBlogList BlogProvider="_context.BlogProvider"
                                       SpaceId="@CurrentSpaceId"
-                                      CurrentUserId="@CurrentUserId"
+                                      CurrentUserId="@EffectiveCurrentUserId"
                                       OnClosed="CloseBlogPanel" />
                 </aside>
             }
@@ -283,7 +283,7 @@
             @if (_context.AuditProvider is not null && _auditPanelOpen)
             {
                 <aside class="tm-notion-shell-panel tm-notion-shell-panel--wide">
-                    <TmNotionAuditLogPanel AuditProvider="_context.AuditProvider"
+                    <TmNotionAuditLogPanel ActivityProvider="_context.AuditProvider"
                                            Class="tm-notion-audit-panel tm-notion-shell-panel__content" />
                     <button type="button"
                             class="tm-notion-shell-panel__close"

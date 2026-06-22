@@ -90,9 +90,8 @@ public partial class TmNotionPdfBlock : ComponentBase, IAsyncDisposable
         var bytes  = Convert.FromBase64String(base64);
         using var stream = new MemoryStream(bytes);
 
-        var fileId = await Context.FileProvider.UploadFileAsync(stream, fileName, mimeType);
-        var url    = await Context.FileProvider.GetFileUrlAsync(fileId);
-        await OnMediaSet.InvokeAsync((fileId, url));
+        var media = await Context.FileProvider.UploadNotionFileAsync(stream, fileName, mimeType);
+        await OnMediaSet.InvokeAsync((media.AssetId, media.Url));
         await InvokeAsync(StateHasChanged);
     }
 

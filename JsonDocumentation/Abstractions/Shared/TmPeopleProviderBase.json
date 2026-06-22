@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Convenience base class for read-only people providers.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmPeopleProviderBase.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Capabilities",
+      "kind": "Property",
+      "type": "TmPeopleProviderCapabilities",
+      "description": "Supported people provider operations."
+    },
+    {
+      "name": "SearchAsync",
+      "kind": "Method",
+      "type": "Task<IReadOnlyList<TmUser>>",
+      "description": "Searches users matching the query. Derived providers implement this method."
+    },
+    {
+      "name": "GetByIdAsync",
+      "kind": "Method",
+      "type": "Task<TmUser?>",
+      "description": "Resolves a single user through GetByIdsAsync."
+    },
+    {
+      "name": "GetByIdsAsync",
+      "kind": "Method",
+      "type": "Task<IReadOnlyList<TmUser>>",
+      "description": "Resolves distinct ids through SearchAsync and preserves the requested order."
+    }
+  ],
+  "itemName": "TmPeopleProviderBase"
+}

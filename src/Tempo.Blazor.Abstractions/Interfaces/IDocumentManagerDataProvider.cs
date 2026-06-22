@@ -1,5 +1,5 @@
 using Tempo.Blazor.Abstractions.Models;
-using Tempo.Blazor.Models;
+using Tempo.Blazor.Abstractions.Shared;
 
 namespace Tempo.Blazor.Abstractions.Interfaces;
 
@@ -76,17 +76,17 @@ public interface IDocumentManagerDataProvider<TMetadata> where TMetadata : class
 
     /// <summary>
     /// Uploads a single 256 KB chunk. Returns an upload session ID (null on first chunk
-    /// response if the provider uses an implicit session). <see cref="FileChunkData.IsLast"/>
+    /// response if the provider uses an implicit session). <see cref="TmFileChunk.IsLast"/>
     /// signals the final chunk.
     /// </summary>
-    Task<string?> UploadChunkAsync(FileChunkData chunk, CancellationToken cancellationToken = default);
+    Task<TmFileUploadResult> UploadChunkAsync(TmFileChunk chunk, CancellationToken cancellationToken = default);
 
     /// <summary>Retrieves all attachments for a specific item.</summary>
-    Task<IReadOnlyList<FileAttachment>> GetAttachmentsAsync(
+    Task<IReadOnlyList<TmAttachment>> GetAttachmentsAsync(
         string itemId, CancellationToken cancellationToken = default);
 
     /// <summary>Adds new file attachments to an existing item.</summary>
-    Task<IReadOnlyList<FileAttachment>> AddAttachmentsAsync(
+    Task<IReadOnlyList<TmAttachment>> AddAttachmentsAsync(
         string itemId, IReadOnlyList<FileUploadInfo> files, CancellationToken cancellationToken = default);
 
     /// <summary>Removes a single attachment from an item.</summary>

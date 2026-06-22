@@ -449,7 +449,7 @@ public partial class TmNotionPageSettingsMenu : ComponentBase, IAsyncDisposable
         if (Context.CommentProvider is null) return;
         try
         {
-            await Context.CommentProvider.MarkAllThreadsAsReadAsync(Page.Id.ToString("D"), "demo");
+            await Context.CommentProvider.MarkAllPageThreadsAsReadAsync(Page.Id.ToString("D"), "demo");
             await ShowToastSuccessAsync(Loc["TmNotionPageSettingsMenu_MarkAllAsReadSuccess"]);
             CloseMenu();
         }

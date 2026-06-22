@@ -1,6 +1,6 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.DocumentEditor.Models
-@using Tempo.Blazor.Interfaces
 
 @if (Comment is not null)
 {
@@ -168,7 +168,7 @@
     [Parameter] public bool CollapseResolved { get; set; } = true;
 
     /// <summary>Optional mention provider reused by the reply composer.</summary>
-    [Parameter] public IMentionDataProvider? MentionProvider { get; set; }
+    [Parameter] public ITmPeopleProvider? MentionProvider { get; set; }
 
     /// <summary>Raised when the thread is selected.</summary>
     [Parameter] public EventCallback<string> OnSelect { get; set; }

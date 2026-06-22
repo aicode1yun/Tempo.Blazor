@@ -19,7 +19,7 @@
         },
         {
           "name": "mentionProvider",
-          "type": "INotionMentionProvider?"
+          "type": "ITmPeopleProvider?"
         }
       ]
     }

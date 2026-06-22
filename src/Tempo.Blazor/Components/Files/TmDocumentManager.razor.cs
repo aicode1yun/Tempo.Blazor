@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Abstractions.Interfaces;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 
 namespace Tempo.Blazor.Components.Files;
 
@@ -51,7 +52,7 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
     private bool _showAttachmentUploadForm;
     private DocumentManagerItem<TMetadata>? _attachmentTargetItem;
     private List<FileUploadInfo> _attachmentUploadFiles = [];
-    private List<FileAttachment> _editAttachments = [];
+    private List<TmAttachment> _editAttachments = [];
     private bool _showAttachmentDeleteDialog;
     private string? _attachmentIdToDelete;
 
@@ -613,7 +614,7 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         if (DataProvider is null || _selectedItems.Count != 1) return;
         var stream = await DataProvider.DownloadAttachmentAsync(_selectedItems[0].Id, attachmentId);
         var attachment = _selectedItems[0].Attachments.FirstOrDefault(a => a.Id == attachmentId);
-        var fileName = attachment?.Name ?? "download";
+        var fileName = attachment?.FileName ?? "download";
         using var streamRef = new DotNetStreamReference(stream);
         await JSRuntime.InvokeVoidAsync("TempoFileManager.downloadFileFromStream", fileName, streamRef);
     }
@@ -767,7 +768,7 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         if (file is null) return;
 
         var stream = await DataProvider.DownloadAsync(file.Id);
-        var fileName = file.Attachments.FirstOrDefault()?.Name ?? file.Name;
+        var fileName = file.Attachments.FirstOrDefault()?.FileName ?? file.Name;
         using var streamRef = new DotNetStreamReference(stream);
         await JSRuntime.InvokeVoidAsync("TempoFileManager.downloadFileFromStream", fileName, streamRef);
     }

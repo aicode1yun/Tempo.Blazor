@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -19,7 +20,7 @@ public partial class TmNotionPublicPage : ComponentBase
     [Parameter, EditorRequired] public INotionBlockProvider BlockProvider { get; set; } = default!;
 
     /// <summary>Optional comments provider enabled only when the public share allows comments.</summary>
-    [Parameter] public INotionCommentProvider? CommentProvider { get; set; }
+    [Parameter] public ITmCommentProvider? CommentProvider { get; set; }
 
     /// <summary>Additional CSS class on the public page shell.</summary>
     [Parameter] public string? Class { get; set; }

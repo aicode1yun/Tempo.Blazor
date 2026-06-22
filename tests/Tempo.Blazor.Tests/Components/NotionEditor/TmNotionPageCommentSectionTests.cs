@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.Components.NotionEditor.UI;
 using Tempo.Blazor.NotionEditor.Helpers;
 using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
 using Tempo.Blazor.Services;
 using Tempo.Blazor.Tests.Localization;
 
@@ -20,7 +20,7 @@ public sealed class TmNotionPageCommentSectionTests : LocalizationTestBase
 
     public TmNotionPageCommentSectionTests()
     {
-        Services.AddSingleton<INotificationService, NoOpNotificationService>();
+        Services.AddSingleton<ITmNotificationService, NoOpNotificationService>();
         Services.AddScoped<CommentNotificationOrchestrator>();
         UseCustomLocalization(new Dictionary<string, string>
         {
@@ -109,16 +109,16 @@ public sealed class TmNotionPageCommentSectionTests : LocalizationTestBase
 
         cut.WaitForAssertion(() =>
             cut.Markup.Should().Contain("Thread reply"));
-        provider.PageComments[0].Thread.Should().HaveCount(2);
+        provider.PageComments[0].Entries.Should().HaveCount(2);
 
         await cut.Find(".tm-comment-reaction--add").ClickAsync(new MouseEventArgs());
         await cut.Find(".tm-comment-reaction-picker__item").ClickAsync(new MouseEventArgs());
-        provider.PageComments[0].Thread[0].Reactions.Should().ContainSingle(reaction => reaction.Emoji == "👍");
+        provider.PageComments[0].Entries[0].Reactions.Should().ContainSingle(reaction => reaction.Value == "👍");
 
         await cut.Find(".tm-npcp__thread-action").ClickAsync(new MouseEventArgs());
         cut.WaitForAssertion(() =>
             cut.Find(".tm-npcp__thread").ClassList.Should().Contain("tm-npcp__thread--resolved"));
-        provider.PageComments[0].IsResolved.Should().BeTrue();
+        provider.PageComments[0].Status.Should().Be(TmCommentThreadStatus.Resolved);
     }
 
     public sealed class PageCommentHost : ComponentBase
@@ -148,138 +148,187 @@ public sealed class TmNotionPageCommentSectionTests : LocalizationTestBase
         }
     }
 
-    private sealed class FakeCommentProvider : INotionCommentProvider
+    private sealed class FakeCommentProvider :
+        ITmCommentProvider,
+        ITmCommentReactionProvider,
+        ITmCommentReadTrackingProvider,
+        ITmCommentSubscriptionProvider
     {
         private readonly string _pageId;
-        private readonly Dictionary<Guid, PageComment> _comments = [];
+        private readonly Dictionary<string, TmCommentThread> _comments = [];
 
         public FakeCommentProvider(string pageId)
         {
             _pageId = pageId;
         }
 
-        public List<PageComment> PageComments => _comments.Values.ToList();
+        public TmCommentProviderCapabilities Capabilities =>
+            TmCommentProviderCapabilities.Read
+            | TmCommentProviderCapabilities.CreateThread
+            | TmCommentProviderCapabilities.Reply
+            | TmCommentProviderCapabilities.Delete
+            | TmCommentProviderCapabilities.Resolve
+            | TmCommentProviderCapabilities.Reactions
+            | TmCommentProviderCapabilities.ReadTracking
+            | TmCommentProviderCapabilities.Subscriptions
+            | TmCommentProviderCapabilities.RichText;
 
-        public Task<IEnumerable<IBlockComment>> GetBlockCommentsAsync(string blockId)
-            => Task.FromResult<IEnumerable<IBlockComment>>([]);
+        public List<TmCommentThread> PageComments => _comments.Values.ToList();
 
-        public Task<IBlockComment> AddBlockCommentAsync(string blockId, string htmlContent)
-            => throw new NotSupportedException();
-
-        public Task<INotionCommentEntry> ReplyToCommentAsync(string commentId, string htmlContent, string? parentEntryId = null)
+        public Task<IReadOnlyList<TmCommentThread>> GetForEntityAsync(
+            TmEntityRef entityRef,
+            CancellationToken cancellationToken = default)
         {
-            var comment = _comments[Guid.Parse(commentId)];
-            var entry = Entry(htmlContent, parentEntryId is null ? null : Guid.Parse(parentEntryId));
-            ((List<INotionCommentEntry>)comment.Thread).Add(entry);
-            comment.LastActivityAt = entry.CreatedAt;
-            return Task.FromResult<INotionCommentEntry>(entry);
+            var result = entityRef.EntityType == "notion-page" && entityRef.EntityId == _pageId
+                ? _comments.Values.ToList()
+                : [];
+            return Task.FromResult<IReadOnlyList<TmCommentThread>>(result);
         }
 
-        public Task<INotionCommentEntry> EditCommentAsync(string commentId, string htmlContent)
+        public Task<TmCommentThread> CreateThreadAsync(
+            TmCommentThread thread,
+            CancellationToken cancellationToken = default)
+        {
+            thread.Id = Guid.NewGuid().ToString("N");
+            thread.EntityRef = TmEntityRef.Create("notion-page", _pageId);
+            foreach (var entry in thread.Entries)
+            {
+                entry.Id = Guid.NewGuid().ToString("N");
+                entry.ThreadId = thread.Id;
+                entry.Author = User();
+                entry.CanEdit = true;
+                entry.CanDelete = true;
+            }
+            thread.SubscribedUserIds.Add("demo");
+            _comments[thread.Id] = thread;
+            return Task.FromResult(thread);
+        }
+
+        public Task<TmCommentEntry> ReplyAsync(
+            string threadId,
+            TmCommentEntry entry,
+            CancellationToken cancellationToken = default)
+        {
+            var comment = _comments[threadId];
+            entry.Id = Guid.NewGuid().ToString("N");
+            entry.ThreadId = threadId;
+            entry.Author = User();
+            entry.BodyFormat = TmCommentBodyFormat.Html;
+            entry.CanEdit = true;
+            entry.CanDelete = true;
+            comment.Entries.Add(entry);
+            comment.UpdatedAt = entry.CreatedAt;
+            return Task.FromResult(entry);
+        }
+
+        public Task<TmCommentEntry> UpdateEntryAsync(
+            string threadId,
+            string entryId,
+            TmCommentEntry entry,
+            CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
-        public Task DeleteCommentAsync(string commentId)
+        public Task DeleteThreadAsync(string threadId, CancellationToken cancellationToken = default)
         {
-            _comments.Remove(Guid.Parse(commentId));
+            _comments.Remove(threadId);
             return Task.CompletedTask;
         }
 
-        public Task DeleteCommentEntryAsync(string entryId)
-            => Task.CompletedTask;
-
-        public Task<IBlockComment> ResolveCommentAsync(string commentId)
+        public Task DeleteEntryAsync(
+            string threadId,
+            string entryId,
+            CancellationToken cancellationToken = default)
         {
-            var comment = _comments[Guid.Parse(commentId)];
-            comment.IsResolved = true;
-            comment.ResolvedAt = DateTime.UtcNow;
-            return Task.FromResult<IBlockComment>(comment);
+            _comments[threadId].Entries.RemoveAll(entry => entry.Id == entryId);
+            return Task.CompletedTask;
         }
 
-        public Task<IBlockComment> UnresolveCommentAsync(string commentId)
+        public Task<TmCommentThread> ResolveAsync(
+            string threadId,
+            TmUserRef? resolvedBy = null,
+            CancellationToken cancellationToken = default)
         {
-            var comment = _comments[Guid.Parse(commentId)];
-            comment.IsResolved = false;
+            var comment = _comments[threadId];
+            comment.Status = TmCommentThreadStatus.Resolved;
+            comment.ResolvedAt = DateTimeOffset.UtcNow;
+            return Task.FromResult(comment);
+        }
+
+        public Task<TmCommentThread> ReopenAsync(
+            string threadId,
+            TmUserRef? reopenedBy = null,
+            CancellationToken cancellationToken = default)
+        {
+            var comment = _comments[threadId];
+            comment.Status = TmCommentThreadStatus.Open;
             comment.ResolvedAt = null;
-            return Task.FromResult<IBlockComment>(comment);
+            return Task.FromResult(comment);
         }
 
-        public Task<IBlockComment> AddTextAnchorCommentAsync(
-            string blockId,
-            int startOffset,
-            int endOffset,
-            string highlightedText,
-            string htmlContent,
-            string commentId)
-            => throw new NotSupportedException();
+        public Task<IReadOnlyList<TmCommentReaction>> GetReactionsAsync(
+            string entryId,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<TmCommentReaction>>(FindEntry(entryId).Reactions);
 
-        public Task<IEnumerable<IPageComment>> GetPageCommentsAsync(string pageId)
-            => Task.FromResult<IEnumerable<IPageComment>>(_comments.Values.Where(comment => comment.PageId == pageId));
-
-        public Task<IPageComment> AddPageCommentAsync(string pageId, string htmlContent)
+        public Task AddReactionAsync(
+            string entryId,
+            string value,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
-            var entry = Entry(htmlContent);
-            var comment = new PageComment
-            {
-                Id = Guid.NewGuid(),
-                BlockId = Guid.Parse(pageId),
-                PageId = pageId,
-                Thread = new List<INotionCommentEntry> { entry },
-                LastActivityAt = entry.CreatedAt,
-                SubscribedUserIds = ["demo"]
-            };
-            _comments[comment.Id] = comment;
-            return Task.FromResult<IPageComment>(comment);
-        }
-
-        public Task<int> GetUnresolvedCommentsCountAsync(string pageId)
-            => Task.FromResult(_comments.Values.Count(comment => comment.PageId == pageId && !comment.IsResolved));
-
-        public Task MarkThreadAsReadAsync(string commentId, string userId) => Task.CompletedTask;
-
-        public Task MarkThreadAsUnreadAsync(string commentId, string userId) => Task.CompletedTask;
-
-        public Task MarkAllThreadsAsReadAsync(string ownerId, string userId) => Task.CompletedTask;
-
-        public Task<IReadOnlyList<ICommentReaction>> GetReactionsAsync(string entryId)
-            => Task.FromResult<IReadOnlyList<ICommentReaction>>([]);
-
-        public Task AddReactionAsync(string entryId, string emoji, string userId)
-        {
-            var entry = _comments.Values
-                .SelectMany(comment => comment.Thread)
-                .OfType<NotionCommentEntry>()
-                .Single(entry => entry.Id.ToString("D") == entryId);
-            var reaction = entry.Reactions.OfType<CommentReaction>().SingleOrDefault(reaction => reaction.Emoji == emoji);
+            var entry = FindEntry(entryId);
+            var reaction = entry.Reactions.SingleOrDefault(reaction => reaction.Value == value);
             if (reaction is null)
             {
-                reaction = new CommentReaction { Emoji = emoji };
+                reaction = new TmCommentReaction { Value = value };
                 entry.Reactions.Add(reaction);
             }
             if (!reaction.UserIds.Contains(userId))
-            {
                 reaction.UserIds.Add(userId);
-            }
             return Task.CompletedTask;
         }
 
-        public Task RemoveReactionAsync(string entryId, string emoji, string userId) => Task.CompletedTask;
+        public Task RemoveReactionAsync(
+            string entryId,
+            string value,
+            string userId,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
 
-        public Task SubscribeToThreadAsync(string commentId, string userId) => Task.CompletedTask;
+        public Task MarkThreadAsReadAsync(
+            string threadId,
+            string userId,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
 
-        public Task UnsubscribeFromThreadAsync(string commentId, string userId) => Task.CompletedTask;
+        public Task MarkThreadAsUnreadAsync(
+            string threadId,
+            string userId,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
 
-        private static NotionCommentEntry Entry(string htmlContent, Guid? parentEntryId = null) => new()
-        {
-            Id = Guid.NewGuid(),
-            ParentEntryId = parentEntryId,
-            AuthorUserId = "demo",
-            AuthorDisplayName = "Demo User",
-            HtmlContent = htmlContent,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-            CanEdit = true,
-            CanDelete = true,
-            Reactions = []
-        };
+        public Task MarkAllForEntityAsReadAsync(
+            TmEntityRef entityRef,
+            string userId,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task SubscribeAsync(
+            string threadId,
+            string userId,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task UnsubscribeAsync(
+            string threadId,
+            string userId,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        private TmCommentEntry FindEntry(string entryId)
+            => _comments.Values.SelectMany(comment => comment.Entries).Single(entry => entry.Id == entryId);
+
+        private static TmUserRef User()
+            => new() { Id = "demo", DisplayName = "Demo User" };
     }
 }

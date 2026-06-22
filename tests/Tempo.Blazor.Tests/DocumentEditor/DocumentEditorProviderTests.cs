@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Demo.Services;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
@@ -538,18 +539,19 @@ public class DocumentEditorProviderTests
     }
 
     [Fact]
-    public async Task AuditSink_RecordsEvents()
+    public async Task ActivityProvider_RecordsEvents()
     {
-        IDocumentAuditSink provider = new InMemoryDocumentEditorProvider();
+        var provider = new InMemoryDocumentEditorProvider();
+        var activityProvider = (ITmActivityProvider)provider;
 
-        await provider.RecordAsync(new DocumentEditorAuditEvent
+        await activityProvider.AppendAsync(DocumentEditorActivityBridge.ToTmActivityEntry(new DocumentEditorAuditEvent
         {
             DocumentId = "doc-1",
             Action = DocumentEditorAuditAction.Open
-        });
+        }));
 
-        ((InMemoryDocumentEditorProvider)provider).AuditEvents.Should().ContainSingle(item =>
-            item.Action == DocumentEditorAuditAction.Open);
+        provider.ActivityEntries.Should().ContainSingle(item =>
+            item.Action == "open");
     }
 
     private static bool IsBlazorType(Type type)

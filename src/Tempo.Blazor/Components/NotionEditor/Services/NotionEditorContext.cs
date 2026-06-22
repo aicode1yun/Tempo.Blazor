@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.NotionEditor.Enums;
@@ -19,10 +20,10 @@ public sealed class NotionEditorContext
     public INotionBlockProvider        BlockProvider         { get; init; } = default!;
     public INotionSearchProvider?      SearchProvider        { get; init; }
     public INotionDatabaseProvider?    DatabaseProvider      { get; init; }
-    public INotionCommentProvider?     CommentProvider       { get; init; }
-    public INotionHistoryProvider?     HistoryProvider       { get; init; }
+    public ITmCommentProvider?         CommentProvider       { get; init; }
+    public INotionVersionProvider?     HistoryProvider       { get; init; }
     public INotionCollaborationProvider? CollaborationProvider { get; init; }
-    public INotionMentionProvider?     MentionProvider       { get; init; }
+    public ITmPeopleProvider?          MentionProvider       { get; init; }
     public INotionAIProvider?          AIProvider            { get; init; }
     public ITmWorkItemProvider?        WorkItemSource        { get; init; }
     public TmWorkItemProviderRegistry? WorkItemProviders     { get; init; }
@@ -34,12 +35,13 @@ public sealed class NotionEditorContext
     public INotionPagePropertiesProvider? PagePropertiesProvider { get; init; }
     public INotionTemplateProvider?      TemplateProvider         { get; init; }
     public ISmartLinkProvider?           SmartLinkProvider        { get; init; }
+    public ITmAuthorizationProvider?      AuthorizationProvider    { get; init; }
     public INotionPermissionProvider?    PermissionProvider       { get; init; }
     public INotionPublicShareProvider?   PublicShareProvider      { get; init; }
-    public INotionAuditProvider?         AuditProvider            { get; init; }
+    public ITmActivityProvider?          AuditProvider            { get; init; }
     public IReadOnlyList<string>         CurrentUserGroupIds      { get; init; } = [];
     public INotionBookmarkProvider?      BookmarkProvider         { get; init; }
-    public INotionFileProvider?          FileProvider             { get; init; }
+    public ITmFileProvider?              FileProvider             { get; init; }
     public INotionImportExportProvider?  ImportExportProvider     { get; init; }
     public IDiagramDocumentProvider?     DiagramDocumentProvider  { get; init; }
     public IWireframeDocumentProvider?    WireframeDocumentProvider  { get; init; }

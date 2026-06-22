@@ -1,6 +1,7 @@
 @page "/gantt"
 @using Tempo.Blazor.Components.Scheduler
 @using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Abstractions.Shared
 @inject IHttpClientFactory HttpFactory
 @inject ToastService Toast
 
@@ -292,8 +293,8 @@ else
     private List<TmWorkItem>             _tasks             = [];
     private List<GanttDependency>        _dependencies      = [];
     private List<GanttBaseline>          _baselines         = [];
-    private List<GanttCustomField>       _customFields      = [];
-    private List<GanttHistoryEntry>      _history           = [];
+    private List<TmCustomFieldDefinition> _customFields     = [];
+    private List<TmActivityEntry>        _history           = [];
     private List<GanttResourceCalendar>  _resourceCalendars = [];
     private List<GanttReport>            _reports           = [];
     private List<TmWorkItemAssignee>          _assignees         = [];
@@ -327,7 +328,7 @@ else
         new() { Key = GanttColumnKey.Estimation, Visible = false, Order = 8, Width = 70 },
     ];
 
-    private GanttNotificationSettings _notificationSettings = new()
+    private TmNotificationPreferences _notificationSettings = new()
     {
         EmailOnAssign   = true,
         EmailOnMention  = true,
@@ -424,13 +425,13 @@ else
 
     private async Task LoadCustomFieldsAsync()
     {
-        var result = await Http.GetFromJsonAsync<List<GanttCustomField>>("/api/gantt/custom-fields");
+        var result = await Http.GetFromJsonAsync<List<TmCustomFieldDefinition>>("/api/gantt/custom-fields");
         _customFields = result ?? [];
     }
 
     private async Task LoadHistoryAsync()
     {
-        var result = await Http.GetFromJsonAsync<List<GanttHistoryEntry>>("/api/gantt/history");
+        var result = await Http.GetFromJsonAsync<List<TmActivityEntry>>("/api/gantt/history");
         _history = result ?? [];
     }
 

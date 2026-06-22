@@ -83,7 +83,7 @@
     },
     {
       "name": "MentionProvider",
-      "type": "IMentionDataProvider?",
+      "type": "ITmPeopleProvider?",
       "isRequired": false,
       "description": "Whether a new comment can be started from the current selection."
     },

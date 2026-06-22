@@ -2,8 +2,8 @@ using System.Globalization;
 using System.Text;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Abstractions.Shared;
+using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
@@ -14,8 +14,8 @@ public partial class TmNotionAuditLogPanel : ComponentBase
     private const int DefaultPageSize = 10;
     private const int ExportLimit = 1000;
 
-    /// <summary>Provider used to query audit entries.</summary>
-    [Parameter, EditorRequired] public INotionAuditProvider AuditProvider { get; set; } = default!;
+    /// <summary>Provider used to query activity entries.</summary>
+    [Parameter, EditorRequired] public ITmActivityProvider ActivityProvider { get; set; } = default!;
 
     /// <summary>Additional CSS class.</summary>
     [Parameter] public string? Class { get; set; }
@@ -26,7 +26,7 @@ public partial class TmNotionAuditLogPanel : ComponentBase
     /// <summary>Number of audit entries shown per page.</summary>
     [Parameter] public int PageSize { get; set; } = DefaultPageSize;
 
-    private PagedResult<AuditEntryDto> _result = new() { Page = 1, PageSize = DefaultPageSize };
+    private PagedResult<TmActivityEntry> _result = new() { Page = 1, PageSize = DefaultPageSize };
     private string _userFilter = string.Empty;
     private string _actionFilter = string.Empty;
     private string _fromFilter = string.Empty;
@@ -50,12 +50,12 @@ public partial class TmNotionAuditLogPanel : ComponentBase
 
         try
         {
-            _result = await AuditProvider.GetEntriesAsync(BuildFilter(), BuildPaging());
+            _result = await ActivityProvider.QueryAsync(BuildQuery());
         }
         catch
         {
             _loadError = Loc["Notion_Audit_LoadError"];
-            _result = new PagedResult<AuditEntryDto> { Page = 1, PageSize = EffectivePageSize };
+            _result = new PagedResult<TmActivityEntry> { Page = 1, PageSize = EffectivePageSize };
         }
         finally
         {
@@ -100,9 +100,10 @@ public partial class TmNotionAuditLogPanel : ComponentBase
 
     private async Task PrepareCsvExportAsync()
     {
-        var exportResult = await AuditProvider.GetEntriesAsync(
-            BuildFilter(),
-            new NotionAuditQuery { Skip = 0, Take = ExportLimit });
+        var exportQuery = BuildQuery();
+        exportQuery.Skip = 0;
+        exportQuery.Take = ExportLimit;
+        var exportResult = await ActivityProvider.QueryAsync(exportQuery);
 
         var csv = BuildCsv(exportResult.Items);
         _csvHref = "data:text/csv;charset=utf-8," + Uri.EscapeDataString(csv);
@@ -120,30 +121,30 @@ public partial class TmNotionAuditLogPanel : ComponentBase
     private void OnToFilterChanged(ChangeEventArgs args)
         => _toFilter = args.Value?.ToString() ?? string.Empty;
 
-    private AuditLogFilter BuildFilter()
+    private TmActivityQuery BuildQuery()
         => new()
         {
-            UserId = string.IsNullOrWhiteSpace(_userFilter) ? null : _userFilter.Trim(),
+            EntityType = "page",
+            SearchText = string.IsNullOrWhiteSpace(_userFilter) ? null : _userFilter.Trim(),
             Action = string.IsNullOrWhiteSpace(_actionFilter) ? null : _actionFilter.Trim(),
-            From = ParseDate(_fromFilter),
-            To = ParseDate(_toFilter)
-        };
-
-    private NotionAuditQuery BuildPaging()
-        => new()
-        {
+            From = ParseDate(_fromFilter, endOfDay: false),
+            To = ParseDate(_toFilter, endOfDay: true),
             Skip = _skip,
             Take = EffectivePageSize
         };
 
     private int EffectivePageSize => Math.Clamp(PageSize, 1, 50);
 
-    private static DateOnly? ParseDate(string value)
-        => DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
-            ? date
-            : null;
+    private static DateTimeOffset? ParseDate(string value, bool endOfDay)
+    {
+        if (!DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+            return null;
 
-    private string BuildCsv(IReadOnlyList<AuditEntryDto> entries)
+        var time = endOfDay ? TimeOnly.MaxValue : TimeOnly.MinValue;
+        return new DateTimeOffset(DateTime.SpecifyKind(date.ToDateTime(time), DateTimeKind.Local)).ToUniversalTime();
+    }
+
+    private string BuildCsv(IReadOnlyList<TmActivityEntry> entries)
     {
         var builder = new StringBuilder();
         builder.Append(CsvCell(Loc["Notion_Audit_Timestamp"]));
@@ -165,7 +166,7 @@ public partial class TmNotionAuditLogPanel : ComponentBase
             builder.Append(',');
             builder.Append(CsvCell(GetActionLabel(entry.Action)));
             builder.Append(',');
-            builder.Append(CsvCell($"{entry.TargetType}:{entry.TargetId}"));
+            builder.Append(CsvCell($"{entry.EntityRef.EntityType}:{entry.EntityRef.EntityId}"));
             builder.Append(',');
             builder.Append(CsvCell(FormatDetails(entry)));
             builder.AppendLine();
@@ -185,17 +186,17 @@ public partial class TmNotionAuditLogPanel : ComponentBase
             _ => action
         };
 
-    private static string GetUserDisplay(AuditEntryDto entry)
-        => string.IsNullOrWhiteSpace(entry.UserDisplayName) ? entry.UserId : entry.UserDisplayName;
+    private static string GetUserDisplay(TmActivityEntry entry)
+        => string.IsNullOrWhiteSpace(entry.Actor?.DisplayName) ? entry.Actor?.Id ?? string.Empty : entry.Actor.DisplayName;
 
     private static string ShortenTargetId(string targetId)
         => Guid.TryParse(targetId, out var id) ? id.ToString("D")[..8] : targetId;
 
-    private static string FormatTimestamp(DateTime timestamp)
+    private static string FormatTimestamp(DateTimeOffset timestamp)
         => timestamp.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
 
-    private static string FormatDetails(AuditEntryDto entry)
-        => string.Join("; ", entry.Details
+    private static string FormatDetails(TmActivityEntry entry)
+        => string.Join("; ", (entry.Metadata ?? new Dictionary<string, object>())
             .OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
             .Select(pair => $"{pair.Key}={pair.Value}"));
 

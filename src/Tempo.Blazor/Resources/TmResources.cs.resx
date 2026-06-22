@@ -3846,15 +3846,15 @@
   <data name="TmGantt_BaselineDeviation" xml:space="preserve"><value>Odchylka od základního plánu</value></data>
   <data name="TmGantt_AddCustomField" xml:space="preserve"><value>Přidat vlastní pole</value></data>
   <data name="TmGantt_CustomFieldName" xml:space="preserve"><value>Název pole</value></data>
-  <data name="GanttFieldType_Text" xml:space="preserve"><value>Text</value></data>
-  <data name="GanttFieldType_Number" xml:space="preserve"><value>Číslo</value></data>
-  <data name="GanttFieldType_Date" xml:space="preserve"><value>Datum</value></data>
-  <data name="GanttFieldType_List" xml:space="preserve"><value>Seznam</value></data>
-  <data name="GanttFieldType_Checkbox" xml:space="preserve"><value>Zaškrtávací políčko</value></data>
-  <data name="GanttFieldType_Color" xml:space="preserve"><value>Barva</value></data>
-  <data name="GanttFieldType_Multiselect" xml:space="preserve"><value>Vícenásobný výběr</value></data>
-  <data name="GanttFieldType_People" xml:space="preserve"><value>Lidé</value></data>
-  <data name="GanttFieldType_Labels" xml:space="preserve"><value>Štítky</value></data>
+  <data name="TmCustomFieldType_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="TmCustomFieldType_Number" xml:space="preserve"><value>Číslo</value></data>
+  <data name="TmCustomFieldType_Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="TmCustomFieldType_List" xml:space="preserve"><value>Seznam</value></data>
+  <data name="TmCustomFieldType_Checkbox" xml:space="preserve"><value>Zaškrtávací políčko</value></data>
+  <data name="TmCustomFieldType_Color" xml:space="preserve"><value>Barva</value></data>
+  <data name="TmCustomFieldType_Multiselect" xml:space="preserve"><value>Vícenásobný výběr</value></data>
+  <data name="TmCustomFieldType_People" xml:space="preserve"><value>Lidé</value></data>
+  <data name="TmCustomFieldType_Labels" xml:space="preserve"><value>Štítky</value></data>
   <data name="TmGantt_Filter" xml:space="preserve"><value>Filtr</value></data>
   <data name="TmGantt_AddFilter" xml:space="preserve"><value>Přidat filtr</value></data>
   <data name="TmGantt_FilterField" xml:space="preserve"><value>Pole</value></data>

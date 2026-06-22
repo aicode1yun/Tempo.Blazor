@@ -2,44 +2,12 @@
   "itemName": "TmNotificationBell",
   "kind": "Component",
   "category": "Notifications",
-  "description": "Notification bell icon button with unread badge count and a dropdown panel showing notification items with severity icons, relative timestamps, and mark-as-read actions. Supports limiting visible items via MaxVisible parameter.",
+  "description": "Notification bell icon button backed by ITmNotificationService. It shows unread count, loads recipient notifications on demand, supports unread filtering, and marks individual or all notifications as read through the shared service.",
   "requiredImports": [
-    "@using Tempo.Blazor.Components.Notifications",
-    "@using Tempo.Blazor.Interfaces"
+    "@using Tempo.Blazor.Abstractions.Shared",
+    "@using Tempo.Blazor.Components.Notifications"
   ],
   "parameters": [
-    {
-      "name": "Notifications",
-      "type": "IReadOnlyList<INotificationItem>",
-      "isRequired": false,
-      "default": "[]",
-      "description": "Notification items to display."
-    },
-    {
-      "name": "OnMarkAsRead",
-      "type": "EventCallback<string>",
-      "isRequired": false,
-      "description": "Fires when \"mark as read\" is clicked for a single notification. Argument = item Id."
-    },
-    {
-      "name": "OnMarkAllRead",
-      "type": "EventCallback",
-      "isRequired": false,
-      "description": "Fires when the \"Mark all as read\" button is clicked."
-    },
-    {
-      "name": "MaxVisible",
-      "type": "int",
-      "isRequired": false,
-      "default": "10",
-      "description": "Maximum number of notifications shown in the dropdown."
-    },
-    {
-      "name": "OnNotificationClick",
-      "type": "EventCallback<INotificationItem>",
-      "isRequired": false,
-      "description": "Fires when a notification item is clicked."
-    },
     {
       "name": "Class",
       "type": "string?",
@@ -47,52 +15,58 @@
       "description": "Additional CSS class."
     },
     {
-      "name": "Disabled",
-      "type": "bool",
+      "name": "CurrentUserId",
+      "type": "string",
       "isRequired": false,
-      "description": "When true the bell button is disabled."
+      "default": "\"demo\"",
+      "description": "Recipient user id used when querying ITmNotificationService."
+    },
+    {
+      "name": "OnDropdownOpenChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "Fires when the notification dropdown opens or closes."
+    },
+    {
+      "name": "AdditionalAttributes",
+      "type": "Dictionary<string, object>?",
+      "isRequired": false,
+      "description": "Additional attributes splatted onto the root element."
     }
   ],
   "cssClasses": [
     "tm-notification-bell",
-    "tm-notification-bell-button",
-    "tm-notification-badge",
-    "tm-notification-dropdown",
-    "tm-notification-header",
-    "tm-notification-title",
-    "tm-notification-mark-all-read",
-    "tm-notification-list",
-    "tm-notification-item",
-    "tm-notification-unread",
-    "tm-notification-severity",
-    "tm-notification-severity--info",
-    "tm-notification-severity--success",
-    "tm-notification-severity--warning",
-    "tm-notification-severity--error",
-    "tm-notification-item-content",
-    "tm-notification-item-title",
-    "tm-notification-item-message",
-    "tm-notification-item-time",
-    "tm-notification-mark-read",
-    "tm-notification-unread-dot",
-    "tm-notification-empty"
+    "tm-notification-bell--pulse",
+    "tm-notification-bell__button",
+    "tm-notification-bell__badge",
+    "tm-notification-bell__dropdown",
+    "tm-notification-bell__header",
+    "tm-notification-bell__title",
+    "tm-notification-bell__actions",
+    "tm-notification-bell__filter",
+    "tm-notification-bell__mark-all",
+    "tm-notification-bell__list",
+    "tm-notification-bell__item",
+    "tm-notification-bell__item--unread",
+    "tm-notification-bell__avatar",
+    "tm-notification-bell__content",
+    "tm-notification-bell__message",
+    "tm-notification-bell__time",
+    "tm-notification-bell__dot",
+    "tm-notification-bell__empty"
   ],
   "examples": [
     {
-      "title": "Basic notification bell with all callbacks",
-      "code": "<TmNotificationBell Notifications=\"notifications\"\n                    OnNotificationClick=\"HandleNotificationClick\"\n                    OnMarkAsRead=\"MarkAsRead\"\n                    OnMarkAllRead=\"MarkAllRead\" />"
+      "title": "Notification bell for the current user",
+      "code": "<TmNotificationBell CurrentUserId=\"@_currentUserId\" />\n\n@code {\n    private string _currentUserId = \"user-1\";\n}"
     },
     {
-      "title": "Bell with limited visible items",
-      "code": "<TmNotificationBell Notifications=\"notifications\" MaxVisible=\"5\" />"
+      "title": "Publish a notification through the shared service",
+      "code": "@inject ITmNotificationService NotificationService\n\n<TmNotificationBell CurrentUserId=\"user-1\" />\n\n<TmButton OnClick=\"PublishAsync\">Publish</TmButton>\n\n@code {\n    private Task PublishAsync()\n        => NotificationService.PublishAsync(new TmNotification\n        {\n            RecipientUserId = \"user-1\",\n            Type = TmNotificationTypes.Mention,\n            Title = \"You were mentioned\",\n            Body = \"Open the document to review the comment.\",\n            ActionUrl = \"/documents/42\"\n        });\n}"
     },
     {
-      "title": "Disabled bell",
-      "code": "<TmNotificationBell Notifications=\"notifications\" Disabled=\"true\" />"
-    },
-    {
-      "title": "Full usage with @code block",
-      "code": "<TmNotificationBell Notifications=\"notifications\"\n                    OnNotificationClick=\"HandleClick\"\n                    OnMarkAsRead=\"HandleMarkAsRead\"\n                    OnMarkAllRead=\"HandleMarkAllRead\"\n                    MaxVisible=\"8\" />\n\n@code {\n    private List<INotificationItem> notifications = new();\n\n    private void HandleClick(INotificationItem item)\n    {\n        // Navigate or show detail\n    }\n\n    private void HandleMarkAsRead(string id)\n    {\n        var n = notifications.FirstOrDefault(x => x.Id == id);\n        if (n is not null) n.IsRead = true;\n    }\n\n    private void HandleMarkAllRead()\n    {\n        foreach (var n in notifications) n.IsRead = true;\n    }\n}"
+      "title": "React to dropdown state",
+      "code": "<TmNotificationBell CurrentUserId=\"@_currentUserId\"\n                    OnDropdownOpenChanged=\"HandleDropdownChanged\" />"
     }
   ]
 }

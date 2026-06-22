@@ -1,5 +1,5 @@
 @namespace Tempo.Blazor.Components.Scheduler
-@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Abstractions.Shared
 
 @if (IsOpen)
 {
@@ -25,21 +25,21 @@
                     {
                         <li class="tm-gantt__history-entry" data-testid="history-entry-@entry.Id">
                             <div class="tm-gantt__history-entry-header">
-                                <span class="tm-gantt__history-entry-type">@GetChangeTypeLabel(entry.ChangeType)</span>
-                                <span class="tm-gantt__history-entry-author">@entry.Author</span>
-                                <span class="tm-gantt__history-entry-time">@entry.Timestamp.ToString("dd.MM.yyyy HH:mm")</span>
+                                <span class="tm-gantt__history-entry-type">@GetChangeTypeLabel(entry.Action)</span>
+                                <span class="tm-gantt__history-entry-author">@(entry.Actor?.DisplayName ?? entry.Actor?.Id ?? "")</span>
+                                <span class="tm-gantt__history-entry-time">@entry.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
                             </div>
-                            @if (entry.OldValue is not null || entry.NewValue is not null)
+                            @if (entry.Before is not null || entry.After is not null)
                             {
                                 <div class="tm-gantt__history-entry-values">
-                                    @if (entry.OldValue is not null)
+                                    @if (entry.Before is not null)
                                     {
-                                        <span class="tm-gantt__history-old">@entry.OldValue</span>
+                                        <span class="tm-gantt__history-old">@entry.Before</span>
                                         <TmIcon Name="arrow-right" Size="IconSize.Xs" />
                                     }
-                                    @if (entry.NewValue is not null)
+                                    @if (entry.After is not null)
                                     {
-                                        <span class="tm-gantt__history-new">@entry.NewValue</span>
+                                        <span class="tm-gantt__history-new">@entry.After</span>
                                     }
                                 </div>
                             }

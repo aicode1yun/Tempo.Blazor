@@ -123,7 +123,7 @@
     },
     {
       "name": "MentionProvider",
-      "type": "IMentionDataProvider?",
+      "type": "ITmPeopleProvider?",
       "isRequired": false,
       "description": "Optional token provider for document token autocomplete."
     },

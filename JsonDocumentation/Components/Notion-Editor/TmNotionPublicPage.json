@@ -26,7 +26,7 @@
     },
     {
       "name": "CommentProvider",
-      "type": "share allows comments.</summary> [Parameter] public INotionCommentProvider?",
+      "type": "ITmCommentProvider?",
       "isRequired": true,
       "description": "Provider used to load blocks for the shared Notion page.",
       "editorRequired": true

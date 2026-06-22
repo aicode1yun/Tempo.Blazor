@@ -299,8 +299,8 @@
                                         @foreach (var att in _editAttachments)
                                         {
                                             <li class="tm-document-manager__attachment-item">
-                                                <span class="tm-document-manager__attachment-name">@att.Name</span>
-                                                <span class="tm-document-manager__attachment-size">@FormatSize(att.Size)</span>
+                                                <span class="tm-document-manager__attachment-name">@att.FileName</span>
+                                                <span class="tm-document-manager__attachment-size">@FormatSize(att.SizeBytes)</span>
                                                 <div class="tm-document-manager__attachment-actions">
                                                     <button type="button" class="tm-document-manager__attachment-action" @onclick="() => DownloadAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Download"]">
                                                         <TmIcon Name="download" />
@@ -405,8 +405,8 @@
                                     @foreach (var att in ctx.Item.Attachments)
                                     {
                                         <li class="tm-document-manager__attachment-item">
-                                            <span class="tm-document-manager__attachment-name">@att.Name</span>
-                                            <span class="tm-document-manager__attachment-size">@FormatSize(att.Size)</span>
+                                            <span class="tm-document-manager__attachment-name">@att.FileName</span>
+                                            <span class="tm-document-manager__attachment-size">@FormatSize(att.SizeBytes)</span>
                                             <div class="tm-document-manager__attachment-actions">
                                                 <button type="button" class="tm-document-manager__attachment-action" @onclick="() => DownloadAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Download"]">
                                                     <TmIcon Name="download" />

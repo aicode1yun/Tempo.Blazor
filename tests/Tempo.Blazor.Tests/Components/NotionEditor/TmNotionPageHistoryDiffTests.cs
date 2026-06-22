@@ -53,7 +53,7 @@ public sealed class TmNotionPageHistoryDiffTests : LocalizationTestBase
         });
     }
 
-    private sealed class CapturingHistoryProvider : INotionHistoryProvider
+    private sealed class CapturingHistoryProvider : INotionVersionProvider
     {
         public static readonly Guid PageId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         private readonly List<NotionPageVersionDto> _versions;

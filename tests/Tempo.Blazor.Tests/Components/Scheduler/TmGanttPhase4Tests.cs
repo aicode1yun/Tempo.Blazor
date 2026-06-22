@@ -6,6 +6,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Scheduler;
 using Tempo.Blazor.Services;
 using Tempo.Blazor.Tests.Localization;
@@ -30,9 +31,18 @@ public class TmGanttPhase4Tests : LocalizationTestBase
             ParentId = parentId
         };
         for (var i = 0; i < attachments; i++)
-            t.Attachments.Add(new GanttAttachment { Id = $"att-{id}-{i}", FileName = $"file{i}.pdf", ContentType = "application/pdf", Url = $"/files/{id}/{i}", UploadedAt = DateTime.UtcNow });
+            t.Attachments.Add(new TmAttachment
+            {
+                Id = $"att-{id}-{i}",
+                EntityRef = TmEntityRef.Create("work-item", id),
+                FileName = $"file{i}.pdf",
+                ContentType = "application/pdf",
+                Url = $"/files/{id}/{i}",
+                UploadedAt = DateTimeOffset.UtcNow,
+                Purpose = "work-item"
+            });
         for (var i = 0; i < comments; i++)
-            t.Comments.Add(new GanttComment { Id = $"cmt-{id}-{i}", TaskId = id, AuthorId = "u1", AuthorName = "Alice", Text = "Comment", CreatedAt = DateTime.UtcNow });
+            t.Comments.Add(MakeComment($"cmt-{id}-{i}", id, "Comment", TmCommentBodyFormat.PlainText));
         return t;
     }
 
@@ -63,13 +73,16 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void GanttAttachment_Class_Has_Required_Properties()
+    public void TmAttachment_Class_Has_Required_Properties_For_Gantt()
     {
-        var att = new GanttAttachment
+        var att = new TmAttachment
         {
-            Id = "a1", FileName = "report.pdf",
+            Id = "a1",
+            EntityRef = TmEntityRef.Create("work-item", "w1"),
+            FileName = "report.pdf",
             ContentType = "application/pdf", Url = "/files/report.pdf",
-            UploadedAt = new DateTime(2024, 1, 10, 12, 0, 0, DateTimeKind.Utc)
+            UploadedAt = new DateTimeOffset(2024, 1, 10, 12, 0, 0, TimeSpan.Zero),
+            Purpose = "work-item"
         };
         att.Id.Should().Be("a1");
         att.FileName.Should().Be("report.pdf");
@@ -110,17 +123,21 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void GanttComment_Class_Has_Required_Properties()
+    public void TmCommentEntry_Class_Has_Required_Properties_For_Gantt()
     {
-        var c = new GanttComment
+        var c = new TmCommentEntry
         {
-            Id = "c1", TaskId = "t1", AuthorId = "u1", AuthorName = "Alice",
-            AvatarUrl = null, Text = "Hello world", CreatedAt = DateTime.UtcNow
+            Id = "c1",
+            ThreadId = "t1",
+            Author = new TmUserRef { Id = "u1", DisplayName = "Alice" },
+            Body = "Hello world",
+            BodyFormat = TmCommentBodyFormat.PlainText,
+            CreatedAt = DateTimeOffset.UtcNow
         };
         c.Id.Should().Be("c1");
-        c.TaskId.Should().Be("t1");
-        c.AuthorName.Should().Be("Alice");
-        c.Text.Should().Be("Hello world");
+        c.ThreadId.Should().Be("t1");
+        c.Author.DisplayName.Should().Be("Alice");
+        c.Body.Should().Be("Hello world");
     }
 
     [Fact]
@@ -144,15 +161,30 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     public void TmGanttTaskPanel_Parses_At_Mention_As_Span()
     {
         var task = MakeTask("1");
-        task.Comments.Add(new GanttComment
-        {
-            Id = "c1", TaskId = "1", AuthorId = "u1", AuthorName = "Alice",
-            Text = "Hello @bob please review this", CreatedAt = DateTime.UtcNow
-        });
+        task.Comments.Add(MakeComment(
+            "c1",
+            "1",
+            "Hello <span class=\"tm-gantt__mention\">@bob</span> please review this",
+            TmCommentBodyFormat.Html));
         var cut = RenderComponent<TmGanttTaskPanel>(p => p.Add(x => x.Task, task));
 
         cut.Find(".tm-gantt__mention").TextContent.Should().Be("@bob");
     }
+
+    private static TmCommentEntry MakeComment(
+        string id,
+        string threadId,
+        string body,
+        TmCommentBodyFormat bodyFormat)
+        => new()
+        {
+            Id = id,
+            ThreadId = threadId,
+            Author = new TmUserRef { Id = "u1", DisplayName = "Alice" },
+            Body = body,
+            BodyFormat = bodyFormat,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
 
     [Fact]
     public void TmGantt_Tree_Row_Shows_Comment_Count_Icon_When_Task_Has_Comments()
@@ -414,18 +446,18 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void GanttHistoryEntry_Record_Has_Required_Properties()
+    public void TmActivityEntry_Record_Has_Required_Properties()
     {
-        var ts = new DateTime(2024, 5, 1, 10, 0, 0, DateTimeKind.Utc);
-        var entry = new GanttHistoryEntry("h1", ts, "Alice", "StatusChanged", "t1", "Open", "Done");
+        var ts = new DateTimeOffset(2024, 5, 1, 10, 0, 0, TimeSpan.Zero);
+        var entry = Activity("h1", ts, "Alice", "StatusChanged", "t1", "Open", "Done");
 
         entry.Id.Should().Be("h1");
         entry.Timestamp.Should().Be(ts);
-        entry.Author.Should().Be("Alice");
-        entry.ChangeType.Should().Be("StatusChanged");
-        entry.TaskId.Should().Be("t1");
-        entry.OldValue.Should().Be("Open");
-        entry.NewValue.Should().Be("Done");
+        entry.Actor!.DisplayName.Should().Be("Alice");
+        entry.Action.Should().Be("StatusChanged");
+        entry.EntityRef.EntityId.Should().Be("t1");
+        entry.Before.Should().Be("Open");
+        entry.After.Should().Be("Done");
     }
 
     [Fact]
@@ -433,8 +465,8 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     {
         var history = new[]
         {
-            new GanttHistoryEntry("h1", DateTime.UtcNow, "Alice", "StatusChanged", "t1", null, "Done"),
-            new GanttHistoryEntry("h2", DateTime.UtcNow, "Bob",   "PriorityChanged", "t2", "Low", "High"),
+            Activity("h1", DateTimeOffset.UtcNow, "Alice", "StatusChanged", "t1", null, "Done"),
+            Activity("h2", DateTimeOffset.UtcNow, "Bob",   "PriorityChanged", "t2", "Low", "High"),
         };
         var cut = RenderComponent<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
@@ -448,16 +480,16 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     {
         var entries = new[]
         {
-            new GanttHistoryEntry("1", DateTime.UtcNow, "Alice", "StatusChanged",   "t1", "Open",  "Done"),
-            new GanttHistoryEntry("2", DateTime.UtcNow, "Bob",   "PriorityChanged", "t2", "Low",   "High"),
-            new GanttHistoryEntry("3", DateTime.UtcNow, "Alice", "StatusChanged",   "t3", "Open",  "InProgress"),
-            new GanttHistoryEntry("4", DateTime.UtcNow, "Carol", "TaskChanged",     "t4", "Old",   "New"),
+            Activity("1", DateTimeOffset.UtcNow, "Alice", "StatusChanged",   "t1", "Open",  "Done"),
+            Activity("2", DateTimeOffset.UtcNow, "Bob",   "PriorityChanged", "t2", "Low",   "High"),
+            Activity("3", DateTimeOffset.UtcNow, "Alice", "StatusChanged",   "t3", "Open",  "InProgress"),
+            Activity("4", DateTimeOffset.UtcNow, "Carol", "TaskChanged",     "t4", "Old",   "New"),
         };
 
         var result = GanttHelper.FilterHistory(entries, new[] { "StatusChanged" });
 
         result.Should().HaveCount(2);
-        result.All(e => e.ChangeType == "StatusChanged").Should().BeTrue();
+        result.All(e => e.Action == "StatusChanged").Should().BeTrue();
     }
 
     [Fact]
@@ -466,13 +498,32 @@ public class TmGanttPhase4Tests : LocalizationTestBase
         var cut = RenderComponent<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.OnTimeTravelRequested,  EventCallback.Factory.Create<DateTime>(this, _ => { }))
-            .Add(x => x.OnRollbackRequested,    EventCallback.Factory.Create<GanttHistoryEntry>(this, _ => { })));
+            .Add(x => x.OnRollbackRequested,    EventCallback.Factory.Create<TmActivityEntry>(this, _ => { })));
 
         cut.Instance.OnTimeTravelRequested.HasDelegate.Should().BeTrue();
         cut.Instance.OnRollbackRequested.HasDelegate.Should().BeTrue();
     }
 
     // ─── Helpers ────────────────────────────────────────────────────
+
+    private static TmActivityEntry Activity(
+        string id,
+        DateTimeOffset timestamp,
+        string author,
+        string action,
+        string taskId,
+        string? before,
+        string? after)
+        => new()
+        {
+            Id = id,
+            Timestamp = timestamp,
+            Actor = new TmUserRef { Id = author.ToLowerInvariant(), DisplayName = author },
+            Action = action,
+            EntityRef = TmEntityRef.Create("work-item", taskId),
+            Before = before,
+            After = after
+        };
 
     private static Stream CreateTestXlsx(string[][] rows)
     {

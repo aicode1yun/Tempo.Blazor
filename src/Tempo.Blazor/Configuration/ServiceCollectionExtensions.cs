@@ -6,6 +6,7 @@ using Tempo.Blazor.Components.Diagram.Services;
 using Tempo.Blazor.Components.Diagram.Stencils;
 using Tempo.Blazor.Components.Diagram.Templates;
 using Tempo.Blazor.Components.Wireframe;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Localization;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Helpers;
@@ -70,8 +71,7 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<DragDropService>();
 
         // ── Notification system ───────────────────────────────────────────────
-        services.TryAddSingleton<INotificationBadgeState, NotificationBadgeState>();
-        services.TryAddSingleton<INotificationService, NoOpNotificationService>();
+        services.TryAddSingleton<ITmNotificationService, NoOpNotificationService>();
         services.TryAddScoped<CommentNotificationOrchestrator>();
 
         // ── Wireframe editor ──────────────────────────────────────────────────
@@ -225,8 +225,6 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Replaces the default <see cref="NoOpNotificationService"/> with
     /// <see cref="InMemoryNotificationStore"/> so notifications are kept in memory.
-    /// Also replaces <see cref="INotificationBadgeState"/> with the same store
-    /// so the badge count is live.
     ///
     /// Use this in demo / test applications where you want to see notifications
     /// without a real backend.
@@ -234,8 +232,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInMemoryNotifications(this IServiceCollection services)
     {
         services.AddSingleton<InMemoryNotificationStore>();
-        services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<InMemoryNotificationStore>());
-        services.AddSingleton<INotificationBadgeState>(sp => sp.GetRequiredService<InMemoryNotificationStore>());
+        services.AddSingleton<ITmNotificationService>(sp => sp.GetRequiredService<InMemoryNotificationStore>());
         return services;
     }
 }

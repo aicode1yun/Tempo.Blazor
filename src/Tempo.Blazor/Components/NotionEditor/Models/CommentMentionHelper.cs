@@ -1,6 +1,5 @@
 using Tempo.Blazor.NotionEditor.Helpers;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Abstractions.Shared;
 
 namespace Tempo.Blazor.Components.NotionEditor.Models;
 
@@ -13,7 +12,7 @@ public static class CommentMentionHelper
     /// Replaces <c>@username</c> mentions with HTML span tags containing <c>data-user-id</c>.
     /// Unresolved mentions are left as plain text.
     /// </summary>
-    public static async Task<string> EncodeAsync(string text, INotionMentionProvider? mentionProvider)
+    public static async Task<string> EncodeAsync(string text, ITmPeopleProvider? mentionProvider)
     {
         if (mentionProvider is null || string.IsNullOrEmpty(text))
             return text;
@@ -27,12 +26,9 @@ public static class CommentMentionHelper
         {
             try
             {
-                var users = await mentionProvider.SearchUsersAsync(username);
-                var match = users.FirstOrDefault(u =>
-                    string.Equals(u.UserId, username, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(u.DisplayName, username, StringComparison.OrdinalIgnoreCase));
+                var match = await ResolveUserAsync(mentionProvider, username);
                 if (match is not null)
-                    userMap[username] = match.UserId;
+                    userMap[username] = match.Id;
             }
             catch { /* best-effort */ }
         }
@@ -49,10 +45,10 @@ public static class CommentMentionHelper
     /// </summary>
     public static async Task NotifyAsync(
         string rawText,
-        INotionCommentEntry entry,
+        TmCommentEntry entry,
         string threadId,
         string pageId,
-        INotionMentionProvider? mentionProvider,
+        ITmPeopleProvider? mentionProvider,
         CommentNotificationOrchestrator? orchestrator)
     {
         if (orchestrator is null || mentionProvider is null || string.IsNullOrEmpty(rawText))
@@ -67,17 +63,27 @@ public static class CommentMentionHelper
         {
             try
             {
-                var users = await mentionProvider.SearchUsersAsync(username);
-                var match = users.FirstOrDefault(u =>
-                    string.Equals(u.UserId, username, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(u.DisplayName, username, StringComparison.OrdinalIgnoreCase));
-                if (match is not null && match.UserId != entry.AuthorUserId)
-                    userIds.Add(match.UserId);
+                var match = await ResolveUserAsync(mentionProvider, username);
+                if (match is not null && match.Id != entry.Author.Id)
+                    userIds.Add(match.Id);
             }
             catch { /* best-effort */ }
         }
 
         if (userIds.Count > 0)
             await orchestrator.OnMentionAsync(entry, userIds, threadId, pageId);
+    }
+
+    private static async Task<TmUser?> ResolveUserAsync(ITmPeopleProvider mentionProvider, string username)
+    {
+        var user = await mentionProvider.GetByIdAsync(username);
+        if (user is not null)
+            return user;
+
+        var users = await mentionProvider.SearchAsync(new TmPeopleQuery { SearchText = username, Take = 8 });
+        return users.FirstOrDefault(u =>
+            string.Equals(u.Id, username, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(u.UserName, username, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(u.DisplayName, username, StringComparison.OrdinalIgnoreCase));
     }
 }

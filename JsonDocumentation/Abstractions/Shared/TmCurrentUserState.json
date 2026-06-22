@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Snapshot of the current user and their group memberships.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCurrentUserState.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "User",
+      "kind": "Property",
+      "type": "TmUserRef?",
+      "description": "Current user, or null when the caller is anonymous."
+    },
+    {
+      "name": "GroupIds",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>",
+      "description": "Group identifiers associated with the current user."
+    },
+    {
+      "name": "IsAuthenticated",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Returns true when a valid current user is available."
+    },
+    {
+      "name": "Anonymous",
+      "kind": "Property",
+      "type": "TmCurrentUserState",
+      "description": "Anonymous current-user state."
+    },
+    {
+      "name": "FromUser",
+      "kind": "Method",
+      "type": "TmCurrentUserState",
+      "description": "Creates an authenticated current-user state from a user reference."
+    }
+  ],
+  "itemName": "TmCurrentUserState"
+}

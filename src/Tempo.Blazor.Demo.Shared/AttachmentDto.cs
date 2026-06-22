@@ -1,5 +1,3 @@
-using Tempo.Blazor.Interfaces;
-
 namespace Tempo.Blazor.Demo.Shared;
 
 public record AttachmentDto(
@@ -10,4 +8,4 @@ public record AttachmentDto(
     DateTimeOffset UploadedAt,
     string? UploadedByName,
     bool CanDelete,
-    bool IsImage) : IFileAttachment;
+    bool IsImage);

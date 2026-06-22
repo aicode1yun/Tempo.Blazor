@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.DataDisplay;
 using Tempo.Blazor.Models;
 
@@ -186,7 +187,7 @@ public partial class TmGantt : IDisposable
     [Parameter] public EventCallback<GanttBaseline> OnBaselineSaved { get; set; }
 
     /// <summary>User-defined custom field definitions.</summary>
-    [Parameter] public IReadOnlyList<GanttCustomField> CustomFields { get; set; } = [];
+    [Parameter] public IReadOnlyList<TmCustomFieldDefinition> CustomFields { get; set; } = [];
 
     /// <summary>Fires when a custom field value is committed for a task. Args: (taskId, fieldId, value).</summary>
     [Parameter] public EventCallback<(string TaskId, string FieldId, string? Value)> OnCustomFieldChanged { get; set; }
@@ -208,14 +209,14 @@ public partial class TmGantt : IDisposable
     /// <summary>Fires when an import operation fails (contains error message).</summary>
     [Parameter] public EventCallback<string> OnImportError { get; set; }
 
-    /// <summary>Audit-log entries to display in the history drawer.</summary>
-    [Parameter] public IReadOnlyList<GanttHistoryEntry> History { get; set; } = [];
+    /// <summary>Activity entries to display in the history drawer.</summary>
+    [Parameter] public IReadOnlyList<TmActivityEntry> History { get; set; } = [];
 
     /// <summary>Fires when the user requests time-travel to the given timestamp.</summary>
     [Parameter] public EventCallback<DateTime> OnTimeTravelRequested { get; set; }
 
     /// <summary>Fires when the user requests rollback to the state before a history entry.</summary>
-    [Parameter] public EventCallback<GanttHistoryEntry> OnRollbackRequested { get; set; }
+    [Parameter] public EventCallback<TmActivityEntry> OnRollbackRequested { get; set; }
 
     // ── Phase 5 Parameters ────────────────────────────────────────
 
@@ -229,13 +230,13 @@ public partial class TmGantt : IDisposable
     [Parameter] public IGanttRealtimeConnection? RealtimeConnection { get; set; }
 
     /// <summary>Notification preferences for the current user.</summary>
-    [Parameter] public GanttNotificationSettings? NotificationSettings { get; set; }
+    [Parameter] public TmNotificationPreferences? NotificationSettings { get; set; }
 
     /// <summary>Fires when a task's status is changed from the board view.</summary>
     [Parameter] public EventCallback<(string TaskId, TmWorkItemStatus NewStatus)> OnStatusChanged { get; set; }
 
     /// <summary>Fires when a notification condition is met (assign, mention, deadline).</summary>
-    [Parameter] public EventCallback<GanttNotification> OnNotificationTriggered { get; set; }
+    [Parameter] public EventCallback<TmNotification> OnNotificationTriggered { get; set; }
 
     /// <summary>Resource calendars for vacation/day-off overlays in People view.</summary>
     [Parameter] public IReadOnlyList<GanttResourceCalendar> ResourceCalendars { get; set; } = [];
@@ -377,6 +378,18 @@ public partial class TmGantt : IDisposable
         await OnTaskUpdated.InvokeAsync(task);
     }
 
+    private async Task HandleTaskCommentAddedAsync(TmCommentEntry entry)
+    {
+        if (SelectedTask is null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(entry.ThreadId))
+            entry.ThreadId = SelectedTask.Id;
+
+        SelectedTask.Comments.Add(entry);
+        await RaiseTaskUpdatedAsync(SelectedTask);
+    }
+
     private async Task RaiseTaskAddedAsync(TmWorkItem task)
     {
         if (WorkItemSource is not null && WorkItemSource.Capabilities.HasFlag(TmWorkItemCapabilities.Create))
@@ -485,7 +498,7 @@ public partial class TmGantt : IDisposable
     private void ToggleSidebarPanel(GanttSidebarPanel panel)
         => _activeSidebarPanel = _activeSidebarPanel == panel ? null : panel;
 
-    private void UpdateNotification(Action<GanttNotificationSettings> apply)
+    private void UpdateNotification(Action<TmNotificationPreferences> apply)
     {
         if (NotificationSettings is null) return;
         apply(NotificationSettings);
@@ -731,6 +744,7 @@ public partial class TmGantt : IDisposable
             BudgetHours = e.Item.BudgetHours, ActualCost = e.Item.ActualCost,
             Status = newStatus,
             Priority = e.Item.Priority, Assignees = e.Item.Assignees,
+            Tags = e.Item.Tags.ToList(),
             CustomFields = e.Item.CustomFields, Attachments = e.Item.Attachments,
             Comments = e.Item.Comments, TimeLog = e.Item.TimeLog,
             UseManualDates = e.Item.UseManualDates,
@@ -759,6 +773,7 @@ public partial class TmGantt : IDisposable
             Color = task.Color, Description = task.Description,
             BudgetHours = task.BudgetHours, ActualCost = task.ActualCost,
             Status = task.Status, Priority = task.Priority, Assignees = task.Assignees,
+            Tags = task.Tags.ToList(),
             CustomFields = task.CustomFields, Attachments = task.Attachments,
             Comments = task.Comments, TimeLog = task.TimeLog,
             UseManualDates = task.UseManualDates,

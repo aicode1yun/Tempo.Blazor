@@ -1,3 +1,5 @@
+using Tempo.Blazor.Abstractions.Shared;
+
 namespace Tempo.Blazor.Abstractions.Models;
 
 /// <summary>
@@ -52,5 +54,5 @@ public class DocumentManagerItem<TMetadata> where TMetadata : class
     public IReadOnlyList<string>? Tags { get; set; }
 
     /// <summary>Physical file attachments linked to this item.</summary>
-    public IReadOnlyList<FileAttachment> Attachments { get; set; } = [];
+    public IReadOnlyList<TmAttachment> Attachments { get; set; } = [];
 }

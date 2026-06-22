@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.Interfaces;
 
@@ -332,30 +333,34 @@ public sealed class TokenDocumentAutocompleteProvider(ITokenDataProvider tokenPr
     }
 }
 
-/// <summary>Adapts the existing mention provider to the generic autocomplete contract.</summary>
-public sealed class MentionDocumentAutocompleteProvider(IMentionDataProvider mentionProvider) : IDocumentAutocompleteProvider
+/// <summary>Adapts the shared people provider to the generic autocomplete contract.</summary>
+public sealed class MentionDocumentAutocompleteProvider(ITmPeopleProvider peopleProvider) : IDocumentAutocompleteProvider
 {
     /// <inheritdoc />
     public async Task<DocumentAutocompleteResult> SearchAsync(
         DocumentAutocompleteRequest request,
         CancellationToken cancellationToken = default)
     {
-        var users = await mentionProvider.SearchUsersAsync(request.Query, cancellationToken);
+        var users = await peopleProvider.SearchAsync(new TmPeopleQuery
+        {
+            SearchText = request.Query,
+            Take = request.Limit
+        }, cancellationToken);
         var items = users
             .Take(Math.Max(0, request.Limit))
             .Select(user => new DocumentAutocompleteItem
             {
                 Id = user.Id,
-                Label = string.IsNullOrWhiteSpace(user.DisplayName) ? user.UserName : user.DisplayName,
-                Description = user.UserName,
+                Label = string.IsNullOrWhiteSpace(user.DisplayName) ? UserHandle(user) : user.DisplayName,
+                Description = UserHandle(user),
                 Kind = DocumentAutocompleteKind.Mention,
                 Value = user.Id,
                 RendererKey = request.Trigger.RendererKey,
                 Metadata =
                 {
                     ["id"] = user.Id,
-                    ["userName"] = user.UserName,
-                    ["displayName"] = user.DisplayName,
+                    ["userName"] = UserHandle(user),
+                    ["displayName"] = string.IsNullOrWhiteSpace(user.DisplayName) ? user.Id : user.DisplayName,
                     ["avatarUrl"] = user.AvatarUrl
                 }
             })
@@ -367,6 +372,9 @@ public sealed class MentionDocumentAutocompleteProvider(IMentionDataProvider men
             Sequence = request.Sequence
         };
     }
+
+    private static string UserHandle(TmUser user)
+        => string.IsNullOrWhiteSpace(user.UserName) ? user.Id : user.UserName;
 }
 
 /// <summary>Autocomplete provider backed by an in-memory slash command list.</summary>

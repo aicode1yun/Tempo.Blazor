@@ -1,6 +1,7 @@
 using Bunit;
 using FluentAssertions;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Scheduler;
 using Tempo.Blazor.Tests.Localization;
 using Xunit;
@@ -346,34 +347,34 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void GanttFieldType_Enum_Has_All_Values()
+    public void TmCustomFieldType_Enum_Has_All_Gantt_Values()
     {
-        var values = Enum.GetValues<GanttFieldType>();
-        values.Should().Contain(GanttFieldType.Text);
-        values.Should().Contain(GanttFieldType.Number);
-        values.Should().Contain(GanttFieldType.Date);
-        values.Should().Contain(GanttFieldType.List);
-        values.Should().Contain(GanttFieldType.Checkbox);
-        values.Should().Contain(GanttFieldType.Color);
-        values.Should().Contain(GanttFieldType.Multiselect);
-        values.Should().Contain(GanttFieldType.People);
-        values.Should().Contain(GanttFieldType.Labels);
+        var values = Enum.GetValues<TmCustomFieldType>();
+        values.Should().Contain(TmCustomFieldType.Text);
+        values.Should().Contain(TmCustomFieldType.Number);
+        values.Should().Contain(TmCustomFieldType.Date);
+        values.Should().Contain(TmCustomFieldType.List);
+        values.Should().Contain(TmCustomFieldType.Checkbox);
+        values.Should().Contain(TmCustomFieldType.Color);
+        values.Should().Contain(TmCustomFieldType.Multiselect);
+        values.Should().Contain(TmCustomFieldType.People);
+        values.Should().Contain(TmCustomFieldType.Labels);
     }
 
     [Fact]
-    public void GanttCustomField_Class_Has_Required_Properties()
+    public void TmCustomFieldDefinition_Class_Has_Required_Properties()
     {
-        var field = new GanttCustomField
+        var field = new TmCustomFieldDefinition
         {
             Id = "f1",
             Name = "Notes",
-            Type = GanttFieldType.Text,
-            Options = null
+            Type = TmCustomFieldType.Text,
+            Options = []
         };
 
         field.Id.Should().Be("f1");
         field.Name.Should().Be("Notes");
-        field.Type.Should().Be(GanttFieldType.Text);
+        field.Type.Should().Be(TmCustomFieldType.Text);
     }
 
     [Fact]
@@ -388,7 +389,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Has_CustomFields_Parameter()
     {
-        var field = new GanttCustomField { Id = "f1", Name = "Notes", Type = GanttFieldType.Text };
+        var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
         var cut = RenderComponent<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.CustomFields, new[] { field }));
@@ -399,7 +400,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_CustomField_Text_Renders_In_Header()
     {
-        var field = new GanttCustomField { Id = "f1", Name = "Notes", Type = GanttFieldType.Text };
+        var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
         var cut = RenderComponent<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.CustomFields, new[] { field }));
@@ -415,7 +416,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
             Id = "t1", Title = "T", Start = new DateTime(2024, 1, 1), End = new DateTime(2024, 1, 5),
             CustomFields = { ["f1"] = "my note" }
         };
-        var field = new GanttCustomField { Id = "f1", Name = "Notes", Type = GanttFieldType.Text };
+        var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
 
         var cut = RenderComponent<TmGantt>(p => p
             .Add(x => x.Items, new[] { task })
@@ -431,7 +432,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         {
             Id = "t1", Title = "T", Start = new DateTime(2024, 1, 1), End = new DateTime(2024, 1, 5)
         };
-        var field = new GanttCustomField { Id = "f1", Name = "Notes", Type = GanttFieldType.Text };
+        var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
 
         var cut = RenderComponent<TmGantt>(p => p
             .Add(x => x.Items, new[] { task })
@@ -453,7 +454,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         {
             Id = "t1", Title = "T", Start = new DateTime(2024, 1, 1), End = new DateTime(2024, 1, 5)
         };
-        var field = new GanttCustomField { Id = "f1", Name = "Notes", Type = GanttFieldType.Text };
+        var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
 
         var cut = RenderComponent<TmGantt>(p => p
             .Add(x => x.Items, new[] { task })

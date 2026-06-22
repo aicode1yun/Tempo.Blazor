@@ -1,9 +1,11 @@
+using Tempo.Blazor.Abstractions.Shared;
+
 namespace Tempo.Blazor.Abstractions.WorkItems;
 
 /// <summary>
 /// A person (or virtual resource) assigned to a <see cref="TmWorkItem"/>.
-/// Unifies the previous <c>TmWorkItemAssignee</c> and the mention-user concept so the
-/// same person can be referenced across Gantt, Notion tasks and the scheduler.
+/// Keeps scheduling-specific metadata while exposing conversion to the shared
+/// <see cref="TmUserRef"/> snapshot used by people-aware components.
 /// </summary>
 public sealed class TmWorkItemAssignee
 {
@@ -12,6 +14,9 @@ public sealed class TmWorkItemAssignee
 
     /// <summary>Display name.</summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>Optional username or mention handle.</summary>
+    public string? UserName { get; set; }
 
     /// <summary>Optional avatar URL.</summary>
     public string? AvatarUrl { get; set; }
@@ -27,4 +32,47 @@ public sealed class TmWorkItemAssignee
 
     /// <summary>Optional CSS color used to tint the person in timelines/avatars.</summary>
     public string? Color { get; set; }
+
+    /// <summary>Optional provider/source discriminator for applications with multiple people sources.</summary>
+    public string? SourceKey { get; set; }
+
+    /// <summary>Optional tenant, workspace, or application scope identifier.</summary>
+    public string? TenantId { get; set; }
+
+    /// <summary>Creates a shared user reference from this assignment snapshot.</summary>
+    public TmUserRef ToUserRef()
+        => new()
+        {
+            Id = Id,
+            DisplayName = Name,
+            UserName = UserName,
+            Email = Email,
+            AvatarUrl = AvatarUrl,
+            Color = Color,
+            IsVirtual = IsVirtual,
+            SourceKey = SourceKey,
+            TenantId = TenantId
+        };
+
+    /// <summary>Creates an assignment snapshot from a shared user reference.</summary>
+    /// <param name="user">Shared user reference to copy.</param>
+    /// <param name="hourlyRate">Optional hourly billing rate for the assignment.</param>
+    public static TmWorkItemAssignee FromUserRef(TmUserRef user, decimal? hourlyRate = null)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+
+        return new TmWorkItemAssignee
+        {
+            Id = user.Id,
+            Name = user.DisplayName,
+            UserName = user.UserName,
+            AvatarUrl = user.AvatarUrl,
+            Email = user.Email,
+            HourlyRate = hourlyRate,
+            IsVirtual = user.IsVirtual,
+            Color = user.Color,
+            SourceKey = user.SourceKey,
+            TenantId = user.TenantId
+        };
+    }
 }

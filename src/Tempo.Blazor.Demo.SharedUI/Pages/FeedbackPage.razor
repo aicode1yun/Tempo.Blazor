@@ -1,5 +1,6 @@
 @page "/feedback"
 @inject ToastService Toast
+@using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.Components.Workflow
 @using Tempo.Blazor.Components.Notifications
 <PageTitle>Feedback – Tempo.Blazor</PageTitle>
@@ -126,7 +127,7 @@
     
     <div class="showcase-card">
         <div class="flex items-center justify-between">
-            <TmNotificationBell Items="@_notifications" OnMarkAllRead="@MarkAllRead" />
+            <TmNotificationBell />
             <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="AddNotification">
                 <span class="flex items-center space-x-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -846,33 +847,33 @@
 
     private int _unreadCount => _notifications.Count(n => !n.IsRead);
 
-    private List<DemoNotification> _notifications = new()
+    private List<TmNotification> _notifications = new()
     {
-        new("n1", "Deployment succeeded", "Build #142 deployed to production.", false),
-        new("n2", "New comment", "Alice commented on PR #88.", false),
-        new("n3", "Issue resolved", "Bug #301 was closed.", true),
+        new() { Id = "n1", RecipientUserId = "demo", Type = TmNotificationTypes.PageEdited, Title = "Deployment succeeded", Body = "Build #142 deployed to production." },
+        new() { Id = "n2", RecipientUserId = "demo", Type = TmNotificationTypes.PageCommentAdded, Title = "New comment", Body = "Alice commented on PR #88." },
+        new() { Id = "n3", RecipientUserId = "demo", Type = TmNotificationTypes.ThreadResolved, Title = "Issue resolved", Body = "Bug #301 was closed.", ReadAt = DateTimeOffset.UtcNow },
     };
-
-    private record DemoNotification(string Id, string Title, string? Body, bool IsRead,
-        string? IconName = null, string? ActionUrl = null,
-        NotificationSeverity Severity = NotificationSeverity.Info) : INotificationItem
-    {
-        public DateTimeOffset CreatedAt => DateTimeOffset.Now.AddMinutes(-new Random().Next(1, 60));
-    }
 
     private void MarkAllRead() =>
         _notifications = _notifications
-            .Select(n => n with { IsRead = true })
+            .Select(n =>
+            {
+                n.ReadAt ??= DateTimeOffset.UtcNow;
+                return n;
+            })
             .ToList();
 
     private void AddNotification()
     {
         var newId = $"n{_notifications.Count + 1}";
-        _notifications.Insert(0, new DemoNotification(
-            newId, 
-            $"New notification {_notifications.Count + 1}", 
-            "This is a dynamically added notification.", 
-            false));
+        _notifications.Insert(0, new TmNotification
+        {
+            Id = newId,
+            RecipientUserId = "demo",
+            Type = TmNotificationTypes.Mention,
+            Title = $"New notification {_notifications.Count + 1}",
+            Body = "This is a dynamically added notification."
+        });
     }
 
     private List<DemoEntry> _timelineEntries = new()

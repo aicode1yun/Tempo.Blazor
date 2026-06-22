@@ -16,13 +16,13 @@
       "type": "DocumentEditorAuditFailureMode",
       "isRequired": false,
       "default": "DocumentEditorAuditFailureMode.NonBlocking",
-      "description": "Optional audit sink used to record document save events."
+      "description": "Determines whether activity provider failures block editor workflows."
     },
     {
-      "name": "AuditSink",
-      "type": "IDocumentAuditSink?",
+      "name": "ActivityProvider",
+      "type": "ITmActivityProvider?",
       "isRequired": false,
-      "description": "Author used for save requests and audit events."
+      "description": "Optional activity provider used to record document editor audit events."
     },
     {
       "name": "Author",
@@ -138,7 +138,7 @@
     },
     {
       "name": "MentionProvider",
-      "type": "IMentionDataProvider?",
+      "type": "ITmPeopleProvider?",
       "isRequired": false,
       "description": "Whether the current user can delete their own comments."
     },
@@ -184,7 +184,7 @@
       "name": "OnSaveRequested",
       "type": "EventCallback<DocumentEditorSaveRequest>",
       "isRequired": false,
-      "description": "Determines whether audit sink failures block editor workflows."
+      "description": "Raised immediately before a save request is sent to the provider."
     },
     {
       "name": "OnVersionCreated",

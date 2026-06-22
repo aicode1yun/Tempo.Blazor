@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Models;
 using Tempo.Blazor.Components.NotionEditor.Services;
-using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
@@ -37,7 +37,7 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
 
     // ── State ─────────────────────────────────────────────────────────────────
 
-    private IBlockComment? _comment;
+    private TmCommentThread? _comment;
     private bool           _loading;
     private bool           _submitting;
     private string         _replyText  = string.Empty;
@@ -49,12 +49,12 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
     private ElementReference _panelRef;
     private DotNetObjectReference<TmNotionTextCommentPanel>? _dotNetRef;
 
-    private Guid?          _editingEntryId;
+    private string?        _editingEntryId;
     private string         _editText = string.Empty;
     private bool           _showDeleteConfirm;
-    private INotionCommentEntry? _pendingDeleteEntry;
+    private TmCommentEntry? _pendingDeleteEntry;
 
-    private Guid?          _replyingToEntryId;
+    private string?        _replyingToEntryId;
     private string         _inlineReplyText = string.Empty;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -125,7 +125,7 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
             if (!string.IsNullOrEmpty(_activeCommentId))
             {
                 var list = await Context.CommentProvider.GetBlockCommentsAsync(BlockId);
-                _comment = list.FirstOrDefault(c => c.Id.ToString() == _activeCommentId);
+                _comment = list.FirstOrDefault(c => c.Id == _activeCommentId);
             }
         }
         catch
@@ -156,16 +156,16 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
             {
                 _comment = await Context.CommentProvider.AddTextAnchorCommentAsync(
                     BlockId, StartOffset, EndOffset, HighlightedText, _replyText.Trim(), CommentId);
-                _activeCommentId = _comment.Id.ToString();
+                _activeCommentId = _comment.Id;
             }
             else
             {
-                await Context.CommentProvider.ReplyToCommentAsync(_comment.Id.ToString(), _replyText.Trim());
+                await Context.CommentProvider.ReplyToCommentAsync(_comment.Id, _replyText.Trim());
             }
 
             _replyText = string.Empty;
             await LoadAsync();
-            await OnCountChanged.InvokeAsync(_comment?.Thread.Count ?? 0);
+            await OnCountChanged.InvokeAsync(_comment?.Entries.Count ?? 0);
         }
         catch
         {
@@ -198,14 +198,14 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
         try
         {
             await Context.CommentProvider.ReplyToCommentAsync(
-                _comment.Id.ToString(),
+                _comment.Id,
                 _inlineReplyText.Trim(),
-                _replyingToEntryId.ToString());
+                _replyingToEntryId);
 
             _replyingToEntryId = null;
             _inlineReplyText   = string.Empty;
             await LoadAsync();
-            await OnCountChanged.InvokeAsync(_comment?.Thread.Count ?? 0);
+            await OnCountChanged.InvokeAsync(_comment?.Entries.Count ?? 0);
         }
         catch
         {
@@ -225,7 +225,7 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
             CancelInlineReply();
     }
 
-    private void HandleEntryKeyDownAsync(KeyboardEventArgs e, INotionCommentEntry entry)
+    private void HandleEntryKeyDownAsync(KeyboardEventArgs e, TmCommentEntry entry)
     {
         if (e.Key == "Enter" && _replyingToEntryId != entry.Id)
         {
@@ -241,7 +241,7 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
         }
     }
 
-    private void StartReplyToEntry(INotionCommentEntry entry)
+    private void StartReplyToEntry(TmCommentEntry entry)
     {
         _replyingToEntryId = entry.Id;
         _inlineReplyText   = QuoteReply(entry);
@@ -260,7 +260,7 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
         _error = string.Empty;
         try
         {
-            _comment = await Context.CommentProvider.ResolveCommentAsync(_comment.Id.ToString());
+            _comment = await Context.CommentProvider.ResolveCommentAsync(_comment.Id);
             await OnResolved.InvokeAsync();
             await OnCountChanged.InvokeAsync(0);
         }
@@ -276,8 +276,8 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
         _error = string.Empty;
         try
         {
-            _comment = await Context.CommentProvider.UnresolveCommentAsync(_comment.Id.ToString());
-            await OnCountChanged.InvokeAsync(_comment.Thread.Count);
+            _comment = await Context.CommentProvider.UnresolveCommentAsync(_comment.Id);
+            await OnCountChanged.InvokeAsync(_comment.Entries.Count);
         }
         catch
         {
@@ -285,10 +285,10 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
         }
     }
 
-    private void StartEdit(INotionCommentEntry entry)
+    private void StartEdit(TmCommentEntry entry)
     {
         _editingEntryId = entry.Id;
-        _editText       = StripHtml(entry.HtmlContent);
+        _editText       = StripHtml(entry.HtmlContent());
         StateHasChanged();
     }
 
@@ -306,7 +306,10 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.EditCommentAsync(_editingEntryId.ToString()!, _editText.Trim());
+            if (_comment is null)
+                return;
+
+            await Context.CommentProvider.EditCommentAsync(_comment.Id, _editingEntryId, _editText.Trim());
             _editingEntryId = null;
             _editText       = string.Empty;
             await LoadAsync();
@@ -317,7 +320,7 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
         }
     }
 
-    private void DeleteEntryAsync(INotionCommentEntry entry)
+    private void DeleteEntryAsync(TmCommentEntry entry)
     {
         if (Context.CommentProvider is null || _comment is null) return;
         _pendingDeleteEntry = entry;
@@ -335,10 +338,10 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
         }
 
         _error = string.Empty;
-        var threadId = _comment.Id.ToString();
+        var threadId = _comment.Id;
         try
         {
-            var isOnlyEntry = _comment.Thread.Count <= 1;
+            var isOnlyEntry = _comment.Entries.Count <= 1;
             if (isOnlyEntry)
             {
                 await Context.CommentProvider.DeleteCommentAsync(threadId);
@@ -350,9 +353,9 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
             }
             else
             {
-                await Context.CommentProvider.DeleteCommentEntryAsync(_pendingDeleteEntry.Id.ToString()!);
+                await Context.CommentProvider.DeleteCommentEntryAsync(threadId, _pendingDeleteEntry.Id);
                 await LoadAsync();
-                await OnCountChanged.InvokeAsync(_comment?.Thread.Count ?? 0);
+                await OnCountChanged.InvokeAsync(_comment?.Entries.Count ?? 0);
             }
         }
         catch
@@ -388,11 +391,9 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.SubscribeToThreadAsync(_comment.Id.ToString(), CurrentUserId);
-            if (_comment is BlockComment bc && !bc.SubscribedUserIds.Contains(CurrentUserId))
-                bc.SubscribedUserIds.Add(CurrentUserId);
-            else if (_comment is Tempo.Blazor.NotionEditor.Models.BlockComment bc2 && !bc2.SubscribedUserIds.Contains(CurrentUserId))
-                bc2.SubscribedUserIds.Add(CurrentUserId);
+            await Context.CommentProvider.SubscribeToThreadAsync(_comment.Id, CurrentUserId);
+            if (!_comment.SubscribedUserIds.Contains(CurrentUserId))
+                _comment.SubscribedUserIds.Add(CurrentUserId);
         }
         catch
         {
@@ -406,11 +407,8 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.UnsubscribeFromThreadAsync(_comment.Id.ToString(), CurrentUserId);
-            if (_comment is BlockComment bc)
-                bc.SubscribedUserIds.Remove(CurrentUserId);
-            else if (_comment is Tempo.Blazor.NotionEditor.Models.BlockComment bc2)
-                bc2.SubscribedUserIds.Remove(CurrentUserId);
+            await Context.CommentProvider.UnsubscribeFromThreadAsync(_comment.Id, CurrentUserId);
+            _comment.SubscribedUserIds.Remove(CurrentUserId);
         }
         catch
         {
@@ -433,9 +431,9 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
     private static string AvatarInitial(string name)
         => name.Length > 0 ? name[0].ToString().ToUpperInvariant() : "?";
 
-    private static string FormatTime(DateTime dt)
+    private static string FormatTime(DateTimeOffset dt)
     {
-        var diff = DateTime.UtcNow - dt.ToUniversalTime();
+        var diff = DateTimeOffset.UtcNow - dt.ToUniversalTime();
         if (diff.TotalMinutes < 1)  return "just now";
         if (diff.TotalHours   < 1)  return $"{(int)diff.TotalMinutes}m ago";
         if (diff.TotalDays    < 1)  return $"{(int)diff.TotalHours}h ago";
@@ -452,10 +450,10 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
         return System.Text.RegularExpressions.Regex.Replace(html, "<[^>]*>", string.Empty);
     }
 
-    private static string QuoteReply(INotionCommentEntry entry)
+    private static string QuoteReply(TmCommentEntry entry)
     {
-        var text = StripHtml(entry.HtmlContent).Trim();
+        var text = StripHtml(entry.HtmlContent()).Trim();
         if (text.Length > 120) text = text[..120] + "…";
-        return $"> {entry.AuthorDisplayName}: \"{text}\"\n\n";
+        return $"> {entry.AuthorDisplayName()}: \"{text}\"\n\n";
     }
 }

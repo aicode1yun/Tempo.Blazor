@@ -1,27 +1,27 @@
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.NotionEditor.Helpers;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Demo.Services;
 
 /// <summary>
-/// In-memory scoped comment provider for the demo. Pre-seeded with two threads on the
-/// "Getting Started" page. All mutation methods update in-memory state only.
+/// In-memory scoped comment provider for the demo. Pre-seeded with threads on
+/// the demo Notion pages. All mutation methods update in-memory state only.
 /// </summary>
-public class MockNotionCommentProvider : INotionCommentProvider
+public class MockNotionCommentProvider :
+    ITmCommentProvider,
+    ITmCommentReactionProvider,
+    ITmCommentReadTrackingProvider,
+    ITmCommentSubscriptionProvider
 {
-    // commentId → BlockComment
-    private readonly Dictionary<Guid, BlockComment> _byId = new();
-    // blockId or pageId → ordered list of comment IDs
-    private readonly Dictionary<Guid, List<Guid>> _idx = new();
+    private readonly Dictionary<string, TmCommentThread> _byId = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, List<string>> _idx = new(StringComparer.Ordinal);
 
-    // Fixed demo page IDs — duplicated from MockNotionDataStore (different assembly)
-    private static readonly Guid _page1Id = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    private static readonly Guid _page2Id = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    private static readonly Guid Page1Id = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly Guid Page2Id = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     private readonly CommentNotificationOrchestrator? _orchestrator;
 
-    public MockNotionCommentProvider(INotificationService? notificationService = null)
+    public MockNotionCommentProvider(ITmNotificationService? notificationService = null)
     {
         _orchestrator = notificationService is not null
             ? new CommentNotificationOrchestrator(notificationService)
@@ -29,360 +29,370 @@ public class MockNotionCommentProvider : INotionCommentProvider
         Seed();
     }
 
-    // ── Seeding ───────────────────────────────────────────────────────────────
+    public TmCommentProviderCapabilities Capabilities =>
+        TmCommentProviderCapabilities.Read
+        | TmCommentProviderCapabilities.CreateThread
+        | TmCommentProviderCapabilities.Reply
+        | TmCommentProviderCapabilities.EditEntry
+        | TmCommentProviderCapabilities.Delete
+        | TmCommentProviderCapabilities.Resolve
+        | TmCommentProviderCapabilities.Reactions
+        | TmCommentProviderCapabilities.ReadTracking
+        | TmCommentProviderCapabilities.Subscriptions
+        | TmCommentProviderCapabilities.RichText;
 
     private void Seed()
     {
-        var pageId = _page1Id;
+        var pageRef = TmEntityRef.Create("notion-page", Page1Id.ToString("D"));
 
-        // Thread 1 — resolved (Alice → Bob)
-        var c1e1 = MakeEntry("alice",   "Alice Johnson", "https://i.pravatar.cc/150?u=alice",
+        var c1e1 = MakeEntry("alice", "Alice Johnson", "https://i.pravatar.cc/150?u=alice",
             "Great overview! Should we add a keyboard shortcut cheat sheet?",
-            DateTime.UtcNow.AddDays(-3));
-        var c1e2 = MakeEntry("bob",     "Bob Smith",     "https://i.pravatar.cc/150?u=bob",
-            "Good idea — added a <strong>Keyboard Shortcuts</strong> callout below 👍",
-            DateTime.UtcNow.AddDays(-2));
-        c1e1.Reactions.Add(new CommentReaction { Emoji = "👍", UserIds = new() { "bob", "charlie" } });
-        c1e1.Reactions.Add(new CommentReaction { Emoji = "🔥", UserIds = new() { "diana" } });
-        var c1 = NewComment(pageId, c1e1, c1e2);
-        c1.IsResolved       = true;
-        c1.ResolvedAt       = DateTime.UtcNow.AddDays(-2).AddHours(1);
-        c1.ResolvedByUserId = "bob";
-        Register(pageId, c1);
+            DateTimeOffset.UtcNow.AddDays(-3));
+        var c1e2 = MakeEntry("bob", "Bob Smith", "https://i.pravatar.cc/150?u=bob",
+            "Good idea - added a <strong>Keyboard Shortcuts</strong> callout below.",
+            DateTimeOffset.UtcNow.AddDays(-2));
+        c1e1.Reactions.Add(new TmCommentReaction { Value = "👍", UserIds = ["bob", "charlie"] });
+        c1e1.Reactions.Add(new TmCommentReaction { Value = "🔥", UserIds = ["diana"] });
 
-        // Thread 2 — open (Charlie)
+        var c1 = NewThread(pageRef, c1e1, c1e2);
+        c1.Status = TmCommentThreadStatus.Resolved;
+        c1.ResolvedAt = DateTimeOffset.UtcNow.AddDays(-2).AddHours(1);
+        c1.ResolvedBy = new TmUserRef { Id = "bob", DisplayName = "Bob Smith" };
+        Register(c1);
+
         var c2e1 = MakeEntry("charlie", "Charlie Brown", null,
             "Can we add a <em>board view</em> database demo in a separate sub-page?",
-            DateTime.UtcNow.AddHours(-6));
-        c2e1.Reactions.Add(new CommentReaction { Emoji = "👍", UserIds = new() { "bob" } });
-        var c2 = NewComment(pageId, c2e1);
-        Register(pageId, c2);
+            DateTimeOffset.UtcNow.AddHours(-6));
+        c2e1.Reactions.Add(new TmCommentReaction { Value = "👍", UserIds = ["bob"] });
+        Register(NewThread(pageRef, c2e1));
 
-        // Page 2 — one open comment
-        var c3 = NewComment(_page2Id,
+        var page2Ref = TmEntityRef.Create("notion-page", Page2Id.ToString("D"));
+        Register(NewThread(page2Ref,
             MakeEntry("diana", "Diana Prince", "https://i.pravatar.cc/150?u=diana",
                 "Should the Q2 items be moved into a separate database for tracking?",
-                DateTime.UtcNow.AddHours(-3))
-        );
-        Register(_page2Id, c3);
+                DateTimeOffset.UtcNow.AddHours(-3))));
     }
 
-    private static BlockComment NewComment(Guid ownerId, params NotionCommentEntry[] entries) => new()
+    public Task<IReadOnlyList<TmCommentThread>> GetForEntityAsync(
+        TmEntityRef entityRef,
+        CancellationToken cancellationToken = default)
     {
-        Id      = Guid.NewGuid(),
-        BlockId = ownerId,
-        Thread  = new List<INotionCommentEntry>(entries),
-        LastActivityAt = entries.Length > 0 ? entries.Max(e => e.CreatedAt) : DateTime.UtcNow
-    };
+        var key = entityRef.Normalize().ToQualifiedKey();
+        var result = _idx.TryGetValue(key, out var ids)
+            ? ids.Where(_byId.ContainsKey).Select(id => _byId[id]).ToList()
+            : [];
 
-    private static NotionCommentEntry MakeEntry(string userId, string name, string? avatar, string html, DateTime at, Guid? parentEntryId = null) => new()
-    {
-        Id                = Guid.NewGuid(),
-        ParentEntryId     = parentEntryId,
-        AuthorUserId      = userId,
-        AuthorDisplayName = name,
-        AuthorAvatarUrl   = avatar,
-        HtmlContent       = html,
-        CreatedAt         = at,
-        UpdatedAt         = at,
-        CanEdit           = false,
-        CanDelete         = false,
-        Reactions         = new()
-    };
-
-    private void Register(Guid ownerId, BlockComment comment)
-    {
-        _byId[comment.Id] = comment;
-        if (!_idx.TryGetValue(ownerId, out var list)) _idx[ownerId] = list = new();
-        list.Add(comment.Id);
+        return Task.FromResult<IReadOnlyList<TmCommentThread>>(result);
     }
 
-    // ── INotionCommentProvider ────────────────────────────────────────────────
-
-    public Task<IEnumerable<IBlockComment>> GetBlockCommentsAsync(string blockId)
+    public Task<TmCommentThread> CreateThreadAsync(
+        TmCommentThread thread,
+        CancellationToken cancellationToken = default)
     {
-        var id  = Parse(blockId);
-        var res = _idx.TryGetValue(id, out var ids)
-            ? ids.Where(_byId.ContainsKey).Select(x => (IBlockComment)_byId[x])
-            : Enumerable.Empty<IBlockComment>();
-        return Task.FromResult(res);
+        NormalizeThread(thread);
+        Register(thread);
+        return Task.FromResult(thread);
     }
 
-    public Task<IBlockComment> AddBlockCommentAsync(string blockId, string htmlContent)
+    public async Task<TmCommentEntry> ReplyAsync(
+        string threadId,
+        TmCommentEntry entry,
+        CancellationToken cancellationToken = default)
     {
-        var id = Parse(blockId);
-        var entry = DemoEntry(htmlContent);
-        var c  = NewComment(id, entry);
-        c.SubscribedUserIds.Add(entry.AuthorUserId);
-        Register(id, c);
-        return Task.FromResult<IBlockComment>(c);
-    }
+        var thread = Require(threadId);
+        NormalizeEntry(entry, thread.Id);
+        thread.Entries.Add(entry);
+        thread.UpdatedAt = DateTimeOffset.UtcNow;
 
-    public async Task<INotionCommentEntry> ReplyToCommentAsync(string commentId, string htmlContent, string? parentEntryId = null)
-    {
-        var c = Require(commentId);
-        var e = DemoEntry(htmlContent);
-        if (!string.IsNullOrEmpty(parentEntryId))
-            e.ParentEntryId = Parse(parentEntryId);
-        ((List<INotionCommentEntry>)c.Thread).Add(e);
-        c.LastActivityAt = DateTime.UtcNow;
-        if (!c.SubscribedUserIds.Contains(e.AuthorUserId))
-            c.SubscribedUserIds.Add(e.AuthorUserId);
+        if (!thread.SubscribedUserIds.Contains(entry.Author.Id))
+            thread.SubscribedUserIds.Add(entry.Author.Id);
 
         if (_orchestrator is not null)
-            await _orchestrator.OnNewReplyAsync(c, e);
+            await _orchestrator.OnNewReplyAsync(thread, entry, cancellationToken);
 
-        return e;
+        return entry;
     }
 
-    public Task<INotionCommentEntry> EditCommentAsync(string entryId, string htmlContent)
+    public Task<TmCommentEntry> UpdateEntryAsync(
+        string threadId,
+        string entryId,
+        TmCommentEntry entry,
+        CancellationToken cancellationToken = default)
     {
-        var eid = Parse(entryId);
-        foreach (var c in _byId.Values)
-            foreach (var e in c.Thread.OfType<NotionCommentEntry>())
-                if (e.Id == eid)
-                {
-                    e.HtmlContent = htmlContent;
-                    e.UpdatedAt   = DateTime.UtcNow;
-                    return Task.FromResult<INotionCommentEntry>(e);
-                }
-        throw new KeyNotFoundException(entryId);
+        var thread = Require(threadId);
+        var existing = thread.Entries.FirstOrDefault(item => item.Id == entryId)
+            ?? throw new KeyNotFoundException(entryId);
+
+        existing.Body = entry.Body;
+        existing.BodyFormat = entry.BodyFormat;
+        existing.EditedAt = entry.EditedAt ?? DateTimeOffset.UtcNow;
+        existing.Mentions = entry.Mentions;
+        existing.Metadata = entry.Metadata;
+        thread.UpdatedAt = DateTimeOffset.UtcNow;
+
+        return Task.FromResult(existing);
     }
 
-    public Task DeleteCommentAsync(string commentId)
+    public Task DeleteThreadAsync(string threadId, CancellationToken cancellationToken = default)
     {
-        var cid = Parse(commentId);
-        if (_byId.TryGetValue(cid, out var c))
+        if (_byId.Remove(threadId, out var thread))
         {
-            _byId.Remove(cid);
-            if (_idx.TryGetValue(c.BlockId, out var list)) list.Remove(cid);
+            var key = thread.EntityRef.Normalize().ToQualifiedKey();
+            if (_idx.TryGetValue(key, out var ids))
+                ids.Remove(threadId);
         }
+
         return Task.CompletedTask;
     }
 
-    public Task DeleteCommentEntryAsync(string entryId)
+    public Task DeleteEntryAsync(
+        string threadId,
+        string entryId,
+        CancellationToken cancellationToken = default)
     {
-        var eid = Parse(entryId);
-        foreach (var c in _byId.Values)
-        {
-            var thread = c.Thread as List<INotionCommentEntry>;
-            if (thread is null) continue;
-            for (int i = 0; i < thread.Count; i++)
-            {
-                if (thread[i].Id == eid)
-                {
-                    thread.RemoveAt(i);
-                    return Task.CompletedTask;
-                }
-            }
-        }
+        var thread = Require(threadId);
+        thread.Entries.RemoveAll(entry => entry.Id == entryId);
+        thread.UpdatedAt = DateTimeOffset.UtcNow;
         return Task.CompletedTask;
     }
 
-    public async Task<IBlockComment> ResolveCommentAsync(string commentId)
+    public async Task<TmCommentThread> ResolveAsync(
+        string threadId,
+        TmUserRef? resolvedBy = null,
+        CancellationToken cancellationToken = default)
     {
-        var c = Require(commentId);
-        c.IsResolved       = true;
-        c.ResolvedAt       = DateTime.UtcNow;
-        c.ResolvedByUserId = "demo";
-        c.LastActivityAt   = DateTime.UtcNow;
+        var thread = Require(threadId);
+        thread.Status = TmCommentThreadStatus.Resolved;
+        thread.ResolvedAt = DateTimeOffset.UtcNow;
+        thread.ResolvedBy = resolvedBy ?? new TmUserRef { Id = "demo", DisplayName = "Demo User" };
+        thread.UpdatedAt = DateTimeOffset.UtcNow;
 
         if (_orchestrator is not null)
-            await _orchestrator.OnThreadResolvedAsync(c, "demo", "Demo User");
+            await _orchestrator.OnThreadResolvedAsync(thread, "demo", "Demo User", cancellationToken);
 
-        return c;
+        return thread;
     }
 
-    public Task<IBlockComment> UnresolveCommentAsync(string commentId)
+    public Task<TmCommentThread> ReopenAsync(
+        string threadId,
+        TmUserRef? reopenedBy = null,
+        CancellationToken cancellationToken = default)
     {
-        var c = Require(commentId);
-        c.IsResolved       = false;
-        c.ResolvedAt       = null;
-        c.ResolvedByUserId = null;
-        return Task.FromResult<IBlockComment>(c);
+        var thread = Require(threadId);
+        thread.Status = TmCommentThreadStatus.Open;
+        thread.ResolvedAt = null;
+        thread.ResolvedBy = null;
+        thread.UpdatedAt = DateTimeOffset.UtcNow;
+        return Task.FromResult(thread);
     }
 
-    public Task<IBlockComment> AddTextAnchorCommentAsync(
-        string blockId, int _startOffset, int _endOffset, string _highlightedText, string htmlContent, string commentId)
+    public Task<IReadOnlyList<TmCommentReaction>> GetReactionsAsync(
+        string entryId,
+        CancellationToken cancellationToken = default)
     {
-        var ownerId = Parse(blockId);
-        var cid     = Parse(commentId);
-        var entry = DemoEntry(htmlContent);
-        var c = new BlockComment
+        var entry = FindEntry(entryId);
+        return Task.FromResult<IReadOnlyList<TmCommentReaction>>(entry?.Reactions ?? []);
+    }
+
+    public async Task AddReactionAsync(
+        string entryId,
+        string value,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        var (thread, entry) = RequireEntry(entryId);
+        var reaction = entry.Reactions.FirstOrDefault(item => item.Value == value);
+        if (reaction is null)
         {
-            Id      = cid,
-            BlockId = ownerId,
-            Thread  = new List<INotionCommentEntry> { entry }
-        };
-        c.SubscribedUserIds.Add(entry.AuthorUserId);
-        Register(ownerId, c);
-        return Task.FromResult<IBlockComment>(c);
+            reaction = new TmCommentReaction { Value = value };
+            entry.Reactions.Add(reaction);
+        }
+
+        if (!reaction.UserIds.Contains(userId))
+            reaction.UserIds.Add(userId);
+
+        thread.UpdatedAt = DateTimeOffset.UtcNow;
+
+        if (_orchestrator is not null)
+            await _orchestrator.OnReactionAsync(entry, value, userId, "Demo User", thread.Id, thread.EntityRef.EntityId, cancellationToken);
     }
 
-    public async Task<IEnumerable<IPageComment>> GetPageCommentsAsync(string pageId)
+    public Task RemoveReactionAsync(
+        string entryId,
+        string value,
+        string userId,
+        CancellationToken cancellationToken = default)
     {
-        var comments = await GetBlockCommentsAsync(pageId);
-        return comments.Select(comment => new PageComment
+        var (thread, entry) = RequireEntry(entryId);
+        var reaction = entry.Reactions.FirstOrDefault(item => item.Value == value);
+        if (reaction is not null)
         {
-            Id = comment.Id,
-            BlockId = comment.BlockId,
-            PageId = pageId,
-            Thread = comment.Thread,
-            IsResolved = comment.IsResolved,
-            ResolvedAt = comment.ResolvedAt,
-            ResolvedByUserId = comment.ResolvedByUserId,
-            LastActivityAt = comment.LastActivityAt,
-            ReadByUserIds = comment.ReadByUserIds.ToList(),
-            SubscribedUserIds = comment.SubscribedUserIds.ToList()
-        }).ToArray();
-    }
+            reaction.UserIds.Remove(userId);
+            if (reaction.UserIds.Count == 0)
+                entry.Reactions.Remove(reaction);
+        }
 
-    public async Task<IPageComment> AddPageCommentAsync(string pageId, string htmlContent)
-    {
-        var comment = await AddBlockCommentAsync(pageId, htmlContent);
-        return new PageComment
-        {
-            Id = comment.Id,
-            BlockId = comment.BlockId,
-            PageId = pageId,
-            Thread = comment.Thread,
-            IsResolved = comment.IsResolved,
-            ResolvedAt = comment.ResolvedAt,
-            ResolvedByUserId = comment.ResolvedByUserId,
-            LastActivityAt = comment.LastActivityAt,
-            ReadByUserIds = comment.ReadByUserIds.ToList(),
-            SubscribedUserIds = comment.SubscribedUserIds.ToList()
-        };
-    }
-
-    public Task<int> GetUnresolvedCommentsCountAsync(string pageId)
-    {
-        var pid   = Parse(pageId);
-        var count = _idx.TryGetValue(pid, out var ids)
-            ? ids.Where(_byId.ContainsKey).Count(x => !_byId[x].IsResolved)
-            : 0;
-        return Task.FromResult(count);
-    }
-
-    public Task MarkThreadAsReadAsync(string commentId, string userId)
-    {
-        var c = Require(commentId);
-        if (!c.ReadByUserIds.Contains(userId))
-            c.ReadByUserIds.Add(userId);
+        thread.UpdatedAt = DateTimeOffset.UtcNow;
         return Task.CompletedTask;
     }
 
-    public Task MarkThreadAsUnreadAsync(string commentId, string userId)
+    public Task MarkThreadAsReadAsync(
+        string threadId,
+        string userId,
+        CancellationToken cancellationToken = default)
     {
-        var c = Require(commentId);
-        c.ReadByUserIds.Remove(userId);
+        var thread = Require(threadId);
+        if (!thread.ReadByUserIds.Contains(userId))
+            thread.ReadByUserIds.Add(userId);
         return Task.CompletedTask;
     }
 
-    public Task MarkAllThreadsAsReadAsync(string ownerId, string userId)
+    public Task MarkThreadAsUnreadAsync(
+        string threadId,
+        string userId,
+        CancellationToken cancellationToken = default)
     {
-        var oid = Parse(ownerId);
-        if (_idx.TryGetValue(oid, out var ids))
+        var thread = Require(threadId);
+        thread.ReadByUserIds.Remove(userId);
+        return Task.CompletedTask;
+    }
+
+    public Task MarkAllForEntityAsReadAsync(
+        TmEntityRef entityRef,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        var key = entityRef.Normalize().ToQualifiedKey();
+        if (_idx.TryGetValue(key, out var ids))
         {
             foreach (var id in ids)
             {
-                if (_byId.TryGetValue(id, out var c) && !c.ReadByUserIds.Contains(userId))
-                    c.ReadByUserIds.Add(userId);
+                if (_byId.TryGetValue(id, out var thread) && !thread.ReadByUserIds.Contains(userId))
+                    thread.ReadByUserIds.Add(userId);
             }
         }
+
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<ICommentReaction>> GetReactionsAsync(string entryId)
+    public Task SubscribeAsync(
+        string threadId,
+        string userId,
+        CancellationToken cancellationToken = default)
     {
-        var eid = Parse(entryId);
-        foreach (var c in _byId.Values)
-            foreach (var e in c.Thread.OfType<NotionCommentEntry>())
-                if (e.Id == eid)
-                    return Task.FromResult<IReadOnlyList<ICommentReaction>>(e.Reactions);
-        return Task.FromResult<IReadOnlyList<ICommentReaction>>(Array.Empty<ICommentReaction>());
+        var thread = Require(threadId);
+        if (!thread.SubscribedUserIds.Contains(userId))
+            thread.SubscribedUserIds.Add(userId);
+        return Task.CompletedTask;
     }
 
-    public async Task AddReactionAsync(string entryId, string emoji, string userId)
+    public Task UnsubscribeAsync(
+        string threadId,
+        string userId,
+        CancellationToken cancellationToken = default)
     {
-        var eid = Parse(entryId);
-        foreach (var c in _byId.Values)
-            foreach (var e in c.Thread.OfType<NotionCommentEntry>())
-                if (e.Id == eid)
-                {
-                    var r = e.Reactions.OfType<CommentReaction>().FirstOrDefault(x => x.Emoji == emoji);
-                    if (r is null)
-                    {
-                        r = new CommentReaction { Emoji = emoji };
-                        e.Reactions.Add(r);
-                    }
-                    if (!r.UserIds.Contains(userId))
-                        r.UserIds.Add(userId);
+        var thread = Require(threadId);
+        thread.SubscribedUserIds.Remove(userId);
+        return Task.CompletedTask;
+    }
 
-                    c.LastActivityAt = DateTime.UtcNow;
-                    if (!c.SubscribedUserIds.Contains(userId))
-                        c.SubscribedUserIds.Add(userId);
+    private static TmCommentThread NewThread(TmEntityRef entityRef, params TmCommentEntry[] entries)
+    {
+        var thread = new TmCommentThread
+        {
+            EntityRef = entityRef,
+            Anchor = TmCommentAnchor.None(),
+            Visibility = TmCommentVisibility.Internal,
+            CreatedAt = entries.Length > 0 ? entries.Min(entry => entry.CreatedAt) : DateTimeOffset.UtcNow,
+            UpdatedAt = entries.Length > 0 ? entries.Max(entry => entry.CreatedAt) : DateTimeOffset.UtcNow,
+            Entries = entries.ToList()
+        };
 
-                    if (_orchestrator is not null)
-                        await _orchestrator.OnReactionAsync(e, emoji, userId, "Demo User", c.Id.ToString(), c.BlockId.ToString());
-                    return;
-                }
+        NormalizeThread(thread);
+        return thread;
+    }
+
+    private static TmCommentEntry MakeEntry(
+        string userId,
+        string name,
+        string? avatar,
+        string html,
+        DateTimeOffset at,
+        string? parentEntryId = null)
+    {
+        return new TmCommentEntry
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            ParentEntryId = parentEntryId,
+            Author = new TmUserRef
+            {
+                Id = userId,
+                DisplayName = name,
+                AvatarUrl = avatar
+            },
+            Body = html,
+            BodyFormat = TmCommentBodyFormat.Html,
+            CreatedAt = at,
+            CanEdit = false,
+            CanDelete = false
+        };
+    }
+
+    private void Register(TmCommentThread thread)
+    {
+        _byId[thread.Id] = thread;
+        var key = thread.EntityRef.Normalize().ToQualifiedKey();
+        if (!_idx.TryGetValue(key, out var ids))
+        {
+            ids = [];
+            _idx[key] = ids;
+        }
+
+        if (!ids.Contains(thread.Id))
+            ids.Add(thread.Id);
+    }
+
+    private TmCommentThread Require(string id)
+        => _byId.TryGetValue(id, out var thread) ? thread : throw new KeyNotFoundException(id);
+
+    private TmCommentEntry? FindEntry(string entryId)
+        => _byId.Values.SelectMany(thread => thread.Entries).FirstOrDefault(entry => entry.Id == entryId);
+
+    private (TmCommentThread Thread, TmCommentEntry Entry) RequireEntry(string entryId)
+    {
+        foreach (var thread in _byId.Values)
+        {
+            var entry = thread.Entries.FirstOrDefault(item => item.Id == entryId);
+            if (entry is not null)
+                return (thread, entry);
+        }
+
         throw new KeyNotFoundException(entryId);
     }
 
-    public Task RemoveReactionAsync(string entryId, string emoji, string userId)
+    private static void NormalizeThread(TmCommentThread thread)
     {
-        var eid = Parse(entryId);
-        foreach (var c in _byId.Values)
-            foreach (var e in c.Thread.OfType<NotionCommentEntry>())
-                if (e.Id == eid)
-                {
-                    var r = e.Reactions.OfType<CommentReaction>().FirstOrDefault(x => x.Emoji == emoji);
-                    if (r is not null)
-                    {
-                        r.UserIds.Remove(userId);
-                        if (r.UserIds.Count == 0)
-                            e.Reactions.Remove(r);
-                    }
-                    c.LastActivityAt = DateTime.UtcNow;
-                    return Task.CompletedTask;
-                }
-        throw new KeyNotFoundException(entryId);
+        if (string.IsNullOrWhiteSpace(thread.Id))
+            thread.Id = Guid.NewGuid().ToString("N");
+
+        thread.EntityRef = thread.EntityRef.Normalize();
+        thread.CreatedAt = thread.CreatedAt == default ? DateTimeOffset.UtcNow : thread.CreatedAt;
+        thread.UpdatedAt ??= thread.CreatedAt;
+
+        foreach (var entry in thread.Entries)
+            NormalizeEntry(entry, thread.Id);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private BlockComment Require(string id)
-        => _byId.TryGetValue(Parse(id), out var c) ? c : throw new KeyNotFoundException(id);
-
-    private static Guid Parse(string id) => Guid.TryParse(id, out var g) ? g : Guid.Empty;
-
-    public Task SubscribeToThreadAsync(string commentId, string userId)
+    private static void NormalizeEntry(TmCommentEntry entry, string threadId)
     {
-        var c = Require(commentId);
-        if (!c.SubscribedUserIds.Contains(userId))
-            c.SubscribedUserIds.Add(userId);
-        return Task.CompletedTask;
+        if (string.IsNullOrWhiteSpace(entry.Id))
+            entry.Id = Guid.NewGuid().ToString("N");
+        entry.ThreadId = threadId;
+        entry.CreatedAt = entry.CreatedAt == default ? DateTimeOffset.UtcNow : entry.CreatedAt;
+        if (string.IsNullOrWhiteSpace(entry.Author.Id))
+        {
+            entry.Author.Id = "demo";
+            entry.Author.DisplayName = "Demo User";
+        }
     }
-
-    public Task UnsubscribeFromThreadAsync(string commentId, string userId)
-    {
-        var c = Require(commentId);
-        c.SubscribedUserIds.Remove(userId);
-        return Task.CompletedTask;
-    }
-
-    private static NotionCommentEntry DemoEntry(string html, Guid? parentEntryId = null) => new()
-    {
-        Id                = Guid.NewGuid(),
-        ParentEntryId     = parentEntryId,
-        AuthorUserId      = "demo",
-        AuthorDisplayName = "Demo User",
-        HtmlContent       = html,
-        CreatedAt         = DateTime.UtcNow,
-        UpdatedAt         = DateTime.UtcNow,
-        CanEdit           = true,
-        CanDelete         = true,
-        Reactions         = new()
-    };
 }

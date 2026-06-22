@@ -1,3 +1,5 @@
+using Tempo.Blazor.Abstractions.Shared;
+
 namespace Tempo.Blazor.DocumentEditor.Models;
 
 /// <summary>Threaded document comment.</summary>
@@ -143,6 +145,237 @@ public enum DocumentCommentVisibility
 
     /// <summary>Public comment included in shared outputs.</summary>
     Public
+}
+
+/// <summary>Maps document-editor comment models to the shared comment contract.</summary>
+public static class DocumentCommentBridge
+{
+    /// <summary>Entity type used by document-editor comments in shared comment providers.</summary>
+    public const string EntityType = "document-editor-document";
+
+    /// <summary>Creates a shared entity reference for a document-editor document.</summary>
+    public static TmEntityRef Entity(string documentId)
+        => TmEntityRef.Create(EntityType, documentId);
+
+    /// <summary>Converts a document-editor comment thread to a shared comment thread.</summary>
+    public static TmCommentThread ToTmCommentThread(DocumentComment comment, string documentId)
+    {
+        var entries = comment.Entries
+            .Select(entry => ToTmCommentEntry(entry, comment.Id))
+            .ToList();
+
+        return new TmCommentThread
+        {
+            Id = string.IsNullOrWhiteSpace(comment.Id) ? Guid.NewGuid().ToString("N") : comment.Id,
+            EntityRef = Entity(documentId),
+            Anchor = ToTmCommentAnchor(comment.Anchor),
+            Status = ToTmStatus(comment.Status),
+            Visibility = ToTmVisibility(comment.Visibility),
+            CreatedAt = entries.Count == 0 ? DateTimeOffset.UtcNow : entries.Min(entry => entry.CreatedAt),
+            UpdatedAt = entries.Count == 0 ? null : entries.Max(entry => entry.EditedAt ?? entry.CreatedAt),
+            ResolvedAt = comment.ResolvedAt,
+            ResolvedBy = comment.ResolvedBy is null ? null : ToTmUserRef(comment.ResolvedBy),
+            ExternalId = comment.ExternalId,
+            SourceFormat = comment.SourceFormat,
+            Entries = entries
+        };
+    }
+
+    /// <summary>Converts a shared comment thread to a document-editor comment thread.</summary>
+    public static DocumentComment ToDocumentComment(TmCommentThread thread)
+    {
+        return new DocumentComment
+        {
+            Id = thread.Id,
+            Anchor = ToDocumentCommentAnchor(thread.Anchor),
+            Entries = thread.Entries.Select(ToDocumentCommentEntry).ToList(),
+            Status = ToDocumentStatus(thread.Status),
+            Visibility = ToDocumentVisibility(thread.Visibility),
+            SourceFormat = thread.SourceFormat,
+            ExternalId = thread.ExternalId,
+            ResolvedAt = thread.ResolvedAt,
+            ResolvedBy = thread.ResolvedBy is null ? null : ToDocumentEditorAuthor(thread.ResolvedBy)
+        };
+    }
+
+    /// <summary>Converts a document-editor comment entry to a shared comment entry.</summary>
+    public static TmCommentEntry ToTmCommentEntry(DocumentCommentEntry entry, string threadId)
+    {
+        var metadata = new Dictionary<string, object>();
+        if (entry.IsExternalAuthor)
+        {
+            metadata["IsExternalAuthor"] = true;
+        }
+
+        if (entry.Inlines.Count > 0)
+        {
+            metadata["Inlines"] = entry.Inlines;
+        }
+
+        return new TmCommentEntry
+        {
+            Id = string.IsNullOrWhiteSpace(entry.Id) ? Guid.NewGuid().ToString("N") : entry.Id,
+            ThreadId = threadId,
+            Author = ToTmUserRef(entry.Author),
+            Body = entry.Text,
+            BodyFormat = TmCommentBodyFormat.PlainText,
+            CreatedAt = entry.CreatedAt == default ? DateTimeOffset.UtcNow : entry.CreatedAt,
+            EditedAt = entry.ModifiedAt,
+            Metadata = metadata.Count == 0 ? null : metadata
+        };
+    }
+
+    /// <summary>Converts a shared comment entry to a document-editor comment entry.</summary>
+    public static DocumentCommentEntry ToDocumentCommentEntry(TmCommentEntry entry)
+    {
+        return new DocumentCommentEntry
+        {
+            Id = entry.Id,
+            Author = ToDocumentEditorAuthor(entry.Author),
+            IsExternalAuthor = GetBool(entry.Metadata, "IsExternalAuthor"),
+            Text = entry.Body,
+            Inlines = GetInlines(entry.Metadata),
+            CreatedAt = entry.CreatedAt == default ? DateTimeOffset.UtcNow : entry.CreatedAt,
+            ModifiedAt = entry.EditedAt
+        };
+    }
+
+    /// <summary>Converts a document-editor author to a shared user reference.</summary>
+    public static TmUserRef ToTmUserRef(DocumentEditorAuthor author)
+    {
+        return new TmUserRef
+        {
+            Id = author.Id,
+            DisplayName = author.DisplayName,
+            Email = author.Email,
+            AvatarUrl = author.AvatarUrl
+        };
+    }
+
+    /// <summary>Converts a shared user reference to a document-editor author.</summary>
+    public static DocumentEditorAuthor ToDocumentEditorAuthor(TmUserRef user)
+    {
+        return new DocumentEditorAuthor
+        {
+            Id = user.Id,
+            DisplayName = string.IsNullOrWhiteSpace(user.DisplayName) ? user.Id : user.DisplayName,
+            Email = user.Email,
+            AvatarUrl = user.AvatarUrl
+        };
+    }
+
+    private static TmCommentAnchor ToTmCommentAnchor(DocumentCommentAnchor anchor)
+    {
+        var result = anchor.Type switch
+        {
+            DocumentCommentAnchorType.TextRange => new TmCommentAnchor
+            {
+                Kind = TmCommentAnchorKind.TextRange,
+                BlockId = anchor.BlockId,
+                StartInlineIndex = anchor.StartInlineIndex,
+                StartOffset = anchor.StartOffset,
+                EndInlineIndex = anchor.EndInlineIndex,
+                EndOffset = anchor.EndOffset
+            },
+            DocumentCommentAnchorType.ImportedDocx or DocumentCommentAnchorType.ImportedOdt => string.IsNullOrWhiteSpace(anchor.ExternalAnchorId)
+                ? TmCommentAnchor.None()
+                : TmCommentAnchor.External(anchor.ExternalAnchorId),
+            DocumentCommentAnchorType.Page => TmCommentAnchor.Page(1),
+            DocumentCommentAnchorType.Rendition => string.IsNullOrWhiteSpace(anchor.RenditionAnchorId)
+                ? TmCommentAnchor.None()
+                : TmCommentAnchor.Rendition(anchor.RenditionAnchorId),
+            _ => string.IsNullOrWhiteSpace(anchor.BlockId)
+                ? TmCommentAnchor.None()
+                : TmCommentAnchor.Block(anchor.BlockId)
+        };
+
+        result.ExternalAnchorId ??= anchor.ExternalAnchorId;
+        result.RenditionAnchorId ??= anchor.RenditionAnchorId;
+        result.IsOrphaned = anchor.IsOrphaned;
+        result.Metadata = new Dictionary<string, object>
+        {
+            ["DocumentAnchorType"] = anchor.Type.ToString()
+        };
+
+        return result;
+    }
+
+    private static DocumentCommentAnchor ToDocumentCommentAnchor(TmCommentAnchor? anchor)
+    {
+        if (anchor is null || anchor.Kind == TmCommentAnchorKind.None)
+        {
+            return new DocumentCommentAnchor();
+        }
+
+        var anchorType = GetDocumentAnchorType(anchor);
+        return new DocumentCommentAnchor
+        {
+            Type = anchorType,
+            BlockId = anchor.BlockId,
+            StartInlineIndex = anchor.StartInlineIndex,
+            StartOffset = anchor.StartOffset,
+            EndInlineIndex = anchor.EndInlineIndex,
+            EndOffset = anchor.EndOffset,
+            ExternalAnchorId = anchor.ExternalAnchorId,
+            RenditionAnchorId = anchor.RenditionAnchorId,
+            IsOrphaned = anchor.IsOrphaned
+        };
+    }
+
+    private static DocumentCommentAnchorType GetDocumentAnchorType(TmCommentAnchor anchor)
+    {
+        if (anchor.Metadata?.TryGetValue("DocumentAnchorType", out var value) == true
+            && value is string raw
+            && Enum.TryParse<DocumentCommentAnchorType>(raw, out var parsed))
+        {
+            return parsed;
+        }
+
+        return anchor.Kind switch
+        {
+            TmCommentAnchorKind.TextRange => DocumentCommentAnchorType.TextRange,
+            TmCommentAnchorKind.External => DocumentCommentAnchorType.ImportedDocx,
+            TmCommentAnchorKind.Page or TmCommentAnchorKind.PagePoint or TmCommentAnchorKind.PageArea => DocumentCommentAnchorType.Page,
+            TmCommentAnchorKind.Rendition => DocumentCommentAnchorType.Rendition,
+            _ => DocumentCommentAnchorType.Block
+        };
+    }
+
+    private static TmCommentThreadStatus ToTmStatus(DocumentCommentStatus status)
+        => status == DocumentCommentStatus.Resolved
+            ? TmCommentThreadStatus.Resolved
+            : TmCommentThreadStatus.Open;
+
+    private static DocumentCommentStatus ToDocumentStatus(TmCommentThreadStatus status)
+        => status == TmCommentThreadStatus.Resolved
+            ? DocumentCommentStatus.Resolved
+            : DocumentCommentStatus.Open;
+
+    private static TmCommentVisibility ToTmVisibility(DocumentCommentVisibility visibility)
+        => visibility switch
+        {
+            DocumentCommentVisibility.External => TmCommentVisibility.External,
+            DocumentCommentVisibility.Client => TmCommentVisibility.Client,
+            DocumentCommentVisibility.Public => TmCommentVisibility.Public,
+            _ => TmCommentVisibility.Internal
+        };
+
+    private static DocumentCommentVisibility ToDocumentVisibility(TmCommentVisibility? visibility)
+        => visibility switch
+        {
+            TmCommentVisibility.External => DocumentCommentVisibility.External,
+            TmCommentVisibility.Client => DocumentCommentVisibility.Client,
+            TmCommentVisibility.Public => DocumentCommentVisibility.Public,
+            _ => DocumentCommentVisibility.Internal
+        };
+
+    private static bool GetBool(Dictionary<string, object>? metadata, string key)
+        => metadata?.TryGetValue(key, out var value) == true && value is bool result && result;
+
+    private static List<InlineContent> GetInlines(Dictionary<string, object>? metadata)
+        => metadata?.TryGetValue("Inlines", out var value) == true && value is List<InlineContent> inlines
+            ? inlines
+            : [];
 }
 
 /// <summary>Comment rail filter mode.</summary>

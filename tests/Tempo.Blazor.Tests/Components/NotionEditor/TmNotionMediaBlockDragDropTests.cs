@@ -2,6 +2,7 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components.Web;
 using NSubstitute;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Blocks.Media;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
@@ -20,7 +21,7 @@ public class TmNotionMediaBlockDragDropTests : LocalizationTestBase
 {
     // ── helpers ──────────────────────────────────────────────────────────────
 
-    private static NotionEditorContext BuildContext(INotionFileProvider? fileProvider = null)
+    private static NotionEditorContext BuildContext(ITmFileProvider? fileProvider = null)
         => new()
         {
             DataProvider  = Substitute.For<INotionDataProvider>(),
@@ -28,7 +29,12 @@ public class TmNotionMediaBlockDragDropTests : LocalizationTestBase
             FileProvider  = fileProvider,
         };
 
-    private static INotionFileProvider MockFileProvider() => Substitute.For<INotionFileProvider>();
+    private static ITmFileProvider MockFileProvider()
+    {
+        var provider = Substitute.For<ITmFileProvider>();
+        provider.Capabilities.Returns(TmFileProviderCapabilities.Upload | TmFileProviderCapabilities.Resolve);
+        return provider;
+    }
 
     private static IImageBlockContent EmptyImageContent() => new TestImageContent();
     private static IPdfBlockContent   EmptyPdfContent()   => new TestPdfContent();

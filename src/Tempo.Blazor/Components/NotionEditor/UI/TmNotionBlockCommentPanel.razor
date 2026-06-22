@@ -1,6 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
-@using Tempo.Blazor.NotionEditor.Interfaces
-@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.Components.NotionEditor.Models
 @using Tempo.Blazor.Components.NotionEditor.Services
 @using Tempo.Blazor.Components.Feedback
@@ -101,7 +100,7 @@
                                 @Loc["TmNotionBlockComment_Watch"]
                             </button>
                         }
-                        @if (_selectedComment.IsResolved)
+                        @if (_selectedComment.IsResolved())
                         {
                             @if (!_isReadByCurrentUser)
                             {
@@ -170,46 +169,46 @@
         @if (IsThreadList)
         {
             <div class="tm-nbcp__thread-list" role="list" aria-label="@Loc["TmNotionBlockComment_ThreadList"]">
-                @foreach (var comment in _comments.OrderBy(c => c.IsResolved).ThenByDescending(c => c.LastActivityAt))
+                @foreach (var comment in _comments.OrderBy(c => c.IsResolved()).ThenByDescending(c => c.LastActivityAt()))
                 {
-                    var firstEntry = comment.Thread.FirstOrDefault();
-                    <div class="tm-nbcp__thread-card @(comment.IsResolved ? "tm-nbcp__thread-card--resolved" : "")"
+                    var firstEntry = comment.Entries.FirstOrDefault();
+                    <div class="tm-nbcp__thread-card @(comment.IsResolved() ? "tm-nbcp__thread-card--resolved" : "")"
                          role="listitem"
                          @onclick="() => SelectThreadAsync(comment)">
                         <div class="tm-nbcp__thread-card__avatar" aria-hidden="true">
-                            @if (firstEntry is not null && !string.IsNullOrEmpty(firstEntry.AuthorAvatarUrl))
+                            @if (firstEntry is not null && !string.IsNullOrEmpty(firstEntry.AuthorAvatarUrl()))
                             {
-                                <img class="tm-nbcp__thread-card__avatar-img" src="@firstEntry.AuthorAvatarUrl" alt="" />
+                                <img class="tm-nbcp__thread-card__avatar-img" src="@firstEntry.AuthorAvatarUrl()" alt="" />
                             }
                             else
                             {
                                 <span class="tm-nbcp__thread-card__avatar-fallback">
-                                    @(firstEntry is not null ? AvatarInitial(firstEntry.AuthorDisplayName) : "?")
+                                    @(firstEntry is not null ? AvatarInitial(firstEntry.AuthorDisplayName()) : "?")
                                 </span>
                             }
                         </div>
                         <div class="tm-nbcp__thread-card__body">
                             <div class="tm-nbcp__thread-card__meta">
-                                <span class="tm-nbcp__thread-card__author">@(firstEntry?.AuthorDisplayName ?? "")</span>
+                                <span class="tm-nbcp__thread-card__author">@(firstEntry?.AuthorDisplayName() ?? "")</span>
                                 <time class="tm-nbcp__thread-card__time">
                                     @(firstEntry is not null ? FormatTime(firstEntry.CreatedAt) : "")
                                 </time>
                             </div>
                             <div class="tm-nbcp__thread-card__preview">
-                                @(firstEntry is not null ? StripHtml(firstEntry.HtmlContent) : "")
+                                @(firstEntry is not null ? StripHtml(firstEntry.HtmlContent()) : "")
                             </div>
                             <div class="tm-nbcp__thread-card__stats">
-                                @if (comment.Thread.Count > 1)
+                                @if (comment.Entries.Count > 1)
                                 {
-                                    <span>@Loc["TmNotionBlockComment_RepliesCount", comment.Thread.Count - 1]</span>
+                                    <span>@Loc["TmNotionBlockComment_RepliesCount", comment.Entries.Count - 1]</span>
                                 }
-                                @if (comment.IsResolved)
+                                @if (comment.IsResolved())
                                 {
                                     <span class="tm-nbcp__thread-card__resolved-badge">@Loc["TmNotionBlockComment_Resolved"]</span>
                                 }
                             </div>
                             <div class="tm-nbcp__thread-card__actions" role="group" aria-label="@Loc["TmNotionBlockComment_ThreadActions"]">
-                                @if (!comment.IsResolved)
+                                @if (!comment.IsResolved())
                                 {
                                     <button class="tm-nbcp__thread-card__action"
                                             type="button"
@@ -247,7 +246,7 @@
         @* ── Thread detail (entries) ───────────────────────────────────────── *@
         @if (IsThreadDetail || _isCreatingNewThread)
         {
-            @if (_selectedComment?.IsResolved == true)
+            @if (_selectedComment?.IsResolved() == true)
             {
                 <div class="tm-nbcp__resolved-banner" role="status">
                     <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
@@ -282,14 +281,14 @@
                             <div class="tm-nbcp__entry-content">
                                 @* Avatar *@
                                 <div class="tm-nbcp__avatar" aria-hidden="true">
-                                    @if (!string.IsNullOrEmpty(node.Entry.AuthorAvatarUrl))
+                                    @if (!string.IsNullOrEmpty(node.Entry.AuthorAvatarUrl()))
                                     {
-                                        <img class="tm-nbcp__avatar-img" src="@node.Entry.AuthorAvatarUrl" alt="" />
+                                        <img class="tm-nbcp__avatar-img" src="@node.Entry.AuthorAvatarUrl()" alt="" />
                                     }
                                     else
                                     {
                                         <span class="tm-nbcp__avatar-fallback">
-                                            @AvatarInitial(node.Entry.AuthorDisplayName)
+                                            @AvatarInitial(node.Entry.AuthorDisplayName())
                                         </span>
                                     }
                                 </div>
@@ -297,7 +296,7 @@
                                 @* Body *@
                                 <div class="tm-nbcp__entry-body">
                                     <div class="tm-nbcp__entry-meta">
-                                        <span class="tm-nbcp__entry-author">@node.Entry.AuthorDisplayName</span>
+                                        <span class="tm-nbcp__entry-author">@node.Entry.AuthorDisplayName()</span>
                                         <time class="tm-nbcp__entry-time"
                                               datetime="@node.Entry.CreatedAt.ToString("O")">
                                             @FormatTime(node.Entry.CreatedAt)
@@ -330,15 +329,15 @@
                                     }
                                     else
                                     {
-                                        <div class="tm-nbcp__entry-text">@((MarkupString)CommentHtmlFormatter.Format(node.Entry.HtmlContent))</div>
-                                        @if (node.Entry.CreatedAt != node.Entry.UpdatedAt)
+                                        <div class="tm-nbcp__entry-text">@((MarkupString)CommentHtmlFormatter.Format(node.Entry.HtmlContent()))</div>
+                                        @if (node.Entry.EditedAt.HasValue)
                                         {
                                             <span class="tm-nbcp__entry-edited">@Loc["TmNotionBlockComment_Edited"]</span>
                                         }
                                         <TmCommentReactions Reactions="node.Entry.Reactions"
-                                                            EntryId="@node.Entry.Id.ToString()"
+                                                            EntryId="@node.Entry.Id"
                                                             CurrentUserId="@CurrentUserId"
-                                                            Provider="Context.CommentProvider!"
+                                                            Provider="@(Context.CommentProvider as ITmCommentReactionProvider)"
                                                             OnChanged="StateHasChanged" />
                                     }
 
@@ -425,7 +424,7 @@
             </div>
 
             @* ── Reply input ─────────────────────────────────────────────────── *@
-            @if ((_selectedComment is null || !_selectedComment.IsResolved) && _replyingToEntryId is null)
+            @if ((_selectedComment is null || !_selectedComment.IsResolved()) && _replyingToEntryId is null)
             {
                 <div class="tm-nbcp__reply">
                     <TmCommentMentionInput Class="tm-nbcp__reply-input"

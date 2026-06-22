@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Work Items",
   "namespace": "Tempo.Blazor.Abstractions.WorkItems",
-  "description": "A person (or virtual resource) assigned to a . Unifies the previous TmWorkItemAssignee and the mention-user concept so the same person can be referenced across Gantt, Notion tasks and the scheduler.",
+  "description": "A person or virtual resource assigned to a TmWorkItem. The assignment keeps scheduling metadata while exposing conversion to the shared TmUserRef snapshot.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemAssignee.cs",
   "documentationStatus": "generated",
@@ -48,6 +48,36 @@
       "kind": "Property",
       "type": "string",
       "description": "Display name."
+    },
+    {
+      "name": "UserName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional username or mention handle."
+    },
+    {
+      "name": "SourceKey",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional provider/source discriminator for applications with multiple people sources."
+    },
+    {
+      "name": "TenantId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional tenant, workspace, or application scope identifier."
+    },
+    {
+      "name": "ToUserRef",
+      "kind": "Method",
+      "type": "TmUserRef",
+      "description": "Creates a shared user reference from this assignment snapshot."
+    },
+    {
+      "name": "FromUserRef",
+      "kind": "Method",
+      "type": "TmWorkItemAssignee",
+      "description": "Creates an assignment snapshot from a shared user reference."
     }
   ],
   "itemName": "TmWorkItemAssignee"

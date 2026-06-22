@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using System.Net;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.Components.NotionEditor.UI;
 using Tempo.Blazor.NotionEditor.Enums;
@@ -643,7 +644,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             {
                 var comments = await Context.CommentProvider.GetBlockCommentsAsync(blockId);
                 foreach (var c in comments)
-                    await Context.CommentProvider.MarkThreadAsReadAsync(c.Id.ToString(), "demo");
+                    await Context.CommentProvider.MarkThreadAsReadAsync(c.Id, "demo");
                 await HandleBlockCommentCountChangedAsync(blockId);
             }
             catch { }
@@ -701,24 +702,24 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         catch { }
     }
 
-    private static BlockCommentInfo ComputeBlockCommentInfo(IEnumerable<IBlockComment> comments)
+    private static BlockCommentInfo ComputeBlockCommentInfo(IEnumerable<TmCommentThread> comments)
     {
         var list = comments.ToList();
-        var unresolved   = list.Count(c => !c.IsResolved);
-        var resolvedUnread = list.Count(c => c.IsResolved && !c.ReadByUserIds.Contains("demo"));
+        var unresolved   = list.Count(c => !c.IsResolved());
+        var resolvedUnread = list.Count(c => c.IsResolved() && !c.ReadByUserIds.Contains("demo"));
 
         // Find the latest entry across all threads for tooltip data
-        INotionCommentEntry? latest = null;
+        TmCommentEntry? latest = null;
         foreach (var c in list)
         {
-            foreach (var e in c.Thread)
+            foreach (var e in c.Entries)
             {
                 if (latest is null || e.CreatedAt > latest.CreatedAt)
                     latest = e;
             }
         }
 
-        var text = latest?.HtmlContent;
+        var text = latest?.HtmlContent();
         if (!string.IsNullOrEmpty(text))
         {
             // Strip HTML tags for tooltip preview
@@ -727,16 +728,16 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
                 text = text[..120] + "…";
         }
 
-        var hasUnread = list.Any(c => c.LastActivityAt.HasValue && !c.ReadByUserIds.Contains("demo"));
+        var hasUnread = list.Any(c => c.LastActivityAt().HasValue && !c.ReadByUserIds.Contains("demo"));
 
         return new BlockCommentInfo(
             unresolved,
             resolvedUnread,
             hasUnread,
-            latest?.AuthorDisplayName,
-            latest?.AuthorAvatarUrl,
+            latest?.AuthorDisplayName(),
+            latest?.AuthorAvatarUrl(),
             text,
-            latest?.CreatedAt,
+            latest?.CreatedAt.UtcDateTime,
             list.Count);
     }
 
@@ -756,7 +757,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             {
                 var comments = await Context.CommentProvider.GetBlockCommentsAsync(blockId);
                 foreach (var c in comments)
-                    await Context.CommentProvider.MarkThreadAsReadAsync(c.Id.ToString(), "demo");
+                    await Context.CommentProvider.MarkThreadAsReadAsync(c.Id, "demo");
                 await HandleBlockCommentCountChangedAsync(blockId);
             }
             catch { }
