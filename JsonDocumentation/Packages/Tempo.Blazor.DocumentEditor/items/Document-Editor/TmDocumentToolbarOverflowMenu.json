@@ -1,0 +1,91 @@
+{
+  "itemName": "TmDocumentToolbarOverflowMenu",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "TmDocumentToolbarOverflowMenu Blazor component in the Document Editor category.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentToolbarOverflowMenu.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": [
+    {
+      "name": "Groups",
+      "type": "IReadOnlyList<DocumentToolbarOverflowMenuGroup>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Current overflow search query."
+    },
+    {
+      "name": "IsOpen",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the toolbar currently has overflowed commands."
+    },
+    {
+      "name": "MoreCommandsLabel",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"\"",
+      "description": "Visible text for the More button."
+    },
+    {
+      "name": "MoreLabel",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"\"",
+      "description": "Grouped overflow menu items."
+    },
+    {
+      "name": "OnCommandRequested",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Raised when the search input changes."
+    },
+    {
+      "name": "OnMenuItemKeyDown",
+      "type": "EventCallback<KeyboardEventArgs>",
+      "isRequired": false,
+      "description": "Raised when a command is selected from the menu."
+    },
+    {
+      "name": "OnMoreKeyDown",
+      "type": "EventCallback<KeyboardEventArgs>",
+      "isRequired": false,
+      "description": "Raised when the More button is clicked."
+    },
+    {
+      "name": "OnSearchInput",
+      "type": "EventCallback<ChangeEventArgs>",
+      "isRequired": false,
+      "description": "Raised when the More button receives a keydown event."
+    },
+    {
+      "name": "OnToggle",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Accessible label and placeholder for the search input."
+    },
+    {
+      "name": "SearchLabel",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"\"",
+      "description": "Accessible label for the More commands menu."
+    },
+    {
+      "name": "SearchQuery",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the search box should be shown."
+    },
+    {
+      "name": "ShowSearch",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the overflow menu is open."
+    }
+  ]
+}

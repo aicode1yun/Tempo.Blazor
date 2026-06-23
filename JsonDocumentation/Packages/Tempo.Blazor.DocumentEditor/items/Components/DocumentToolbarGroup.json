@@ -1,0 +1,42 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+  "description": "Public record defined by Tempo.Blazor.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Registry/DocumentToolbarGroup.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "required string",
+      "description": "Stable group identifier."
+    },
+    {
+      "name": "LabelKey",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Localization key for the group label."
+    },
+    {
+      "name": "Order",
+      "kind": "Property",
+      "type": "int",
+      "description": "Sort order inside the tab."
+    },
+    {
+      "name": "Tab",
+      "kind": "Property",
+      "type": "DocumentToolbarTab",
+      "description": "Logical tab that owns this group."
+    },
+    {
+      "name": "TabId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Backward-compatible tab identifier."
+    }
+  ],
+  "itemName": "DocumentToolbarGroup"
+}

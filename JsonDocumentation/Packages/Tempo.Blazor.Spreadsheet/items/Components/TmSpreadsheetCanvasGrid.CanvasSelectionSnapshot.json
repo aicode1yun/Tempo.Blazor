@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "description": "Represents a canvas selection snapshot emitted by JavaScript.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetCanvasGrid.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmSpreadsheetCanvasGrid.CanvasSelectionSnapshot"
+}

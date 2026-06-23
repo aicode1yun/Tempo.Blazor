@@ -1,0 +1,33 @@
+{
+  "itemName": "TmDocumentCommandPalette",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "TmDocumentCommandPalette Blazor component in the Document Editor category.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCommandPalette.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": [
+    {
+      "name": "Commands",
+      "type": "IReadOnlyDictionary<string, DocumentEditorCommandState>?",
+      "isRequired": false,
+      "description": "Raised when the command palette should close."
+    },
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Whether the command palette is visible."
+    },
+    {
+      "name": "OnExecuteCommand",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Current command states."
+    }
+  ]
+}

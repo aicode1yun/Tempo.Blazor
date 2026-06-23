@@ -271,7 +271,7 @@ public sealed class DocumentEditorCanvasTabStopsE2ETests : WasmTestBase
                     throw new Error('Canvas engine handle is not available.');
                 }
 
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 return interop.execCommand(handle, arg.command, JSON.stringify(arg.payload || {}));
             }
             """,
@@ -356,7 +356,7 @@ public sealed class DocumentEditorCanvasTabStopsE2ETests : WasmTestBase
                     throw new Error('Canvas engine handle is not available.');
                 }
 
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(interop.getModelJson(handle));
                 const blocks = model.blocks || model.document?.blocks || model.body?.blocks || [];
                 const block = blocks.find(item => item.id === 'canvas-e2-tabstops-ruler-target') || {};

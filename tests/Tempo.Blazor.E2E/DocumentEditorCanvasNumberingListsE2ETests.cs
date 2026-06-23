@@ -132,7 +132,7 @@ public sealed class DocumentEditorCanvasNumberingListsE2ETests : WasmTestBase
                     const textRect = firstText.getBoundingClientRect();
                     return labelRect.right < textRect.left - 0.5;
                 });
-                return import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs').then(module => {
+                return import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs').then(module => {
                     const handle = host?.getAttribute('data-canvas-engine-handle') || '';
                     const model = handle ? JSON.parse(module.getModelJson(handle)) : {};
                     const listBlocks = (model.body?.blocks || []).filter(block => block.type === 'list' || block.content?.type === 'list');

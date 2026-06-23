@@ -1,0 +1,40 @@
+{
+  "itemName": "TmNotionPagePropertiesBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionPagePropertiesBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionPagePropertiesBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
+  ],
+  "parameters": [
+    {
+      "name": "Content",
+      "type": "IPagePropertiesBlockContent?",
+      "isRequired": false,
+      "description": "Owning page block for persistence context."
+    },
+    {
+      "name": "OnContentChanged",
+      "type": "EventCallback<PagePropertiesBlockContent>",
+      "isRequired": false,
+      "description": "Whether the properties table is rendered without editing affordances."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when edited page properties should be persisted."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Saved page properties content."
+    }
+  ],
+  "subcategory": "Blocks / Special"
+}

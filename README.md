@@ -20,7 +20,17 @@ dotnet add package Tempo.Blazor
 Optional packages:
 
 ```bash
+dotnet add package Tempo.Blazor.All              # Compatibility package: core + split feature packages
 dotnet add package Tempo.Blazor.Abstractions      # Interfaces only (for API/service projects)
+dotnet add package Tempo.Blazor.PdfViewer         # PDF.js powered PDF viewer
+dotnet add package Tempo.Blazor.Codes             # QR code and barcode components
+dotnet add package Tempo.Blazor.DiagramEditor     # Diagram editor and diagram assets
+dotnet add package Tempo.Blazor.Wireframe         # Wireframe editor and wireframe assets
+dotnet add package Tempo.Blazor.Modeling          # Modeling editor built on DiagramEditor
+dotnet add package Tempo.Blazor.Spreadsheet       # Spreadsheet editor and XLSX support
+dotnet add package Tempo.Blazor.GanttXlsx         # Optional Gantt XLSX import/export helpers
+dotnet add package Tempo.Blazor.DocumentEditor    # Document editor and canvas runtime
+dotnet add package Tempo.Blazor.NotionEditor      # Notion-style editor and block/database UI
 dotnet add package Tempo.Blazor.FluentValidation   # FluentValidation integration for EditForm
 dotnet add package Tempo.Reporting.Abstractions    # Report definition JSON, validation, data contracts
 dotnet add package Tempo.Reporting.Engine          # Processing, layout, PDF/PNG, CSV/XLSX
@@ -40,9 +50,27 @@ dotnet add package Tempo.Blazor.Reporting          # Blazor report viewer/design
 builder.Services.AddTempoBlazor();
 ```
 
+To keep the pre-split all-in setup, install `Tempo.Blazor.All` and register:
+
+```csharp
+builder.Services.AddTempoBlazorAll();
+```
+
+For a lean app, reference and register only the feature packages you use:
+
+```csharp
+builder.Services.AddTempoBlazor();
+builder.Services.AddTempoBlazorPdfViewer();
+builder.Services.AddTempoBlazorDiagramEditor();
+builder.Services.AddTempoBlazorWireframe();
+builder.Services.AddTempoBlazorSpreadsheet();
+builder.Services.AddTempoBlazorDocumentEditor();
+builder.Services.AddTempoBlazorNotionEditor();
+```
+
 ### Custom Diagram Stencils
 
-Register custom diagram stencils after `AddTempoBlazor()`. Keep provider output as your own data and mark built-in application stencils with `DiagramStencilOrigin.TempoOriginal`.
+Install `Tempo.Blazor.DiagramEditor` and register custom diagram stencils after `AddTempoBlazorDiagramEditor()`. Keep provider output as your own data and mark built-in application stencils with `DiagramStencilOrigin.TempoOriginal`.
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -50,7 +78,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.Diagram.Stencils;
 
-builder.Services.AddTempoBlazor();
+builder.Services.AddTempoBlazorDiagramEditor();
 builder.Services.TryAddEnumerable(
     ServiceDescriptor.Singleton<IDiagramStencilProvider, MyStencilProvider>());
 
@@ -85,6 +113,11 @@ public sealed class MyStencilProvider : IDiagramStencilProvider
 ```html
 <!-- index.html or App.razor -->
 <link href="_content/Tempo.Blazor/css/tempo-blazor.bundled.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.DiagramEditor/css/tempo-blazor-diagram-editor.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.Wireframe/css/tempo-blazor-wireframe.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.Spreadsheet/css/tempo-blazor-spreadsheet.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.DocumentEditor/css/tempo-blazor-document-editor.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.NotionEditor/css/tempo-blazor-notion-editor.css" rel="stylesheet" />
 ```
 
 ### 3. Add Toast Container to Layout

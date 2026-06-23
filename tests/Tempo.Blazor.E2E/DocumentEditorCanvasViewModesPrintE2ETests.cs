@@ -230,7 +230,7 @@ public sealed class DocumentEditorCanvasViewModesPrintE2ETests : WasmTestBase
             async ({ commandId, json }) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const raw = module.execCommand(handle, commandId, json);
                 const parsed = JSON.parse(raw || '{}');
                 return {
@@ -285,7 +285,7 @@ public sealed class DocumentEditorCanvasViewModesPrintE2ETests : WasmTestBase
             async () => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const parsed = JSON.parse(module.getPrintPreviewStateJson(handle) || '{}');
                 return {
                     active: parsed.active === true,

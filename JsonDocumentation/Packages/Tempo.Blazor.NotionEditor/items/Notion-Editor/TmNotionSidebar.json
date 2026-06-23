@@ -1,0 +1,22 @@
+{
+  "itemName": "TmNotionSidebar",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionSidebar Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Sidebar",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Sidebar/TmNotionSidebar.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Sidebar"
+  ],
+  "parameters": [
+    {
+      "name": "OnTrashRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "ID of the currently active (open) page — highlights it in the tree."
+    }
+  ],
+  "subcategory": "Sidebar"
+}

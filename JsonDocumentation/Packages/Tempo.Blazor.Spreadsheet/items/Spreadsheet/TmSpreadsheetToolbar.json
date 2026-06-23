@@ -1,0 +1,416 @@
+{
+  "itemName": "TmSpreadsheetToolbar",
+  "kind": "Component",
+  "category": "Spreadsheet",
+  "description": "Ribbon-style toolbar for the spreadsheet with tabbed groups: Home, Insert, View, and File.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetToolbar.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Spreadsheet"
+  ],
+  "parameters": [
+    {
+      "name": "BackgroundColor",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Current text color (CSS color value)."
+    },
+    {
+      "name": "CanRedo",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether undo is available."
+    },
+    {
+      "name": "CustomTools",
+      "type": "List<SpreadsheetCustomTool>?",
+      "isRequired": false,
+      "description": "Called when the Name Manager button is clicked."
+    },
+    {
+      "name": "IsBold",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Currently selected font size."
+    },
+    {
+      "name": "IsFilterActive",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether grid lines are currently visible."
+    },
+    {
+      "name": "IsFormatPainterActive",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the current selection has strikethrough."
+    },
+    {
+      "name": "IsItalic",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the current selection is bold."
+    },
+    {
+      "name": "IsMergeCellsActive",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the current selection uses a thousands-separator format."
+    },
+    {
+      "name": "IsPercentageFormat",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Currently selected number format."
+    },
+    {
+      "name": "IsStrikeThrough",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the current selection is underlined."
+    },
+    {
+      "name": "IsThousandsFormat",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the current selection uses a percentage format."
+    },
+    {
+      "name": "IsUnderline",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the current selection is italic."
+    },
+    {
+      "name": "OnAlignChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Called when the background color is selected from the color picker."
+    },
+    {
+      "name": "OnBackgroundColorChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Called when the text color is selected from the color picker."
+    },
+    {
+      "name": "OnBoldToggle",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the font size changes."
+    },
+    {
+      "name": "OnBorderPresetChanged",
+      "type": "EventCallback<BorderPreset>",
+      "isRequired": false,
+      "description": "Called when a custom tool is clicked."
+    },
+    {
+      "name": "OnCircleInvalidData",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Data Validation dialog button is clicked."
+    },
+    {
+      "name": "OnClearValidationCircles",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Circle Invalid Data button is clicked."
+    },
+    {
+      "name": "OnCopy",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Redo button is clicked."
+    },
+    {
+      "name": "OnCustomSort",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Sort Descending button is clicked."
+    },
+    {
+      "name": "OnCustomToolClick",
+      "type": "EventCallback<SpreadsheetCustomTool>",
+      "isRequired": false,
+      "description": "Called when the Toggle Grid Lines button is clicked."
+    },
+    {
+      "name": "OnCut",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Copy button is clicked."
+    },
+    {
+      "name": "OnDataValidation",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Paste Special button is clicked."
+    },
+    {
+      "name": "OnDecreaseDecimals",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Increase Decimals button is clicked."
+    },
+    {
+      "name": "OnDeleteColumn",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Insert Column button is clicked."
+    },
+    {
+      "name": "OnDeleteRow",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Insert Row button is clicked."
+    },
+    {
+      "name": "OnDownload",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Open button is clicked."
+    },
+    {
+      "name": "OnFontFamilyChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Called when the Delete Column button is clicked."
+    },
+    {
+      "name": "OnFontSizeChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Called when the font family changes."
+    },
+    {
+      "name": "OnFormatCells",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Decrease Indent button is clicked."
+    },
+    {
+      "name": "OnFormatPainterClick",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Custom tools to inject into the toolbar."
+    },
+    {
+      "name": "OnFormatPainterDoubleClick",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Format Painter button is single-clicked."
+    },
+    {
+      "name": "OnIncreaseDecimals",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the number format changes."
+    },
+    {
+      "name": "OnIndentDecrease",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Increase Indent button is clicked."
+    },
+    {
+      "name": "OnIndentIncrease",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the StrikeThrough toggle is clicked."
+    },
+    {
+      "name": "OnInsertColumn",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Delete Row button is clicked."
+    },
+    {
+      "name": "OnInsertImage",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Insert Link button is clicked."
+    },
+    {
+      "name": "OnInsertLink",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Download button is clicked."
+    },
+    {
+      "name": "OnInsertRow",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Paste button is clicked."
+    },
+    {
+      "name": "OnItalicToggle",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Bold toggle is clicked."
+    },
+    {
+      "name": "OnMergeCells",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Insert Image button is clicked."
+    },
+    {
+      "name": "OnNameManager",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Clear Validation Circles button is clicked."
+    },
+    {
+      "name": "OnNumberFormatChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Called when the horizontal alignment changes."
+    },
+    {
+      "name": "OnOpen",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Thousands separator (,) button is clicked."
+    },
+    {
+      "name": "OnOpenBorderDialog",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when a border preset is selected from the border picker dropdown."
+    },
+    {
+      "name": "OnPaste",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Cut button is clicked."
+    },
+    {
+      "name": "OnPasteSpecial",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Text to Columns button is clicked."
+    },
+    {
+      "name": "OnPercentageFormat",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Decrease Decimals button is clicked."
+    },
+    {
+      "name": "OnRedo",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Undo button is clicked."
+    },
+    {
+      "name": "OnRemoveDuplicates",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Custom Sort button is clicked."
+    },
+    {
+      "name": "OnSortAscending",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Filter toggle button is clicked."
+    },
+    {
+      "name": "OnSortDescending",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Sort Ascending button is clicked."
+    },
+    {
+      "name": "OnStrikeThroughToggle",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Underline toggle is clicked."
+    },
+    {
+      "name": "OnTextColorChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Called when the Format Cells button/dialog is requested."
+    },
+    {
+      "name": "OnTextToColumns",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Remove Duplicates button is clicked."
+    },
+    {
+      "name": "OnThousandsFormat",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Percentage (%) button is clicked."
+    },
+    {
+      "name": "OnToggleFilter",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Whether the auto-filter is currently enabled on the active sheet."
+    },
+    {
+      "name": "OnToggleGridLines",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Merge Cells button is clicked."
+    },
+    {
+      "name": "OnUnderlineToggle",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Italic toggle is clicked."
+    },
+    {
+      "name": "OnUndo",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Called when the Format Painter button is double-clicked (sticky mode)."
+    },
+    {
+      "name": "SelectedFontFamily",
+      "type": "string?",
+      "isRequired": false,
+      "default": "\"Arial\"",
+      "description": "Whether redo is available."
+    },
+    {
+      "name": "SelectedFontSize",
+      "type": "string?",
+      "isRequired": false,
+      "default": "\"11\"",
+      "description": "Currently selected font family."
+    },
+    {
+      "name": "SelectedHorizontalAlign",
+      "type": "string?",
+      "isRequired": false,
+      "default": "\"left\"",
+      "description": "Current background color (CSS color value)."
+    },
+    {
+      "name": "SelectedNumberFormat",
+      "type": "string?",
+      "isRequired": false,
+      "default": "\"General\"",
+      "description": "Current horizontal alignment."
+    },
+    {
+      "name": "ShowGridLines",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the current selection covers a merged cell range."
+    },
+    {
+      "name": "TextColor",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether Format Painter is currently active."
+    }
+  ]
+}

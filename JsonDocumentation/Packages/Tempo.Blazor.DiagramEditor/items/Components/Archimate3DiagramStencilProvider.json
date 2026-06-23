@@ -1,0 +1,17 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+  "description": "Provides Tempo-original ArchiMate 3.2 stencil definitions.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/Archimate3DiagramStencilProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetStencilSets",
+      "kind": "Method",
+      "type": "IEnumerable<DiagramStencilSet>"
+    }
+  ],
+  "itemName": "Archimate3DiagramStencilProvider"
+}

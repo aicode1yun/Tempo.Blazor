@@ -1,0 +1,10 @@
+{
+  "kind": "RecordStruct",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "description": "Carries the screen position of an auto-filter dropdown button click.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetCanvasGrid.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmSpreadsheetCanvasGrid.CanvasFilterButtonClick"
+}

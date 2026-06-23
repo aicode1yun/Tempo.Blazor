@@ -1582,7 +1582,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task VersionCreate_SavesJsRuntimeDocumentBeforeProviderVersionSnapshot()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        var focusModule = JSInterop.SetupModule("./_content/Tempo.Blazor/js/document-editor/focus-management.mjs");
+        var focusModule = JSInterop.SetupModule("./_content/Tempo.Blazor.DocumentEditor/js/document-editor/focus-management.mjs");
         focusModule.SetupVoid("trapFocus", _ => true).SetVoidResult();
         focusModule.SetupVoid("releaseFocusTrap", _ => true).SetVoidResult();
 

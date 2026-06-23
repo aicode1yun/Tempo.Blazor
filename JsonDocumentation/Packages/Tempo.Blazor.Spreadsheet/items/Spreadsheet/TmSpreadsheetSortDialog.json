@@ -1,0 +1,29 @@
+{
+  "itemName": "TmSpreadsheetSortDialog",
+  "kind": "Component",
+  "category": "Spreadsheet",
+  "description": "The multi-level sort dialog. Each level chooses a column key, what to sort on (value / cell colour / font colour) and the order. Supports add/remove of levels, a \"my data has headers\" toggle and a case-sensitivity option. Applying produces a . All text is localized.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetSortDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+  ],
+  "parameters": [
+    {
+      "name": "OnApply",
+      "type": "EventCallback<SpreadsheetSortSpec>",
+      "isRequired": true,
+      "description": "The range being sorted.",
+      "editorRequired": true
+    },
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the user applies the sort."
+    }
+  ],
+  "subcategory": "Dialogs"
+}

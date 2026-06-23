@@ -13,7 +13,7 @@ namespace Tempo.Blazor.Tests.Components.DocumentEditor.CanvasEngine;
 /// </summary>
 public sealed class CanvasEnginePageImageExportTests : LocalizationTestBase
 {
-    private const string InteropModulePath = "./_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs";
+    private const string InteropModulePath = "./_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs";
 
     [Fact]
     public async Task CanvasEngineHost_ExportPageImagesAsync_ExportsEveryPageWithDataUrl()

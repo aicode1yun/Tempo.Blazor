@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "description": "Describes a parsed formula reference token and its position within the editor text.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/SpreadsheetFormulaReferenceToken.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ColorIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "The zero-based color slot assigned to the token."
+    },
+    {
+      "name": "End",
+      "kind": "Property",
+      "type": "int",
+      "description": "The exclusive token end index."
+    },
+    {
+      "name": "Start",
+      "kind": "Property",
+      "type": "int",
+      "description": "The inclusive token start index."
+    },
+    {
+      "name": "Text",
+      "kind": "Property",
+      "type": "string",
+      "description": "The token text as written in the formula."
+    }
+  ],
+  "itemName": "SpreadsheetFormulaReferenceToken"
+}

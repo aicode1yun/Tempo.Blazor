@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Wysiwyg.Model",
+  "description": "Range affected by a tracked revision.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Wysiwyg/Model/DocumentModel.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentRevisionRange"
+}

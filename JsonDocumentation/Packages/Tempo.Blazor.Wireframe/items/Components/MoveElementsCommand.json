@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+  "description": "Moves one or more elements to new positions. Supports coalescing: consecutive move commands targeting the same element ids within a 100 ms window are merged. The \"before\" snapshot is kept from the first move; only the \"after\" positions are updated. This keeps undo snapping back to where the drag began rather than to an intermediate frame.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/MoveElementsCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Execute",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "Undo",
+      "kind": "Method",
+      "type": "void"
+    }
+  ],
+  "itemName": "MoveElementsCommand"
+}

@@ -157,11 +157,11 @@ public class DiagramExtendedStencilPhase8Tests : LocalizationTestBase
     }
 
     [Fact]
-    public void AddTempoBlazor_Registers_Extended_Provider_And_C4_TemplateProvider()
+    public void AddTempoBlazorDiagramEditor_Registers_Extended_Provider_And_C4_TemplateProvider()
     {
         var services = new ServiceCollection();
 
-        services.AddTempoBlazor();
+        services.AddTempoBlazorDiagramEditor();
 
         var provider = services.BuildServiceProvider();
         provider.GetServices<IDiagramStencilProvider>()

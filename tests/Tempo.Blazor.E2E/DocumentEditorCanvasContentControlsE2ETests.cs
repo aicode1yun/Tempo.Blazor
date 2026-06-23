@@ -366,7 +366,7 @@ public sealed class DocumentEditorCanvasContentControlsE2ETests : WasmTestBase
             """
             async () => {
                 window.__tempoPhaseE9CanvasInterop = window.__tempoPhaseE9CanvasInterop
-                    || await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    || await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
             }
             """);
     }
@@ -389,7 +389,7 @@ public sealed class DocumentEditorCanvasContentControlsE2ETests : WasmTestBase
             """
             async () => {
                 window.__tempoPhaseE9CanvasInterop = window.__tempoPhaseE9CanvasInterop
-                    || await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    || await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
             }
             """);
     }
@@ -416,7 +416,7 @@ public sealed class DocumentEditorCanvasContentControlsE2ETests : WasmTestBase
                     const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                     const handle = host?.getAttribute('data-canvas-engine-handle') || '';
                     const module = window.__tempoPhaseE9CanvasInterop
-                        || await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                        || await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                     return JSON.parse(module.getModelJson(handle) || '{}');
                 }
             }
@@ -437,7 +437,7 @@ public sealed class DocumentEditorCanvasContentControlsE2ETests : WasmTestBase
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
                 const module = window.__tempoPhaseE9CanvasInterop
-                    || await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    || await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const selection = JSON.parse(module.getSelectionStateJson(handle) || '{}');
                 const model = JSON.parse(module.getModelJson(handle) || '{}');
                 return focusedControlId(model, selection) === expectedControlId;
@@ -588,7 +588,7 @@ public sealed class DocumentEditorCanvasContentControlsE2ETests : WasmTestBase
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
                 const module = window.__tempoPhaseE9CanvasInterop
-                    || await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    || await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(module.getModelJson(handle) || '{}');
                 const repeating = (model?.body?.blocks || []).find(block => block?.content?.contentControl?.control?.controlId === 'canvas-form-addresses');
                 const repeatingBlocks = repeating?.content?.contentControl?.blocks || [];

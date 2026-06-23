@@ -1,0 +1,15 @@
+{
+  "itemName": "TmDiagramTemplateGallery",
+  "kind": "Component",
+  "category": "Diagram",
+  "description": "TmDiagramTemplateGallery Blazor component in the Diagram category.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "namespace": "Tempo.Blazor.Components.Diagram",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/TmDiagramTemplateGallery.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Diagram"
+  ],
+  "parameters": [],
+  "subcategory": "Templates"
+}

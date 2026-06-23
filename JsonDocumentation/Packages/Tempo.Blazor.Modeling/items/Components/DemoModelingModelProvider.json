@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Modeling",
+  "description": "Demo modeling provider with deterministic BPMN and ArchiMate sample data.",
+  "packageId": "Tempo.Blazor.Modeling",
+  "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/DemoModelingModelProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetModelAsync",
+      "kind": "Method",
+      "type": "Task<ModelingModelDto>",
+      "parameters": [
+        {
+          "name": "request",
+          "type": "ModelingModelRequest"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken"
+        }
+      ]
+    }
+  ],
+  "itemName": "DemoModelingModelProvider"
+}

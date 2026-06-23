@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Exports Gantt tasks to an XLSX spreadsheet.",
+  "packageId": "Tempo.Blazor.GanttXlsx",
+  "sourcePath": "src/Tempo.Blazor/Services/GanttXlsxExporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "GanttXlsxExporter"
+}

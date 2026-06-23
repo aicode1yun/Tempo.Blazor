@@ -1,0 +1,22 @@
+{
+  "itemName": "TmNotionDbFieldEditor",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionDbFieldEditor Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDbFieldEditor.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
+  ],
+  "parameters": [
+    {
+      "name": "OnFieldChanged",
+      "type": "EventCallback<IDatabaseField>",
+      "isRequired": true,
+      "editorRequired": true
+    }
+  ],
+  "subcategory": "Blocks / Database"
+}

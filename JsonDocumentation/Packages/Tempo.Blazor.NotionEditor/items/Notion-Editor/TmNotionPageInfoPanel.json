@@ -1,0 +1,41 @@
+{
+  "itemName": "TmNotionPageInfoPanel",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionPageInfoPanel Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Page/TmNotionPageInfoPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Page"
+  ],
+  "parameters": [
+    {
+      "name": "Blocks",
+      "type": "IReadOnlyList<IPageBlock>?",
+      "isRequired": false,
+      "description": "Currently loaded page blocks. When absent, the component loads them from the block provider."
+    },
+    {
+      "name": "Page",
+      "type": "INotionPage",
+      "isRequired": true,
+      "description": "The page whose metadata should be displayed.",
+      "editorRequired": true
+    },
+    {
+      "name": "Visible",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Shows the panel when true."
+    },
+    {
+      "name": "VisibleChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "Raised when the visibility changes."
+    }
+  ],
+  "subcategory": "Page"
+}

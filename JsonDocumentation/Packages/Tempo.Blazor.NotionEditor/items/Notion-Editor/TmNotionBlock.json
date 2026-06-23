@@ -1,0 +1,244 @@
+{
+  "itemName": "TmNotionBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Dispatcher for a single page block — renders the correct markup per BlockType, manages contenteditable lifecycle via JS interop, and surfaces block events to the parent.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/TmNotionBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks"
+  ],
+  "parameters": [
+    {
+      "name": "ActiveBlockId",
+      "type": "Guid?",
+      "isRequired": false
+    },
+    {
+      "name": "Block",
+      "type": "IPageBlock",
+      "isRequired": true,
+      "editorRequired": true
+    },
+    {
+      "name": "BlockCommentCounts",
+      "type": "IReadOnlyDictionary<string, TmNotionPage.BlockCommentInfo>",
+      "isRequired": true
+    },
+    {
+      "name": "BlockHasUnreadActivity",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Number of resolved-but-unread block comment threads for this block."
+    },
+    {
+      "name": "BlockIndex",
+      "type": "int",
+      "isRequired": false
+    },
+    {
+      "name": "BlockLastAuthorName",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Total number of comment threads on this block."
+    },
+    {
+      "name": "BlockResolvedUnreadCount",
+      "type": "int",
+      "isRequired": false,
+      "description": "Number of unresolved block comment threads for this block."
+    },
+    {
+      "name": "Blocks",
+      "type": "IReadOnlyList<IPageBlock>",
+      "isRequired": true,
+      "default": "[]",
+      "editorRequired": true
+    },
+    {
+      "name": "BlockThreadCount",
+      "type": "int",
+      "isRequired": false,
+      "description": "True when any thread on this block has unread activity (new entry, reaction, resolve)."
+    },
+    {
+      "name": "BlockUnresolvedCount",
+      "type": "int",
+      "isRequired": false
+    },
+    {
+      "name": "IsFocused",
+      "type": "bool",
+      "isRequired": false
+    },
+    {
+      "name": "IsSelected",
+      "type": "bool",
+      "isRequired": false
+    },
+    {
+      "name": "NumberedListNumber",
+      "type": "int",
+      "isRequired": false
+    },
+    {
+      "name": "OnAddAfter",
+      "type": "EventCallback<(BlockType Type, string? InitialHtml)>",
+      "isRequired": false
+    },
+    {
+      "name": "OnAddBlockAfter",
+      "type": "EventCallback<(string AfterBlockId, BlockType Type, string? InitialHtml)>",
+      "isRequired": false,
+      "description": "Fired when a block requests type conversion (blockId, newType)."
+    },
+    {
+      "name": "OnAddBlockAtEnd",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when a new block should be inserted after the given block (afterBlockId, type, initialHtml)."
+    },
+    {
+      "name": "OnBlockDeleted",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fired when a block receives focus. Arg is the block ID string."
+    },
+    {
+      "name": "OnBlockDuplicated",
+      "type": "EventCallback<IPageBlock>",
+      "isRequired": false,
+      "description": "Fired when a block's content was saved by the user."
+    },
+    {
+      "name": "OnBlockFocused",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fired when a block was moved out of this list after a successful external drop."
+    },
+    {
+      "name": "OnBlockUpdated",
+      "type": "EventCallback<IPageBlock>",
+      "isRequired": false,
+      "description": "Fired when a block requests deletion. Arg is the block ID string."
+    },
+    {
+      "name": "OnComment",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when a text block requests keyboard focus movement to a sibling block."
+    },
+    {
+      "name": "OnConvertBlock",
+      "type": "EventCallback<(string, BlockType)>",
+      "isRequired": false,
+      "description": "Fired when a block should be duplicated (carries the source block)."
+    },
+    {
+      "name": "OnConvertTo",
+      "type": "EventCallback<BlockType>",
+      "isRequired": false
+    },
+    {
+      "name": "OnDeleted",
+      "type": "EventCallback",
+      "isRequired": false
+    },
+    {
+      "name": "OnDuplicate",
+      "type": "EventCallback<IPageBlock>",
+      "isRequired": false
+    },
+    {
+      "name": "OnExternalBlockDropped",
+      "type": "EventCallback<MoveNotionBlockRequest>",
+      "isRequired": false,
+      "description": "Fired when blocks are reordered via drag-and-drop (sourceIndex, targetIndex)."
+    },
+    {
+      "name": "OnExternalBlockRemoved",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fired when a block from another list is dropped into this list."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "1-based ordinal for NumberedList blocks, pre-computed by TmNotionBlockList."
+    },
+    {
+      "name": "OnInsertTemplateBlocks",
+      "type": "EventCallback<IReadOnlyList<IPageBlock>>",
+      "isRequired": false,
+      "description": "Raised when '{{' token syntax is typed. Args are viewport coords."
+    },
+    {
+      "name": "OnInsertTemplateBlocksAfter",
+      "type": "EventCallback<(string AfterBlockId, IReadOnlyList<IPageBlock> Blocks)>",
+      "isRequired": false,
+      "description": "Fired when a block requests keyboard focus movement within this list."
+    },
+    {
+      "name": "OnMentionMenu",
+      "type": "EventCallback<(string BlockId, double Top, double Left)>",
+      "isRequired": false,
+      "description": "Raised when a '/' typed in this block opens the slash menu. Args are viewport coords."
+    },
+    {
+      "name": "OnMoveFocus",
+      "type": "EventCallback<(string BlockId, int Direction)>",
+      "isRequired": false,
+      "description": "Raised when a TemplateButton block requests insertion of its template blocks after itself."
+    },
+    {
+      "name": "OnNewThread",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the user clicks the Comment button in the block handle menu."
+    },
+    {
+      "name": "OnPageLinkMenu",
+      "type": "EventCallback<(string BlockId, double Top, double Left)>",
+      "isRequired": false,
+      "description": "Raised when '@' mention syntax is typed. Args are viewport coords."
+    },
+    {
+      "name": "OnReorder",
+      "type": "EventCallback<(int, int)>",
+      "isRequired": false,
+      "description": "Per-block comment summary for margin-thread indicators and hover tooltip."
+    },
+    {
+      "name": "OnSlashMenu",
+      "type": "EventCallback<(string BlockId, double Top, double Left)>",
+      "isRequired": false
+    },
+    {
+      "name": "OnTokenMenu",
+      "type": "EventCallback<(string BlockId, double Top, double Left)>",
+      "isRequired": false,
+      "description": "Raised when '[[' page-link syntax is typed. Args are viewport coords."
+    },
+    {
+      "name": "OnUpdated",
+      "type": "EventCallback<IPageBlock>",
+      "isRequired": false
+    },
+    {
+      "name": "ParentBlockId",
+      "type": "Guid?",
+      "isRequired": false,
+      "description": "Page ID owned by this rendered list."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Parent block ID for nested lists. Null means the top-level page list."
+    }
+  ],
+  "subcategory": "Blocks"
+}

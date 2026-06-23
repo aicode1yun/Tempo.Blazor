@@ -1,0 +1,32 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Copies selected nodes to the internal clipboard and removes them from the document.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/CutNodesCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Execute",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "Undo",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "Edges",
+      "kind": "Property",
+      "type": "List<DiagramEdge>"
+    },
+    {
+      "name": "Nodes",
+      "kind": "Property",
+      "type": "List<DiagramNode>"
+    }
+  ],
+  "itemName": "CutNodesCommand"
+}

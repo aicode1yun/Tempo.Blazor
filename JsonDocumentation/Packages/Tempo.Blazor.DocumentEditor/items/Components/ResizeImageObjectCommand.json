@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Commands",
+  "description": "Resizes a positioned image object while preserving its anchor, wrap, and stacking metadata.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Commands/ResizeImageObjectCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "ResizeImageObjectCommand"
+}

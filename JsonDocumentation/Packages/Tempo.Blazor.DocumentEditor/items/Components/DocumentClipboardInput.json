@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard",
+  "description": "Raw clipboard data captured when the user pastes into the editor.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Clipboard/DocumentClipboardInput.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Files",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>",
+      "description": "File names or URIs attached to the clipboard event (e.g. image files)."
+    },
+    {
+      "name": "Html",
+      "kind": "Property",
+      "type": "string?",
+      "description": "HTML content from the clipboard, or if not present."
+    },
+    {
+      "name": "PlainText",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Plain-text content from the clipboard, or if not present."
+    },
+    {
+      "name": "Source",
+      "kind": "Property",
+      "type": "DocumentClipboardSource",
+      "description": "Detected source application."
+    }
+  ],
+  "itemName": "DocumentClipboardInput"
+}

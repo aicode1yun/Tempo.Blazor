@@ -115,7 +115,7 @@ public sealed class TmModelingLocalizationM15Tests : LocalizationTestBase
 
     public TmModelingLocalizationM15Tests()
     {
-        Services.AddTempoBlazor();
+        Services.AddTempoBlazorModeling();
     }
 
     [Fact]

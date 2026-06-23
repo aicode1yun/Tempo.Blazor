@@ -829,7 +829,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
                 async function readCanvasModel() {
                     const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                     const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                    const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                     return JSON.parse(module.getModelJson(handle) || '{}');
                 }
             }
@@ -849,7 +849,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
                 async function readCanvasModel() {
                     const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                     const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                    const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                     return JSON.parse(module.getModelJson(handle) || '{}');
                 }
 
@@ -888,7 +888,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
                 async function readCanvasModel() {
                     const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                     const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                    const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                     return JSON.parse(module.getModelJson(handle) || '{}');
                 }
 
@@ -926,7 +926,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
                 async function readCanvasModel() {
                     const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                     const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                    const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                     return JSON.parse(module.getModelJson(handle) || '{}');
                 }
             }
@@ -945,7 +945,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
                 async function readCanvasModel() {
                     const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                     const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                    const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                     return JSON.parse(module.getModelJson(handle) || '{}');
                 }
             }
@@ -959,8 +959,8 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             async blockId => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
-                const text = await import('/_content/Tempo.Blazor/js/document-editor-canvas/layout/canvas-text-style.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
+                const text = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/layout/canvas-text-style.mjs');
                 const model = JSON.parse(interop.getModelJson(handle) || '{}');
                 const block = (model?.body?.blocks || []).find(item => String(item?.id || '') === String(blockId || ''));
                 return (block?.content?.runs || []).reduce((total, run) => total + text.createCanvasRunText(run).length, 0);
@@ -981,13 +981,13 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
                     return false;
                 }
 
-                const math = await import('/_content/Tempo.Blazor/js/document-editor-canvas/math/math-model.mjs');
+                const math = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/math/math-model.mjs');
                 return math.mathToAccessibleText(content) === expectedText;
 
                 async function readCanvasModel() {
                     const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                     const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                    const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                     return JSON.parse(module.getModelJson(handle) || '{}');
                 }
 
@@ -1013,7 +1013,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
                 async function readCanvasModel() {
                     const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                     const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                    const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                     return JSON.parse(module.getModelJson(handle) || '{}');
                 }
 
@@ -1049,7 +1049,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             async () => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(module.getModelJson(handle) || '{}');
                 const modelMathCount = (model?.body?.blocks || [])
                     .flatMap(block => block?.content?.runs || [])
@@ -1094,7 +1094,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
                 async function readCanvasModel() {
                     const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                     const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                    const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                     return JSON.parse(module.getModelJson(handle) || '{}');
                 }
             }
@@ -1134,7 +1134,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             async ({ mathId, displayMode }) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(module.getModelJson(handle) || '{}');
                 const run = (model?.body?.blocks || [])
                     .flatMap(block => block?.content?.runs || [])
@@ -1158,7 +1158,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
 
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const snapshot = JSON.parse(module.getSnapshotJson(handle) || '{}');
                 const math = snapshot?.selection?.math || {};
                 return math.active === true
@@ -1175,7 +1175,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             async ({ expectedMathId, expectedSlotName }) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const snapshot = JSON.parse(module.getSnapshotJson(handle) || '{}');
                 const math = snapshot?.selection?.math || {};
                 return math.active === true
@@ -1199,7 +1199,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
 
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const snapshot = JSON.parse(module.getSnapshotJson(handle) || '{}');
                 const math = snapshot?.selection?.math || {};
                 return math.active === true
@@ -1225,7 +1225,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             async ({ expectedMathId, expectedSlotCount }) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const snapshot = JSON.parse(module.getSnapshotJson(handle) || '{}');
                 const math = snapshot?.selection?.math || {};
                 return math.mathId === expectedMathId
@@ -1314,8 +1314,8 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             async ({ mathId, slotPath }) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
-                const caret = await import('/_content/Tempo.Blazor/js/document-editor-canvas/math/math-caret.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
+                const caret = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/math/math-caret.mjs');
                 let equations = [];
                 let equation = null;
                 const until = Date.now() + 5000;
@@ -1351,7 +1351,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             async () => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(module.getModelJson(handle) || '{}');
                 return (model?.body?.blocks || [])
                     .flatMap(block => block?.content?.runs || [])
@@ -1367,7 +1367,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             async ({ existingMathIds, elementType }) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(module.getModelJson(handle) || '{}');
                 const existing = new Set(existingMathIds || []);
                 const mathRuns = (model?.body?.blocks || [])
@@ -1516,7 +1516,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
                     async ({ commandId, json }) => {
                         const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                         const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                        const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                        const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                         const raw = module.execCommand(handle, commandId, json);
                         const parsed = JSON.parse(raw || '{}');
                         const snapshot = JSON.parse(module.getSnapshotJson(handle) || '{}');
@@ -1572,7 +1572,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
                 const first = document.querySelector('[data-testid="document-canvas-page"]');
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = handle ? JSON.parse(module.getModelJson(handle) || '{}') : {};
                 const mathRuns = (model?.body?.blocks || []).flatMap(block => block?.content?.runs || []).filter(run => run?.math);
                 const elementTypes = mathRuns.flatMap(run => collectTypes(run.math?.content));

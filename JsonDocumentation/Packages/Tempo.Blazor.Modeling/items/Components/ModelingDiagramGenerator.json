@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Modeling",
+  "description": "Generates diagram documents from source-backed modeling DTOs.",
+  "packageId": "Tempo.Blazor.Modeling",
+  "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/ModelingDiagramGenerator.cs",
+  "documentationStatus": "generated",
+  "itemName": "ModelingDiagramGenerator"
+}

@@ -1,0 +1,41 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
+  "description": "Shared core helpers for validating and aggregating streamed Notion AI provider responses.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionAIStreamingService.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AggregateAsync",
+      "kind": "Method",
+      "type": "Task<string>",
+      "description": "Aggregates any streamed AI response into a single string.",
+      "parameters": [
+        {
+          "name": "stream",
+          "type": "IAsyncEnumerable<string>"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "ValidateCompletionRequest",
+      "kind": "Method",
+      "type": "void",
+      "description": "Validates a completion request before dispatching it to a provider.",
+      "parameters": [
+        {
+          "name": "request",
+          "type": "AiCompletionRequest"
+        }
+      ]
+    }
+  ],
+  "itemName": "NotionAIStreamingService"
+}

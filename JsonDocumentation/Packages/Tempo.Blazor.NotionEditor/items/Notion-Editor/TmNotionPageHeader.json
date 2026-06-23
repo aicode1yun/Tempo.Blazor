@@ -1,0 +1,50 @@
+{
+  "itemName": "TmNotionPageHeader",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Page header: cover image (with drag repositioning), icon (emoji picker), title (contenteditable), and optional description.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Page/TmNotionPageHeader.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Page"
+  ],
+  "parameters": [
+    {
+      "name": "OnCommentBadgeClicked",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Total unresolved comment count for the page (header badge)."
+    },
+    {
+      "name": "OnPageUpdated",
+      "type": "EventCallback<INotionPage>",
+      "isRequired": false,
+      "description": "When true, displays a visible page-level restricted access indicator in the header."
+    },
+    {
+      "name": "OnTitleEnterPressed",
+      "type": "EventCallback",
+      "isRequired": false
+    },
+    {
+      "name": "Page",
+      "type": "INotionPage",
+      "isRequired": true,
+      "editorRequired": true
+    },
+    {
+      "name": "ShowRestrictedIndicator",
+      "type": "bool",
+      "isRequired": false
+    },
+    {
+      "name": "UnresolvedCommentCount",
+      "type": "int",
+      "isRequired": false,
+      "description": "Fired when Enter is pressed in the title, signalling to add a new block."
+    }
+  ],
+  "subcategory": "Page"
+}

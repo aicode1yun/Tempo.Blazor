@@ -1,0 +1,33 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+  "description": "Groups multiple commands into a single undoable unit.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/BatchCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Add",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "command",
+          "type": "ISpreadsheetCommand"
+        }
+      ]
+    },
+    {
+      "name": "Execute",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "Undo",
+      "kind": "Method",
+      "type": "void"
+    }
+  ],
+  "itemName": "Tempo.Blazor.Components.Spreadsheet.Commands.BatchCommand"
+}

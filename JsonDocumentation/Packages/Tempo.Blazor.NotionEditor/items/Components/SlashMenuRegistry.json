@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "description": "All available slash-menu block types with their display keys, icons, and search keywords. Name / Description fields are localisation keys resolved by the component via Loc[].",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/SlashMenuRegistry.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "FindByType",
+      "kind": "Method",
+      "type": "SlashMenuItem?",
+      "parameters": [
+        {
+          "name": "type",
+          "type": "BlockType"
+        }
+      ]
+    }
+  ],
+  "itemName": "SlashMenuRegistry"
+}

@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Templates",
+  "description": "Validates that a diagram template references registered Tempo-original stencils.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/DiagramTemplateStencilValidator.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Validate",
+      "kind": "Method",
+      "type": "DiagramTemplateStencilValidationResult",
+      "description": "Validates node stencil ids and edge connector types in .",
+      "parameters": [
+        {
+          "name": "template",
+          "type": "DiagramTemplate"
+        },
+        {
+          "name": "stencilRegistry",
+          "type": "DiagramStencilRegistry"
+        }
+      ]
+    }
+  ],
+  "itemName": "DiagramTemplateStencilValidator"
+}

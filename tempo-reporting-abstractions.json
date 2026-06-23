@@ -74,7 +74,47 @@
     "packages": [
       {
         "name": "Tempo.Blazor",
-        "description": "Comprehensive Blazor component library with 100+ components. Supports WebAssembly, Server, and InteractiveAuto render modes. Multi-targets .NET 8/9/10. Includes FluentValidation integration, multilingual support (EN/CS), CSS variable theming, and dark mode."
+        "description": "Comprehensive Blazor component library with 100+ components. Supports WebAssembly, Server, and InteractiveAuto render modes. Multi-targets .NET 8/9/10. Includes multilingual support (EN/CS), CSS variable theming, and dark mode. Optional FluentValidation integration is available through Tempo.Blazor.FluentValidation."
+      },
+      {
+        "name": "Tempo.Blazor.PdfViewer",
+        "description": "PDF.js powered PDF viewer component for Tempo.Blazor with thumbnails, search, text layer, rotation, zoom, and continuous scroll."
+      },
+      {
+        "name": "Tempo.Blazor.Codes",
+        "description": "QR code and barcode components for Tempo.Blazor backed by QRCoder and ZXing.Net."
+      },
+      {
+        "name": "Tempo.Blazor.DiagramEditor",
+        "description": "Diagram editor components for Tempo.Blazor, including stencil libraries, templates, import helpers, auto-layout, and diagram canvas interop."
+      },
+      {
+        "name": "Tempo.Blazor.Wireframe",
+        "description": "Wireframe editor components for Tempo.Blazor with toolbox, schema registry, canvas interop, page tabs, minimap, and export helpers."
+      },
+      {
+        "name": "Tempo.Blazor.Modeling",
+        "description": "Modeling editor components for Tempo.Blazor, including BPMN, UML, ArchiMate, ERD notation profiles and diagram generation."
+      },
+      {
+        "name": "Tempo.Blazor.Spreadsheet",
+        "description": "Excel-like spreadsheet components for Tempo.Blazor, including canvas rendering, formula editing, workbook import/export, and spreadsheet interop assets."
+      },
+      {
+        "name": "Tempo.Blazor.GanttXlsx",
+        "description": "Optional XLSX import and export helpers for Tempo.Blazor Gantt components, backed by DocumentFormat.OpenXml."
+      },
+      {
+        "name": "Tempo.Blazor.DocumentEditor",
+        "description": "Document editor components for Tempo.Blazor, including canvas rendering, collaboration UI, clipboard normalization, and document editor interop assets."
+      },
+      {
+        "name": "Tempo.Blazor.NotionEditor",
+        "description": "Notion-style editor components for Tempo.Blazor, including pages, blocks, databases, collaboration UI, comments, media, and Tempo embed blocks."
+      },
+      {
+        "name": "Tempo.Blazor.All",
+        "description": "Compatibility package for Tempo.Blazor that references the core package and split feature packages for applications that want the full component suite."
       },
       {
         "name": "Tempo.Blazor.Abstractions",

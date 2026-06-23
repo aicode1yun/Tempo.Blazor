@@ -1,0 +1,49 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+  "description": "Declarative metadata for the built-in document editor toolbar.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Registry/DocumentEditorBuiltInToolbar.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CreateRegistry",
+      "kind": "Method",
+      "type": "DocumentEditorToolbarRegistry",
+      "description": "Creates a toolbar registry preloaded with the built-in groups and items.",
+      "parameters": [
+        {
+          "name": "commandRegistry",
+          "type": "DocumentEditorCommandRegistry?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "FindGroup",
+      "kind": "Method",
+      "type": "DocumentToolbarGroup?",
+      "description": "Finds built-in group metadata for the given group id.",
+      "parameters": [
+        {
+          "name": "groupId",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "FindItemByCommandName",
+      "kind": "Method",
+      "type": "DocumentToolbarItem?",
+      "description": "Finds built-in metadata for the given command name.",
+      "parameters": [
+        {
+          "name": "commandName",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentEditorBuiltInToolbar"
+}

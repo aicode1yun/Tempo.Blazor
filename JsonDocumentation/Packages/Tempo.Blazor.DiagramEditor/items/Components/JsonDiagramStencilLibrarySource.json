@@ -1,0 +1,62 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+  "description": "Descriptor for a JSON stencil library source.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/JsonDiagramStencilLibrarySource.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "LoadJson",
+      "kind": "Method",
+      "type": "string",
+      "description": "Loads the JSON payload for this source."
+    },
+    {
+      "name": "Optional",
+      "kind": "Method",
+      "type": "JsonDiagramStencilLibrarySource",
+      "description": "Creates a source that is loaded only after .",
+      "parameters": [
+        {
+          "name": "sourceId",
+          "type": "string"
+        },
+        {
+          "name": "loadJson",
+          "type": "Func<string>"
+        }
+      ]
+    },
+    {
+      "name": "Required",
+      "kind": "Method",
+      "type": "JsonDiagramStencilLibrarySource",
+      "description": "Creates a source that is loaded together with the provider.",
+      "parameters": [
+        {
+          "name": "sourceId",
+          "type": "string"
+        },
+        {
+          "name": "loadJson",
+          "type": "Func<string>"
+        }
+      ]
+    },
+    {
+      "name": "IsOptional",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether this source should be loaded only when requested."
+    },
+    {
+      "name": "SourceId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique source identifier used for optional library activation."
+    }
+  ],
+  "itemName": "JsonDiagramStencilLibrarySource"
+}

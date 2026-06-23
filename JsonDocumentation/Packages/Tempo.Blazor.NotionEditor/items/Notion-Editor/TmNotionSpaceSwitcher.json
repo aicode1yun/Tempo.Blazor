@@ -1,0 +1,40 @@
+{
+  "itemName": "TmNotionSpaceSwitcher",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionSpaceSwitcher Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Sidebar",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Sidebar/TmNotionSpaceSwitcher.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Sidebar"
+  ],
+  "parameters": [
+    {
+      "name": "CurrentPageId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Raised when the selected space id changes."
+    },
+    {
+      "name": "OnCurrentPageMoved",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Currently opened page id used by overview move actions."
+    },
+    {
+      "name": "SelectedSpaceId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional provider that supplies spaces and cross-space page moves."
+    },
+    {
+      "name": "SelectedSpaceIdChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Currently selected space id. Null means the provider default or implicit space."
+    }
+  ],
+  "subcategory": "Sidebar"
+}

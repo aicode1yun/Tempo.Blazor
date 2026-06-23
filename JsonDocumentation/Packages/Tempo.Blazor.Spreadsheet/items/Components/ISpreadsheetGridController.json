@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Rendering",
+  "description": "Defines the runtime operations exposed by spreadsheet grid renderers to the parent spreadsheet component.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Rendering/ISpreadsheetGridController.cs",
+  "documentationStatus": "generated",
+  "itemName": "ISpreadsheetGridController"
+}

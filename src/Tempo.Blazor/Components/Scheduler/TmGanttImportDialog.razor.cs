@@ -49,7 +49,7 @@ public partial class TmGanttImportDialog
             {
                 if (_selectedFile is null) return;
                 using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
-                tasks = GanttExcelImporter.Import(stream);
+                tasks = ImportExcelTasks(stream);
             }
             else if (_tab == ImportTab.Mpp)
             {
@@ -80,4 +80,30 @@ public partial class TmGanttImportDialog
             _isImporting = false;
         }
     }
+
+    private IReadOnlyList<TmWorkItem> ImportExcelTasks(Stream stream)
+    {
+        var importerType = ResolveGanttExcelImporterType()
+            ?? throw new InvalidOperationException(Loc["TmGantt_ImportXlsxPackageMissing"]);
+
+        var importMethod = importerType.GetMethods()
+            .FirstOrDefault(method =>
+            {
+                if (method.Name != "Import")
+                    return false;
+
+                var parameters = method.GetParameters();
+                return parameters.Length == 2 && parameters[0].ParameterType == typeof(Stream);
+            })
+            ?? throw new MissingMethodException(importerType.FullName, "Import");
+
+        return importMethod.Invoke(null, [stream, null]) as IReadOnlyList<TmWorkItem>
+            ?? Array.Empty<TmWorkItem>();
+    }
+
+    private static Type? ResolveGanttExcelImporterType()
+        => Type.GetType("Tempo.Blazor.Services.GanttExcelImporter, Tempo.Blazor.GanttXlsx")
+           ?? AppDomain.CurrentDomain.GetAssemblies()
+               .Select(assembly => assembly.GetType("Tempo.Blazor.Services.GanttExcelImporter", throwOnError: false))
+               .FirstOrDefault(type => type is not null);
 }

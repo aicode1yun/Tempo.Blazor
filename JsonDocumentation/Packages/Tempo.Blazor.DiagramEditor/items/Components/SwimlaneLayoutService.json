@@ -1,0 +1,56 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Calculates swimlane cell positions and arranges child nodes.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/SwimlaneLayoutService.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ArrangeChild",
+      "kind": "Method",
+      "type": "void",
+      "description": "Positions a child node inside the centre of its assigned swimlane cell.",
+      "parameters": [
+        {
+          "name": "swimlane",
+          "type": "DiagramNode"
+        },
+        {
+          "name": "child",
+          "type": "DiagramNode"
+        }
+      ]
+    },
+    {
+      "name": "GetDefaultLaneSize",
+      "kind": "Method",
+      "type": "double",
+      "description": "Returns the default size for a newly added row or column.",
+      "parameters": [
+        {
+          "name": "data",
+          "type": "DiagramNodeSwimlaneData"
+        },
+        {
+          "name": "forRow",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "RecalculateSize",
+      "kind": "Method",
+      "type": "void",
+      "description": "Updates swimlane dimensions so that all rows and columns fit their defined sizes.",
+      "parameters": [
+        {
+          "name": "swimlane",
+          "type": "DiagramNode"
+        }
+      ]
+    }
+  ],
+  "itemName": "SwimlaneLayoutService"
+}

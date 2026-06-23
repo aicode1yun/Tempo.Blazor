@@ -1,0 +1,79 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Undo/redo history for a single diagram editor instance. Not a DI service. TmDiagramEditor creates one instance and cascades it to child components via CascadingValue. Each editor on the page gets its own isolated stack.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/DiagramCommandStack.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BeginTransaction",
+      "kind": "Method",
+      "type": "void",
+      "description": "Begins a new transactional scope. Nested transactions are not allowed.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Clear",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "CommitTransaction",
+      "kind": "Method",
+      "type": "void",
+      "description": "Commits the current transaction as a single undo/redo step."
+    },
+    {
+      "name": "Dispose",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "Push",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "command",
+          "type": "IDiagramCommand"
+        }
+      ]
+    },
+    {
+      "name": "Redo",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "RollbackTransaction",
+      "kind": "Method",
+      "type": "void",
+      "description": "Rolls back the current transaction without recording it."
+    },
+    {
+      "name": "TransactionScope",
+      "kind": "Method",
+      "type": "IDisposable",
+      "description": "Returns an wrapper that begins and commits/rolls back a transaction.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Undo",
+      "kind": "Method",
+      "type": "void"
+    }
+  ],
+  "itemName": "DiagramCommandStack"
+}

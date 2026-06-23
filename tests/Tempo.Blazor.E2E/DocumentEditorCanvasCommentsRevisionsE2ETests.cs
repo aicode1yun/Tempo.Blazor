@@ -292,7 +292,7 @@ public sealed class DocumentEditorCanvasCommentsRevisionsE2ETests : WasmTestBase
             async () => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const state = JSON.parse(module.getUndoStateJson(handle) || '{}');
                 return Number(state.undoDepth || (state.canUndo ? 1 : 0) || 0);
             }
@@ -304,7 +304,7 @@ public sealed class DocumentEditorCanvasCommentsRevisionsE2ETests : WasmTestBase
             async enabled => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 module.setTrackChangesEnabled(handle, enabled === true, JSON.stringify({
                     id: 'canvas-demo-user',
                     displayName: 'Canvas Demo User'
@@ -329,7 +329,7 @@ public sealed class DocumentEditorCanvasCommentsRevisionsE2ETests : WasmTestBase
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
                 if (!handle) return false;
-                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(module.getModelJson(handle) || '{}');
                 const revision = (Array.isArray(model.revisions) ? model.revisions : [])
                     .find(item => String(item?.id || item?.Id || '') === String(revisionId || ''));
@@ -346,7 +346,7 @@ public sealed class DocumentEditorCanvasCommentsRevisionsE2ETests : WasmTestBase
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
                 if (!handle) return false;
-                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(module.getModelJson(handle) || '{}');
                 const revisions = Array.isArray(model.revisions) ? model.revisions : [];
                 const pending = revisions.filter(item => String(item?.action || item?.Action || '').toLowerCase() === 'pending').length;
@@ -389,7 +389,7 @@ public sealed class DocumentEditorCanvasCommentsRevisionsE2ETests : WasmTestBase
                 const payload = JSON.parse(json || '{}');
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const raw = module.execCommand(handle, commandId, json);
                 const parsed = JSON.parse(raw || '{}');
                 const model = parsed?.result?.model || {};
@@ -538,7 +538,7 @@ public sealed class DocumentEditorCanvasCommentsRevisionsE2ETests : WasmTestBase
             async () => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = handle ? JSON.parse(module.getModelJson(handle) || '{}') : {};
                 const comments = Array.isArray(model.comments) ? model.comments : [];
                 const revisions = Array.isArray(model.revisions) ? model.revisions : [];

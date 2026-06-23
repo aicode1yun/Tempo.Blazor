@@ -92,6 +92,16 @@ builder.Services.AddScoped<SignalRCollaborationProvider>();
 
 // Register Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)
 builder.Services.AddTempoBlazor();
+builder.Services.AddTempoBlazorPdfViewer();
+builder.Services.AddTempoBlazorCodes();
+builder.Services.AddTempoBlazorDocumentEditor();
+builder.Services.AddTempoBlazorDiagramEditor();
+builder.Services.AddTempoBlazorWireframe();
+builder.Services.AddTempoBlazorModeling();
+builder.Services.AddTempoBlazorSpreadsheet();
+builder.Services.AddTempoBlazorGanttXlsx();
+builder.Services.AddTempoBlazorNotionEditor();
+builder.Services.AddTempoBlazorSigning();
 builder.Services.AddTempoBlazorReporting();
 builder.Services.AddSingleton<IModelingNotationProfile, ErdNotationProfile>();
 builder.Services.AddInMemoryNotifications();

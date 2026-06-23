@@ -18,7 +18,7 @@ namespace Tempo.Blazor.Tests.Localization;
 /// </summary>
 public abstract class LocalizationTestBase : TestContext
 {
-    private const string DocumentCanvasInteropModulePath = "./_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs";
+    private const string DocumentCanvasInteropModulePath = "./_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs";
 
     private BunitJSModuleInterop? _documentCanvasModule;
     private JSRuntimeInvocationHandler<string?>? _documentCanvasGetModelJson;

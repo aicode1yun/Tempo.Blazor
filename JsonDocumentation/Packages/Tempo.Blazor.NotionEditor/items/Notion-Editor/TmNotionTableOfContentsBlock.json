@@ -1,0 +1,15 @@
+{
+  "itemName": "TmNotionTableOfContentsBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionTableOfContentsBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionTableOfContentsBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
+  ],
+  "parameters": [],
+  "subcategory": "Blocks / Special"
+}

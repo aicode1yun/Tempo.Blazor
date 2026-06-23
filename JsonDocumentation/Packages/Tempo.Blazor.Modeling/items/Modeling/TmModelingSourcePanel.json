@@ -1,0 +1,33 @@
+{
+  "itemName": "TmModelingSourcePanel",
+  "kind": "Component",
+  "category": "Modeling",
+  "description": "Shows metadata and reload controls for the modeling data source.",
+  "packageId": "Tempo.Blazor.Modeling",
+  "namespace": "Tempo.Blazor.Components.Modeling",
+  "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/TmModelingSourcePanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Modeling"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback raised when the user requests loading the model again."
+    },
+    {
+      "name": "IsLoading",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Metadata describing the currently loaded modeling source."
+    },
+    {
+      "name": "OnLoadRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Whether a model load is currently in progress."
+    }
+  ]
+}

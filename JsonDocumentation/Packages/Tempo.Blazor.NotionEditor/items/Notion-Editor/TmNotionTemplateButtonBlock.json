@@ -1,0 +1,41 @@
+{
+  "itemName": "TmNotionTemplateButtonBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionTemplateButtonBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionTemplateButtonBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
+  ],
+  "parameters": [
+    {
+      "name": "IsFocused",
+      "type": "bool",
+      "isRequired": false
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false
+    },
+    {
+      "name": "OnInsertTemplateBlocks",
+      "type": "EventCallback<IReadOnlyList<IPageBlock>>",
+      "isRequired": false
+    },
+    {
+      "name": "OnUpdated",
+      "type": "EventCallback<TemplateButtonBlockContent>",
+      "isRequired": false
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "Blocks / Special"
+}

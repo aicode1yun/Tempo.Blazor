@@ -140,7 +140,7 @@ public class TmDocumentEditorLocalizationTests : LocalizationTestBase
     private static SortedSet<string> ReadUsedDocumentEditorKeys(string root)
     {
         var keys = new SortedSet<string>(StringComparer.Ordinal);
-        var componentRoot = Path.Combine(root, "src", "Tempo.Blazor", "Components", "DocumentEditor");
+        var componentRoot = Path.Combine(root, "src", "Tempo.Blazor.DocumentEditor", "Components", "DocumentEditor");
         foreach (var file in Directory.EnumerateFiles(componentRoot, "*.*", SearchOption.AllDirectories)
                      .Where(file => file.EndsWith(".razor", StringComparison.OrdinalIgnoreCase)
                          || file.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)))

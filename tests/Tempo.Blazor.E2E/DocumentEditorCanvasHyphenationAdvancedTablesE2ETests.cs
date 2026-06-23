@@ -170,7 +170,7 @@ public sealed class DocumentEditorCanvasHyphenationAdvancedTablesE2ETests : Wasm
             async ({ commandId, json }) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const raw = module.execCommand(handle, commandId, json);
                 const parsed = JSON.parse(raw || '{}');
                 return {
@@ -196,7 +196,7 @@ public sealed class DocumentEditorCanvasHyphenationAdvancedTablesE2ETests : Wasm
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
                 let runtimeModel = {};
                 if (handle) {
-                    const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                     runtimeModel = JSON.parse(module.getModelJson(handle) || '{}');
                 }
                 const pageBackground = runtimeModel.pageBackground || runtimeModel.PageBackground || {};

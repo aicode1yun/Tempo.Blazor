@@ -1,0 +1,77 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Central registry of all wireframe component definitions. Registered as a singleton DI service. Multiple instances can be registered; when two providers supply the same , the definition from the higher-priority provider wins.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeComponentRegistry.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetAll",
+      "kind": "Method",
+      "type": "IEnumerable<WireframeComponentDef>",
+      "description": "Returns all registered definitions ordered by Category then DisplayName."
+    },
+    {
+      "name": "GetByCategory",
+      "kind": "Method",
+      "type": "IEnumerable<WireframeComponentDef>",
+      "description": "Returns definitions belonging to .",
+      "parameters": [
+        {
+          "name": "category",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "GetCategories",
+      "kind": "Method",
+      "type": "string[]",
+      "description": "Returns all distinct category names in display order."
+    },
+    {
+      "name": "GetDef",
+      "kind": "Method",
+      "type": "WireframeComponentDef?",
+      "description": "Returns the definition for , or null if not found.",
+      "parameters": [
+        {
+          "name": "type",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "RegisterDefinition",
+      "kind": "Method",
+      "type": "void",
+      "description": "Registers a single definition. If a definition with the same type already exists, the one with higher wins (ties keep the existing entry).",
+      "parameters": [
+        {
+          "name": "def",
+          "type": "WireframeComponentDef"
+        },
+        {
+          "name": "priority",
+          "type": "int",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "RegisterProvider",
+      "kind": "Method",
+      "type": "void",
+      "description": "Loads all definitions from into the registry.",
+      "parameters": [
+        {
+          "name": "provider",
+          "type": "IWireframeComponentProvider"
+        }
+      ]
+    }
+  ],
+  "itemName": "WireframeComponentRegistry"
+}

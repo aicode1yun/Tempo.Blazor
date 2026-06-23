@@ -1,0 +1,530 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.Modeling",
+    "title": "Tempo.Blazor.Modeling",
+    "description": "Modeling editor components for Tempo.Blazor, including BPMN, UML, ArchiMate, ERD notation profiles and diagram generation.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;components;modeling;bpmn;uml;archimate;erd",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Modeling"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor/Tempo.Blazor.csproj",
+      "../Tempo.Blazor.DiagramEditor/Tempo.Blazor.DiagramEditor.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Components.Modeling",
+      "Tempo.Blazor.Configuration"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.Modeling",
+    "overview": "Modeling editor components for Tempo.Blazor, including BPMN, UML, ArchiMate, ERD notation profiles and diagram generation.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Modeling"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "DemoModelingModelProvider",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Modeling",
+      "description": "Demo modeling provider with deterministic BPMN and ArchiMate sample data.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/DemoModelingModelProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ProviderKey",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "ProviderKeyValue",
+          "kind": "Field",
+          "type": "string",
+          "description": "Provider key used for the built-in demo modeling data."
+        },
+        {
+          "name": "GetModelAsync",
+          "kind": "Method",
+          "type": "Task<ModelingModelDto>",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "ModelingModelRequest"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "ErdNotationProfile",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Modeling",
+      "description": "Optional Entity Relationship Diagram notation profile for consumer-registered modeling scenarios.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/BuiltInModelingProfiles.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ErdStencilMapper",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Modeling",
+      "description": "ERD stencil mapper placeholder. It intentionally returns no mappings until a consumer registers ERD stencils.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/BuiltInModelingProfiles.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ModelingDiagramGenerator",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Modeling",
+      "description": "Generates diagram documents from source-backed modeling DTOs.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/ModelingDiagramGenerator.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ModelingNodeDroppedEventArgs",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Modeling",
+      "description": "Describes a modeling element dropped onto a diagram preview.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/ModelingNodeDroppedEventArgs.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Element",
+          "kind": "Property",
+          "type": "required ModelingElementDto",
+          "description": "Existing semantic model element reused by the new diagram node."
+        },
+        {
+          "name": "NodeId",
+          "kind": "Property",
+          "type": "required string",
+          "description": "Identifier of the diagram node created for this dropped occurrence."
+        },
+        {
+          "name": "Point",
+          "kind": "Property",
+          "type": "required DiagramPoint",
+          "description": "Drop point in diagram document coordinates."
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Configuration",
+      "namespace": "Tempo.Blazor.Configuration",
+      "description": "Extension methods for registering Tempo.Blazor modeling editor services.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Configuration/ModelingServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "AddTempoBlazorModeling",
+          "kind": "Method",
+          "type": "IServiceCollection",
+          "description": "Registers services required by the modeling editor component group.",
+          "parameters": [
+            {
+              "name": "services",
+              "type": "this IServiceCollection"
+            }
+          ]
+        }
+      ],
+      "itemName": "ModelingServiceCollectionExtensions"
+    },
+    {
+      "itemName": "TmModelingDiagramPreview",
+      "kind": "Component",
+      "category": "Modeling",
+      "namespace": "Tempo.Blazor.Components.Modeling",
+      "description": "Shows a generated modeling diagram through the diagram editor canvas.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/TmModelingDiagramPreview.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Modeling"
+      ],
+      "parameters": [
+        {
+          "name": "ActiveDraggedElement",
+          "type": "ModelingElementDto?",
+          "isRequired": false,
+          "description": "Raised when a dragged modeling tree item is dropped onto the preview canvas."
+        },
+        {
+          "name": "AllowNodeDrop",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Modeling element currently being dragged from the model tree."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Raised when a relationship edge is selected in the generated preview."
+        },
+        {
+          "name": "DocumentChanged",
+          "type": "EventCallback<DiagramDocument>",
+          "isRequired": false,
+          "description": "Generated diagram document to show in the preview. Null renders the pre-generation empty state."
+        },
+        {
+          "name": "OnDrop",
+          "type": "EventCallback<DragEventArgs>",
+          "isRequired": false,
+          "description": "Raised when the user requests a fresh diagram generation from the currently loaded model."
+        },
+        {
+          "name": "OnGenerateRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user requests opening the generated document in the full diagram editor."
+        },
+        {
+          "name": "OnNodeDropped",
+          "type": "EventCallback<ModelingNodeDroppedEventArgs>",
+          "isRequired": false,
+          "description": "When false, model tree drops are ignored without mutating the preview document."
+        },
+        {
+          "name": "OnOpenInEditor",
+          "type": "EventCallback<DiagramDocument>",
+          "isRequired": false,
+          "description": "Raised when the embedded diagram editor reports a document mutation."
+        },
+        {
+          "name": "OnRelationshipSelected",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised after a tree element is reused as a new diagram node."
+        }
+      ]
+    },
+    {
+      "itemName": "TmModelingEditor",
+      "kind": "Component",
+      "category": "Modeling",
+      "namespace": "Tempo.Blazor.Components.Modeling",
+      "description": "Loads a semantic modeling source and presents an initial modeling editor shell.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/TmModelingEditor.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Modeling"
+      ],
+      "parameters": [
+        {
+          "name": "AllowNodeDrop",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Callback raised when the editor viewpoint selection changes."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Callback raised after a model tree element is reused as a new preview node."
+        },
+        {
+          "name": "ModelLoaderOverride",
+          "type": "Func<ModelingModelRequest, CancellationToken, Task<ModelingModelDto>>?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the editor root."
+        },
+        {
+          "name": "NotationKey",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Provider key used to select the semantic model provider. Null or empty values render the empty state."
+        },
+        {
+          "name": "OnDiagramGenerated",
+          "type": "EventCallback<DiagramDocument>",
+          "isRequired": false,
+          "description": "Optional viewpoint key passed to the selected provider and used to choose the initial model view."
+        },
+        {
+          "name": "OnNodeDropped",
+          "type": "EventCallback<ModelingNodeDroppedEventArgs>",
+          "isRequired": false,
+          "description": "Whether model tree elements can be reused by dropping them onto the preview canvas."
+        },
+        {
+          "name": "OnNotationChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Callback raised when the user opens the generated diagram in the full diagram editor."
+        },
+        {
+          "name": "OnOpenInEditor",
+          "type": "EventCallback<DiagramDocument>",
+          "isRequired": false,
+          "description": "Callback raised after a model is loaded and converted into a diagram document."
+        },
+        {
+          "name": "OnViewpointChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Callback raised when the editor notation selection changes."
+        },
+        {
+          "name": "ViewpointKey",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional notation key passed to the selected provider and generator."
+        }
+      ]
+    },
+    {
+      "itemName": "TmModelingInspector",
+      "kind": "Component",
+      "category": "Modeling",
+      "namespace": "Tempo.Blazor.Components.Modeling",
+      "description": "Displays details for a selected modeling element or relationship.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/TmModelingInspector.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Modeling"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Elements used to resolve relationship source and target display names."
+        },
+        {
+          "name": "Elements",
+          "type": "IReadOnlyList<ModelingElementDto>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Selected modeling relationship."
+        },
+        {
+          "name": "Relationship",
+          "type": "ModelingRelationshipDto?",
+          "isRequired": false,
+          "description": "Selected modeling element. Takes precedence when both element and relationship are supplied."
+        }
+      ]
+    },
+    {
+      "itemName": "TmModelingIssuePanel",
+      "kind": "Component",
+      "category": "Modeling",
+      "namespace": "Tempo.Blazor.Components.Modeling",
+      "description": "Displays validation and generation issues for a modeling document.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/TmModelingIssuePanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Modeling"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Raised when the user selects an issue that points to a model element or relationship."
+        },
+        {
+          "name": "OnIssueSelected",
+          "type": "EventCallback<ModelingIssueDto>",
+          "isRequired": false,
+          "description": "Issues to render in severity-coded order."
+        }
+      ]
+    },
+    {
+      "itemName": "TmModelingModelTree",
+      "kind": "Component",
+      "category": "Modeling",
+      "namespace": "Tempo.Blazor.Components.Modeling",
+      "description": "Displays semantic modeling elements grouped by type with live filtering and selection.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/TmModelingModelTree.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Modeling"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Raised when the user ends a drag operation from a tree node."
+        },
+        {
+          "name": "OnElementDragEnded",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user starts dragging an element node. Reserved for canvas drop support."
+        },
+        {
+          "name": "OnElementDragStarted",
+          "type": "EventCallback<ModelingElementDto>",
+          "isRequired": false,
+          "description": "Raised when the user selects an element node."
+        },
+        {
+          "name": "OnElementSelected",
+          "type": "EventCallback<ModelingElementDto>",
+          "isRequired": false,
+          "description": "Raised when changes."
+        },
+        {
+          "name": "SelectedElement",
+          "type": "ModelingElementDto?",
+          "isRequired": false,
+          "description": "Elements rendered by the tree. They are grouped by ."
+        },
+        {
+          "name": "SelectedElementChanged",
+          "type": "EventCallback<ModelingElementDto?>",
+          "isRequired": false,
+          "description": "Currently selected element."
+        }
+      ]
+    },
+    {
+      "itemName": "TmModelingSourcePanel",
+      "kind": "Component",
+      "category": "Modeling",
+      "namespace": "Tempo.Blazor.Components.Modeling",
+      "description": "Shows metadata and reload controls for the modeling data source.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/TmModelingSourcePanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Modeling"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Callback raised when the user requests loading the model again."
+        },
+        {
+          "name": "IsLoading",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Metadata describing the currently loaded modeling source."
+        },
+        {
+          "name": "OnLoadRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Whether a model load is currently in progress."
+        }
+      ]
+    },
+    {
+      "itemName": "TmModelingViewSelector",
+      "kind": "Component",
+      "category": "Modeling",
+      "namespace": "Tempo.Blazor.Components.Modeling",
+      "description": "Selects the active modeling notation and notation-specific viewpoint.",
+      "packageId": "Tempo.Blazor.Modeling",
+      "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/TmModelingViewSelector.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Modeling"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Raised when the viewpoint changes."
+        },
+        {
+          "name": "OnNotationChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Selected viewpoint key."
+        },
+        {
+          "name": "OnViewpointChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Raised when the notation changes."
+        },
+        {
+          "name": "ViewpointKey",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Selected notation key."
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [],
+  "summary": {
+    "itemCount": 13,
+    "manualItemCount": 12,
+    "generatedItemCount": 13,
+    "generatedOnlyItemCount": 1,
+    "componentCount": 7,
+    "publicApiTypeCount": 6
+  }
+}

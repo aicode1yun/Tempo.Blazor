@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Imports Gantt tasks from an XLSX spreadsheet stream.",
+  "packageId": "Tempo.Blazor.GanttXlsx",
+  "sourcePath": "src/Tempo.Blazor/Services/GanttExcelImporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "GanttExcelImporter"
+}

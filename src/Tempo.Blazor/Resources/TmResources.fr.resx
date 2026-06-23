@@ -3648,4 +3648,6 @@
   <data name="TmNotionBlock_InsertExisting" xml:space="preserve"><value>Insérer un existant…</value></data>
   <data name="TmNotionBlock_DocumentNotFound" xml:space="preserve"><value>Document introuvable</value></data>
   <data name="TmNotionBlock_RemoveBlock" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="TmNotionSpreadsheetEditModal_MissingPackage" xml:space="preserve"><value>Ajoutez le paquet Tempo.Blazor.Spreadsheet pour modifier les feuilles de calcul ici.</value></data>
+  <data name="TmGantt_ImportXlsxPackageMissing" xml:space="preserve"><value>Ajoutez le paquet Tempo.Blazor.GanttXlsx pour importer des fichiers Excel.</value></data>
 </root>

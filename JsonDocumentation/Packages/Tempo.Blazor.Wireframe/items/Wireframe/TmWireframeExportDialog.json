@@ -1,0 +1,14 @@
+{
+  "itemName": "TmWireframeExportDialog",
+  "kind": "Component",
+  "category": "Wireframe",
+  "description": "TmWireframeExportDialog Blazor component in the Wireframe category.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeExportDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Wireframe"
+  ],
+  "parameters": []
+}

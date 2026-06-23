@@ -1,0 +1,83 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Commands",
+  "description": "Async undo / redo history for a single Notion editor instance. Not a DI service — TmNotionPage creates one instance per page and cascades it to child components via CascadingValue so each page has its own isolated stack. Because provider calls are async the stack exposes async Push / Undo / Redo. The event is raised on every mutation so the UI can refresh without coupling to the stack's internal implementation.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Commands/NotionCommandStack.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BatchScope",
+      "kind": "Method",
+      "type": "IAsyncDisposable",
+      "description": "Returns an that begins a batch now and commits it on disposal (or rolls it back if an exception is thrown).",
+      "parameters": [
+        {
+          "name": "description",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "BeginBatch",
+      "kind": "Method",
+      "type": "void",
+      "description": "Begins a new batch scope. All commands pushed while the batch is open will be grouped into a single undo / redo step. Nested batches are not allowed.",
+      "parameters": [
+        {
+          "name": "description",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ClearAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Clears both stacks (e.g. after navigating to a different page)."
+    },
+    {
+      "name": "CommitBatch",
+      "kind": "Method",
+      "type": "void",
+      "description": "Commits the open batch as a single undo step. If the batch contains no commands it is discarded silently."
+    },
+    {
+      "name": "DisposeAsync",
+      "kind": "Method",
+      "type": "ValueTask"
+    },
+    {
+      "name": "PushAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Executes and pushes it onto the undo stack. When a batch is open the command is appended to it instead of being pushed directly — it will be committed as part of .",
+      "parameters": [
+        {
+          "name": "command",
+          "type": "INotionCommand"
+        }
+      ]
+    },
+    {
+      "name": "RedoAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Re-applies the most recently undone command. No-op when is false."
+    },
+    {
+      "name": "RollbackBatchAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Rolls back the open batch: undoes all commands already executed within it and discards the batch without recording it."
+    },
+    {
+      "name": "UndoAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Undoes the most recent command. No-op when is false."
+    }
+  ],
+  "itemName": "NotionCommandStack"
+}

@@ -1,0 +1,88 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
+  "description": "Bridges INotionCollaborationProvider observables to simple .NET events consumed by TmNotionCollaborationCursors and TmNotionPage. Owns join/leave lifecycle per page. Last-write-wins conflict detection: remote changes are always applied; the local block store is the source of truth for the current user's own edits.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionCollaborationSync.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BroadcastBlockChangeAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Broadcasts a local block change to all other collaborators.",
+      "parameters": [
+        {
+          "name": "change",
+          "type": "BlockChange"
+        }
+      ]
+    },
+    {
+      "name": "BroadcastCursorAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Broadcasts the local cursor position to all other collaborators.",
+      "parameters": [
+        {
+          "name": "cursor",
+          "type": "CollaboratorCursor"
+        }
+      ]
+    },
+    {
+      "name": "DisposeAsync",
+      "kind": "Method",
+      "type": "ValueTask"
+    },
+    {
+      "name": "JoinAsync",
+      "kind": "Method",
+      "type": "Task",
+      "description": "Joins a page, subscribing to both streams. Automatically leaves any previous page.",
+      "parameters": [
+        {
+          "name": "provider",
+          "type": "INotionCollaborationProvider"
+        },
+        {
+          "name": "pageId",
+          "type": "string"
+        },
+        {
+          "name": "userId",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "OnCompleted",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "OnError",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "_",
+          "type": "Exception"
+        }
+      ]
+    },
+    {
+      "name": "OnNext",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "value",
+          "type": "T"
+        }
+      ]
+    }
+  ],
+  "itemName": "NotionCollaborationSync"
+}

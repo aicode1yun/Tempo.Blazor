@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+  "description": "Default renderer for document toolbar color picker inputs.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Registry/DocumentToolbarColorPickerRenderer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Render",
+      "kind": "Method",
+      "type": "RenderFragment",
+      "parameters": [
+        {
+          "name": "context",
+          "type": "DocumentToolbarRenderContext"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentToolbarColorPickerRenderer"
+}

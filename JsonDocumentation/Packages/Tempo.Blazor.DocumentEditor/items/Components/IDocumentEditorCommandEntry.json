@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+  "description": "A named command registered in the .",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Registry/IDocumentEditorCommandEntry.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDocumentEditorCommandEntry"
+}

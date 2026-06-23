@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "description": "Groups related Notion keyboard shortcuts in the shortcuts panel.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/NotionShortcutCatalog.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionShortcutGroup"
+}

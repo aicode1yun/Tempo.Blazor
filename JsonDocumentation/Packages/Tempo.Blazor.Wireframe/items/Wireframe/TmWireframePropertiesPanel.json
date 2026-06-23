@@ -1,0 +1,57 @@
+{
+  "itemName": "TmWireframePropertiesPanel",
+  "kind": "Component",
+  "category": "Wireframe",
+  "description": "Properties panel for the wireframe editor. Shows editable fields for the currently selected element(s). Supports single-select (all PropDef fields grouped by category, plus Layout X/Y/W/H and Element/ZIndex sections) and multi-select (intersection of common props, Mixed indicator when values differ). All mutations are routed through the cascaded WireframeCommandStack when available. Text and number inputs use per-field debounce (350 ms); dropdowns and checkboxes apply immediately. Changing a size prop with SizePresets defined automatically resizes the element.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Wireframe"
+  ],
+  "parameters": [
+    {
+      "name": "Document",
+      "type": "WireframeDocument?",
+      "isRequired": false,
+      "description": "Document being edited."
+    },
+    {
+      "name": "DocumentChanged",
+      "type": "EventCallback<WireframeDocument>",
+      "isRequired": false,
+      "description": "Raised after every property change."
+    },
+    {
+      "name": "SelectedIds",
+      "type": "string[]",
+      "isRequired": false,
+      "defaultValue": "[]",
+      "description": "IDs of the currently selected elements. Empty = no selection shown."
+    },
+    {
+      "name": "CommandStack",
+      "type": "WireframeCommandStack?",
+      "isRequired": false,
+      "description": "Cascaded from TmWireframeEditor. When present all mutations are recorded for undo/redo."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class applied to the panel wrapper."
+    }
+  ],
+  "cssClasses": [
+    "tm-wd-props",
+    "tm-wd-props__section",
+    "tm-wd-props__field",
+    "tm-wd-props__input",
+    "tm-wd-props__select",
+    "tm-wd-props__toggle"
+  ],
+  "examples": [
+    {
+      "title": "Properties panel bound to canvas selection",
+      "code": "<TmWireframeDesignerCanvas @ref=\"_canvas\"\n                           Document=\"_document\"\n                           DocumentChanged=\"d => _document = d\"\n                           OnSelectionChanged=\"ids => _selectedIds = ids\" />\n\n<TmWireframePropertiesPanel Document=\"_document\"\n                             DocumentChanged=\"d => _document = d\"\n                             SelectedIds=\"_selectedIds\" />\n\n@code {\n    private WireframeDocument _document = new();\n    private string[] _selectedIds = [];\n}"
+    }
+  ],
+  "packageId": "Tempo.Blazor.Wireframe"
+}

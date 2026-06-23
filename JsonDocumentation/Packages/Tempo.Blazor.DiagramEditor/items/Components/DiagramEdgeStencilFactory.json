@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+  "description": "Creates and updates diagram edges from edge stencil definitions.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/DiagramEdgeStencilFactory.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ApplyDefaults",
+      "kind": "Method",
+      "type": "void",
+      "description": "Applies edge stencil defaults to an existing diagram edge.",
+      "parameters": [
+        {
+          "name": "edge",
+          "type": "DiagramEdge"
+        },
+        {
+          "name": "stencil",
+          "type": "DiagramStencil"
+        }
+      ]
+    }
+  ],
+  "itemName": "DiagramEdgeStencilFactory"
+}

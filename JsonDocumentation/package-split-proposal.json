@@ -1,0 +1,1567 @@
+{
+  "$schema": "https://tempo.blazor.local/schemas/package-split-proposal.v1.json",
+  "schemaVersion": 1,
+  "createdOn": "2026-06-23",
+  "status": "phase-7-implemented-docs-release-compat",
+  "implementationStatus": {
+    "lastUpdatedOn": "2026-06-23",
+    "completedPhases": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "currentScope": "Phase 7 is implemented: JsonDocumentation/packages.json contains package-specific entries for the split feature packages, package-specific JSON outputs were generated, Tempo.Blazor.All is a physical compatibility package with AddTempoBlazorAll(), and README/release migration documentation was added.",
+    "demoImpact": "Demo hosts continue to reference and register split feature packages explicitly instead of using Tempo.Blazor.All, so the demo still validates individual package references, DI calls, CSS links, and script paths. Tempo.Blazor.All is reserved for consuming applications that want the compatibility path.",
+    "phase2PackageVerification": {
+      "packedOn": "2026-06-23",
+      "outputDirectory": "/tmp/tempo-phase2-pack",
+      "packages": [
+        {
+          "packageId": "Tempo.Blazor",
+          "compressedNupkgSize": "11 MB",
+          "verifiedAbsentEntries": [
+            "staticwebassets/js/pdf-viewer.js",
+            "staticwebassets/js/pdf.min.mjs",
+            "staticwebassets/js/pdf.worker.min.mjs",
+            "TmPdfViewer",
+            "TmQRCode",
+            "TmBarcode",
+            "QRCoder",
+            "ZXing.Net"
+          ]
+        },
+        {
+          "packageId": "Tempo.Blazor.PdfViewer",
+          "compressedNupkgSize": "458 KB",
+          "verifiedEntries": [
+            "lib/net8.0/Tempo.Blazor.PdfViewer.dll",
+            "lib/net9.0/Tempo.Blazor.PdfViewer.dll",
+            "lib/net10.0/Tempo.Blazor.PdfViewer.dll",
+            "staticwebassets/js/pdf-viewer.js",
+            "staticwebassets/js/pdf.min.mjs",
+            "staticwebassets/js/pdf.worker.min.mjs",
+            "staticwebassets/Tempo.Blazor.PdfViewer.*.bundle.scp.css"
+          ]
+        },
+        {
+          "packageId": "Tempo.Blazor.Codes",
+          "compressedNupkgSize": "31 KB",
+          "verifiedEntries": [
+            "lib/net8.0/Tempo.Blazor.Codes.dll",
+            "lib/net9.0/Tempo.Blazor.Codes.dll",
+            "lib/net10.0/Tempo.Blazor.Codes.dll",
+            "staticwebassets/Tempo.Blazor.Codes.*.bundle.scp.css"
+          ],
+          "verifiedDependencies": [
+            "Tempo.Blazor",
+            "QRCoder",
+            "ZXing.Net"
+          ]
+        }
+      ]
+    },
+    "phase3BuildVerification": {
+      "verifiedOn": "2026-06-23",
+      "commands": [
+        "dotnet restore TempoBlazor.slnx",
+        "dotnet build src/Tempo.Blazor.DiagramEditor/Tempo.Blazor.DiagramEditor.csproj --no-restore",
+        "dotnet build src/Tempo.Blazor.Wireframe/Tempo.Blazor.Wireframe.csproj --no-restore",
+        "dotnet build src/Tempo.Blazor.Modeling/Tempo.Blazor.Modeling.csproj --no-restore",
+        "dotnet build src/Tempo.Blazor.Demo/Tempo.Blazor.Demo.csproj --no-restore",
+        "dotnet build src/Tempo.Blazor.Demo.Server/Tempo.Blazor.Demo.Server.csproj --no-restore",
+        "dotnet build src/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto.csproj --no-restore",
+        "dotnet test tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj --no-restore --filter \"FullyQualifiedName~Diagram|FullyQualifiedName~Wireframe|FullyQualifiedName~Modeling|FullyQualifiedName~ServiceCollectionExtensionsPhase1Tests\"",
+        "dotnet build TempoBlazor.slnx --no-restore"
+      ],
+      "result": "passed",
+      "targetedTestResult": "passed: 1337 total, 0 failed, 0 skipped",
+      "solutionBuildResult": "passed: 8253 warnings, 0 errors",
+      "knownWarnings": [
+        "Existing analyzer/XML/localization warnings remain in core and extracted editor code.",
+        "NU1603 fallback remains for Microsoft.Extensions.Http 8.0.12 resolving to 9.0.0.",
+        "Existing NU1902/NU1903 package vulnerability warnings remain for MailKit, MimeKit, and SQLitePCLRaw.lib.e_sqlite3.",
+        "Release pack still reports existing duplicate resource key warnings for TmSpreadsheet_BackgroundColor and TmFileManager_UploadTitle.",
+        "Release pack still reports existing public XML/analyzer warnings in core and extracted editor code."
+      ]
+    },
+    "phase3PackageVerification": {
+      "packedOn": "2026-06-23",
+      "outputDirectory": "/tmp/tempo-phase3-pack",
+      "packages": [
+        {
+          "packageId": "Tempo.Blazor",
+          "compressedNupkgSize": "8.7 MB",
+          "verifiedAbsentEntries": [
+            "staticwebassets/js/dagre.min.js",
+            "staticwebassets/js/diagram-editor.js",
+            "staticwebassets/js/diagram-arrow-select.js",
+            "staticwebassets/js/d3-*.min.js",
+            "staticwebassets/js/wireframe-designer.js",
+            "staticwebassets/css/components/_diagram-editor.css",
+            "staticwebassets/css/components/_wireframe-editor.css",
+            "staticwebassets/diagram-templates/*.json",
+            "staticwebassets/wireframe-document.schema.json",
+            "staticwebassets/test-layouts.html"
+          ]
+        },
+        {
+          "packageId": "Tempo.Blazor.DiagramEditor",
+          "compressedNupkgSize": "1.2 MB",
+          "verifiedEntries": [
+            "lib/net8.0/Tempo.Blazor.DiagramEditor.dll",
+            "lib/net9.0/Tempo.Blazor.DiagramEditor.dll",
+            "lib/net10.0/Tempo.Blazor.DiagramEditor.dll",
+            "staticwebassets/js/dagre.min.js",
+            "staticwebassets/js/diagram-editor.js",
+            "staticwebassets/js/diagram-arrow-select.js",
+            "staticwebassets/js/d3-dispatch.min.js",
+            "staticwebassets/js/d3-force.min.js",
+            "staticwebassets/js/d3-hierarchy.min.js",
+            "staticwebassets/js/d3-quadtree.min.js",
+            "staticwebassets/js/d3-timer.min.js",
+            "staticwebassets/css/tempo-blazor-diagram-editor.css",
+            "staticwebassets/css/components/_diagram-editor.css",
+            "staticwebassets/diagram-templates/index.json",
+            "staticwebassets/test-layouts.html"
+          ],
+          "verifiedDependencies": [
+            "Tempo.Blazor",
+            "CsvHelper"
+          ]
+        },
+        {
+          "packageId": "Tempo.Blazor.Wireframe",
+          "compressedNupkgSize": "587 KB",
+          "verifiedEntries": [
+            "lib/net8.0/Tempo.Blazor.Wireframe.dll",
+            "lib/net9.0/Tempo.Blazor.Wireframe.dll",
+            "lib/net10.0/Tempo.Blazor.Wireframe.dll",
+            "staticwebassets/js/wireframe-designer.js",
+            "staticwebassets/css/tempo-blazor-wireframe.css",
+            "staticwebassets/css/components/_wireframe-editor.css",
+            "staticwebassets/wireframe-document.schema.json"
+          ],
+          "verifiedDependencies": [
+            "Tempo.Blazor"
+          ]
+        },
+        {
+          "packageId": "Tempo.Blazor.Modeling",
+          "compressedNupkgSize": "226 KB",
+          "verifiedEntries": [
+            "lib/net8.0/Tempo.Blazor.Modeling.dll",
+            "lib/net9.0/Tempo.Blazor.Modeling.dll",
+            "lib/net10.0/Tempo.Blazor.Modeling.dll",
+            "staticwebassets/Tempo.Blazor.Modeling.*.bundle.scp.css"
+          ],
+          "verifiedDependencies": [
+            "Tempo.Blazor",
+            "Tempo.Blazor.DiagramEditor"
+          ]
+        }
+      ]
+    },
+    "phase4BuildVerification": {
+      "verifiedOn": "2026-06-23",
+      "commands": [
+        "dotnet restore TempoBlazor.slnx",
+        "dotnet build TempoBlazor.slnx --no-restore",
+        "dotnet test tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj --no-restore --filter \"FullyQualifiedName~Spreadsheet|FullyQualifiedName~Gantt|FullyQualifiedName~NotionSpreadsheet\" --logger \"console;verbosity=minimal\""
+      ],
+      "result": "passed",
+      "solutionBuildResult": "passed: 64 warnings, 0 errors",
+      "targetedTestResult": "passed: 1106 total, 0 failed, 0 skipped",
+      "knownWarnings": [
+        "Existing NU1603 fallback remains for Microsoft.Extensions.Http 8.0.12 resolving to 9.0.0.",
+        "Existing NU1902/NU1903 package vulnerability warnings remain for MailKit, MimeKit, and SQLitePCLRaw.lib.e_sqlite3.",
+        "New Tempo.Blazor.GanttXlsx package currently reports analyzer warnings MA0051 and MA0011; CS1591 was removed by adding XML comments to public methods."
+      ]
+    },
+    "phase4PackageVerification": {
+      "packedOn": "2026-06-23",
+      "outputDirectory": "/tmp/tempo-phase4-pack",
+      "commands": [
+        "dotnet pack src/Tempo.Blazor/Tempo.Blazor.csproj -c Release --no-restore -o /tmp/tempo-phase4-pack",
+        "dotnet pack src/Tempo.Blazor.Spreadsheet/Tempo.Blazor.Spreadsheet.csproj -c Release --no-restore -o /tmp/tempo-phase4-pack",
+        "dotnet pack src/Tempo.Blazor.GanttXlsx/Tempo.Blazor.GanttXlsx.csproj -c Release --no-restore -o /tmp/tempo-phase4-pack"
+      ],
+      "packages": [
+        {
+          "packageId": "Tempo.Blazor",
+          "compressedNupkgSize": "8.1 MB",
+          "verifiedAbsentEntries": [
+            "DocumentFormat.OpenXml dependency",
+            "staticwebassets/js/spreadsheet.js",
+            "staticwebassets/js/spreadsheet-canvas.js",
+            "staticwebassets/js/spreadsheet-benchmark.js",
+            "staticwebassets/css/components/_spreadsheet.css",
+            "staticwebassets/css/components/_spreadsheet-toolbar.css",
+            "staticwebassets/css/components/_spreadsheet-formula-bar.css"
+          ]
+        },
+        {
+          "packageId": "Tempo.Blazor.Spreadsheet",
+          "compressedNupkgSize": "699 KB",
+          "verifiedEntries": [
+            "lib/net8.0/Tempo.Blazor.Spreadsheet.dll",
+            "lib/net9.0/Tempo.Blazor.Spreadsheet.dll",
+            "lib/net10.0/Tempo.Blazor.Spreadsheet.dll",
+            "staticwebassets/css/tempo-blazor-spreadsheet.css",
+            "staticwebassets/css/components/_spreadsheet.css",
+            "staticwebassets/css/components/_spreadsheet-toolbar.css",
+            "staticwebassets/css/components/_spreadsheet-formula-bar.css",
+            "staticwebassets/js/spreadsheet.js",
+            "staticwebassets/js/spreadsheet-canvas.js",
+            "staticwebassets/js/spreadsheet-benchmark.js"
+          ],
+          "verifiedDependencies": [
+            "Tempo.Blazor",
+            "DocumentFormat.OpenXml"
+          ]
+        },
+        {
+          "packageId": "Tempo.Blazor.GanttXlsx",
+          "compressedNupkgSize": "33 KB",
+          "verifiedEntries": [
+            "lib/net8.0/Tempo.Blazor.GanttXlsx.dll",
+            "lib/net9.0/Tempo.Blazor.GanttXlsx.dll",
+            "lib/net10.0/Tempo.Blazor.GanttXlsx.dll"
+          ],
+          "verifiedDependencies": [
+            "Tempo.Blazor.Abstractions",
+            "DocumentFormat.OpenXml",
+            "Microsoft.Extensions.DependencyInjection.Abstractions"
+          ]
+        }
+      ]
+    },
+    "phase5BuildVerification": {
+      "verifiedOn": "2026-06-23",
+      "commands": [
+        "dotnet build src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj --no-restore",
+        "dotnet build TempoBlazor.slnx --no-restore",
+        "dotnet test tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj --filter \"FullyQualifiedName~DocumentEditor|FullyQualifiedName~TmDocument\""
+      ],
+      "result": "passed",
+      "documentEditorBuildResult": "passed: 0 errors",
+      "solutionBuildResult": "passed: 1083 warnings, 0 errors",
+      "targetedTestResult": "passed: 1422 total, 0 failed, 0 skipped",
+      "knownWarnings": [
+        "Existing NU1603 fallback remains for Microsoft.Extensions.Http 8.0.12 resolving to 9.0.0.",
+        "Existing NU1902/NU1903 package vulnerability warnings remain for MailKit, MimeKit, and SQLitePCLRaw.lib.e_sqlite3.",
+        "Existing analyzer/XML/resx duplicate resource warnings remain in core and extracted feature packages.",
+        "DocumentEditor localization resource keys currently remain in core resources until a future composite/resource-contributor localizer phase."
+      ]
+    },
+    "phase5PackageVerification": {
+      "packedOn": "2026-06-23",
+      "outputDirectory": "/tmp/tempo-phase5-pack",
+      "commands": [
+        "dotnet pack src/Tempo.Blazor/Tempo.Blazor.csproj -c Release --no-restore -o /tmp/tempo-phase5-pack",
+        "dotnet pack src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj -c Release --no-restore -o /tmp/tempo-phase5-pack"
+      ],
+      "packages": [
+        {
+          "packageId": "Tempo.Blazor",
+          "compressedNupkgSize": "5.8 MB",
+          "verifiedAbsentEntries": [
+            "AngleSharp dependency",
+            "staticwebassets/js/document-editor/**",
+            "staticwebassets/js/document-editor-canvas/**",
+            "staticwebassets/css/components/_document-editor.css",
+            "staticwebassets/css/components/_document-editor-toolbar.css",
+            "staticwebassets/css/components/_document-editor-comments.css",
+            "staticwebassets/css/components/_document-editor-find.css"
+          ]
+        },
+        {
+          "packageId": "Tempo.Blazor.DocumentEditor",
+          "compressedNupkgSize": "2.4 MB",
+          "verifiedEntries": [
+            "lib/net8.0/Tempo.Blazor.DocumentEditor.dll",
+            "lib/net9.0/Tempo.Blazor.DocumentEditor.dll",
+            "lib/net10.0/Tempo.Blazor.DocumentEditor.dll",
+            "staticwebassets/css/tempo-blazor-document-editor.css",
+            "staticwebassets/css/components/_document-editor.css",
+            "staticwebassets/js/document-editor/focus-management.mjs",
+            "staticwebassets/js/document-editor-canvas/interop.mjs"
+          ],
+          "verifiedDependencies": [
+            "Tempo.Blazor",
+            "AngleSharp"
+          ],
+          "verifiedAbsentEntries": [
+            "staticwebassets/**/*.test.mjs",
+            "staticwebassets/**/__tests__/**",
+            "staticwebassets/**/*.md",
+            "staticwebassets/**/.gitkeep"
+          ]
+        }
+      ]
+    },
+    "phase6BuildVerification": {
+      "verifiedOn": "2026-06-23",
+      "commands": [
+        "dotnet restore TempoBlazor.slnx",
+        "dotnet build src/Tempo.Blazor.NotionEditor/Tempo.Blazor.NotionEditor.csproj --no-restore",
+        "dotnet build TempoBlazor.slnx --no-restore",
+        "dotnet test tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj --no-build --filter \"FullyQualifiedName~Notion\""
+      ],
+      "result": "passed",
+      "notionEditorBuildResult": "passed: 4995 warnings, 0 errors",
+      "solutionBuildResult": "passed: 2940 warnings, 0 errors",
+      "targetedTestResult": "passed: 255 total, 0 failed, 0 skipped",
+      "knownWarnings": [
+        "Existing NU1603 fallback remains for Microsoft.Extensions.Http 8.0.12 resolving to 9.0.0.",
+        "Existing NU1902/NU1903 package vulnerability warnings remain for MailKit, MimeKit, and SQLitePCLRaw.lib.e_sqlite3.",
+        "Existing analyzer/XML/nullability warnings remain in extracted NotionEditor code.",
+        "NotionEditor localization resource keys currently remain in core resources until a future composite/resource-contributor localizer phase."
+      ]
+    },
+    "phase6PackageVerification": {
+      "packedOn": "2026-06-23",
+      "outputDirectory": "/tmp/tempo-phase6-pack",
+      "commands": [
+        "dotnet pack src/Tempo.Blazor/Tempo.Blazor.csproj -c Release --no-restore -o /tmp/tempo-phase6-pack",
+        "dotnet pack src/Tempo.Blazor.NotionEditor/Tempo.Blazor.NotionEditor.csproj -c Release --no-restore -o /tmp/tempo-phase6-pack"
+      ],
+      "packages": [
+        {
+          "packageId": "Tempo.Blazor",
+          "compressedNupkgSize": "3.6 MB",
+          "verifiedAbsentEntries": [
+            "staticwebassets/js/notion-editor.js",
+            "staticwebassets/css/components/_notion-collab.css",
+            "staticwebassets/css/components/_notion-dark.css",
+            "staticwebassets/css/components/_notion-typography.css",
+            "staticwebassets/css/components/_notion-variables.css",
+            "TmNotion*",
+            "Components.NotionEditor",
+            "Tempo.Blazor.NotionEditor dependency"
+          ]
+        },
+        {
+          "packageId": "Tempo.Blazor.NotionEditor",
+          "compressedNupkgSize": "2.3 MB",
+          "verifiedEntries": [
+            "lib/net8.0/Tempo.Blazor.NotionEditor.dll",
+            "lib/net9.0/Tempo.Blazor.NotionEditor.dll",
+            "lib/net10.0/Tempo.Blazor.NotionEditor.dll",
+            "staticwebassets/css/tempo-blazor-notion-editor.css",
+            "staticwebassets/css/components/_notion-collab.css",
+            "staticwebassets/css/components/_notion-dark.css",
+            "staticwebassets/css/components/_notion-typography.css",
+            "staticwebassets/css/components/_notion-variables.css",
+            "staticwebassets/js/notion-editor.js"
+          ],
+          "verifiedDependencies": [
+            "Tempo.Blazor",
+            "Tempo.Blazor.DiagramEditor",
+            "Tempo.Blazor.PdfViewer",
+            "Tempo.Blazor.Spreadsheet",
+            "Tempo.Blazor.Wireframe"
+          ],
+          "dependencyDecision": "Integrated Tempo blocks remain in the main NotionEditor package in phase 6. A later Tempo.Blazor.NotionEditor.TempoBlocks split remains available if NotionEditor should become a lighter text/database-only package."
+        }
+      ]
+    },
+    "phase7DocumentationVerification": {
+      "verifiedOn": "2026-06-23",
+      "commands": [
+        "dotnet run --project JsonDocumentation/JsonDocumentationGenerator/JsonDocumentationGenerator.csproj -- JsonDocumentation generate",
+        "dotnet run --project JsonDocumentation/JsonDocumentationGenerator/JsonDocumentationGenerator.csproj -- JsonDocumentation validate"
+      ],
+      "result": "passed",
+      "configuredPackageCount": 21,
+      "aggregateOutputFile": "tempo-blazor-all.json",
+      "aggregatePackageCount": 21,
+      "aggregateItemCount": 2719,
+      "packageOutputsAdded": [
+        "tempo-blazor-pdfviewer.json",
+        "tempo-blazor-codes.json",
+        "tempo-blazor-diagrameditor.json",
+        "tempo-blazor-wireframe.json",
+        "tempo-blazor-modeling.json",
+        "tempo-blazor-spreadsheet.json",
+        "tempo-blazor-ganttxlsx.json",
+        "tempo-blazor-documenteditor.json",
+        "tempo-blazor-notioneditor.json",
+        "tempo-blazor-all-package.json"
+      ],
+      "sourceDocumentationMoved": [
+        "JsonDocumentation/Packages/Tempo.Blazor.PdfViewer/items",
+        "JsonDocumentation/Packages/Tempo.Blazor.Codes/items",
+        "JsonDocumentation/Packages/Tempo.Blazor.DiagramEditor/items",
+        "JsonDocumentation/Packages/Tempo.Blazor.Wireframe/items",
+        "JsonDocumentation/Packages/Tempo.Blazor.Modeling/items",
+        "JsonDocumentation/Packages/Tempo.Blazor.Spreadsheet/items",
+        "JsonDocumentation/Packages/Tempo.Blazor.GanttXlsx/items",
+        "JsonDocumentation/Packages/Tempo.Blazor.DocumentEditor/items",
+        "JsonDocumentation/Packages/Tempo.Blazor.NotionEditor/items"
+      ],
+      "releaseDocumentation": [
+        "README.md",
+        "docs/nuget-package-split-migration.md"
+      ]
+    },
+    "phase7BuildVerification": {
+      "verifiedOn": "2026-06-23",
+      "commands": [
+        "dotnet restore TempoBlazor.slnx",
+        "dotnet build TempoBlazor.slnx --no-restore",
+        "dotnet build src/Tempo.Blazor.All/Tempo.Blazor.All.csproj --no-restore",
+        "dotnet test tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj --no-build --filter \"FullyQualifiedName~ServiceCollectionExtensionsPhase1Tests\"",
+        "dotnet run --project JsonDocumentation/JsonDocumentationGenerator/JsonDocumentationGenerator.csproj -- JsonDocumentation validate"
+      ],
+      "result": "passed",
+      "solutionBuildResult": "passed: 13323 warnings, 0 errors",
+      "compatPackageBuildResult": "passed: 30 warnings, 0 errors",
+      "targetedTestResult": "passed: 7 total, 0 failed, 0 skipped",
+      "jsonValidationResult": "passed: 21 packages validated",
+      "knownWarnings": [
+        "Existing NU1603 fallback remains for Microsoft.Extensions.Http 8.0.12 resolving to 9.0.0.",
+        "Existing NU1902/NU1903 package vulnerability warnings remain for MailKit, MimeKit, and SQLitePCLRaw.lib.e_sqlite3.",
+        "Existing analyzer warnings remain in tests and extracted feature packages.",
+        "An initial parallel build of Tempo.Blazor.All hit a transient file-lock against the concurrent solution build; the sequential rerun passed."
+      ]
+    },
+    "phase7PackageVerification": {
+      "packedOn": "2026-06-23",
+      "outputDirectory": "/tmp/tempo-phase7-pack",
+      "commands": [
+        "dotnet pack src/Tempo.Blazor.All/Tempo.Blazor.All.csproj -c Release --no-restore -o /tmp/tempo-phase7-pack"
+      ],
+      "packages": [
+        {
+          "packageId": "Tempo.Blazor.All",
+          "compressedNupkgSize": "20 KB",
+          "verifiedEntries": [
+            "README.md",
+            "lib/net8.0/Tempo.Blazor.All.dll",
+            "lib/net8.0/Tempo.Blazor.All.xml",
+            "lib/net9.0/Tempo.Blazor.All.dll",
+            "lib/net9.0/Tempo.Blazor.All.xml",
+            "lib/net10.0/Tempo.Blazor.All.dll",
+            "lib/net10.0/Tempo.Blazor.All.xml"
+          ],
+          "verifiedDependencies": [
+            "Tempo.Blazor",
+            "Tempo.Blazor.Codes",
+            "Tempo.Blazor.DiagramEditor",
+            "Tempo.Blazor.DocumentEditor",
+            "Tempo.Blazor.GanttXlsx",
+            "Tempo.Blazor.Modeling",
+            "Tempo.Blazor.NotionEditor",
+            "Tempo.Blazor.PdfViewer",
+            "Tempo.Blazor.Spreadsheet",
+            "Tempo.Blazor.Wireframe"
+          ],
+          "assetDecision": "Tempo.Blazor.All intentionally ships no feature static web assets directly; assets remain owned by their feature packages and host apps include the CSS/script links they render."
+        }
+      ]
+    }
+  },
+  "language": "cs-CZ",
+  "repository": "/home/pavel/NetProjects/Tempo.Blazor",
+  "summary": {
+    "recommendation": "Split the current all-in-one Tempo.Blazor package into a smaller core package plus feature packages for the largest editors and specialized dependency groups.",
+    "preferredIdentityStrategy": "Keep Tempo.Blazor as the lean core package in the next major version and add Tempo.Blazor.All as the compatibility metapackage.",
+    "mainReason": "The current package includes large editor code, large static web assets, and feature-specific dependencies that many applications do not need."
+  },
+  "currentMeasurements": {
+    "measuredPackage": "Tempo.Blazor.1.0.0.nupkg",
+    "compressedNupkgSize": "12 MB",
+    "unpackedSizeBytes": 46390404,
+    "fileCount": 722,
+    "largestPackageEntries": [
+      {
+        "path": "lib/net10.0/Tempo.Blazor.dll",
+        "sizeBytes": 9620480
+      },
+      {
+        "path": "lib/net9.0/Tempo.Blazor.dll",
+        "sizeBytes": 9620480
+      },
+      {
+        "path": "lib/net8.0/Tempo.Blazor.dll",
+        "sizeBytes": 9616384
+      },
+      {
+        "path": "build/Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+        "sizeBytes": 1291314
+      },
+      {
+        "path": "staticwebassets/js/pdf.worker.min.mjs",
+        "sizeBytes": 1039207
+      },
+      {
+        "path": "staticwebassets/Tempo.Blazor.wausqu6ieq.bundle.scp.css",
+        "sizeBytes": 1034467
+      },
+      {
+        "path": "staticwebassets/css/tempo-blazor.bundled.css",
+        "sizeBytes": 695801
+      },
+      {
+        "path": "staticwebassets/js/pdf.min.mjs",
+        "sizeBytes": 394119
+      },
+      {
+        "path": "staticwebassets/js/spreadsheet-canvas.js",
+        "sizeBytes": 322907
+      },
+      {
+        "path": "staticwebassets/js/dagre.min.js",
+        "sizeBytes": 283803
+      },
+      {
+        "path": "staticwebassets/js/diagram-editor.js",
+        "sizeBytes": 196445
+      },
+      {
+        "path": "staticwebassets/js/notion-editor.js",
+        "sizeBytes": 134054
+      }
+    ],
+    "sourceAreas": [
+      {
+        "path": "src/Tempo.Blazor/Components/NotionEditor",
+        "size": "3.7 MB",
+        "candidatePackage": "Tempo.Blazor.NotionEditor"
+      },
+      {
+        "path": "src/Tempo.Blazor/wwwroot/js/document-editor-canvas",
+        "size": "2.8 MB",
+        "candidatePackage": "Tempo.Blazor.DocumentEditor"
+      },
+      {
+        "path": "src/Tempo.Blazor/wwwroot/js/document-editor",
+        "size": "2.2 MB",
+        "candidatePackage": "Tempo.Blazor.DocumentEditor"
+      },
+      {
+        "path": "src/Tempo.Blazor/Components/DocumentEditor",
+        "size": "1.7 MB",
+        "candidatePackage": "Tempo.Blazor.DocumentEditor"
+      },
+      {
+        "path": "src/Tempo.Blazor/Components/Diagram",
+        "size": "1.6 MB",
+        "candidatePackage": "Tempo.Blazor.DiagramEditor"
+      },
+      {
+        "path": "src/Tempo.Blazor/Components/Spreadsheet",
+        "size": "844 KB",
+        "candidatePackage": "Tempo.Blazor.Spreadsheet"
+      },
+      {
+        "path": "src/Tempo.Blazor/Components/Wireframe",
+        "size": "712 KB",
+        "candidatePackage": "Tempo.Blazor.Wireframe"
+      },
+      {
+        "path": "src/Tempo.Blazor/Components/Signing",
+        "size": "504 KB",
+        "candidatePackage": "Tempo.Blazor.Signing"
+      },
+      {
+        "path": "src/Tempo.Blazor/Components/Modeling",
+        "size": "300 KB",
+        "candidatePackage": "Tempo.Blazor.Modeling"
+      }
+    ]
+  },
+  "identityStrategy": {
+    "recommended": {
+      "corePackageId": "Tempo.Blazor",
+      "compatibilityMetapackageId": "Tempo.Blazor.All",
+      "breakingChange": true,
+      "reason": "The most visible NuGet ID becomes smaller by default, which is the actual goal of the split."
+    },
+    "alternative": {
+      "corePackageId": "Tempo.Blazor.Core",
+      "compatibilityMetapackageId": "Tempo.Blazor",
+      "breakingChange": false,
+      "reasonNotRecommended": "This preserves compatibility but keeps the package named Tempo.Blazor large for new users."
+    }
+  },
+  "packages": [
+    {
+      "packageId": "Tempo.Blazor",
+      "kind": "core",
+      "sourceProject": "src/Tempo.Blazor/Tempo.Blazor.csproj",
+      "targetFrameworks": "net8.0;net9.0;net10.0",
+      "dependsOn": [
+        "Tempo.Blazor.Abstractions"
+      ],
+      "keepAreas": [
+        "Buttons",
+        "Inputs except optional specialized dependency groups",
+        "Forms",
+        "Feedback",
+        "Layout",
+        "Navigation",
+        "DataTable",
+        "DataDisplay without optional Codes split",
+        "Charts",
+        "Pickers",
+        "Files except TmPdfViewer",
+        "Gallery",
+        "Tags",
+        "Timeline",
+        "TreeView",
+        "Dashboard",
+        "Workflow",
+        "Activity rich/markdown editors"
+      ],
+      "removePackageReferencesWhenPossible": [
+        "AngleSharp",
+        "CsvHelper",
+        "DocumentFormat.OpenXml",
+        "FluentValidation",
+        "QRCoder",
+        "ZXing.Net"
+      ],
+      "css": [
+        "_content/Tempo.Blazor/css/tempo-blazor.css"
+      ],
+      "scripts": [
+        "_content/Tempo.Blazor/js/richEditor.js",
+        "_content/Tempo.Blazor/js/markdownEditor.js",
+        "_content/Tempo.Blazor/js/dashboard.js",
+        "_content/Tempo.Blazor/js/workflow-designer.js",
+        "_content/Tempo.Blazor/js/scheduler.js",
+        "_content/Tempo.Blazor/js/gantt.js",
+        "_content/Tempo.Blazor/js/file-manager.js",
+        "_content/Tempo.Blazor/js/color-picker.js",
+        "_content/Tempo.Blazor/js/signature-capture.js"
+      ],
+      "serviceRegistration": "AddTempoBlazor",
+      "serviceBoundary": "Core-only services: ITmLocalizer, ThemeService, ToastService, DragDropService, core notifications. No Diagram, Wireframe, Modeling, DocumentEditor, or NotionEditor provider registrations."
+    },
+    {
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "kind": "feature",
+      "status": "implemented",
+      "sourceProject": "src/Tempo.Blazor.PdfViewer/Tempo.Blazor.PdfViewer.csproj",
+      "targetFrameworks": "net8.0;net9.0;net10.0",
+      "dependsOn": [
+        "Tempo.Blazor",
+        "Tempo.Blazor.Abstractions"
+      ],
+      "moveFrom": [
+        "src/Tempo.Blazor/Components/Files/TmPdfViewer*",
+        "src/Tempo.Blazor/wwwroot/js/pdf-viewer.js",
+        "src/Tempo.Blazor/wwwroot/js/pdf.min.mjs",
+        "src/Tempo.Blazor/wwwroot/js/pdf.worker.min.mjs"
+      ],
+      "publicNamespacesToKeep": [
+        "Tempo.Blazor.Components.Files"
+      ],
+      "css": [
+        "CSS isolation static web asset bundle included through the host app .styles.css pipeline"
+      ],
+      "scripts": [
+        "_content/Tempo.Blazor.PdfViewer/js/pdf-viewer.js"
+      ],
+      "serviceRegistration": "AddTempoBlazorPdfViewer",
+      "demoPages": [
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/PdfViewerPage.razor"
+      ],
+      "documentation": {
+        "outputFile": "tempo-blazor-pdfviewer.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.PdfViewer/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.PdfViewer/Components"
+        ],
+        "includeAssets": true
+      }
+    },
+    {
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "kind": "feature",
+      "proposedSourceProject": "src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj",
+      "targetFrameworks": "net8.0;net9.0;net10.0",
+      "dependsOn": [
+        "Tempo.Blazor",
+        "Tempo.Blazor.Abstractions"
+      ],
+      "packageReferences": [
+        "AngleSharp"
+      ],
+      "moveFrom": [
+        "src/Tempo.Blazor/Components/DocumentEditor/**",
+        "src/Tempo.Blazor/wwwroot/js/document-editor/**",
+        "src/Tempo.Blazor/wwwroot/js/document-editor-canvas/**",
+        "src/Tempo.Blazor/wwwroot/css/components/_document-editor*.css"
+      ],
+      "excludeFromStaticWebAssets": [
+        "wwwroot/js/**/*.test.mjs",
+        "wwwroot/js/**/__tests__/**",
+        "wwwroot/js/**/*.md",
+        "wwwroot/js/**/.gitkeep"
+      ],
+      "publicNamespacesToKeep": [
+        "Tempo.Blazor.Components.DocumentEditor",
+        "Tempo.Blazor.DocumentEditor.Models",
+        "Tempo.Blazor.DocumentEditor.Services",
+        "Tempo.Blazor.DocumentEditor.Interfaces"
+      ],
+      "css": [
+        "_content/Tempo.Blazor.DocumentEditor/css/tempo-blazor-document-editor.css"
+      ],
+      "dynamicImportsToRewrite": [
+        {
+          "from": "./_content/Tempo.Blazor/js/document-editor/focus-management.mjs",
+          "to": "./_content/Tempo.Blazor.DocumentEditor/js/document-editor/focus-management.mjs"
+        },
+        {
+          "from": "./_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs",
+          "to": "./_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs"
+        }
+      ],
+      "serviceRegistration": "AddTempoBlazorDocumentEditor",
+      "demoPages": [
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/DocumentEditorPage.razor",
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/CanvasEngineHostPage.razor",
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/CoreEngineEditorPage.razor",
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/SigningTemplateFromEditorPage.razor"
+      ],
+      "documentation": {
+        "outputFile": "tempo-blazor-documenteditor.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.DocumentEditor/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.DocumentEditor/Components"
+        ],
+        "includeAssets": true
+      }
+    },
+    {
+      "packageId": "Tempo.Blazor.NotionEditor",
+      "kind": "feature",
+      "implementationStatus": "implemented-in-phase-6",
+      "sourceProject": "src/Tempo.Blazor.NotionEditor/Tempo.Blazor.NotionEditor.csproj",
+      "rootNamespace": "Tempo.Blazor",
+      "targetFrameworks": "net8.0;net9.0;net10.0",
+      "dependsOn": [
+        "Tempo.Blazor",
+        "Tempo.Blazor.Abstractions",
+        "Tempo.Blazor.PdfViewer",
+        "Tempo.Blazor.DiagramEditor",
+        "Tempo.Blazor.Wireframe",
+        "Tempo.Blazor.Spreadsheet"
+      ],
+      "dependencyDecision": "Integrated PDF, Diagram, Wireframe, and Spreadsheet Tempo blocks remain inside Tempo.Blazor.NotionEditor in phase 6, so the package owns direct dependencies on those feature packages.",
+      "futureOptionalSplit": {
+        "packageId": "Tempo.Blazor.NotionEditor.TempoBlocks",
+        "reason": "Move PDF, Diagram, Wireframe, Spreadsheet, and other heavy embedded Tempo blocks out of the base Notion editor."
+      },
+      "moveFrom": [
+        "src/Tempo.Blazor/Components/NotionEditor/**",
+        "src/Tempo.Blazor/wwwroot/js/notion-editor.js",
+        "src/Tempo.Blazor/wwwroot/css/components/_notion*.css"
+      ],
+      "currentSource": [
+        "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/**",
+        "src/Tempo.Blazor.NotionEditor/wwwroot/js/notion-editor.js",
+        "src/Tempo.Blazor.NotionEditor/wwwroot/css/tempo-blazor-notion-editor.css",
+        "src/Tempo.Blazor.NotionEditor/wwwroot/css/components/_notion*.css"
+      ],
+      "publicNamespacesToKeep": [
+        "Tempo.Blazor.Components.NotionEditor",
+        "Tempo.Blazor.Components.NotionEditor.Blocks",
+        "Tempo.Blazor.Components.NotionEditor.Page",
+        "Tempo.Blazor.Components.NotionEditor.Services",
+        "Tempo.Blazor.Components.NotionEditor.Sidebar",
+        "Tempo.Blazor.Components.NotionEditor.UI",
+        "Tempo.Blazor.NotionEditor.Interfaces",
+        "Tempo.Blazor.NotionEditor.Models"
+      ],
+      "css": [
+        "_content/Tempo.Blazor.NotionEditor/css/tempo-blazor-notion-editor.css"
+      ],
+      "scripts": [
+        "_content/Tempo.Blazor.NotionEditor/js/notion-editor.js"
+      ],
+      "serviceRegistration": "AddTempoBlazorNotionEditor",
+      "demoPages": [
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/NotionEditorPage.razor",
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/PublicNotionPage.razor",
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/UnifiedTasksPage.razor"
+      ],
+      "documentation": {
+        "outputFile": "tempo-blazor-notioneditor.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.NotionEditor/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.NotionEditor/Components"
+        ],
+        "includeAssets": true
+      }
+    },
+    {
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "kind": "feature",
+      "implementationStatus": "implementedInPhase3",
+      "sourceProject": "src/Tempo.Blazor.DiagramEditor/Tempo.Blazor.DiagramEditor.csproj",
+      "rootNamespace": "Tempo.Blazor",
+      "targetFrameworks": "net8.0;net9.0;net10.0",
+      "dependsOn": [
+        "Tempo.Blazor",
+        "Tempo.Blazor.Abstractions"
+      ],
+      "packageReferences": [
+        "CsvHelper"
+      ],
+      "moveFrom": [
+        "src/Tempo.Blazor/Components/Diagram/**",
+        "src/Tempo.Blazor/wwwroot/js/diagram-editor.js",
+        "src/Tempo.Blazor/wwwroot/js/diagram-arrow-select.js",
+        "src/Tempo.Blazor/wwwroot/js/dagre.min.js",
+        "src/Tempo.Blazor/wwwroot/js/d3-*.min.js",
+        "src/Tempo.Blazor/wwwroot/diagram-templates/*.json",
+        "src/Tempo.Blazor/wwwroot/css/components/_diagram-editor.css",
+        "src/Tempo.Blazor/wwwroot/test-layouts.html"
+      ],
+      "currentSource": [
+        "src/Tempo.Blazor.DiagramEditor/Components/Diagram/**",
+        "src/Tempo.Blazor.DiagramEditor/wwwroot/js/diagram-editor.js",
+        "src/Tempo.Blazor.DiagramEditor/wwwroot/js/diagram-arrow-select.js",
+        "src/Tempo.Blazor.DiagramEditor/wwwroot/js/dagre.min.js",
+        "src/Tempo.Blazor.DiagramEditor/wwwroot/js/d3-*.min.js",
+        "src/Tempo.Blazor.DiagramEditor/wwwroot/diagram-templates/*.json",
+        "src/Tempo.Blazor.DiagramEditor/wwwroot/css/components/_diagram-editor.css",
+        "src/Tempo.Blazor.DiagramEditor/wwwroot/test-layouts.html"
+      ],
+      "publicNamespacesToKeep": [
+        "Tempo.Blazor.Components.Diagram",
+        "Tempo.Blazor.Components.Diagram.Models",
+        "Tempo.Blazor.Components.Diagram.Services",
+        "Tempo.Blazor.Components.Diagram.Stencils",
+        "Tempo.Blazor.Components.Diagram.Templates"
+      ],
+      "css": [
+        "_content/Tempo.Blazor.DiagramEditor/css/tempo-blazor-diagram-editor.css"
+      ],
+      "scripts": [
+        "_content/Tempo.Blazor.DiagramEditor/js/dagre.min.js",
+        "_content/Tempo.Blazor.DiagramEditor/js/d3-dispatch.min.js",
+        "_content/Tempo.Blazor.DiagramEditor/js/d3-timer.min.js",
+        "_content/Tempo.Blazor.DiagramEditor/js/d3-quadtree.min.js",
+        "_content/Tempo.Blazor.DiagramEditor/js/d3-hierarchy.min.js",
+        "_content/Tempo.Blazor.DiagramEditor/js/d3-force.min.js",
+        "_content/Tempo.Blazor.DiagramEditor/js/diagram-arrow-select.js",
+        "_content/Tempo.Blazor.DiagramEditor/js/diagram-editor.js"
+      ],
+      "serviceRegistration": "AddTempoBlazorDiagramEditor",
+      "movedServiceExtensions": [
+        "AddDiagramStencilProvider",
+        "AddJsonDiagramStencilProvider"
+      ],
+      "demoPages": [
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/DiagramEditorPage.razor"
+      ],
+      "documentation": {
+        "outputFile": "tempo-blazor-diagrameditor.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.DiagramEditor/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.DiagramEditor/Components"
+        ],
+        "includeAssets": true
+      }
+    },
+    {
+      "packageId": "Tempo.Blazor.Wireframe",
+      "kind": "feature",
+      "implementationStatus": "implementedInPhase3",
+      "sourceProject": "src/Tempo.Blazor.Wireframe/Tempo.Blazor.Wireframe.csproj",
+      "rootNamespace": "Tempo.Blazor",
+      "targetFrameworks": "net8.0;net9.0;net10.0",
+      "dependsOn": [
+        "Tempo.Blazor",
+        "Tempo.Blazor.Abstractions"
+      ],
+      "moveFrom": [
+        "src/Tempo.Blazor/Components/Wireframe/**",
+        "src/Tempo.Blazor/wwwroot/js/wireframe-designer.js",
+        "src/Tempo.Blazor/wwwroot/css/components/_wireframe-editor.css",
+        "src/Tempo.Blazor/wwwroot/wireframe-document.schema.json"
+      ],
+      "currentSource": [
+        "src/Tempo.Blazor.Wireframe/Components/Wireframe/**",
+        "src/Tempo.Blazor.Wireframe/wwwroot/js/wireframe-designer.js",
+        "src/Tempo.Blazor.Wireframe/wwwroot/css/components/_wireframe-editor.css",
+        "src/Tempo.Blazor.Wireframe/wwwroot/wireframe-document.schema.json"
+      ],
+      "publicNamespacesToKeep": [
+        "Tempo.Blazor.Components.Wireframe",
+        "Tempo.Blazor.Components.Wireframe.Models"
+      ],
+      "css": [
+        "_content/Tempo.Blazor.Wireframe/css/tempo-blazor-wireframe.css"
+      ],
+      "scripts": [
+        "_content/Tempo.Blazor.Wireframe/js/wireframe-designer.js"
+      ],
+      "serviceRegistration": "AddTempoBlazorWireframe",
+      "movedServiceExtensions": [
+        "AddWireframeComponentProvider"
+      ],
+      "demoPages": [
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/WireframeEditorPage.razor"
+      ],
+      "documentation": {
+        "outputFile": "tempo-blazor-wireframe.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.Wireframe/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.Wireframe/Components"
+        ],
+        "includeAssets": true
+      }
+    },
+    {
+      "packageId": "Tempo.Blazor.Modeling",
+      "kind": "feature",
+      "implementationStatus": "implementedInPhase3",
+      "sourceProject": "src/Tempo.Blazor.Modeling/Tempo.Blazor.Modeling.csproj",
+      "rootNamespace": "Tempo.Blazor",
+      "targetFrameworks": "net8.0;net9.0;net10.0",
+      "dependsOn": [
+        "Tempo.Blazor",
+        "Tempo.Blazor.Abstractions",
+        "Tempo.Blazor.DiagramEditor"
+      ],
+      "moveFrom": [
+        "src/Tempo.Blazor/Components/Modeling/**"
+      ],
+      "currentSource": [
+        "src/Tempo.Blazor.Modeling/Components/Modeling/**"
+      ],
+      "publicNamespacesToKeep": [
+        "Tempo.Blazor.Components.Modeling",
+        "Tempo.Blazor.Modeling"
+      ],
+      "css": [],
+      "usesCssIsolation": true,
+      "serviceRegistration": "AddTempoBlazorModeling",
+      "demoPages": [
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/ModelingEditorPage.razor"
+      ],
+      "documentation": {
+        "outputFile": "tempo-blazor-modeling.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.Modeling/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.Modeling/Components"
+        ],
+        "includeAssets": true
+      }
+    },
+    {
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "kind": "feature",
+      "proposedSourceProject": "src/Tempo.Blazor.Spreadsheet/Tempo.Blazor.Spreadsheet.csproj",
+      "targetFrameworks": "net8.0;net9.0;net10.0",
+      "dependsOn": [
+        "Tempo.Blazor",
+        "Tempo.Blazor.Abstractions"
+      ],
+      "packageReferences": [
+        "DocumentFormat.OpenXml"
+      ],
+      "moveFrom": [
+        "src/Tempo.Blazor/Components/Spreadsheet/**",
+        "src/Tempo.Blazor/wwwroot/js/spreadsheet.js",
+        "src/Tempo.Blazor/wwwroot/js/spreadsheet-canvas.js",
+        "src/Tempo.Blazor/wwwroot/css/components/_spreadsheet*.css"
+      ],
+      "publicNamespacesToKeep": [
+        "Tempo.Blazor.Components.Spreadsheet",
+        "Tempo.Blazor.Components.Spreadsheet.Models",
+        "Tempo.Blazor.Components.Spreadsheet.Enums"
+      ],
+      "css": [
+        "_content/Tempo.Blazor.Spreadsheet/css/tempo-blazor-spreadsheet.css"
+      ],
+      "scripts": [
+        "_content/Tempo.Blazor.Spreadsheet/js/spreadsheet.js",
+        "_content/Tempo.Blazor.Spreadsheet/js/spreadsheet-canvas.js"
+      ],
+      "serviceRegistration": "AddTempoBlazorSpreadsheet",
+      "implementationStatus": "implemented-in-phase-4",
+      "dependencyDecision": "DocumentFormat.OpenXml moved out of core. Spreadsheet owns its XLSX import/export dependency, and Gantt XLSX helpers moved to Tempo.Blazor.GanttXlsx.",
+      "demoPages": [
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/SpreadsheetPage.razor",
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/SpreadsheetBenchmarkPage.razor"
+      ],
+      "documentation": {
+        "outputFile": "tempo-blazor-spreadsheet.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.Spreadsheet/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.Spreadsheet/Components"
+        ],
+        "includeAssets": true
+      }
+    },
+    {
+      "packageId": "Tempo.Blazor.GanttXlsx",
+      "kind": "feature",
+      "proposedSourceProject": "src/Tempo.Blazor.GanttXlsx/Tempo.Blazor.GanttXlsx.csproj",
+      "targetFrameworks": "net8.0;net9.0;net10.0",
+      "dependsOn": [
+        "Tempo.Blazor.Abstractions"
+      ],
+      "packageReferences": [
+        "DocumentFormat.OpenXml",
+        "Microsoft.Extensions.DependencyInjection.Abstractions"
+      ],
+      "moveFrom": [
+        "src/Tempo.Blazor/Services/GanttExcelImporter.cs",
+        "src/Tempo.Blazor/Services/GanttXlsxExporter.cs"
+      ],
+      "publicNamespacesToKeep": [
+        "Tempo.Blazor.Services"
+      ],
+      "serviceRegistration": "AddTempoBlazorGanttXlsx",
+      "implementationStatus": "implemented-in-phase-4",
+      "demoPages": [
+        "Scheduler/Gantt import and export flows"
+      ],
+      "documentation": {
+        "outputFile": "tempo-blazor-ganttxlsx.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.GanttXlsx/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.GanttXlsx/Services",
+          "src/Tempo.Blazor.GanttXlsx/Configuration"
+        ],
+        "includeAssets": false
+      }
+    },
+    {
+      "packageId": "Tempo.Blazor.Signing",
+      "kind": "feature",
+      "proposedSourceProject": "src/Tempo.Blazor.Signing/Tempo.Blazor.Signing.csproj",
+      "targetFrameworks": "net8.0;net9.0;net10.0",
+      "dependsOn": [
+        "Tempo.Blazor",
+        "Tempo.Blazor.Abstractions"
+      ],
+      "moveFrom": [
+        "src/Tempo.Blazor/Components/Signing/**",
+        "src/Tempo.Blazor/wwwroot/js/pdf-template-designer.js",
+        "src/Tempo.Blazor/wwwroot/css/components/_signing*.css",
+        "src/Tempo.Blazor/wwwroot/css/components/_pdf-template-designer.css"
+      ],
+      "keepInCoreForPhase1": [
+        "src/Tempo.Blazor/Components/Inputs/TmSignature*",
+        "src/Tempo.Blazor/wwwroot/js/signature-capture.js"
+      ],
+      "publicNamespacesToKeep": [
+        "Tempo.Blazor.Components.Signing"
+      ],
+      "css": [
+        "_content/Tempo.Blazor.Signing/css/tempo-blazor-signing.css"
+      ],
+      "scripts": [
+        "_content/Tempo.Blazor.Signing/js/pdf-template-designer.js"
+      ],
+      "dynamicImportsToRewrite": [
+        {
+          "from": "./_content/Tempo.Blazor/js/pdf-template-designer.js",
+          "to": "./_content/Tempo.Blazor.Signing/js/pdf-template-designer.js"
+        }
+      ],
+      "serviceRegistration": "AddTempoBlazorSigning",
+      "demoPages": [
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/SigningComponentsPage.razor",
+        "src/Tempo.Blazor.Demo.SharedUI/Pages/SigningTemplateFromEditorPage.razor"
+      ],
+      "documentation": {
+        "outputFile": "tempo-blazor-signing.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.Signing/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.Signing/Components"
+        ],
+        "includeAssets": true
+      }
+    },
+    {
+      "packageId": "Tempo.Blazor.Codes",
+      "kind": "optionalFeature",
+      "status": "implemented",
+      "sourceProject": "src/Tempo.Blazor.Codes/Tempo.Blazor.Codes.csproj",
+      "targetFrameworks": "net8.0;net9.0;net10.0",
+      "dependsOn": [
+        "Tempo.Blazor"
+      ],
+      "packageReferences": [
+        "QRCoder",
+        "ZXing.Net"
+      ],
+      "moveFrom": [
+        "src/Tempo.Blazor/Components/DataDisplay/TmQRCode*",
+        "src/Tempo.Blazor/Components/DataDisplay/TmBarcode*",
+        "src/Tempo.Blazor/wwwroot/css/components/_qr-code.css",
+        "src/Tempo.Blazor/wwwroot/css/components/_barcode.css"
+      ],
+      "publicNamespacesToKeep": [
+        "Tempo.Blazor.Components.DataDisplay"
+      ],
+      "css": [
+        "CSS isolation static web asset bundle included through the host app .styles.css pipeline"
+      ],
+      "serviceRegistration": "AddTempoBlazorCodes",
+      "documentation": {
+        "outputFile": "tempo-blazor-codes.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.Codes/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.Codes/Components"
+        ],
+        "includeAssets": true
+      }
+    },
+    {
+      "packageId": "Tempo.Blazor.All",
+      "kind": "compatibilityPackage",
+      "status": "implemented-in-phase-7",
+      "sourceProject": "src/Tempo.Blazor.All/Tempo.Blazor.All.csproj",
+      "targetFrameworks": "net8.0;net9.0;net10.0",
+      "dependsOn": [
+        "Tempo.Blazor",
+        "Tempo.Blazor.PdfViewer",
+        "Tempo.Blazor.Codes",
+        "Tempo.Blazor.DiagramEditor",
+        "Tempo.Blazor.Wireframe",
+        "Tempo.Blazor.Modeling",
+        "Tempo.Blazor.Spreadsheet",
+        "Tempo.Blazor.GanttXlsx",
+        "Tempo.Blazor.DocumentEditor",
+        "Tempo.Blazor.NotionEditor"
+      ],
+      "serviceRegistration": "AddTempoBlazorAll",
+      "documentation": {
+        "outputFile": "tempo-blazor-all-package.json",
+        "aggregateOutputFile": "tempo-blazor-all.json"
+      }
+    }
+  ],
+  "demoMigration": {
+    "hostProjects": [
+      "src/Tempo.Blazor.Demo/Tempo.Blazor.Demo.csproj",
+      "src/Tempo.Blazor.Demo.Server/Tempo.Blazor.Demo.Server.csproj",
+      "src/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto.Client/Tempo.Blazor.Demo.InteractiveAuto.Client.csproj",
+      "src/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto.csproj",
+      "src/Tempo.Blazor.Demo.SharedUI/Tempo.Blazor.Demo.SharedUI.csproj"
+    ],
+    "doNotAddUiFeaturePackagesTo": [
+      "src/Tempo.Blazor.Demo.Api/Tempo.Blazor.Demo.Api.csproj"
+    ],
+    "serviceCalls": [
+      "AddTempoBlazor",
+      "AddTempoBlazorPdfViewer",
+      "AddTempoBlazorCodes",
+      "AddTempoBlazorDocumentEditor",
+      "AddTempoBlazorDiagramEditor",
+      "AddTempoBlazorWireframe",
+      "AddTempoBlazorModeling",
+      "AddTempoBlazorSpreadsheet",
+      "AddTempoBlazorGanttXlsx",
+      "AddTempoBlazorNotionEditor",
+      "AddTempoBlazorSigning",
+      "AddTempoBlazorReporting"
+    ],
+    "htmlHostsToUpdate": [
+      "src/Tempo.Blazor.Demo/wwwroot/index.html",
+      "src/Tempo.Blazor.Demo.Server/Pages/_Host.cshtml",
+      "src/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto/Components/App.razor"
+    ],
+    "phase3ProjectReferencesAdded": [
+      "Tempo.Blazor.DiagramEditor",
+      "Tempo.Blazor.Wireframe",
+      "Tempo.Blazor.Modeling"
+    ],
+    "phase4ProjectReferencesAdded": [
+      "Tempo.Blazor.Spreadsheet",
+      "Tempo.Blazor.GanttXlsx"
+    ],
+    "phase5ProjectReferencesAdded": [
+      "Tempo.Blazor.DocumentEditor"
+    ],
+    "phase6ProjectReferencesAdded": [
+      "Tempo.Blazor.NotionEditor"
+    ],
+    "phase3CssLinksAdded": [
+      "_content/Tempo.Blazor.DiagramEditor/css/tempo-blazor-diagram-editor.css",
+      "_content/Tempo.Blazor.Wireframe/css/tempo-blazor-wireframe.css"
+    ],
+    "phase4CssLinksAdded": [
+      "_content/Tempo.Blazor.Spreadsheet/css/tempo-blazor-spreadsheet.css"
+    ],
+    "phase5CssLinksAdded": [
+      "_content/Tempo.Blazor.DocumentEditor/css/tempo-blazor-document-editor.css"
+    ],
+    "phase6CssLinksAdded": [
+      "_content/Tempo.Blazor.NotionEditor/css/tempo-blazor-notion-editor.css"
+    ],
+    "assetPathRewrites": [
+      {
+        "from": "_content/Tempo.Blazor/js/pdf-viewer.js",
+        "to": "_content/Tempo.Blazor.PdfViewer/js/pdf-viewer.js"
+      },
+      {
+        "from": "_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs",
+        "to": "_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs"
+      },
+      {
+        "from": "_content/Tempo.Blazor/js/wireframe-designer.js",
+        "to": "_content/Tempo.Blazor.Wireframe/js/wireframe-designer.js"
+      },
+      {
+        "from": "_content/Tempo.Blazor/js/spreadsheet.js",
+        "to": "_content/Tempo.Blazor.Spreadsheet/js/spreadsheet.js"
+      },
+      {
+        "from": "_content/Tempo.Blazor/js/spreadsheet-canvas.js",
+        "to": "_content/Tempo.Blazor.Spreadsheet/js/spreadsheet-canvas.js"
+      },
+      {
+        "from": "_content/Tempo.Blazor/js/dagre.min.js",
+        "to": "_content/Tempo.Blazor.DiagramEditor/js/dagre.min.js"
+      },
+      {
+        "from": "_content/Tempo.Blazor/js/d3-*.min.js",
+        "to": "_content/Tempo.Blazor.DiagramEditor/js/d3-*.min.js"
+      },
+      {
+        "from": "_content/Tempo.Blazor/js/diagram-arrow-select.js",
+        "to": "_content/Tempo.Blazor.DiagramEditor/js/diagram-arrow-select.js"
+      },
+      {
+        "from": "_content/Tempo.Blazor/js/diagram-editor.js",
+        "to": "_content/Tempo.Blazor.DiagramEditor/js/diagram-editor.js"
+      },
+      {
+        "from": "_content/Tempo.Blazor/js/notion-editor.js",
+        "to": "_content/Tempo.Blazor.NotionEditor/js/notion-editor.js"
+      },
+      {
+        "from": "_content/Tempo.Blazor/js/pdf-template-designer.js",
+        "to": "_content/Tempo.Blazor.Signing/js/pdf-template-designer.js"
+      }
+    ],
+    "featurePages": {
+      "Tempo.Blazor.PdfViewer": [
+        "PdfViewerPage.razor"
+      ],
+      "Tempo.Blazor.DocumentEditor": [
+        "DocumentEditorPage.razor",
+        "CanvasEngineHostPage.razor",
+        "CoreEngineEditorPage.razor",
+        "SigningTemplateFromEditorPage.razor"
+      ],
+      "Tempo.Blazor.NotionEditor": [
+        "NotionEditorPage.razor",
+        "PublicNotionPage.razor",
+        "UnifiedTasksPage.razor"
+      ],
+      "Tempo.Blazor.DiagramEditor": [
+        "DiagramEditorPage.razor"
+      ],
+      "Tempo.Blazor.Wireframe": [
+        "WireframeEditorPage.razor"
+      ],
+      "Tempo.Blazor.Modeling": [
+        "ModelingEditorPage.razor"
+      ],
+      "Tempo.Blazor.Spreadsheet": [
+        "SpreadsheetPage.razor",
+        "SpreadsheetBenchmarkPage.razor"
+      ],
+      "Tempo.Blazor.Signing": [
+        "SigningComponentsPage.razor",
+        "SigningTemplateFromEditorPage.razor"
+      ]
+    }
+  },
+  "jsonDocumentationMigration": {
+    "currentConfigFile": "JsonDocumentation/packages.json",
+    "currentAggregateOutputFile": "tempo-blazor-all.json",
+    "requiredChanges": [
+      "Limit the Tempo.Blazor entry to core documentation roots and component roots.",
+      "Add package entries for each feature project.",
+      "Generate package-specific JSON outputs.",
+      "Keep tempo-blazor-all.json as the aggregate output.",
+      "Move generated feature item documentation under JsonDocumentation/Packages/<PackageId>/items."
+    ],
+    "newPackageEntries": [
+      {
+        "packageId": "Tempo.Blazor.PdfViewer",
+        "sourceProject": "src/Tempo.Blazor.PdfViewer/Tempo.Blazor.PdfViewer.csproj",
+        "outputFile": "tempo-blazor-pdfviewer.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.PdfViewer/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.PdfViewer/Components"
+        ],
+        "includePublicTypes": true,
+        "includeAssets": true
+      },
+      {
+        "packageId": "Tempo.Blazor.Codes",
+        "sourceProject": "src/Tempo.Blazor.Codes/Tempo.Blazor.Codes.csproj",
+        "outputFile": "tempo-blazor-codes.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.Codes/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.Codes/Components"
+        ],
+        "includePublicTypes": true,
+        "includeAssets": true
+      },
+      {
+        "packageId": "Tempo.Blazor.DocumentEditor",
+        "sourceProject": "src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj",
+        "outputFile": "tempo-blazor-documenteditor.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.DocumentEditor/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.DocumentEditor/Components"
+        ],
+        "includePublicTypes": true,
+        "includeAssets": true
+      },
+      {
+        "packageId": "Tempo.Blazor.NotionEditor",
+        "sourceProject": "src/Tempo.Blazor.NotionEditor/Tempo.Blazor.NotionEditor.csproj",
+        "outputFile": "tempo-blazor-notioneditor.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.NotionEditor/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.NotionEditor/Components"
+        ],
+        "includePublicTypes": true,
+        "includeAssets": true
+      },
+      {
+        "packageId": "Tempo.Blazor.DiagramEditor",
+        "sourceProject": "src/Tempo.Blazor.DiagramEditor/Tempo.Blazor.DiagramEditor.csproj",
+        "outputFile": "tempo-blazor-diagrameditor.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.DiagramEditor/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.DiagramEditor/Components"
+        ],
+        "includePublicTypes": true,
+        "includeAssets": true
+      },
+      {
+        "packageId": "Tempo.Blazor.Wireframe",
+        "sourceProject": "src/Tempo.Blazor.Wireframe/Tempo.Blazor.Wireframe.csproj",
+        "outputFile": "tempo-blazor-wireframe.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.Wireframe/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.Wireframe/Components"
+        ],
+        "includePublicTypes": true,
+        "includeAssets": true
+      },
+      {
+        "packageId": "Tempo.Blazor.Modeling",
+        "sourceProject": "src/Tempo.Blazor.Modeling/Tempo.Blazor.Modeling.csproj",
+        "outputFile": "tempo-blazor-modeling.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.Modeling/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.Modeling/Components"
+        ],
+        "includePublicTypes": true,
+        "includeAssets": true
+      },
+      {
+        "packageId": "Tempo.Blazor.Spreadsheet",
+        "sourceProject": "src/Tempo.Blazor.Spreadsheet/Tempo.Blazor.Spreadsheet.csproj",
+        "outputFile": "tempo-blazor-spreadsheet.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.Spreadsheet/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.Spreadsheet/Components"
+        ],
+        "includePublicTypes": true,
+        "includeAssets": true
+      },
+      {
+        "packageId": "Tempo.Blazor.GanttXlsx",
+        "sourceProject": "src/Tempo.Blazor.GanttXlsx/Tempo.Blazor.GanttXlsx.csproj",
+        "outputFile": "tempo-blazor-ganttxlsx.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.GanttXlsx/items"
+        ],
+        "componentRoots": [
+          "src/Tempo.Blazor.GanttXlsx/Services",
+          "src/Tempo.Blazor.GanttXlsx/Configuration"
+        ],
+        "includePublicTypes": true,
+        "includeAssets": false
+      },
+      {
+        "packageId": "Tempo.Blazor.All",
+        "sourceProject": "src/Tempo.Blazor.All/Tempo.Blazor.All.csproj",
+        "outputFile": "tempo-blazor-all-package.json",
+        "documentationRoots": [
+          "Packages/Tempo.Blazor.All/items"
+        ],
+        "componentRoots": [],
+        "includePublicTypes": true,
+        "includeAssets": false
+      }
+    ]
+  },
+  "implementationPhases": [
+    {
+      "phase": 0,
+      "name": "Immediate package cleanup",
+      "status": "implemented",
+      "tasks": [
+        "Exclude JS tests and runtime-internal README files from static web assets.",
+        "Remove FluentValidation from Tempo.Blazor if build confirms no runtime usage.",
+        "Align DocumentFormat.OpenXml versions while it remains in multiple projects."
+      ]
+    },
+    {
+      "phase": 1,
+      "name": "Service boundary preparation",
+      "status": "implemented",
+      "tasks": [
+        "Make AddTempoBlazor core-only.",
+        "Introduce AddTempoBlazorPdfViewer, AddTempoBlazorDocumentEditor, AddTempoBlazorDiagramEditor, AddTempoBlazorWireframe, AddTempoBlazorModeling, AddTempoBlazorSpreadsheet, AddTempoBlazorNotionEditor, and AddTempoBlazorSigning.",
+        "Add DI smoke tests for every registration method."
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Low-risk package extraction",
+      "status": "implemented",
+      "tasks": [
+        "Extract Tempo.Blazor.PdfViewer.",
+        "Extract Tempo.Blazor.Codes to remove QRCoder and ZXing.Net from core.",
+        "Update demo project references, service registrations, and PDF static asset paths.",
+        "Kept Signing QR integration optional through DynamicComponent lookups; Notion PDF integration later moved with NotionEditor in phase 6."
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Diagram family extraction",
+      "status": "implemented",
+      "tasks": [
+        "Extracted Tempo.Blazor.DiagramEditor.",
+        "Extracted Tempo.Blazor.Wireframe.",
+        "Extracted Tempo.Blazor.Modeling after DiagramEditor is available.",
+        "Updated demo references, service registration, CSS links, and Diagram/Wireframe static asset paths.",
+        "Verified build, targeted tests, and NuGet package contents."
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Spreadsheet and OpenXML decision",
+      "status": "implemented",
+      "tasks": [
+        "Extracted Tempo.Blazor.Spreadsheet as a physical RCL.",
+        "Moved Gantt XLSX import/export to Tempo.Blazor.GanttXlsx so DocumentFormat.OpenXml leaves core.",
+        "Updated demo references, service registration, CSS links, and Spreadsheet script paths.",
+        "Verified build, targeted tests, and NuGet package contents."
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Document editor extraction",
+      "status": "implemented",
+      "tasks": [
+        "Extracted Tempo.Blazor.DocumentEditor as a physical RCL.",
+        "Moved DocumentEditor C#/Razor, IndexedDB offline store, document-editor JS runtime, document-editor-canvas runtime, and feature CSS out of core.",
+        "Rewrote dynamic imports, E2E references, and canvas harness imports to _content/Tempo.Blazor.DocumentEditor.",
+        "Updated demo project references, AddTempoBlazorDocumentEditor registration, shared imports, and feature CSS links.",
+        "Verified build, targeted tests, and NuGet package contents."
+      ]
+    },
+    {
+      "phase": 6,
+      "name": "Notion editor extraction",
+      "status": "implemented",
+      "tasks": [
+        "Extracted Tempo.Blazor.NotionEditor as a physical RCL.",
+        "Moved NotionEditor C#/Razor, notion-editor.js, and _notion*.css feature CSS out of core.",
+        "Kept integrated Tempo blocks in the main NotionEditor package for this phase and added direct dependencies on PdfViewer, DiagramEditor, Wireframe, and Spreadsheet.",
+        "Removed AddTempoBlazorNotionEditor and CommentNotificationOrchestrator registration from core AddTempoBlazor.",
+        "Updated demo project references, AddTempoBlazorNotionEditor registration, feature CSS links, script paths, shared imports, and JSON documentation paths.",
+        "Verified build, targeted tests, and NuGet package contents."
+      ]
+    },
+    {
+      "phase": 7,
+      "name": "Documentation, demo, and release",
+      "status": "implemented",
+      "tasks": [
+        "Added Tempo.Blazor.All as a physical compatibility package with AddTempoBlazorAll().",
+        "Moved split feature source JSON items from JsonDocumentation/Components to JsonDocumentation/Packages/<PackageId>/items.",
+        "Updated JsonDocumentation/packages.json with package-specific entries for split feature packages and Tempo.Blazor.All.",
+        "Generated package-specific JSON documentation and the aggregate tempo-blazor-all.json.",
+        "Updated README.md and added docs/nuget-package-split-migration.md with migration and release notes.",
+        "Kept demo projects on explicit split package references and registrations so the demo continues to validate individual packages."
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "risk": "Static asset path breakage",
+      "mitigation": "Centralize dynamic import paths and add smoke E2E checks for every heavy editor page."
+    },
+    {
+      "risk": "Missing DI registrations after AddTempoBlazor becomes core-only",
+      "mitigation": "Add AddTempoBlazorX methods and DI tests per feature package."
+    },
+    {
+      "risk": "NotionEditor remains large because it includes all Tempo block integrations",
+      "mitigation": "Use direct dependencies in phase 6, then split Tempo.Blazor.NotionEditor.TempoBlocks later."
+    },
+    {
+      "risk": "DocumentFormat.OpenXml accidentally returns to core through Gantt XLSX",
+      "mitigation": "Keep Gantt XLSX import/export in Tempo.Blazor.GanttXlsx and verify core nuspec dependencies during package checks."
+    },
+    {
+      "risk": "JSON documentation duplicates moved components",
+      "mitigation": "Use core exclude patterns and package-specific documentation roots."
+    }
+  ]
+}

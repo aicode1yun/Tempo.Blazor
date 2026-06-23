@@ -1714,6 +1714,7 @@
   <data name="TmNotionDiagramEditModal_Title"          xml:space="preserve"><value>Diagram editor</value></data>
   <data name="TmNotionDiagramEditModal_Save"           xml:space="preserve"><value>Save &amp; close</value></data>
   <data name="TmNotionDiagramEditModal_Discard"        xml:space="preserve"><value>Discard changes</value></data>
+  <data name="TmNotionDiagramEditModal_MissingPackage" xml:space="preserve"><value>Add the Tempo.Blazor.DiagramEditor package to edit diagrams here.</value></data>
 
   <data name="TmNotionWireframeBlock_CreateWireframe"      xml:space="preserve"><value>Create wireframe</value></data>
   <data name="TmNotionWireframeBlock_Edit"                 xml:space="preserve"><value>Edit wireframe</value></data>
@@ -1725,10 +1726,12 @@
   <data name="TmNotionWireframeEditModal_Title"            xml:space="preserve"><value>Wireframe editor</value></data>
   <data name="TmNotionWireframeEditModal_Save"             xml:space="preserve"><value>Save &amp; close</value></data>
   <data name="TmNotionWireframeEditModal_Discard"          xml:space="preserve"><value>Discard changes</value></data>
+  <data name="TmNotionWireframeEditModal_MissingPackage"   xml:space="preserve"><value>Add the Tempo.Blazor.Wireframe package to edit wireframes here.</value></data>
 
   <data name="TmNotionSpreadsheetEditModal_Title"          xml:space="preserve"><value>Spreadsheet editor</value></data>
   <data name="TmNotionSpreadsheetEditModal_Save"           xml:space="preserve"><value>Save &amp; close</value></data>
   <data name="TmNotionSpreadsheetEditModal_Discard"        xml:space="preserve"><value>Discard changes</value></data>
+  <data name="TmNotionSpreadsheetEditModal_MissingPackage" xml:space="preserve"><value>Add the Tempo.Blazor.Spreadsheet package to edit spreadsheets here.</value></data>
 
   <!-- ═══════════════ WIREFRAME MULTI-PAGE ═══════════════ -->
   <data name="TmWireframe_Page" xml:space="preserve"><value>Page</value></data>
@@ -3996,6 +3999,7 @@
   <data name="TmGantt_ImportMpp" xml:space="preserve"><value>Import MS Project</value></data>
   <data name="TmGantt_ImportJira" xml:space="preserve"><value>Import from JIRA</value></data>
   <data name="TmGantt_ImportError" xml:space="preserve"><value>Import failed: {0}</value></data>
+  <data name="TmGantt_ImportXlsxPackageMissing" xml:space="preserve"><value>Add the Tempo.Blazor.GanttXlsx package to import Excel files.</value></data>
   <data name="TmGantt_ImportMapping" xml:space="preserve"><value>Column mapping</value></data>
   <data name="TmGantt_ImportSourceColumn" xml:space="preserve"><value>Source column</value></data>
   <data name="TmGantt_ImportTargetField" xml:space="preserve"><value>Target field</value></data>

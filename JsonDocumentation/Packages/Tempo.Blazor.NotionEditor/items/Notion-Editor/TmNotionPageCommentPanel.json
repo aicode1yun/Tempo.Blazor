@@ -1,0 +1,31 @@
+{
+  "itemName": "TmNotionPageCommentPanel",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionPageCommentPanel Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionPageCommentPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "OnCountChanged",
+      "type": "EventCallback",
+      "isRequired": false
+    },
+    {
+      "name": "OnExpandedChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false
+    },
+    {
+      "name": "OnMentionClicked",
+      "type": "EventCallback<string>",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "UI"
+}

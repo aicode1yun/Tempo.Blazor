@@ -1,0 +1,100 @@
+{
+  "itemName": "TmDiagramSearchPanel",
+  "kind": "Component",
+  "category": "Diagram",
+  "description": "Floating search panel for the diagram editor.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "namespace": "Tempo.Blazor.Components.Diagram",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramSearchPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Diagram"
+  ],
+  "parameters": [
+    {
+      "name": "CurrentIndex",
+      "type": "int",
+      "isRequired": false,
+      "description": "Total number of matches."
+    },
+    {
+      "name": "CurrentIndexChanged",
+      "type": "EventCallback<int>",
+      "isRequired": false,
+      "description": "Zero-based index of the currently highlighted match."
+    },
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fires when the active match index changes."
+    },
+    {
+      "name": "OnReplace",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Error message displayed when the regex pattern is invalid."
+    },
+    {
+      "name": "OnReplaceAll",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fires when the user clicks the Replace button."
+    },
+    {
+      "name": "QueryChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Current search query."
+    },
+    {
+      "name": "RegexError",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Fires when the regex toggle changes."
+    },
+    {
+      "name": "ReplaceQuery",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"\"",
+      "description": "Fires when the \"search all pages\" toggle changes."
+    },
+    {
+      "name": "ReplaceQueryChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Current replacement text."
+    },
+    {
+      "name": "ResultsCount",
+      "type": "int",
+      "isRequired": false,
+      "description": "Fires when the query changes."
+    },
+    {
+      "name": "SearchAllPages",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Fires when the panel should close."
+    },
+    {
+      "name": "SearchAllPagesChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "When true, search spans all pages instead of just the active one."
+    },
+    {
+      "name": "UseRegex",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Fires when the replacement text changes."
+    },
+    {
+      "name": "UseRegexChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "When true, the query is treated as a regular expression."
+    }
+  ]
+}

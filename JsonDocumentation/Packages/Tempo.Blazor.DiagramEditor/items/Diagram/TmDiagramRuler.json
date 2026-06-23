@@ -1,0 +1,72 @@
+{
+  "itemName": "TmDiagramRuler",
+  "kind": "Component",
+  "category": "Diagram",
+  "description": "Horizontal or vertical ruler synchronized with the diagram canvas viewport.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "namespace": "Tempo.Blazor.Components.Diagram",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramRuler.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Diagram"
+  ],
+  "parameters": [
+    {
+      "name": "CursorX",
+      "type": "double",
+      "isRequired": false,
+      "description": "Page scale factor (1.0 = 1:1)."
+    },
+    {
+      "name": "CursorY",
+      "type": "double",
+      "isRequired": false,
+      "description": "Cursor position for crosshair."
+    },
+    {
+      "name": "Scale",
+      "type": "double",
+      "isRequired": false,
+      "default": "1.0",
+      "description": "Measurement unit."
+    },
+    {
+      "name": "Unit",
+      "type": "MeasurementUnit",
+      "isRequired": false,
+      "default": "MeasurementUnit.Px",
+      "description": "Current zoom level (1.0 = 100%)."
+    },
+    {
+      "name": "ViewportH",
+      "type": "double",
+      "isRequired": false,
+      "description": "Viewport width in document coordinates."
+    },
+    {
+      "name": "ViewportW",
+      "type": "double",
+      "isRequired": false,
+      "description": "Viewport Y in document coordinates."
+    },
+    {
+      "name": "ViewportX",
+      "type": "double",
+      "isRequired": false,
+      "description": "Either horizontal or vertical."
+    },
+    {
+      "name": "ViewportY",
+      "type": "double",
+      "isRequired": false,
+      "description": "Viewport X in document coordinates."
+    },
+    {
+      "name": "Zoom",
+      "type": "double",
+      "isRequired": false,
+      "default": "1.0",
+      "description": "Viewport height in document coordinates."
+    }
+  ]
+}

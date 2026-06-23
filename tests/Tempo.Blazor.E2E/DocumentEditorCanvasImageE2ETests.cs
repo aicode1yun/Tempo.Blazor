@@ -317,7 +317,7 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
                 let selection = null;
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
                 if (handle) {
-                    const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                     formatting = JSON.parse(module.getFormattingStateJson(handle) || '{}');
                     selection = JSON.parse(module.getSelectionStateJson(handle) || '{}');
                 }
@@ -394,7 +394,7 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
 
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const debug = JSON.parse(module.getRuntimeDebugSnapshotJson(handle) || '{}');
                 const blocks = [
                     ...(debug?.render?.selectionLayout?.blocks || []),
@@ -436,7 +436,7 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
                 const root = document.querySelector('[data-testid="document-canvas-engine-root"][data-page-surface-strategy="canvas-per-visible-page"]');
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(module.getModelJson(handle) || '{}');
                 const canvasPages = Array.from(document.querySelectorAll('[data-testid="document-canvas-page"]'));
                 const phasePage = canvasPages.find(page => page.getAttribute('data-canvas-model-document-id') === 'phase-15-canvas-images');
@@ -505,7 +505,7 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
             async ({ commandId, json }) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const raw = module.execCommand(handle, commandId, json);
                 const parsed = JSON.parse(raw || '{}');
                 return {
@@ -644,7 +644,7 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
                 let layoutObject = null;
                 let layoutImageBlocks = [];
                 if (handle) {
-                    const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                     selection = JSON.parse(module.getSelectionStateJson(handle) || '{}');
                     const model = JSON.parse(module.getModelJson(handle) || '{}');
                     const debug = JSON.parse(module.getRuntimeDebugSnapshotJson(handle) || '{}');
@@ -757,7 +757,7 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
             async objectId => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(module.getModelJson(handle) || '{}');
                 const source = findObjectSource(model, objectId);
                 if (!source) {
@@ -811,7 +811,7 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
             async args => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(module.getModelJson(handle) || '{}');
                 const source = findObjectSource(model, args.objectId);
                 if (!source) {
@@ -864,7 +864,7 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
             async args => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(module.getModelJson(handle) || '{}');
                 const source = findObjectSource(model, args.objectId);
                 if (!source) {
@@ -968,7 +968,7 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
             async objectId => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const debug = JSON.parse(module.getRuntimeDebugSnapshotJson(handle) || '{}');
                 const layout = debug?.render?.selectionLayout || debug?.layout || {};
                 const blocks = layout?.blocks || [];
@@ -1117,7 +1117,7 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
             async ([objectId, blockId]) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const debug = JSON.parse(module.getRuntimeDebugSnapshotJson(handle) || '{}');
                 const blocks = debug?.render?.selectionLayout?.blocks || [];
                 const block = blocks.find(candidate =>

@@ -1,0 +1,15 @@
+{
+  "itemName": "TmDiagramTemplateCard",
+  "kind": "Component",
+  "category": "Diagram",
+  "description": "TmDiagramTemplateCard Blazor component in the Diagram category.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "namespace": "Tempo.Blazor.Components.Diagram",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/TmDiagramTemplateCard.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Diagram"
+  ],
+  "parameters": [],
+  "subcategory": "Templates"
+}

@@ -1,0 +1,279 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.Codes",
+    "title": "Tempo.Blazor.Codes",
+    "description": "QR code and barcode components for Tempo.Blazor backed by QRCoder and ZXing.Net.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;components;qr;barcode;qrcode;zxing",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Codes"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "QRCoder",
+        "version": "1.6.0"
+      },
+      {
+        "name": "ZXing.Net",
+        "version": "0.16.10"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor/Tempo.Blazor.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Components.DataDisplay",
+      "Tempo.Blazor.Configuration"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.Codes",
+    "overview": "QR code and barcode components for Tempo.Blazor backed by QRCoder and ZXing.Net.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Codes"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "QRCoder",
+        "version": "1.6.0"
+      },
+      {
+        "name": "ZXing.Net",
+        "version": "0.16.10"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ]
+  },
+  "items": [
+    {
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DataDisplay",
+      "description": "Supported barcode formats.",
+      "packageId": "Tempo.Blazor.Codes",
+      "sourcePath": "src/Tempo.Blazor.Codes/Components/DataDisplay/BarcodeFormat.cs",
+      "documentationStatus": "generated",
+      "itemName": "BarcodeFormat"
+    },
+    {
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DataDisplay",
+      "description": "QR code error correction levels.",
+      "packageId": "Tempo.Blazor.Codes",
+      "sourcePath": "src/Tempo.Blazor.Codes/Components/DataDisplay/QRErrorCorrectionLevel.cs",
+      "documentationStatus": "generated",
+      "itemName": "QRErrorCorrectionLevel"
+    },
+    {
+      "kind": "Class",
+      "category": "Configuration",
+      "namespace": "Tempo.Blazor.Configuration",
+      "description": "Extension methods for registering Tempo.Blazor QR code and barcode services.",
+      "packageId": "Tempo.Blazor.Codes",
+      "sourcePath": "src/Tempo.Blazor.Codes/Configuration/CodesServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "AddTempoBlazorCodes",
+          "kind": "Method",
+          "type": "IServiceCollection",
+          "description": "Registers services required by the QR code and barcode component group.",
+          "parameters": [
+            {
+              "name": "services",
+              "type": "this IServiceCollection"
+            }
+          ]
+        }
+      ],
+      "itemName": "CodesServiceCollectionExtensions"
+    },
+    {
+      "itemName": "TmBarcode",
+      "kind": "Component",
+      "category": "Data Display",
+      "namespace": "Tempo.Blazor.Components.DataDisplay",
+      "description": "Renders a barcode as an SVG element. Supports multiple formats (Code128, Code39, EAN13, UPC, QR) with optional value display below the barcode.",
+      "packageId": "Tempo.Blazor.Codes",
+      "sourcePath": "src/Tempo.Blazor.Codes/Components/DataDisplay/TmBarcode.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.DataDisplay"
+      ],
+      "parameters": [
+        {
+          "name": "CssClass",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional CSS class."
+        },
+        {
+          "name": "DisplayValue",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether to display the value as text below the barcode."
+        },
+        {
+          "name": "Format",
+          "type": "BarcodeFormat",
+          "isRequired": false,
+          "default": "BarcodeFormat.Code128",
+          "description": "The barcode format. Default is Code128."
+        },
+        {
+          "name": "Height",
+          "type": "int",
+          "isRequired": false,
+          "default": "100",
+          "description": "The height in pixels."
+        },
+        {
+          "name": "Width",
+          "type": "int",
+          "isRequired": false,
+          "default": "200",
+          "description": "The width in pixels."
+        },
+        {
+          "name": "Value",
+          "type": "string",
+          "isRequired": false,
+          "default": "Empty",
+          "description": "The value to encode."
+        }
+      ],
+      "cssClasses": [
+        "tm-barcode",
+        "tm-barcode__error"
+      ],
+      "examples": [
+        {
+          "title": "Code 128 barcode",
+          "code": "<TmBarcode Value=\"TEST1234\" Format=\"BarcodeFormat.Code128\" DisplayValue=\"true\" />"
+        },
+        {
+          "title": "Custom size barcode",
+          "code": "<TmBarcode Value=\"ABC-999\" Format=\"BarcodeFormat.Code39\" Width=\"300\" Height=\"120\" />"
+        }
+      ]
+    },
+    {
+      "itemName": "TmQRCode",
+      "kind": "Component",
+      "category": "Data Display",
+      "namespace": "Tempo.Blazor.Components.DataDisplay",
+      "description": "Renders a QR code as an SVG element. Supports custom size, foreground/background colors, and multiple error correction levels.",
+      "packageId": "Tempo.Blazor.Codes",
+      "sourcePath": "src/Tempo.Blazor.Codes/Components/DataDisplay/TmQRCode.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.DataDisplay"
+      ],
+      "parameters": [
+        {
+          "name": "BackgroundColor",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"#ffffff\"",
+          "description": "Background color in hex format."
+        },
+        {
+          "name": "CssClass",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional CSS class."
+        },
+        {
+          "name": "ErrorCorrectionLevel",
+          "type": "QRErrorCorrectionLevel",
+          "isRequired": false,
+          "default": "QRErrorCorrectionLevel.M",
+          "description": "Error correction level. Default is M (15% recovery)."
+        },
+        {
+          "name": "ForegroundColor",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"#000000\"",
+          "description": "Foreground color in hex format."
+        },
+        {
+          "name": "Size",
+          "type": "int",
+          "isRequired": false,
+          "default": "200",
+          "description": "The size in pixels. Default is 200."
+        },
+        {
+          "name": "Value",
+          "type": "string",
+          "isRequired": false,
+          "default": "Empty",
+          "description": "The text or URL to encode."
+        }
+      ],
+      "cssClasses": [
+        "tm-qr-code"
+      ],
+      "examples": [
+        {
+          "title": "Basic QR code",
+          "code": "<TmQRCode Value=\"https://example.com\" />"
+        },
+        {
+          "title": "Large QR code with custom colors",
+          "code": "<TmQRCode Value=\"https://example.com\" Size=\"300\" ForegroundColor=\"#3b82f6\" BackgroundColor=\"#f0f9ff\" />"
+        },
+        {
+          "title": "High error correction",
+          "code": "<TmQRCode Value=\"important-data\" ErrorCorrectionLevel=\"QRErrorCorrectionLevel.H\" />"
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [],
+  "summary": {
+    "itemCount": 5,
+    "manualItemCount": 2,
+    "generatedItemCount": 5,
+    "generatedOnlyItemCount": 3,
+    "componentCount": 2,
+    "publicApiTypeCount": 3
+  }
+}

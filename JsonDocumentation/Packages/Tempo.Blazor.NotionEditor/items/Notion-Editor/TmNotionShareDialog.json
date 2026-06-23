@@ -1,0 +1,35 @@
+{
+  "itemName": "TmNotionShareDialog",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionShareDialog Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Page/TmNotionShareDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Page"
+  ],
+  "parameters": [
+    {
+      "name": "PageId",
+      "type": "share is managed.</summary> [Parameter, EditorRequired] public Guid",
+      "isRequired": true,
+      "description": "Raised when dialog visibility changes."
+    },
+    {
+      "name": "Provider",
+      "type": "shares.</summary> [Parameter] public INotionPublicShareProvider?",
+      "isRequired": true,
+      "description": "Page identifier whose public share is managed.",
+      "editorRequired": true
+    },
+    {
+      "name": "VisibleChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "Controls whether the dialog is visible."
+    }
+  ],
+  "subcategory": "Page"
+}

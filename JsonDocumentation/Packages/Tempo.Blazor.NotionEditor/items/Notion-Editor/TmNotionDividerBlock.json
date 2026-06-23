@@ -1,0 +1,38 @@
+{
+  "itemName": "TmNotionDividerBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Divider block — a focusable horizontal rule. Enter adds a Paragraph below; Backspace/Delete removes the block.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Text",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Text/TmNotionDividerBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Text"
+  ],
+  "parameters": [
+    {
+      "name": "IsFocused",
+      "type": "bool",
+      "isRequired": false
+    },
+    {
+      "name": "OnAddAfter",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when the block receives focus (click or Tab)."
+    },
+    {
+      "name": "OnDeleteRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when Enter is pressed — parent should add a Paragraph block below."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "Blocks / Text"
+}

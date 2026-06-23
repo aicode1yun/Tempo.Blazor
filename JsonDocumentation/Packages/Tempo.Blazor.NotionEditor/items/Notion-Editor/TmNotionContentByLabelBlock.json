@@ -1,0 +1,34 @@
+{
+  "itemName": "TmNotionContentByLabelBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionContentByLabelBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionContentByLabelBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
+  ],
+  "parameters": [
+    {
+      "name": "OnContentChanged",
+      "type": "EventCallback<ContentByLabelBlockContent>",
+      "isRequired": false,
+      "description": "Whether editing controls are hidden."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised after the block configuration changes."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Saved Content-by-Label block configuration."
+    }
+  ],
+  "subcategory": "Blocks / Special"
+}

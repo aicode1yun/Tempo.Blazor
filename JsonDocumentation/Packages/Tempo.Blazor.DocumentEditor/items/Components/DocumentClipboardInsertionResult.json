@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard",
+  "description": "Final paste pipeline result after schema policy normalization.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Clipboard/DocumentClipboardStageModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentClipboardInsertionResult"
+}

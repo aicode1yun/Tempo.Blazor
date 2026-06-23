@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+  "description": "Undo/redo history for a single wireframe editor instance. Not a DI service. TmWireframeEditor creates one instance and cascades it to child components via CascadingValue. Each editor on the page gets its own isolated stack.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/WireframeCommandStack.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Clear",
+      "kind": "Method",
+      "type": "void",
+      "description": "Clears both stacks (e.g. after loading a new document)."
+    },
+    {
+      "name": "Push",
+      "kind": "Method",
+      "type": "void",
+      "description": "Executes and pushes it onto the undo stack. Clears the redo stack. Move coalescing: if the previous command is a targeting the same element ids and was pushed within 100 ms, the new command is merged into it (keeps the original \"before\" positions, updates \"after\").",
+      "parameters": [
+        {
+          "name": "command",
+          "type": "IWireframeCommand"
+        }
+      ]
+    },
+    {
+      "name": "Redo",
+      "kind": "Method",
+      "type": "void",
+      "description": "Re-applies the most recently undone command. No-op if stack is empty."
+    },
+    {
+      "name": "Undo",
+      "kind": "Method",
+      "type": "void",
+      "description": "Reverses the most recent command. No-op if stack is empty."
+    }
+  ],
+  "itemName": "WireframeCommandStack"
+}

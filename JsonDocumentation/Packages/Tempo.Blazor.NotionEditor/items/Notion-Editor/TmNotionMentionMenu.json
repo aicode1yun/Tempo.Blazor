@@ -1,0 +1,33 @@
+{
+  "itemName": "TmNotionMentionMenu",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionMentionMenu Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionMentionMenu.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "OnClosed",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the user picks a mention. Args: (type, id, displayText)."
+    },
+    {
+      "name": "OnItemSelected",
+      "type": "EventCallback<(string Type, string Id, string Display)>",
+      "isRequired": false,
+      "description": "When true only the Pages tab is shown (triggered by '[[')."
+    },
+    {
+      "name": "PagesOnly",
+      "type": "bool",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "UI"
+}

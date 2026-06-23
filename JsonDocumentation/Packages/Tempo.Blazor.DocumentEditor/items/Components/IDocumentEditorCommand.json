@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Commands",
+  "description": "Undoable and redoable document editor mutation.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Commands/IDocumentEditorCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDocumentEditorCommand"
+}

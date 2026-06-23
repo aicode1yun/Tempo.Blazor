@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Tracks the full movement state of a node including swimlane parent.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/MoveNodesCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "NodeMoveState"
+}

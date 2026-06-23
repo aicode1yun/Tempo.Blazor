@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+  "description": "Default renderer for document toolbar separators.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Registry/DocumentToolbarSeparatorRenderer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Render",
+      "kind": "Method",
+      "type": "RenderFragment",
+      "parameters": [
+        {
+          "name": "context",
+          "type": "DocumentToolbarRenderContext"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentToolbarSeparatorRenderer"
+}

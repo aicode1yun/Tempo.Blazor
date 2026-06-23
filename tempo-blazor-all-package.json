@@ -1,0 +1,83 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.All",
+    "title": "Tempo.Blazor.All",
+    "description": "Compatibility package for Tempo.Blazor that references the core package and split feature packages for applications that want the full component suite.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;components;ui;compatibility;metapackage;tempo-blazor",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.All"
+      ]
+    },
+    "dependencies": [],
+    "projectReferences": [
+      "../Tempo.Blazor/Tempo.Blazor.csproj",
+      "../Tempo.Blazor.Codes/Tempo.Blazor.Codes.csproj",
+      "../Tempo.Blazor.DiagramEditor/Tempo.Blazor.DiagramEditor.csproj",
+      "../Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj",
+      "../Tempo.Blazor.GanttXlsx/Tempo.Blazor.GanttXlsx.csproj",
+      "../Tempo.Blazor.Modeling/Tempo.Blazor.Modeling.csproj",
+      "../Tempo.Blazor.NotionEditor/Tempo.Blazor.NotionEditor.csproj",
+      "../Tempo.Blazor.PdfViewer/Tempo.Blazor.PdfViewer.csproj",
+      "../Tempo.Blazor.Spreadsheet/Tempo.Blazor.Spreadsheet.csproj",
+      "../Tempo.Blazor.Wireframe/Tempo.Blazor.Wireframe.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Configuration"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.All",
+    "overview": "Compatibility package for Tempo.Blazor that references the core package and split feature packages for applications that want the full component suite.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.All"
+      ]
+    },
+    "dependencies": []
+  },
+  "items": [
+    {
+      "kind": "Class",
+      "category": "Configuration",
+      "namespace": "Tempo.Blazor.Configuration",
+      "description": "Extension methods for registering the full Tempo.Blazor split package set.",
+      "packageId": "Tempo.Blazor.All",
+      "sourcePath": "src/Tempo.Blazor.All/Configuration/AllServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "AddTempoBlazorAll",
+          "kind": "Method",
+          "type": "IServiceCollection",
+          "description": "Registers the core Tempo.Blazor services and all split feature package services.",
+          "parameters": [
+            {
+              "name": "services",
+              "type": "this IServiceCollection"
+            }
+          ]
+        }
+      ],
+      "itemName": "AllServiceCollectionExtensions"
+    }
+  ],
+  "libraryExamples": [],
+  "summary": {
+    "itemCount": 1,
+    "manualItemCount": 0,
+    "generatedItemCount": 1,
+    "generatedOnlyItemCount": 1,
+    "componentCount": 0,
+    "publicApiTypeCount": 1
+  }
+}

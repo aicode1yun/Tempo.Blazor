@@ -1,5 +1,4 @@
 @namespace Tempo.Blazor.Components.Signing
-@using Tempo.Blazor.Components.DataDisplay
 
 <section @attributes="AdditionalAttributes"
          class="@RootClass"
@@ -34,7 +33,10 @@
     @if (ShowQrCode && !string.IsNullOrWhiteSpace(Link))
     {
         <div class="tm-share-link-panel__qr">
-            <TmQRCode Value="@Link" Size="144" />
+            @if (QrCodeComponentType is not null)
+            {
+                <DynamicComponent Type="QrCodeComponentType" Parameters="QrCodeParameters" />
+            }
         </div>
     }
 
@@ -77,6 +79,14 @@
     /// <summary>Additional HTML attributes passed to the root element.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
+    private static readonly Type? QrCodeComponentType = ResolveQrCodeComponentType();
+
+    private Dictionary<string, object?> QrCodeParameters => new()
+    {
+        ["Value"] = Link,
+        ["Size"] = 144
+    };
+
     private string RootClass => string.Join(" ", new[]
     {
         "tm-share-link-panel",
@@ -92,4 +102,10 @@
     }
 
     private static string BoolText(bool value) => value ? "true" : "false";
+
+    private static Type? ResolveQrCodeComponentType()
+        => Type.GetType("Tempo.Blazor.Components.DataDisplay.TmQRCode, Tempo.Blazor.Codes")
+           ?? AppDomain.CurrentDomain.GetAssemblies()
+               .Select(assembly => assembly.GetType("Tempo.Blazor.Components.DataDisplay.TmQRCode", throwOnError: false))
+               .FirstOrDefault(type => type is not null);
 }

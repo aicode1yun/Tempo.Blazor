@@ -1,0 +1,29 @@
+{
+  "itemName": "TmSpreadsheetTextToColumnsDialog",
+  "kind": "Component",
+  "category": "Spreadsheet",
+  "description": "The multi-step Text to Columns wizard. Step 1 picks the split type (delimited / fixed width), step 2 configures the delimiters (or break positions) with a live preview, and step 3 chooses the target format of each produced column. The preview updates live as options change. Applying yields a . All text is localized.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetTextToColumnsDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+  ],
+  "parameters": [
+    {
+      "name": "OnApply",
+      "type": "EventCallback<SpreadsheetTextToColumnsResult>",
+      "isRequired": true,
+      "description": "The raw text of each source row to be split (used for the live preview).",
+      "editorRequired": true
+    },
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the user finishes the wizard."
+    }
+  ],
+  "subcategory": "Dialogs"
+}

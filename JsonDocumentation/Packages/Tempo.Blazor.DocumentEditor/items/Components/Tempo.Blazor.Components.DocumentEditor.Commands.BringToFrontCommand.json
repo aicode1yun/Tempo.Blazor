@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Commands",
+  "description": "Moves one positioned image above all other image objects.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Commands/BringToFrontCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "Tempo.Blazor.Components.DocumentEditor.Commands.BringToFrontCommand"
+}

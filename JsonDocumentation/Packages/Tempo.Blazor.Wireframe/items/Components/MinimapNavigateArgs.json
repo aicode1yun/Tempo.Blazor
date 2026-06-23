@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Navigate-to arguments: document-space centre point.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeMinimap.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "MinimapNavigateArgs"
+}

@@ -182,11 +182,11 @@ public class DiagramBpmn2Phase6Tests : LocalizationTestBase
     }
 
     [Fact]
-    public void AddTempoBlazor_Registers_Bpmn2_Provider()
+    public void AddTempoBlazorDiagramEditor_Registers_Bpmn2_Provider()
     {
         var services = new ServiceCollection();
 
-        services.AddTempoBlazor();
+        services.AddTempoBlazorDiagramEditor();
 
         var provider = services.BuildServiceProvider();
         provider.GetServices<IDiagramStencilProvider>()

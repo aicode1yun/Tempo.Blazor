@@ -64,11 +64,11 @@ public sealed class DemoModelingModelProviderTests
     }
 
     [Fact]
-    public void AddTempoBlazor_registers_demo_provider_with_try_add_enumerable()
+    public void AddTempoBlazorModeling_registers_demo_provider_with_try_add_enumerable()
     {
         var services = new ServiceCollection();
 
-        services.AddTempoBlazor();
+        services.AddTempoBlazorModeling();
 
         using var provider = services.BuildServiceProvider();
         var providers = provider.GetServices<IModelingModelProvider>().ToList();

@@ -1,0 +1,28 @@
+{
+  "itemName": "TmDocumentCellPropertiesPanel",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "TmDocumentCellPropertiesPanel Blazor component in the Document Editor category.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCellPropertiesPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": [
+    {
+      "name": "CellChanged",
+      "type": "EventCallback<TableCellContent>",
+      "isRequired": false,
+      "description": "Current cell content."
+    },
+    {
+      "name": "TestIdPrefix",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"document-cell-properties\"",
+      "description": "Raised when cell properties change."
+    }
+  ]
+}
