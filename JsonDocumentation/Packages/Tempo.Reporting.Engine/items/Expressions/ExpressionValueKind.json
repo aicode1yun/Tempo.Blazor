@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Expressions",
+  "namespace": "Tempo.Reporting.Engine.Expressions",
+  "description": "Expression runtime value kind.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionValue.cs",
+  "documentationStatus": "generated",
+  "itemName": "ExpressionValueKind"
+}

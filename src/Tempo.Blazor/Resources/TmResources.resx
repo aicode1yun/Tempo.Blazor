@@ -1380,6 +1380,52 @@
   <data name="TmPdfViewer_Thumbnails"                        xml:space="preserve"><value>Thumbnails</value></data>
   <data name="TmPdfViewer_Search"                            xml:space="preserve"><value>Search</value></data>
   <data name="TmPdfViewer_SearchResults"                     xml:space="preserve"><value>{0} of {1}</value></data>
+  <!-- TmReportViewer -->
+  <data name="TmReportViewer_ToolbarLabel"                    xml:space="preserve"><value>Report controls</value></data>
+  <data name="TmReportViewer_Loading"                         xml:space="preserve"><value>Loading report...</value></data>
+  <data name="TmReportViewer_EmptyTitle"                      xml:space="preserve"><value>No report rendered</value></data>
+  <data name="TmReportViewer_EmptyDescription"                xml:space="preserve"><value>Set parameters and run the report.</value></data>
+  <data name="TmReportViewer_NoSource"                        xml:space="preserve"><value>No report source is configured.</value></data>
+  <data name="TmReportViewer_ErrorTitle"                      xml:space="preserve"><value>Report could not be rendered</value></data>
+  <data name="TmReportViewer_Parameters"                      xml:space="preserve"><value>Parameters</value></data>
+  <data name="TmReportViewer_Run"                             xml:space="preserve"><value>Show report</value></data>
+  <data name="TmReportViewer_Refresh"                         xml:space="preserve"><value>Refresh</value></data>
+  <data name="TmReportViewer_FirstPage"                       xml:space="preserve"><value>First page</value></data>
+  <data name="TmReportViewer_PreviousPage"                    xml:space="preserve"><value>Previous page</value></data>
+  <data name="TmReportViewer_NextPage"                        xml:space="preserve"><value>Next page</value></data>
+  <data name="TmReportViewer_LastPage"                        xml:space="preserve"><value>Last page</value></data>
+  <data name="TmReportViewer_Page"                            xml:space="preserve"><value>Page</value></data>
+  <data name="TmReportViewer_PageOf"                          xml:space="preserve"><value>{0} of {1}</value></data>
+  <data name="TmReportViewer_Zoom"                            xml:space="preserve"><value>Zoom</value></data>
+  <data name="TmReportViewer_ZoomIn"                          xml:space="preserve"><value>Zoom in</value></data>
+  <data name="TmReportViewer_ZoomOut"                         xml:space="preserve"><value>Zoom out</value></data>
+  <data name="TmReportViewer_FitWidth"                        xml:space="preserve"><value>Fit width</value></data>
+  <data name="TmReportViewer_FitPage"                         xml:space="preserve"><value>Fit page</value></data>
+  <data name="TmReportViewer_Export"                          xml:space="preserve"><value>Export</value></data>
+  <data name="TmReportViewer_ExportPdf"                       xml:space="preserve"><value>PDF</value></data>
+  <data name="TmReportViewer_ExportCsv"                       xml:space="preserve"><value>CSV</value></data>
+  <data name="TmReportViewer_ExportXlsx"                      xml:space="preserve"><value>XLSX</value></data>
+  <data name="TmReportViewer_ExportCsvUnavailable"            xml:space="preserve"><value>CSV / XLSX after F15</value></data>
+  <data name="TmReportViewer_Print"                           xml:space="preserve"><value>Print</value></data>
+  <data name="TmReportViewer_SelectValue"                     xml:space="preserve"><value>Select value</value></data>
+  <data name="TmReportViewer_ParameterRequired"               xml:space="preserve"><value>{0} is required.</value></data>
+  <!-- TmReportExplorer -->
+  <data name="TmReportExplorer_Folders"                        xml:space="preserve"><value>Folders</value></data>
+  <data name="TmReportExplorer_Search"                         xml:space="preserve"><value>Search reports</value></data>
+  <data name="TmReportExplorer_SearchPlaceholder"              xml:space="preserve"><value>Search reports...</value></data>
+  <data name="TmReportExplorer_GridView"                       xml:space="preserve"><value>Grid view</value></data>
+  <data name="TmReportExplorer_ListView"                       xml:space="preserve"><value>List view</value></data>
+  <data name="TmReportExplorer_NewFolderPlaceholder"           xml:space="preserve"><value>New folder name</value></data>
+  <data name="TmReportExplorer_CreateFolder"                   xml:space="preserve"><value>Create folder</value></data>
+  <data name="TmReportExplorer_EmptyTitle"                     xml:space="preserve"><value>No reports found</value></data>
+  <data name="TmReportExplorer_EmptyDescription"               xml:space="preserve"><value>Try another folder or search term.</value></data>
+  <data name="TmReportExplorer_ThumbnailAlt"                   xml:space="preserve"><value>{0} thumbnail</value></data>
+  <data name="TmReportExplorer_OpenReport"                     xml:space="preserve"><value>Open</value></data>
+  <data name="TmReportExplorer_OpenReportNamed"                xml:space="preserve"><value>Open {0}</value></data>
+  <data name="TmReportExplorer_Revision"                       xml:space="preserve"><value>Rev {0}</value></data>
+  <data name="TmReportExplorer_ActionsFor"                     xml:space="preserve"><value>Actions for {0}</value></data>
+  <data name="TmReportExplorer_MoveTo"                         xml:space="preserve"><value>Move to</value></data>
+  <data name="TmReportExplorer_MoveReport"                     xml:space="preserve"><value>Move report</value></data>
   <data name="TmAIPrompt_Placeholder"                        xml:space="preserve"><value>Ask me anything...</value></data>
   <data name="TmAIPrompt_Submit"                             xml:space="preserve"><value>Send</value></data>
   <data name="TmAIPrompt_CommandsLabel"                      xml:space="preserve"><value>Quick actions</value></data>
@@ -4839,4 +4885,74 @@
   <data name="TmNotionBlock_InsertExisting" xml:space="preserve"><value>Insert existing…</value></data>
   <data name="TmNotionBlock_DocumentNotFound" xml:space="preserve"><value>Document not found</value></data>
   <data name="TmNotionBlock_RemoveBlock" xml:space="preserve"><value>Remove</value></data>
+  <data name="TmReportDesigner_Label" xml:space="preserve"><value>Report designer</value></data>
+  <data name="TmReportDesigner_Zoom" xml:space="preserve"><value>Zoom</value></data>
+  <data name="TmReportDesigner_Undo" xml:space="preserve"><value>Undo</value></data>
+  <data name="TmReportDesigner_Redo" xml:space="preserve"><value>Redo</value></data>
+  <data name="TmReportDesigner_Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="TmReportDesigner_PageSetup" xml:space="preserve"><value>Page setup</value></data>
+  <data name="TmReportDesigner_Tabs" xml:space="preserve"><value>Designer sections</value></data>
+  <data name="TmReportDesigner_PageWidth" xml:space="preserve"><value>Page width</value></data>
+  <data name="TmReportDesigner_PageHeight" xml:space="preserve"><value>Page height</value></data>
+  <data name="TmReportDesigner_Margins" xml:space="preserve"><value>Margins</value></data>
+  <data name="TmReportDesigner_Orientation" xml:space="preserve"><value>Orientation</value></data>
+  <data name="TmReportDesigner_Portrait" xml:space="preserve"><value>Portrait</value></data>
+  <data name="TmReportDesigner_Landscape" xml:space="preserve"><value>Landscape</value></data>
+  <data name="TmReportDesigner_Palette" xml:space="preserve"><value>Palette</value></data>
+  <data name="TmReportDesigner_TextBox" xml:space="preserve"><value>Text box</value></data>
+  <data name="TmReportDesigner_Image" xml:space="preserve"><value>Image</value></data>
+  <data name="TmReportDesigner_Shape" xml:space="preserve"><value>Shape</value></data>
+  <data name="TmReportDesigner_Table" xml:space="preserve"><value>Table</value></data>
+  <data name="TmReportDesigner_Chart" xml:space="preserve"><value>Chart</value></data>
+  <data name="TmReportDesigner_DefaultTextBox" xml:space="preserve"><value>Text box</value></data>
+  <data name="TmReportDesigner_BandHeight" xml:space="preserve"><value>Height</value></data>
+  <data name="TmReportDesigner_Properties" xml:space="preserve"><value>Properties</value></data>
+  <data name="TmReportDesigner_NoSelection" xml:space="preserve"><value>Select an element.</value></data>
+  <data name="TmReportDesigner_X" xml:space="preserve"><value>X</value></data>
+  <data name="TmReportDesigner_Y" xml:space="preserve"><value>Y</value></data>
+  <data name="TmReportDesigner_Width" xml:space="preserve"><value>Width</value></data>
+  <data name="TmReportDesigner_Height" xml:space="preserve"><value>Height</value></data>
+  <data name="TmReportDesigner_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="TmReportDesigner_FieldList" xml:space="preserve"><value>Fields</value></data>
+  <data name="TmReportDesigner_NoDataSource" xml:space="preserve"><value>No source</value></data>
+  <data name="TmReportDesigner_Datasets" xml:space="preserve"><value>Datasets</value></data>
+  <data name="TmReportDesigner_Query" xml:space="preserve"><value>Query</value></data>
+  <data name="TmReportDesigner_PreviewTop" xml:space="preserve"><value>Preview top rows</value></data>
+  <data name="TmReportDesigner_Parameters" xml:space="preserve"><value>Parameters</value></data>
+  <data name="TmReportDesigner_ExpressionEditor" xml:space="preserve"><value>Expression editor</value></data>
+  <data name="TmReportDesigner_Expression" xml:space="preserve"><value>Expression</value></data>
+  <data name="TmReportDesigner_ExpressionSelectField" xml:space="preserve"><value>Select a field or parameter.</value></data>
+  <data name="TmReportDesigner_ExpressionMustStart" xml:space="preserve"><value>Expression must start with =.</value></data>
+  <data name="TmReportDesigner_Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="TmReportDesigner_Validation" xml:space="preserve"><value>Validation</value></data>
+  <data name="TmReportDesigner_Revisions" xml:space="preserve"><value>Revisions</value></data>
+  <data name="TmReportDesigner_CurrentRevision" xml:space="preserve"><value>Current revision {0}</value></data>
+  <data name="TmReportDesigner_SaveDraft" xml:space="preserve"><value>Save draft</value></data>
+  <data name="TmReportDesigner_Publish" xml:space="preserve"><value>Publish</value></data>
+  <data name="TmReportDesigner_ValidationName" xml:space="preserve"><value>Report name is required.</value></data>
+  <data name="TmReportDesigner_ValidationDataset" xml:space="preserve"><value>Add at least one dataset.</value></data>
+  <data name="TmReportDesigner_ValidationElements" xml:space="preserve"><value>Add at least one element.</value></data>
+  <data name="TmReportDesigner_ValidationElementSize" xml:space="preserve"><value>{0} has invalid size.</value></data>
+  <data name="TmReportDesigner_InvalidSize" xml:space="preserve"><value>Invalid size.</value></data>
+  <data name="TmReportDesigner_ValidElement" xml:space="preserve"><value>Element is valid.</value></data>
+  <data name="TmReportDesigner_ChartTitle" xml:space="preserve"><value>Chart title</value></data>
+  <data name="TmReportDesigner_ChartType" xml:space="preserve"><value>Chart type</value></data>
+  <data name="TmReportDesigner_ChartTypeColumn" xml:space="preserve"><value>Column</value></data>
+  <data name="TmReportDesigner_ChartTypeBar" xml:space="preserve"><value>Bar</value></data>
+  <data name="TmReportDesigner_ChartTypeLine" xml:space="preserve"><value>Line</value></data>
+  <data name="TmReportDesigner_ChartTypeArea" xml:space="preserve"><value>Area</value></data>
+  <data name="TmReportDesigner_ChartTypePie" xml:space="preserve"><value>Pie</value></data>
+  <data name="TmReportDesigner_ChartTypeDonut" xml:space="preserve"><value>Donut</value></data>
+  <data name="TmReportDesigner_ChartDataset" xml:space="preserve"><value>Dataset</value></data>
+  <data name="TmReportDesigner_ChartSeries" xml:space="preserve"><value>Series</value></data>
+  <data name="TmReportDesigner_ChartCategoryExpression" xml:space="preserve"><value>Category expression</value></data>
+  <data name="TmReportDesigner_ChartValueExpression" xml:space="preserve"><value>Value expression</value></data>
+  <data name="TmReportDesigner_ChartColor" xml:space="preserve"><value>Color</value></data>
+  <data name="TmReportDesigner_ChartLegend" xml:space="preserve"><value>Legend</value></data>
+  <data name="TmReportDesigner_ChartPreview" xml:space="preserve"><value>Chart preview</value></data>
+  <data name="TmReportDesigner_DefaultChartTitle" xml:space="preserve"><value>Sales chart</value></data>
+  <data name="TmReportDesigner_DefaultChartSeries" xml:space="preserve"><value>Actual</value></data>
+  <data name="TmReportDesigner_ChartInvalidSeries" xml:space="preserve"><value>Chart series needs category and value expressions.</value></data>
+  <data name="TmReportDesigner_Data" xml:space="preserve"><value>Data</value></data>
+  <data name="TmReportDesigner_Design" xml:space="preserve"><value>Design</value></data>
 </root>

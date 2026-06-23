@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Null ordering for report sorting.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetProcessing.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportNullSortOrder"
+}

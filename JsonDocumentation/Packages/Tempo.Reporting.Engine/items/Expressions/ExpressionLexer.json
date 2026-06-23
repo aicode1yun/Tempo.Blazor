@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Expressions",
+  "namespace": "Tempo.Reporting.Engine.Expressions",
+  "description": "Lexer for report expressions.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionLexer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Tokenize",
+      "kind": "Method",
+      "type": "IReadOnlyList<ExpressionToken>",
+      "description": "Tokenizes an expression.",
+      "parameters": [
+        {
+          "name": "expression",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "ExpressionLexer"
+}

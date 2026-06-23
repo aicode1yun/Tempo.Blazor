@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Reporting.Services",
+  "description": "Deterministic fallback text measurer used when a host does not register font metrics.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Services/DefaultReportViewerTextMeasurer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "MeasureRun",
+      "kind": "Method",
+      "type": "TextMeasurement",
+      "parameters": [
+        {
+          "name": "request",
+          "type": "TextMeasureRequest"
+        }
+      ]
+    }
+  ],
+  "itemName": "DefaultReportViewerTextMeasurer"
+}

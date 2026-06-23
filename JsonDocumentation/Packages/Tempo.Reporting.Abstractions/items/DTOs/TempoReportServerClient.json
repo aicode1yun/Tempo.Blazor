@@ -1,0 +1,24 @@
+{
+  "itemName": "TempoReportServerClient",
+  "kind": "Class",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Default HttpClient-based implementation of ITempoReportServerClient. It applies an optional bearer token provider, serializes DTOs as JSON, and maps all Report Server API routes exposed by the F10 server.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/TempoReportServerClient.cs",
+  "documentationStatus": "manual",
+  "constructor": {
+    "signature": "TempoReportServerClient(HttpClient httpClient, IReportServerTokenProvider? tokenProvider = null, string basePath = \"api\")",
+    "description": "Creates a typed client for a report server base address. basePath defaults to api and is trimmed before route composition."
+  },
+  "examples": [
+    {
+      "title": "DI registration",
+      "code": "builder.Services.AddHttpClient<ITempoReportServerClient, TempoReportServerClient>(client =>\n{\n    client.BaseAddress = new Uri(reportServerBaseUrl);\n});"
+    }
+  ],
+  "relatedTypes": [
+    "ITempoReportServerClient",
+    "IReportServerTokenProvider"
+  ]
+}

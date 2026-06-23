@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Export",
+  "namespace": "Tempo.Reporting.Engine.Export",
+  "description": "Builds culture-neutral tabular export data from processed report output.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportTabularExportBuilder.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportTabularExportBuilder"
+}

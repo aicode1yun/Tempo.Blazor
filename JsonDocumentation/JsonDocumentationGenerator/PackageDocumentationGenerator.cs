@@ -52,20 +52,25 @@ internal static class PackageDocumentationGenerator
             return 1;
         }
 
-        var generator = new PackageDocumentationComposer(baseDir, repoRoot, cli.OutputDirectory);
+        var generator = new PackageDocumentationComposer(baseDir, repoRoot, cli.OutputDirectory, config.Packages);
         var results = packages.Select(generator.Compose).ToList();
 
         return cli.Command switch
         {
-            GeneratorCommand.Generate => WriteOutputs(results),
-            GeneratorCommand.Validate => Validate(results, repoRoot, failOnManualDrift: cli.FailOnDrift),
+            GeneratorCommand.Generate => WriteOutputs(results, config, repoRoot, cli.OutputDirectory, writeAggregate: cli.PackageId is null),
+            GeneratorCommand.Validate => Validate(results, repoRoot, config.Packages, failOnManualDrift: cli.FailOnDrift),
             GeneratorCommand.ListMissing => ListMissing(results),
             GeneratorCommand.Enrich => EnrichSourceJson(results),
             _ => 1
         };
     }
 
-    private static int WriteOutputs(IReadOnlyList<PackageDocumentationResult> results)
+    private static int WriteOutputs(
+        IReadOnlyList<PackageDocumentationResult> results,
+        PackageDocumentationConfig config,
+        string repoRoot,
+        string? outputDirectory,
+        bool writeAggregate)
     {
         foreach (var result in results)
         {
@@ -95,10 +100,57 @@ internal static class PackageDocumentationGenerator
             Console.WriteLine();
         }
 
+        if (writeAggregate && !string.IsNullOrWhiteSpace(config.AggregateOutputFile))
+        {
+            var outputDir = ResolveOutputDirectory(repoRoot, outputDirectory);
+            var aggregatePath = Path.Combine(outputDir, config.AggregateOutputFile);
+            var aggregate = BuildAggregateDocument(results);
+            var json = aggregate.ToJsonString(JsonOptions);
+            Directory.CreateDirectory(Path.GetDirectoryName(aggregatePath)!);
+            File.WriteAllText(aggregatePath, json);
+            Console.WriteLine($"Generated aggregate: {aggregatePath}");
+            Console.WriteLine($"  Packages: {results.Count}");
+            Console.WriteLine($"  Items: {results.Sum(r => r.ItemCount)}");
+            Console.WriteLine($"  File size: {json.Length:N0} bytes");
+            Console.WriteLine();
+        }
+
         return 0;
     }
 
-    private static int Validate(IReadOnlyList<PackageDocumentationResult> results, string repoRoot, bool failOnManualDrift)
+    private static JsonObject BuildAggregateDocument(IReadOnlyList<PackageDocumentationResult> results)
+    {
+        var packages = new JsonArray();
+        foreach (var result in results)
+        {
+            packages.Add(result.Document.DeepClone());
+        }
+
+        return new JsonObject
+        {
+            ["packages"] = packages,
+            ["summary"] = new JsonObject
+            {
+                ["packageCount"] = results.Count,
+                ["itemCount"] = results.Sum(r => r.ItemCount),
+                ["manualItemCount"] = results.Sum(r => r.ManualItemCount),
+                ["generatedOnlyItemCount"] = results.Sum(r => r.GeneratedOnlyCount),
+                ["componentCount"] = results.Sum(r => r.DiscoveredComponentCount),
+                ["publicApiTypeCount"] = results.Sum(r => r.DiscoveredTypeCount)
+            }
+        };
+    }
+
+    private static string ResolveOutputDirectory(string repoRoot, string? outputDirectory)
+        => string.IsNullOrWhiteSpace(outputDirectory)
+            ? repoRoot
+            : Path.GetFullPath(Path.IsPathRooted(outputDirectory) ? outputDirectory : Path.Combine(repoRoot, outputDirectory));
+
+    private static int Validate(
+        IReadOnlyList<PackageDocumentationResult> results,
+        string repoRoot,
+        IReadOnlyList<PackageDocumentationPackage> configuredPackages,
+        bool failOnManualDrift)
     {
         var errors = new List<string>();
 
@@ -156,7 +208,7 @@ internal static class PackageDocumentationGenerator
             }
         }
 
-        var configuredPackageIds = results.Select(r => r.Config.PackageId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var configuredPackageIds = configuredPackages.Select(p => p.PackageId).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var projectPackageIds = Directory.GetFiles(Path.Combine(repoRoot, "src"), "*.csproj", SearchOption.AllDirectories)
             .Where(p => !IsUnderBuildOutput(p))
             .Select(ProjectMetadataReader.Read)
@@ -280,12 +332,18 @@ internal sealed class PackageDocumentationComposer
     private readonly string _baseDir;
     private readonly string _repoRoot;
     private readonly string? _outputDirectory;
+    private readonly IReadOnlyList<PackageDocumentationPackage> _knownPackages;
 
-    public PackageDocumentationComposer(string baseDir, string repoRoot, string? outputDirectory)
+    public PackageDocumentationComposer(
+        string baseDir,
+        string repoRoot,
+        string? outputDirectory,
+        IReadOnlyList<PackageDocumentationPackage> knownPackages)
     {
         _baseDir = baseDir;
         _repoRoot = repoRoot;
         _outputDirectory = outputDirectory;
+        _knownPackages = knownPackages;
     }
 
     public PackageDocumentationResult Compose(PackageDocumentationPackage config)
@@ -455,9 +513,9 @@ internal sealed class PackageDocumentationComposer
             if (File.Exists(path) && JsonNode.Parse(File.ReadAllText(path)) is JsonObject existing)
             {
                 var clone = existing.DeepClone().AsObject();
-                if (clone["packages"] is not JsonArray { Count: >= 8 })
+                if (clone["packages"] is not JsonArray packages || packages.Count < _knownPackages.Count)
                 {
-                    clone["packages"] = BuildKnownPackagesArray();
+                    clone["packages"] = BuildKnownPackagesArray(_knownPackages, _repoRoot);
                 }
 
                 return clone;
@@ -537,24 +595,18 @@ internal sealed class PackageDocumentationComposer
         packageNode["namespaces"] = ToArray(namespaces);
     }
 
-    private static JsonArray BuildKnownPackagesArray()
+    private static JsonArray BuildKnownPackagesArray(
+        IReadOnlyList<PackageDocumentationPackage> packages,
+        string repoRoot)
     {
-        var packages = new[]
+        return ToArray(packages.Select(package =>
         {
-            ("Tempo.Blazor", "Main UI component library."),
-            ("Tempo.Blazor.Abstractions", "Interfaces and models with no UI dependency."),
-            ("Tempo.Blazor.FluentValidation", "FluentValidation integration for EditForm."),
-            ("Tempo.Blazor.Collaboration", "SignalR collaboration providers."),
-            ("Tempo.Blazor.DocumentFormats", "Server-side document import/export support."),
-            ("Tempo.Blazor.EmailTemplates.Abstractions", "Email template engine contracts and model."),
-            ("Tempo.Blazor.EmailTemplates", "Visual email template editor components."),
-            ("Tempo.Blazor.Mcp", "MCP tools for Tempo.Blazor wireframes.")
-        };
-
-        return ToArray(packages.Select(p => new JsonObject
-        {
-            ["name"] = p.Item1,
-            ["description"] = p.Item2
+            var project = ProjectMetadataReader.Read(Path.Combine(repoRoot, package.SourceProject));
+            return new JsonObject
+            {
+                ["name"] = package.PackageId,
+                ["description"] = project.Description ?? $"Documentation for {package.PackageId}."
+            };
         }));
     }
 
@@ -1520,6 +1572,30 @@ internal static class DefaultExamples
                     ["code"] = "builder.Services.AddTempoWireframeMcpTools();\\nbuilder.Services.AddMcpServer()\\n    .WithHttpTransport()\\n    .WithToolsFromAssembly(typeof(TempoWireframeMcp).Assembly);"
                 }
             ]),
+            "Tempo.Reporting.Abstractions" => PackageDocumentationComposer.ToArray([
+                new JsonObject
+                {
+                    ["title"] = "Create a report server client",
+                    ["category"] = "Report Server",
+                    ["code"] = "services.AddHttpClient<ITempoReportServerClient, TempoReportServerClient>(client =>\\n{\\n    client.BaseAddress = new Uri(reportServerBaseUrl);\\n});"
+                }
+            ]),
+            "Tempo.Reporting.Engine" => PackageDocumentationComposer.ToArray([
+                new JsonObject
+                {
+                    ["title"] = "Generate a report snapshot",
+                    ["category"] = "Rendering",
+                    ["code"] = "var instance = ReportBandInstantiator.Instantiate(definition, dataSet, context);\\nvar snapshot = ReportSnapshotGenerator.Generate(instance, textMeasurer);"
+                }
+            ]),
+            "Tempo.Blazor.Reporting" => PackageDocumentationComposer.ToArray([
+                new JsonObject
+                {
+                    ["title"] = "Use the report viewer",
+                    ["category"] = "Components",
+                    ["code"] = "<TmReportViewer ReportSource=\"@source\" TenantId=\"tenant-a\" UserId=\"user-1\" />"
+                }
+            ]),
             _ => []
         };
     }
@@ -1538,20 +1614,26 @@ internal static class CategoryNames
         ["Dashboard"] = "Dashboard",
         ["DataDisplay"] = "Data Display",
         ["DataTable"] = "Data Table",
+        ["Data"] = "Data",
         ["Diagram"] = "Diagram",
+        ["Definitions"] = "Definitions",
         ["DocumentEditor"] = "Document Editor",
         ["DocumentFormats"] = "Document Formats",
         ["DocumentLibrary"] = "Document Library",
         ["Dropdowns"] = "Dropdowns",
         ["Dtos"] = "DTOs",
+        ["Export"] = "Export",
+        ["Expressions"] = "Expressions",
         ["Feedback"] = "Feedback",
         ["Files"] = "Files",
         ["Filters"] = "Filters",
+        ["Fonts"] = "Fonts",
         ["Forms"] = "Forms",
         ["Gallery"] = "Gallery",
         ["Icons"] = "Icons",
         ["ImportExport"] = "Import / Export",
         ["Inputs"] = "Inputs",
+        ["Interop"] = "Interop",
         ["Layout"] = "Layout",
         ["Localization"] = "Localization",
         ["Modeling"] = "Modeling",
@@ -1561,11 +1643,13 @@ internal static class CategoryNames
         ["NotionEditor"] = "Notion Editor",
         ["Pickers"] = "Pickers",
         ["PivotTable"] = "Pivot Table",
+        ["Pdf"] = "PDF",
         ["Rendering"] = "Rendering",
         ["Scheduler"] = "Scheduler",
         ["Serialization"] = "Serialization",
         ["Services"] = "Services",
         ["Signing"] = "Signing",
+        ["Snapshot"] = "Snapshot",
         ["Spreadsheet"] = "Spreadsheet",
         ["Tags"] = "Tags",
         ["Templating"] = "Templating",
@@ -1671,6 +1755,7 @@ internal enum GeneratorCommand
 
 internal sealed record PackageDocumentationConfig
 {
+    public string? AggregateOutputFile { get; init; }
     public List<PackageDocumentationPackage> Packages { get; init; } = [];
 }
 

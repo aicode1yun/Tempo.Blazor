@@ -1,0 +1,79 @@
+{
+  "kind": "Record",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Runtime processing context shared by data, grouping, aggregate and band phases.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/ReportProcessingContext.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CreateExpressionContext",
+      "kind": "Method",
+      "type": "ExpressionContext",
+      "description": "Creates an expression context for a row.",
+      "parameters": [
+        {
+          "name": "row",
+          "type": "ProcessedDataRow?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "WithDataSets",
+      "kind": "Method",
+      "type": "ReportProcessingContext",
+      "description": "Creates a copy with a different data set dictionary.",
+      "parameters": [
+        {
+          "name": "dataSets",
+          "type": "ProcessedDataSet>"
+        }
+      ]
+    },
+    {
+      "name": "WithParameters",
+      "kind": "Method",
+      "type": "ReportProcessingContext",
+      "description": "Creates a copy with a different parameter dictionary.",
+      "parameters": [
+        {
+          "name": "parameters",
+          "type": "ReportParameterValue>"
+        }
+      ]
+    },
+    {
+      "name": "Culture",
+      "kind": "Property",
+      "type": "CultureInfo",
+      "description": "Culture used for collation, formatting and type conversion."
+    },
+    {
+      "name": "DataSets",
+      "kind": "Property",
+      "type": "IReadOnlyDictionary<string, ProcessedDataSet>",
+      "description": "Materialized data sets available to processing expressions."
+    },
+    {
+      "name": "ExecutionContext",
+      "kind": "Property",
+      "type": "ReportExecutionContext",
+      "description": "Tenant-scoped execution context."
+    },
+    {
+      "name": "Globals",
+      "kind": "Property",
+      "type": "ExpressionGlobals",
+      "description": "Global expression values."
+    },
+    {
+      "name": "Parameters",
+      "kind": "Property",
+      "type": "IReadOnlyDictionary<string, ReportParameterValue>",
+      "description": "Resolved report parameters."
+    }
+  ],
+  "itemName": "ReportProcessingContext"
+}

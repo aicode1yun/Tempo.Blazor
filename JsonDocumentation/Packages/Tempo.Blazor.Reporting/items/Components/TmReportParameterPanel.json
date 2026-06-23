@@ -1,0 +1,20 @@
+{
+  "itemName": "TmReportParameterPanel",
+  "kind": "Component",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Reporting.Components",
+  "description": "Auto-generated report parameter panel for text, number, date, bool, select, and multi-select parameter metadata. It emits changed values and submit events used by TmReportViewer.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Components/TmReportParameterPanel.razor",
+  "documentationStatus": "manual",
+  "requiredImports": [
+    "@using Tempo.Blazor.Reporting.Components",
+    "@using Tempo.Blazor.Reporting.Models"
+  ],
+  "relatedTypes": [
+    "ReportViewerParameterMetadata",
+    "ReportViewerParameterOption",
+    "ReportParameterChangedEventArgs",
+    "ReportParameterSubmitEventArgs"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "itemName": "ExpressionEvaluator",
+  "kind": "Class",
+  "category": "Expressions",
+  "namespace": "Tempo.Reporting.Engine.Expressions",
+  "description": "Safe expression evaluator for report formulas. It evaluates parsed expressions against Fields, Parameters, and Globals with explicit limits and no reflection or environment access.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionEvaluator.cs",
+  "documentationStatus": "manual",
+  "methods": [
+    {
+      "name": "Evaluate",
+      "description": "Parses and evaluates an expression string or evaluates an already parsed ExpressionNode."
+    }
+  ],
+  "relatedTypes": [
+    "ExpressionParser",
+    "ExpressionContext",
+    "ExpressionValue",
+    "ExpressionEvaluationOptions"
+  ]
+}

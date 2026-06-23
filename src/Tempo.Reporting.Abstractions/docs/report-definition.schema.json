@@ -1,0 +1,524 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tempo-blazor.dev/schemas/report-definition.schema.json",
+  "title": "Tempo Reporting report definition",
+  "description": "Canonical JSON contract for Tempo.Reporting.Abstractions.Definitions.ReportDefinition schemaVersion 1. JSON uses camelCase properties, string enums, and a polymorphic report element discriminator named type.",
+  "type": "object",
+  "required": ["schemaVersion", "name", "pageSetup", "bands"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "description": "Report definition schema version. Version 1 is the current runtime contract.",
+      "type": "integer",
+      "const": 1
+    },
+    "id": {
+      "description": "Stable report identifier assigned by the host or server.",
+      "type": "string"
+    },
+    "name": {
+      "description": "Human-readable report name.",
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "description": "Optional report description for catalog views.",
+      "type": ["string", "null"]
+    },
+    "pageSetup": { "$ref": "#/$defs/pageSetup" },
+    "parameters": {
+      "description": "Parameter definitions exposed before rendering.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/parameter" },
+      "default": []
+    },
+    "dataSets": {
+      "description": "Data set definitions consumed by report processing.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/dataSet" },
+      "default": []
+    },
+    "styles": {
+      "description": "Reusable named styles.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/style" },
+      "default": []
+    },
+    "bands": { "$ref": "#/$defs/bands" }
+  },
+  "$defs": {
+    "number": {
+      "type": "number"
+    },
+    "color": {
+      "description": "CSS color token or literal color accepted by the renderer.",
+      "type": "string"
+    },
+    "thickness": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "left": { "$ref": "#/$defs/number" },
+        "top": { "$ref": "#/$defs/number" },
+        "right": { "$ref": "#/$defs/number" },
+        "bottom": { "$ref": "#/$defs/number" }
+      }
+    },
+    "borderLine": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "color": { "$ref": "#/$defs/color" },
+        "width": { "$ref": "#/$defs/number" },
+        "style": {
+          "type": "string",
+          "enum": ["solid", "dashed", "dotted", "none"]
+        }
+      }
+    },
+    "border": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "left": { "$ref": "#/$defs/borderLine" },
+        "top": { "$ref": "#/$defs/borderLine" },
+        "right": { "$ref": "#/$defs/borderLine" },
+        "bottom": { "$ref": "#/$defs/borderLine" }
+      }
+    },
+    "textStyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fontFamily": { "type": "string" },
+        "fontSize": { "$ref": "#/$defs/number" },
+        "bold": { "type": "boolean" },
+        "italic": { "type": "boolean" },
+        "underline": { "type": "boolean" },
+        "strikeThrough": { "type": "boolean" },
+        "color": { "$ref": "#/$defs/color" },
+        "backgroundColor": { "type": ["string", "null"] },
+        "lineHeight": { "$ref": "#/$defs/number" }
+      }
+    },
+    "style": {
+      "description": "Reusable named style.",
+      "type": "object",
+      "required": ["id"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "textStyle": { "$ref": "#/$defs/textStyle" },
+        "border": { "$ref": "#/$defs/border" },
+        "backgroundColor": { "type": ["string", "null"] },
+        "padding": { "$ref": "#/$defs/thickness" }
+      }
+    },
+    "pageSetup": {
+      "type": "object",
+      "required": ["pageSize", "orientation", "margins"],
+      "additionalProperties": false,
+      "properties": {
+        "pageSize": {
+          "type": "object",
+          "required": ["width", "height"],
+          "additionalProperties": false,
+          "properties": {
+            "width": { "$ref": "#/$defs/number" },
+            "height": { "$ref": "#/$defs/number" },
+            "unit": {
+              "type": "string",
+              "enum": ["point"],
+              "default": "point"
+            }
+          }
+        },
+        "orientation": {
+          "type": "string",
+          "enum": ["portrait", "landscape"]
+        },
+        "margins": { "$ref": "#/$defs/thickness" }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "required": ["name", "dataType"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "label": { "type": ["string", "null"] },
+        "dataType": {
+          "type": "string",
+          "enum": ["string", "number", "date", "boolean", "list"]
+        },
+        "defaultExpression": { "type": ["string", "null"] },
+        "availableValues": { "$ref": "#/$defs/availableValues" },
+        "allowMultipleValues": { "type": "boolean" },
+        "hidden": { "type": "boolean" },
+        "required": { "type": "boolean" }
+      }
+    },
+    "availableValues": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["static", "dataSet"]
+        },
+        "staticValues": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/availableValue" }
+        },
+        "dataSetName": { "type": ["string", "null"] },
+        "valueField": { "type": ["string", "null"] },
+        "labelField": { "type": ["string", "null"] }
+      }
+    },
+    "availableValue": {
+      "type": "object",
+      "required": ["value"],
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "string" },
+        "label": { "type": ["string", "null"] }
+      }
+    },
+    "dataSet": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "source": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" }
+          }
+        },
+        "query": { "type": ["string", "null"] },
+        "fields": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/dataSetField" }
+        },
+        "parameters": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/dataSetParameter" }
+        }
+      }
+    },
+    "dataSetField": {
+      "type": "object",
+      "required": ["name", "dataType"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "dataType": {
+          "type": "string",
+          "enum": ["string", "number", "date", "boolean", "object"]
+        }
+      }
+    },
+    "dataSetParameter": {
+      "type": "object",
+      "required": ["name", "expression"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "expression": { "type": "string" }
+      }
+    },
+    "bands": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reportHeader": { "$ref": "#/$defs/band" },
+        "reportFooter": { "$ref": "#/$defs/band" },
+        "pageHeader": { "$ref": "#/$defs/band" },
+        "pageFooter": { "$ref": "#/$defs/band" },
+        "detail": { "$ref": "#/$defs/band" },
+        "groups": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/group" }
+        }
+      }
+    },
+    "band": {
+      "type": "object",
+      "required": ["kind", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["reportHeader", "reportFooter", "pageHeader", "pageFooter", "groupHeader", "groupFooter", "detail"]
+        },
+        "height": { "$ref": "#/$defs/number" },
+        "keepTogether": { "type": "boolean" },
+        "elements": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/reportElement" }
+        },
+        "visibleExpression": { "type": ["string", "null"] }
+      }
+    },
+    "group": {
+      "type": "object",
+      "required": ["name", "expression"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "expression": { "type": "string" },
+        "groupHeader": { "$ref": "#/$defs/band" },
+        "groupFooter": { "$ref": "#/$defs/band" }
+      }
+    },
+    "elementBase": {
+      "type": "object",
+      "required": ["type", "id", "x", "y", "width", "height"],
+      "properties": {
+        "type": { "type": "string" },
+        "id": { "type": "string" },
+        "x": { "$ref": "#/$defs/number" },
+        "y": { "$ref": "#/$defs/number" },
+        "width": { "$ref": "#/$defs/number" },
+        "height": { "$ref": "#/$defs/number" },
+        "styleId": { "type": ["string", "null"] },
+        "visibleExpression": { "type": ["string", "null"] }
+      }
+    },
+    "reportElement": {
+      "oneOf": [
+        { "$ref": "#/$defs/textBoxElement" },
+        { "$ref": "#/$defs/imageElement" },
+        { "$ref": "#/$defs/shapeElement" },
+        { "$ref": "#/$defs/lineElement" },
+        { "$ref": "#/$defs/tableElement" },
+        { "$ref": "#/$defs/chartElement" },
+        { "$ref": "#/$defs/subReportElement" }
+      ]
+    },
+    "textBoxElement": {
+      "description": "Static text or expression-backed text. Use text for labels and expression for row values such as =Fields.Total.",
+      "allOf": [{ "$ref": "#/$defs/elementBase" }],
+      "required": ["type", "id", "x", "y", "width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "textBox" },
+        "id": { "type": "string" },
+        "x": { "$ref": "#/$defs/number" },
+        "y": { "$ref": "#/$defs/number" },
+        "width": { "$ref": "#/$defs/number" },
+        "height": { "$ref": "#/$defs/number" },
+        "styleId": { "type": ["string", "null"] },
+        "visibleExpression": { "type": ["string", "null"] },
+        "text": { "type": ["string", "null"] },
+        "expression": { "type": ["string", "null"] },
+        "textStyle": { "$ref": "#/$defs/textStyle" },
+        "horizontalAlignment": { "type": "string", "enum": ["left", "center", "right", "justify"] },
+        "verticalAlignment": { "type": "string", "enum": ["top", "middle", "bottom"] },
+        "padding": { "$ref": "#/$defs/thickness" },
+        "border": { "$ref": "#/$defs/border" },
+        "canGrow": { "type": "boolean" }
+      },
+      "anyOf": [
+        { "required": ["text"] },
+        { "required": ["expression"] }
+      ]
+    },
+    "imageElement": {
+      "description": "Image rendered from a URL, embedded data URI, or expression result.",
+      "required": ["type", "id", "x", "y", "width", "height", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "image" },
+        "id": { "type": "string" },
+        "x": { "$ref": "#/$defs/number" },
+        "y": { "$ref": "#/$defs/number" },
+        "width": { "$ref": "#/$defs/number" },
+        "height": { "$ref": "#/$defs/number" },
+        "styleId": { "type": ["string", "null"] },
+        "visibleExpression": { "type": ["string", "null"] },
+        "sourceKind": { "type": "string", "enum": ["url", "embedded", "expression"] },
+        "source": { "type": "string" },
+        "contentType": { "type": ["string", "null"] },
+        "sizing": { "type": "string", "enum": ["stretch", "contain", "cover", "actualSize"] }
+      }
+    },
+    "shapeElement": {
+      "description": "Vector rectangle, rounded rectangle, or ellipse used for panels, backgrounds, and highlights.",
+      "required": ["type", "id", "x", "y", "width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "shape" },
+        "id": { "type": "string" },
+        "x": { "$ref": "#/$defs/number" },
+        "y": { "$ref": "#/$defs/number" },
+        "width": { "$ref": "#/$defs/number" },
+        "height": { "$ref": "#/$defs/number" },
+        "styleId": { "type": ["string", "null"] },
+        "visibleExpression": { "type": ["string", "null"] },
+        "shape": { "type": "string", "enum": ["rectangle", "roundedRectangle", "ellipse"] },
+        "fillColor": { "type": ["string", "null"] },
+        "border": { "$ref": "#/$defs/border" }
+      }
+    },
+    "lineElement": {
+      "description": "Straight horizontal, vertical, or diagonal rule with a stroke.",
+      "required": ["type", "id", "x", "y", "width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "line" },
+        "id": { "type": "string" },
+        "x": { "$ref": "#/$defs/number" },
+        "y": { "$ref": "#/$defs/number" },
+        "width": { "$ref": "#/$defs/number" },
+        "height": { "$ref": "#/$defs/number" },
+        "styleId": { "type": ["string", "null"] },
+        "visibleExpression": { "type": ["string", "null"] },
+        "stroke": { "$ref": "#/$defs/borderLine" }
+      }
+    },
+    "tableElement": {
+      "description": "Tablix-style table bound to a data set, with columns and row templates.",
+      "required": ["type", "id", "x", "y", "width", "height", "columns", "detail"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "table" },
+        "id": { "type": "string" },
+        "x": { "$ref": "#/$defs/number" },
+        "y": { "$ref": "#/$defs/number" },
+        "width": { "$ref": "#/$defs/number" },
+        "height": { "$ref": "#/$defs/number" },
+        "styleId": { "type": ["string", "null"] },
+        "visibleExpression": { "type": ["string", "null"] },
+        "dataSetName": { "type": ["string", "null"] },
+        "columns": { "type": "array", "items": { "$ref": "#/$defs/tableColumn" } },
+        "repeatHeaderOnNewPage": { "type": "boolean" },
+        "borderModel": { "type": "string", "enum": ["collapse", "separate"] },
+        "header": { "$ref": "#/$defs/tableRow" },
+        "groups": { "type": "array", "items": { "$ref": "#/$defs/tableGroup" } },
+        "detail": { "$ref": "#/$defs/tableRow" },
+        "footer": { "$ref": "#/$defs/tableRow" },
+        "zebraStripeColor": { "type": ["string", "null"] }
+      }
+    },
+    "tableColumn": {
+      "type": "object",
+      "required": ["header", "width"],
+      "additionalProperties": false,
+      "properties": {
+        "header": { "type": "string" },
+        "width": { "$ref": "#/$defs/number" },
+        "widthMode": { "type": "string", "enum": ["fixed", "proportional"] }
+      }
+    },
+    "tableRow": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "height": { "$ref": "#/$defs/number" },
+        "keepTogether": { "type": "boolean" },
+        "visibleExpression": { "type": ["string", "null"] },
+        "backgroundColor": { "type": ["string", "null"] },
+        "backgroundExpression": { "type": ["string", "null"] },
+        "cells": { "type": "array", "items": { "$ref": "#/$defs/tableCell" } }
+      }
+    },
+    "tableCell": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": { "type": ["string", "null"] },
+        "expression": { "type": ["string", "null"] },
+        "numberFormat": { "type": ["string", "null"] },
+        "styleId": { "type": ["string", "null"] },
+        "textStyle": { "$ref": "#/$defs/textStyle" },
+        "padding": { "$ref": "#/$defs/thickness" },
+        "border": { "$ref": "#/$defs/border" },
+        "backgroundColor": { "type": ["string", "null"] },
+        "horizontalAlignment": { "type": "string", "enum": ["left", "center", "right", "justify"] },
+        "canGrow": { "type": "boolean" },
+        "elements": { "type": "array", "items": { "$ref": "#/$defs/reportElement" } }
+      }
+    },
+    "tableGroup": {
+      "type": "object",
+      "required": ["name", "expression"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "expression": { "type": "string" },
+        "header": { "$ref": "#/$defs/tableRow" },
+        "footer": { "$ref": "#/$defs/tableRow" },
+        "keepWithFirstDetail": { "type": "boolean" }
+      }
+    },
+    "chartElement": {
+      "description": "Engine-rendered column, bar, line, area, pie, or donut chart bound to a data set.",
+      "required": ["type", "id", "x", "y", "width", "height", "series"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "chart" },
+        "id": { "type": "string" },
+        "x": { "$ref": "#/$defs/number" },
+        "y": { "$ref": "#/$defs/number" },
+        "width": { "$ref": "#/$defs/number" },
+        "height": { "$ref": "#/$defs/number" },
+        "styleId": { "type": ["string", "null"] },
+        "visibleExpression": { "type": ["string", "null"] },
+        "chartType": { "type": "string", "enum": ["column", "bar", "line", "area", "pie", "donut"] },
+        "dataSetName": { "type": ["string", "null"] },
+        "series": { "type": "array", "items": { "$ref": "#/$defs/chartSeries" } },
+        "title": { "type": ["string", "null"] },
+        "categoryAxisTitle": { "type": ["string", "null"] },
+        "valueAxisTitle": { "type": ["string", "null"] },
+        "showLegend": { "type": "boolean" },
+        "showCategoryAxis": { "type": "boolean" },
+        "showValueAxis": { "type": "boolean" },
+        "colorPalette": { "type": "array", "items": { "$ref": "#/$defs/color" } }
+      }
+    },
+    "chartSeries": {
+      "type": "object",
+      "required": ["name", "categoryExpression", "valueExpression"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "categoryExpression": { "type": "string" },
+        "valueExpression": { "type": "string" },
+        "color": { "type": ["string", "null"] }
+      }
+    },
+    "subReportElement": {
+      "description": "Placeholder for another report definition with parameter mappings.",
+      "required": ["type", "id", "x", "y", "width", "height", "reportId"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "subReport" },
+        "id": { "type": "string" },
+        "x": { "$ref": "#/$defs/number" },
+        "y": { "$ref": "#/$defs/number" },
+        "width": { "$ref": "#/$defs/number" },
+        "height": { "$ref": "#/$defs/number" },
+        "styleId": { "type": ["string", "null"] },
+        "visibleExpression": { "type": ["string", "null"] },
+        "reportId": { "type": "string" },
+        "parameterMappings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/subReportParameterMapping" }
+        }
+      }
+    },
+    "subReportParameterMapping": {
+      "type": "object",
+      "required": ["parameterName", "expression"],
+      "additionalProperties": false,
+      "properties": {
+        "parameterName": { "type": "string" },
+        "expression": { "type": "string" }
+      }
+    }
+  }
+}

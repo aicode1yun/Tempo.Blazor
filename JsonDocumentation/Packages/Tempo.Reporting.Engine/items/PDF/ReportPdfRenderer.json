@@ -1,0 +1,26 @@
+{
+  "itemName": "ReportPdfRenderer",
+  "kind": "Class",
+  "category": "PDF",
+  "namespace": "Tempo.Reporting.Engine.Pdf",
+  "description": "Renders report snapshots to PDF and PNG using SkiaSharp. Text, shapes, paths, images, and clipping are drawn from the same snapshot commands used by the canvas viewer.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Pdf/ReportPdfRenderer.cs",
+  "documentationStatus": "manual",
+  "methods": [
+    {
+      "name": "Render",
+      "description": "Renders a complete ReportSnapshot to a PDF byte array or stream."
+    },
+    {
+      "name": "RenderPagePng",
+      "description": "Renders a single snapshot page to a PNG byte array."
+    }
+  ],
+  "relatedTypes": [
+    "ReportPdfRendererOptions",
+    "ReportPdfFontFace",
+    "ReportSnapshot",
+    "ReportSnapshotPage"
+  ]
+}

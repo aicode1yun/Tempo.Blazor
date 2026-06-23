@@ -1,0 +1,109 @@
+name: TmDocumentEditor — Performance baseline
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'src/Tempo.Blazor/wwwroot/js/document-editor-wysiwyg.js'
+      - 'src/Tempo.Blazor/wwwroot/js/document-editor.js'
+      - 'src/Tempo.Blazor/Components/DocumentEditor/**'
+      - 'src/Tempo.Blazor.Abstractions/DocumentEditor/**'
+      - 'tests/Tempo.Blazor.Tests/DocumentEditor/Performance/**'
+      - 'planning/baselines/**'
+      - '.github/workflows/document-editor-performance.yml'
+  workflow_dispatch:
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.0.x
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build editor projects
+        run: |
+          dotnet build src/Tempo.Blazor/Tempo.Blazor.csproj --no-restore --configuration Release
+          dotnet build tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj --no-restore --configuration Release
+
+      - name: Run performance baseline tests
+        run: |
+          dotnet test tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --filter "FullyQualifiedName~Tempo.Blazor.Tests.DocumentEditor.Performance" \
+            --logger "trx;LogFileName=perf.trx" \
+            --results-directory ./TestResults
+
+      - name: Upload baseline CSV
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf-baseline-csv
+          path: planning/baselines/*.csv
+
+      - name: Detect regression vs. checked-in baseline
+        run: |
+          set -euo pipefail
+          baseline_dir=planning/baselines
+          current=$(ls -1t $baseline_dir/perf-*.csv 2>/dev/null | head -1 || true)
+          previous=$(ls -1t $baseline_dir/perf-*.csv 2>/dev/null | sed -n '2p' || true)
+          if [ -z "${current}" ] || [ -z "${previous}" ]; then
+            echo "Not enough baselines on disk for regression comparison — skipping."
+            exit 0
+          fi
+          echo "Comparing current=$current vs previous=$previous"
+          python3 - <<'PY'
+          import csv, os, sys
+          import pathlib
+          baseline_dir = pathlib.Path('planning/baselines')
+          files = sorted(baseline_dir.glob('perf-*.csv'), key=lambda p: p.stat().st_mtime, reverse=True)
+          if len(files) < 2:
+              sys.exit(0)
+          current_path, previous_path = files[0], files[1]
+          def load(path):
+              rows = {}
+              with open(path) as fh:
+                  reader = csv.DictReader(fh)
+                  for row in reader:
+                      rows[row['scenario']] = row
+              return rows
+          current = load(current_path)
+          previous = load(previous_path)
+          threshold = 1.15
+          regressions = []
+          for scenario, row in current.items():
+              prev_row = previous.get(scenario)
+              if not prev_row:
+                  continue
+              for metric in ('elapsed_ms', 'input_operations', 'render_swaps', 'full_render_swaps'):
+                  try:
+                      cur_val = float(row[metric])
+                      prev_val = float(prev_row[metric])
+                  except (KeyError, ValueError):
+                      continue
+                  if prev_val <= 0:
+                      continue
+                  ratio = cur_val / prev_val
+                  if ratio > threshold:
+                      regressions.append(f"{scenario}.{metric}: {prev_val:.2f} -> {cur_val:.2f} (+{(ratio-1)*100:.1f}%)")
+          if regressions:
+              print("Performance regression detected:")
+              for line in regressions:
+                  print("  " + line)
+              sys.exit(1)
+          print(f"No regressions over {(threshold-1)*100:.0f}% threshold ({len(current)} scenarios).")
+          PY

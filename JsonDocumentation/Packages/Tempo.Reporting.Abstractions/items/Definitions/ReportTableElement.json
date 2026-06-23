@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Table element structure. Detailed tablix behavior is implemented in a later phase.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportTableElement"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Composes processed report bands into fixed pages.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/BandPageComposition.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportPageComposer"
+}

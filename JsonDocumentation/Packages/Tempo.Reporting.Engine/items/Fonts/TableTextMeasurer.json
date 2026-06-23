@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Fonts",
+  "namespace": "Tempo.Reporting.Engine.Fonts",
+  "description": "Font-table based text measurer used by the reporting engine.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Fonts/TableTextMeasurer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "MeasureRun",
+      "kind": "Method",
+      "type": "TextMeasurement",
+      "parameters": [
+        {
+          "name": "request",
+          "type": "TextMeasureRequest"
+        }
+      ]
+    }
+  ],
+  "itemName": "TableTextMeasurer"
+}

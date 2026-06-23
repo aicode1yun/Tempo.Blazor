@@ -1,0 +1,116 @@
+using Tempo.Blazor.EmailTemplates.Abstractions;
+using Tempo.Blazor.EmailTemplates.Abstractions.Contracts;
+using Tempo.Blazor.Reporting.Configuration;
+using Tempo.ReportServer.Api.Security;
+using Tempo.ReportServer.Web;
+using Tempo.ReportServer.Web.Services;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "ReportServerEmbeddingDemo",
+        policy => policy
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
+builder.Services.AddTempoBlazorReporting();
+builder.Services.AddTempoEmailTemplateEngine();
+builder.Services.AddSingleton<IReportApiKeyStore, DemoReportApiKeyStore>();
+builder.Services.AddReportServerSecurity();
+builder.Services.AddSingleton<DemoReportSourceFactory>();
+builder.Services.AddSingleton<ReportServerCatalogStore>();
+builder.Services.AddSingleton<IReportScheduleClock, SystemReportScheduleClock>();
+builder.Services.AddSingleton<ReportScheduleStore>();
+builder.Services.AddSingleton<ReportRenderJobQueue>();
+builder.Services.AddSingleton<ReportEmailOutbox>();
+builder.Services.AddSingleton<ReportEmailTemplateGalleryStore>();
+builder.Services.AddSingleton<IEmailTemplateStore>(sp => sp.GetRequiredService<ReportEmailTemplateGalleryStore>());
+builder.Services.AddSingleton<IEmailSender, Smtp4DevEmailSender>();
+builder.Services.AddSingleton<IReportScheduledDeliveryService, ReportEmailDeliveryService>();
+builder.Services.AddSingleton<ReportScheduleWorker>();
+builder.Services.AddScoped<ReportServerSessionState>();
+
+var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+}
+
+UseProjectStaticAssets(app, "Tempo.Blazor.Reporting");
+UseProjectStaticAssets(app, "Tempo.Blazor");
+app.UseStaticFiles();
+app.UseCors("ReportServerEmbeddingDemo");
+app.UseAntiforgery();
+
+app.MapReportServerDemoApi();
+app.MapStaticAssets();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+
+app.Run();
+
+static void UseProjectStaticAssets(WebApplication app, string projectName)
+{
+    var assetRoot = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", projectName, "wwwroot"));
+    if (!Directory.Exists(assetRoot))
+    {
+        return;
+    }
+
+    var normalizedRoot = assetRoot.EndsWith(Path.DirectorySeparatorChar)
+        ? assetRoot
+        : assetRoot + Path.DirectorySeparatorChar;
+    var requestPrefix = $"/_content/{projectName}";
+
+    app.Use(async (context, next) =>
+    {
+        if (!HttpMethods.IsGet(context.Request.Method) &&
+            !HttpMethods.IsHead(context.Request.Method))
+        {
+            await next(context).ConfigureAwait(false);
+            return;
+        }
+
+        var requestPath = context.Request.Path.Value;
+        if (requestPath is null ||
+            !requestPath.StartsWith(requestPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            await next(context).ConfigureAwait(false);
+            return;
+        }
+
+        var relativePath = requestPath[requestPrefix.Length..].TrimStart('/');
+        var fullPath = Path.GetFullPath(Path.Combine(normalizedRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+        if (!fullPath.StartsWith(normalizedRoot, StringComparison.Ordinal) || !File.Exists(fullPath))
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+
+        context.Response.ContentType = ContentTypeFor(fullPath);
+        context.Response.ContentLength = new FileInfo(fullPath).Length;
+        if (!HttpMethods.IsHead(context.Request.Method))
+        {
+            await context.Response.SendFileAsync(fullPath).ConfigureAwait(false);
+        }
+    });
+}
+
+static string ContentTypeFor(string path)
+    => Path.GetExtension(path).ToLowerInvariant() switch
+    {
+        ".css" => "text/css; charset=utf-8",
+        ".html" => "text/html; charset=utf-8",
+        ".js" or ".mjs" => "application/javascript; charset=utf-8",
+        ".json" => "application/json; charset=utf-8",
+        ".png" => "image/png",
+        ".svg" => "image/svg+xml",
+        ".woff2" => "font/woff2",
+        _ => "application/octet-stream",
+    };

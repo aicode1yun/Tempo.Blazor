@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Available values for a report parameter.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Parameters.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportParameterAvailableValues"
+}

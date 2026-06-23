@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Text box element with static text or expression content.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportTextBoxElement"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Export",
+  "namespace": "Tempo.Reporting.Engine.Export",
+  "description": "Tabular cell value kind used by CSV and spreadsheet exports.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportTabularExportModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportTabularExportCellKind"
+}

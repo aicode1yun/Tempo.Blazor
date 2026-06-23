@@ -221,6 +221,21 @@
         "name": "Tempo.Blazor.Mcp",
         "description": "MCP tools for Tempo.Blazor wireframe schemas, document operations, validation, and implementation briefs.",
         "required": false
+      },
+      {
+        "name": "Tempo.Reporting.Abstractions",
+        "description": "Report definition contracts, validation models, data provider interfaces, report server DTOs, and the typed HTTP client for remote report servers.",
+        "required": false
+      },
+      {
+        "name": "Tempo.Reporting.Engine",
+        "description": "Server/WASM-capable reporting engine for expressions, processing, fixed-page layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives.",
+        "required": false
+      },
+      {
+        "name": "Tempo.Blazor.Reporting",
+        "description": "Blazor reporting components: report viewer, parameter panel, explorer, lightweight designer, embedded sources, and remote Report Server integration.",
+        "required": false
       }
     ],
     "installation": {
@@ -232,7 +247,10 @@
         "dotnet add package Tempo.Blazor.DocumentFormats  # optional server-side import/export",
         "dotnet add package Tempo.Blazor.EmailTemplates.Abstractions  # optional email template contracts",
         "dotnet add package Tempo.Blazor.EmailTemplates  # optional email template editor UI",
-        "dotnet add package Tempo.Blazor.Mcp  # optional MCP wireframe tools"
+        "dotnet add package Tempo.Blazor.Mcp  # optional MCP wireframe tools",
+        "dotnet add package Tempo.Reporting.Abstractions  # optional reporting contracts and typed client",
+        "dotnet add package Tempo.Reporting.Engine  # optional reporting processing/rendering engine",
+        "dotnet add package Tempo.Blazor.Reporting  # optional reporting UI components"
       ],
       "programCs": {
         "description": "Register Tempo.Blazor services in Program.cs. AddTempoBlazor() registers ITmLocalizer (Singleton), ThemeService (Scoped), and ToastService (Scoped).",
@@ -244,7 +262,7 @@
       },
       "importsRazor": {
         "description": "Add component namespaces to _Imports.razor for convenient usage without per-file @using directives.",
-        "code": "@using Tempo.Blazor.Components.Avatars\n@using Tempo.Blazor.Components.Buttons\n@using Tempo.Blazor.Components.Charts\n@using Tempo.Blazor.Components.Dashboard\n@using Tempo.Blazor.Components.DataDisplay\n@using Tempo.Blazor.Components.DataTable\n@using Tempo.Blazor.Components.Dropdowns\n@using Tempo.Blazor.Components.Feedback\n@using Tempo.Blazor.Components.Files\n@using Tempo.Blazor.Components.Filters\n@using Tempo.Blazor.Components.Forms\n@using Tempo.Blazor.Components.Gallery\n@using Tempo.Blazor.Components.Icons\n@using Tempo.Blazor.Components.ImportExport\n@using Tempo.Blazor.Components.Inputs\n@using Tempo.Blazor.Components.Layout\n@using Tempo.Blazor.Components.Navigation\n@using Tempo.Blazor.Components.Notifications\n@using Tempo.Blazor.Components.Pickers\n@using Tempo.Blazor.Components.Scheduler\n@using Tempo.Blazor.Components.Tags\n@using Tempo.Blazor.Components.Timeline\n@using Tempo.Blazor.Components.Toolbar\n@using Tempo.Blazor.Components.TreeView\n@using Tempo.Blazor.Components.Workflow\n@using Tempo.Blazor.Interfaces\n@using Tempo.Blazor.Models"
+        "code": "@using Tempo.Blazor.Components.Avatars\n@using Tempo.Blazor.Components.Buttons\n@using Tempo.Blazor.Components.Charts\n@using Tempo.Blazor.Components.Dashboard\n@using Tempo.Blazor.Components.DataDisplay\n@using Tempo.Blazor.Components.DataTable\n@using Tempo.Blazor.Components.Dropdowns\n@using Tempo.Blazor.Components.Feedback\n@using Tempo.Blazor.Components.Files\n@using Tempo.Blazor.Components.Filters\n@using Tempo.Blazor.Components.Forms\n@using Tempo.Blazor.Components.Gallery\n@using Tempo.Blazor.Components.Icons\n@using Tempo.Blazor.Components.ImportExport\n@using Tempo.Blazor.Components.Inputs\n@using Tempo.Blazor.Components.Layout\n@using Tempo.Blazor.Components.Navigation\n@using Tempo.Blazor.Components.Notifications\n@using Tempo.Blazor.Components.Pickers\n@using Tempo.Blazor.Components.Scheduler\n@using Tempo.Blazor.Components.Tags\n@using Tempo.Blazor.Components.Timeline\n@using Tempo.Blazor.Components.Toolbar\n@using Tempo.Blazor.Components.TreeView\n@using Tempo.Blazor.Components.Workflow\n@using Tempo.Blazor.Reporting.Components\n@using Tempo.Blazor.Reporting.Models\n@using Tempo.Blazor.Reporting.Services\n@using Tempo.Blazor.Interfaces\n@using Tempo.Blazor.Models"
       },
       "interactiveAutoSetup": {
         "description": "Tempo.Blazor supports InteractiveAuto (hybrid) rendering in .NET 8+ Blazor Web Apps. Components handle prerendering, double initialization, and JS interop safety automatically. Register services in both Server and Client projects.",
@@ -48020,6 +48038,14 @@
     },
     {
       "path": "src/Tempo.Blazor/wwwroot/js/pdf.worker.min.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor/wwwroot/js/reporting/reporting-painter.bundle.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor/wwwroot/js/reporting/reporting-painter.mjs",
       "kind": "JavaScript"
     },
     {

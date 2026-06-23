@@ -1,0 +1,24 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Resolved parameter option displayed by the viewer parameter panel.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerParameterOption.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display label."
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "string",
+      "description": "Serialized parameter value."
+    }
+  ],
+  "itemName": "ReportViewerParameterOption"
+}

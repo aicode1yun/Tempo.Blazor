@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Interop",
+  "namespace": "Tempo.Blazor.Reporting.Interop",
+  "description": "JSON options shared by report viewer interop and HTTP sources.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Interop/ReportViewerJson.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "SerializeSnapshot",
+      "kind": "Method",
+      "type": "string",
+      "description": "Serializes a snapshot for the JavaScript painter.",
+      "parameters": [
+        {
+          "name": "snapshot",
+          "type": "ReportSnapshot"
+        }
+      ]
+    },
+    {
+      "name": "Options",
+      "kind": "Property",
+      "type": "static JsonSerializerOptions",
+      "description": "Viewer JSON options."
+    }
+  ],
+  "itemName": "ReportViewerJson"
+}

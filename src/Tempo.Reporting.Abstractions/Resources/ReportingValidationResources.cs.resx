@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ReportDefinition_SchemaVersion_Unsupported" xml:space="preserve">
+    <value>Verze schématu definice reportu není podporovaná.</value>
+  </data>
+  <data name="ReportDefinition_Name_Required" xml:space="preserve">
+    <value>Název reportu je povinný.</value>
+  </data>
+  <data name="ReportDefinition_Name_TooLong" xml:space="preserve">
+    <value>Název reportu je příliš dlouhý.</value>
+  </data>
+  <data name="ReportDefinition_PageSetup_Size" xml:space="preserve">
+    <value>Velikost stránky reportu musí být kladná.</value>
+  </data>
+  <data name="ReportDefinition_PageSetup_Margins" xml:space="preserve">
+    <value>Okraje stránky reportu nesmí být záporné a musí se vejít na stránku.</value>
+  </data>
+  <data name="ReportDefinition_Bands_Detail_Required" xml:space="preserve">
+    <value>Detailní band je povinný.</value>
+  </data>
+  <data name="ReportDefinition_Bands_Height" xml:space="preserve">
+    <value>Výška bandu nesmí být záporná.</value>
+  </data>
+  <data name="ReportDefinition_Parameters_Name_Duplicate" xml:space="preserve">
+    <value>Názvy parametrů reportu musí být jedinečné.</value>
+  </data>
+  <data name="ReportDefinition_DataSets_Name_Required" xml:space="preserve">
+    <value>Název datové sady je povinný.</value>
+  </data>
+  <data name="ReportDefinition_DataSets_Name_Duplicate" xml:space="preserve">
+    <value>Názvy datových sad musí být jedinečné.</value>
+  </data>
+  <data name="ReportDefinition_Elements_Id_Required" xml:space="preserve">
+    <value>Id prvku je povinné.</value>
+  </data>
+  <data name="ReportDefinition_Elements_Id_Duplicate" xml:space="preserve">
+    <value>Id prvků musí být jedinečná.</value>
+  </data>
+  <data name="ReportElement_Bounds_Invalid" xml:space="preserve">
+    <value>Souřadnice prvku musí mít nezápornou pozici a kladnou plochu.</value>
+  </data>
+  <data name="ReportTextBox_Content_Required" xml:space="preserve">
+    <value>Textové pole musí obsahovat text nebo výraz.</value>
+  </data>
+  <data name="ReportImage_Source_Required" xml:space="preserve">
+    <value>Zdroj obrázku je povinný.</value>
+  </data>
+  <data name="ReportTable_Columns_Required" xml:space="preserve">
+    <value>Tabulka musí obsahovat alespoň jeden sloupec.</value>
+  </data>
+  <data name="ReportChart_Series_Required" xml:space="preserve">
+    <value>Graf musí obsahovat alespoň jednu sérii.</value>
+  </data>
+  <data name="ReportChart_Series_CategoryExpression_Required" xml:space="preserve">
+    <value>Série grafu musí definovat výraz pro kategorii.</value>
+  </data>
+  <data name="ReportChart_Series_ValueExpression_Required" xml:space="preserve">
+    <value>Série grafu musí definovat výraz pro hodnotu.</value>
+  </data>
+  <data name="ReportSubReport_ReportId_Required" xml:space="preserve">
+    <value>Id podreportu je povinné.</value>
+  </data>
+  <data name="ReportParameter_Name_Required" xml:space="preserve">
+    <value>Název parametru je povinný.</value>
+  </data>
+  <data name="ReportParameter_Name_Invalid" xml:space="preserve">
+    <value>Název parametru smí obsahovat pouze písmena, číslice a podtržítka a nesmí začínat číslicí.</value>
+  </data>
+  <data name="ReportParameter_Multiple_RequiresList" xml:space="preserve">
+    <value>Více hodnot je povoleno pouze pro seznamové parametry.</value>
+  </data>
+  <data name="ReportParameter_Hidden_RequiresDefault" xml:space="preserve">
+    <value>Skryté parametry musí definovat výchozí výraz.</value>
+  </data>
+  <data name="ReportParameter_AvailableValues_Static_Required" xml:space="preserve">
+    <value>Statické dostupné hodnoty musí obsahovat alespoň jednu položku.</value>
+  </data>
+  <data name="ReportParameter_AvailableValues_DataSet_Required" xml:space="preserve">
+    <value>Dostupné hodnoty z datové sady musí definovat datovou sadu a pole hodnoty.</value>
+  </data>
+</root>

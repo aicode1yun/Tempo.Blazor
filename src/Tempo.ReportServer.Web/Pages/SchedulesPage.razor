@@ -1,0 +1,289 @@
+@page "/admin/schedules"
+@using Tempo.Blazor.EmailTemplates.Abstractions.Dtos
+@inject ReportServerSessionState Session
+@inject ReportServerCatalogStore Catalog
+@inject ReportScheduleStore Schedules
+@inject ReportScheduleWorker Worker
+@inject ReportEmailOutbox Outbox
+@inject ReportEmailTemplateGalleryStore TemplateStore
+
+<ReportServerShell Title="Schedules" ActiveSection="schedules">
+    <div class="rs-page" data-testid="f16-schedules-page">
+        <div class="rs-page__heading">
+            <div>
+                <p class="rs-kicker">Automation</p>
+                <h2>Schedules</h2>
+            </div>
+            <div class="rs-page__stats">
+                <span>@ScheduleRows.Count schedules</span>
+                <span>@Outbox.Messages.Count smtp4dev messages</span>
+            </div>
+        </div>
+
+        <section class="rs-admin-grid">
+            <form class="rs-panel" @onsubmit="SaveSchedule" @onsubmit:preventDefault>
+                <h3>Create schedule</h3>
+                <label class="rs-field">
+                    <span>Name</span>
+                    <input data-testid="schedule-name" value="@_name" @oninput="HandleNameInput" />
+                </label>
+                <label class="rs-field">
+                    <span>Report</span>
+                    <select data-testid="schedule-report" value="@_reportId" @onchange="HandleReportChange">
+                        @foreach (var report in Reports)
+                        {
+                            <option value="@report.Id">@report.Name</option>
+                        }
+                    </select>
+                </label>
+                <label class="rs-field">
+                    <span>Cron UTC</span>
+                    <input data-testid="schedule-cron" value="@_cron" @oninput="HandleCronInput" />
+                </label>
+                <label class="rs-field">
+                    <span>Format</span>
+                    <select data-testid="schedule-format" value="@_format" @onchange="HandleFormatChange">
+                        <option>Pdf</option>
+                        <option>Csv</option>
+                        <option>Xlsx</option>
+                    </select>
+                </label>
+                <label class="rs-field">
+                    <span>Recipients</span>
+                    <input data-testid="schedule-email" value="@_email" @oninput="HandleEmailInput" />
+                </label>
+                <label class="rs-field">
+                    <span>Email template</span>
+                    <select data-testid="schedule-template" value="@_templateId" @onchange="HandleTemplateChange">
+                        @foreach (var template in _templates)
+                        {
+                            <option value="@template.Id">@template.Name</option>
+                        }
+                    </select>
+                </label>
+                <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Plus" data-testid="schedule-save" OnClick="SaveSchedule">
+                    Save schedule
+                </TmButton>
+                @if (!string.IsNullOrWhiteSpace(_status))
+                {
+                    <span class="rs-status rs-status--ok" data-testid="schedule-form-status">@_status</span>
+                }
+            </form>
+
+            <section class="rs-panel rs-table-panel">
+                <h3>Scheduled reports</h3>
+                <div class="rs-table" data-testid="schedules-table">
+                    @foreach (var schedule in ScheduleRows)
+                    {
+                        <article class="rs-table__row rs-schedule-row">
+                            <div>
+                                <strong>@schedule.Name</strong>
+                                <span>@ReportName(schedule.ReportId) · @schedule.Format</span>
+                            </div>
+                            <div>
+                                <code>@schedule.CronExpression</code>
+                                <span>Next @schedule.NextRunUtc.ToLocalTime().ToString("g", System.Globalization.CultureInfo.InvariantCulture)</span>
+                            </div>
+                            <div>
+                                <span>@Recipients(schedule)</span>
+                                <span>@schedule.LastStatusMessage</span>
+                            </div>
+                            <button type="button"
+                                    class="rs-text-button"
+                                    data-testid="@($"toggle-schedule-{schedule.Id}")"
+                                    @onclick="() => ToggleSchedule(schedule.Id)">
+                                @(schedule.IsEnabled ? "Disable" : "Enable")
+                            </button>
+                            <button type="button"
+                                    class="rs-text-button"
+                                    disabled="@(!schedule.IsEnabled)"
+                                    data-testid="@($"run-schedule-{schedule.Id}")"
+                                    @onclick="() => RunSchedule(schedule.Id)">
+                                Run now
+                            </button>
+                        </article>
+                    }
+                </div>
+            </section>
+        </section>
+
+        <section class="rs-panel rs-table-panel" data-testid="schedule-outbox">
+            <div class="rs-revision__header">
+                <div>
+                    <h3>smtp4dev outbox</h3>
+                    <span>Local demo transport @Smtp4DevEmailSender.Transport</span>
+                </div>
+                <span class="rs-status">@Outbox.Messages.Count messages</span>
+            </div>
+            @if (Outbox.Messages.Count == 0)
+            {
+                <div class="rs-empty rs-empty--compact">
+                    <TmIcon Name="@IconNames.Mail" Size="IconSize.Md" />
+                    <strong>No scheduled emails yet</strong>
+                    <span>Run a schedule to render the report and capture the email with its attachment.</span>
+                </div>
+            }
+            else
+            {
+                <div class="rs-revisions">
+                    @foreach (var message in Outbox.Messages.Take(5))
+                    {
+                        <article class="rs-revision rs-outbox-item">
+                            <div class="rs-revision__header">
+                                <div>
+                                    <strong>@message.Message.Subject</strong>
+                                    <span>@string.Join(", ", message.Message.To)</span>
+                                </div>
+                                <span class="rs-status rs-status--ok">@message.Message.Transport</span>
+                            </div>
+                            <div class="rs-param-chips">
+                                @foreach (var attachment in message.Attachments)
+                                {
+                                    <span>@attachment.FileName (@attachment.Bytes.Length bytes)</span>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+</ReportServerShell>
+
+@code {
+    private string _name = "Executive dashboard digest";
+    private string _reportId = "sales-dashboard";
+    private string _cron = "0 8 * * 1";
+    private string _format = "Pdf";
+    private string _email = "finance@example.test";
+    private Guid _templateId = ReportEmailTemplateGalleryStore.ReportDigestTemplateId;
+    private string? _status;
+    private List<EmailTemplateSummaryDto> _templates = [];
+
+    private IReadOnlyList<ReportExplorerReportItem> Reports => Catalog.GetCatalog(Session.CurrentTenantId).Reports;
+
+    private IReadOnlyList<ReportScheduleDefinition> ScheduleRows => Schedules.ListSchedules(Session.CurrentTenantId);
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        _templates = (await TemplateStore.ListAsync()).ToList();
+        _templateId = _templates.FirstOrDefault()?.Id ?? ReportEmailTemplateGalleryStore.ReportDigestTemplateId;
+    }
+
+    private void HandleNameInput(ChangeEventArgs args)
+        => _name = args.Value?.ToString() ?? string.Empty;
+
+    private void HandleReportChange(ChangeEventArgs args)
+        => _reportId = args.Value?.ToString() ?? "sales-dashboard";
+
+    private void HandleCronInput(ChangeEventArgs args)
+        => _cron = args.Value?.ToString() ?? "0 8 * * 1";
+
+    private void HandleFormatChange(ChangeEventArgs args)
+        => _format = args.Value?.ToString() ?? "Pdf";
+
+    private void HandleEmailInput(ChangeEventArgs args)
+        => _email = args.Value?.ToString() ?? string.Empty;
+
+    private void HandleTemplateChange(ChangeEventArgs args)
+    {
+        if (Guid.TryParse(args.Value?.ToString(), out var templateId))
+        {
+            _templateId = templateId;
+        }
+    }
+
+    private void SaveSchedule()
+    {
+        var recipients = ParseRecipients(_email);
+        if (recipients.Count == 0)
+        {
+            _status = "Recipient is required.";
+            return;
+        }
+
+        if (!Enum.TryParse<ReportScheduleOutputFormat>(_format, ignoreCase: true, out var format))
+        {
+            format = ReportScheduleOutputFormat.Pdf;
+        }
+
+        try
+        {
+            var schedule = Schedules.UpsertSchedule(new ReportScheduleDefinition
+            {
+                Id = Slug(_name),
+                TenantId = Session.CurrentTenantId,
+                OwnerUserId = Session.UserName,
+                Name = string.IsNullOrWhiteSpace(_name) ? ReportName(_reportId) : _name.Trim(),
+                ReportId = _reportId,
+                CronExpression = _cron,
+                Format = format,
+                EmailTemplateId = _templateId,
+                Parameters = DefaultParameters(),
+                Recipients = recipients,
+            });
+            Schedules.UpsertSubscription(new ReportSubscription
+            {
+                Id = $"sub-{schedule.Id}-{Slug(Session.UserName)}",
+                TenantId = Session.CurrentTenantId,
+                ScheduleId = schedule.Id,
+                UserId = Session.UserName,
+                Email = recipients[0].Email,
+            });
+            _status = $"Saved {schedule.Name}";
+        }
+        catch (FormatException ex)
+        {
+            _status = ex.Message;
+        }
+    }
+
+    private void ToggleSchedule(string scheduleId)
+    {
+        var schedule = Schedules.GetSchedule(Session.CurrentTenantId, scheduleId);
+        if (schedule is not null)
+        {
+            Schedules.ToggleSchedule(Session.CurrentTenantId, scheduleId, !schedule.IsEnabled);
+        }
+    }
+
+    private async Task RunSchedule(string scheduleId)
+    {
+        _status = "Run queued.";
+        await InvokeAsync(StateHasChanged);
+        var delivered = await Worker.RunScheduleNowAsync(Session.CurrentTenantId, scheduleId);
+        _status = delivered is null
+            ? "Run failed; retry scheduled."
+            : $"Delivered {delivered.Attachments[0].FileName} via smtp4dev.";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string ReportName(string reportId)
+        => Reports.FirstOrDefault(report => string.Equals(report.Id, reportId, StringComparison.Ordinal))?.Name
+            ?? reportId;
+
+    private static Dictionary<string, ReportParameterValue> DefaultParameters()
+        => new(StringComparer.Ordinal)
+        {
+            ["Region"] = ReportParameterValue.Scalar("EU"),
+            ["MinimumTotal"] = ReportParameterValue.Scalar(0),
+            ["IncludeClosed"] = ReportParameterValue.Scalar(true),
+        };
+
+    private static List<ReportScheduleRecipient> ParseRecipients(string value)
+        => value.Split([',', ';', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(email => !string.IsNullOrWhiteSpace(email))
+            .Select(email => new ReportScheduleRecipient(email))
+            .ToList();
+
+    private static string Recipients(ReportScheduleDefinition schedule)
+        => string.Join(", ", schedule.Recipients.Select(recipient => recipient.Email));
+
+    private static string Slug(string value)
+    {
+        var text = string.IsNullOrWhiteSpace(value) ? Guid.NewGuid().ToString("N") : value.Trim().ToLowerInvariant();
+        var chars = text.Select(ch => char.IsLetterOrDigit(ch) ? ch : '-').ToArray();
+        return string.Join('-', new string(chars).Split('-', StringSplitOptions.RemoveEmptyEntries));
+    }
+}

@@ -1,0 +1,32 @@
+{
+  "kind": "Class",
+  "category": "Fonts",
+  "namespace": "Tempo.Reporting.Engine.Fonts",
+  "description": "Reads the TrueType tables required by the reporting metric generator.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Fonts/TrueTypeFontMetricReader.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Read",
+      "kind": "Method",
+      "type": "FontMetricFace",
+      "description": "Builds a reporting font face from a TrueType font stream.",
+      "parameters": [
+        {
+          "name": "stream",
+          "type": "Stream"
+        },
+        {
+          "name": "familyName",
+          "type": "string"
+        },
+        {
+          "name": "styleKey",
+          "type": "FontStyleKey"
+        }
+      ]
+    }
+  ],
+  "itemName": "TrueTypeFontMetricReader"
+}

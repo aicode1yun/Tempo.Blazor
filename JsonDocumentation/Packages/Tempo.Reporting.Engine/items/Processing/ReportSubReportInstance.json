@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Processed sub-report placeholder with evaluated parameters.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/BandInstantiation.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportSubReportInstance"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Expressions",
+  "namespace": "Tempo.Reporting.Engine.Expressions",
+  "description": "Global values exposed to expressions.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionContext.cs",
+  "documentationStatus": "generated",
+  "itemName": "ExpressionGlobals"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Reference to a named data source registered by the host or server.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/DataSets.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDataSourceReference"
+}

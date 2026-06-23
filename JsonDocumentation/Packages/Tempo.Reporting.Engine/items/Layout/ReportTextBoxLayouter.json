@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Lays out report text boxes.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/TextBoxLayout.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportTextBoxLayouter"
+}

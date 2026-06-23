@@ -798,8 +798,11 @@ Před spuštěním: oba servery + smtp4dev běží.
       obousměrný import/export, plné pokrytí MJML 4 featur, odkaz na MJML_ATTRIBUTE_PARITY.md
       (+ případné mezery Mjml.Net zjištěné v E0.9 transparentně vypsané)
 - [ ] E12.2 `COMPONENTS.md`: přidat TmEmailTemplateEditor (+ podkomponenty) podle formátu souboru
-- [ ] E12.3 JSON dokumentace: vytvořit nový json (co nuget balíček to musí být samostatný json soubor) - vzor`tempo-blazor-documentation.json` /
+- [x] E12.3 JSON dokumentace: vytvořit nový json (co nuget balíček to musí být samostatný json soubor) - vzor`tempo-blazor-documentation.json` /
       `JsonDocumentation` konvence (prozkoumat formát, dodržet ho — kvůli MCP serveru)
+      Realizace 2026-06-17: přidány samostatné výstupy `tempo-blazor-emailtemplates.json` a
+      `tempo-blazor-emailtemplates-abstractions.json`, source skeletony v `JsonDocumentation/Packages/*`
+      a validace `JsonDocumentationGenerator validate --fail-on-drift`.
 - [ ] E12.4 XML doc komentáře na všech public API obou balíčků (GenerateDocumentationFile už
       zapnutý → build bez CS1591 warningů)
 - [ ] E12.5 `dotnet pack` obou balíčků (Release) — validní nupkg, README přibalené, správná
@@ -817,6 +820,7 @@ Před spuštěním: oba servery + smtp4dev běží.
 | 2 | 08-send-form | Živý preview na send page ignoroval vstup z formuláře — `TmEmailTemplatePreview._dataInitialized` guard zachytil `VariablesJson` jen při prvním renderu, takže preview zůstal na sample datech („Hi Jane Doe") místo vyplněného jména | Vysoká | OPRAVENO test-first — komponenta přijme změněný externí `VariablesJson` (sleduje `_lastExternalJson`), lokální textarea edity zachovány; unit test `Preview_UpdatesWhenVariablesJsonChanges` + E2E assertion v `E11_8` |
 | 3 | 03-editor | Toolbox dlaždice bloků mírně ořezávají dlouhé názvy („Wrapp…", „Navbar") | Kosmetická | Neblokující — ponecháno (čitelné, funkční) |
 | 4 | 08-send-form | Sticky preview iframe ořízne obsah dole (pevná výška iframe) | Kosmetická | Neblokující |
+| 6 | 13-many-columns | **Od ~3. přidaného sloupce prostor pro blok přesahoval editor** — `ColumnFlex` dával `flex:0 0 {width}` (flex-shrink:0), takže 6×16.7% + mezery (gap) > 100% → sloupce přetekly mimo canvas | **Vysoká** | OPRAVENO test-first — `flex:{grow} 1 0` (proporcionální grow přes nulový basis pohltí mezery, vždy padne do šířky, zachová poměry) + `min-inline-size:0` na sloupci i `__empty` + `overflow-wrap:anywhere`. Testy `CanvasColumnLayoutTests` (2) + E2E `AddColumns_UpToSix_DoesNotOverflowCanvas` (měří `getBoundingClientRect().right` vs canvas) + screenshot `13-many-columns.png` |
 | 5 | video 2026-06-12 07-05-51 | **Nešlo umístit obsah do editoru drag&drop** — prázdný sloupec se v okamžiku startu dragu zhroutil z ~80px na 8px (placeholder skryt `!DragActive`, zůstal jen `0.5rem` end-dropzone), a mezi-blokové zóny byly 8px tenké → člověk myší netrefí cíl, blok se nikdy nepřidal | **Vysoká (blocker)** | OPRAVENO test-first — prázdný sloupec má teď trvalý velký drop-target (`__empty`, min 5rem, `data-tm-drop-empty`, vždy přítomný i bez dragu), mezi-blokové zóny 1.5rem (hover 2.25rem) + `dragenter/drop:preventDefault`. bUnit `CanvasDragDropTests` (4) + E2E `EmailEditorDragDropE2ETests` (6: drop z toolboxu do prázdného sloupce/mezi bloky, click-to-add, reorder, delete+undo/redo, velikost drop-targetu při dragu) + screenshot `12-drag-dropzones.png`. POZN: Playwright neumí reprodukovat lidský pixel-miss (jeho drag vždy trefí cíl), proto E2E ověřuje pipeline + existenci/velikost cílů, lidský hit-area fix ověřen vizuálně |
 
 ## Poznámky z implementace (plnit průběžně)

@@ -1,0 +1,15 @@
+{
+  "itemName": "ReportDefinitionValidator",
+  "kind": "Class",
+  "category": "Validation",
+  "namespace": "Tempo.Reporting.Abstractions.Validation",
+  "description": "FluentValidation validator for report definitions, including schema, page setup, band, element, data set, style, and parameter consistency rules.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Validation/ReportDefinitionValidator.cs",
+  "documentationStatus": "manual",
+  "relatedTypes": [
+    "ReportDefinition",
+    "ReportParameterDefinitionValidator",
+    "ReportingValidationResources"
+  ]
+}

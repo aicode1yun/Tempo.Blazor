@@ -1,0 +1,22 @@
+{
+  "examples": [
+    {
+      "title": "Create a Report Server Typed Client",
+      "category": "Report Server",
+      "description": "Registers the typed HTTP client and optional bearer-token provider used by Blazor, API, or worker hosts.",
+      "code": "builder.Services.AddHttpClient<ITempoReportServerClient, TempoReportServerClient>(client =>\n{\n    client.BaseAddress = new Uri(\"https://reports.example.com/\");\n});\n\nbuilder.Services.AddSingleton<IReportServerTokenProvider, MyTokenProvider>();"
+    },
+    {
+      "title": "Render a Remote Report",
+      "category": "Report Server",
+      "description": "Calls the synchronous render endpoint and receives a snapshot, PDF, CSV, XLSX, or PNG payload depending on the requested format.",
+      "code": "var result = await reportServer.RenderAsync(new RenderReportRequestDto\n{\n    TenantId = \"tenant-a\",\n    ReportId = \"sales-by-region\",\n    Format = ReportRenderFormat.Snapshot,\n    CultureName = \"en-US\",\n    Parameters =\n    [\n        new ReportParameterValueDto { Name = \"Year\", Values = [\"2026\"] }\n    ]\n}, cancellationToken);"
+    },
+    {
+      "title": "Implement a Data Provider",
+      "category": "Data",
+      "description": "Feeds report processing with schema plus streamed rows. Hosts can implement SQL, REST, domain service, or in-memory providers.",
+      "code": "public sealed class OrdersReportDataProvider : IReportDataProvider\n{\n    public Task<ReportDataSetResult> GetDataAsync(\n        string dataSetName,\n        ReportDataQuery query,\n        IReadOnlyDictionary<string, ReportParameterValue> parameters,\n        ReportExecutionContext context)\n    {\n        var schema = new[]\n        {\n            new ReportDataColumn(\"Region\", ReportDataFieldType.String),\n            new ReportDataColumn(\"Total\", ReportDataFieldType.Number)\n        };\n\n        return Task.FromResult(new ReportDataSetResult(schema, LoadRowsAsync(context.CancellationToken)));\n    }\n}"
+    }
+  ]
+}

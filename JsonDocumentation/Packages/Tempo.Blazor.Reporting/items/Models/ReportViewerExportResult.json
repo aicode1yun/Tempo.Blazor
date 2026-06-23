@@ -1,0 +1,30 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Binary export returned by a report source.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerExportResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Bytes",
+      "kind": "Property",
+      "type": "byte[]",
+      "description": "Export bytes."
+    },
+    {
+      "name": "ContentType",
+      "kind": "Property",
+      "type": "string",
+      "description": "MIME content type."
+    },
+    {
+      "name": "FileName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Suggested file name."
+    }
+  ],
+  "itemName": "ReportViewerExportResult"
+}

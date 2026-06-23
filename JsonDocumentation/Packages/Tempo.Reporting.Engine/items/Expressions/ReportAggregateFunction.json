@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Expressions",
+  "namespace": "Tempo.Reporting.Engine.Expressions",
+  "description": "Aggregate functions parsed as AST nodes.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportAggregateFunction"
+}

@@ -7,10 +7,12 @@ using Tempo.Blazor.Configuration;
 using Tempo.Blazor.Modeling;
 using Tempo.Blazor.Demo.Services;
 using Tempo.Blazor.Demo.SharedUI;
+using Tempo.Blazor.Demo.SharedUI.Services;
 using Tempo.Blazor.EmailTemplates;
 using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.Reporting.Configuration;
 using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.Demo.Validators;
 using Tempo.Blazor.FluentValidation;
@@ -90,6 +92,7 @@ builder.Services.AddScoped<SignalRCollaborationProvider>();
 
 // Register Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)
 builder.Services.AddTempoBlazor();
+builder.Services.AddTempoBlazorReporting();
 builder.Services.AddSingleton<IModelingNotationProfile, ErdNotationProfile>();
 builder.Services.AddInMemoryNotifications();
 builder.Services.AddScoped<DemoNotionNotificationService>();
@@ -105,6 +108,7 @@ builder.Services.AddTempoFluentValidation(typeof(PersonFormValidator).Assembly);
 // Email template editor demo: engine + localization, and the typed API client.
 builder.Services.AddTempoEmailTemplates();
 builder.Services.AddScoped<Tempo.Blazor.Demo.Services.IEmailTemplateApiClient, Tempo.Blazor.Demo.Services.EmailTemplateApiClient>();
+builder.Services.AddScoped<DemoReportEmbeddingSourceFactory>();
 
 var host = builder.Build();
 

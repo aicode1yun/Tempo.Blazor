@@ -1,11 +1,13 @@
 using Tempo.Blazor.Configuration;
 using Tempo.Blazor.Demo.Services;
+using Tempo.Blazor.Demo.SharedUI.Services;
 using Tempo.Blazor.Demo.Validators;
 using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.FluentValidation;
 using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.Reporting.Configuration;
 using Tempo.Blazor.Services;
 
 // Import Components namespace for App.razor
@@ -73,6 +75,8 @@ builder.Services.AddScoped<SignalRCollaborationProvider>();
 
 // Register Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)
 builder.Services.AddTempoBlazor();
+builder.Services.AddTempoBlazorReporting();
+builder.Services.AddScoped<DemoReportEmbeddingSourceFactory>();
 
 // Register Dashboard services
 builder.Services.AddSingleton<IWidgetRegistry, InMemoryWidgetRegistry>();

@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tempo.Blazor.DocumentFormats\Tempo.Blazor.DocumentFormats.csproj" />
+    <ProjectReference Include="..\..\src\Tempo.Reporting.Engine\Tempo.Reporting.Engine.csproj" />
   </ItemGroup>
 
   <ItemGroup>

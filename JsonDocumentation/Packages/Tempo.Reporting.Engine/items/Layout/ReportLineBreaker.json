@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Simplified UAX#14-inspired line breaker for report text.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/LineBreaking.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportLineBreaker"
+}

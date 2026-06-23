@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Data",
+  "namespace": "Tempo.Reporting.Abstractions.Data",
+  "description": "Report data field type.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+  "documentationStatus": "generated",
+  "itemName": "Tempo.Reporting.Abstractions.Data.ReportDataFieldType"
+}

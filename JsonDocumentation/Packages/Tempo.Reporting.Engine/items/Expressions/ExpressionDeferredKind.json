@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Expressions",
+  "namespace": "Tempo.Reporting.Engine.Expressions",
+  "description": "Deferred expression placeholder kind.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionValue.cs",
+  "documentationStatus": "generated",
+  "itemName": "ExpressionDeferredKind"
+}

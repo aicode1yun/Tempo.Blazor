@@ -1,0 +1,2118 @@
+{
+  "package": {
+    "packageId": "Tempo.Reporting.Engine",
+    "title": "Tempo.Reporting.Engine",
+    "description": "Tempo Reporting processing engine with expression evaluation, parameter resolution, layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "reporting;reports;engine;layout;pdf;png;csv;xlsx;expressions",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Reporting.Engine"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "ClosedXML",
+        "version": "0.104.2"
+      },
+      {
+        "name": "SkiaSharp",
+        "version": "3.119.2"
+      },
+      {
+        "name": "SkiaSharp.NativeAssets.Linux.NoDependencies",
+        "version": "3.119.2"
+      },
+      {
+        "name": "Svg.Skia",
+        "version": "4.2.0"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Reporting.Abstractions/Tempo.Reporting.Abstractions.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Reporting.Engine.Export",
+      "Tempo.Reporting.Engine.Expressions",
+      "Tempo.Reporting.Engine.Fonts",
+      "Tempo.Reporting.Engine.Layout",
+      "Tempo.Reporting.Engine.Pdf",
+      "Tempo.Reporting.Engine.Processing",
+      "Tempo.Reporting.Engine.Snapshot"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Getting Started with Tempo.Reporting.Engine",
+    "overview": "Tempo.Reporting.Engine executes Tempo report definitions: expression evaluation, parameter resolution, data processing, grouping, fixed-page band layout, snapshot generation, PDF/PNG rendering, and CSV/XLSX export.",
+    "targetFramework": ".NET 8.0 / 9.0 / 10.0 (multi-target)",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Reporting.Engine"
+      ]
+    },
+    "namespaces": [
+      "Tempo.Reporting.Engine.Expressions",
+      "Tempo.Reporting.Engine.Processing",
+      "Tempo.Reporting.Engine.Layout",
+      "Tempo.Reporting.Engine.Snapshot",
+      "Tempo.Reporting.Engine.Pdf",
+      "Tempo.Reporting.Engine.Export",
+      "Tempo.Reporting.Engine.Fonts"
+    ],
+    "notes": [
+      "The engine is pure .NET and can run server-side or in WebAssembly hosts.",
+      "Report Server APIs and embedded Blazor report sources use this package for the actual rendering pipeline."
+    ],
+    "packages": [
+      {
+        "name": "Tempo.Blazor",
+        "description": "Comprehensive Blazor component library with 100+ components. Supports WebAssembly, Server, and InteractiveAuto render modes. Multi-targets .NET 8/9/10. Includes FluentValidation integration, multilingual support (EN/CS), CSS variable theming, and dark mode."
+      },
+      {
+        "name": "Tempo.Blazor.Abstractions",
+        "description": "Interfaces and models for Tempo.Blazor component library. Zero UI dependencies – safe to reference from API/service projects."
+      },
+      {
+        "name": "Tempo.Blazor.FluentValidation",
+        "description": "FluentValidation integration for Tempo.Blazor component library. Provides FluentValidationValidator component for EditForm and assembly scanning for validator registration."
+      },
+      {
+        "name": "Tempo.Blazor.Collaboration",
+        "description": "SignalR collaboration providers for Tempo.Blazor document editor abstractions."
+      },
+      {
+        "name": "Tempo.Blazor.DocumentFormats",
+        "description": "Optional server-side DOCX and ODT import/export support for TmDocumentEditor."
+      },
+      {
+        "name": "Tempo.Blazor.EmailTemplates.Abstractions",
+        "description": "Logic and contracts for the Tempo.Blazor email template editor: block model, MJML generation and import, Scriban templating sandbox, variable extraction, render pipeline, DTOs and validators. No Blazor dependency – safe to reference from API/service projects."
+      },
+      {
+        "name": "Tempo.Blazor.EmailTemplates",
+        "description": "Drag-and-drop email template editor component (TmEmailTemplateEditor) for Tempo.Blazor. Visual MJML editor with full MJML 4 parity, bidirectional MJML import/export, Scriban variable templating and live preview. Built entirely on Tempo.Blazor components."
+      },
+      {
+        "name": "Tempo.Blazor.Mcp",
+        "description": "Model Context Protocol (MCP) tools for designing and editing Tempo.Blazor wireframes, diagrams, editor documents and reports with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server."
+      },
+      {
+        "name": "Tempo.Reporting.Abstractions",
+        "description": "Contracts, JSON definition schema, validation models, data provider interfaces, and server DTOs for Tempo Reporting. No Blazor or ASP.NET dependency."
+      },
+      {
+        "name": "Tempo.Reporting.Engine",
+        "description": "Tempo Reporting processing engine with expression evaluation, parameter resolution, layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives."
+      },
+      {
+        "name": "Tempo.Blazor.Reporting",
+        "description": "Blazor reporting components for Tempo Reporting: report viewer, parameter panel, explorer, lightweight designer, embedded sources, and remote Report Server integration."
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "ReportCsvExporter",
+      "kind": "Class",
+      "category": "Export",
+      "namespace": "Tempo.Reporting.Engine.Export",
+      "description": "Exports tabular report data to CSV with culture-aware formatting, delimiter selection, quoting, and optional BOM output.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportCsvExporter.cs",
+      "documentationStatus": "merged",
+      "relatedTypes": [
+        "ReportTabularExportBuilder",
+        "ReportTabularExportDocument",
+        "ReportCsvExportOptions"
+      ]
+    },
+    {
+      "itemName": "ReportCsvExportOptions",
+      "kind": "Record",
+      "category": "Export",
+      "namespace": "Tempo.Reporting.Engine.Export",
+      "description": "Culture-aware CSV export options.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportTabularExportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTabularExportBuilder",
+      "kind": "Class",
+      "category": "Export",
+      "namespace": "Tempo.Reporting.Engine.Export",
+      "description": "Builds culture-neutral tabular export data from processed report output.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportTabularExportBuilder.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTabularExportCell",
+      "kind": "Record",
+      "category": "Export",
+      "namespace": "Tempo.Reporting.Engine.Export",
+      "description": "One export cell with optional spreadsheet styling.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportTabularExportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTabularExportCellKind",
+      "kind": "Enum",
+      "category": "Export",
+      "namespace": "Tempo.Reporting.Engine.Export",
+      "description": "Tabular cell value kind used by CSV and spreadsheet exports.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportTabularExportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTabularExportDocument",
+      "kind": "Record",
+      "category": "Export",
+      "namespace": "Tempo.Reporting.Engine.Export",
+      "description": "Structured tabular export document.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportTabularExportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTabularExportRow",
+      "kind": "Record",
+      "category": "Export",
+      "namespace": "Tempo.Reporting.Engine.Export",
+      "description": "One export row.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportTabularExportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTabularExportSheet",
+      "kind": "Record",
+      "category": "Export",
+      "namespace": "Tempo.Reporting.Engine.Export",
+      "description": "One exportable table or data set.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportTabularExportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportXlsxExporter",
+      "kind": "Class",
+      "category": "Export",
+      "namespace": "Tempo.Reporting.Engine.Export",
+      "description": "Exports tabular report data to an XLSX workbook using ClosedXML, preserving headers, cell values, and culture-aware number/date formatting.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportXlsxExporter.cs",
+      "documentationStatus": "merged",
+      "relatedTypes": [
+        "ReportTabularExportBuilder",
+        "ReportTabularExportDocument",
+        "ReportXlsxExportOptions"
+      ]
+    },
+    {
+      "itemName": "ReportXlsxExportOptions",
+      "kind": "Record",
+      "category": "Export",
+      "namespace": "Tempo.Reporting.Engine.Export",
+      "description": "Spreadsheet export options.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportTabularExportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AggregateExpressionNode",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Aggregate expression node parsed for later processing phases.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "BinaryExpressionNode",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Binary operator expression node.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionBinaryOperator",
+      "kind": "Enum",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Binary operators.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionContext",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Explicit runtime context available to expression evaluation.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionContext.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionDeferredKind",
+      "kind": "Enum",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Deferred expression placeholder kind.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionValue.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionDiagnostic",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Structured expression diagnostic with stable code and source position.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionDiagnostic.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Create",
+          "kind": "Method",
+          "type": "ExpressionDiagnostic",
+          "parameters": [
+            {
+              "name": "code",
+              "type": "string"
+            },
+            {
+              "name": "line",
+              "type": "int"
+            },
+            {
+              "name": "column",
+              "type": "int"
+            },
+            {
+              "name": "args",
+              "type": "params object?[]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "ExpressionEvaluationException",
+      "kind": "Class",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Exception thrown when an expression cannot be evaluated.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionExceptions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionEvaluationOptions",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Options controlling expression evaluation.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionOptions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionEvaluator",
+      "kind": "Class",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Safe expression evaluator for report formulas. It evaluates parsed expressions against Fields, Parameters, and Globals with explicit limits and no reflection or environment access.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionEvaluator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Evaluate",
+          "kind": "Method",
+          "type": "ExpressionValue",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "ExpressionNode"
+            }
+          ]
+        }
+      ],
+      "methods": [
+        {
+          "name": "Evaluate",
+          "description": "Parses and evaluates an expression string or evaluates an already parsed ExpressionNode."
+        }
+      ],
+      "relatedTypes": [
+        "ExpressionParser",
+        "ExpressionContext",
+        "ExpressionValue",
+        "ExpressionEvaluationOptions"
+      ]
+    },
+    {
+      "itemName": "ExpressionGlobals",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Global values exposed to expressions.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionContext.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionLexer",
+      "kind": "Class",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Lexer for report expressions.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionLexer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Tokenize",
+          "kind": "Method",
+          "type": "IReadOnlyList<ExpressionToken>",
+          "description": "Tokenizes an expression.",
+          "parameters": [
+            {
+              "name": "expression",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "ExpressionNode",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Base type for expression AST nodes.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionParseException",
+      "kind": "Class",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Exception thrown when an expression cannot be parsed.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionExceptions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionParseOptions",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Options controlling expression parsing.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionOptions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionParser",
+      "kind": "Class",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Parser for report expressions.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionParser.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Parse",
+          "kind": "Method",
+          "type": "ExpressionNode",
+          "description": "Parses an expression into an AST.",
+          "parameters": [
+            {
+              "name": "expression",
+              "type": "string"
+            },
+            {
+              "name": "options",
+              "type": "ExpressionParseOptions?",
+              "default": "null"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "ExpressionToken",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Expression token with source position and optional literal value.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionToken.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionTokenKind",
+      "kind": "Enum",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Expression token kind.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionToken.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionUnaryOperator",
+      "kind": "Enum",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Unary operators.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionValue",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Typed expression value.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionValue.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ExpressionValueKind",
+      "kind": "Enum",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Expression runtime value kind.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionValue.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "FunctionCallExpressionNode",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Function call expression node.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LiteralExpressionNode",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Literal expression node.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "MemberAccessExpressionNode",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Member access expression node.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportAggregateFunction",
+      "kind": "Enum",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Aggregate functions parsed as AST nodes.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportAggregateScope",
+      "kind": "Enum",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Aggregate evaluation scope.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "UnaryExpressionNode",
+      "kind": "Record",
+      "category": "Expressions",
+      "namespace": "Tempo.Reporting.Engine.Expressions",
+      "description": "Unary operator expression node.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "FontKerningPair",
+      "kind": "RecordStruct",
+      "category": "Fonts",
+      "namespace": "Tempo.Reporting.Engine.Fonts",
+      "description": "Unicode code-point pair for kerning adjustment lookup.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Fonts/FontKerningPair.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "FontMetricFace",
+      "kind": "Class",
+      "category": "Fonts",
+      "namespace": "Tempo.Reporting.Engine.Fonts",
+      "description": "Precomputed metrics for one font family/style face.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Fonts/FontMetricFace.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AdvanceWidths",
+          "kind": "Field",
+          "type": "IReadOnlyDictionary<int, ushort>",
+          "description": "Unicode advance width table."
+        },
+        {
+          "name": "HintedAdvanceWidths",
+          "kind": "Field",
+          "type": "IReadOnlyDictionary<int, IReadOnlyDictionary<int, ushort>>",
+          "description": "Hinted Unicode advance widths keyed by CSS pixels per em."
+        },
+        {
+          "name": "KerningPairs",
+          "kind": "Field",
+          "type": "IReadOnlyDictionary<FontKerningPair, short>",
+          "description": "Unicode kerning table."
+        },
+        {
+          "name": "MissingGlyphHintedAdvanceWidths",
+          "kind": "Field",
+          "type": "IReadOnlyDictionary<int, ushort>",
+          "description": "Hinted missing-glyph advance widths keyed by CSS pixels per em."
+        },
+        {
+          "name": "ContainsCodePoint",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Returns true when the face contains a code point.",
+          "parameters": [
+            {
+              "name": "codePoint",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "GetAdvanceWidth",
+          "kind": "Method",
+          "type": "ushort",
+          "description": "Gets an advance width for a Unicode code point.",
+          "parameters": [
+            {
+              "name": "codePoint",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "GetKerning",
+          "kind": "Method",
+          "type": "short",
+          "description": "Gets kerning in font units for a code-point pair.",
+          "parameters": [
+            {
+              "name": "leftCodePoint",
+              "type": "int"
+            },
+            {
+              "name": "rightCodePoint",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "TryGetHintedAdvanceWidth",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Attempts to get a hinted CSS pixel advance width for a Unicode code point.",
+          "parameters": [
+            {
+              "name": "codePoint",
+              "type": "int"
+            },
+            {
+              "name": "pixelsPerEm",
+              "type": "int"
+            },
+            {
+              "name": "width",
+              "type": "out ushort"
+            }
+          ]
+        },
+        {
+          "name": "TryGetHintedMissingGlyphAdvanceWidth",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Attempts to get a hinted CSS pixel advance width for a missing glyph.",
+          "parameters": [
+            {
+              "name": "pixelsPerEm",
+              "type": "int"
+            },
+            {
+              "name": "width",
+              "type": "out ushort"
+            }
+          ]
+        },
+        {
+          "name": "Ascent",
+          "kind": "Property",
+          "type": "short",
+          "description": "Ascender in font units."
+        },
+        {
+          "name": "Descent",
+          "kind": "Property",
+          "type": "short",
+          "description": "Descender in font units."
+        },
+        {
+          "name": "FamilyName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Font family name."
+        },
+        {
+          "name": "LineGap",
+          "kind": "Property",
+          "type": "short",
+          "description": "Line gap in font units."
+        },
+        {
+          "name": "MissingGlyphAdvanceWidth",
+          "kind": "Property",
+          "type": "ushort",
+          "description": "Advance width used when no glyph is available."
+        },
+        {
+          "name": "StyleKey",
+          "kind": "Property",
+          "type": "FontStyleKey",
+          "description": "Font style key."
+        },
+        {
+          "name": "UnitsPerEm",
+          "kind": "Property",
+          "type": "int",
+          "description": "Units per em from the TrueType head table."
+        }
+      ]
+    },
+    {
+      "itemName": "FontMetricTable",
+      "kind": "Class",
+      "category": "Fonts",
+      "namespace": "Tempo.Reporting.Engine.Fonts",
+      "description": "Collection of precomputed reporting font metrics.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Fonts/FontMetricTable.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Faces",
+          "kind": "Field",
+          "type": "IReadOnlyList<FontMetricFace>",
+          "description": "All metric faces."
+        },
+        {
+          "name": "FallbackFamilyNames",
+          "kind": "Field",
+          "type": "IReadOnlyList<string>",
+          "description": "Fallback family names in lookup order."
+        },
+        {
+          "name": "FindFallbackFace",
+          "kind": "Method",
+          "type": "FontMetricFace?",
+          "description": "Finds a fallback face that contains the requested code point.",
+          "parameters": [
+            {
+              "name": "codePoint",
+              "type": "int"
+            },
+            {
+              "name": "styleKey",
+              "type": "FontStyleKey"
+            }
+          ]
+        },
+        {
+          "name": "ResolveFace",
+          "kind": "Method",
+          "type": "FontMetricFace",
+          "description": "Resolves the best face for a family/style request.",
+          "parameters": [
+            {
+              "name": "familyName",
+              "type": "string?"
+            },
+            {
+              "name": "bold",
+              "type": "bool"
+            },
+            {
+              "name": "italic",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "name": "DefaultFamilyName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Default family used when a request cannot resolve its family."
+        }
+      ]
+    },
+    {
+      "itemName": "FontMetricTableBinarySerializer",
+      "kind": "Class",
+      "category": "Fonts",
+      "namespace": "Tempo.Reporting.Engine.Fonts",
+      "description": "Compact binary serializer for reporting font metric tables.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Fonts/FontMetricTableBinarySerializer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Read",
+          "kind": "Method",
+          "type": "FontMetricTable",
+          "description": "Reads a metric table from a compact binary stream.",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "Stream"
+            }
+          ]
+        },
+        {
+          "name": "Write",
+          "kind": "Method",
+          "type": "void",
+          "description": "Writes a metric table to a compact binary stream.",
+          "parameters": [
+            {
+              "name": "table",
+              "type": "FontMetricTable"
+            },
+            {
+              "name": "output",
+              "type": "Stream"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "FontStyleKey",
+      "kind": "RecordStruct",
+      "category": "Fonts",
+      "namespace": "Tempo.Reporting.Engine.Fonts",
+      "description": "Normalized font style selector used by reporting metric tables.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Fonts/FontStyleKey.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "From",
+          "kind": "Method",
+          "type": "FontStyleKey",
+          "description": "Creates a style key from UI booleans.",
+          "parameters": [
+            {
+              "name": "bold",
+              "type": "bool"
+            },
+            {
+              "name": "italic",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "name": "Bold",
+          "kind": "Property",
+          "type": "static FontStyleKey",
+          "description": "Bold 700 normal style."
+        },
+        {
+          "name": "Regular",
+          "kind": "Property",
+          "type": "static FontStyleKey",
+          "description": "Regular 400 normal style."
+        }
+      ]
+    },
+    {
+      "itemName": "ITextMeasurer",
+      "kind": "Interface",
+      "category": "Fonts",
+      "namespace": "Tempo.Reporting.Engine.Fonts",
+      "description": "Text measurement abstraction used by line breaking, text box layout, table layout, chart labels, and snapshot generation.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Fonts/ITextMeasurer.cs",
+      "documentationStatus": "merged",
+      "relatedTypes": [
+        "TextMeasureRequest",
+        "TextMeasurement",
+        "TableTextMeasurer",
+        "FontMetricTable"
+      ]
+    },
+    {
+      "itemName": "TableTextMeasurer",
+      "kind": "Class",
+      "category": "Fonts",
+      "namespace": "Tempo.Reporting.Engine.Fonts",
+      "description": "Font-table based text measurer used by the reporting engine.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Fonts/TableTextMeasurer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "MeasureRun",
+          "kind": "Method",
+          "type": "TextMeasurement",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "TextMeasureRequest"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "TextMeasurement",
+      "kind": "Record",
+      "category": "Fonts",
+      "namespace": "Tempo.Reporting.Engine.Fonts",
+      "description": "Measured text run geometry.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Fonts/TextMeasurement.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TextMeasureRequest",
+      "kind": "Record",
+      "category": "Fonts",
+      "namespace": "Tempo.Reporting.Engine.Fonts",
+      "description": "Text run measurement request.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Fonts/TextMeasureRequest.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TrueTypeFontMetricReader",
+      "kind": "Class",
+      "category": "Fonts",
+      "namespace": "Tempo.Reporting.Engine.Fonts",
+      "description": "Reads the TrueType tables required by the reporting metric generator.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Fonts/TrueTypeFontMetricReader.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Read",
+          "kind": "Method",
+          "type": "FontMetricFace",
+          "description": "Builds a reporting font face from a TrueType font stream.",
+          "parameters": [
+            {
+              "name": "stream",
+              "type": "Stream"
+            },
+            {
+              "name": "familyName",
+              "type": "string"
+            },
+            {
+              "name": "styleKey",
+              "type": "FontStyleKey"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "ReportBandPlacement",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Absolute placement of a processed band on a composed page.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/BandPageComposition.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportChartLayouter",
+      "kind": "Class",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Lays out engine-drawn report chart elements.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/ChartLayout.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CategoryCenter",
+          "kind": "Method",
+          "type": "double",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int"
+            },
+            {
+              "name": "categoryCount",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "ScaleValue",
+          "kind": "Method",
+          "type": "double",
+          "parameters": [
+            {
+              "name": "value",
+              "type": "double"
+            }
+          ]
+        },
+        {
+          "name": "ValueFor",
+          "kind": "Method",
+          "type": "double",
+          "parameters": [
+            {
+              "name": "category",
+              "type": "ChartCategoryKey"
+            }
+          ]
+        },
+        {
+          "name": "Category",
+          "kind": "Property",
+          "type": "ChartCategoryKey"
+        },
+        {
+          "name": "Color",
+          "kind": "Property",
+          "type": "string"
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string"
+        },
+        {
+          "name": "Points",
+          "kind": "Property",
+          "type": "IReadOnlyList<ChartDataPoint>"
+        },
+        {
+          "name": "SeriesColor",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "Slug",
+          "kind": "Property",
+          "type": "string"
+        },
+        {
+          "name": "Value",
+          "kind": "Property",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "itemName": "ReportComposedPage",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "A single composed page with repeated and body band placements.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/BandPageComposition.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportLayoutRectangle",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Simple rectangle used by layout results.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/RichTextLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportLineBreaker",
+      "kind": "Class",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Simplified UAX#14-inspired line breaker for report text.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/LineBreaking.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportLineBreakKind",
+      "kind": "Enum",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "How a laid-out line ended.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/LineBreaking.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportPageComposer",
+      "kind": "Class",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Composes processed report bands into fixed pages.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/BandPageComposition.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportPageComposition",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Paginated report band composition.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/BandPageComposition.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportPageCompositionOptions",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Options for band pagination.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/BandPageComposition.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParagraphLayout",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Paragraph layout result.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/ParagraphLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParagraphLayouter",
+      "kind": "Class",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Positions wrapped text lines inside a paragraph rectangle.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/ParagraphLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParagraphLayoutOptions",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Paragraph layout options.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/ParagraphLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportRichTextRun",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Rich text run consumed by the report text layout engine.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/RichTextLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportSnapshotGenerator",
+      "kind": "Class",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Generates deterministic fixed-page report snapshots from processed report instances. The output command stream is consumed by the Blazor canvas viewer and the PDF/PNG renderer.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/ReportSnapshotGenerator.cs",
+      "documentationStatus": "merged",
+      "methods": [
+        {
+          "name": "Generate",
+          "description": "Composes pages, resolves deferred page globals, lays out bands/elements/tables/charts, and returns a ReportSnapshot."
+        }
+      ],
+      "relatedTypes": [
+        "ReportSnapshotGeneratorOptions",
+        "ReportInstance",
+        "ITextMeasurer",
+        "ReportSnapshot"
+      ]
+    },
+    {
+      "itemName": "ReportSnapshotGeneratorOptions",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Options for report snapshot generation.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/ReportSnapshotGenerator.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableColumnLayout",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Computed table column.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/TableLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableLayout",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Computed table layout.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/TableLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableLayoutCell",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Computed table cell.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/TableLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableLayouter",
+      "kind": "Class",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Lays out report tablix elements.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/TableLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableLayoutPage",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "One page slice of a table layout.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/TableLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableLayoutRequest",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Table layout request.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/TableLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableLayoutRow",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Computed table row.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/TableLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableLayoutRowKind",
+      "kind": "Enum",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Rendered table row kind.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/TableLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTextBoxLayout",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Text box layout result.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/TextBoxLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTextBoxLayouter",
+      "kind": "Class",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Lays out report text boxes.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/TextBoxLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTextBoxLayoutRequest",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Text box layout request.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/TextBoxLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTextLine",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Single broken or positioned text line.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/LineBreaking.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTextLineRun",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Text run positioned inside a laid-out line.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/LineBreaking.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportPdfFontFace",
+      "kind": "Record",
+      "category": "PDF",
+      "namespace": "Tempo.Reporting.Engine.Pdf",
+      "description": "Single TrueType/OpenType font face available to the PDF renderer.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Pdf/ReportPdfRenderer.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportPdfRenderer",
+      "kind": "Class",
+      "category": "PDF",
+      "namespace": "Tempo.Reporting.Engine.Pdf",
+      "description": "Renders report snapshots to PDF and PNG using SkiaSharp. Text, shapes, paths, images, and clipping are drawn from the same snapshot commands used by the canvas viewer.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Pdf/ReportPdfRenderer.cs",
+      "documentationStatus": "merged",
+      "methods": [
+        {
+          "name": "Render",
+          "description": "Renders a complete ReportSnapshot to a PDF byte array or stream."
+        },
+        {
+          "name": "RenderPagePng",
+          "description": "Renders a single snapshot page to a PNG byte array."
+        }
+      ],
+      "relatedTypes": [
+        "ReportPdfRendererOptions",
+        "ReportPdfFontFace",
+        "ReportSnapshot",
+        "ReportSnapshotPage"
+      ]
+    },
+    {
+      "itemName": "ReportPdfRendererOptions",
+      "kind": "Record",
+      "category": "PDF",
+      "namespace": "Tempo.Reporting.Engine.Pdf",
+      "description": "Options for snapshot to PDF rendering.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Pdf/ReportPdfRenderer.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ProcessedDataRow",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Materialized provider row.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetRuntime.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ProcessedDataSet",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Materialized data set consumed by report processing.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetRuntime.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ProcessedGroup",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Processed group node containing rows and child groups.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/GroupingProcessing.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportAggregateEngine",
+      "kind": "Class",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Evaluates processing-time aggregate expressions over materialized rows.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/AggregateProcessing.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Dispose",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "ToString",
+          "kind": "Method",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "itemName": "ReportBandInstance",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Instantiated band with evaluated elements.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/BandInstantiation.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportBandInstantiator",
+      "kind": "Class",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Builds a tree of report band instances from definitions and data.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/BandInstantiation.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataCursor",
+      "kind": "Class",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Resettable row cursor over a processed data set.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetRuntime.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataSetProcessor",
+      "kind": "Class",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Filtering and sorting helpers for processed data sets.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetProcessing.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataSetRuntime",
+      "kind": "Class",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Loads provider streams into processing-friendly data sets.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetRuntime.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportElementInstance",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Base processed element instance.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/BandInstantiation.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportGroupingEngine",
+      "kind": "Class",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Builds multi-level group trees from processed rows.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/GroupingProcessing.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportGroupLevel",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Group level definition used by the processing engine.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/GroupingProcessing.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportInstance",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Processed report instance produced before layout.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/BandInstantiation.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportNullSortOrder",
+      "kind": "Enum",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Null ordering for report sorting.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetProcessing.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterProcessor",
+      "kind": "Class",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Resolves and validates report parameters before data processing.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/ParameterProcessing.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterResolution",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Resolved parameter values plus available-value lists.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/ParameterProcessing.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportProcessingContext",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Runtime processing context shared by data, grouping, aggregate and band phases.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/ReportProcessingContext.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CreateExpressionContext",
+          "kind": "Method",
+          "type": "ExpressionContext",
+          "description": "Creates an expression context for a row.",
+          "parameters": [
+            {
+              "name": "row",
+              "type": "ProcessedDataRow?",
+              "default": "null"
+            }
+          ]
+        },
+        {
+          "name": "WithDataSets",
+          "kind": "Method",
+          "type": "ReportProcessingContext",
+          "description": "Creates a copy with a different data set dictionary.",
+          "parameters": [
+            {
+              "name": "dataSets",
+              "type": "ProcessedDataSet>"
+            }
+          ]
+        },
+        {
+          "name": "WithParameters",
+          "kind": "Method",
+          "type": "ReportProcessingContext",
+          "description": "Creates a copy with a different parameter dictionary.",
+          "parameters": [
+            {
+              "name": "parameters",
+              "type": "ReportParameterValue>"
+            }
+          ]
+        },
+        {
+          "name": "Culture",
+          "kind": "Property",
+          "type": "CultureInfo",
+          "description": "Culture used for collation, formatting and type conversion."
+        },
+        {
+          "name": "DataSets",
+          "kind": "Property",
+          "type": "IReadOnlyDictionary<string, ProcessedDataSet>",
+          "description": "Materialized data sets available to processing expressions."
+        },
+        {
+          "name": "ExecutionContext",
+          "kind": "Property",
+          "type": "ReportExecutionContext",
+          "description": "Tenant-scoped execution context."
+        },
+        {
+          "name": "Globals",
+          "kind": "Property",
+          "type": "ExpressionGlobals",
+          "description": "Global expression values."
+        },
+        {
+          "name": "Parameters",
+          "kind": "Property",
+          "type": "IReadOnlyDictionary<string, ReportParameterValue>",
+          "description": "Resolved report parameters."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportProcessingException",
+      "kind": "Class",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Exception thrown by the report processing pipeline.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/ReportProcessingException.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Code",
+          "kind": "Property",
+          "type": "string",
+          "description": "Stable processing error code."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportProcessingOptions",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Processing options for report instantiation.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/BandInstantiation.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportResolvedParameterAvailableValue",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Resolved report parameter option.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/ParameterProcessing.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportSortDefinition",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Expression-backed sort definition.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetProcessing.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportSortDirection",
+      "kind": "Enum",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Sort direction for report processing.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetProcessing.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportSubReportInstance",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Processed sub-report placeholder with evaluated parameters.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/BandInstantiation.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTextBoxInstance",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Processed text box instance.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/BandInstantiation.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTextRun",
+      "kind": "Record",
+      "category": "Processing",
+      "namespace": "Tempo.Reporting.Engine.Processing",
+      "description": "Processed rich-text run placeholder produced from a text box value.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Processing/BandInstantiation.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportSnapshot",
+      "kind": "Class",
+      "category": "Snapshot",
+      "namespace": "Tempo.Reporting.Engine.Snapshot",
+      "description": "Immutable page snapshot consumed by reporting canvas and export renderers.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportSnapshot.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CurrentSchemaVersion",
+          "kind": "Field",
+          "type": "int",
+          "description": "Current snapshot schema version."
+        },
+        {
+          "name": "Pages",
+          "kind": "Property",
+          "type": "List<ReportSnapshotPage>"
+        },
+        {
+          "name": "SchemaVersion",
+          "kind": "Property",
+          "type": "int"
+        },
+        {
+          "name": "SnapshotId",
+          "kind": "Property",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "itemName": "ReportSnapshotCommand",
+      "kind": "Class",
+      "category": "Snapshot",
+      "namespace": "Tempo.Reporting.Engine.Snapshot",
+      "description": "Single absolute drawing primitive in a report snapshot page.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportSnapshotCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ClipPop",
+          "kind": "Method",
+          "type": "ReportSnapshotCommand",
+          "description": "Creates a clip-pop command.",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "ClipPush",
+          "kind": "Method",
+          "type": "ReportSnapshotCommand",
+          "description": "Creates a rectangular clip-push command.",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string"
+            },
+            {
+              "name": "x",
+              "type": "double"
+            },
+            {
+              "name": "y",
+              "type": "double"
+            },
+            {
+              "name": "width",
+              "type": "double"
+            },
+            {
+              "name": "height",
+              "type": "double"
+            }
+          ]
+        },
+        {
+          "name": "Image",
+          "kind": "Method",
+          "type": "ReportSnapshotCommand",
+          "description": "Creates an image command.",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string"
+            },
+            {
+              "name": "x",
+              "type": "double"
+            },
+            {
+              "name": "y",
+              "type": "double"
+            },
+            {
+              "name": "width",
+              "type": "double"
+            },
+            {
+              "name": "height",
+              "type": "double"
+            },
+            {
+              "name": "source",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Line",
+          "kind": "Method",
+          "type": "ReportSnapshotCommand",
+          "description": "Creates a line command.",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string"
+            },
+            {
+              "name": "x",
+              "type": "double"
+            },
+            {
+              "name": "y",
+              "type": "double"
+            },
+            {
+              "name": "width",
+              "type": "double"
+            },
+            {
+              "name": "height",
+              "type": "double"
+            },
+            {
+              "name": "stroke",
+              "type": "string"
+            },
+            {
+              "name": "strokeWidth",
+              "type": "double"
+            }
+          ]
+        },
+        {
+          "name": "Baseline",
+          "kind": "Property",
+          "type": "double?"
+        },
+        {
+          "name": "Fill",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "FontFamily",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "FontSize",
+          "kind": "Property",
+          "type": "double?"
+        },
+        {
+          "name": "FontStyle",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "FontWeight",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "Height",
+          "kind": "Property",
+          "type": "double"
+        },
+        {
+          "name": "Highlight",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "Id",
+          "kind": "Property",
+          "type": "string"
+        },
+        {
+          "name": "LetterSpacing",
+          "kind": "Property",
+          "type": "double"
+        },
+        {
+          "name": "PathData",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "Rotation",
+          "kind": "Property",
+          "type": "double"
+        },
+        {
+          "name": "Source",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "StrikeThrough",
+          "kind": "Property",
+          "type": "bool"
+        },
+        {
+          "name": "Stroke",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "StrokeWidth",
+          "kind": "Property",
+          "type": "double"
+        },
+        {
+          "name": "Text",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "Type",
+          "kind": "Property",
+          "type": "ReportSnapshotCommandType"
+        },
+        {
+          "name": "Underline",
+          "kind": "Property",
+          "type": "bool"
+        },
+        {
+          "name": "Width",
+          "kind": "Property",
+          "type": "double"
+        },
+        {
+          "name": "X",
+          "kind": "Property",
+          "type": "double"
+        },
+        {
+          "name": "Y",
+          "kind": "Property",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "itemName": "ReportSnapshotCommandType",
+      "kind": "Enum",
+      "category": "Snapshot",
+      "namespace": "Tempo.Reporting.Engine.Snapshot",
+      "description": "Primitive command kinds supported by the F0 reporting painter contract.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportSnapshotCommandType.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportSnapshotJsonException",
+      "kind": "Class",
+      "category": "Snapshot",
+      "namespace": "Tempo.Reporting.Engine.Snapshot",
+      "description": "Thrown when a report snapshot cannot be read safely.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportSnapshotJsonException.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportSnapshotJsonSerializer",
+      "kind": "Class",
+      "category": "Snapshot",
+      "namespace": "Tempo.Reporting.Engine.Snapshot",
+      "description": "Serializer for fixed-page report snapshot JSON exchanged between the engine, Blazor viewer, Report Server render endpoints, and tests.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportSnapshotJsonSerializer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Deserialize",
+          "kind": "Method",
+          "type": "ReportSnapshot",
+          "description": "Deserializes and validates a report snapshot.",
+          "parameters": [
+            {
+              "name": "json",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Serialize",
+          "kind": "Method",
+          "type": "string",
+          "description": "Serializes a report snapshot with deterministic property naming and enum values.",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "ReportSnapshot"
+            }
+          ]
+        }
+      ],
+      "relatedTypes": [
+        "ReportSnapshot",
+        "ReportSnapshotPage",
+        "ReportSnapshotCommand",
+        "ReportSnapshotJsonException"
+      ]
+    },
+    {
+      "itemName": "ReportSnapshotPage",
+      "kind": "Class",
+      "category": "Snapshot",
+      "namespace": "Tempo.Reporting.Engine.Snapshot",
+      "description": "Single fixed-size report page containing absolute drawing commands.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportSnapshotPage.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Commands",
+          "kind": "Property",
+          "type": "List<ReportSnapshotCommand>"
+        },
+        {
+          "name": "Height",
+          "kind": "Property",
+          "type": "double"
+        },
+        {
+          "name": "PageNumber",
+          "kind": "Property",
+          "type": "int"
+        },
+        {
+          "name": "Width",
+          "kind": "Property",
+          "type": "double"
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [
+    {
+      "title": "Evaluate a Report Expression",
+      "category": "Expressions",
+      "description": "Evaluates a safe report expression against fields, parameters, and globals without reflection or environment access.",
+      "code": "var value = ExpressionEvaluator.Evaluate(\n    \"=Fields.Price * Parameters.Rate\",\n    new ExpressionContext(\n        new Dictionary<string, object?> { [\"Price\"] = 120m },\n        new Dictionary<string, object?> { [\"Rate\"] = 1.21m },\n        new ExpressionGlobals(DateTimeOffset.UtcNow, \"user-1\", \"tenant-a\")));"
+    },
+    {
+      "title": "Generate a Snapshot",
+      "category": "Layout",
+      "description": "Converts a processed report instance into deterministic fixed-page snapshot commands for the Blazor canvas viewer and PDF renderer.",
+      "code": "var instance = ReportBandInstantiator.Instantiate(definition, dataSet, processingContext);\nvar snapshot = ReportSnapshotGenerator.Generate(instance, textMeasurer);"
+    },
+    {
+      "title": "Render PDF and PNG",
+      "category": "PDF",
+      "description": "Uses the same snapshot command stream for PDF and PNG output.",
+      "code": "var renderer = new ReportPdfRenderer();\nbyte[] pdf = renderer.Render(snapshot);\nbyte[] firstPagePng = renderer.RenderPagePng(snapshot.Pages[0]);"
+    },
+    {
+      "title": "Export Tabular Data",
+      "category": "Export",
+      "description": "Builds a tabular export document from processed report data and serializes it to CSV or XLSX.",
+      "code": "var document = ReportTabularExportBuilder.Build(definition, processingContext);\nvar csv = ReportCsvExporter.Export(document, new ReportCsvExportOptions { IncludeBom = true });\nvar xlsx = ReportXlsxExporter.Export(document, new ReportXlsxExportOptions());"
+    }
+  ],
+  "summary": {
+    "itemCount": 108,
+    "manualItemCount": 108,
+    "generatedItemCount": 108,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 0,
+    "publicApiTypeCount": 108
+  }
+}

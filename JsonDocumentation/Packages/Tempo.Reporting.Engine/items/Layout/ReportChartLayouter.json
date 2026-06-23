@@ -1,0 +1,84 @@
+{
+  "kind": "Class",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Lays out engine-drawn report chart elements.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/ChartLayout.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CategoryCenter",
+      "kind": "Method",
+      "type": "double",
+      "parameters": [
+        {
+          "name": "index",
+          "type": "int"
+        },
+        {
+          "name": "categoryCount",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "ScaleValue",
+      "kind": "Method",
+      "type": "double",
+      "parameters": [
+        {
+          "name": "value",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "ValueFor",
+      "kind": "Method",
+      "type": "double",
+      "parameters": [
+        {
+          "name": "category",
+          "type": "ChartCategoryKey"
+        }
+      ]
+    },
+    {
+      "name": "Category",
+      "kind": "Property",
+      "type": "ChartCategoryKey"
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Points",
+      "kind": "Property",
+      "type": "IReadOnlyList<ChartDataPoint>"
+    },
+    {
+      "name": "SeriesColor",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Slug",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "double"
+    }
+  ],
+  "itemName": "ReportChartLayouter"
+}

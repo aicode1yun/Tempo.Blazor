@@ -1,0 +1,34 @@
+{
+  "phase": "F8",
+  "testName": "F8_PdfRenderer_MatchesCanvasGoldenImagesForInvoiceAndSales",
+  "invoicePages": 2,
+  "salesPages": 38,
+  "pdfFiles": [
+    "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f8/invoice-print.pdf",
+    "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f8/sales-print.pdf"
+  ],
+  "functionalReview": "The Skia PDF renderer exports the F7 invoice and grouped sales snapshots, embeds supplied TTF fonts, and rasterized PDF pages stay within the canvas golden-image tolerance.",
+  "uxReview": "Both PDF print files preserve the report page proportions, repeated table headers, aligned numeric columns, compact row rhythm and clean page backgrounds.",
+  "results": [
+    {
+      "snapshotId": "f7-invoice",
+      "pageNumber": 1,
+      "canvasPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f8/02-invoice-canvas.png",
+      "pdfRasterPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f8/03-invoice-pdf-raster.png",
+      "diffPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f8/01-canvas-vs-pdf-diff.png",
+      "differentPixelCount": 1693,
+      "totalPixelCount": 550400,
+      "differentPixelRatio": 0.0030759447674418607
+    },
+    {
+      "snapshotId": "f7-sales",
+      "pageNumber": 38,
+      "canvasPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f8/05-sales-canvas.png",
+      "pdfRasterPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f8/06-sales-pdf-raster.png",
+      "diffPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f8/04-sales-canvas-vs-pdf-diff.png",
+      "differentPixelCount": 1113,
+      "totalPixelCount": 275200,
+      "differentPixelRatio": 0.004044331395348837
+    }
+  ]
+}

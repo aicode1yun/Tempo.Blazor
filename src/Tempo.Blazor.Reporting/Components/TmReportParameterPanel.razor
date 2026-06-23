@@ -1,0 +1,276 @@
+@namespace Tempo.Blazor.Reporting.Components
+
+<section class="@CssClass" data-testid="tm-report-parameter-panel" aria-label="@Loc["TmReportViewer_Parameters"]">
+    @if (VisibleParameters.Count > 0)
+    {
+        <div class="tm-report-parameters__grid">
+            @foreach (var metadata in VisibleParameters)
+            {
+                var definition = metadata.Definition;
+                var fieldId = FieldId(definition.Name);
+                <div class="tm-report-parameters__field" data-testid="@($"tm-report-param-field-{definition.Name}")">
+                    <label class="tm-report-parameters__label" for="@fieldId">
+                        @ParameterLabel(definition)
+                        @if (definition.Required)
+                        {
+                            <span class="tm-report-parameters__required" aria-hidden="true">*</span>
+                        }
+                    </label>
+
+                    @if (definition.DataType == ReportParameterType.Boolean)
+                    {
+                        <label class="tm-report-parameters__check">
+                            <input id="@fieldId"
+                                   data-testid="@($"tm-report-param-{definition.Name}")"
+                                   type="checkbox"
+                                   checked="@GetBoolean(definition.Name)"
+                                   disabled="@Disabled"
+                                   @onchange="args => SetBooleanAsync(definition, args)" />
+                            <span>@ParameterLabel(definition)</span>
+                        </label>
+                    }
+                    else if (definition.DataType == ReportParameterType.List && definition.AllowMultipleValues)
+                    {
+                        <div id="@fieldId" class="tm-report-parameters__multi" data-testid="@($"tm-report-param-{definition.Name}")">
+                            @foreach (var option in metadata.Options)
+                            {
+                                <label class="tm-report-parameters__option">
+                                    <input type="checkbox"
+                                           value="@option.Value"
+                                           checked="@IsSelected(definition.Name, option.Value)"
+                                           disabled="@Disabled"
+                                           @onchange="args => ToggleOptionAsync(definition, option.Value, args)" />
+                                    <span>@option.Label</span>
+                                </label>
+                            }
+                        </div>
+                    }
+                    else if (definition.DataType == ReportParameterType.List)
+                    {
+                        <select id="@fieldId"
+                                class="tm-report-parameters__control"
+                                data-testid="@($"tm-report-param-{definition.Name}")"
+                                value="@GetSingle(definition.Name)"
+                                disabled="@Disabled"
+                                @onchange="args => SetSingleAsync(definition, args.Value?.ToString())">
+                            <option value="">@Loc["TmReportViewer_SelectValue"]</option>
+                            @foreach (var option in metadata.Options)
+                            {
+                                <option value="@option.Value">@option.Label</option>
+                            }
+                        </select>
+                    }
+                    else
+                    {
+                        <input id="@fieldId"
+                               class="tm-report-parameters__control"
+                               data-testid="@($"tm-report-param-{definition.Name}")"
+                               type="@InputType(definition)"
+                               value="@GetSingle(definition.Name)"
+                               disabled="@Disabled"
+                               @oninput="args => SetSingleAsync(definition, args.Value?.ToString())" />
+                    }
+
+                    @if (_errors.TryGetValue(definition.Name, out var error))
+                    {
+                        <div class="tm-report-parameters__error" data-testid="@($"tm-report-param-error-{definition.Name}")">@error</div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    <div class="tm-report-parameters__actions">
+        <TmButton Variant="ButtonVariant.Primary"
+                  Size="ButtonSize.Sm"
+                  Icon="@IconNames.Play"
+                  Disabled="@Disabled"
+                  OnClick="SubmitAsync">
+            @Loc["TmReportViewer_Run"]
+        </TmButton>
+    </div>
+</section>
+
+@code {
+    private readonly Dictionary<string, List<string>> _values = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _errors = new(StringComparer.Ordinal);
+    private IReadOnlyDictionary<string, ReportParameterValue>? _lastValues;
+
+    /// <summary>Parameter metadata to render.</summary>
+    [Parameter] public IReadOnlyList<ReportViewerParameterMetadata> Parameters { get; set; } = [];
+
+    /// <summary>Current parameter values.</summary>
+    [Parameter] public IReadOnlyDictionary<string, ReportParameterValue>? Values { get; set; }
+
+    /// <summary>Fired when a parameter value changes.</summary>
+    [Parameter] public EventCallback<ReportParameterChangedEventArgs> OnParameterChanged { get; set; }
+
+    /// <summary>Fired when the user submits parameters.</summary>
+    [Parameter] public EventCallback<ReportParameterSubmitEventArgs> OnSubmit { get; set; }
+
+    /// <summary>Disables parameter controls.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Additional CSS classes.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    private IReadOnlyList<ReportViewerParameterMetadata> VisibleParameters
+        => Parameters.Where(parameter => !parameter.Definition.Hidden).ToArray();
+
+    private string CssClass
+        => string.IsNullOrWhiteSpace(Class)
+            ? "tm-report-parameters"
+            : $"tm-report-parameters {Class}";
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        var valuesChanged = !ReferenceEquals(_lastValues, Values);
+        _lastValues = Values;
+        var names = Parameters.Select(parameter => parameter.Definition.Name).ToHashSet(StringComparer.Ordinal);
+        foreach (var staleName in _values.Keys.Where(name => !names.Contains(name)).ToArray())
+        {
+            _values.Remove(staleName);
+            _errors.Remove(staleName);
+        }
+
+        foreach (var metadata in Parameters)
+        {
+            var name = metadata.Definition.Name;
+            if (Values is not null && Values.TryGetValue(name, out var value))
+            {
+                if (valuesChanged || !_values.ContainsKey(name))
+                {
+                    _values[name] = value.Values
+                        .Select(item => Convert.ToString(item, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty)
+                        .ToList();
+                }
+            }
+            else if (_values.ContainsKey(name))
+            {
+                continue;
+            }
+            else if (metadata.Definition.DataType == ReportParameterType.Boolean)
+            {
+                _values[name] = ["false"];
+            }
+            else
+            {
+                _values[name] = [];
+            }
+        }
+    }
+
+    private static string FieldId(string name) => $"tm-report-param-{name}";
+
+    private static string InputType(ReportParameterDefinition definition)
+        => definition.DataType switch
+        {
+            ReportParameterType.Number => "number",
+            ReportParameterType.Date => "date",
+            _ => "text",
+        };
+
+    private static string ParameterLabel(ReportParameterDefinition definition)
+        => string.IsNullOrWhiteSpace(definition.Label) ? definition.Name : definition.Label;
+
+    private string GetSingle(string name)
+        => _values.TryGetValue(name, out var values) ? values.FirstOrDefault() ?? string.Empty : string.Empty;
+
+    private bool GetBoolean(string name)
+        => bool.TryParse(GetSingle(name), out var value) && value;
+
+    private bool IsSelected(string name, string value)
+        => _values.TryGetValue(name, out var values) && values.Contains(value, StringComparer.Ordinal);
+
+    private async Task SetSingleAsync(ReportParameterDefinition definition, string? value)
+    {
+        _values[definition.Name] = string.IsNullOrWhiteSpace(value) ? [] : [value];
+        _errors.Remove(definition.Name);
+        await OnParameterChanged.InvokeAsync(new ReportParameterChangedEventArgs(definition, BuildValues()));
+    }
+
+    private async Task SetBooleanAsync(ReportParameterDefinition definition, ChangeEventArgs args)
+    {
+        var value = args.Value is bool boolean && boolean;
+        _values[definition.Name] = [value ? "true" : "false"];
+        _errors.Remove(definition.Name);
+        await OnParameterChanged.InvokeAsync(new ReportParameterChangedEventArgs(definition, BuildValues()));
+    }
+
+    private async Task ToggleOptionAsync(ReportParameterDefinition definition, string value, ChangeEventArgs args)
+    {
+        if (!_values.TryGetValue(definition.Name, out var values))
+        {
+            values = [];
+            _values[definition.Name] = values;
+        }
+
+        var selected = args.Value is bool boolean && boolean;
+        if (selected && !values.Contains(value, StringComparer.Ordinal))
+        {
+            values.Add(value);
+        }
+        else if (!selected)
+        {
+            values.RemoveAll(item => string.Equals(item, value, StringComparison.Ordinal));
+        }
+
+        _errors.Remove(definition.Name);
+        await OnParameterChanged.InvokeAsync(new ReportParameterChangedEventArgs(definition, BuildValues()));
+    }
+
+    private async Task SubmitAsync()
+    {
+        _errors.Clear();
+        foreach (var metadata in VisibleParameters)
+        {
+            var definition = metadata.Definition;
+            if (!definition.Required || definition.DataType == ReportParameterType.Boolean)
+            {
+                continue;
+            }
+
+            if (!_values.TryGetValue(definition.Name, out var values) || values.Count == 0 || values.All(string.IsNullOrWhiteSpace))
+            {
+                _errors[definition.Name] = Loc["TmReportViewer_ParameterRequired", ParameterLabel(definition)];
+            }
+        }
+
+        if (_errors.Count > 0)
+        {
+            return;
+        }
+
+        await OnSubmit.InvokeAsync(new ReportParameterSubmitEventArgs(BuildValues()));
+    }
+
+    private IReadOnlyDictionary<string, ReportParameterValue> BuildValues()
+    {
+        var values = new Dictionary<string, ReportParameterValue>(StringComparer.Ordinal);
+        foreach (var metadata in Parameters)
+        {
+            var definition = metadata.Definition;
+            if (!_values.TryGetValue(definition.Name, out var rawValues))
+            {
+                continue;
+            }
+
+            var nonEmpty = rawValues.Where(value => !string.IsNullOrWhiteSpace(value)).Cast<object?>().ToArray();
+            if (definition.DataType == ReportParameterType.Boolean)
+            {
+                values[definition.Name] = ReportParameterValue.Scalar(GetBoolean(definition.Name));
+            }
+            else if (definition.AllowMultipleValues && nonEmpty.Length > 0)
+            {
+                values[definition.Name] = ReportParameterValue.Multiple(nonEmpty);
+            }
+            else if (nonEmpty.Length > 0)
+            {
+                values[definition.Name] = ReportParameterValue.Scalar(nonEmpty[0]);
+            }
+        }
+
+        return values;
+    }
+}

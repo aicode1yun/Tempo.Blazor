@@ -1,0 +1,28 @@
+{
+  "examples": [
+    {
+      "title": "Embedded Viewer",
+      "category": "Components",
+      "description": "Runs the reporting engine locally from a ReportDefinition and IReportDataProvider.",
+      "code": "@using Tempo.Blazor.Reporting.Services\n\n<TmReportViewer ReportSource=\"@_source\"\n                TenantId=\"tenant-a\"\n                UserId=\"user-1\"\n                Height=\"760px\" />\n\n@code {\n    private IReportSource _source = default!;\n\n    protected override void OnInitialized()\n    {\n        _source = new EmbeddedReportSource(_definition, _dataProvider);\n    }\n}"
+    },
+    {
+      "title": "Remote Viewer",
+      "category": "Components",
+      "description": "Uses HTTP endpoints for metadata, snapshot rendering, and export.",
+      "code": "@inject HttpClient Http\n\n<TmReportViewer ReportSource=\"@_source\"\n                TenantId=\"tenant-a\"\n                UserId=\"user-1\"\n                CultureName=\"cs-CZ\" />\n\n@code {\n    private IReportSource? _source;\n\n    protected override void OnInitialized()\n    {\n        _source = new RemoteReportSource(Http, \"sales-by-region\");\n    }\n}"
+    },
+    {
+      "title": "Explorer to Viewer Flow",
+      "category": "Components",
+      "description": "Shows a catalog with folder navigation and opens the selected report in the viewer.",
+      "code": "<TmReportExplorer RootFolder=\"@_root\"\n                  Reports=\"@_reports\"\n                  CurrentFolderPath=\"@_folder\"\n                  CurrentFolderPathChanged=\"folder => _folder = folder\"\n                  ReportOpened=\"OpenReport\" />\n\n@if (_selectedSource is not null)\n{\n    <TmReportViewer ReportSource=\"@_selectedSource\" />\n}"
+    },
+    {
+      "title": "Register Services",
+      "category": "Setup",
+      "description": "Registers Tempo.Blazor services, HttpClient, default text measurer, and PDF renderer dependencies used by reporting components.",
+      "code": "builder.Services.AddTempoBlazorReporting();"
+    }
+  ]
+}

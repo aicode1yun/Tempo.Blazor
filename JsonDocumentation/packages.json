@@ -1,4 +1,5 @@
 {
+  "aggregateOutputFile": "tempo-blazor-all.json",
   "packages": [
     {
       "packageId": "Tempo.Blazor",
@@ -78,6 +79,41 @@
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true
+    },
+    {
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourceProject": "src/Tempo.Reporting.Abstractions/Tempo.Reporting.Abstractions.csproj",
+      "outputFile": "tempo-reporting-abstractions.json",
+      "documentationRoots": [ "Packages/Tempo.Reporting.Abstractions/items" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "gettingStartedFile": "Packages/Tempo.Reporting.Abstractions/gettingStarted.json",
+      "examplesFile": "Packages/Tempo.Reporting.Abstractions/libraryExamples.json",
+      "includePublicTypes": true
+    },
+    {
+      "packageId": "Tempo.Reporting.Engine",
+      "sourceProject": "src/Tempo.Reporting.Engine/Tempo.Reporting.Engine.csproj",
+      "outputFile": "tempo-reporting-engine.json",
+      "documentationRoots": [ "Packages/Tempo.Reporting.Engine/items" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "gettingStartedFile": "Packages/Tempo.Reporting.Engine/gettingStarted.json",
+      "examplesFile": "Packages/Tempo.Reporting.Engine/libraryExamples.json",
+      "includePublicTypes": true
+    },
+    {
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourceProject": "src/Tempo.Blazor.Reporting/Tempo.Blazor.Reporting.csproj",
+      "outputFile": "tempo-blazor-reporting.json",
+      "documentationRoots": [ "Packages/Tempo.Blazor.Reporting/items" ],
+      "componentRoots": [ "src/Tempo.Blazor.Reporting/Components" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "gettingStartedFile": "Packages/Tempo.Blazor.Reporting/gettingStarted.json",
+      "examplesFile": "Packages/Tempo.Blazor.Reporting/libraryExamples.json",
+      "includePublicTypes": true,
+      "includeAssets": true
     }
   ]
 }

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Available values source kind.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Parameters.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportParameterAvailableValuesKind"
+}

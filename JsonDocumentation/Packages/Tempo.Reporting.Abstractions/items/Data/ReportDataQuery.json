@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Data",
+  "namespace": "Tempo.Reporting.Abstractions.Data",
+  "description": "Provider query descriptor.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDataQuery"
+}

@@ -1,0 +1,23 @@
+{
+  "itemName": "IReportDataProvider",
+  "kind": "Interface",
+  "category": "Data",
+  "namespace": "Tempo.Reporting.Abstractions.Data",
+  "description": "Tenant-aware provider contract that supplies report processing with a schema and streaming-friendly rows for a named data set.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+  "documentationStatus": "manual",
+  "methods": [
+    {
+      "name": "GetDataAsync",
+      "description": "Loads data for one report data set using the provider-specific query, resolved report parameters, and ReportExecutionContext."
+    }
+  ],
+  "relatedTypes": [
+    "ReportDataQuery",
+    "ReportDataSetResult",
+    "ReportDataColumn",
+    "ReportDataRow",
+    "ReportExecutionContext"
+  ]
+}

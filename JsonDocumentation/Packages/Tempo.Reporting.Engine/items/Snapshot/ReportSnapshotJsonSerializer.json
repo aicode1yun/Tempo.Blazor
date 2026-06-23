@@ -1,0 +1,16 @@
+{
+  "itemName": "ReportSnapshotJsonSerializer",
+  "kind": "Class",
+  "category": "Snapshot",
+  "namespace": "Tempo.Reporting.Engine.Snapshot",
+  "description": "Serializer for fixed-page report snapshot JSON exchanged between the engine, Blazor viewer, Report Server render endpoints, and tests.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportSnapshotJsonSerializer.cs",
+  "documentationStatus": "manual",
+  "relatedTypes": [
+    "ReportSnapshot",
+    "ReportSnapshotPage",
+    "ReportSnapshotCommand",
+    "ReportSnapshotJsonException"
+  ]
+}

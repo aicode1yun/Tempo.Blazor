@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Grouping definition with optional header and footer bands.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Bands.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportGroupDefinition"
+}

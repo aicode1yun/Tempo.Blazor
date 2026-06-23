@@ -1,0 +1,30 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Report metadata needed before rendering.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerMetadata.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Parameters",
+      "kind": "Property",
+      "type": "IReadOnlyList<ReportViewerParameterMetadata>",
+      "description": "Viewer parameter metadata."
+    },
+    {
+      "name": "ReportId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable report identifier."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string",
+      "description": "Report title."
+    }
+  ],
+  "itemName": "ReportViewerMetadata"
+}

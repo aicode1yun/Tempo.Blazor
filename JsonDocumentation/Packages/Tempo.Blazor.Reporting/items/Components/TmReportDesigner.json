@@ -1,0 +1,20 @@
+{
+  "itemName": "TmReportDesigner",
+  "kind": "Component",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Reporting.Components",
+  "description": "Lightweight report designer MVP with band canvas, element toolbox, properties panel, data/parameter editing, expression authoring, preview, validation summary, and draft/publish save callbacks.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Components/TmReportDesigner.razor",
+  "documentationStatus": "manual",
+  "requiredImports": [
+    "@using Tempo.Blazor.Reporting.Components",
+    "@using Tempo.Blazor.Reporting.Models",
+    "@using Tempo.Reporting.Abstractions.Definitions"
+  ],
+  "relatedTypes": [
+    "ReportDefinition",
+    "ReportDesignerSaveEventArgs",
+    "ReportDesignerSaveKind"
+  ]
+}

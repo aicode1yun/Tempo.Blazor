@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "How a laid-out line ended.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/LineBreaking.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportLineBreakKind"
+}

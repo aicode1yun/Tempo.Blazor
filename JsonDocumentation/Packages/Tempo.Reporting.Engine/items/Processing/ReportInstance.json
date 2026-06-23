@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Processed report instance produced before layout.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/BandInstantiation.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportInstance"
+}

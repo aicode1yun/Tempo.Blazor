@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Interop",
+  "namespace": "Tempo.Blazor.Reporting.Interop",
+  "description": "Serializes report parameter values for remote report viewer HTTP calls.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Interop/ReportParameterValueJsonConverter.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportParameterValueJsonConverter"
+}

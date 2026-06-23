@@ -1,0 +1,93 @@
+@page "/reports/{*Path}"
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager Navigation
+@inject ReportServerSessionState Session
+@inject ReportServerCatalogStore Catalog
+@inject DemoReportSourceFactory SourceFactory
+
+<ReportServerShell Title="@(_report?.Name ?? "Report viewer")" ActiveSection="reports">
+    <div class="rs-page rs-viewer-page" data-testid="f12-viewer-page">
+        @if (_report is null)
+        {
+            <div class="rs-empty" data-testid="report-not-found">
+                <TmIcon Name="@IconNames.AlertTriangle" Size="IconSize.Md" />
+                <strong>Report not found</strong>
+                <span>The requested report path does not exist in this tenant.</span>
+            </div>
+        }
+        else
+        {
+            <div class="rs-viewer-page__heading">
+                <div>
+                    <p class="rs-kicker">@_report.FolderPath</p>
+                    <h2>@_report.Name</h2>
+                    <p>@_report.Description</p>
+                </div>
+                <div class="rs-param-chips" data-testid="viewer-deep-link-params">
+                    @foreach (var parameter in _parameterValues)
+                    {
+                        <span>@parameter.Key: @parameter.Value.ScalarValue</span>
+                    }
+                </div>
+            </div>
+
+            <TmReportViewer ReportSource="@_source"
+                            ParameterValues="@_parameterValues"
+                            Height="720px"
+                            ShowParameterPanel="true"
+                            TenantId="@Session.CurrentTenantId"
+                            UserId="@Session.UserName"
+                            CultureName="en-US"
+                            PdfExported="HandleExported"
+                            CsvExported="HandleExported"
+                            XlsxExported="HandleExported" />
+
+            @if (_lastExport is not null)
+            {
+                <div class="rs-export-status" data-testid="viewer-export-status">
+                    Exported @_lastExport.FileName (@_lastExport.Bytes.Length bytes)
+                </div>
+            }
+        }
+    </div>
+</ReportServerShell>
+
+@code {
+    /// <summary>Catch-all report path after <c>/reports/</c>.</summary>
+    [Parameter] public string? Path { get; set; }
+
+    private ReportExplorerReportItem? _report;
+    private IReportSource? _source;
+    private IReadOnlyDictionary<string, ReportParameterValue> _parameterValues =
+        new Dictionary<string, ReportParameterValue>(StringComparer.Ordinal);
+    private ReportViewerExportResult? _lastExport;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        _report = Catalog.GetReportByPath(Session.CurrentTenantId, Path ?? string.Empty);
+        _source = _report is null ? null : SourceFactory.CreateReportSource(_report.Id);
+        _parameterValues = ParseParameterValues();
+    }
+
+    private IReadOnlyDictionary<string, ReportParameterValue> ParseParameterValues()
+    {
+        var result = new Dictionary<string, ReportParameterValue>(StringComparer.Ordinal);
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        foreach (var pair in query)
+        {
+            if (string.IsNullOrWhiteSpace(pair.Key) || pair.Value.Count == 0)
+            {
+                continue;
+            }
+
+            result[pair.Key] = ReportParameterValue.Scalar(pair.Value[0]);
+        }
+
+        return result;
+    }
+
+    private void HandleExported(ReportViewerExportResult export)
+        => _lastExport = export;
+}

@@ -1,0 +1,517 @@
+@namespace Tempo.Blazor.Reporting.Components
+@implements IAsyncDisposable
+@using Tempo.Blazor.Reporting.Interop
+@using Tempo.Blazor.Reporting.Services
+@using Tempo.Reporting.Engine.Snapshot
+@inject IJSRuntime JS
+
+<div @ref="_root"
+     class="@CssClass"
+     style="@RootStyle"
+     data-testid="tm-report-viewer"
+     @attributes="AdditionalAttributes">
+    <div class="tm-report-viewer__toolbar" role="toolbar" aria-label="@Loc["TmReportViewer_ToolbarLabel"]" data-testid="tm-report-toolbar">
+        <div class="tm-report-viewer__toolbar-group">
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.SkipBack" AriaLabel="@Loc["TmReportViewer_FirstPage"]" Disabled="@(!CanGoPrevious)" OnClick="FirstPageAsync" />
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.ChevronLeft" AriaLabel="@Loc["TmReportViewer_PreviousPage"]" Disabled="@(!CanGoPrevious)" OnClick="PreviousPageAsync" />
+            <label class="tm-report-viewer__page-label" for="@_pageInputId">@Loc["TmReportViewer_Page"]</label>
+            <input id="@_pageInputId"
+                   data-testid="tm-report-page-input"
+                   class="tm-report-viewer__page-input"
+                   type="number"
+                   min="1"
+                   max="@PageCount"
+                   value="@CurrentPage"
+                   disabled="@(_snapshot is null || _isLoading)"
+                   @onchange="HandlePageInputAsync" />
+            <span class="tm-report-viewer__page-count" data-testid="tm-report-page-count">@Loc["TmReportViewer_PageOf", CurrentPage, PageCount]</span>
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.ChevronRight" AriaLabel="@Loc["TmReportViewer_NextPage"]" Disabled="@(!CanGoNext)" OnClick="NextPageAsync" />
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.SkipForward" AriaLabel="@Loc["TmReportViewer_LastPage"]" Disabled="@(!CanGoNext)" OnClick="LastPageAsync" />
+        </div>
+
+        <div class="tm-report-viewer__toolbar-group">
+            <label class="tm-report-viewer__zoom-label" for="@_zoomSelectId">@Loc["TmReportViewer_Zoom"]</label>
+            <select id="@_zoomSelectId"
+                    data-testid="tm-report-zoom-select"
+                    class="tm-report-viewer__zoom-select"
+                    value="@ZoomValue"
+                    disabled="@(_snapshot is null || _isLoading)"
+                    @onchange="HandleZoomChangedAsync">
+                <option value="FitWidth">@Loc["TmReportViewer_FitWidth"]</option>
+                <option value="FitPage">@Loc["TmReportViewer_FitPage"]</option>
+                <option value="50">50%</option>
+                <option value="75">75%</option>
+                <option value="100">100%</option>
+                <option value="125">125%</option>
+                <option value="150">150%</option>
+                <option value="200">200%</option>
+            </select>
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.ZoomOut" AriaLabel="@Loc["TmReportViewer_ZoomOut"]" Disabled="@(_snapshot is null || _isLoading)" OnClick="ZoomOutAsync" />
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.ZoomIn" AriaLabel="@Loc["TmReportViewer_ZoomIn"]" Disabled="@(_snapshot is null || _isLoading)" OnClick="ZoomInAsync" />
+        </div>
+
+        <div class="tm-report-viewer__toolbar-spacer"></div>
+
+        @if (_metadata?.Parameters.Count > 0 && ShowParameterPanelToggle)
+        {
+            <TmButton Variant="ButtonVariant.Ghost"
+                      Size="ButtonSize.Sm"
+                      Icon="@IconNames.Sliders"
+                      AriaLabel="@Loc["TmReportViewer_Parameters"]"
+                      OnClick="ToggleParametersAsync">
+                @Loc["TmReportViewer_Parameters"]
+            </TmButton>
+        }
+
+        <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.Refresh" AriaLabel="@Loc["TmReportViewer_Refresh"]" Disabled="@(ReportSource is null || _isLoading)" OnClick="RefreshAsync" />
+
+        <div class="tm-report-viewer__export" data-testid="tm-report-export">
+            <TmButton Variant="ButtonVariant.Ghost"
+                      Size="ButtonSize.Sm"
+                      Icon="@IconNames.FileDown"
+                      IconRight="true"
+                      AriaLabel="@Loc["TmReportViewer_Export"]"
+                      Disabled="@(_snapshot is null || _isLoading)"
+                      OnClick="ToggleExportMenuAsync">
+                @Loc["TmReportViewer_Export"]
+            </TmButton>
+            @if (_exportMenuOpen)
+            {
+                <div class="tm-report-viewer__export-menu" role="menu" data-testid="tm-report-export-menu">
+                    <button type="button" role="menuitem" class="tm-report-viewer__menu-item" data-testid="tm-report-export-pdf" @onclick="ExportPdfAsync">@Loc["TmReportViewer_ExportPdf"]</button>
+                    <button type="button" role="menuitem" class="tm-report-viewer__menu-item" data-testid="tm-report-export-csv" @onclick="ExportCsvAsync">@Loc["TmReportViewer_ExportCsv"]</button>
+                    <button type="button" role="menuitem" class="tm-report-viewer__menu-item" data-testid="tm-report-export-xlsx" @onclick="ExportXlsxAsync">@Loc["TmReportViewer_ExportXlsx"]</button>
+                </div>
+            }
+        </div>
+
+        <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.Print" AriaLabel="@Loc["TmReportViewer_Print"]" Disabled="@(_snapshot is null || _isLoading)" OnClick="PrintAsync" />
+    </div>
+
+    @if (_metadata?.Parameters.Count > 0 && _parametersOpen)
+    {
+        <TmReportParameterPanel Parameters="@_metadata.Parameters"
+                                Values="@_parameterValues"
+                                Disabled="@_isLoading"
+                                OnParameterChanged="HandleParameterChangedAsync"
+                                OnSubmit="HandleParameterSubmitAsync" />
+    }
+
+    <div class="tm-report-viewer__surface" data-testid="tm-report-surface">
+        <div class="tm-report-viewer__canvas-wrap @(_snapshot is null ? "tm-report-viewer__canvas-wrap--hidden" : null)" data-testid="tm-report-canvas-wrap">
+            <canvas @ref="_canvas" class="tm-report-viewer__canvas" data-testid="tm-report-viewer-canvas"></canvas>
+        </div>
+
+        @if (_isLoading)
+        {
+            <div class="tm-report-viewer__state" data-testid="tm-report-loading-state">
+                <TmSpinner Size="SpinnerSize.Md" />
+                <span>@Loc["TmReportViewer_Loading"]</span>
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="tm-report-viewer__state tm-report-viewer__state--error" data-testid="tm-report-error-state">
+                <TmIcon Name="@IconNames.AlertTriangle" Size="IconSize.Md" />
+                <strong>@Loc["TmReportViewer_ErrorTitle"]</strong>
+                <span>@_error</span>
+            </div>
+        }
+        else if (_snapshot is null)
+        {
+            <div class="tm-report-viewer__state" data-testid="tm-report-empty-state">
+                <TmIcon Name="@IconNames.FileText" Size="IconSize.Md" />
+                <strong>@Loc["TmReportViewer_EmptyTitle"]</strong>
+                <span>@Loc[ReportSource is null ? "TmReportViewer_NoSource" : "TmReportViewer_EmptyDescription"]</span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private const string ModulePath = "./_content/Tempo.Blazor.Reporting/js/reporting/tm-report-viewer.bundle.js";
+
+    private readonly string _pageInputId = $"tm-report-page-{Guid.NewGuid():N}";
+    private readonly string _zoomSelectId = $"tm-report-zoom-{Guid.NewGuid():N}";
+    private ElementReference _root;
+    private ElementReference _canvas;
+    private IJSObjectReference? _module;
+    private string? _viewerHandle;
+    private IReportSource? _loadedSource;
+    private ReportViewerMetadata? _metadata;
+    private ReportSnapshot? _snapshot;
+    private IReadOnlyDictionary<string, ReportParameterValue> _parameterValues =
+        new Dictionary<string, ReportParameterValue>(StringComparer.Ordinal);
+    private ReportViewerZoom _zoom = new();
+    private string? _interactionToken;
+    private string? _error;
+    private bool _isLoading;
+    private bool _parametersOpen = true;
+    private bool _exportMenuOpen;
+    private int _currentPage = 1;
+
+    /// <summary>Report source to render.</summary>
+    [Parameter] public IReportSource? ReportSource { get; set; }
+
+    /// <summary>Initial parameter values.</summary>
+    [Parameter] public IReadOnlyDictionary<string, ReportParameterValue>? ParameterValues { get; set; }
+
+    /// <summary>Whether the viewer renders immediately after metadata is loaded.</summary>
+    [Parameter] public bool AutoLoad { get; set; } = true;
+
+    /// <summary>Whether the parameter panel starts visible.</summary>
+    [Parameter] public bool ShowParameterPanel { get; set; } = true;
+
+    /// <summary>Whether users can toggle the parameter panel from the toolbar.</summary>
+    [Parameter] public bool ShowParameterPanelToggle { get; set; } = true;
+
+    /// <summary>Viewer height CSS value.</summary>
+    [Parameter] public string? Height { get; set; } = "720px";
+
+    /// <summary>Culture used for rendering.</summary>
+    [Parameter] public string CultureName { get; set; } = "en-US";
+
+    /// <summary>Tenant identifier passed to report sources.</summary>
+    [Parameter] public string TenantId { get; set; } = string.Empty;
+
+    /// <summary>User identifier passed to report sources.</summary>
+    [Parameter] public string UserId { get; set; } = string.Empty;
+
+    /// <summary>Additional CSS classes.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Fired after a snapshot is rendered.</summary>
+    [Parameter] public EventCallback<ReportSnapshot> SnapshotChanged { get; set; }
+
+    /// <summary>Fired after a PDF export is produced.</summary>
+    [Parameter] public EventCallback<ReportViewerExportResult> PdfExported { get; set; }
+
+    /// <summary>Fired after a CSV export is produced.</summary>
+    [Parameter] public EventCallback<ReportViewerExportResult> CsvExported { get; set; }
+
+    /// <summary>Fired after an XLSX export is produced.</summary>
+    [Parameter] public EventCallback<ReportViewerExportResult> XlsxExported { get; set; }
+
+    /// <summary>Additional attributes applied to the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private int PageCount => Math.Max(1, _snapshot?.Pages.Count ?? 1);
+
+    private int CurrentPage => Math.Clamp(_currentPage, 1, PageCount);
+
+    private bool CanGoPrevious => _snapshot is not null && !_isLoading && CurrentPage > 1;
+
+    private bool CanGoNext => _snapshot is not null && !_isLoading && CurrentPage < PageCount;
+
+    private string ZoomValue => _zoom.Mode == ReportViewerZoomMode.Percent ? _zoom.Percent.ToString(System.Globalization.CultureInfo.InvariantCulture) : _zoom.Mode.ToString();
+
+    private string CssClass
+        => string.IsNullOrWhiteSpace(Class)
+            ? "tm-report-viewer"
+            : $"tm-report-viewer {Class}";
+
+    private string? RootStyle
+        => string.IsNullOrWhiteSpace(Height) ? null : $"--tm-report-viewer-height:{Height}";
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        _parametersOpen = ShowParameterPanel;
+        if (ParameterValues is not null)
+        {
+            _parameterValues = new Dictionary<string, ReportParameterValue>(ParameterValues, StringComparer.Ordinal);
+        }
+
+        if (ReferenceEquals(_loadedSource, ReportSource))
+        {
+            return;
+        }
+
+        _loadedSource = ReportSource;
+        _snapshot = null;
+        _metadata = null;
+        _currentPage = 1;
+        _error = null;
+
+        if (ReportSource is null)
+        {
+            return;
+        }
+
+        await LoadMetadataAsync();
+        if (AutoLoad)
+        {
+            await RefreshAsync();
+        }
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            _viewerHandle = await _module.InvokeAsync<string>("mount", _root, _canvas);
+        }
+
+        await UpdateCanvasAsync();
+    }
+
+    /// <summary>Refreshes metadata and report content.</summary>
+    public async Task RefreshAsync()
+    {
+        if (ReportSource is null)
+        {
+            return;
+        }
+
+        _isLoading = true;
+        _error = null;
+        _exportMenuOpen = false;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            var result = await ReportSource.RenderAsync(BuildRenderRequest());
+            _snapshot = result.Snapshot;
+            _metadata = result.Metadata ?? _metadata;
+            if (result.Parameters is not null)
+            {
+                _parameterValues = new Dictionary<string, ReportParameterValue>(result.Parameters, StringComparer.Ordinal);
+            }
+
+            _interactionToken = result.InteractionToken ?? _interactionToken;
+            _currentPage = Math.Clamp(_currentPage, 1, PageCount);
+            await SnapshotChanged.InvokeAsync(_snapshot);
+        }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+            _snapshot = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+
+        await UpdateCanvasAsync();
+    }
+
+    /// <summary>Toggles a stateless interaction key and re-renders the report.</summary>
+    public async Task ToggleInteractionAsync(string key)
+    {
+        _interactionToken = ReportInteractionState.Toggle(_interactionToken, key);
+        await RefreshAsync();
+    }
+
+    private async Task LoadMetadataAsync()
+    {
+        if (ReportSource is null)
+        {
+            return;
+        }
+
+        _isLoading = true;
+        _error = null;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            _metadata = await ReportSource.GetMetadataAsync(BuildMetadataRequest());
+        }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task HandleParameterChangedAsync(ReportParameterChangedEventArgs args)
+    {
+        _parameterValues = args.Values;
+        if (args.Parameter.AvailableValues?.Kind == ReportParameterAvailableValuesKind.DataSet && ReportSource is not null)
+        {
+            _metadata = await ReportSource.GetMetadataAsync(BuildMetadataRequest());
+        }
+    }
+
+    private async Task HandleParameterSubmitAsync(ReportParameterSubmitEventArgs args)
+    {
+        _parameterValues = args.Values;
+        _currentPage = 1;
+        await RefreshAsync();
+    }
+
+    private Task ToggleParametersAsync()
+    {
+        _parametersOpen = !_parametersOpen;
+        return Task.CompletedTask;
+    }
+
+    private Task ToggleExportMenuAsync()
+    {
+        _exportMenuOpen = !_exportMenuOpen;
+        return Task.CompletedTask;
+    }
+
+    private async Task FirstPageAsync() => await SetPageAsync(1);
+
+    private async Task PreviousPageAsync() => await SetPageAsync(CurrentPage - 1);
+
+    private async Task NextPageAsync() => await SetPageAsync(CurrentPage + 1);
+
+    private async Task LastPageAsync() => await SetPageAsync(PageCount);
+
+    private async Task HandlePageInputAsync(ChangeEventArgs args)
+    {
+        if (int.TryParse(args.Value?.ToString(), out var page))
+        {
+            await SetPageAsync(page);
+        }
+    }
+
+    private async Task SetPageAsync(int page)
+    {
+        _currentPage = Math.Clamp(page, 1, PageCount);
+        await UpdateCanvasAsync();
+    }
+
+    private async Task HandleZoomChangedAsync(ChangeEventArgs args)
+    {
+        var value = args.Value?.ToString();
+        _zoom = value switch
+        {
+            "FitWidth" => _zoom with { Mode = ReportViewerZoomMode.FitWidth },
+            "FitPage" => _zoom with { Mode = ReportViewerZoomMode.FitPage },
+            _ when int.TryParse(value, out var percent) => new ReportViewerZoom(ReportViewerZoomMode.Percent, percent),
+            _ => _zoom,
+        };
+        await UpdateCanvasAsync();
+    }
+
+    private async Task ZoomInAsync()
+    {
+        var current = _zoom.Mode == ReportViewerZoomMode.Percent ? _zoom.Percent : 100;
+        _zoom = new ReportViewerZoom(ReportViewerZoomMode.Percent, Math.Min(400, current + 25));
+        await UpdateCanvasAsync();
+    }
+
+    private async Task ZoomOutAsync()
+    {
+        var current = _zoom.Mode == ReportViewerZoomMode.Percent ? _zoom.Percent : 100;
+        _zoom = new ReportViewerZoom(ReportViewerZoomMode.Percent, Math.Max(25, current - 25));
+        await UpdateCanvasAsync();
+    }
+
+    private async Task ExportPdfAsync()
+    {
+        if (ReportSource is null)
+        {
+            return;
+        }
+
+        _exportMenuOpen = false;
+        var export = await ReportSource.ExportPdfAsync(BuildRenderRequest());
+        await PdfExported.InvokeAsync(export);
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("downloadFile", export.FileName, export.ContentType, Convert.ToBase64String(export.Bytes));
+        }
+    }
+
+    private async Task ExportCsvAsync()
+    {
+        if (ReportSource is null)
+        {
+            return;
+        }
+
+        _exportMenuOpen = false;
+        var export = await ReportSource.ExportCsvAsync(BuildRenderRequest());
+        await CsvExported.InvokeAsync(export);
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("downloadFile", export.FileName, export.ContentType, Convert.ToBase64String(export.Bytes));
+        }
+    }
+
+    private async Task ExportXlsxAsync()
+    {
+        if (ReportSource is null)
+        {
+            return;
+        }
+
+        _exportMenuOpen = false;
+        var export = await ReportSource.ExportXlsxAsync(BuildRenderRequest());
+        await XlsxExported.InvokeAsync(export);
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("downloadFile", export.FileName, export.ContentType, Convert.ToBase64String(export.Bytes));
+        }
+    }
+
+    private async Task PrintAsync()
+    {
+        if (ReportSource is null)
+        {
+            return;
+        }
+
+        var export = await ReportSource.ExportPdfAsync(BuildRenderRequest());
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("printPdf", export.ContentType, Convert.ToBase64String(export.Bytes));
+        }
+    }
+
+    private ReportViewerMetadataRequest BuildMetadataRequest()
+        => new()
+        {
+            CultureName = CultureName,
+            TenantId = TenantId,
+            UserId = UserId,
+            Parameters = _parameterValues,
+        };
+
+    private ReportViewerRenderRequest BuildRenderRequest()
+        => new()
+        {
+            CultureName = CultureName,
+            TenantId = TenantId,
+            UserId = UserId,
+            Parameters = _parameterValues,
+            InteractionToken = _interactionToken,
+        };
+
+    private async Task UpdateCanvasAsync()
+    {
+        if (_module is null || string.IsNullOrWhiteSpace(_viewerHandle) || _snapshot is null)
+        {
+            return;
+        }
+
+        await _module.InvokeVoidAsync(
+            "update",
+            _viewerHandle,
+            ReportViewerJson.SerializeSnapshot(_snapshot),
+            CurrentPage,
+            _zoom.Mode.ToString(),
+            _zoom.Percent);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null && !string.IsNullOrWhiteSpace(_viewerHandle))
+        {
+            await _module.InvokeVoidAsync("dispose", _viewerHandle);
+        }
+
+        if (_module is not null)
+        {
+            await _module.DisposeAsync();
+        }
+    }
+}

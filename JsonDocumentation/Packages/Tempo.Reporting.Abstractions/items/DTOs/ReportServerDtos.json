@@ -1,0 +1,57 @@
+{
+  "itemName": "ReportServerDtos",
+  "kind": "Model",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "DTO family shared by Report Server API, typed clients, and remote Blazor reporting components. It covers folders, reports, revisions, render requests/results/jobs, parameter metadata, and tenant-scoped data source administration.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+  "documentationStatus": "manual",
+  "groups": [
+    {
+      "name": "Catalog",
+      "types": [
+        "ReportFolderDto",
+        "ReportSummaryDto",
+        "ReportDetailDto",
+        "CreateReportFolderRequestDto",
+        "UpdateReportFolderRequestDto",
+        "MoveReportFolderRequestDto",
+        "ReportSearchRequestDto",
+        "MoveReportRequestDto"
+      ]
+    },
+    {
+      "name": "Revisions",
+      "types": [
+        "ReportRevisionDto",
+        "UpdateReportDefinitionRequestDto",
+        "PublishReportRevisionRequestDto",
+        "RollbackReportRevisionRequestDto"
+      ]
+    },
+    {
+      "name": "Rendering",
+      "types": [
+        "ReportRenderFormat",
+        "ReportParameterValueDto",
+        "ReportParameterMetadataDto",
+        "RenderReportRequestDto",
+        "RenderReportResultDto",
+        "RenderJobDto",
+        "RenderJobStatus"
+      ]
+    },
+    {
+      "name": "Data Sources",
+      "types": [
+        "ReportDataSourceDto",
+        "UpsertReportDataSourceRequestDto",
+        "ReportDataSourceConnectionTestResultDto",
+        "ReportDataSourceSchemaDto",
+        "ReportDataSourceSchemaColumnDto",
+        "ReportDataSourcePreviewDto"
+      ]
+    }
+  ]
+}

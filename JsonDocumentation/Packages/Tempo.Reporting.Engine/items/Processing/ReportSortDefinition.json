@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Expression-backed sort definition.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetProcessing.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportSortDefinition"
+}

@@ -1,0 +1,21 @@
+{
+  "itemName": "TmReportExplorer",
+  "kind": "Component",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Reporting.Components",
+  "description": "Report catalog explorer with folder tree, grid/list report views, search, thumbnails, folder creation, report open actions, and report move callbacks.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Components/TmReportExplorer.razor",
+  "documentationStatus": "manual",
+  "requiredImports": [
+    "@using Tempo.Blazor.Reporting.Components",
+    "@using Tempo.Blazor.Reporting.Models"
+  ],
+  "relatedTypes": [
+    "ReportExplorerFolder",
+    "ReportExplorerReportItem",
+    "ReportExplorerViewMode",
+    "ReportExplorerCreateFolderRequest",
+    "ReportExplorerMoveReportRequest"
+  ]
+}

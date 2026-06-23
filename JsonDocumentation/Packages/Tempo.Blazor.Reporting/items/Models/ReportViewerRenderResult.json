@@ -1,0 +1,42 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Rendered report snapshot with optional refreshed metadata.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerRenderResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "InteractionToken",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Interaction token used for this render."
+    },
+    {
+      "name": "Metadata",
+      "kind": "Property",
+      "type": "ReportViewerMetadata?",
+      "description": "Metadata resolved during render."
+    },
+    {
+      "name": "Parameters",
+      "kind": "Property",
+      "type": "IReadOnlyDictionary<string, ReportParameterValue>?",
+      "description": "Resolved parameter values used by the render."
+    },
+    {
+      "name": "RenderedAt",
+      "kind": "Property",
+      "type": "DateTimeOffset",
+      "description": "UTC render time."
+    },
+    {
+      "name": "Snapshot",
+      "kind": "Property",
+      "type": "ReportSnapshot",
+      "description": "Rendered fixed-page snapshot."
+    }
+  ],
+  "itemName": "ReportViewerRenderResult"
+}

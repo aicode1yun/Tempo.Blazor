@@ -68,7 +68,10 @@ builder.Services.AddSingleton<Tempo.Blazor.DocumentLibrary.ITempoDocumentLibrary
     Tempo.Blazor.Demo.Api.Services.StoreDocumentLibraryProvider>();
 builder.Services.AddSingleton<Tempo.Blazor.NotionEditor.Interfaces.IWireframeDocumentProvider,
     Tempo.Blazor.Demo.Api.Services.StoreWireframeDocumentProvider>();
+builder.Services.AddSingleton<Tempo.Reporting.Abstractions.Data.IReportDefinitionStore,
+    Tempo.Reporting.Abstractions.Data.InMemoryReportDefinitionStore>();
 builder.Services.AddTempoWireframeMcpTools();
+builder.Services.AddTempoReportingMcpTools();
 builder.Services.AddMcpServer()
     .WithHttpTransport()
     .WithRequestFilters(filters =>

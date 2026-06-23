@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Group level definition used by the processing engine.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/GroupingProcessing.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportGroupLevel"
+}

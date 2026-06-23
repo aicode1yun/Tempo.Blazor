@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Resolved report parameter option.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/ParameterProcessing.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportResolvedParameterAvailableValue"
+}

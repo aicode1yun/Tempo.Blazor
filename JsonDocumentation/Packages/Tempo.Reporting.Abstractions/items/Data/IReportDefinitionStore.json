@@ -1,0 +1,17 @@
+{
+  "itemName": "IReportDefinitionStore",
+  "kind": "Interface",
+  "category": "Data",
+  "namespace": "Tempo.Reporting.Abstractions.Data",
+  "description": "Tenant-scoped storage contract for folders, report metadata, and immutable report definition revisions.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDefinitionStore.cs",
+  "documentationStatus": "manual",
+  "usage": "Use this contract for embedded hosts, tests, or custom storage implementations that need to save report definitions without referencing the ASP.NET Report Server application.",
+  "relatedTypes": [
+    "ReportFolderRecord",
+    "ReportDefinitionRecord",
+    "ReportDefinitionRevisionRecord",
+    "InMemoryReportDefinitionStore"
+  ]
+}

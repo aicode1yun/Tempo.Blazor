@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Expressions",
+  "namespace": "Tempo.Reporting.Engine.Expressions",
+  "description": "Exception thrown when an expression cannot be parsed.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionExceptions.cs",
+  "documentationStatus": "generated",
+  "itemName": "ExpressionParseException"
+}

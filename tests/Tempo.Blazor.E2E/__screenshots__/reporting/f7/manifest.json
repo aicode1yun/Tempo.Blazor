@@ -1,0 +1,46 @@
+{
+  "phase": "F7",
+  "testName": "F7_ReportingHarness_RendersInvoiceAndGroupedSalesScreenshots",
+  "invoicePages": 2,
+  "salesPages": 38,
+  "salesTotal": 98333,
+  "functionalReview": "The invoice line items are rendered by a ReportTableElement. The sales fixture uses three grouping levels, repeated table headers, group footers and a report-level aggregate footer across 30\u002B pages.",
+  "uxReview": "Both tablix fixtures keep numeric columns right aligned, use compact readable row padding, repeat headers on page breaks and avoid visible text collisions.",
+  "pages": [
+    {
+      "snapshotId": "f7-invoice",
+      "pageNumber": 1,
+      "screenshotPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f7/01-invoice-p1.png",
+      "textRunCount": 160,
+      "paintedCommandCount": 235
+    },
+    {
+      "snapshotId": "f7-invoice",
+      "pageNumber": 2,
+      "screenshotPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f7/02-invoice-p2.png",
+      "textRunCount": 83,
+      "paintedCommandCount": 128
+    },
+    {
+      "snapshotId": "f7-sales",
+      "pageNumber": 1,
+      "screenshotPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f7/03-sales-p1.png",
+      "textRunCount": 98,
+      "paintedCommandCount": 177
+    },
+    {
+      "snapshotId": "f7-sales",
+      "pageNumber": 20,
+      "screenshotPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f7/04-sales-p20.png",
+      "textRunCount": 104,
+      "paintedCommandCount": 177
+    },
+    {
+      "snapshotId": "f7-sales",
+      "pageNumber": 38,
+      "screenshotPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f7/05-sales-p38.png",
+      "textRunCount": 88,
+      "paintedCommandCount": 159
+    }
+  ]
+}

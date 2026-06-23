@@ -1,0 +1,18 @@
+{
+  "kind": "Class",
+  "category": "Serialization",
+  "namespace": "Tempo.Reporting.Abstractions.Serialization",
+  "description": "JSON options for report server API DTO payloads.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Serialization/ReportApiJsonSerializer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Options",
+      "kind": "Property",
+      "type": "static JsonSerializerOptions",
+      "description": "Canonical API JSON options."
+    }
+  ],
+  "itemName": "ReportApiJsonSerializer"
+}

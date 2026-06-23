@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Builds multi-level group trees from processed rows.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/GroupingProcessing.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportGroupingEngine"
+}

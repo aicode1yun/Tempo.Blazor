@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Validation",
+  "namespace": "Tempo.Reporting.Abstractions.Validation",
+  "description": "Validates report parameter definitions.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Validation/ReportParameterDefinitionValidator.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportParameterDefinitionValidator"
+}

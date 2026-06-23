@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Expressions",
+  "namespace": "Tempo.Reporting.Engine.Expressions",
+  "description": "Binary operator expression node.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionAst.cs",
+  "documentationStatus": "generated",
+  "itemName": "BinaryExpressionNode"
+}

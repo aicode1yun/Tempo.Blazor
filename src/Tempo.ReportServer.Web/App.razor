@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tempo Report Server</title>
+    <base href="/" />
+    <link href="_content/Tempo.Blazor/css/tempo-blazor.css" rel="stylesheet" />
+    <link href="_content/Tempo.Blazor.Reporting/css/tempo-blazor-reporting.css" rel="stylesheet" />
+    <link rel="stylesheet" href="@Assets["report-server.css"]" />
+    <style>
+        body {
+            background: var(--tm-bg-page);
+            color: var(--tm-text-primary);
+            font-family: var(--tm-font-sans);
+            margin: 0;
+        }
+
+        .report-demo-shell {
+            display: grid;
+            gap: var(--tm-space-4);
+            margin: 0 auto;
+            max-inline-size: 78rem;
+            padding: var(--tm-space-4);
+        }
+
+        .report-demo-title {
+            align-items: center;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .report-demo-title h1 {
+            font-size: var(--tm-font-size-xl);
+            margin: 0;
+        }
+    </style>
+    <HeadOutlet @rendermode="InteractiveServer" />
+</head>
+<body>
+    <Routes @rendermode="InteractiveServer" />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+</html>

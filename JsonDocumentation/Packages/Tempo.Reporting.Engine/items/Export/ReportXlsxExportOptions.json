@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Export",
+  "namespace": "Tempo.Reporting.Engine.Export",
+  "description": "Spreadsheet export options.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportTabularExportModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportXlsxExportOptions"
+}

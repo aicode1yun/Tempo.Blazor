@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Paragraph layout options.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/ParagraphLayout.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportParagraphLayoutOptions"
+}

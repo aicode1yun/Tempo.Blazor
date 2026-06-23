@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Report measurement unit for physical layout values.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/PageSetup.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportMeasurementUnit"
+}

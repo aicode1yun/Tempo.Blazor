@@ -1,0 +1,23 @@
+{
+  "title": "Getting Started with Tempo.Reporting.Engine",
+  "overview": "Tempo.Reporting.Engine executes Tempo report definitions: expression evaluation, parameter resolution, data processing, grouping, fixed-page band layout, snapshot generation, PDF/PNG rendering, and CSV/XLSX export.",
+  "targetFramework": ".NET 8.0 / 9.0 / 10.0 (multi-target)",
+  "installation": {
+    "nuget": [
+      "dotnet add package Tempo.Reporting.Engine"
+    ]
+  },
+  "namespaces": [
+    "Tempo.Reporting.Engine.Expressions",
+    "Tempo.Reporting.Engine.Processing",
+    "Tempo.Reporting.Engine.Layout",
+    "Tempo.Reporting.Engine.Snapshot",
+    "Tempo.Reporting.Engine.Pdf",
+    "Tempo.Reporting.Engine.Export",
+    "Tempo.Reporting.Engine.Fonts"
+  ],
+  "notes": [
+    "The engine is pure .NET and can run server-side or in WebAssembly hosts.",
+    "Report Server APIs and embedded Blazor report sources use this package for the actual rendering pipeline."
+  ]
+}

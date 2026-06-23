@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Serialization",
+  "namespace": "Tempo.Reporting.Abstractions.Serialization",
+  "description": "Migrates a report definition JSON object between adjacent schema versions.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Serialization/IReportDefinitionMigration.cs",
+  "documentationStatus": "generated",
+  "itemName": "IReportDefinitionMigration"
+}

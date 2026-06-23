@@ -93,9 +93,16 @@ public class MockGanttStore
                 ],
                 Comments =
                 [
-                    new() { Id = "cm1", TaskId = "3", AuthorId = "a1", AuthorName = "Alice Johnson",
-                            AvatarUrl = "https://i.pravatar.cc/40?img=1",
-                            Text = "Charter approved by board.", CreatedAt = today.AddDays(-18) },
+                    new()
+                    {
+                        Id = "cm1",
+                        ThreadId = "3",
+                        Author = new TmUserRef { Id = "a1", DisplayName = "Alice Johnson", AvatarUrl = "https://i.pravatar.cc/40?img=1" },
+                        Body = "Charter approved by board.",
+                        BodyFormat = TmCommentBodyFormat.PlainText,
+                        CreatedAt = today.AddDays(-18),
+                        Metadata = new() { ["TaskId"] = "3" },
+                    },
                 ],
                 Attachments =
                 [
@@ -152,9 +159,16 @@ public class MockGanttStore
                 ],
                 Comments =
                 [
-                    new() { Id = "cm2", TaskId = "7", AuthorId = "a3", AuthorName = "Carol White",
-                            AvatarUrl = "https://i.pravatar.cc/40?img=5",
-                            Text = "Mockups approved â€” ready for handoff.", CreatedAt = today.AddDays(-1) },
+                    new()
+                    {
+                        Id = "cm2",
+                        ThreadId = "7",
+                        Author = new TmUserRef { Id = "a3", DisplayName = "Carol White", AvatarUrl = "https://i.pravatar.cc/40?img=5" },
+                        Body = "Mockups approved â€” ready for handoff.",
+                        BodyFormat = TmCommentBodyFormat.PlainText,
+                        CreatedAt = today.AddDays(-1),
+                        Metadata = new() { ["TaskId"] = "7" },
+                    },
                 ],
             },
             new()
@@ -376,12 +390,26 @@ public class MockGanttStore
                 ],
                 Comments =
                 [
-                    new() { Id = "cm3", TaskId = "27", AuthorId = "a1", AuthorName = "Alice Johnson",
-                            AvatarUrl = "https://i.pravatar.cc/40?img=1",
-                            Text = "Blocked on vendor response. Escalating.", CreatedAt = today.AddDays(-3) },
-                    new() { Id = "cm4", TaskId = "27", AuthorId = "a2", AuthorName = "Bob Smith",
-                            AvatarUrl = "https://i.pravatar.cc/40?img=3",
-                            Text = "Moving deadline out by 3 days, awaiting approval.", CreatedAt = today.AddDays(-1) },
+                    new()
+                    {
+                        Id = "cm3",
+                        ThreadId = "27",
+                        Author = new TmUserRef { Id = "a1", DisplayName = "Alice Johnson", AvatarUrl = "https://i.pravatar.cc/40?img=1" },
+                        Body = "Blocked on vendor response. Escalating.",
+                        BodyFormat = TmCommentBodyFormat.PlainText,
+                        CreatedAt = today.AddDays(-3),
+                        Metadata = new() { ["TaskId"] = "27" },
+                    },
+                    new()
+                    {
+                        Id = "cm4",
+                        ThreadId = "27",
+                        Author = new TmUserRef { Id = "a2", DisplayName = "Bob Smith", AvatarUrl = "https://i.pravatar.cc/40?img=3" },
+                        Body = "Moving deadline out by 3 days, awaiting approval.",
+                        BodyFormat = TmCommentBodyFormat.PlainText,
+                        CreatedAt = today.AddDays(-1),
+                        Metadata = new() { ["TaskId"] = "27" },
+                    },
                 ],
             },
             new()

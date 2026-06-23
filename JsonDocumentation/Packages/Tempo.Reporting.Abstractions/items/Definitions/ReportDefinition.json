@@ -1,0 +1,25 @@
+{
+  "itemName": "ReportDefinition",
+  "kind": "Record",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Root schema-versioned report definition shared by designers, report servers, embedded hosts, serialization, validation, and the processing engine.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/ReportDefinition.cs",
+  "documentationStatus": "manual",
+  "members": [
+    { "name": "SchemaVersion", "kind": "Property", "type": "int", "description": "Schema version used by migration and validation." },
+    { "name": "Id", "kind": "Property", "type": "string", "description": "Stable report identifier assigned by a host or server." },
+    { "name": "Name", "kind": "Property", "type": "string", "description": "Human-readable report name." },
+    { "name": "PageSetup", "kind": "Property", "type": "ReportPageSetup", "description": "Physical page setup used by the layout engine." },
+    { "name": "Parameters", "kind": "Property", "type": "List<ReportParameterDefinition>", "description": "Parameter definitions exposed before rendering." },
+    { "name": "DataSets", "kind": "Property", "type": "List<ReportDataSetDefinition>", "description": "Data set definitions consumed by processing." },
+    { "name": "Bands", "kind": "Property", "type": "ReportBandCollection", "description": "Band definitions that make up the report body." }
+  ],
+  "relatedTypes": [
+    "ReportPageSetup",
+    "ReportParameterDefinition",
+    "ReportDataSetDefinition",
+    "ReportBandCollection"
+  ]
+}

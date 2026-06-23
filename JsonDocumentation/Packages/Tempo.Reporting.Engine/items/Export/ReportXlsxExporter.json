@@ -1,0 +1,15 @@
+{
+  "itemName": "ReportXlsxExporter",
+  "kind": "Class",
+  "category": "Export",
+  "namespace": "Tempo.Reporting.Engine.Export",
+  "description": "Exports tabular report data to an XLSX workbook using ClosedXML, preserving headers, cell values, and culture-aware number/date formatting.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportXlsxExporter.cs",
+  "documentationStatus": "manual",
+  "relatedTypes": [
+    "ReportTabularExportBuilder",
+    "ReportTabularExportDocument",
+    "ReportXlsxExportOptions"
+  ]
+}

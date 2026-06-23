@@ -1,0 +1,66 @@
+{
+  "kind": "Class",
+  "category": "Fonts",
+  "namespace": "Tempo.Reporting.Engine.Fonts",
+  "description": "Collection of precomputed reporting font metrics.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Fonts/FontMetricTable.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Faces",
+      "kind": "Field",
+      "type": "IReadOnlyList<FontMetricFace>",
+      "description": "All metric faces."
+    },
+    {
+      "name": "FallbackFamilyNames",
+      "kind": "Field",
+      "type": "IReadOnlyList<string>",
+      "description": "Fallback family names in lookup order."
+    },
+    {
+      "name": "FindFallbackFace",
+      "kind": "Method",
+      "type": "FontMetricFace?",
+      "description": "Finds a fallback face that contains the requested code point.",
+      "parameters": [
+        {
+          "name": "codePoint",
+          "type": "int"
+        },
+        {
+          "name": "styleKey",
+          "type": "FontStyleKey"
+        }
+      ]
+    },
+    {
+      "name": "ResolveFace",
+      "kind": "Method",
+      "type": "FontMetricFace",
+      "description": "Resolves the best face for a family/style request.",
+      "parameters": [
+        {
+          "name": "familyName",
+          "type": "string?"
+        },
+        {
+          "name": "bold",
+          "type": "bool"
+        },
+        {
+          "name": "italic",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "DefaultFamilyName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Default family used when a request cannot resolve its family."
+    }
+  ],
+  "itemName": "FontMetricTable"
+}

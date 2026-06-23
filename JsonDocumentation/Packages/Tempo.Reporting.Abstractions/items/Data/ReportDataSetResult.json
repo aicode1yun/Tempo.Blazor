@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Data",
+  "namespace": "Tempo.Reporting.Abstractions.Data",
+  "description": "Data provider result with schema and streaming-friendly rows.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDataSetResult"
+}

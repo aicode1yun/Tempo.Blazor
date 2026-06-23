@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Builds a tree of report band instances from definitions and data.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/BandInstantiation.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportBandInstantiator"
+}

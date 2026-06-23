@@ -1,0 +1,33 @@
+{
+  "kind": "Class",
+  "category": "Snapshot",
+  "namespace": "Tempo.Reporting.Engine.Snapshot",
+  "description": "Immutable page snapshot consumed by reporting canvas and export renderers.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportSnapshot.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CurrentSchemaVersion",
+      "kind": "Field",
+      "type": "int",
+      "description": "Current snapshot schema version."
+    },
+    {
+      "name": "Pages",
+      "kind": "Property",
+      "type": "List<ReportSnapshotPage>"
+    },
+    {
+      "name": "SchemaVersion",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "SnapshotId",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "ReportSnapshot"
+}

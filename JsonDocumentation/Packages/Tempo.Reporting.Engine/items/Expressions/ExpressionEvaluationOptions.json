@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Expressions",
+  "namespace": "Tempo.Reporting.Engine.Expressions",
+  "description": "Options controlling expression evaluation.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionOptions.cs",
+  "documentationStatus": "generated",
+  "itemName": "ExpressionEvaluationOptions"
+}

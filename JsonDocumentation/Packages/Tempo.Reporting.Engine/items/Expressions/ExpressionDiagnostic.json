@@ -1,0 +1,35 @@
+{
+  "kind": "Record",
+  "category": "Expressions",
+  "namespace": "Tempo.Reporting.Engine.Expressions",
+  "description": "Structured expression diagnostic with stable code and source position.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionDiagnostic.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Create",
+      "kind": "Method",
+      "type": "ExpressionDiagnostic",
+      "parameters": [
+        {
+          "name": "code",
+          "type": "string"
+        },
+        {
+          "name": "line",
+          "type": "int"
+        },
+        {
+          "name": "column",
+          "type": "int"
+        },
+        {
+          "name": "args",
+          "type": "params object?[]"
+        }
+      ]
+    }
+  ],
+  "itemName": "ExpressionDiagnostic"
+}

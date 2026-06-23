@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Table column width behavior.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportTableColumnWidthMode"
+}

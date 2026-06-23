@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Render job DTO.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "RenderJobDto"
+}

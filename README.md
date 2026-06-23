@@ -9,6 +9,7 @@ Key features:
 - CSS design system based on custom properties with dark mode
 - Injectable `ToastService` and `ThemeService` registered automatically
 - Lightweight abstractions package (`Tempo.Blazor.Abstractions`) for use in API/service projects without UI dependencies
+- Optional Tempo Reporting packages for embedded viewers, report definitions, rendering, export, and Report Server integration
 
 ## Installation
 
@@ -21,6 +22,9 @@ Optional packages:
 ```bash
 dotnet add package Tempo.Blazor.Abstractions      # Interfaces only (for API/service projects)
 dotnet add package Tempo.Blazor.FluentValidation   # FluentValidation integration for EditForm
+dotnet add package Tempo.Reporting.Abstractions    # Report definition JSON, validation, data contracts
+dotnet add package Tempo.Reporting.Engine          # Processing, layout, PDF/PNG, CSV/XLSX
+dotnet add package Tempo.Blazor.Reporting          # Blazor report viewer/designer/explorer components
 ```
 
 ## Document Editor Cutover
@@ -147,6 +151,84 @@ public sealed class MyStencilProvider : IDiagramStencilProvider
     <TmDataTableColumn TItem="Person" Title="Name" Field="p => p.Name" Sortable />
     <TmDataTableColumn TItem="Person" Title="Email" Field="p => p.Email" />
 </TmDataTable>
+```
+
+## Embedding do vaší aplikace
+
+`TmReportViewer` lze vložit do běžné Blazor aplikace dvěma způsoby. Embedded režim spouští report engine v hostitelské aplikaci nad vlastním `IReportDataProvider`; Remote režim volá Tempo Report Server API přes `RemoteReportSource`.
+
+### Embedded: lokální engine a vlastní data
+
+```csharp
+// Program.cs
+using Tempo.Blazor.Reporting.Configuration;
+
+builder.Services.AddTempoBlazorReporting();
+builder.Services.AddScoped<MyReportDataProvider>();
+```
+
+```razor
+@using Tempo.Blazor.Reporting.Components
+@using Tempo.Blazor.Reporting.Services
+@using Tempo.Reporting.Abstractions.Definitions
+@inject MyReportDataProvider DataProvider
+
+<TmReportViewer ReportSource="_source"
+                TenantId="northwind"
+                UserId="embedded-user"
+                CultureName="en-US" />
+
+@code {
+    private IReportSource? _source;
+
+    protected override void OnInitialized()
+    {
+        ReportDefinition definition = BuildDefinition();
+        _source = new EmbeddedReportSource(definition, DataProvider);
+    }
+}
+```
+
+### Remote: Report Server API
+
+```csharp
+// Program.cs
+using Tempo.Blazor.Reporting.Configuration;
+
+builder.Services.AddTempoBlazorReporting();
+builder.Services.AddHttpClient("Reports", client =>
+{
+    client.BaseAddress = new Uri("https://reports.example.com/");
+    client.DefaultRequestHeaders.Add("X-Api-Key", builder.Configuration["Reports:ApiKey"]);
+});
+```
+
+```razor
+@using Tempo.Blazor.Reporting.Components
+@using Tempo.Blazor.Reporting.Services
+@inject IHttpClientFactory HttpClientFactory
+
+<TmReportViewer ReportSource="_source"
+                TenantId="northwind"
+                UserId="embedded-user"
+                CultureName="en-US" />
+
+@code {
+    private IReportSource? _source;
+
+    protected override void OnInitialized()
+    {
+        _source = new RemoteReportSource(HttpClientFactory.CreateClient("Reports"), "sales-dashboard");
+    }
+}
+```
+
+Na serveru musí API key mapovat na tenant/application scope s oprávněními `View`, `Render` a volitelně `Export`. Demo používá hlavičku `X-Api-Key`; pro produkci ukládejte klíč mimo klientský kód, rotujte ho přes serverovou administraci a pro WebAssembly povolte CORS jen pro známé origins.
+
+Přidejte také reporting stylesheet:
+
+```html
+<link href="_content/Tempo.Blazor.Reporting/css/tempo-blazor-reporting.css" rel="stylesheet" />
 ```
 
 ### Toast Notifications

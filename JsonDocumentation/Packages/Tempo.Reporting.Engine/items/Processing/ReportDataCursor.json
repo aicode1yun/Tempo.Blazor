@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Resettable row cursor over a processed data set.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetRuntime.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDataCursor"
+}

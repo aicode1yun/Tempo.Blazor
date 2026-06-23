@@ -1,0 +1,18 @@
+{
+  "kind": "Class",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Exception thrown by the report processing pipeline.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/ReportProcessingException.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Code",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable processing error code."
+    }
+  ],
+  "itemName": "ReportProcessingException"
+}

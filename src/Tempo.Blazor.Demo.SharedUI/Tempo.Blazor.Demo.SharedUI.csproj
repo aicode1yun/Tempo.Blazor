@@ -25,6 +25,7 @@
     <ProjectReference Include="..\Tempo.Blazor.Demo.Shared\Tempo.Blazor.Demo.Shared.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.EmailTemplates\Tempo.Blazor.EmailTemplates.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.EmailTemplates.Abstractions\Tempo.Blazor.EmailTemplates.Abstractions.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.Reporting\Tempo.Blazor.Reporting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Filtering and sorting helpers for processed data sets.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetProcessing.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDataSetProcessor"
+}

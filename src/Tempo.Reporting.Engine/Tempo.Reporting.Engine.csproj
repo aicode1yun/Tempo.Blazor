@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>true</IsPackable>
+    <PackageId>Tempo.Reporting.Engine</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>ptyll</Authors>
+    <Title>Tempo.Reporting.Engine</Title>
+    <Description>Tempo Reporting processing engine with expression evaluation, parameter resolution, layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives.</Description>
+    <PackageTags>reporting;reports;engine;layout;pdf;png;csv;xlsx;expressions</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ptyll/Tempo.Blazor</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ptyll/Tempo.Blazor</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
+    <PackageReference Include="SkiaSharp" Version="3.119.2" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.2" />
+    <PackageReference Include="Svg.Skia" Version="4.2.0" />
+    <ProjectReference Include="..\Tempo.Reporting.Abstractions\Tempo.Reporting.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

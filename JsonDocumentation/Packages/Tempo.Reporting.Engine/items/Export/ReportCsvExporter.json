@@ -1,0 +1,15 @@
+{
+  "itemName": "ReportCsvExporter",
+  "kind": "Class",
+  "category": "Export",
+  "namespace": "Tempo.Reporting.Engine.Export",
+  "description": "Exports tabular report data to CSV with culture-aware formatting, delimiter selection, quoting, and optional BOM output.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportCsvExporter.cs",
+  "documentationStatus": "manual",
+  "relatedTypes": [
+    "ReportTabularExportBuilder",
+    "ReportTabularExportDocument",
+    "ReportCsvExportOptions"
+  ]
+}
