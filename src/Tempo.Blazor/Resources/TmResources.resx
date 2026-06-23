@@ -2326,7 +2326,6 @@
   <data name="TmSpreadsheet_BorderStyleDashed" xml:space="preserve"><value>Dashed</value></data>
   <data name="TmSpreadsheet_BorderStyleDotted" xml:space="preserve"><value>Dotted</value></data>
   <data name="TmSpreadsheet_BorderStyleDouble" xml:space="preserve"><value>Double</value></data>
-  <data name="TmSpreadsheet_BackgroundColor" xml:space="preserve"><value>Background color</value></data>
   <data name="TmSpreadsheet_NoFill" xml:space="preserve"><value>No fill</value></data>
   <data name="TmSpreadsheet_CustomColor" xml:space="preserve"><value>Custom color</value></data>
   <data name="TmSpreadsheet_BorderPicker" xml:space="preserve"><value>Border picker</value></data>
@@ -2932,7 +2931,6 @@
   <data name="TmNotionCollab_Connected"                xml:space="preserve"><value>Connected</value></data>
 
   <!-- Document Manager -->
-  <data name="TmFileManager_UploadTitle"               xml:space="preserve"><value>Upload Files</value></data>
   <data name="TmFileManager_Edit"                      xml:space="preserve"><value>Edit</value></data>
   <data name="TmFileManager_Detail"                    xml:space="preserve"><value>Detail</value></data>
   <data name="TmFileManager_AddAttachment"             xml:space="preserve"><value>Add Attachment</value></data>

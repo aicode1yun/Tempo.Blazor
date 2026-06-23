@@ -2148,7 +2148,6 @@
   <data name="TmSpreadsheet_BorderStyleDashed" xml:space="preserve"><value>Přerušovaný</value></data>
   <data name="TmSpreadsheet_BorderStyleDotted" xml:space="preserve"><value>Tečkovaný</value></data>
   <data name="TmSpreadsheet_BorderStyleDouble" xml:space="preserve"><value>Dvojitý</value></data>
-  <data name="TmSpreadsheet_BackgroundColor" xml:space="preserve"><value>Barva pozadí</value></data>
   <data name="TmSpreadsheet_NoFill" xml:space="preserve"><value>Bez výplně</value></data>
   <data name="TmSpreadsheet_CustomColor" xml:space="preserve"><value>Vlastní barva</value></data>
   <data name="TmSpreadsheet_BorderPicker" xml:space="preserve"><value>Výběr ohraničení</value></data>
@@ -2889,7 +2888,6 @@
   <data name="TmNotionPageSettingsMenu_ErrorDelete"          xml:space="preserve"><value>Stránku se nepodařilo smazat.</value></data>
 
   <!-- Document Manager -->
-  <data name="TmFileManager_UploadTitle"               xml:space="preserve"><value>Nahrát soubory</value></data>
   <data name="TmFileManager_Edit"                      xml:space="preserve"><value>Upravit</value></data>
   <data name="TmFileManager_Detail"                    xml:space="preserve"><value>Detail</value></data>
   <data name="TmFileManager_AddAttachment"             xml:space="preserve"><value>Přidat přílohu</value></data>

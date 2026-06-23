@@ -21,7 +21,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- CS1591: interface already provides XML docs for implementing properties -->
-    <NoWarn>CS1591</NoWarn>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
     <!-- Žádná UI závislost, žádný Blazor reference -->
   </PropertyGroup>
 
