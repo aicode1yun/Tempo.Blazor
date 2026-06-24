@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "description": "Pointer event data for a signing field overlay interaction.",
+  "packageId": "Tempo.Blazor.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmSigningFieldOverlayPointerEventArgs.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmSigningFieldOverlayPointerEventArgs"
+}

@@ -35,7 +35,8 @@
 TempoBlazor.slnx
 ├── src/
 │   ├── Tempo.Blazor.Abstractions/    # Interfaces and models (NuGet package)
-│   ├── Tempo.Blazor/                 # Main component library (NuGet package)
+│   ├── Tempo.Blazor/                 # Core component library (NuGet package)
+│   ├── Tempo.Blazor.Signing/         # Signing workflows and PDF template designer
 │   ├── Tempo.Blazor.FluentValidation/# Optional FluentValidation integration
 │   ├── Tempo.Blazor.Demo/            # Blazor WASM demo application
 │   ├── Tempo.Blazor.Demo.Shared/     # Shared DTOs between API and Demo
@@ -509,14 +510,20 @@ Key consequences:
 
 ## JavaScript Interop
 
-Six JS files in `wwwroot/js/` require `<script>` tags in `index.html` when using specific components:
+Core JS files in `src/Tempo.Blazor/wwwroot/js/` require `<script>` tags in host pages when using the related core components:
 - `dashboard.js` — required by `TmDashboard` (drag & resize grid)
 - `workflow-designer.js` — required by `TmWorkflowDesignerCanvas` (SVG drag, pan, zoom, transition creation)
 - `richEditor.js` — required by `TmRichEditorFull` / `TmRichEditorSimple` (contenteditable interop)
 - `scheduler.js` — required by `TmScheduler` (drag & drop events)
-- `pdf-viewer.js` — required by `TmPdfViewer` (PDF.js interop: render, zoom, rotation, thumbnails, search, text layer, continuous scroll)
-- `dagre.min.js` — required by `TmDiagramCanvas` for auto layout
-- `diagram-editor.js` — required by `TmDiagramEditor` (canvas interactions, selection, keyboard shortcuts)
+- `signature-capture.js` — required by `TmSignatureCapture`
+
+Split package assets live under their own static-web-asset base paths:
+- `Tempo.Blazor.PdfViewer`: `_content/Tempo.Blazor.PdfViewer/js/pdf-viewer.js`
+- `Tempo.Blazor.DiagramEditor`: `_content/Tempo.Blazor.DiagramEditor/js/dagre.min.js` and `_content/Tempo.Blazor.DiagramEditor/js/diagram-editor.js`
+- `Tempo.Blazor.Wireframe`: `_content/Tempo.Blazor.Wireframe/js/wireframe-designer.js`
+- `Tempo.Blazor.Spreadsheet`: `_content/Tempo.Blazor.Spreadsheet/js/spreadsheet.js` and `_content/Tempo.Blazor.Spreadsheet/js/spreadsheet-canvas.js`
+- `Tempo.Blazor.NotionEditor`: `_content/Tempo.Blazor.NotionEditor/js/notion-editor.js`
+- `Tempo.Blazor.Signing`: `_content/Tempo.Blazor.Signing/js/pdf-template-designer.js` (loaded by `TmPdfTemplateDesigner` as an ES module)
 
 ## Security Considerations
 
@@ -576,8 +583,19 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | Package | Description |
 |---------|-------------|
-| `Tempo.Blazor` | Main component library with all UI components |
+| `Tempo.Blazor` | Core component library, services, tokens, base CSS, and lightweight core JS |
+| `Tempo.Blazor.All` | Compatibility metapackage that references core plus split feature packages, including Signing |
 | `Tempo.Blazor.Abstractions` | Interfaces and models, zero UI dependencies |
+| `Tempo.Blazor.PdfViewer` | PDF.js powered `TmPdfViewer` |
+| `Tempo.Blazor.Codes` | QR code and barcode components |
+| `Tempo.Blazor.DiagramEditor` | Diagram editor components, services, CSS, and JS |
+| `Tempo.Blazor.Wireframe` | Wireframe editor components, CSS, and JS |
+| `Tempo.Blazor.Modeling` | Modeling editor built on DiagramEditor |
+| `Tempo.Blazor.Spreadsheet` | Spreadsheet editor components, XLSX support, CSS, and JS |
+| `Tempo.Blazor.GanttXlsx` | Optional Gantt XLSX import/export helpers |
+| `Tempo.Blazor.DocumentEditor` | Document editor UI and canvas runtime |
+| `Tempo.Blazor.NotionEditor` | Notion-style editor and block/database UI |
+| `Tempo.Blazor.Signing` | Signing workflows, document page overlays, PDF template designer, CSS, and JS |
 | `Tempo.Blazor.FluentValidation` | FluentValidation integration for EditForm |
 
 ---

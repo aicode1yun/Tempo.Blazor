@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\..\src\Tempo.Blazor.NotionEditor\Tempo.Blazor.NotionEditor.csproj" />
     <ProjectReference Include="..\..\..\src\Tempo.Blazor.PdfViewer\Tempo.Blazor.PdfViewer.csproj" />
     <ProjectReference Include="..\..\..\src\Tempo.Blazor.Reporting\Tempo.Blazor.Reporting.csproj" />
+    <ProjectReference Include="..\..\..\src\Tempo.Blazor.Signing\Tempo.Blazor.Signing.csproj" />
     <ProjectReference Include="..\..\..\src\Tempo.Blazor.Spreadsheet\Tempo.Blazor.Spreadsheet.csproj" />
     <ProjectReference Include="..\..\..\src\Tempo.Blazor.Wireframe\Tempo.Blazor.Wireframe.csproj" />
     <ProjectReference Include="..\..\..\src\Tempo.Blazor.Demo.Shared\Tempo.Blazor.Demo.Shared.csproj" />

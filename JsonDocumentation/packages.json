@@ -115,6 +115,17 @@
       "includeAssets": true
     },
     {
+      "packageId": "Tempo.Blazor.Signing",
+      "sourceProject": "src/Tempo.Blazor.Signing/Tempo.Blazor.Signing.csproj",
+      "outputFile": "tempo-blazor-signing.json",
+      "documentationRoots": [ "Packages/Tempo.Blazor.Signing/items" ],
+      "componentRoots": [ "src/Tempo.Blazor.Signing/Components" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "includePublicTypes": true,
+      "includeAssets": true
+    },
+    {
       "packageId": "Tempo.Blazor.All",
       "sourceProject": "src/Tempo.Blazor.All/Tempo.Blazor.All.csproj",
       "outputFile": "tempo-blazor-all-package.json",

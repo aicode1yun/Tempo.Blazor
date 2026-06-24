@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "description": "Country calling code option for phone signing steps.",
+  "packageId": "Tempo.Blazor.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmSigningPhoneStep.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmSigningPhoneStep.PhoneCountryOption"
+}

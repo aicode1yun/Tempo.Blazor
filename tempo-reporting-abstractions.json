@@ -113,6 +113,10 @@
         "description": "Notion-style editor components for Tempo.Blazor, including pages, blocks, databases, collaboration UI, comments, media, and Tempo embed blocks."
       },
       {
+        "name": "Tempo.Blazor.Signing",
+        "description": "Signing workflow components for Tempo.Blazor, including PDF template design, recipient roles, signing form runner, document comments, verification panels, and audit trail UI."
+      },
+      {
         "name": "Tempo.Blazor.All",
         "description": "Compatibility package for Tempo.Blazor that references the core package and split feature packages for applications that want the full component suite."
       },

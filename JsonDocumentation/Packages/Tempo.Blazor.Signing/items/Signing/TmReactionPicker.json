@@ -1,0 +1,27 @@
+{
+  "itemName": "TmReactionPicker",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "TmReactionPicker Blazor component in the Signing category.",
+  "packageId": "Tempo.Blazor.Signing",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmReactionPicker.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Available reaction values."
+    },
+    {
+      "name": "OnSelected",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Whether picker interaction is disabled."
+    }
+  ]
+}

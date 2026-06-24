@@ -31,6 +31,7 @@ dotnet add package Tempo.Blazor.Spreadsheet       # Spreadsheet editor and XLSX 
 dotnet add package Tempo.Blazor.GanttXlsx         # Optional Gantt XLSX import/export helpers
 dotnet add package Tempo.Blazor.DocumentEditor    # Document editor and canvas runtime
 dotnet add package Tempo.Blazor.NotionEditor      # Notion-style editor and block/database UI
+dotnet add package Tempo.Blazor.Signing           # Signing workflows and PDF template designer
 dotnet add package Tempo.Blazor.FluentValidation   # FluentValidation integration for EditForm
 dotnet add package Tempo.Reporting.Abstractions    # Report definition JSON, validation, data contracts
 dotnet add package Tempo.Reporting.Engine          # Processing, layout, PDF/PNG, CSV/XLSX
@@ -56,6 +57,8 @@ To keep the pre-split all-in setup, install `Tempo.Blazor.All` and register:
 builder.Services.AddTempoBlazorAll();
 ```
 
+`Tempo.Blazor.All` includes `Tempo.Blazor.Signing` and calls `AddTempoBlazorSigning()` automatically.
+
 For a lean app, reference and register only the feature packages you use:
 
 ```csharp
@@ -66,6 +69,7 @@ builder.Services.AddTempoBlazorWireframe();
 builder.Services.AddTempoBlazorSpreadsheet();
 builder.Services.AddTempoBlazorDocumentEditor();
 builder.Services.AddTempoBlazorNotionEditor();
+builder.Services.AddTempoBlazorSigning();
 ```
 
 ### Custom Diagram Stencils
@@ -118,7 +122,10 @@ public sealed class MyStencilProvider : IDiagramStencilProvider
 <link href="_content/Tempo.Blazor.Spreadsheet/css/tempo-blazor-spreadsheet.css" rel="stylesheet" />
 <link href="_content/Tempo.Blazor.DocumentEditor/css/tempo-blazor-document-editor.css" rel="stylesheet" />
 <link href="_content/Tempo.Blazor.NotionEditor/css/tempo-blazor-notion-editor.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.Signing/css/tempo-blazor-signing.css" rel="stylesheet" />
 ```
+
+`TmPdfTemplateDesigner` loads its ES module from `_content/Tempo.Blazor.Signing/js/pdf-template-designer.js`. If your host app uses CSP or a static-asset allowlist, include that path. `TmSignatureCapture` still uses the core `_content/Tempo.Blazor/js/signature-capture.js` asset.
 
 ### 3. Add Toast Container to Layout
 

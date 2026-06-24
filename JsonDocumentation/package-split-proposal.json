@@ -4,7 +4,7 @@
   "createdOn": "2026-06-23",
   "status": "phase-7-implemented-docs-release-compat",
   "implementationStatus": {
-    "lastUpdatedOn": "2026-06-23",
+    "lastUpdatedOn": "2026-06-24",
     "completedPhases": [
       0,
       1,
@@ -15,7 +15,7 @@
       6,
       7
     ],
-    "currentScope": "Phase 7 is implemented: JsonDocumentation/packages.json contains package-specific entries for the split feature packages, package-specific JSON outputs were generated, Tempo.Blazor.All is a physical compatibility package with AddTempoBlazorAll(), and README/release migration documentation was added.",
+    "currentScope": "Phase 7 is implemented for the original split packages, and the Tempo.Blazor.Signing follow-up is implemented and validated through phase 9: the signing RCL exists, demo projects reference and register it explicitly, JsonDocumentation/packages.json generates tempo-blazor-signing.json, Tempo.Blazor.All references and registers signing, eng/nuget-packages.txt includes the package for CI publishing, README/migration/internal docs describe the package, CSS, ES module path, and core leftovers, and restore/build/test/demo/package verification passed.",
     "demoImpact": "Demo hosts continue to reference and register split feature packages explicitly instead of using Tempo.Blazor.All, so the demo still validates individual package references, DI calls, CSS links, and script paths. Tempo.Blazor.All is reserved for consuming applications that want the compatibility path.",
     "phase2PackageVerification": {
       "packedOn": "2026-06-23",
@@ -1059,7 +1059,8 @@
     {
       "packageId": "Tempo.Blazor.Signing",
       "kind": "feature",
-      "proposedSourceProject": "src/Tempo.Blazor.Signing/Tempo.Blazor.Signing.csproj",
+      "status": "implemented",
+      "sourceProject": "src/Tempo.Blazor.Signing/Tempo.Blazor.Signing.csproj",
       "targetFrameworks": "net8.0;net9.0;net10.0",
       "dependsOn": [
         "Tempo.Blazor",

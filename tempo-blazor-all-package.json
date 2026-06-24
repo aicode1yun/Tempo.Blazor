@@ -27,6 +27,7 @@
       "../Tempo.Blazor.Modeling/Tempo.Blazor.Modeling.csproj",
       "../Tempo.Blazor.NotionEditor/Tempo.Blazor.NotionEditor.csproj",
       "../Tempo.Blazor.PdfViewer/Tempo.Blazor.PdfViewer.csproj",
+      "../Tempo.Blazor.Signing/Tempo.Blazor.Signing.csproj",
       "../Tempo.Blazor.Spreadsheet/Tempo.Blazor.Spreadsheet.csproj",
       "../Tempo.Blazor.Wireframe/Tempo.Blazor.Wireframe.csproj"
     ],

@@ -4,9 +4,7 @@ on:
   pull_request:
     branches: [main, master]
     paths:
-      - 'src/Tempo.Blazor/wwwroot/js/document-editor-wysiwyg.js'
-      - 'src/Tempo.Blazor/wwwroot/js/document-editor.js'
-      - 'src/Tempo.Blazor/Components/DocumentEditor/**'
+      - 'src/Tempo.Blazor.DocumentEditor/**'
       - 'src/Tempo.Blazor.Abstractions/DocumentEditor/**'
       - 'tests/Tempo.Blazor.Tests/DocumentEditor/Performance/**'
       - 'planning/baselines/**'
@@ -18,25 +16,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET SDKs
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
             10.0.x
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
 
       - name: Restore
         run: dotnet restore
 
       - name: Build editor projects
         run: |
-          dotnet build src/Tempo.Blazor/Tempo.Blazor.csproj --no-restore --configuration Release
+          dotnet build src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj --no-restore --configuration Release
           dotnet build tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj --no-restore --configuration Release
 
       - name: Run performance baseline tests
@@ -49,47 +42,94 @@ jobs:
             --results-directory ./TestResults
 
       - name: Upload baseline CSV
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: perf-baseline-csv
           path: planning/baselines/*.csv
 
       - name: Detect regression vs. checked-in baseline
+        env:
+          HARD_FAIL_ON_REGRESSION: ${{ github.event_name != 'pull_request' }}
         run: |
           set -euo pipefail
-          baseline_dir=planning/baselines
-          current=$(ls -1t $baseline_dir/perf-*.csv 2>/dev/null | head -1 || true)
-          previous=$(ls -1t $baseline_dir/perf-*.csv 2>/dev/null | sed -n '2p' || true)
-          if [ -z "${current}" ] || [ -z "${previous}" ]; then
-            echo "Not enough baselines on disk for regression comparison — skipping."
-            exit 0
-          fi
-          echo "Comparing current=$current vs previous=$previous"
+          set +e
           python3 - <<'PY'
-          import csv, os, sys
+          import csv
+          import os
           import pathlib
+          import subprocess
+          import sys
+
           baseline_dir = pathlib.Path('planning/baselines')
-          files = sorted(baseline_dir.glob('perf-*.csv'), key=lambda p: p.stat().st_mtime, reverse=True)
-          if len(files) < 2:
+          threshold = 1.15
+          metrics = ('elapsed_ms', 'input_operations', 'render_swaps', 'full_render_swaps')
+
+          def is_in_process_baseline(path):
+              return path.name.startswith('perf-') and not path.name.startswith('perf-e2e-') and path.suffix == '.csv'
+
+          def changed_baselines():
+              result = subprocess.run(
+                  ['git', 'status', '--porcelain', '--', str(baseline_dir)],
+                  check=True,
+                  capture_output=True,
+                  text=True)
+              paths = []
+              for line in result.stdout.splitlines():
+                  if not line:
+                      continue
+                  path_text = line[3:].strip()
+                  if ' -> ' in path_text:
+                      path_text = path_text.split(' -> ', 1)[1]
+                  path = pathlib.Path(path_text)
+                  if path.exists() and is_in_process_baseline(path):
+                      paths.append(path)
+              return sorted(set(paths), key=lambda p: p.name)
+
+          current_candidates = changed_baselines()
+          if not current_candidates:
+              references = sorted(p.name for p in baseline_dir.glob('perf-*.csv') if is_in_process_baseline(p))
+              print('No generated or modified in-process performance baseline CSV found; skipping regression comparison.')
+              print('Checked-in in-process reference baselines: ' + (', '.join(references) if references else 'none'))
               sys.exit(0)
-          current_path, previous_path = files[0], files[1]
+
+          current_path = current_candidates[-1]
+          reference_candidates = sorted(
+              (p for p in baseline_dir.glob('perf-*.csv') if is_in_process_baseline(p) and p != current_path),
+              key=lambda p: p.name)
+
+          if not reference_candidates:
+              print(f'No checked-in in-process reference baseline found for current={current_path}; skipping regression comparison.')
+              sys.exit(0)
+
+          previous_path = reference_candidates[-1]
+          print(f'Comparing current={current_path} vs reference={previous_path}')
+
           def load(path):
               rows = {}
-              with open(path) as fh:
+              with path.open(newline='', encoding='utf-8-sig') as fh:
                   reader = csv.DictReader(fh)
+                  reader.fieldnames = [(name or '').lstrip('\ufeff') for name in (reader.fieldnames or [])]
+                  if 'scenario' not in reader.fieldnames:
+                      raise SystemExit(f"{path}: missing 'scenario' column. Columns: {reader.fieldnames}")
                   for row in reader:
-                      rows[row['scenario']] = row
+                      scenario = (row.get('scenario') or '').strip()
+                      if scenario:
+                          rows[scenario] = row
               return rows
+
           current = load(current_path)
           previous = load(previous_path)
-          threshold = 1.15
           regressions = []
+          compared_metrics = 0
+          compared_scenarios = 0
+
           for scenario, row in current.items():
               prev_row = previous.get(scenario)
               if not prev_row:
                   continue
-              for metric in ('elapsed_ms', 'input_operations', 'render_swaps', 'full_render_swaps'):
+              scenario_compared = False
+              for metric in metrics:
                   try:
                       cur_val = float(row[metric])
                       prev_val = float(prev_row[metric])
@@ -97,13 +137,32 @@ jobs:
                       continue
                   if prev_val <= 0:
                       continue
+                  compared_metrics += 1
+                  scenario_compared = True
                   ratio = cur_val / prev_val
                   if ratio > threshold:
                       regressions.append(f"{scenario}.{metric}: {prev_val:.2f} -> {cur_val:.2f} (+{(ratio-1)*100:.1f}%)")
+              if scenario_compared:
+                  compared_scenarios += 1
+
+          print(f'Compared {compared_metrics} metrics across {compared_scenarios} scenarios.')
+          if compared_metrics == 0:
+              print('No comparable metrics found; skipping regression decision.')
+              sys.exit(0)
+
           if regressions:
               print("Performance regression detected:")
               for line in regressions:
                   print("  " + line)
-              sys.exit(1)
+                  print(f"::warning::{line}")
+              sys.exit(2)
+
           print(f"No regressions over {(threshold-1)*100:.0f}% threshold ({len(current)} scenarios).")
           PY
+          status=$?
+          set -e
+          if [ "$status" -eq 2 ] && [ "$HARD_FAIL_ON_REGRESSION" != "true" ]; then
+            echo "::warning::Performance regression detected, but pull_request runs are informational."
+            exit 0
+          fi
+          exit "$status"

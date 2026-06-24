@@ -1,0 +1,46 @@
+{
+  "itemName": "TmRecipientRoleEditor",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "Edits signing template roles and concrete submission recipient details.",
+  "packageId": "Tempo.Blazor.Signing",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmRecipientRoleEditor.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the editor controls are disabled."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Fields available for invite-via-field rules."
+    },
+    {
+      "name": "Fields",
+      "type": "IReadOnlyList<SigningField>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Whether the editor edits template roles or concrete submission recipients."
+    },
+    {
+      "name": "Mode",
+      "type": "TmRecipientRoleEditorMode",
+      "isRequired": true,
+      "description": "Callback invoked whenever roles change."
+    },
+    {
+      "name": "RolesChanged",
+      "type": "EventCallback<IReadOnlyList<SigningSubmitterRole>>",
+      "isRequired": false,
+      "description": "Roles or submission recipients currently edited."
+    }
+  ]
+}

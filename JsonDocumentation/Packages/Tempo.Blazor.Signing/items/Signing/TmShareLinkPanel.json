@@ -1,0 +1,53 @@
+{
+  "itemName": "TmShareLinkPanel",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "TmShareLinkPanel Blazor component in the Signing category.",
+  "packageId": "Tempo.Blazor.Signing",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmShareLinkPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether a QR code is rendered."
+    },
+    {
+      "name": "EmbedCode",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Public signing link."
+    },
+    {
+      "name": "Enabled",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Optional embed code for publishing the signing link."
+    },
+    {
+      "name": "EnabledChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "Whether sharing is enabled."
+    },
+    {
+      "name": "ExpiresAt",
+      "type": "DateTimeOffset?",
+      "isRequired": false,
+      "description": "Callback invoked when sharing is enabled or disabled."
+    },
+    {
+      "name": "ShowQrCode",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Optional link expiration time."
+    }
+  ]
+}

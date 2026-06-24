@@ -16,6 +16,7 @@ src/Tempo.Blazor.Spreadsheet/Tempo.Blazor.Spreadsheet.csproj
 src/Tempo.Blazor.GanttXlsx/Tempo.Blazor.GanttXlsx.csproj
 src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj
 src/Tempo.Blazor.NotionEditor/Tempo.Blazor.NotionEditor.csproj
+src/Tempo.Blazor.Signing/Tempo.Blazor.Signing.csproj
 src/Tempo.Blazor.All/Tempo.Blazor.All.csproj
 src/Tempo.Blazor.EmailTemplates.Abstractions/Tempo.Blazor.EmailTemplates.Abstractions.csproj
 src/Tempo.Blazor.EmailTemplates/Tempo.Blazor.EmailTemplates.csproj

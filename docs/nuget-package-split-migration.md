@@ -19,6 +19,7 @@ Tempo.Blazor now uses a lean core package plus feature packages for the largest 
 | `Tempo.Blazor.GanttXlsx` | Optional Gantt XLSX import/export helpers. |
 | `Tempo.Blazor.DocumentEditor` | Document editor UI, canvas runtime, clipboard normalization, and document assets. |
 | `Tempo.Blazor.NotionEditor` | Notion-style page/block/database editor and integrated Tempo embed blocks. |
+| `Tempo.Blazor.Signing` | Signing workflow components, PDF template designer, document page viewer overlays, audit trail, and signing assets. |
 
 ## Fast Compatibility Path
 
@@ -50,6 +51,7 @@ dotnet add package Tempo.Blazor.Wireframe
 dotnet add package Tempo.Blazor.Spreadsheet
 dotnet add package Tempo.Blazor.DocumentEditor
 dotnet add package Tempo.Blazor.NotionEditor
+dotnet add package Tempo.Blazor.Signing
 ```
 
 Register only the matching services:
@@ -62,6 +64,7 @@ builder.Services.AddTempoBlazorWireframe();
 builder.Services.AddTempoBlazorSpreadsheet();
 builder.Services.AddTempoBlazorDocumentEditor();
 builder.Services.AddTempoBlazorNotionEditor();
+builder.Services.AddTempoBlazorSigning();
 ```
 
 ## Asset Path Changes
@@ -77,6 +80,7 @@ builder.Services.AddTempoBlazorNotionEditor();
 | `_content/Tempo.Blazor/js/document-editor/**` | `_content/Tempo.Blazor.DocumentEditor/js/document-editor/**` |
 | `_content/Tempo.Blazor/js/document-editor-canvas/**` | `_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/**` |
 | `_content/Tempo.Blazor/js/notion-editor.js` | `_content/Tempo.Blazor.NotionEditor/js/notion-editor.js` |
+| `_content/Tempo.Blazor/js/pdf-template-designer.js` | `_content/Tempo.Blazor.Signing/js/pdf-template-designer.js` |
 
 Feature CSS entry points:
 
@@ -87,16 +91,27 @@ Feature CSS entry points:
 <link href="_content/Tempo.Blazor.Spreadsheet/css/tempo-blazor-spreadsheet.css" rel="stylesheet" />
 <link href="_content/Tempo.Blazor.DocumentEditor/css/tempo-blazor-document-editor.css" rel="stylesheet" />
 <link href="_content/Tempo.Blazor.NotionEditor/css/tempo-blazor-notion-editor.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.Signing/css/tempo-blazor-signing.css" rel="stylesheet" />
 ```
+
+`TmPdfTemplateDesigner` imports `_content/Tempo.Blazor.Signing/js/pdf-template-designer.js` as an ES module. Apps normally do not need a separate `<script>` tag for it, but CSP rules and static-asset allowlists must allow the new path.
+
+## Signing Migration Notes
+
+Signing workflows moved from core `Tempo.Blazor` into `Tempo.Blazor.Signing`. Add the new package and call `builder.Services.AddTempoBlazorSigning()` when using components from `Tempo.Blazor.Components.Signing`, including `TmPdfTemplateDesigner`, `TmSigningFormRunner`, `TmDocumentPageViewer`, `TmSigningFieldOverlay`, `TmAuditTrailViewer`, `TmShareLinkPanel`, and the signing step components.
+
+The public component namespace remains `Tempo.Blazor.Components.Signing`, so Razor `@using` lines do not change. The breaking part is package and asset ownership: applications that previously got these components from `Tempo.Blazor` must reference `Tempo.Blazor.Signing`, include `_content/Tempo.Blazor.Signing/css/tempo-blazor-signing.css`, and allow the new PDF template designer module path.
+
+For the first extraction iteration, `TmSignature`, `TmSignatureCapture`, `_signature-capture.css`, and `_content/Tempo.Blazor/js/signature-capture.js` remain in core `Tempo.Blazor`. Signing model/contracts under `Tempo.Blazor.Abstractions` also remain where they are.
 
 ## Release Notes
 
 This is a breaking package layout change for apps that relied on large editors being inside `Tempo.Blazor`.
 
-Core `Tempo.Blazor` no longer ships PDF viewer, QR/barcode, Diagram, Wireframe, Modeling, Spreadsheet, Gantt XLSX helpers, DocumentEditor, or NotionEditor implementation/assets. Add the corresponding feature package or use `Tempo.Blazor.All`.
+Core `Tempo.Blazor` no longer ships PDF viewer, QR/barcode, Diagram, Wireframe, Modeling, Spreadsheet, Gantt XLSX helpers, DocumentEditor, NotionEditor, or Signing workflow implementation/assets. Add the corresponding feature package or use `Tempo.Blazor.All`.
 
 Known follow-up items:
 
-- Signing remains in core until a future extraction phase.
+- `TmSignature` and `TmSignatureCapture` remain in core for now; a later phase can decide whether moving them is worth a separate breaking change.
 - Feature localization resources still live in core resources until the planned composite/resource-contributor localizer work.
-- `Tempo.Blazor.NotionEditor` currently includes integrated Tempo blocks and therefore depends on PDF, Diagram, Wireframe, and Spreadsheet feature packages. A future `Tempo.Blazor.NotionEditor.TempoBlocks` split can make the base Notion package smaller.
+- `Tempo.Blazor.NotionEditor` currently includes integrated Tempo blocks and therefore depends on PDF, Diagram, Wireframe, Spreadsheet, and Signing feature packages. A future `Tempo.Blazor.NotionEditor.TempoBlocks` split can make the base Notion package smaller.

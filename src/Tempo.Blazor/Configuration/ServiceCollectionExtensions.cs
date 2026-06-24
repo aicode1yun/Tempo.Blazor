@@ -63,16 +63,6 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers services required by the signing component group.
-    /// </summary>
-    public static IServiceCollection AddTempoBlazorSigning(this IServiceCollection services)
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        services.AddTempoBlazor();
-        return services;
-    }
-
-    /// <summary>
     /// Replaces the default <see cref="NoOpNotificationService"/> with
     /// <see cref="InMemoryNotificationStore"/> so notifications are kept in memory.
     ///
