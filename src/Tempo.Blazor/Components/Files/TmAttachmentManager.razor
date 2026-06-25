@@ -1,10 +1,9 @@
 @namespace Tempo.Blazor.Components.Files
-@using Tempo.Blazor.Interfaces
-@using Tempo.Blazor.Models
+@using Tempo.Blazor.Abstractions.Shared
 @using Microsoft.AspNetCore.Components.Forms
 
 <div class="tm-attachment-manager @Class" @attributes="AdditionalAttributes">
-    @if (Provider is not null && _attachments.Count > 0)
+    @if (AttachmentProvider is not null && _attachments.Count > 0)
     {
         <div class="tm-attachment-list">
             @foreach (var attachment in _attachments)
@@ -15,10 +14,10 @@
                     <div class="tm-attachment-info">
                         <span class="tm-attachment-name">@att.FileName</span>
                         <span class="tm-attachment-meta">
-                            @FormatSize(att.FileSizeBytes)
-                            @if (!string.IsNullOrEmpty(att.UploadedByName))
+                            @FormatSize(att.SizeBytes)
+                            @if (!string.IsNullOrEmpty(att.UploadedBy?.DisplayName))
                             {
-                                <span>&nbsp;· @att.UploadedByName</span>
+                                <span>&nbsp;· @att.UploadedBy.DisplayName</span>
                             }
                         </span>
                     </div>
@@ -57,11 +56,20 @@
 </div>
 
 @code {
-    /// <summary>Data provider for loading, downloading, deleting, and uploading attachments.</summary>
-    [Parameter] public IFileAttachmentProvider? Provider { get; set; }
+    /// <summary>Provider for loading and linking attachments to an entity.</summary>
+    [Parameter] public ITmAttachmentProvider? AttachmentProvider { get; set; }
 
-    /// <summary>Entity ID used to load and upload attachments.</summary>
+    /// <summary>Provider for uploading files and resolving asset URLs.</summary>
+    [Parameter] public ITmFileProvider? FileProvider { get; set; }
+
+    /// <summary>Entity reference used to load and upload attachments.</summary>
+    [Parameter] public TmEntityRef? EntityRef { get; set; }
+
+    /// <summary>Entity ID convenience parameter used when <see cref="EntityRef"/> is not supplied.</summary>
     [Parameter] public string? EntityId { get; set; }
+
+    /// <summary>Entity type used with <see cref="EntityId"/>. Defaults to <c>attachment-manager-entity</c>.</summary>
+    [Parameter] public string EntityType { get; set; } = "attachment-manager-entity";
 
     /// <summary>When true, upload and delete controls are disabled.</summary>
     [Parameter] public bool Disabled { get; set; }
@@ -73,44 +81,108 @@
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
     /// <summary>Fires when an attachment is deleted.</summary>
-    [Parameter] public EventCallback<IFileAttachment> OnDeleted { get; set; }
+    [Parameter] public EventCallback<TmAttachment> OnDeleted { get; set; }
 
-    private List<IFileAttachment> _attachments = [];
+    private List<TmAttachment> _attachments = [];
     private bool                  _isUploading;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Provider is not null && !string.IsNullOrEmpty(EntityId))
+        var entityRef = EffectiveEntityRef;
+        if (AttachmentProvider is not null && entityRef is not null)
         {
-            _attachments = [.. await Provider.GetAttachmentsAsync(EntityId)];
+            _attachments = [.. await AttachmentProvider.GetForEntityAsync(entityRef)];
         }
     }
 
     private async Task HandleFilesSelectedAsync(InputFileChangeEventArgs e)
     {
-        if (Provider is null || string.IsNullOrEmpty(EntityId)) return;
+        var entityRef = EffectiveEntityRef;
+        var fileProvider = EffectiveFileProvider;
+        if (AttachmentProvider is null || fileProvider is null || entityRef is null) return;
+
         _isUploading = true;
         StateHasChanged();
-        await Task.Delay(0); // yield for re-render
-        _isUploading = false;
+
+        try
+        {
+            foreach (var file in e.GetMultipleFiles())
+            {
+                await using var stream = file.OpenReadStream();
+                var upload = await fileProvider.UploadAsync(new TmFileUploadRequest
+                {
+                    FileName = file.Name,
+                    ContentType = file.ContentType,
+                    SizeBytes = file.Size,
+                    EntityRef = entityRef,
+                    Purpose = "attachment-manager"
+                }, stream);
+
+                if (!upload.Success)
+                {
+                    continue;
+                }
+
+                var attachment = ToAttachment(upload, file, entityRef);
+                _attachments.Add(await AttachmentProvider.AddAsync(attachment));
+            }
+        }
+        finally
+        {
+            _isUploading = false;
+        }
     }
 
-    private async Task DownloadAsync(IFileAttachment att)
+    private async Task DownloadAsync(TmAttachment att)
     {
-        if (Provider is null) return;
-        var _ = await Provider.GetDownloadUrlAsync(att.Id);
+        var assetId = att.AssetId ?? att.Id;
+        if (EffectiveFileProvider is null || string.IsNullOrWhiteSpace(assetId)) return;
+
+        var _ = await EffectiveFileProvider.ResolveAsync(new TmFileResolveRequest
+        {
+            AssetId = assetId,
+            EntityRef = att.EntityRef,
+            Purpose = att.Purpose
+        });
         // Navigation to download URL is handled by the host application
     }
 
-    private async Task DeleteAsync(IFileAttachment att)
+    private async Task DeleteAsync(TmAttachment att)
     {
-        if (Provider is null) return;
-        await Provider.DeleteAttachmentAsync(att.Id);
+        var entityRef = EffectiveEntityRef;
+        if (AttachmentProvider is null || entityRef is null) return;
+
+        await AttachmentProvider.RemoveAsync(entityRef, att.Id);
         _attachments.Remove(att);
         await OnDeleted.InvokeAsync(att);
     }
 
-    private static string FileIcon(string contentType) => contentType switch
+    private TmEntityRef? EffectiveEntityRef
+        => EntityRef ?? (string.IsNullOrWhiteSpace(EntityId) ? null : TmEntityRef.Create(EntityType, EntityId));
+
+    private ITmFileProvider? EffectiveFileProvider
+        => FileProvider ?? AttachmentProvider as ITmFileProvider;
+
+    private static TmAttachment ToAttachment(TmFileUploadResult upload, IBrowserFile file, TmEntityRef entityRef)
+    {
+        var assetId = upload.AssetId ?? upload.UploadSessionId ?? Guid.NewGuid().ToString("N");
+        return new TmAttachment
+        {
+            Id = assetId,
+            EntityRef = entityRef,
+            AssetId = upload.AssetId ?? assetId,
+            Url = upload.Url,
+            FileName = upload.FileName ?? file.Name,
+            ContentType = upload.ContentType ?? file.ContentType,
+            SizeBytes = upload.SizeBytes ?? file.Size,
+            UploadedAt = DateTimeOffset.UtcNow,
+            Purpose = "attachment-manager",
+            CanDelete = true,
+            CanDownload = true
+        };
+    }
+
+    private static string FileIcon(string? contentType) => (contentType ?? string.Empty) switch
     {
         var ct when ct.StartsWith("image/") => "🖼",
         "application/pdf"                   => "📄",

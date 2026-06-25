@@ -1,55 +1,43 @@
-using Tempo.Blazor.Interfaces;
+using Tempo.Blazor.Abstractions.Shared;
 
 namespace Tempo.Blazor.Demo.Services;
 
 /// <summary>
 /// Demo mention data provider for testing mentions in rich text editors.
 /// </summary>
-public class DemoMentionProvider : IMentionDataProvider
+public class DemoMentionProvider : TmPeopleProviderBase
 {
-    private readonly List<DemoMentionUser> _users = new()
-    {
-        new DemoMentionUser("u1", "alice", "Alice Johnson", null),
-        new DemoMentionUser("u2", "bob", "Bob Smith", "https://i.pravatar.cc/150?u=1"),
-        new DemoMentionUser("u3", "charlie", "Charlie Brown", null),
-        new DemoMentionUser("u4", "diana", "Diana Prince", "https://i.pravatar.cc/150?u=2"),
-        new DemoMentionUser("u5", "eve", "Eve Davis", null),
-    };
+    private readonly List<TmUser> _users =
+    [
+        new() { Id = "u1", UserName = "alice", DisplayName = "Alice Johnson" },
+        new() { Id = "u2", UserName = "bob", DisplayName = "Bob Smith", AvatarUrl = "https://i.pravatar.cc/150?u=1" },
+        new() { Id = "u3", UserName = "charlie", DisplayName = "Charlie Brown" },
+        new() { Id = "u4", UserName = "diana", DisplayName = "Diana Prince", AvatarUrl = "https://i.pravatar.cc/150?u=2" },
+        new() { Id = "u5", UserName = "eve", DisplayName = "Eve Davis" },
+    ];
 
-    public Task<IEnumerable<IMentionUser>> SearchUsersAsync(string query, CancellationToken ct = default)
+    /// <inheritdoc />
+    public override Task<IReadOnlyList<TmUser>> SearchAsync(TmPeopleQuery query, CancellationToken ct = default)
     {
-        var results = string.IsNullOrWhiteSpace(query)
-            ? _users.Cast<IMentionUser>()
+        var searchText = query.SearchText ?? string.Empty;
+        IEnumerable<TmUser> results = string.IsNullOrWhiteSpace(searchText)
+            ? _users
             : _users.Where(u => 
-                u.UserName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                u.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase))
-                .Cast<IMentionUser>();
+                (u.UserName?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                u.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase));
 
-        return Task.FromResult(results);
+        if (query.Ids.Count > 0)
+        {
+            var idSet = query.Ids.ToHashSet(StringComparer.Ordinal);
+            results = results.Where(user => idSet.Contains(user.Id));
+        }
+
+        if (!query.IncludeVirtual)
+        {
+            results = results.Where(user => !user.IsVirtual);
+        }
+
+        var take = query.Take <= 0 ? _users.Count : query.Take;
+        return Task.FromResult<IReadOnlyList<TmUser>>(results.Take(take).ToArray());
     }
-
-    public Task<IMentionUser?> GetUserByIdAsync(string id, CancellationToken ct = default)
-    {
-        var user = _users.FirstOrDefault(u => u.Id == id);
-        return Task.FromResult<IMentionUser?>(user);
-    }
-}
-
-/// <summary>
-/// Demo mention user implementation.
-/// </summary>
-public class DemoMentionUser : IMentionUser
-{
-    public DemoMentionUser(string id, string userName, string displayName, string? avatarUrl)
-    {
-        Id = id;
-        UserName = userName;
-        DisplayName = displayName;
-        AvatarUrl = avatarUrl;
-    }
-
-    public string Id { get; }
-    public string UserName { get; }
-    public string DisplayName { get; }
-    public string? AvatarUrl { get; }
 }

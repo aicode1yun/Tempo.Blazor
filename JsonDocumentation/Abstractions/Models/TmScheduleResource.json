@@ -2,9 +2,71 @@
   "kind": "Class",
   "category": "Models",
   "namespace": "Tempo.Blazor.Models",
-  "description": "Represents a schedulable resource (person, room, etc.).",
+  "description": "Represents a scheduler-specific resource snapshot. Use ToResource and FromResource to bridge to the shared TmResource model.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SchedulerModels.cs",
   "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?",
+      "description": "CSS color value for the resource."
+    },
+    {
+      "name": "ResourceType",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional resource type, for example person, team, room, or equipment."
+    },
+    {
+      "name": "GroupId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional group identifier for nested grouping."
+    },
+    {
+      "name": "SortOrder",
+      "kind": "Property",
+      "type": "int",
+      "description": "Display order within the group."
+    },
+    {
+      "name": "SourceKey",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional provider/source discriminator for applications with multiple resource sources."
+    },
+    {
+      "name": "TenantId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional tenant, workspace, or application scope identifier."
+    },
+    {
+      "name": "ToResource",
+      "kind": "Method",
+      "type": "TmResource",
+      "description": "Creates a shared resource snapshot from this scheduler resource."
+    },
+    {
+      "name": "FromResource",
+      "kind": "Method",
+      "type": "TmScheduleResource",
+      "description": "Creates a scheduler resource snapshot from a shared resource model."
+    }
+  ],
   "itemName": "TmScheduleResource"
 }

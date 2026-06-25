@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "description": "Keyboard commands supported by .",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/DocumentEditorKeyboardManager.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorKeyboardCommand"
+}

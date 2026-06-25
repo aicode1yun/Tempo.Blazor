@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Abstractions.WorkItems;
+using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Demo.Services;
 
@@ -20,49 +20,49 @@ public sealed class DemoOpsWorkItemProvider : HttpWorkItemProvider
     }
 }
 
-public abstract class HttpWorkItemProvider : IWorkItemProvider
+public abstract class HttpWorkItemProvider : TmWorkItemProviderBase
 {
     private readonly HttpClient _http;
 
-    protected HttpWorkItemProvider(IHttpClientFactory factory, string providerKey, string displayName)
+    protected HttpWorkItemProvider(IHttpClientFactory factory, string sourceKey, string displayName)
     {
         _http = factory.CreateClient("DemoApi");
-        ProviderKey = providerKey;
+        SourceKey = sourceKey;
         DisplayName = displayName;
     }
 
-    public string ProviderKey { get; }
-    public string DisplayName { get; }
+    public override string SourceKey { get; }
+    public override string DisplayName { get; }
+    public override TmWorkItemCapabilities Capabilities => TmWorkItemCapabilities.Read;
 
-    public async Task<WorkItemDto?> GetByIdAsync(string externalId, CancellationToken cancellationToken)
+    public override async Task<TmWorkItem?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         var response = await _http.GetAsync(
-            $"/api/notion/work-items/{Uri.EscapeDataString(ProviderKey)}/{Uri.EscapeDataString(externalId)}",
+            $"/api/notion/work-items/{Uri.EscapeDataString(SourceKey)}/{Uri.EscapeDataString(id)}",
             cancellationToken);
 
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             return null;
 
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<WorkItemDto>(cancellationToken);
+        return await response.Content.ReadFromJsonAsync<TmWorkItem>(cancellationToken);
     }
 
-    public async Task<PagedResult<WorkItemDto>> SearchAsync(WorkItemQuery query, CancellationToken cancellationToken)
+    public override async Task<PagedResult<TmWorkItem>> SearchAsync(TmWorkItemQuery query, CancellationToken cancellationToken = default)
     {
-        var normalized = new WorkItemQuery
+        var normalized = new TmWorkItemQuery
         {
-            ProviderKey = ProviderKey,
+            SourceKey = SourceKey,
             FreeText = query.FreeText,
             Ids = query.Ids,
             QueryString = query.QueryString,
-            Jql = query.Jql,
             Skip = query.Skip,
             Take = query.Take
         };
 
         var response = await _http.PostAsJsonAsync("/api/notion/work-items/query", normalized, cancellationToken);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<PagedResult<WorkItemDto>>(cancellationToken)
-            ?? new PagedResult<WorkItemDto> { Items = [], TotalCount = 0, Page = 1, PageSize = normalized.Take };
+        return await response.Content.ReadFromJsonAsync<PagedResult<TmWorkItem>>(cancellationToken)
+            ?? new PagedResult<TmWorkItem> { Items = [], TotalCount = 0, Page = 1, PageSize = normalized.Take };
     }
 }

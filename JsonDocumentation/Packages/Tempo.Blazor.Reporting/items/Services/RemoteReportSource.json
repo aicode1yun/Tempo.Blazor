@@ -1,0 +1,20 @@
+{
+  "itemName": "RemoteReportSource",
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Reporting.Services",
+  "description": "HTTP-backed IReportSource for viewer-facing remote report endpoints. It loads metadata, renders snapshots, and exports PDF/CSV/XLSX by posting ReportViewer request DTOs.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Services/RemoteReportSource.cs",
+  "documentationStatus": "manual",
+  "constructor": {
+    "signature": "RemoteReportSource(HttpClient httpClient, string reportId, string basePath = \"api/reports\")",
+    "description": "Creates a remote source for one report id. The base path is trimmed and defaults to api/reports."
+  },
+  "relatedTypes": [
+    "IReportSource",
+    "ReportViewerMetadataRequest",
+    "ReportViewerRenderRequest",
+    "ReportViewerExportResult"
+  ]
+}

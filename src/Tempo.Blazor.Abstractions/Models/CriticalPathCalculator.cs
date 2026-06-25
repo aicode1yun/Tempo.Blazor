@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.WorkItems;
 namespace Tempo.Blazor.Abstractions.Models;
 
 /// <summary>
@@ -10,7 +11,7 @@ public static class CriticalPathCalculator
     /// Calculates which tasks lie on the critical path.
     /// </summary>
     public static IReadOnlySet<string> Calculate(
-        IEnumerable<GanttTask> tasks,
+        IEnumerable<TmWorkItem> tasks,
         IEnumerable<GanttDependency> dependencies)
     {
         var taskList = tasks.ToList();
@@ -57,7 +58,7 @@ public static class CriticalPathCalculator
             return new HashSet<string>();
 
         // Duration in days for each task
-        double Duration(GanttTask t) => Math.Max(1, (t.End - t.Start).TotalDays);
+        double Duration(TmWorkItem t) => Math.Max(1, t.ScheduledDuration().TotalDays);
 
         // Forward pass: ES (earliest start), EF (earliest finish)
         var es = new Dictionary<string, double>();

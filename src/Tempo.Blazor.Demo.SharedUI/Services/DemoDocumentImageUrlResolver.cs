@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
 
@@ -19,6 +20,16 @@ public class DemoDocumentImageUrlResolver : IDocumentImageUrlResolver, IDocument
         [ContractAssetId] = DemoPngDataUrl,
         [ExhibitAssetId] = DemoPngDataUrl
     };
+
+    /// <inheritdoc />
+    public TmFileProviderCapabilities Capabilities
+        => TmFileProviderCapabilities.Upload
+         | TmFileProviderCapabilities.Resolve
+         | TmFileProviderCapabilities.Delete
+         | TmFileProviderCapabilities.DraftAssets
+         | TmFileProviderCapabilities.CommitDraftAssets
+         | TmFileProviderCapabilities.SignedUrls
+         | TmFileProviderCapabilities.RefreshUrls;
 
     /// <inheritdoc />
     public Task<string> ResolveUrlAsync(
@@ -89,5 +100,86 @@ public class DemoDocumentImageUrlResolver : IDocumentImageUrlResolver, IDocument
         CancellationToken cancellationToken = default)
     {
         return ResolveAsync(request, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<TmFileUploadResult> UploadAsync(
+        TmFileUploadRequest request,
+        Stream content,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(content);
+
+        var upload = await UploadAsync(
+            new DocumentImageUploadRequest
+            {
+                DocumentId = GetDocumentId(request.EntityRef, request.Metadata),
+                LocalAssetId = request.LocalAssetId,
+                FileName = request.FileName,
+                ContentType = string.IsNullOrWhiteSpace(request.ContentType) ? "image/png" : request.ContentType,
+                SizeBytes = request.SizeBytes ?? (content.CanSeek ? content.Length : 0)
+            },
+            content,
+            cancellationToken);
+
+        return new TmFileUploadResult
+        {
+            Success = upload.Success,
+            IsComplete = upload.Success,
+            AssetId = upload.AssetId,
+            Url = upload.Url,
+            FileName = request.FileName,
+            ContentType = request.ContentType,
+            SizeBytes = request.SizeBytes,
+            ErrorMessage = upload.ErrorMessage
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<TmFileResolveResult> ResolveAsync(
+        TmFileResolveRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var result = await ResolveAsync(
+            new DocumentImageResolveRequest
+            {
+                DocumentId = GetDocumentId(request.EntityRef, request.Metadata),
+                AssetId = request.AssetId
+            },
+            cancellationToken);
+
+        return new TmFileResolveResult
+        {
+            Success = result.Success,
+            AssetId = request.AssetId,
+            Url = result.Url,
+            ContentType = result.ContentType,
+            ErrorMessage = result.ErrorMessage
+        };
+    }
+
+    /// <inheritdoc />
+    public Task DeleteAsync(string assetId, CancellationToken cancellationToken = default)
+    {
+        _assets.Remove(assetId);
+        return Task.CompletedTask;
+    }
+
+    private static string GetDocumentId(TmEntityRef? entityRef, Dictionary<string, object>? metadata)
+    {
+        if (!string.IsNullOrWhiteSpace(entityRef?.EntityId))
+            return entityRef.EntityId;
+
+        if (metadata is not null
+            && metadata.TryGetValue("DocumentId", out var value)
+            && !string.IsNullOrWhiteSpace(value?.ToString()))
+        {
+            return value.ToString()!;
+        }
+
+        return "document";
     }
 }

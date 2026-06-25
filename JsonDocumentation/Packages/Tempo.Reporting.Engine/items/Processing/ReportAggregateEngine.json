@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Evaluates processing-time aggregate expressions over materialized rows.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/AggregateProcessing.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Dispose",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "ToString",
+      "kind": "Method",
+      "type": "string"
+    }
+  ],
+  "itemName": "ReportAggregateEngine"
+}

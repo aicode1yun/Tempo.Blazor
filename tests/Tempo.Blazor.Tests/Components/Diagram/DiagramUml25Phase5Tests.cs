@@ -209,11 +209,11 @@ public class DiagramUml25Phase5Tests : LocalizationTestBase
     }
 
     [Fact]
-    public void AddTempoBlazor_Registers_Uml25_Provider()
+    public void AddTempoBlazorDiagramEditor_Registers_Uml25_Provider()
     {
         var services = new ServiceCollection();
 
-        services.AddTempoBlazor();
+        services.AddTempoBlazorDiagramEditor();
 
         var provider = services.BuildServiceProvider();
         provider.GetServices<IDiagramStencilProvider>()

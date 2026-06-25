@@ -1,0 +1,15 @@
+{
+  "itemName": "TmNotionPageTreeItem",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionPageTreeItem Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Sidebar",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Sidebar/TmNotionPageTreeItem.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Sidebar"
+  ],
+  "parameters": [],
+  "subcategory": "Sidebar"
+}

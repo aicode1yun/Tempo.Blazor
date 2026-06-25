@@ -1,0 +1,42 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Render request issued by TmReportViewer.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerRenderRequest.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CultureName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Culture used for processing."
+    },
+    {
+      "name": "InteractionToken",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Stateless interaction token carrying toggle and drill-down state."
+    },
+    {
+      "name": "Parameters",
+      "kind": "Property",
+      "type": "IReadOnlyDictionary<string, ReportParameterValue>",
+      "description": "Resolved or user-supplied parameter values."
+    },
+    {
+      "name": "TenantId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Tenant identifier passed to report providers."
+    },
+    {
+      "name": "UserId",
+      "kind": "Property",
+      "type": "string",
+      "description": "User identifier passed to report providers."
+    }
+  ],
+  "itemName": "ReportViewerRenderRequest"
+}

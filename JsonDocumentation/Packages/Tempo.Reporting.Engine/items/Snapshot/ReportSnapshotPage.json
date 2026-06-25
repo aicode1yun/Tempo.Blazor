@@ -1,0 +1,32 @@
+{
+  "kind": "Class",
+  "category": "Snapshot",
+  "namespace": "Tempo.Reporting.Engine.Snapshot",
+  "description": "Single fixed-size report page containing absolute drawing commands.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportSnapshotPage.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Commands",
+      "kind": "Property",
+      "type": "List<ReportSnapshotCommand>"
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "PageNumber",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "double"
+    }
+  ],
+  "itemName": "ReportSnapshotPage"
+}

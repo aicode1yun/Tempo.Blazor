@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Work Items",
+  "namespace": "Tempo.Blazor.Abstractions.WorkItems",
+  "description": "Single, unified contract for supplying and mutating s. One registration of this provider can feed every task-bearing component (Gantt, Notion tasks, scheduler, work-item blocks) within an application, so the same item stays consistent across them.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/ITmWorkItemProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITmWorkItemProvider"
+}

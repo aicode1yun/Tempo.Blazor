@@ -1,0 +1,16 @@
+{
+  "itemName": "ServiceCollectionExtensions",
+  "kind": "Class",
+  "category": "Configuration",
+  "namespace": "Tempo.Blazor.Reporting.Configuration",
+  "description": "DI extension methods for registering Tempo.Blazor.Reporting services, including Tempo.Blazor core services, HttpClient, default text measurement, and PDF rendering support.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Configuration/ServiceCollectionExtensions.cs",
+  "documentationStatus": "manual",
+  "methods": [
+    {
+      "name": "AddTempoBlazorReporting",
+      "description": "Registers the services required by reporting viewer components."
+    }
+  ]
+}

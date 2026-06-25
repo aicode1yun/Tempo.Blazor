@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Text run positioned inside a laid-out line.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/LineBreaking.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportTextLineRun"
+}

@@ -10,7 +10,7 @@ namespace Tempo.Blazor.Tests.Components.DocumentEditor.CanvasEngine;
 
 public sealed class CanvasEngineHostRenderTests : LocalizationTestBase
 {
-    private const string InteropModulePath = "./_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs";
+    private const string InteropModulePath = "./_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs";
 
     [Fact]
     public void CanvasEngineHost_RendersCanvasStackAccessibilityMirrorAndHiddenInput()

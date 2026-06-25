@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
+  "description": "Per-block comment summary for margin-thread indicators and hover tooltip.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Page/TmNotionPage.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmNotionPage.BlockCommentInfo"
+}

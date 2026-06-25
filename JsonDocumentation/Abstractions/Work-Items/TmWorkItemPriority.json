@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Work Items",
+  "namespace": "Tempo.Blazor.Abstractions.WorkItems",
+  "description": "Unified priority level shared by all task-bearing components. Providers may additionally carry a provider-native label in .",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemPriority.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmWorkItemPriority"
+}

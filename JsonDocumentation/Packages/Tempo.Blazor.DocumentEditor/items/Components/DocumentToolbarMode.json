@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "description": "Visual density and visibility mode for the document editor toolbar.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/DocumentToolbarMode.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentToolbarMode"
+}

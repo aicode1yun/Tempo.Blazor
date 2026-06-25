@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Resolves and validates report parameters before data processing.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/ParameterProcessing.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportParameterProcessor"
+}

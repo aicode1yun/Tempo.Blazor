@@ -1,0 +1,14 @@
+{
+  "itemName": "TmWireframeLayersPanel",
+  "kind": "Component",
+  "category": "Wireframe",
+  "description": "Right-side layers panel for managing wireframe layers.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeLayersPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Wireframe"
+  ],
+  "parameters": []
+}

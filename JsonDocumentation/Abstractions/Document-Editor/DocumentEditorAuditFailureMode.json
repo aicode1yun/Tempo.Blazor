@@ -2,7 +2,7 @@
   "kind": "Enum",
   "category": "Document Editor",
   "namespace": "Tempo.Blazor.DocumentEditor.Models",
-  "description": "Behavior used when an audit sink fails while recording an editor event.",
+  "description": "Behavior used when an activity provider fails while recording an editor event.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProviderContracts.cs",
   "documentationStatus": "generated",

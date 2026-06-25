@@ -1,6 +1,7 @@
 @page "/gantt"
 @using Tempo.Blazor.Components.Scheduler
 @using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Abstractions.Shared
 @inject IHttpClientFactory HttpFactory
 @inject ToastService Toast
 
@@ -80,8 +81,8 @@ else
 
     <!-- ── Main Gantt ─────────────────────────────────────────── -->
     <section class="showcase-card p-0 overflow-hidden" style="height: 680px;">
-        <TmGantt Data="@_tasks"
-                 Dependencies="@_dependencies"
+        <TmGantt Items="@_tasks"
+                 DependencyItems="@_dependencies"
                  @bind-View="@_view"
                  ViewSettings="@_viewSettings"
                  OnViewSettingsChanged="@HandleViewSettingsChanged"
@@ -289,20 +290,20 @@ else
     private HttpClient Http => HttpFactory.CreateClient("DemoApi");
 
     // ── Data ──────────────────────────────────────────────────────
-    private List<GanttTask>             _tasks             = [];
+    private List<TmWorkItem>             _tasks             = [];
     private List<GanttDependency>        _dependencies      = [];
     private List<GanttBaseline>          _baselines         = [];
-    private List<GanttCustomField>       _customFields      = [];
-    private List<GanttHistoryEntry>      _history           = [];
+    private List<TmCustomFieldDefinition> _customFields     = [];
+    private List<TmActivityEntry>        _history           = [];
     private List<GanttResourceCalendar>  _resourceCalendars = [];
     private List<GanttReport>            _reports           = [];
-    private List<GanttAssignee>          _assignees         = [];
+    private List<TmWorkItemAssignee>          _assignees         = [];
     private WorkingSchedule              _schedule          = new();
 
     // ── View / Feature state ──────────────────────────────────────
     private GanttView             _view                    = GanttView.Week;
     private GanttViewSettings     _viewSettings            = new() { ShowAvatarsOnChart = true, ShowTodayMarker = true, ShowDaysOff = true, ShowAdvancedContextButtons = true };
-    private GanttTask?            _selectedTask;
+    private TmWorkItem?            _selectedTask;
     private string?               _activeBaselineId;
     private WorkloadDisplayMode   _workloadMode            = WorkloadDisplayMode.Hours;
     private bool                  _autoSchedule            = false;
@@ -327,7 +328,7 @@ else
         new() { Key = GanttColumnKey.Estimation, Visible = false, Order = 8, Width = 70 },
     ];
 
-    private GanttNotificationSettings _notificationSettings = new()
+    private TmNotificationPreferences _notificationSettings = new()
     {
         EmailOnAssign   = true,
         EmailOnMention  = true,
@@ -406,7 +407,7 @@ else
 
     private async Task LoadTasksAsync()
     {
-        var result = await Http.GetFromJsonAsync<List<GanttTask>>("/api/gantt/tasks");
+        var result = await Http.GetFromJsonAsync<List<TmWorkItem>>("/api/gantt/tasks");
         _tasks = result ?? [];
     }
 
@@ -424,13 +425,13 @@ else
 
     private async Task LoadCustomFieldsAsync()
     {
-        var result = await Http.GetFromJsonAsync<List<GanttCustomField>>("/api/gantt/custom-fields");
+        var result = await Http.GetFromJsonAsync<List<TmCustomFieldDefinition>>("/api/gantt/custom-fields");
         _customFields = result ?? [];
     }
 
     private async Task LoadHistoryAsync()
     {
-        var result = await Http.GetFromJsonAsync<List<GanttHistoryEntry>>("/api/gantt/history");
+        var result = await Http.GetFromJsonAsync<List<TmActivityEntry>>("/api/gantt/history");
         _history = result ?? [];
     }
 
@@ -454,18 +455,18 @@ else
 
     private async Task LoadAssigneesAsync()
     {
-        var result = await Http.GetFromJsonAsync<List<GanttAssignee>>("/api/gantt/assignees");
+        var result = await Http.GetFromJsonAsync<List<TmWorkItemAssignee>>("/api/gantt/assignees");
         _assignees = result ?? [];
     }
 
     // ── Event handlers ────────────────────────────────────────────
 
-    private void HandleTaskSelected(GanttTask task)
+    private void HandleTaskSelected(TmWorkItem task)
     {
         _selectedTask = task;
     }
 
-    private async Task HandleTaskUpdated(GanttTask updated)
+    private async Task HandleTaskUpdated(TmWorkItem updated)
     {
         var idx = _tasks.FindIndex(t => t.Id == updated.Id);
         if (idx >= 0)
@@ -527,7 +528,7 @@ else
         var response = await Http.PostAsJsonAsync("/api/gantt/tasks", args.Task);
         if (response.IsSuccessStatusCode)
         {
-            var created = await response.Content.ReadFromJsonAsync<GanttTask>();
+            var created = await response.Content.ReadFromJsonAsync<TmWorkItem>();
             if (created is not null)
             {
                 var idx = _tasks.FindIndex(t => t.Id == args.Task.Id);
@@ -581,7 +582,7 @@ else
         _viewSettings = settings;
     }
 
-    private void HandleAutoScheduled(IReadOnlyList<GanttTask> updated)
+    private void HandleAutoScheduled(IReadOnlyList<TmWorkItem> updated)
     {
         foreach (var t in updated)
         {
@@ -622,7 +623,7 @@ else
         Log($"Export: format={opts.Format}");
     }
 
-    private void HandleImportCompleted(IReadOnlyList<GanttTask> imported)
+    private void HandleImportCompleted(IReadOnlyList<TmWorkItem> imported)
     {
         _tasks.AddRange(imported);
         Toast.ShowSuccess($"Imported {imported.Count} tasks.");
@@ -653,7 +654,7 @@ else
         Log($"Timer stopped: {task?.Title ?? args.TaskId}");
     }
 
-    private void HandleVirtualResourceAdded(GanttAssignee assignee)
+    private void HandleVirtualResourceAdded(TmWorkItemAssignee assignee)
     {
         _assignees.Add(assignee);
         Toast.ShowSuccess($"Virtual resource added: {assignee.Name}");
@@ -668,7 +669,7 @@ else
             await Http.PutAsJsonAsync($"/api/gantt/resource-calendars/{cal.AssigneeId}", cal);
     }
 
-    private void HandleStatusChanged((string TaskId, GanttTaskStatus NewStatus) args)
+    private void HandleStatusChanged((string TaskId, TmWorkItemStatus NewStatus) args)
     {
         var task = _tasks.FirstOrDefault(t => t.Id == args.TaskId);
         if (task is not null) task.Status = args.NewStatus;

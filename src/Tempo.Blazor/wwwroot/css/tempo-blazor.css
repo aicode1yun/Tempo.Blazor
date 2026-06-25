@@ -130,10 +130,6 @@
 @import "components/_rich-editor-simple.css";
 @import "components/_rich-editor-full.css";
 @import "components/_markdown-editor.css";
-@import "components/_notion-variables.css";
-@import "components/_notion-typography.css";
-@import "components/_notion-dark.css";
-@import "components/_notion-collab.css";
 @import "components/_cells.css";
 @import "components/_link-dialog.css";
 @import "components/_image-dialog.css";
@@ -142,9 +138,6 @@
 @import "components/_findreplace-dialog.css";
 @import "components/_mention-autocomplete.css";
 @import "components/_token-autocomplete.css";
-@import "components/_document-editor.css";
-@import "components/_document-editor-toolbar.css";
-@import "components/_document-editor-comments.css";
 
 /* 14. Charts & Diagrams */
 @import "components/_chart.css";
@@ -152,8 +145,6 @@
 @import "components/_sparkline.css";
 @import "components/_gauge.css";
 @import "components/_workflow-designer.css";
-@import "components/_wireframe-editor.css";
-@import "components/_diagram-editor.css";
 
 /* 15. Navigation & Views */
 @import "components/_tree-view.css";
@@ -176,40 +167,16 @@
 @import "components/_scheduler-week.css";
 @import "components/_scheduler-timeline.css";
 
-/* 18. Spreadsheet */
-@import "components/_spreadsheet.css";
-@import "components/_spreadsheet-toolbar.css";
-@import "components/_spreadsheet-formula-bar.css";
-
-/* 19. Splitter */
+/* 18. Splitter */
 @import "components/_splitter.css";
 
-/* 20. QR Code & Barcode */
-@import "components/_qr-code.css";
-@import "components/_barcode.css";
-
-/* 21. Signing */
-@import "components/_document-page-viewer.css";
-@import "components/_document-comments.css";
-@import "components/_signing-field-overlay.css";
+/* 19. Signature input */
 @import "components/_signature-capture.css";
-@import "components/_condition-builder.css";
-@import "components/_formula-builder.css";
-@import "components/_recipient-role-editor.css";
-@import "components/_signing-field-editor-panel.css";
-@import "components/_pdf-template-designer.css";
-@import "components/_signing-step-shell.css";
-@import "components/_signing-form-runner.css";
-@import "components/_signing-completion-panel.css";
-@import "components/_submission-status-timeline.css";
-@import "components/_share-link-panel.css";
-@import "components/_pdf-signature-verification.css";
-@import "components/_audit-trail-viewer.css";
 
-/* 22. Dock Manager */
+/* 21. Dock Manager */
 @import "components/_dock-manager.css";
 
-/* 23. AI Tools */
+/* 22. AI Tools */
 @import "components/_ai-prompt.css";
 @import "components/_chat.css";
 

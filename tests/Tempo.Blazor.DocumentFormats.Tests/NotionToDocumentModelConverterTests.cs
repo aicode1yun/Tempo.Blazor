@@ -180,7 +180,7 @@ public class NotionToDocumentModelConverterTests
         BlockType.Diagram => new Nm.DiagramBlockContent { Caption = "Diagram caption" },
         BlockType.Wireframe => new Nm.WireframeBlockContent { Caption = "Wireframe caption" },
         BlockType.Spreadsheet => new Nm.SpreadsheetBlockContent { Caption = "Spreadsheet caption" },
-        BlockType.WorkItem => new Nm.WorkItemBlockContent { ProviderKey = "demo", ExternalId = "DEMO-25", CachedSnapshot = new Nm.WorkItemDto { Title = "Work item title", Status = "Open" } },
+        BlockType.WorkItem => new Nm.WorkItemBlockContent { SourceKey = "demo", ExternalId = "DEMO-25", CachedSnapshot = new Tempo.Blazor.Abstractions.WorkItems.TmWorkItem { Title = "Work item title", StatusLabel = "Open" } },
         BlockType.ContentByLabel => new Nm.ContentByLabelBlockContent { Labels = ["export"], MaxItems = 5 },
         BlockType.IncludePage => new Nm.IncludePageBlockContent { SourcePageId = Guid.NewGuid() },
         BlockType.ChildrenDisplay => new Nm.ChildrenDisplayBlockContent { RootPageId = Guid.NewGuid(), Depth = 2 },

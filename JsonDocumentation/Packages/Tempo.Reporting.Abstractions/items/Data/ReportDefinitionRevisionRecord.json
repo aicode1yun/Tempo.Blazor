@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Data",
+  "namespace": "Tempo.Reporting.Abstractions.Data",
+  "description": "Stored report definition revision record.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDefinitionStore.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDefinitionRevisionRecord"
+}

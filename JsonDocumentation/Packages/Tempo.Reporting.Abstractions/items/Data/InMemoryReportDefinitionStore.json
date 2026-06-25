@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Data",
+  "namespace": "Tempo.Reporting.Abstractions.Data",
+  "description": "In-memory tenant-scoped report definition store for tests and embedded hosts.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDefinitionStore.cs",
+  "documentationStatus": "generated",
+  "itemName": "InMemoryReportDefinitionStore"
+}

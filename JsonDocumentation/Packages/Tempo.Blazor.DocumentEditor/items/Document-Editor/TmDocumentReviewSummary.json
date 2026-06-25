@@ -1,0 +1,33 @@
+{
+  "itemName": "TmDocumentReviewSummary",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "TmDocumentReviewSummary Blazor component in the Document Editor category.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentReviewSummary.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": [
+    {
+      "name": "OpenCommentCount",
+      "type": "int",
+      "isRequired": false,
+      "description": "Number of pending tracked changes."
+    },
+    {
+      "name": "OpenComments",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Number of open comment threads."
+    },
+    {
+      "name": "OpenRevisions",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the comments panel should open."
+    }
+  ]
+}

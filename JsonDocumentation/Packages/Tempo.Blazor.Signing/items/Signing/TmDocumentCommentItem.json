@@ -1,0 +1,65 @@
+{
+  "itemName": "TmDocumentCommentItem",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "TmDocumentCommentItem Blazor component in the Signing category.",
+  "packageId": "Tempo.Blazor.Signing",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmDocumentCommentItem.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "Comment",
+      "type": "DocumentComment",
+      "isRequired": true,
+      "description": "Parent thread id.",
+      "editorRequired": true
+    },
+    {
+      "name": "CurrentUserId",
+      "type": "string?",
+      "isRequired": true,
+      "description": "Comment to render.",
+      "editorRequired": true
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Current user id for permissions and active reaction styling."
+    },
+    {
+      "name": "OnDeleteRequested",
+      "type": "EventCallback<DocumentCommentDeleteRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when editing is requested."
+    },
+    {
+      "name": "OnEditRequested",
+      "type": "EventCallback<DocumentComment>",
+      "isRequired": false,
+      "description": "Callback invoked when picker open state changes."
+    },
+    {
+      "name": "OnReactionToggled",
+      "type": "EventCallback<DocumentCommentReactionToggleRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when deleting is requested."
+    },
+    {
+      "name": "PickerOpen",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether item interaction is disabled."
+    },
+    {
+      "name": "PickerOpenChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "Whether this comment's reaction picker is open."
+    }
+  ]
+}

@@ -1,0 +1,382 @@
+@namespace Tempo.Blazor.Components.NotionEditor
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.Components.NotionEditor.Services
+@using Tempo.Blazor.Components.NotionEditor.Page
+@using Tempo.Blazor.Components.NotionEditor.Sidebar
+@using Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.Components.Notifications
+
+<div class="tm-notion-editor @_editorModifiers @Class"
+     data-notion-scroll-root
+     data-view-mode="@ViewModeName"
+     tabindex="0"
+     @onkeydown="OnEditorKeyDown"
+     @ref="_rootRef">
+
+    <CascadingValue Value="_context" IsFixed="false">
+
+        @* ── Sidebar ───────────────────────────────────────────────────────── *@
+        @if (ShowSidebar && !IsReadOnlyViewMode && !HasNoAccess)
+        {
+            <aside class="tm-notion-sidebar @(_sidebarVisible ? "tm-notion-sidebar--visible" : "tm-notion-sidebar--hidden")"
+                   aria-label="@Loc["TmNotionEditor_SidebarLabel"]"
+                   role="navigation">
+                <TmNotionSidebar ActivePageId="@_currentPageId"
+                                 OnTrashRequested="OnTrashRequestedAsync" />
+            </aside>
+
+            @if (_sidebarVisible && _sidebarOverlay)
+            {
+                <div class="tm-notion-sidebar-overlay"
+                     aria-hidden="true"
+                     @onclick="ToggleSidebar">
+                </div>
+            }
+        }
+
+        @* ── Main area ─────────────────────────────────────────────────────── *@
+        <div class="tm-notion-main" @ref="_mainRef">
+
+            @* ── Top bar ──────────────────────────────────────────────────── *@
+            <header class="tm-notion-topbar @(_topbarScrolled ? "tm-notion-topbar--scrolled" : "")"
+                    role="banner">
+
+                @if (ShowSidebar && !IsReadOnlyViewMode)
+                {
+                    <button class="tm-notion-sidebar-toggle"
+                            type="button"
+                            aria-label="@Loc["TmNotionEditor_ToggleSidebar"]"
+                            title="@Loc["TmNotionEditor_ToggleSidebar"]"
+                            @onclick="ToggleSidebar">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <rect x="1" y="2.5"  width="14" height="1.5" rx=".75" fill="currentColor"/>
+                            <rect x="1" y="7.25" width="14" height="1.5" rx=".75" fill="currentColor"/>
+                            <rect x="1" y="12"   width="14" height="1.5" rx=".75" fill="currentColor"/>
+                        </svg>
+                    </button>
+                }
+
+                @if (_navStack.Count > 1)
+                {
+                    <button class="tm-notion-topbar__back"
+                            type="button"
+                            aria-label="@Loc["TmNotionEditor_NavigateBack"]"
+                            title="@Loc["TmNotionEditor_NavigateBack"]"
+                            @onclick="NavigateBackAsync">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                            <path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        @Loc["TmNotionEditor_NavigateBack"]
+                    </button>
+                }
+
+                @if (_currentPage is not null)
+                {
+                    <span class="tm-notion-topbar__title" aria-live="polite">
+                        @(string.IsNullOrWhiteSpace(_currentPage.Title)
+                            ? Loc["TmNotionEditor_Untitled"]
+                            : _currentPage.Title)
+                    </span>
+                }
+
+                <span class="tm-notion-topbar__spacer" aria-hidden="true"></span>
+
+                @* ── Collaboration avatar bar ──────────────────────────── *@
+                @if (_context.CollaborationProvider is not null)
+                {
+                    <TmNotionCollaborationCursors />
+                }
+
+                @if (_viewMode == NotionEditorViewMode.Reading)
+                {
+                    <button class="tm-notion-reading-exit tm-notion-topbar__tool"
+                            type="button"
+                            aria-label="@Loc["Notion_Reading_Exit"]"
+                            title="@Loc["Notion_Reading_Exit"]"
+                            @onclick="ExitViewMode">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M5 3L2 8l3 5M2.5 8h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                }
+                else if (_viewMode == NotionEditorViewMode.Presentation)
+                {
+                    <button class="tm-notion-reading-exit tm-notion-topbar__tool"
+                            type="button"
+                            aria-label="@Loc["Notion_Reading_Exit"]"
+                            title="@Loc["Notion_Reading_Exit"]"
+                            @onclick="ExitViewMode">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                }
+
+                @if (_context.WatchProvider is not null && _currentPage is not null && !IsReadOnlyViewMode)
+                {
+                    <TmNotionWatchButton Provider="_context.WatchProvider"
+                                         PageId="@_currentPage.Id.ToString("D")"
+                                         UserId="@EffectiveCurrentUserId" />
+                }
+
+                @if (_context.AuditProvider is not null && !IsReadOnlyViewMode)
+                {
+                    <button class="tm-notion-topbar__tool"
+                            type="button"
+                            data-testid="notion-audit-open"
+                            aria-label="@Loc["Notion_Audit_Title"]"
+                            title="@Loc["Notion_Audit_Title"]"
+                            aria-pressed="@_auditPanelOpen.ToString().ToLowerInvariant()"
+                            @onclick="ToggleAuditPanel">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M3 2.5h10v11H3z" stroke="currentColor" stroke-width="1.3"/>
+                            <path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                }
+
+                <button class="tm-notion-topbar__shortcuts tm-notion-topbar__tool"
+                        type="button"
+                        aria-label="@Loc["Notion_Shortcuts_Title"]"
+                        title="@Loc["Notion_Shortcuts_Title"]"
+                        aria-pressed="@_shortcutsVisible.ToString().ToLowerInvariant()"
+                        @onclick="OpenShortcutsPanel">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M6.25 6.1a1.8 1.8 0 1 1 2.6 1.6c-.7.38-.95.86-.95 1.55" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                        <path d="M8 11.9h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.25"/>
+                    </svg>
+                </button>
+
+                @if (_context.BlogProvider is not null && !IsReadOnlyViewMode)
+                {
+                    <button class="tm-notion-topbar__tool"
+                            type="button"
+                            data-testid="notion-blog-open"
+                            aria-label="@Loc["Notion_Blog_Title"]"
+                            title="@Loc["Notion_Blog_Title"]"
+                            aria-pressed="@_blogPanelOpen.ToString().ToLowerInvariant()"
+                            @onclick="ToggleBlogPanel">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M4 2.5h5.5L12 5v8.5H4z" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"/>
+                            <path d="M6 7h4M6 9.5h4M6 12h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                }
+
+                @if (_context.AnalyticsProvider is not null && !IsReadOnlyViewMode)
+                {
+                    <button class="tm-notion-topbar__tool"
+                            type="button"
+                            data-testid="notion-analytics-open"
+                            aria-label="@Loc["Notion_Analytics_Title"]"
+                            title="@Loc["Notion_Analytics_Title"]"
+                            aria-pressed="@_analyticsPanelOpen.ToString().ToLowerInvariant()"
+                            @onclick="ToggleAnalyticsPanel">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M3 13V8M8 13V3M13 13V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                }
+
+                @if (!IsReadOnlyViewMode)
+                {
+                    <button class="tm-notion-reading-toggle tm-notion-topbar__tool"
+                            type="button"
+                            aria-label="@Loc["Notion_Reading_Enter"]"
+                            title="@Loc["Notion_Reading_Enter"]"
+                            @onclick="EnterReadingMode">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M3 3.5h3.5A2.5 2.5 0 0 1 9 6v6.5A2.5 2.5 0 0 0 6.5 10H3zM9 6a2.5 2.5 0 0 1 2.5-2.5H13V10h-1.5A2.5 2.5 0 0 0 9 12.5z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+
+                    <button class="tm-notion-presentation-toggle tm-notion-topbar__tool"
+                            type="button"
+                            aria-label="@Loc["Notion_Presentation_Enter"]"
+                            title="@Loc["Notion_Presentation_Enter"]"
+                            @onclick="EnterPresentationMode">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <rect x="2.5" y="3" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+                            <path d="M6.5 13h3M8 11v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                }
+
+                @if (_context.WorkItemSource is not null && !IsReadOnlyViewMode)
+                {
+                    <button class="tm-notion-topbar__tasks"
+                            type="button"
+                            aria-label="@Loc["Notion_Tasks_Title"]"
+                            title="@Loc["Notion_Tasks_Title"]"
+                            aria-pressed="@_tasksPanelOpen.ToString().ToLowerInvariant()"
+                            @onclick="ToggleTasksPanel">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <rect x="2.5" y="2.5" width="11" height="11" rx="2.5" stroke="currentColor" stroke-width="1.4"/>
+                            <path d="M5 8l1.7 1.7L11 5.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                }
+
+                @* ── Notification bell ─────────────────────────────────── *@
+                <TmNotionNotificationCenter CurrentUserId="@EffectiveCurrentUserId"
+                                            OnDropdownOpenChanged="OnNotificationDropdownOpenChanged" />
+
+                @if (IsPermissionRestricted)
+                {
+                    <span class="tm-notion-restricted-badge" role="status" aria-label="@Loc["Notion_Restrictions_Title"]">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                            <path d="M3 5V3.8a3 3 0 1 1 6 0V5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                            <rect x="2" y="5" width="8" height="5.8" rx="1.5" fill="currentColor" opacity=".78"/>
+                        </svg>
+                        @Loc["Notion_Restrictions_Title"]
+                    </span>
+                }
+
+                @if (IsEffectivelyReadOnly)
+                {
+                    <span class="tm-notion-locked-badge" role="status" aria-label="@Loc["TmNotionEditor_Locked"]">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                            <rect x="2" y="5" width="8" height="6" rx="1.5" fill="currentColor" opacity=".7"/>
+                            <path d="M4 5V3.5a2 2 0 1 1 4 0V5" stroke="currentColor" stroke-width="1.25"
+                                  stroke-linecap="round" fill="none"/>
+                        </svg>
+                        @Loc["TmNotionEditor_Locked"]
+                    </span>
+                }
+
+            </header>
+
+            @if (_context.WorkItemSource is not null && _tasksPanelOpen)
+            {
+                <aside class="tm-notion-tasks-panel"
+                       aria-label="@Loc["Notion_Tasks_Title"]">
+                    <TmNotionMyTasks WorkItemSource="_context.WorkItemSource"
+                                     CurrentUserId="@EffectiveCurrentUserId"
+                                     OnClosed="CloseTasksPanel"
+                                     OnNavigateToBlock="NavigateToTaskBlockAsync" />
+                </aside>
+            }
+
+            @if (_context.BlogProvider is not null && _blogPanelOpen)
+            {
+                <aside class="tm-notion-shell-panel tm-notion-shell-panel--wide">
+                    <TmNotionBlogList BlogProvider="_context.BlogProvider"
+                                      SpaceId="@CurrentSpaceId"
+                                      CurrentUserId="@EffectiveCurrentUserId"
+                                      OnClosed="CloseBlogPanel" />
+                </aside>
+            }
+
+            @if (_context.AnalyticsProvider is not null && _analyticsPanelOpen)
+            {
+                <aside class="tm-notion-shell-panel">
+                    <TmNotionAnalyticsPanel AnalyticsProvider="_context.AnalyticsProvider"
+                                            SpaceId="@CurrentSpaceId"
+                                            CurrentPageId="@_currentPage?.Id"
+                                            OnClosed="CloseAnalyticsPanel" />
+                </aside>
+            }
+
+            @if (_context.AuditProvider is not null && _auditPanelOpen)
+            {
+                <aside class="tm-notion-shell-panel tm-notion-shell-panel--wide">
+                    <TmNotionAuditLogPanel ActivityProvider="_context.AuditProvider"
+                                           Class="tm-notion-audit-panel tm-notion-shell-panel__content" />
+                    <button type="button"
+                            class="tm-notion-shell-panel__close"
+                            aria-label="@Loc["Tm_Close"]"
+                            title="@Loc["Tm_Close"]"
+                            @onclick="CloseAuditPanel">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </aside>
+            }
+
+            @* ── Page content area ────────────────────────────────────────── *@
+            @if (_isLoading)
+            {
+                <div class="tm-notion-loading" role="status" aria-label="@Loc["TmNotionEditor_Loading"]" aria-busy="true">
+                    <div class="tm-notion-skeleton tm-notion-skeleton--title"></div>
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:85%"></div>
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:70%"></div>
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line-short"></div>
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:60%"></div>
+                </div>
+            }
+            else if (_loadError is not null)
+            {
+                <div class="tm-notion-load-error" role="alert">
+                    <svg class="tm-notion-load-error__icon" width="24" height="24" viewBox="0 0 24 24"
+                         fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M12 7v5M12 16h.01" stroke="currentColor" stroke-width="1.5"
+                              stroke-linecap="round"/>
+                    </svg>
+                    <span class="tm-notion-load-error__message">
+                        @_loadError
+                    </span>
+                    <button class="tm-notion-load-error__retry"
+                            type="button"
+                            @onclick="RetryLoadAsync">
+                        @Loc["Tm_Retry"]
+                    </button>
+                </div>
+            }
+            else if (_currentPage is not null)
+            {
+                @if (HasNoAccess)
+                {
+                    <section class="tm-notion-no-access" role="alert">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                            <path d="M8 12V9.2a6 6 0 1 1 12 0V12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                            <rect x="6.5" y="12" width="15" height="11" rx="2.5" stroke="currentColor" stroke-width="1.7"/>
+                            <path d="M14 16.5v2.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                        </svg>
+                        <div>
+                            <h2>@Loc["Notion_Restrictions_NoAccessTitle"]</h2>
+                            <p>@Loc["Notion_Restrictions_NoAccess"]</p>
+                        </div>
+                    </section>
+                }
+                else
+                {
+                    <TmNotionLabelEditor PageId="_currentPage.Id"
+                                         Labels="_currentPage.Labels"
+                                         ReadOnly="IsEffectivelyReadOnly || _currentPage.IsLocked"
+                                         OnLabelsChanged="HandleCurrentPageLabelsChangedAsync" />
+                    <CascadingValue Value="_scrollSpyBlockId" Name="TmActiveHeadingBlockId" IsFixed="false">
+                        <TmNotionPage Page="_currentPage"
+                                      ReadOnly="IsEffectivelyReadOnly || _currentPage.IsLocked"
+                                      EffectivePermission="_effectivePermission"
+                                      OnPermissionsChanged="OnPagePermissionsChangedAsync"
+                                      OnPageUpdated="OnChildPageUpdatedAsync"
+                                      OnNavigateToPage="NavigateToPageAsync"
+                                      OnCreateTokenRequested="OnCreateTokenRequested" />
+                    </CascadingValue>
+                }
+            }
+
+        </div>
+
+        @* ── Page Search (Ctrl+P / Cmd+P) ──────────────────────────────────── *@
+        <TmNotionPageSearch />
+
+        <TmNotionTemplateGallery Visible="_templateGalleryOpen"
+                                 TemplateProvider="_context.TemplateProvider"
+                                 OnTemplateSelected="HandleTemplateSelectedAsync"
+                                 OnClosed="CloseTemplateGallery" />
+
+        <TmNotionShortcutsPanel Visible="_shortcutsVisible"
+                                VisibleChanged="HandleShortcutsVisibleChangedAsync" />
+
+        @* ── Notification toasts ─────────────────────────────────────────────── *@
+        <TmNotificationToastContainer IsPanelOpen="_notificationPanelOpen" />
+
+    </CascadingValue>
+
+</div>

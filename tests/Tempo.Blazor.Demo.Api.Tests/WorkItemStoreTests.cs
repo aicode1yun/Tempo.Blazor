@@ -1,6 +1,6 @@
 using FluentAssertions;
+using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Demo.Api.Data;
-using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Demo.Api.Tests;
 
@@ -11,9 +11,9 @@ public sealed class WorkItemStoreTests
     {
         var store = new DemoWorkItemStore();
 
-        var result = store.Search(new WorkItemQuery
+        var result = store.Search(new TmWorkItemQuery
         {
-            ProviderKey = "demo",
+            SourceKey = "demo",
             FreeText = "release",
             Ids = []
         });
@@ -26,9 +26,9 @@ public sealed class WorkItemStoreTests
     {
         var store = new DemoWorkItemStore();
 
-        var result = store.Search(new WorkItemQuery
+        var result = store.Search(new TmWorkItemQuery
         {
-            ProviderKey = "demo",
+            SourceKey = "demo",
             FreeText = "release",
             Ids = ["release"]
         });

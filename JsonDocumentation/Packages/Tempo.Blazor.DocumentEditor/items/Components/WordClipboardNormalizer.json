@@ -1,0 +1,34 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard.Normalizers",
+  "description": "Normalizes HTML clipboard content that originated from Microsoft Word or Office applications. Detects Office markup (xmlns:w, MsoNormal class, mso-* styles), strips noise, and maps to document blocks.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Clipboard/Normalizers/WordClipboardNormalizer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CanHandle",
+      "kind": "Method",
+      "type": "bool",
+      "parameters": [
+        {
+          "name": "input",
+          "type": "DocumentClipboardInput"
+        }
+      ]
+    },
+    {
+      "name": "Normalize",
+      "kind": "Method",
+      "type": "DocumentClipboardOutput",
+      "parameters": [
+        {
+          "name": "input",
+          "type": "DocumentClipboardInput"
+        }
+      ]
+    }
+  ],
+  "itemName": "WordClipboardNormalizer"
+}

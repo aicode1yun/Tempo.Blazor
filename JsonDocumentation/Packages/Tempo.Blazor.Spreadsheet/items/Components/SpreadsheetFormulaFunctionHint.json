@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "description": "Represents the currently active function call and argument index under the caret.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/SpreadsheetFormulaFunctionHint.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ActiveArgumentIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "The zero-based index of the active argument."
+    },
+    {
+      "name": "Function",
+      "kind": "Property",
+      "type": "SpreadsheetFormulaFunctionMetadata",
+      "description": "The resolved function metadata."
+    }
+  ],
+  "itemName": "SpreadsheetFormulaFunctionHint"
+}

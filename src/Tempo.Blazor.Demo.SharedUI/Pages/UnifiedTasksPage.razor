@@ -1,0 +1,90 @@
+@page "/unified-tasks"
+@using Tempo.Blazor.Components.Scheduler
+@using Tempo.Blazor.Components.NotionEditor.UI
+@inject DemoSharedWorkItemProvider Provider
+
+<PageTitle>Unified Task Provider – Tempo.Blazor</PageTitle>
+
+<div class="mb-4">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">One provider, many components</h1>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
+        The Gantt chart and the Notion-style “My Tasks” panel below are both bound to the
+        <strong>same <code>ITmWorkItemProvider</code></strong> instance. Create or complete a task and it
+        instantly appears in both — proving cross-component interoperability over one shared task source.
+    </p>
+</div>
+
+<div class="mb-4 flex flex-wrap items-center gap-2">
+    <button class="px-3 py-1.5 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+            @onclick="AddTaskAsync">
+        + Add task (via provider)
+    </button>
+    <button class="px-3 py-1.5 text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+            @onclick="CompleteReleaseNotesAsync">
+        Complete “Write release notes”
+    </button>
+    <button class="px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+            @onclick="RefreshAll">
+        Refresh both
+    </button>
+    @if (_lastAction is not null)
+    {
+        <span class="text-xs text-slate-500">@_lastAction</span>
+    }
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+    <div class="xl:col-span-2 showcase-card overflow-hidden">
+        <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">TmGantt — WorkItemSource</h2>
+        <TmGantt @key="_ganttKey"
+                 WorkItemSource="Provider"
+                 ShowCriticalPath="true"
+                 OnTaskUpdated="OnGanttMutated"
+                 OnTaskAdded="OnGanttMutated"
+                 OnTaskRemoved="OnGanttRemoved" />
+    </div>
+
+    <div class="showcase-card">
+        <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">TmNotionMyTasks — same WorkItemSource</h2>
+        <TmNotionMyTasks @key="_tasksKey" WorkItemSource="Provider" />
+    </div>
+</div>
+
+@code {
+    private int _ganttKey;
+    private int _tasksKey;
+    private int _newTaskCounter = 1;
+    private string? _lastAction;
+
+    private async Task AddTaskAsync()
+    {
+        var today = DateTime.Today;
+        await Provider.CreateAsync(new TmWorkItem
+        {
+            Title = $"New shared task #{_newTaskCounter++}",
+            Start = today,
+            End = today.AddDays(4),
+            DueDate = today.AddDays(4),
+            Status = TmWorkItemStatus.Open,
+            Priority = TmWorkItemPriority.Medium
+        });
+        _lastAction = "Added a task through the provider — it shows in both components.";
+        RefreshAll();
+    }
+
+    private async Task CompleteReleaseNotesAsync()
+    {
+        await Provider.SetCompletedAsync("p4", true);
+        _lastAction = "Completed “Write release notes” — reflected in both components.";
+        RefreshAll();
+    }
+
+    private void OnGanttMutated(TmWorkItem _) => _tasksKey++;
+    private void OnGanttRemoved(string _) => _tasksKey++;
+
+    private void RefreshAll()
+    {
+        _ganttKey++;
+        _tasksKey++;
+    }
+}

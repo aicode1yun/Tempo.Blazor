@@ -11,6 +11,7 @@
     <Authors>Tempo</Authors>
     <PackageTags>blazor;documents;collaboration;signalr;document-editor</PackageTags>
     <RepositoryUrl>https://github.com/tempo/tempo-blazor</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,5 +20,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Tempo.Blazor.Abstractions\Tempo.Blazor.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Condition="Exists('..\..\README.md')" />
   </ItemGroup>
 </Project>

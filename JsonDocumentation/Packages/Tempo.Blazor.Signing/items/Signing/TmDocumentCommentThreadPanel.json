@@ -1,0 +1,100 @@
+{
+  "itemName": "TmDocumentCommentThreadPanel",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "TmDocumentCommentThreadPanel Blazor component in the Signing category.",
+  "packageId": "Tempo.Blazor.Signing",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmDocumentCommentThreadPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "AllowReplyToResolved",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Users available for mention suggestions."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when a thread asks the parent to navigate to its page."
+    },
+    {
+      "name": "CurrentUserId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when selected thread id changes."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether replies are allowed on resolved threads."
+    },
+    {
+      "name": "MentionUsers",
+      "type": "IReadOnlyList<DocumentCommentUser>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Current user id for mentions and active reactions."
+    },
+    {
+      "name": "OnDeleteRequested",
+      "type": "EventCallback<DocumentCommentDeleteRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when editing a comment is requested."
+    },
+    {
+      "name": "OnEditRequested",
+      "type": "EventCallback<DocumentCommentEditRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when reopening a thread is requested."
+    },
+    {
+      "name": "OnReactionToggled",
+      "type": "EventCallback<DocumentCommentReactionToggleRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when deleting a comment is requested."
+    },
+    {
+      "name": "OnReopenRequested",
+      "type": "EventCallback<DocumentCommentThreadStatusRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when resolving a thread is requested."
+    },
+    {
+      "name": "OnReplyRequested",
+      "type": "EventCallback<DocumentCommentReplyRequest>",
+      "isRequired": false,
+      "description": "Whether panel interaction is disabled."
+    },
+    {
+      "name": "OnResolveRequested",
+      "type": "EventCallback<DocumentCommentThreadStatusRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when a reply is requested."
+    },
+    {
+      "name": "OnThreadNavigateRequested",
+      "type": "EventCallback<DocumentCommentThreadNavigateRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when toggling a reaction is requested."
+    },
+    {
+      "name": "SelectedThreadId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Comment threads to render."
+    },
+    {
+      "name": "SelectedThreadIdChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Selected thread id."
+    }
+  ]
+}

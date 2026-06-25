@@ -1,0 +1,25 @@
+# NuGet package projects published by CI.
+# Keep one project path per line. The verification script checks this list
+# against src/*.csproj files that define PackageId and are not IsPackable=false.
+src/Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj
+src/Tempo.Reporting.Abstractions/Tempo.Reporting.Abstractions.csproj
+src/Tempo.Blazor/Tempo.Blazor.csproj
+src/Tempo.Blazor.DocumentFormats/Tempo.Blazor.DocumentFormats.csproj
+src/Tempo.Blazor.FluentValidation/Tempo.Blazor.FluentValidation.csproj
+src/Tempo.Blazor.Collaboration/Tempo.Blazor.Collaboration.csproj
+src/Tempo.Blazor.PdfViewer/Tempo.Blazor.PdfViewer.csproj
+src/Tempo.Blazor.Codes/Tempo.Blazor.Codes.csproj
+src/Tempo.Blazor.DiagramEditor/Tempo.Blazor.DiagramEditor.csproj
+src/Tempo.Blazor.Wireframe/Tempo.Blazor.Wireframe.csproj
+src/Tempo.Blazor.Modeling/Tempo.Blazor.Modeling.csproj
+src/Tempo.Blazor.Spreadsheet/Tempo.Blazor.Spreadsheet.csproj
+src/Tempo.Blazor.GanttXlsx/Tempo.Blazor.GanttXlsx.csproj
+src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj
+src/Tempo.Blazor.NotionEditor/Tempo.Blazor.NotionEditor.csproj
+src/Tempo.Blazor.Signing/Tempo.Blazor.Signing.csproj
+src/Tempo.Blazor.All/Tempo.Blazor.All.csproj
+src/Tempo.Blazor.EmailTemplates.Abstractions/Tempo.Blazor.EmailTemplates.Abstractions.csproj
+src/Tempo.Blazor.EmailTemplates/Tempo.Blazor.EmailTemplates.csproj
+src/Tempo.Reporting.Engine/Tempo.Reporting.Engine.csproj
+src/Tempo.Blazor.Reporting/Tempo.Blazor.Reporting.csproj
+src/Tempo.Blazor.Mcp/Tempo.Blazor.Mcp.csproj

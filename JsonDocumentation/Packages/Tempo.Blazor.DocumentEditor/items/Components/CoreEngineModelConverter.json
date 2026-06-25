@@ -1,0 +1,39 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "description": "R.4.8 / R.5.1 cutover bridge — converts a to/from the JS core-engine model (the { documentId, body: { blocks: [...] } } shape that coreEngine.createCoreEditor consumes). The hosted component (TmDocumentCoreEngineHost) sends to JS and rebuilds the document from on save. R.5.1 — full round-trip (no data loss on save). Round-trips paragraphs, headings, lists, quotes, text runs + inline marks, paragraph alignment, AND the structural blocks that previously vanished: tables (rows/cells/spans/header + nested blocks, recursively), images (standalone ↔ a paragraph carrying a drawing run, plus inline ), and page breaks. Rich C# content the engine does not model (image source/asset/link/natural-size, token/field/note runs) is carried verbatim in a __docSource preserve channel and restored on the way back, with the engine-managed visible fields (text/url/size/wrap/position/caption/alt) overlaid on top so user edits survive.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/CoreEngineModelConverter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "FromCoreModel",
+      "kind": "Method",
+      "type": "DocumentEditorDocument",
+      "parameters": [
+        {
+          "name": "coreModel",
+          "type": "JsonElement"
+        },
+        {
+          "name": "template",
+          "type": "DocumentEditorDocument?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ToCoreModel",
+      "kind": "Method",
+      "type": "Dictionary<string, object?>",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        }
+      ]
+    }
+  ],
+  "itemName": "CoreEngineModelConverter"
+}

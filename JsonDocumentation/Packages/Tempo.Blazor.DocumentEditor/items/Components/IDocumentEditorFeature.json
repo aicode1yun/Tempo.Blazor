@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Features",
+  "description": "Feature plug-in contract for the document editor.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Features/DocumentEditorFeatureInfrastructure.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDocumentEditorFeature"
+}

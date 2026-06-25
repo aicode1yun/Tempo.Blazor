@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>true</IsPackable>
+    <PackageId>Tempo.Blazor.All</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>ptyll</Authors>
+    <Title>Tempo.Blazor.All</Title>
+    <Description>Compatibility package for Tempo.Blazor that references the core package and split feature packages for applications that want the full component suite.</Description>
+    <PackageTags>blazor;components;ui;compatibility;metapackage;tempo-blazor</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ptyll/Tempo.Blazor</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ptyll/Tempo.Blazor</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tempo.Blazor\Tempo.Blazor.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.Codes\Tempo.Blazor.Codes.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.DiagramEditor\Tempo.Blazor.DiagramEditor.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.DocumentEditor\Tempo.Blazor.DocumentEditor.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.GanttXlsx\Tempo.Blazor.GanttXlsx.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.Modeling\Tempo.Blazor.Modeling.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.NotionEditor\Tempo.Blazor.NotionEditor.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.PdfViewer\Tempo.Blazor.PdfViewer.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.Signing\Tempo.Blazor.Signing.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.Spreadsheet\Tempo.Blazor.Spreadsheet.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.Wireframe\Tempo.Blazor.Wireframe.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Condition="Exists('..\..\README.md')" />
+  </ItemGroup>
+
+</Project>

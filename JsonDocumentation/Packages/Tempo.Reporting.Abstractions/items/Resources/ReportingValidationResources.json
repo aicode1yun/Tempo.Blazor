@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Resources",
+  "namespace": "Tempo.Reporting.Abstractions.Resources",
+  "description": "Marker type for report validation resources used by IStringLocalizer<ReportingValidationResources>.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Resources/ReportingValidationResources.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportingValidationResources"
+}

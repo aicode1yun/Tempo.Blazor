@@ -1,0 +1,24 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Zoom state passed from the Blazor viewer to the canvas module.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerZoom.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Mode",
+      "kind": "Property",
+      "type": "ReportViewerZoomMode",
+      "description": "Zoom mode."
+    },
+    {
+      "name": "Percent",
+      "kind": "Property",
+      "type": "int",
+      "description": "Explicit zoom percentage used when is ."
+    }
+  ],
+  "itemName": "ReportViewerZoom"
+}

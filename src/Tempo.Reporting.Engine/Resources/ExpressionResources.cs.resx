@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ExpressionLexer_UnexpectedCharacter" xml:space="preserve">
+    <value>Neočekávaný znak „{0}“ ve výrazu.</value>
+  </data>
+  <data name="ExpressionLexer_UnterminatedString" xml:space="preserve">
+    <value>Řetězcový literál není ukončený.</value>
+  </data>
+  <data name="ExpressionParser_ExpectedToken" xml:space="preserve">
+    <value>Očekáván token {0}.</value>
+  </data>
+  <data name="ExpressionParser_UnexpectedToken" xml:space="preserve">
+    <value>Neočekávaný token „{0}“.</value>
+  </data>
+  <data name="ExpressionParser_AggregateNotAllowed" xml:space="preserve">
+    <value>Agregační funkce „{0}“ není v tomto umístění výrazu povolená.</value>
+  </data>
+  <data name="ExpressionParser_ExpressionTooLong" xml:space="preserve">
+    <value>Výraz překračuje maximální délku {0} znaků.</value>
+  </data>
+  <data name="ExpressionParser_ExpressionTooDeep" xml:space="preserve">
+    <value>Výraz překračuje maximální hloubku {0}.</value>
+  </data>
+  <data name="ExpressionEvaluator_UnknownRoot" xml:space="preserve">
+    <value>Neznámý kořen výrazu „{0}“.</value>
+  </data>
+  <data name="ExpressionEvaluator_UnknownMember" xml:space="preserve">
+    <value>Neznámý člen výrazu „{0}“.</value>
+  </data>
+  <data name="ExpressionEvaluator_UnknownFunction" xml:space="preserve">
+    <value>Neznámá funkce výrazu „{0}“.</value>
+  </data>
+  <data name="ExpressionEvaluator_InvalidArgumentCount" xml:space="preserve">
+    <value>Neplatný počet argumentů funkce „{0}“.</value>
+  </data>
+  <data name="ExpressionEvaluator_Timeout" xml:space="preserve">
+    <value>Vyhodnocení výrazu bylo zastaveno kvůli překročení bezpečnostního rozpočtu.</value>
+  </data>
+  <data name="ExpressionEvaluator_AggregateRequiresProcessing" xml:space="preserve">
+    <value>Agregační výrazy vyhodnocuje processing fáze.</value>
+  </data>
+  <data name="ExpressionEvaluator_UnsupportedNode" xml:space="preserve">
+    <value>Výraz obsahuje nepodporovaný AST uzel.</value>
+  </data>
+  <data name="ExpressionEvaluator_UnsupportedOperator" xml:space="preserve">
+    <value>Výraz obsahuje nepodporovaný operátor.</value>
+  </data>
+</root>

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Expressions",
+  "namespace": "Tempo.Reporting.Engine.Expressions",
+  "description": "Options controlling expression parsing.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionOptions.cs",
+  "documentationStatus": "generated",
+  "itemName": "ExpressionParseOptions"
+}

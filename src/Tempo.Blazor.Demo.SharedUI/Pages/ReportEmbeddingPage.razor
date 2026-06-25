@@ -1,0 +1,269 @@
+@page "/report-embedding"
+@using Tempo.Blazor.Reporting.Components
+@using Tempo.Blazor.Reporting.Models
+@using Tempo.Reporting.Abstractions.Data
+@inject DemoReportEmbeddingSourceFactory SourceFactory
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Report Embedding - Tempo.Blazor</PageTitle>
+
+<div class="space-y-6" data-testid="f17-embedding-page">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+            <p class="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">Foreign application</p>
+            <h1 class="mt-1 text-3xl font-bold text-slate-950 dark:text-white">Sales Operations Workspace</h1>
+            <p class="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-400">
+                A host application embedding Tempo reports with local data and with a remote Report Server API.
+            </p>
+        </div>
+
+        <div class="inline-flex w-full rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900 xl:w-auto"
+             role="tablist"
+             aria-label="Report source mode">
+            <button type="button"
+                    class="@ModeButtonClass("embedded")"
+                    data-testid="embedding-mode-embedded"
+                    aria-selected="@(_mode == "embedded")"
+                    @onclick="ShowEmbedded">
+                Embedded
+            </button>
+            <button type="button"
+                    class="@ModeButtonClass("remote")"
+                    data-testid="embedding-mode-remote"
+                    aria-selected="@(_mode == "remote")"
+                    @onclick="ShowRemote">
+                Remote
+            </button>
+        </div>
+    </div>
+
+    <section class="grid gap-4 lg:grid-cols-2">
+        <div class="@ScenarioClass("embedded")" data-testid="embedded-host-card">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-base font-semibold text-slate-950 dark:text-white">Embedded source</h2>
+                    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                        Local engine, local demo data provider, no HTTP dependency.
+                    </p>
+                </div>
+                <span class="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 ring-1 ring-teal-200 dark:bg-teal-950 dark:text-teal-200 dark:ring-teal-800">Local</span>
+            </div>
+            <dl class="mt-4 grid grid-cols-3 gap-3 text-sm">
+                <div>
+                    <dt class="text-slate-500 dark:text-slate-400">Report</dt>
+                    <dd class="font-semibold text-slate-900 dark:text-slate-100">@DemoReportEmbeddingSourceFactory.EmbeddedReportId</dd>
+                </div>
+                <div>
+                    <dt class="text-slate-500 dark:text-slate-400">Rows</dt>
+                    <dd class="font-semibold text-slate-900 dark:text-slate-100">28</dd>
+                </div>
+                <div>
+                    <dt class="text-slate-500 dark:text-slate-400">Tenant</dt>
+                    <dd class="font-semibold text-slate-900 dark:text-slate-100">northwind</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="@ScenarioClass("remote")" data-testid="remote-host-card">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-base font-semibold text-slate-950 dark:text-white">Remote source</h2>
+                    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                        Report Server API, embedding API key, browser-safe CORS in the demo host.
+                    </p>
+                </div>
+                <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950 dark:text-blue-200 dark:ring-blue-800">API</span>
+            </div>
+            <div class="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(12rem,16rem)_auto]">
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Report Server URL
+                    <input class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-blue-950"
+                           data-testid="remote-base-url"
+                           value="@_remoteBaseUrl"
+                           @onchange="HandleRemoteBaseUrlChanged" />
+                </label>
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    API key
+                    <input class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-blue-950"
+                           data-testid="remote-api-key"
+                           value="@_apiKey"
+                           @onchange="HandleApiKeyChanged" />
+                </label>
+                <button type="button"
+                        class="self-end rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+                        data-testid="remote-connect"
+                        @onclick="ConnectRemote">
+                    Connect
+                </button>
+            </div>
+            <p class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="embedding-status">@_remoteStatus</p>
+        </div>
+    </section>
+
+    @if (_mode == "embedded")
+    {
+        <section class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900" data-testid="embedded-report-viewer">
+            <div class="flex flex-col gap-1 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+                <h2 class="text-lg font-semibold text-slate-950 dark:text-white">Embedded revenue pack</h2>
+                <p class="text-sm text-slate-600 dark:text-slate-400">@_embeddedStatus</p>
+            </div>
+            <TmReportViewer ReportSource="@_embeddedSource"
+                            ParameterValues="@_defaultParameters"
+                            Height="720px"
+                            TenantId="northwind"
+                            UserId="embedded-user"
+                            CultureName="en-US"
+                            PdfExported="HandleEmbeddedExported"
+                            CsvExported="HandleEmbeddedExported"
+                            XlsxExported="HandleEmbeddedExported" />
+        </section>
+    }
+    else
+    {
+        <section class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900" data-testid="remote-report-viewer">
+            <div class="flex flex-col gap-1 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+                <h2 class="text-lg font-semibold text-slate-950 dark:text-white">Remote dashboard</h2>
+                <p class="text-sm text-slate-600 dark:text-slate-400">@_remoteViewerStatus</p>
+            </div>
+            <TmReportViewer ReportSource="@_remoteSource"
+                            Height="720px"
+                            TenantId="northwind"
+                            UserId="embedded-user"
+                            CultureName="en-US"
+                            PdfExported="HandleRemoteExported"
+                            CsvExported="HandleRemoteExported"
+                            XlsxExported="HandleRemoteExported" />
+        </section>
+    }
+</div>
+
+@code {
+    private const string EmbeddedMode = "embedded";
+    private const string RemoteMode = "remote";
+
+    private IReportSource? _embeddedSource;
+    private IReportSource? _remoteSource;
+    private IReadOnlyDictionary<string, ReportParameterValue> _defaultParameters =
+        new Dictionary<string, ReportParameterValue>(StringComparer.Ordinal);
+    private string _mode = EmbeddedMode;
+    private string _remoteBaseUrl = "http://127.0.0.1:5109";
+    private string _apiKey = DemoReportEmbeddingSourceFactory.DemoApiKey;
+    private string _embeddedStatus = "Local snapshot rendered from the host application's IReportDataProvider.";
+    private string _remoteStatus = "Remote source is ready for a Report Server API URL.";
+    private string _remoteViewerStatus = "Connected to sales-dashboard through RemoteReportSource.";
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        _embeddedSource = SourceFactory.CreateEmbeddedSource();
+        _defaultParameters = SourceFactory.CreateDefaultParameters();
+        ApplyQueryString();
+        if (_mode == RemoteMode)
+        {
+            ConnectRemote();
+        }
+    }
+
+    private void ShowEmbedded()
+    {
+        _mode = EmbeddedMode;
+    }
+
+    private void ShowRemote()
+    {
+        _mode = RemoteMode;
+        if (_remoteSource is null)
+        {
+            ConnectRemote();
+        }
+    }
+
+    private void ConnectRemote()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            client.BaseAddress = new Uri(NormalizeBaseUrl(_remoteBaseUrl), UriKind.Absolute);
+            _remoteSource = SourceFactory.CreateRemoteSource(client, _apiKey);
+            _remoteStatus = $"Connected to {client.BaseAddress} as tempo-demo-shared-ui.";
+            _remoteViewerStatus = $"Remote API: {client.BaseAddress}api/reports/{DemoReportEmbeddingSourceFactory.RemoteReportId}";
+            _mode = RemoteMode;
+        }
+        catch (Exception exception)
+        {
+            _remoteSource = null;
+            _remoteStatus = exception.Message;
+            _remoteViewerStatus = "Remote source is not connected.";
+        }
+    }
+
+    private void HandleRemoteBaseUrlChanged(ChangeEventArgs args)
+    {
+        _remoteBaseUrl = Convert.ToString(args.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        _remoteSource = null;
+        _remoteStatus = "Remote URL changed.";
+    }
+
+    private void HandleApiKeyChanged(ChangeEventArgs args)
+    {
+        _apiKey = Convert.ToString(args.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        _remoteSource = null;
+        _remoteStatus = "API key changed.";
+    }
+
+    private void HandleEmbeddedExported(ReportViewerExportResult export)
+    {
+        _embeddedStatus = $"Exported {export.FileName} ({export.Bytes.Length:n0} bytes).";
+    }
+
+    private void HandleRemoteExported(ReportViewerExportResult export)
+    {
+        _remoteViewerStatus = $"Exported {export.FileName} ({export.Bytes.Length:n0} bytes).";
+    }
+
+    private string ModeButtonClass(string mode)
+        => _mode == mode
+            ? "flex-1 rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition dark:bg-white dark:text-slate-950 xl:flex-none"
+            : "flex-1 rounded-md px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white xl:flex-none";
+
+    private string ScenarioClass(string mode)
+        => _mode == mode
+            ? "rounded-lg border border-teal-300 bg-white p-5 shadow-sm ring-2 ring-teal-100 dark:border-teal-700 dark:bg-slate-900 dark:ring-teal-950"
+            : "rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900";
+
+    private void ApplyQueryString()
+    {
+        var query = Navigation.ToAbsoluteUri(Navigation.Uri).Query.TrimStart('?');
+        foreach (var part in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var pieces = part.Split('=', 2);
+            var key = Uri.UnescapeDataString(pieces[0]);
+            var value = pieces.Length == 2 ? Uri.UnescapeDataString(pieces[1].Replace('+', ' ')) : string.Empty;
+            if (string.Equals(key, "mode", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(value, RemoteMode, StringComparison.OrdinalIgnoreCase))
+            {
+                _mode = RemoteMode;
+            }
+            else if (string.Equals(key, "reportServerUrl", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(value))
+            {
+                _remoteBaseUrl = value;
+            }
+            else if (string.Equals(key, "apiKey", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(value))
+            {
+                _apiKey = value;
+            }
+        }
+    }
+
+    private static string NormalizeBaseUrl(string value)
+    {
+        var normalized = string.IsNullOrWhiteSpace(value) ? "http://127.0.0.1:5109" : value.Trim();
+        if (!normalized.Contains("://", StringComparison.Ordinal))
+        {
+            normalized = $"http://{normalized}";
+        }
+
+        return normalized.EndsWith("/", StringComparison.Ordinal) ? normalized : $"{normalized}/";
+    }
+}

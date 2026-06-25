@@ -1,0 +1,3759 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.Spreadsheet",
+    "title": "Tempo.Blazor.Spreadsheet",
+    "description": "Excel-like spreadsheet components for Tempo.Blazor, including canvas rendering, formula editing, workbook import/export, and spreadsheet interop assets.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;components;spreadsheet;excel;xlsx;formula;canvas",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Spreadsheet"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "DocumentFormat.OpenXml",
+        "version": "3.3.0"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor/Tempo.Blazor.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Components.Spreadsheet",
+      "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "Tempo.Blazor.Components.Spreadsheet.Data",
+      "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+      "Tempo.Blazor.Components.Spreadsheet.Rendering",
+      "Tempo.Blazor.Components.Spreadsheet.Xlsx",
+      "Tempo.Blazor.Configuration"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.Spreadsheet",
+    "overview": "Excel-like spreadsheet components for Tempo.Blazor, including canvas rendering, formula editing, workbook import/export, and spreadsheet interop assets.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Spreadsheet"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "DocumentFormat.OpenXml",
+        "version": "3.3.0"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "AddNamedRangeCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Adds a named range to the workbook and recalculates any formulas that reference it. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/AddNamedRangeCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "AddSheetCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Adds a new sheet to the workbook. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/AddSheetCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "AutoFillCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Undoable command that performs an AutoFill series expansion.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/AutoFillCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "AutoFilterCommandBase",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Shared helpers for auto-filter commands: snapshotting and restoring the hidden state of the data rows in a filter range so undo restores row visibility exactly.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/AutoFilterCommandBase.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Groups multiple commands into a single undoable unit.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/BatchCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Add",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "command",
+              "type": "ISpreadsheetCommand"
+            }
+          ]
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "BatchCommand"
+    },
+    {
+      "itemName": "ClearAutoFilterCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Removes the sheet's auto-filter and reveals every row it had hidden. Undo restores the filter and the previous row visibility exactly.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/ClearAutoFilterCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "ClearCellContentCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Clears the value and formula of selected cells while preserving their style. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/ClearCellContentCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "ClearDataValidationCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Removes all data validation rules that overlap a given range and supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/ClearDataValidationCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "CopyCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Copies the current selection into the internal clipboard.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/CopyCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "CutCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Cuts the current selection into the internal clipboard.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/CutCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "DeleteCellsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Deletes the content of the specified cells. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/DeleteCellsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "DeleteColumnCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Deletes a column at the specified index and shifts cells left. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/DeleteColumnCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "DeleteNamedRangeCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Deletes a named range from the workbook and recalculates any formulas that referenced it. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/DeleteNamedRangeCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "DeleteRowCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Deletes a row at the specified index and shifts cells up. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/DeleteRowCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "DeleteSheetCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Deletes a sheet from the workbook. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/DeleteSheetCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "EditNamedRangeCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Edits an existing named range and recalculates any formulas that reference it. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/EditNamedRangeCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "HideColumnsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Hides or unhides a set of columns and supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/HideColumnsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "HideRowsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Hides or unhides a set of rows and supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/HideRowsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "InsertColumnCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Inserts a column at the specified index and shifts cells right. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/InsertColumnCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "InsertRowCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Inserts a row at the specified index and shifts cells down. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/InsertRowCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "ISpreadsheetCommand",
+      "kind": "Interface",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Marker interface for spreadsheet undo/redo commands.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/ISpreadsheetCommand.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ISpreadsheetGridController",
+      "kind": "Interface",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Rendering",
+      "description": "Defines the runtime operations exposed by spreadsheet grid renderers to the parent spreadsheet component.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Rendering/ISpreadsheetGridController.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "MergeCellsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Merges a range of cells and supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/MergeCellsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "PasteCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Pastes clipboard content starting at the given target cell reference.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/PasteCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AffectedCellRefs",
+          "kind": "Field",
+          "type": "IReadOnlyList<string>",
+          "description": "Cell references changed by the latest paste execution."
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "PasteSpecialCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Pastes the internal clipboard into a target range with paste-special semantics: selectable content (values / formulas / formats / all / all-except-borders), an optional arithmetic operation against the existing target values, skip-blanks, and transpose. Relative formula references are shifted by the paste offset (except when transposing, where formulas are flattened to their computed value to avoid producing wrong references). restores the overwritten cells exactly.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/PasteSpecialCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AffectedCellRefs",
+          "kind": "Field",
+          "type": "IReadOnlyList<string>",
+          "description": "The cell references changed by the latest paste (for renderer invalidation)."
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "RemoveDuplicatesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Removes duplicate rows from a range, keeping the first occurrence of each distinct key-column combination and compacting the surviving rows upward within the range. Only the columns inside the range are touched (Excel/OnlyOffice semantics); cells outside the range stay put. The whole operation is a single atomic step: restores the original layout exactly. Ranges that intersect a merged cell are rejected.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/RemoveDuplicatesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AffectedCellRefs",
+          "kind": "Field",
+          "type": "IReadOnlyList<string>",
+          "description": "The cell references touched by the last (for renderer invalidation)."
+        },
+        {
+          "name": "HasMergeConflict",
+          "kind": "Field",
+          "type": "bool",
+          "description": "True when the range intersects a merged cell and therefore cannot be deduplicated."
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "RemainingCount",
+          "kind": "Property",
+          "type": "int",
+          "description": "The number of unique data rows that remained after the last ."
+        },
+        {
+          "name": "RemovedCount",
+          "kind": "Property",
+          "type": "int",
+          "description": "The number of duplicate rows removed by the last ."
+        }
+      ]
+    },
+    {
+      "itemName": "RemoveHyperlinkCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Removes the hyperlink from a cell while preserving its value and formula. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/RemoveHyperlinkCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "RenameSheetCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Renames a sheet in the workbook. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/RenameSheetCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "ReplaceCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Replaces matched text within a single cell and supports undo. The cell's searchable text (displayed value or formula, per ) is rewritten and re-parsed through . In mode formula cells are skipped so their formulas are never destroyed.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/ReplaceCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "DidReplace",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Whether the last actually changed the cell."
+        }
+      ]
+    },
+    {
+      "itemName": "ResizeColumnCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Sets the width of a column and supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/ResizeColumnCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "ResizeRowCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Sets the height of a row and supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/ResizeRowCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "SetAutoFilterCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Turns the auto-filter on over a range (or moves it to a new range). Enabling the filter adds the header buttons but hides nothing until column criteria are set. Undo restores the previous filter and the previous row visibility.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/SetAutoFilterCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "SetCellStyleCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Applies a style mutation to multiple cells and supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/SetCellStyleCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "SetCellValueCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Sets the value and/or formula of a single cell and supports undo. Optionally applies a typed data type and an implied number format (the latter only when the cell still uses the General format), as produced by .",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/SetCellValueCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "SetDataValidationCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Adds or replaces a data validation rule on a sheet range. Fully undoable: removes any previous rule that overlapped the same range and restores it on undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/SetDataValidationCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "SetHyperlinkCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Sets a structured hyperlink on a cell. If the cell is empty and a display text is provided, the display text is written into the cell value. Supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/SetHyperlinkCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "SortRangeCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Sorts a range by reordering whole rows (or columns when is set). Cell values, formulas and styles move with their row; relative formula references are shifted by the row delta of the move so they keep pointing at the same logical data. Undo restores the original cell layout exactly. Ranges that intersect merged cells are rejected.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/SortRangeCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AffectedCellRefs",
+          "kind": "Field",
+          "type": "IReadOnlyList<string>",
+          "description": "The cell references touched by the last (for renderer invalidation)."
+        },
+        {
+          "name": "HasMergeConflict",
+          "kind": "Field",
+          "type": "bool",
+          "description": "True when the range intersects a merged cell and therefore cannot be sorted."
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "SpreadsheetClipboard",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Static clipboard holding copied/cut cells for internal copy-paste operations.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/SpreadsheetClipboard.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Clear",
+          "kind": "Method",
+          "type": "void",
+          "description": "Clears the clipboard."
+        },
+        {
+          "name": "Copy",
+          "kind": "Method",
+          "type": "void",
+          "description": "Stores the given cells into the clipboard.",
+          "parameters": [
+            {
+              "name": "cells",
+              "type": "SpreadsheetCell>"
+            },
+            {
+              "name": "sourceRangeRef",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Cut",
+          "kind": "Method",
+          "type": "void",
+          "description": "Stores the given cells into the clipboard and marks it as a cut operation.",
+          "parameters": [
+            {
+              "name": "cells",
+              "type": "SpreadsheetCell>"
+            },
+            {
+              "name": "sourceRangeRef",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Cells",
+          "kind": "Property",
+          "type": "static Dictionary<string, SpreadsheetCell>?",
+          "description": "The copied/cut cells keyed by their relative position within the source range."
+        },
+        {
+          "name": "IsCut",
+          "kind": "Property",
+          "type": "static bool",
+          "description": "Whether the clipboard content came from a cut operation."
+        },
+        {
+          "name": "SourceRangeRef",
+          "kind": "Property",
+          "type": "static string?",
+          "description": "The source range reference (e.g. A1:B2) used for the copy/cut."
+        }
+      ]
+    },
+    {
+      "itemName": "SpreadsheetCommandManager",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Manages undo/redo stacks for spreadsheet operations.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/SpreadsheetCommandManager.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CanRedo",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Whether a redo operation is available."
+        },
+        {
+          "name": "CanUndo",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Whether an undo operation is available."
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void",
+          "description": "Executes a command and adds it to the undo stack.",
+          "parameters": [
+            {
+              "name": "command",
+              "type": "ISpreadsheetCommand"
+            }
+          ]
+        },
+        {
+          "name": "Redo",
+          "kind": "Method",
+          "type": "void",
+          "description": "Redoes the last undone command."
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void",
+          "description": "Undoes the last command."
+        }
+      ]
+    },
+    {
+      "itemName": "SpreadsheetFormulaEditSession",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Represents the current editing session state for a spreadsheet formula editor.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/SpreadsheetFormulaEditSession.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ActiveFunctionHint",
+          "kind": "Property",
+          "type": "SpreadsheetFormulaFunctionHint?",
+          "description": "The active function call hint under the caret, if any."
+        },
+        {
+          "name": "ActiveReferenceToken",
+          "kind": "Property",
+          "type": "SpreadsheetFormulaReferenceToken?",
+          "description": "The active reference token under the caret or selection anchor."
+        },
+        {
+          "name": "FunctionPrefix",
+          "kind": "Property",
+          "type": "string?",
+          "description": "The currently typed function name fragment, if any."
+        },
+        {
+          "name": "FunctionPrefixEnd",
+          "kind": "Property",
+          "type": "int",
+          "description": "The end index of the current function name fragment."
+        },
+        {
+          "name": "FunctionPrefixStart",
+          "kind": "Property",
+          "type": "int",
+          "description": "The start index of the current function name fragment."
+        },
+        {
+          "name": "IsFormula",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Whether the current text is a formula expression."
+        },
+        {
+          "name": "IsReferencePickingMode",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Whether the editor is currently in reference-picking mode."
+        },
+        {
+          "name": "ReferenceTokens",
+          "kind": "Property",
+          "type": "IReadOnlyList<SpreadsheetFormulaReferenceToken>",
+          "description": "All parsed reference tokens from the current text."
+        },
+        {
+          "name": "SelectedSuggestionIndex",
+          "kind": "Property",
+          "type": "int",
+          "description": "The currently selected suggestion index."
+        },
+        {
+          "name": "SelectionEnd",
+          "kind": "Property",
+          "type": "int",
+          "description": "The current selection end within ."
+        },
+        {
+          "name": "SelectionStart",
+          "kind": "Property",
+          "type": "int",
+          "description": "The current selection start within ."
+        },
+        {
+          "name": "Suggestions",
+          "kind": "Property",
+          "type": "IReadOnlyList<SpreadsheetFormulaFunctionMetadata>",
+          "description": "The available autocomplete suggestions for the current function fragment."
+        },
+        {
+          "name": "Text",
+          "kind": "Property",
+          "type": "string",
+          "description": "The current editor text."
+        }
+      ]
+    },
+    {
+      "itemName": "SpreadsheetFormulaFunctionCatalog",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Built-in formula function metadata used by spreadsheet editing UX helpers.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/SpreadsheetFormulaFunctionCatalog.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "All",
+          "kind": "Property",
+          "type": "static IReadOnlyList<SpreadsheetFormulaFunctionMetadata>",
+          "description": "All built-in spreadsheet functions exposed to formula autocomplete."
+        }
+      ]
+    },
+    {
+      "itemName": "SpreadsheetFormulaFunctionHint",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Represents the currently active function call and argument index under the caret.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/SpreadsheetFormulaFunctionHint.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ActiveArgumentIndex",
+          "kind": "Property",
+          "type": "int",
+          "description": "The zero-based index of the active argument."
+        },
+        {
+          "name": "Function",
+          "kind": "Property",
+          "type": "SpreadsheetFormulaFunctionMetadata",
+          "description": "The resolved function metadata."
+        }
+      ]
+    },
+    {
+      "itemName": "SpreadsheetFormulaFunctionMetadata",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Describes a spreadsheet function for autocomplete and inline help.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/SpreadsheetFormulaFunctionMetadata.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Arguments",
+          "kind": "Property",
+          "type": "IReadOnlyList<string>",
+          "description": "The ordered argument labels used for active argument highlighting."
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string",
+          "description": "The function name."
+        },
+        {
+          "name": "Signature",
+          "kind": "Property",
+          "type": "string",
+          "description": "The display signature shown in inline help."
+        },
+        {
+          "name": "Summary",
+          "kind": "Property",
+          "type": "string",
+          "description": "A short user-facing description."
+        }
+      ]
+    },
+    {
+      "itemName": "SpreadsheetFormulaReferenceToken",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Describes a parsed formula reference token and its position within the editor text.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/SpreadsheetFormulaReferenceToken.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ColorIndex",
+          "kind": "Property",
+          "type": "int",
+          "description": "The zero-based color slot assigned to the token."
+        },
+        {
+          "name": "End",
+          "kind": "Property",
+          "type": "int",
+          "description": "The exclusive token end index."
+        },
+        {
+          "name": "Start",
+          "kind": "Property",
+          "type": "int",
+          "description": "The inclusive token start index."
+        },
+        {
+          "name": "Text",
+          "kind": "Property",
+          "type": "string",
+          "description": "The token text as written in the formula."
+        }
+      ]
+    },
+    {
+      "itemName": "SpreadsheetRemoveDuplicatesOptions",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+      "description": "The user's choices from the Remove Duplicates dialog: which columns form the duplicate key, whether the range has a header row, and whether text comparison is case-sensitive.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/SpreadsheetRemoveDuplicatesOptions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CaseSensitive",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Whether text comparison is case-sensitive."
+        },
+        {
+          "name": "HasHeader",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Whether the first row of the range is a header that must be preserved."
+        },
+        {
+          "name": "KeyColumns",
+          "kind": "Property",
+          "type": "IReadOnlyList<int>",
+          "description": "The absolute column indices selected as the duplicate key."
+        }
+      ]
+    },
+    {
+      "itemName": "SpreadsheetTextToColumnsResult",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+      "description": "The outcome of the Text to Columns wizard: the split options and the per-output-column target formats chosen by the user.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/SpreadsheetTextToColumnsResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Formats",
+          "kind": "Property",
+          "type": "IReadOnlyList<SpreadsheetColumnFormat>",
+          "description": "The target format for each produced column (by index)."
+        },
+        {
+          "name": "Options",
+          "kind": "Property",
+          "type": "SpreadsheetSeparatorOptions",
+          "description": "The separator/split options."
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Groups multiple commands into a single undoable unit.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/BatchCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Add",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "command",
+              "type": "ISpreadsheetCommand"
+            }
+          ]
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Spreadsheet.Commands.BatchCommand"
+    },
+    {
+      "itemName": "TextToColumnsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Splits the text of a single source column into several columns using , writing the produced fields starting at the source column and overwriting cells to its right. Each produced column gets a target format (general → value parser, text → literal, skip → dropped). The whole region is snapshotted so restores the original single column exactly.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/TextToColumnsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AffectedCellRefs",
+          "kind": "Field",
+          "type": "IReadOnlyList<string>",
+          "description": "The cell references touched by the last (for renderer invalidation)."
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "ColumnsProduced",
+          "kind": "Property",
+          "type": "int",
+          "description": "The number of output columns produced by the last ."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetCanvasGrid.CanvasCellEditCommit",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Represents one cell edit committed by the canvas JavaScript editor.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetCanvasGrid.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmSpreadsheetCanvasGrid.CanvasCommandLogEntry",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Represents one command emitted by the canvas JavaScript engine.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetCanvasGrid.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmSpreadsheetCanvasGrid.CanvasFilterButtonClick",
+      "kind": "RecordStruct",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Carries the screen position of an auto-filter dropdown button click.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetCanvasGrid.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmSpreadsheetCanvasGrid.CanvasSelectionSnapshot",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Represents a canvas selection snapshot emitted by JavaScript.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetCanvasGrid.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "UnmergeCellsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Unmerges a range of cells and supports undo.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/UnmergeCellsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateColumnFilterCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+      "description": "Applies, replaces or clears the filter of a single column and recomputes which rows are hidden. Pass a null or inactive to clear that column. Undo restores the previous column filters and the previous row visibility.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/UpdateColumnFilterCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "XlsxExporter",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Xlsx",
+      "description": "Exports a to an XLSX file.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Xlsx/XlsxExporter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Export",
+          "kind": "Method",
+          "type": "byte[]",
+          "description": "Exports the given workbook to a byte array representing an XLSX file.",
+          "parameters": [
+            {
+              "name": "workbook",
+              "type": "SpreadsheetWorkbook"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "XlsxImporter",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Xlsx",
+      "description": "Imports an XLSX file into a .",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Xlsx/XlsxImporter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Import",
+          "kind": "Method",
+          "type": "SpreadsheetWorkbook",
+          "description": "Imports the given XLSX data and returns a new workbook.",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "byte[]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Configuration",
+      "namespace": "Tempo.Blazor.Configuration",
+      "description": "Extension methods for registering Tempo.Blazor spreadsheet services.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Configuration/SpreadsheetServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "AddTempoBlazorSpreadsheet",
+          "kind": "Method",
+          "type": "IServiceCollection",
+          "description": "Registers services required by the spreadsheet component group.",
+          "parameters": [
+            {
+              "name": "services",
+              "type": "this IServiceCollection"
+            }
+          ]
+        }
+      ],
+      "itemName": "SpreadsheetServiceCollectionExtensions"
+    },
+    {
+      "itemName": "TmSpreadsheet",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "description": "Phase 2 features: status-bar aggregation, zoom and find/replace.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheet.razor",
+      "documentationStatus": "generated",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet"
+      ],
+      "parameters": [
+        {
+          "name": "ActiveCellChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "When true the grid is displayed in read-only mode: cell editing, context menu, and editing-related callbacks are disabled."
+        },
+        {
+          "name": "ActiveIndex",
+          "type": "int",
+          "isRequired": false,
+          "description": "All sheets in the workbook."
+        },
+        {
+          "name": "BackgroundColor",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Current text color (CSS color value)."
+        },
+        {
+          "name": "CanRedo",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether undo is available."
+        },
+        {
+          "name": "CellValueCommitted",
+          "type": "EventCallback<(string CellRef, string? Value)>",
+          "isRequired": false,
+          "description": "Called when the user Ctrl+clicks a hyperlink in a cell."
+        },
+        {
+          "name": "CellValuesCommittedBatch",
+          "type": "EventCallback<IReadOnlyList<CanvasCellEditCommit>>",
+          "isRequired": false,
+          "description": "Called when a cell value is committed after editing."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Controls the display and interaction mode of the spreadsheet. Defaults to ."
+        },
+        {
+          "name": "ColumnsCount",
+          "type": "int",
+          "isRequired": false,
+          "default": "50",
+          "description": "The initial number of rows to render. Defaults to 200."
+        },
+        {
+          "name": "ColumnWidth",
+          "type": "double",
+          "isRequired": false,
+          "default": "64",
+          "description": "The default row height in pixels. Defaults to 20."
+        },
+        {
+          "name": "CustomTools",
+          "type": "List<SpreadsheetCustomTool>?",
+          "isRequired": false,
+          "description": "Called when the Name Manager button is clicked."
+        },
+        {
+          "name": "DisplayValue",
+          "type": "string?",
+          "isRequired": false,
+          "description": "The A1 reference of the currently active cell."
+        },
+        {
+          "name": "ExternalFormulaEditValue",
+          "type": "string?",
+          "isRequired": false,
+          "description": "The zoom factor applied to the grid geometry and fonts (1.0 = 100%)."
+        },
+        {
+          "name": "ExternalFormulaOriginCellRef",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Whether a formula-bar editing session is currently active even before the latest live value is mirrored into the grid."
+        },
+        {
+          "name": "ExternalFormulaSessionActive",
+          "type": "bool",
+          "isRequired": false,
+          "description": "The external formula editor value when reference-picking is driven by the formula bar instead of inline cell editing."
+        },
+        {
+          "name": "FilterButtonClicked",
+          "type": "EventCallback<CanvasFilterButtonClick>",
+          "isRequired": false,
+          "description": "Called when a batch of cell values is committed from the JavaScript engine."
+        },
+        {
+          "name": "Height",
+          "type": "string?",
+          "isRequired": false,
+          "default": "\"600px\"",
+          "description": "Called when a cell enters or exits edit mode."
+        },
+        {
+          "name": "InitialWorkbook",
+          "type": "SpreadsheetWorkbook?",
+          "isRequired": false,
+          "description": "The default column width in pixels. Defaults to 64."
+        },
+        {
+          "name": "IsBold",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Currently selected font size."
+        },
+        {
+          "name": "IsEditing",
+          "type": "bool",
+          "isRequired": false,
+          "description": "The current display value or formula of the active cell."
+        },
+        {
+          "name": "IsFilterActive",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether grid lines are currently visible."
+        },
+        {
+          "name": "IsFormatPainterActive",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Called when the user requests strikethrough toggle."
+        },
+        {
+          "name": "IsFormulaPointMode",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, hides add/delete/rename controls (embedded/readonly view)."
+        },
+        {
+          "name": "IsItalic",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the current selection is bold."
+        },
+        {
+          "name": "IsMergeCellsActive",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the current selection uses a thousands-separator format."
+        },
+        {
+          "name": "IsPercentageFormat",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Currently selected number format."
+        },
+        {
+          "name": "IsReadonly",
+          "type": "bool",
+          "isRequired": false,
+          "description": "The origin cell of an external formula-bar session, used as an additional guard against unintended pointer selection changes."
+        },
+        {
+          "name": "IsStrikeThrough",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the current selection is underlined."
+        },
+        {
+          "name": "IsThousandsFormat",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the current selection uses a percentage format."
+        },
+        {
+          "name": "IsUnderline",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the current selection is italic."
+        },
+        {
+          "name": "Mode",
+          "type": "SpreadsheetMode",
+          "isRequired": false,
+          "default": "SpreadsheetMode.Full",
+          "description": "Pre-populates the spreadsheet with an existing workbook on first render. Subsequent parameter changes are ignored — use to read the current state after editing."
+        },
+        {
+          "name": "OnActiveSheetChanged",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Zero-based index of the active sheet."
+        },
+        {
+          "name": "OnAddSheetRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the active sheet should change."
+        },
+        {
+          "name": "OnAlignChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the background color is selected from the color picker."
+        },
+        {
+          "name": "OnBackgroundColorChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the text color is selected from the color picker."
+        },
+        {
+          "name": "OnBoldToggle",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the font size changes."
+        },
+        {
+          "name": "OnBoldToggleRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests redo."
+        },
+        {
+          "name": "OnBorderPresetChanged",
+          "type": "EventCallback<BorderPreset>",
+          "isRequired": false,
+          "description": "Called when a custom tool is clicked."
+        },
+        {
+          "name": "OnCellEdit",
+          "type": "EventCallback<SpreadsheetCellEditEventArgs>",
+          "isRequired": false,
+          "description": "Called when the active cell or selection changes."
+        },
+        {
+          "name": "OnCellReferenceRequested",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Called when a cell enters or exits edit mode."
+        },
+        {
+          "name": "OnChange",
+          "type": "EventCallback<SpreadsheetChangeEventArgs>",
+          "isRequired": false,
+          "description": "Called when the workbook is downloaded/exported."
+        },
+        {
+          "name": "OnCircleInvalidData",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Data Validation dialog button is clicked."
+        },
+        {
+          "name": "OnClearAllRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when content should be cleared."
+        },
+        {
+          "name": "OnClearContentRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when formatting should be cleared."
+        },
+        {
+          "name": "OnClearFormattingRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when Format Painter is activated from context menu."
+        },
+        {
+          "name": "OnClearValidationCircles",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Circle Invalid Data button is clicked."
+        },
+        {
+          "name": "OnColumnResizeRequested",
+          "type": "EventCallback<(int ColIndex, double Width)>",
+          "isRequired": false,
+          "description": "Called when formula point mode inserts a cell reference."
+        },
+        {
+          "name": "OnCommitNavigationRequested",
+          "type": "EventCallback<(int RowDelta, int ColDelta)>",
+          "isRequired": false,
+          "description": "Called when the user presses Tab while editing in the formula bar."
+        },
+        {
+          "name": "OnCopy",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Redo button is clicked."
+        },
+        {
+          "name": "OnCopyRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user clicks the in-cell validation dropdown arrow (list type)."
+        },
+        {
+          "name": "OnCustomSort",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Sort Descending button is clicked."
+        },
+        {
+          "name": "OnCustomToolClick",
+          "type": "EventCallback<SpreadsheetCustomTool>",
+          "isRequired": false,
+          "description": "Called when the Toggle Grid Lines button is clicked."
+        },
+        {
+          "name": "OnCut",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Copy button is clicked."
+        },
+        {
+          "name": "OnCutRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests a paste-special operation (Ctrl+Shift+V)."
+        },
+        {
+          "name": "OnDataValidation",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Paste Special button is clicked."
+        },
+        {
+          "name": "OnDecreaseDecimals",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Increase Decimals button is clicked."
+        },
+        {
+          "name": "OnDeleteColumn",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Insert Column button is clicked."
+        },
+        {
+          "name": "OnDeleteColumnRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests insert column."
+        },
+        {
+          "name": "OnDeleteRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests delete column."
+        },
+        {
+          "name": "OnDeleteRow",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Insert Row button is clicked."
+        },
+        {
+          "name": "OnDeleteRowRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests insert row."
+        },
+        {
+          "name": "OnDeleteSheetRequested",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Called when a new sheet should be added."
+        },
+        {
+          "name": "OnDownload",
+          "type": "EventCallback<SpreadsheetDownloadEventArgs>",
+          "isRequired": false,
+          "description": "Called when a file is opened/imported."
+        },
+        {
+          "name": "OnEditCancelled",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user commits a value from the formula bar."
+        },
+        {
+          "name": "OnEditStarted",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Whether the formula bar is in editing mode."
+        },
+        {
+          "name": "OnFindRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the zoom should reset to 100% (Ctrl+0)."
+        },
+        {
+          "name": "OnFontFamilyChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the Delete Column button is clicked."
+        },
+        {
+          "name": "OnFontSizeChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the font family changes."
+        },
+        {
+          "name": "OnFormatCells",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Decrease Indent button is clicked."
+        },
+        {
+          "name": "OnFormatCellsRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when a row is resized."
+        },
+        {
+          "name": "OnFormatPainterActivateRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when hidden columns near the selection should be shown."
+        },
+        {
+          "name": "OnFormatPainterApply",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Whether Format Painter mode is active."
+        },
+        {
+          "name": "OnFormatPainterCancel",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when Format Painter applies to a cell."
+        },
+        {
+          "name": "OnFormatPainterClick",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Custom tools to inject into the toolbar."
+        },
+        {
+          "name": "OnFormatPainterDoubleClick",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Format Painter button is single-clicked."
+        },
+        {
+          "name": "OnHideColumnsRequested",
+          "type": "EventCallback<(int Start, int End)>",
+          "isRequired": false,
+          "description": "Called when hidden rows near the selection should be shown."
+        },
+        {
+          "name": "OnHideRowsRequested",
+          "type": "EventCallback<(int Start, int End)>",
+          "isRequired": false,
+          "description": "Called when Format Painter is cancelled."
+        },
+        {
+          "name": "OnHyperlinkClick",
+          "type": "EventCallback<SpreadsheetHyperlink>",
+          "isRequired": false,
+          "description": "Called when the active cell changes."
+        },
+        {
+          "name": "OnIncreaseDecimals",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the number format changes."
+        },
+        {
+          "name": "OnIndentDecrease",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Increase Indent button is clicked."
+        },
+        {
+          "name": "OnIndentIncrease",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the StrikeThrough toggle is clicked."
+        },
+        {
+          "name": "OnInsertColumn",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Delete Row button is clicked."
+        },
+        {
+          "name": "OnInsertColumnRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests delete row."
+        },
+        {
+          "name": "OnInsertImage",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Insert Link button is clicked."
+        },
+        {
+          "name": "OnInsertLink",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Download button is clicked."
+        },
+        {
+          "name": "OnInsertRow",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Paste button is clicked."
+        },
+        {
+          "name": "OnInsertRowRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests a cut operation."
+        },
+        {
+          "name": "OnItalicToggle",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Bold toggle is clicked."
+        },
+        {
+          "name": "OnItalicToggleRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests bold toggle."
+        },
+        {
+          "name": "OnMergeCells",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Insert Image button is clicked."
+        },
+        {
+          "name": "OnNameManager",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Clear Validation Circles button is clicked."
+        },
+        {
+          "name": "OnNavigateToRef",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Called after a commit when spreadsheet-like navigation should move the active cell."
+        },
+        {
+          "name": "OnNumberFormatChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the horizontal alignment changes."
+        },
+        {
+          "name": "OnOpen",
+          "type": "EventCallback<SpreadsheetOpenEventArgs>",
+          "isRequired": false,
+          "description": "XLSX file data to load into the spreadsheet."
+        },
+        {
+          "name": "OnOpenBorderDialog",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when a border preset is selected from the border picker dropdown."
+        },
+        {
+          "name": "OnPaste",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Cut button is clicked."
+        },
+        {
+          "name": "OnPasteRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests a copy operation."
+        },
+        {
+          "name": "OnPasteSpecial",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Text to Columns button is clicked."
+        },
+        {
+          "name": "OnPasteSpecialRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests a paste operation."
+        },
+        {
+          "name": "OnPercentageFormat",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Decrease Decimals button is clicked."
+        },
+        {
+          "name": "OnRedo",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Undo button is clicked."
+        },
+        {
+          "name": "OnRedoRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests undo."
+        },
+        {
+          "name": "OnRemoveDuplicates",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Custom Sort button is clicked."
+        },
+        {
+          "name": "OnRenameSheetRequested",
+          "type": "EventCallback<(int Index, string NewName)>",
+          "isRequired": false,
+          "description": "Called when a sheet should be deleted."
+        },
+        {
+          "name": "OnReplaceRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Find panel should open (Ctrl+F)."
+        },
+        {
+          "name": "OnRowResizeRequested",
+          "type": "EventCallback<(int RowIndex, double Height)>",
+          "isRequired": false,
+          "description": "Called when a column is resized."
+        },
+        {
+          "name": "OnSelect",
+          "type": "EventCallback<SpreadsheetSelectEventArgs>",
+          "isRequired": false,
+          "description": "Called when any cell value or formula changes."
+        },
+        {
+          "name": "OnSelectAllRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests underline toggle."
+        },
+        {
+          "name": "OnSheetSelectedForFormula",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Whether formula-point mode is active (tab click selects sheet for formula rather than switching view)."
+        },
+        {
+          "name": "OnSortAscending",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Filter toggle button is clicked."
+        },
+        {
+          "name": "OnSortDescending",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Sort Ascending button is clicked."
+        },
+        {
+          "name": "OnStrikeThroughToggle",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Underline toggle is clicked."
+        },
+        {
+          "name": "OnStrikeThroughToggleRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests the Format Cells dialog."
+        },
+        {
+          "name": "OnTabPressed",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the formula bar value changes during editing."
+        },
+        {
+          "name": "OnTextColorChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the Format Cells button/dialog is requested."
+        },
+        {
+          "name": "OnTextToColumns",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Remove Duplicates button is clicked."
+        },
+        {
+          "name": "OnThousandsFormat",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Percentage (%) button is clicked."
+        },
+        {
+          "name": "OnToggleFilter",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Whether the auto-filter is currently enabled on the active sheet."
+        },
+        {
+          "name": "OnToggleGridLines",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Merge Cells button is clicked."
+        },
+        {
+          "name": "OnTransferToInlineEditorRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user enters a cell reference or named range in the name box and presses Enter."
+        },
+        {
+          "name": "OnUnderlineToggle",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Italic toggle is clicked."
+        },
+        {
+          "name": "OnUnderlineToggleRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests italic toggle."
+        },
+        {
+          "name": "OnUndo",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Format Painter button is double-clicked (sticky mode)."
+        },
+        {
+          "name": "OnUndoRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests delete selection."
+        },
+        {
+          "name": "OnUnhideColumnsRequested",
+          "type": "EventCallback<(int Start, int End)>",
+          "isRequired": false,
+          "description": "Called when selected columns should be hidden."
+        },
+        {
+          "name": "OnUnhideRowsRequested",
+          "type": "EventCallback<(int Start, int End)>",
+          "isRequired": false,
+          "description": "Called when selected rows should be hidden."
+        },
+        {
+          "name": "OnValueChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the user cancels editing in the formula bar."
+        },
+        {
+          "name": "OnValueCommitted",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the user starts editing in the formula bar."
+        },
+        {
+          "name": "OnZoomChanged",
+          "type": "EventCallback<double>",
+          "isRequired": false,
+          "description": "The current zoom factor (1.0 = 100%)."
+        },
+        {
+          "name": "OnZoomResetRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the zoom should change by one step (+1 to zoom in, -1 to zoom out)."
+        },
+        {
+          "name": "OnZoomStep",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Called when content and formatting should be cleared."
+        },
+        {
+          "name": "RowHeight",
+          "type": "double",
+          "isRequired": false,
+          "default": "20",
+          "description": "The initial number of columns to render. Defaults to 50."
+        },
+        {
+          "name": "RowsCount",
+          "type": "int",
+          "isRequired": false,
+          "default": "200",
+          "description": "The CSS width of the spreadsheet container. Defaults to 100%."
+        },
+        {
+          "name": "SelectedFontFamily",
+          "type": "string?",
+          "isRequired": false,
+          "default": "\"Arial\"",
+          "description": "Whether redo is available."
+        },
+        {
+          "name": "SelectedFontSize",
+          "type": "string?",
+          "isRequired": false,
+          "default": "\"11\"",
+          "description": "Currently selected font family."
+        },
+        {
+          "name": "SelectedHorizontalAlign",
+          "type": "string?",
+          "isRequired": false,
+          "default": "\"left\"",
+          "description": "Current background color (CSS color value)."
+        },
+        {
+          "name": "SelectedNumberFormat",
+          "type": "string?",
+          "isRequired": false,
+          "default": "\"General\"",
+          "description": "Current horizontal alignment."
+        },
+        {
+          "name": "ShowGridLines",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the current selection covers a merged cell range."
+        },
+        {
+          "name": "TextColor",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Whether Format Painter is currently active."
+        },
+        {
+          "name": "ValidationDropButtonClicked",
+          "type": "EventCallback<(int Row, int Col, double ClientX, double ClientY)>",
+          "isRequired": false,
+          "description": "Called when the user clicks the auto-filter dropdown button of a header cell."
+        },
+        {
+          "name": "Width",
+          "type": "string?",
+          "isRequired": false,
+          "default": "\"100%\"",
+          "description": "The CSS height of the spreadsheet container. Defaults to 600px."
+        },
+        {
+          "name": "Zoom",
+          "type": "double",
+          "isRequired": false,
+          "default": "1.0",
+          "description": "Default column width in pixels."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetCanvasGrid",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Renders a spreadsheet sheet using a hybrid canvas surface with HTML editing and accessibility overlays.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetCanvasGrid.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet"
+      ],
+      "parameters": [
+        {
+          "name": "ActiveCellChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "When true the grid is displayed in read-only mode: cell editing, context menu, and editing-related callbacks are disabled."
+        },
+        {
+          "name": "CellValueCommitted",
+          "type": "EventCallback<(string CellRef, string? Value)>",
+          "isRequired": false,
+          "description": "Called when the user Ctrl+clicks a hyperlink in a cell."
+        },
+        {
+          "name": "CellValuesCommittedBatch",
+          "type": "EventCallback<IReadOnlyList<CanvasCellEditCommit>>",
+          "isRequired": false,
+          "description": "Called when a cell value is committed after editing."
+        },
+        {
+          "name": "ColumnWidth",
+          "type": "double",
+          "isRequired": false,
+          "default": "64",
+          "description": "Default row height in pixels."
+        },
+        {
+          "name": "ExternalFormulaEditValue",
+          "type": "string?",
+          "isRequired": false,
+          "description": "The zoom factor applied to the grid geometry and fonts (1.0 = 100%)."
+        },
+        {
+          "name": "ExternalFormulaOriginCellRef",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Whether a formula-bar editing session is currently active even before the latest live value is mirrored into the grid."
+        },
+        {
+          "name": "ExternalFormulaSessionActive",
+          "type": "bool",
+          "isRequired": false,
+          "description": "The external formula editor value when reference-picking is driven by the formula bar instead of inline cell editing."
+        },
+        {
+          "name": "FilterButtonClicked",
+          "type": "EventCallback<CanvasFilterButtonClick>",
+          "isRequired": false,
+          "description": "Called when a batch of cell values is committed from the JavaScript engine."
+        },
+        {
+          "name": "IsFormatPainterActive",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Called when the user requests strikethrough toggle."
+        },
+        {
+          "name": "IsReadonly",
+          "type": "bool",
+          "isRequired": false,
+          "description": "The origin cell of an external formula-bar session, used as an additional guard against unintended pointer selection changes."
+        },
+        {
+          "name": "OnBoldToggleRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests redo."
+        },
+        {
+          "name": "OnCellEdit",
+          "type": "EventCallback<SpreadsheetCellEditEventArgs>",
+          "isRequired": false,
+          "description": "Called when the user requests select all."
+        },
+        {
+          "name": "OnCellReferenceRequested",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Called when a cell enters or exits edit mode."
+        },
+        {
+          "name": "OnClearAllRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when content should be cleared."
+        },
+        {
+          "name": "OnClearContentRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when formatting should be cleared."
+        },
+        {
+          "name": "OnClearFormattingRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when Format Painter is activated from context menu."
+        },
+        {
+          "name": "OnColumnResizeRequested",
+          "type": "EventCallback<(int ColIndex, double Width)>",
+          "isRequired": false,
+          "description": "Called when formula point mode inserts a cell reference."
+        },
+        {
+          "name": "OnCopyRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user clicks the in-cell validation dropdown arrow (list type)."
+        },
+        {
+          "name": "OnCutRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests a paste-special operation (Ctrl+Shift+V)."
+        },
+        {
+          "name": "OnDeleteColumnRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests insert column."
+        },
+        {
+          "name": "OnDeleteRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests delete column."
+        },
+        {
+          "name": "OnDeleteRowRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests insert row."
+        },
+        {
+          "name": "OnFindRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the zoom should reset to 100% (Ctrl+0)."
+        },
+        {
+          "name": "OnFormatCellsRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when a row is resized."
+        },
+        {
+          "name": "OnFormatPainterActivateRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when hidden columns near the selection should be shown."
+        },
+        {
+          "name": "OnFormatPainterApply",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Whether Format Painter mode is active."
+        },
+        {
+          "name": "OnFormatPainterCancel",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when Format Painter applies to a cell."
+        },
+        {
+          "name": "OnHideColumnsRequested",
+          "type": "EventCallback<(int Start, int End)>",
+          "isRequired": false,
+          "description": "Called when hidden rows near the selection should be shown."
+        },
+        {
+          "name": "OnHideRowsRequested",
+          "type": "EventCallback<(int Start, int End)>",
+          "isRequired": false,
+          "description": "Called when Format Painter is cancelled."
+        },
+        {
+          "name": "OnHyperlinkClick",
+          "type": "EventCallback<SpreadsheetHyperlink>",
+          "isRequired": false,
+          "description": "Called when the active cell changes."
+        },
+        {
+          "name": "OnInsertColumnRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests delete row."
+        },
+        {
+          "name": "OnInsertRowRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests a cut operation."
+        },
+        {
+          "name": "OnItalicToggleRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests bold toggle."
+        },
+        {
+          "name": "OnPasteRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests a copy operation."
+        },
+        {
+          "name": "OnPasteSpecialRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests a paste operation."
+        },
+        {
+          "name": "OnRedoRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests undo."
+        },
+        {
+          "name": "OnReplaceRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Find panel should open (Ctrl+F)."
+        },
+        {
+          "name": "OnRowResizeRequested",
+          "type": "EventCallback<(int RowIndex, double Height)>",
+          "isRequired": false,
+          "description": "Called when a column is resized."
+        },
+        {
+          "name": "OnSelectAllRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests underline toggle."
+        },
+        {
+          "name": "OnStrikeThroughToggleRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests the Format Cells dialog."
+        },
+        {
+          "name": "OnUnderlineToggleRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests italic toggle."
+        },
+        {
+          "name": "OnUndoRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user requests delete selection."
+        },
+        {
+          "name": "OnUnhideColumnsRequested",
+          "type": "EventCallback<(int Start, int End)>",
+          "isRequired": false,
+          "description": "Called when selected columns should be hidden."
+        },
+        {
+          "name": "OnUnhideRowsRequested",
+          "type": "EventCallback<(int Start, int End)>",
+          "isRequired": false,
+          "description": "Called when selected rows should be hidden."
+        },
+        {
+          "name": "OnZoomResetRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the zoom should change by one step (+1 to zoom in, -1 to zoom out)."
+        },
+        {
+          "name": "OnZoomStep",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Called when content and formatting should be cleared."
+        },
+        {
+          "name": "RowHeight",
+          "type": "double",
+          "isRequired": false,
+          "default": "20",
+          "description": "The sheet to render."
+        },
+        {
+          "name": "ValidationDropButtonClicked",
+          "type": "EventCallback<(int Row, int Col, double ClientX, double ClientY)>",
+          "isRequired": false,
+          "description": "Called when the user clicks the auto-filter dropdown button of a header cell."
+        },
+        {
+          "name": "Zoom",
+          "type": "double",
+          "isRequired": false,
+          "default": "1.0",
+          "description": "Default column width in pixels."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetCustomFilterDialog",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "subcategory": "Dialogs",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+      "description": "The custom filter dialog: an operator with up to two operands, combined with a second optional condition via AND/OR. The operator list is adapted to the column kind (text/number/date). Applying produces a with the matching criteria. All text is localized.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetCustomFilterDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+      ],
+      "parameters": [
+        {
+          "name": "Kind",
+          "type": "SpreadsheetFilterKind",
+          "isRequired": false,
+          "default": "SpreadsheetFilterKind.Text",
+          "description": "The column index the filter applies to."
+        },
+        {
+          "name": "OnApply",
+          "type": "EventCallback<SpreadsheetColumnFilter?>",
+          "isRequired": false,
+          "description": "The kind of filter (text/number/date)."
+        },
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user applies the custom filter (null clears it)."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetDataValidationDialog",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "TmSpreadsheetDataValidationDialog Blazor component in the Spreadsheet category.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetDataValidationDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmSpreadsheetFilterDropdown",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "subcategory": "Data",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+      "description": "The auto-filter dropdown shown for a single header column. Offers ascending/descending sort, a search box over the distinct values, a checkbox list (with select-all), an entry point to the custom (text/number/date) filter dialog, and OK/Cancel. All text is localized.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Data/TmSpreadsheetFilterDropdown.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet.Data"
+      ],
+      "parameters": [
+        {
+          "name": "ColumnIndex",
+          "type": "int",
+          "isRequired": true,
+          "description": "The active auto-filter.",
+          "editorRequired": true
+        },
+        {
+          "name": "Culture",
+          "type": "CultureInfo?",
+          "isRequired": false,
+          "description": "The zero-based column index this dropdown filters."
+        },
+        {
+          "name": "Filter",
+          "type": "SpreadsheetAutoFilter",
+          "isRequired": true,
+          "description": "The sheet the filter applies to.",
+          "editorRequired": true
+        },
+        {
+          "name": "OnApply",
+          "type": "EventCallback<SpreadsheetColumnFilter?>",
+          "isRequired": false,
+          "description": "Raised when the user requests a descending sort by this column."
+        },
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user opens the custom text/number/date filter dialog."
+        },
+        {
+          "name": "OnOpenCustomFilter",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Raised when the user applies a value filter (null clears this column's filter)."
+        },
+        {
+          "name": "OnSortAscending",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "The top position (px) of the dropdown."
+        },
+        {
+          "name": "OnSortDescending",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Raised when the user requests an ascending sort by this column."
+        },
+        {
+          "name": "X",
+          "type": "double",
+          "isRequired": false,
+          "description": "The culture used to format and compare values."
+        },
+        {
+          "name": "Y",
+          "type": "double",
+          "isRequired": false,
+          "description": "The left position (px) of the dropdown."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetFindReplaceDialog",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "subcategory": "Dialogs",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+      "description": "Find & replace panel for the spreadsheet. Owns the query/replacement text and search options locally and bubbles changes to the host, which performs the actual search/replace and reports the current match position back via / .",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetFindReplaceDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+      ],
+      "parameters": [
+        {
+          "name": "MatchCount",
+          "type": "int",
+          "isRequired": false,
+          "description": "1-based index of the currently highlighted match (0 when none)."
+        },
+        {
+          "name": "MatchIndex",
+          "type": "int",
+          "isRequired": false,
+          "description": "Initial search options used to seed the panel."
+        },
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised to replace every match; carries the replacement text."
+        },
+        {
+          "name": "OnFindNext",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised whenever the query or any option changes; carries the full current options."
+        },
+        {
+          "name": "OnFindPrevious",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised to move to the next match."
+        },
+        {
+          "name": "OnReplaceAllRequested",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised to replace the current match; carries the replacement text."
+        },
+        {
+          "name": "OnReplaceRequested",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised to move to the previous match."
+        },
+        {
+          "name": "OnSearchRequested",
+          "type": "EventCallback<SpreadsheetSearchOptions>",
+          "isRequired": false,
+          "description": "Total number of matches for the current query."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetFormatCellsDialog",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "TmSpreadsheetFormatCellsDialog Blazor component in the Spreadsheet category.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetFormatCellsDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmSpreadsheetFormulaBar",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Displays the active cell reference and provides an input for editing cell values and formulas. Synchronizes bidirectionally with the active cell in the spreadsheet grid.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetFormulaBar.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet"
+      ],
+      "parameters": [
+        {
+          "name": "DisplayValue",
+          "type": "string?",
+          "isRequired": false,
+          "description": "The A1 reference of the currently active cell."
+        },
+        {
+          "name": "IsEditing",
+          "type": "bool",
+          "isRequired": false,
+          "description": "The current display value or formula of the active cell."
+        },
+        {
+          "name": "OnCommitNavigationRequested",
+          "type": "EventCallback<(int RowDelta, int ColDelta)>",
+          "isRequired": false,
+          "description": "Called when the user presses Tab while editing in the formula bar."
+        },
+        {
+          "name": "OnEditCancelled",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user commits a value from the formula bar."
+        },
+        {
+          "name": "OnEditStarted",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Whether the formula bar is in editing mode."
+        },
+        {
+          "name": "OnNavigateToRef",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Called after a commit when spreadsheet-like navigation should move the active cell."
+        },
+        {
+          "name": "OnTabPressed",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the formula bar value changes during editing."
+        },
+        {
+          "name": "OnTransferToInlineEditorRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the user enters a cell reference or named range in the name box and presses Enter."
+        },
+        {
+          "name": "OnValueChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the user cancels editing in the formula bar."
+        },
+        {
+          "name": "OnValueCommitted",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the user starts editing in the formula bar."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetHyperlinkDialog",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "subcategory": "Dialogs",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+      "description": "Dialog for inserting or editing a structured hyperlink on a cell. Supports four link kinds: Web, Email, InternalRef, NamedRange.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetHyperlinkDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+      ],
+      "parameters": [
+        {
+          "name": "Hyperlink",
+          "type": "SpreadsheetHyperlink?",
+          "isRequired": true,
+          "description": "The workbook (used for named range choices).",
+          "editorRequired": true
+        },
+        {
+          "name": "OnCancel",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user saves the dialog."
+        },
+        {
+          "name": "OnSave",
+          "type": "EventCallback<SpreadsheetHyperlink>",
+          "isRequired": false,
+          "description": "The existing hyperlink to edit, or null for a new one."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetNamedRangeEditDialog",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "subcategory": "Dialogs",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+      "description": "Dialog for creating or editing a named range. Validates name syntax and required fields.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetNamedRangeEditDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+      ],
+      "parameters": [
+        {
+          "name": "OnCancel",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user saves the dialog."
+        },
+        {
+          "name": "OnSave",
+          "type": "EventCallback<SpreadsheetNamedRange>",
+          "isRequired": false,
+          "description": "The range to edit, or null when creating a new one."
+        },
+        {
+          "name": "Range",
+          "type": "SpreadsheetNamedRange?",
+          "isRequired": true,
+          "description": "The workbook containing the named range.",
+          "editorRequired": true
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetNameManagerDialog",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "subcategory": "Dialogs",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+      "description": "Name Manager dialog that lists all named ranges in the workbook, allows filtering, and raises events for New / Edit / Delete.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetNameManagerDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+      ],
+      "parameters": [
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user wants to delete the selected named range."
+        },
+        {
+          "name": "OnDelete",
+          "type": "EventCallback<SpreadsheetNamedRange>",
+          "isRequired": false,
+          "description": "Raised when the user wants to edit the selected named range."
+        },
+        {
+          "name": "OnEdit",
+          "type": "EventCallback<SpreadsheetNamedRange>",
+          "isRequired": false,
+          "description": "Raised when the user wants to create a new named range."
+        },
+        {
+          "name": "OnNew",
+          "type": "EventCallback",
+          "isRequired": true,
+          "description": "The workbook whose named ranges are being managed.",
+          "editorRequired": true
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetRemoveDuplicatesDialog",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "subcategory": "Dialogs",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+      "description": "The Remove Duplicates dialog. Lists every column in the range with a checkbox, offers a \"my data has headers\" toggle (which switches the column labels between header text and the column letter), select-all / deselect-all helpers and a case-sensitivity option. Applying yields a . All text is localized.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetRemoveDuplicatesDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+      ],
+      "parameters": [
+        {
+          "name": "HeaderLabels",
+          "type": "IReadOnlyDictionary<int, string>?",
+          "isRequired": true,
+          "description": "The range being deduplicated.",
+          "editorRequired": true
+        },
+        {
+          "name": "OnApply",
+          "type": "EventCallback<SpreadsheetRemoveDuplicatesOptions>",
+          "isRequired": false,
+          "description": "Header text per absolute column index, used to label columns when my data has headers is on. Columns without an entry fall back to their column letter."
+        },
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user applies the dialog."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetSheetTabs",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Tab bar for switching between workbook sheets with add, delete, and rename support.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetSheetTabs.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet"
+      ],
+      "parameters": [
+        {
+          "name": "ActiveIndex",
+          "type": "int",
+          "isRequired": false,
+          "description": "All sheets in the workbook."
+        },
+        {
+          "name": "IsFormulaPointMode",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, hides add/delete/rename controls (embedded/readonly view)."
+        },
+        {
+          "name": "IsReadonly",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Called when a sheet should be renamed."
+        },
+        {
+          "name": "OnActiveSheetChanged",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Zero-based index of the active sheet."
+        },
+        {
+          "name": "OnAddSheetRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the active sheet should change."
+        },
+        {
+          "name": "OnDeleteSheetRequested",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Called when a new sheet should be added."
+        },
+        {
+          "name": "OnRenameSheetRequested",
+          "type": "EventCallback<(int Index, string NewName)>",
+          "isRequired": false,
+          "description": "Called when a sheet should be deleted."
+        },
+        {
+          "name": "OnSheetSelectedForFormula",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Whether formula-point mode is active (tab click selects sheet for formula rather than switching view)."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetSortDialog",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "subcategory": "Dialogs",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+      "description": "The multi-level sort dialog. Each level chooses a column key, what to sort on (value / cell colour / font colour) and the order. Supports add/remove of levels, a \"my data has headers\" toggle and a case-sensitivity option. Applying produces a . All text is localized.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetSortDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+      ],
+      "parameters": [
+        {
+          "name": "OnApply",
+          "type": "EventCallback<SpreadsheetSortSpec>",
+          "isRequired": true,
+          "description": "The range being sorted.",
+          "editorRequired": true
+        },
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user applies the sort."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetSpecialPasteDialog",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "subcategory": "Dialogs",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+      "description": "The Paste Special dialog. Radio options choose what to paste (all / values / formulas / formats / values+formats / all-except-borders), a dropdown picks an arithmetic operation, and checkboxes toggle transpose and skip-blanks. Applying yields a . All text is localized.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetSpecialPasteDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+      ],
+      "parameters": [
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user applies the paste."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetStatusBar",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "The spreadsheet status bar: selection aggregations (Sum/Average/Count/Numerical count/Min/Max) and a zoom control (slider, +/- buttons and a percentage reset button).",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetStatusBar.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet"
+      ],
+      "parameters": [
+        {
+          "name": "OnZoomChanged",
+          "type": "EventCallback<double>",
+          "isRequired": false,
+          "description": "The current zoom factor (1.0 = 100%)."
+        },
+        {
+          "name": "Zoom",
+          "type": "double",
+          "isRequired": false,
+          "default": "1.0",
+          "description": "The aggregation result for the current selection."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetTextToColumnsDialog",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "subcategory": "Dialogs",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+      "description": "The multi-step Text to Columns wizard. Step 1 picks the split type (delimited / fixed width), step 2 configures the delimiters (or break positions) with a live preview, and step 3 chooses the target format of each produced column. The preview updates live as options change. Applying yields a . All text is localized.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetTextToColumnsDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+      ],
+      "parameters": [
+        {
+          "name": "OnApply",
+          "type": "EventCallback<SpreadsheetTextToColumnsResult>",
+          "isRequired": true,
+          "description": "The raw text of each source row to be split (used for the live preview).",
+          "editorRequired": true
+        },
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user finishes the wizard."
+        }
+      ]
+    },
+    {
+      "itemName": "TmSpreadsheetToolbar",
+      "kind": "Component",
+      "category": "Spreadsheet",
+      "namespace": "Tempo.Blazor.Components.Spreadsheet",
+      "description": "Ribbon-style toolbar for the spreadsheet with tabbed groups: Home, Insert, View, and File.",
+      "packageId": "Tempo.Blazor.Spreadsheet",
+      "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheetToolbar.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Spreadsheet"
+      ],
+      "parameters": [
+        {
+          "name": "BackgroundColor",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Current text color (CSS color value)."
+        },
+        {
+          "name": "CanRedo",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether undo is available."
+        },
+        {
+          "name": "CustomTools",
+          "type": "List<SpreadsheetCustomTool>?",
+          "isRequired": false,
+          "description": "Called when the Name Manager button is clicked."
+        },
+        {
+          "name": "IsBold",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Currently selected font size."
+        },
+        {
+          "name": "IsFilterActive",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether grid lines are currently visible."
+        },
+        {
+          "name": "IsFormatPainterActive",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the current selection has strikethrough."
+        },
+        {
+          "name": "IsItalic",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the current selection is bold."
+        },
+        {
+          "name": "IsMergeCellsActive",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the current selection uses a thousands-separator format."
+        },
+        {
+          "name": "IsPercentageFormat",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Currently selected number format."
+        },
+        {
+          "name": "IsStrikeThrough",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the current selection is underlined."
+        },
+        {
+          "name": "IsThousandsFormat",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the current selection uses a percentage format."
+        },
+        {
+          "name": "IsUnderline",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the current selection is italic."
+        },
+        {
+          "name": "OnAlignChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the background color is selected from the color picker."
+        },
+        {
+          "name": "OnBackgroundColorChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the text color is selected from the color picker."
+        },
+        {
+          "name": "OnBoldToggle",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the font size changes."
+        },
+        {
+          "name": "OnBorderPresetChanged",
+          "type": "EventCallback<BorderPreset>",
+          "isRequired": false,
+          "description": "Called when a custom tool is clicked."
+        },
+        {
+          "name": "OnCircleInvalidData",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Data Validation dialog button is clicked."
+        },
+        {
+          "name": "OnClearValidationCircles",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Circle Invalid Data button is clicked."
+        },
+        {
+          "name": "OnCopy",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Redo button is clicked."
+        },
+        {
+          "name": "OnCustomSort",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Sort Descending button is clicked."
+        },
+        {
+          "name": "OnCustomToolClick",
+          "type": "EventCallback<SpreadsheetCustomTool>",
+          "isRequired": false,
+          "description": "Called when the Toggle Grid Lines button is clicked."
+        },
+        {
+          "name": "OnCut",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Copy button is clicked."
+        },
+        {
+          "name": "OnDataValidation",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Paste Special button is clicked."
+        },
+        {
+          "name": "OnDecreaseDecimals",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Increase Decimals button is clicked."
+        },
+        {
+          "name": "OnDeleteColumn",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Insert Column button is clicked."
+        },
+        {
+          "name": "OnDeleteRow",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Insert Row button is clicked."
+        },
+        {
+          "name": "OnDownload",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Open button is clicked."
+        },
+        {
+          "name": "OnFontFamilyChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the Delete Column button is clicked."
+        },
+        {
+          "name": "OnFontSizeChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the font family changes."
+        },
+        {
+          "name": "OnFormatCells",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Decrease Indent button is clicked."
+        },
+        {
+          "name": "OnFormatPainterClick",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Custom tools to inject into the toolbar."
+        },
+        {
+          "name": "OnFormatPainterDoubleClick",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Format Painter button is single-clicked."
+        },
+        {
+          "name": "OnIncreaseDecimals",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the number format changes."
+        },
+        {
+          "name": "OnIndentDecrease",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Increase Indent button is clicked."
+        },
+        {
+          "name": "OnIndentIncrease",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the StrikeThrough toggle is clicked."
+        },
+        {
+          "name": "OnInsertColumn",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Delete Row button is clicked."
+        },
+        {
+          "name": "OnInsertImage",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Insert Link button is clicked."
+        },
+        {
+          "name": "OnInsertLink",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Download button is clicked."
+        },
+        {
+          "name": "OnInsertRow",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Paste button is clicked."
+        },
+        {
+          "name": "OnItalicToggle",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Bold toggle is clicked."
+        },
+        {
+          "name": "OnMergeCells",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Insert Image button is clicked."
+        },
+        {
+          "name": "OnNameManager",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Clear Validation Circles button is clicked."
+        },
+        {
+          "name": "OnNumberFormatChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the horizontal alignment changes."
+        },
+        {
+          "name": "OnOpen",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Thousands separator (,) button is clicked."
+        },
+        {
+          "name": "OnOpenBorderDialog",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when a border preset is selected from the border picker dropdown."
+        },
+        {
+          "name": "OnPaste",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Cut button is clicked."
+        },
+        {
+          "name": "OnPasteSpecial",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Text to Columns button is clicked."
+        },
+        {
+          "name": "OnPercentageFormat",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Decrease Decimals button is clicked."
+        },
+        {
+          "name": "OnRedo",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Undo button is clicked."
+        },
+        {
+          "name": "OnRemoveDuplicates",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Custom Sort button is clicked."
+        },
+        {
+          "name": "OnSortAscending",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Filter toggle button is clicked."
+        },
+        {
+          "name": "OnSortDescending",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Sort Ascending button is clicked."
+        },
+        {
+          "name": "OnStrikeThroughToggle",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Underline toggle is clicked."
+        },
+        {
+          "name": "OnTextColorChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Called when the Format Cells button/dialog is requested."
+        },
+        {
+          "name": "OnTextToColumns",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Remove Duplicates button is clicked."
+        },
+        {
+          "name": "OnThousandsFormat",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Percentage (%) button is clicked."
+        },
+        {
+          "name": "OnToggleFilter",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Whether the auto-filter is currently enabled on the active sheet."
+        },
+        {
+          "name": "OnToggleGridLines",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Merge Cells button is clicked."
+        },
+        {
+          "name": "OnUnderlineToggle",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Italic toggle is clicked."
+        },
+        {
+          "name": "OnUndo",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Called when the Format Painter button is double-clicked (sticky mode)."
+        },
+        {
+          "name": "SelectedFontFamily",
+          "type": "string?",
+          "isRequired": false,
+          "default": "\"Arial\"",
+          "description": "Whether redo is available."
+        },
+        {
+          "name": "SelectedFontSize",
+          "type": "string?",
+          "isRequired": false,
+          "default": "\"11\"",
+          "description": "Currently selected font family."
+        },
+        {
+          "name": "SelectedHorizontalAlign",
+          "type": "string?",
+          "isRequired": false,
+          "default": "\"left\"",
+          "description": "Current background color (CSS color value)."
+        },
+        {
+          "name": "SelectedNumberFormat",
+          "type": "string?",
+          "isRequired": false,
+          "default": "\"General\"",
+          "description": "Current horizontal alignment."
+        },
+        {
+          "name": "ShowGridLines",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the current selection covers a merged cell range."
+        },
+        {
+          "name": "TextColor",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Whether Format Painter is currently active."
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [],
+  "assets": [
+    {
+      "path": "src/Tempo.Blazor.Spreadsheet/wwwroot/css/components/_spreadsheet-formula-bar.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.Spreadsheet/wwwroot/css/components/_spreadsheet-toolbar.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.Spreadsheet/wwwroot/css/components/_spreadsheet.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.Spreadsheet/wwwroot/css/tempo-blazor-spreadsheet.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.Spreadsheet/wwwroot/js/spreadsheet-benchmark.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.Spreadsheet/wwwroot/js/spreadsheet-canvas.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.Spreadsheet/wwwroot/js/spreadsheet.js",
+      "kind": "JavaScript"
+    }
+  ],
+  "summary": {
+    "itemCount": 75,
+    "manualItemCount": 72,
+    "generatedItemCount": 74,
+    "generatedOnlyItemCount": 3,
+    "componentCount": 18,
+    "publicApiTypeCount": 56
+  }
+}

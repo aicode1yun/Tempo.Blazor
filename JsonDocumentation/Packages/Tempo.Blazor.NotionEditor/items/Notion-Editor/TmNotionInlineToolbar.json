@@ -1,0 +1,21 @@
+{
+  "itemName": "TmNotionInlineToolbar",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionInlineToolbar Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionInlineToolbar.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "OnTurnInto",
+      "type": "EventCallback<BlockType>",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "UI"
+}

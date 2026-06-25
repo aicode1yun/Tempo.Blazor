@@ -1,9 +1,10 @@
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.DocumentEditor.Models;
 
 namespace Tempo.Blazor.DocumentEditor.Interfaces;
 
 /// <summary>Primary provider contract used by <c>TmDocumentEditor</c>.</summary>
-public interface IDocumentEditorProvider : IDocumentVersionProvider, IDocumentCommentProvider
+public interface IDocumentEditorProvider : IDocumentVersionProvider, ITmCommentProvider
 {
     /// <summary>Loads a document by id.</summary>
     Task<DocumentEditorLoadResult> LoadAsync(
@@ -36,56 +37,118 @@ public interface IDocumentVersionProvider
         CancellationToken cancellationToken = default);
 }
 
-/// <summary>Provider contract for document comments.</summary>
-public interface IDocumentCommentProvider
+/// <summary>Compatibility helpers that adapt document-editor comments to the shared comment provider contract.</summary>
+public static class DocumentEditorCommentProviderExtensions
 {
     /// <summary>Gets comments for a document.</summary>
-    Task<IReadOnlyList<DocumentComment>> GetCommentsAsync(
+    public static async Task<IReadOnlyList<DocumentComment>> GetCommentsAsync(
+        this IDocumentEditorProvider provider,
         string documentId,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default)
+    {
+        var threads = await provider.GetForEntityAsync(DocumentCommentBridge.Entity(documentId), cancellationToken);
+        return threads.Select(DocumentCommentBridge.ToDocumentComment).ToList();
+    }
 
     /// <summary>Creates a comment thread.</summary>
-    Task<DocumentComment> CreateCommentAsync(
+    public static async Task<DocumentComment> CreateCommentAsync(
+        this IDocumentEditorProvider provider,
         string documentId,
         DocumentComment comment,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default)
+    {
+        var thread = await provider.CreateThreadAsync(
+            DocumentCommentBridge.ToTmCommentThread(comment, documentId),
+            cancellationToken);
+
+        return DocumentCommentBridge.ToDocumentComment(thread);
+    }
 
     /// <summary>Adds a reply to an existing comment thread.</summary>
-    Task<DocumentComment> AddCommentReplyAsync(
+    public static async Task<DocumentComment> AddCommentReplyAsync(
+        this IDocumentEditorProvider provider,
         string documentId,
         string commentId,
         DocumentCommentEntry entry,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default)
+    {
+        await provider.ReplyAsync(
+            commentId,
+            DocumentCommentBridge.ToTmCommentEntry(entry, commentId),
+            cancellationToken);
+
+        var threads = await provider.GetForEntityAsync(DocumentCommentBridge.Entity(documentId), cancellationToken);
+        return DocumentCommentBridge.ToDocumentComment(threads.First(thread => thread.Id == commentId));
+    }
 
     /// <summary>Updates an existing comment entry.</summary>
-    Task<DocumentComment> UpdateCommentEntryAsync(
+    public static async Task<DocumentComment> UpdateCommentEntryAsync(
+        this IDocumentEditorProvider provider,
         string documentId,
         string commentId,
         string entryId,
         string text,
         DocumentEditorAuthor updatedBy,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default)
+    {
+        await provider.UpdateEntryAsync(
+            commentId,
+            entryId,
+            new TmCommentEntry
+            {
+                Id = entryId,
+                ThreadId = commentId,
+                Author = DocumentCommentBridge.ToTmUserRef(updatedBy),
+                Body = text.Trim(),
+                BodyFormat = TmCommentBodyFormat.PlainText,
+                EditedAt = DateTimeOffset.UtcNow
+            },
+            cancellationToken);
+
+        var threads = await provider.GetForEntityAsync(DocumentCommentBridge.Entity(documentId), cancellationToken);
+        return DocumentCommentBridge.ToDocumentComment(threads.First(thread => thread.Id == commentId));
+    }
 
     /// <summary>Resolves a comment thread.</summary>
-    Task<DocumentComment> ResolveCommentAsync(
+    public static async Task<DocumentComment> ResolveCommentAsync(
+        this IDocumentEditorProvider provider,
         string documentId,
         string commentId,
         DocumentEditorAuthor resolvedBy,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default)
+    {
+        var thread = await provider.ResolveAsync(
+            commentId,
+            DocumentCommentBridge.ToTmUserRef(resolvedBy),
+            cancellationToken);
+
+        return DocumentCommentBridge.ToDocumentComment(thread);
+    }
 
     /// <summary>Reopens a resolved comment thread.</summary>
-    Task<DocumentComment> ReopenCommentAsync(
+    public static async Task<DocumentComment> ReopenCommentAsync(
+        this IDocumentEditorProvider provider,
         string documentId,
         string commentId,
         DocumentEditorAuthor reopenedBy,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default)
+    {
+        var thread = await provider.ReopenAsync(
+            commentId,
+            DocumentCommentBridge.ToTmUserRef(reopenedBy),
+            cancellationToken);
+
+        return DocumentCommentBridge.ToDocumentComment(thread);
+    }
 
     /// <summary>Deletes a comment thread.</summary>
-    Task DeleteCommentAsync(
+    public static Task DeleteCommentAsync(
+        this IDocumentEditorProvider provider,
         string documentId,
         string commentId,
         DocumentEditorAuthor deletedBy,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default)
+        => provider.DeleteThreadAsync(commentId, cancellationToken);
 }
 
 /// <summary>Provider contract for resolving document template token values.</summary>
@@ -109,15 +172,6 @@ public interface IDocumentFontProvider
     /// <summary>Gets the fallback font used when no explicit family is selected.</summary>
     Task<DocumentFontFamily> GetFallbackFontAsync(
         DocumentFontQuery? query = null,
-        CancellationToken cancellationToken = default);
-}
-
-/// <summary>Audit sink for host applications that persist editor events.</summary>
-public interface IDocumentAuditSink
-{
-    /// <summary>Records an audit event.</summary>
-    Task RecordAsync(
-        DocumentEditorAuditEvent auditEvent,
         CancellationToken cancellationToken = default);
 }
 
@@ -160,7 +214,7 @@ public interface IDocumentSyncProvider
 }
 
 /// <summary>Document image provider boundary.</summary>
-public interface IDocumentImageProvider
+public interface IDocumentImageProvider : ITmFileProvider
 {
     /// <summary>Uploads an image stream and returns a provider-managed asset.</summary>
     Task<DocumentImageUploadResult> UploadAsync(

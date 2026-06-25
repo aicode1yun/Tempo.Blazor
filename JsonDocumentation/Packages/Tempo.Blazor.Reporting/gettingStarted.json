@@ -1,0 +1,33 @@
+{
+  "title": "Getting Started with Tempo.Blazor.Reporting",
+  "overview": "Tempo.Blazor.Reporting provides Blazor components and services for viewing, exploring, designing, and embedding Tempo reports. It supports embedded rendering with local report definitions and remote rendering against Tempo Report Server endpoints.",
+  "targetFramework": ".NET 8.0 / 9.0 / 10.0 (multi-target)",
+  "installation": {
+    "nuget": [
+      "dotnet add package Tempo.Blazor.Reporting"
+    ],
+    "programCs": {
+      "description": "Register Tempo.Blazor and reporting viewer services.",
+      "code": "using Tempo.Blazor.Reporting.Configuration;\n\nbuilder.Services.AddTempoBlazorReporting();"
+    },
+    "cssAndJs": {
+      "description": "The package uses Tempo.Blazor styles and ships a reporting viewer JS bundle as a static web asset.",
+      "code": "<link href=\"_content/Tempo.Blazor/css/tempo-blazor.bundled.css\" rel=\"stylesheet\" />\n<!-- The report viewer loads _content/Tempo.Blazor.Reporting/js/reporting/tm-report-viewer.bundle.js as an ES module. -->"
+    },
+    "importsRazor": {
+      "description": "Add reporting namespaces for convenient component usage.",
+      "code": "@using Tempo.Blazor.Reporting.Components\n@using Tempo.Blazor.Reporting.Models\n@using Tempo.Blazor.Reporting.Services"
+    }
+  },
+  "namespaces": [
+    "Tempo.Blazor.Reporting.Components",
+    "Tempo.Blazor.Reporting.Configuration",
+    "Tempo.Blazor.Reporting.Models",
+    "Tempo.Blazor.Reporting.Services"
+  ],
+  "notes": [
+    "EmbeddedReportSource runs the reporting engine in the current Blazor render mode.",
+    "RemoteReportSource uses HTTP endpoints compatible with the report viewer-facing remote API shape.",
+    "For full Report Server catalog, revisions, render jobs, and data source administration use ITempoReportServerClient from Tempo.Reporting.Abstractions."
+  ]
+}

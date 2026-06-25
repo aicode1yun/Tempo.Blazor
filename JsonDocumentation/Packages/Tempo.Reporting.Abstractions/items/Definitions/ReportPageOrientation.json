@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Page orientation used during layout.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/PageSetup.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportPageOrientation"
+}

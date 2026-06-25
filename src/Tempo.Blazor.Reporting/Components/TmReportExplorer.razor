@@ -1,0 +1,406 @@
+@namespace Tempo.Blazor.Reporting.Components
+@using System.Globalization
+@using Tempo.Blazor.Reporting.Models
+
+<div class="@CssClass" data-testid="tm-report-explorer" @attributes="AdditionalAttributes">
+    <aside class="tm-report-explorer__folders" aria-label="@Loc["TmReportExplorer_Folders"]">
+        <div class="tm-report-explorer__folders-title">
+            <TmIcon Name="@IconNames.FolderOpen" Size="IconSize.Sm" />
+            <span>@Loc["TmReportExplorer_Folders"]</span>
+        </div>
+        <div class="tm-report-explorer__folder-tree" data-testid="tm-report-folder-tree">
+            @if (RootFolder is not null)
+            {
+                @foreach (var folder in FlattenFolders(RootFolder))
+                {
+                    <button type="button"
+                            class="@FolderCssClass(folder.Folder.Path)"
+                            style="@FolderDepthStyle(folder.Depth)"
+                            data-testid="@FolderTestId(folder.Folder.Path)"
+                            aria-current="@(IsCurrentFolder(folder.Folder.Path) ? "page" : null)"
+                            @onclick="() => SelectFolderAsync(folder.Folder.Path)">
+                        <TmIcon Name="@(IsCurrentFolder(folder.Folder.Path) ? IconNames.FolderOpen : IconNames.Folder)" Size="IconSize.Sm" />
+                        <span>@folder.Folder.Name</span>
+                        @if (folder.Folder.ReportCount > 0)
+                        {
+                            <span class="tm-report-explorer__folder-count">@folder.Folder.ReportCount.ToString(CultureInfo.InvariantCulture)</span>
+                        }
+                    </button>
+                }
+            }
+        </div>
+    </aside>
+
+    <section class="tm-report-explorer__main">
+        <header class="tm-report-explorer__toolbar">
+            <label class="tm-report-explorer__search">
+                <TmIcon Name="@IconNames.Search" Size="IconSize.Sm" />
+                <span class="tm-report-explorer__visually-hidden">@Loc["TmReportExplorer_Search"]</span>
+                <input type="search"
+                       data-testid="tm-report-explorer-search"
+                       placeholder="@Loc["TmReportExplorer_SearchPlaceholder"]"
+                       value="@_searchText"
+                       @oninput="HandleSearchInputAsync" />
+            </label>
+
+            <div class="tm-report-explorer__toolbar-actions">
+                <TmButton Variant="@GridButtonVariant"
+                          Size="ButtonSize.Sm"
+                          Icon="@IconNames.Grid"
+                          AriaLabel="@Loc["TmReportExplorer_GridView"]"
+                          OnClick="() => SetViewModeAsync(ReportExplorerViewMode.Grid)" />
+                <TmButton Variant="@ListButtonVariant"
+                          Size="ButtonSize.Sm"
+                          Icon="@IconNames.List"
+                          AriaLabel="@Loc["TmReportExplorer_ListView"]"
+                          OnClick="() => SetViewModeAsync(ReportExplorerViewMode.List)" />
+            </div>
+        </header>
+
+        @if (AllowFolderManagement)
+        {
+            <div class="tm-report-explorer__folder-create" data-testid="tm-report-folder-create">
+                <input data-testid="tm-report-new-folder-name"
+                       class="tm-report-explorer__folder-input"
+                       placeholder="@Loc["TmReportExplorer_NewFolderPlaceholder"]"
+                       value="@_newFolderName"
+                       @oninput="HandleNewFolderInput" />
+                <TmButton Variant="ButtonVariant.Secondary"
+                          Size="ButtonSize.Sm"
+                          Icon="@IconNames.FolderPlus"
+                          AriaLabel="@Loc["TmReportExplorer_CreateFolder"]"
+                          Disabled="@string.IsNullOrWhiteSpace(_newFolderName)"
+                          OnClick="CreateFolderAsync">
+                    @Loc["TmReportExplorer_CreateFolder"]
+                </TmButton>
+            </div>
+        }
+
+        @if (FilteredReports.Count == 0)
+        {
+            <div class="tm-report-explorer__empty" data-testid="tm-report-explorer-empty">
+                <TmIcon Name="@IconNames.SearchX" Size="IconSize.Md" />
+                <strong>@Loc["TmReportExplorer_EmptyTitle"]</strong>
+                <span>@Loc["TmReportExplorer_EmptyDescription"]</span>
+            </div>
+        }
+        else if (_viewMode == ReportExplorerViewMode.List)
+        {
+            <div class="tm-report-explorer__list" data-testid="tm-report-explorer-list">
+                @foreach (var report in FilteredReports)
+                {
+                    @RenderReportRow(report)
+                }
+            </div>
+        }
+        else
+        {
+            <div class="tm-report-explorer__grid" data-testid="tm-report-explorer-grid">
+                @foreach (var report in FilteredReports)
+                {
+                    @RenderReportCard(report)
+                }
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    private string _searchText = string.Empty;
+    private string _newFolderName = string.Empty;
+    private string? _openActionsReportId;
+    private string? _moveTargetPath;
+    private ReportExplorerViewMode _viewMode = ReportExplorerViewMode.Grid;
+
+    /// <summary>Root folder for the folder tree.</summary>
+    [Parameter] public ReportExplorerFolder? RootFolder { get; set; }
+
+    /// <summary>Reports in the current scope.</summary>
+    [Parameter] public IReadOnlyList<ReportExplorerReportItem> Reports { get; set; } = [];
+
+    /// <summary>Current folder path.</summary>
+    [Parameter] public string CurrentFolderPath { get; set; } = "/";
+
+    /// <summary>Raised when the current folder path changes.</summary>
+    [Parameter] public EventCallback<string> CurrentFolderPathChanged { get; set; }
+
+    /// <summary>Current search text.</summary>
+    [Parameter] public string SearchText { get; set; } = string.Empty;
+
+    /// <summary>Raised when search text changes.</summary>
+    [Parameter] public EventCallback<string> SearchTextChanged { get; set; }
+
+    /// <summary>Current explorer view mode.</summary>
+    [Parameter] public ReportExplorerViewMode ViewMode { get; set; } = ReportExplorerViewMode.Grid;
+
+    /// <summary>Raised when the explorer view mode changes.</summary>
+    [Parameter] public EventCallback<ReportExplorerViewMode> ViewModeChanged { get; set; }
+
+    /// <summary>Whether folder creation and move controls are available.</summary>
+    [Parameter] public bool AllowFolderManagement { get; set; }
+
+    /// <summary>Raised when a report should be opened.</summary>
+    [Parameter] public EventCallback<ReportExplorerReportItem> ReportOpened { get; set; }
+
+    /// <summary>Raised when a folder should be created.</summary>
+    [Parameter] public EventCallback<ReportExplorerCreateFolderRequest> CreateFolderRequested { get; set; }
+
+    /// <summary>Raised when a report should be moved.</summary>
+    [Parameter] public EventCallback<ReportExplorerMoveReportRequest> ReportMoveRequested { get; set; }
+
+    /// <summary>Additional CSS classes.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Additional attributes applied to the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private ButtonVariant GridButtonVariant => _viewMode == ReportExplorerViewMode.Grid ? ButtonVariant.Secondary : ButtonVariant.Ghost;
+
+    private ButtonVariant ListButtonVariant => _viewMode == ReportExplorerViewMode.List ? ButtonVariant.Secondary : ButtonVariant.Ghost;
+
+    private string CssClass
+        => string.IsNullOrWhiteSpace(Class)
+            ? "tm-report-explorer"
+            : $"tm-report-explorer {Class}";
+
+    private IReadOnlyList<ReportExplorerReportItem> FilteredReports
+    {
+        get
+        {
+            var reports = Reports.Where(report => string.Equals(report.FolderPath, CurrentFolderPath, StringComparison.Ordinal));
+            if (!string.IsNullOrWhiteSpace(_searchText))
+            {
+                reports = reports.Where(MatchesSearch);
+            }
+
+            return reports
+                .OrderBy(report => report.Name, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+    }
+
+    private IReadOnlyList<(ReportExplorerFolder Folder, int Depth)> AllFolders
+        => RootFolder is null ? [] : FlattenFolders(RootFolder).ToArray();
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        _searchText = SearchText ?? string.Empty;
+        _viewMode = ViewMode;
+    }
+
+    private RenderFragment RenderReportCard(ReportExplorerReportItem report)
+        => @<article class="tm-report-explorer__card" data-testid="@ReportTestId(report)">
+            <button type="button" class="tm-report-explorer__preview" @onclick="() => OpenReportAsync(report)">
+                @if (!string.IsNullOrWhiteSpace(report.ThumbnailUrl))
+                {
+                    <img src="@report.ThumbnailUrl" alt="@Loc["TmReportExplorer_ThumbnailAlt", report.Name]" />
+                }
+                else
+                {
+                    <TmIcon Name="@IconNames.FileText" Size="IconSize.Lg" />
+                }
+            </button>
+            <div class="tm-report-explorer__item-body">
+                <div>
+                    <h3>@report.Name</h3>
+                    <p>@report.Description</p>
+                </div>
+                @RenderReportMeta(report)
+                @RenderReportTags(report)
+                <div class="tm-report-explorer__item-actions">
+                    <TmButton Variant="ButtonVariant.Primary"
+                              Size="ButtonSize.Sm"
+                              Icon="@IconNames.ExternalLink"
+                              AriaLabel="@Loc["TmReportExplorer_OpenReportNamed", report.Name]"
+                              data-testid="@OpenTestId(report)"
+                              OnClick="() => OpenReportAsync(report)">
+                        @Loc["TmReportExplorer_OpenReport"]
+                    </TmButton>
+                    @RenderActions(report)
+                </div>
+            </div>
+        </article>;
+
+    private RenderFragment RenderReportRow(ReportExplorerReportItem report)
+        => @<article class="tm-report-explorer__row" data-testid="@ReportTestId(report)">
+            <div class="tm-report-explorer__row-icon">
+                <TmIcon Name="@IconNames.FileText" Size="IconSize.Sm" />
+            </div>
+            <div class="tm-report-explorer__row-main">
+                <h3>@report.Name</h3>
+                <p>@report.Description</p>
+            </div>
+            @RenderReportMeta(report)
+            <div class="tm-report-explorer__row-actions">
+                <TmButton Variant="ButtonVariant.Ghost"
+                          Size="ButtonSize.Sm"
+                          Icon="@IconNames.ExternalLink"
+                          AriaLabel="@Loc["TmReportExplorer_OpenReportNamed", report.Name]"
+                          data-testid="@OpenTestId(report)"
+                          OnClick="() => OpenReportAsync(report)">
+                    @Loc["TmReportExplorer_OpenReport"]
+                </TmButton>
+                @RenderActions(report)
+            </div>
+        </article>;
+
+    private RenderFragment RenderReportMeta(ReportExplorerReportItem report)
+        => @<div class="tm-report-explorer__meta">
+            <span>@report.OwnerName</span>
+            <span>@Loc["TmReportExplorer_Revision", report.Revision]</span>
+            <span>@report.ModifiedAt.ToLocalTime().ToString("MMM d, yyyy", CultureInfo.InvariantCulture)</span>
+        </div>;
+
+    private RenderFragment RenderReportTags(ReportExplorerReportItem report)
+        => @<div class="tm-report-explorer__tags">
+            @foreach (var tag in report.Tags)
+            {
+                <span>@tag</span>
+            }
+        </div>;
+
+    private RenderFragment RenderActions(ReportExplorerReportItem report)
+        => @<div class="tm-report-explorer__actions">
+            <TmButton Variant="ButtonVariant.Ghost"
+                      Size="ButtonSize.Sm"
+                      Icon="@IconNames.MoreHorizontal"
+                      AriaLabel="@Loc["TmReportExplorer_ActionsFor", report.Name]"
+                      OnClick="() => ToggleActions(report)" />
+            @if (string.Equals(_openActionsReportId, report.Id, StringComparison.Ordinal))
+            {
+                <div class="tm-report-explorer__menu" data-testid="@ActionsTestId(report)">
+                    <label>
+                        <span>@Loc["TmReportExplorer_MoveTo"]</span>
+                        <select data-testid="@MoveTargetTestId(report)" value="@_moveTargetPath" @onchange="HandleMoveTargetChanged">
+                            @foreach (var folder in AllFolders.Where(folder => !string.Equals(folder.Folder.Path, report.FolderPath, StringComparison.Ordinal)))
+                            {
+                                <option value="@folder.Folder.Path">@folder.Folder.Name</option>
+                            }
+                        </select>
+                    </label>
+                    <button type="button" data-testid="@MoveTestId(report)" @onclick="() => MoveReportAsync(report)">@Loc["TmReportExplorer_MoveReport"]</button>
+                </div>
+            }
+        </div>;
+
+    private IEnumerable<(ReportExplorerFolder Folder, int Depth)> FlattenFolders(ReportExplorerFolder folder, int depth = 0)
+    {
+        yield return (folder, depth);
+        foreach (var child in folder.Children.OrderBy(child => child.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            foreach (var nested in FlattenFolders(child, depth + 1))
+            {
+                yield return nested;
+            }
+        }
+    }
+
+    private bool MatchesSearch(ReportExplorerReportItem report)
+    {
+        var query = _searchText.Trim();
+        return Contains(report.Name, query) ||
+            Contains(report.Description, query) ||
+            Contains(report.OwnerName, query) ||
+            report.Tags.Any(tag => Contains(tag, query));
+    }
+
+    private static bool Contains(string value, string query)
+        => value.Contains(query, StringComparison.OrdinalIgnoreCase);
+
+    private async Task HandleSearchInputAsync(ChangeEventArgs args)
+    {
+        _searchText = args.Value?.ToString() ?? string.Empty;
+        await SearchTextChanged.InvokeAsync(_searchText);
+    }
+
+    private void HandleNewFolderInput(ChangeEventArgs args)
+        => _newFolderName = args.Value?.ToString() ?? string.Empty;
+
+    private async Task SelectFolderAsync(string folderPath)
+    {
+        CurrentFolderPath = folderPath;
+        await CurrentFolderPathChanged.InvokeAsync(folderPath);
+    }
+
+    private async Task SetViewModeAsync(ReportExplorerViewMode mode)
+    {
+        _viewMode = mode;
+        await ViewModeChanged.InvokeAsync(mode);
+    }
+
+    private async Task OpenReportAsync(ReportExplorerReportItem report)
+        => await ReportOpened.InvokeAsync(report);
+
+    private async Task CreateFolderAsync()
+    {
+        var name = _newFolderName.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return;
+        }
+
+        await CreateFolderRequested.InvokeAsync(new ReportExplorerCreateFolderRequest(CurrentFolderPath, name));
+        _newFolderName = string.Empty;
+    }
+
+    private void ToggleActions(ReportExplorerReportItem report)
+    {
+        _openActionsReportId = string.Equals(_openActionsReportId, report.Id, StringComparison.Ordinal)
+            ? null
+            : report.Id;
+        _moveTargetPath = FirstMoveTarget(report);
+    }
+
+    private void HandleMoveTargetChanged(ChangeEventArgs args)
+        => _moveTargetPath = args.Value?.ToString();
+
+    private async Task MoveReportAsync(ReportExplorerReportItem report)
+    {
+        var target = string.IsNullOrWhiteSpace(_moveTargetPath) ? FirstMoveTarget(report) : _moveTargetPath;
+        if (string.IsNullOrWhiteSpace(target))
+        {
+            return;
+        }
+
+        await ReportMoveRequested.InvokeAsync(new ReportExplorerMoveReportRequest(report.Id, target));
+        _openActionsReportId = null;
+    }
+
+    private string? FirstMoveTarget(ReportExplorerReportItem report)
+        => AllFolders
+            .Select(folder => folder.Folder.Path)
+            .FirstOrDefault(path => !string.Equals(path, report.FolderPath, StringComparison.Ordinal));
+
+    private bool IsCurrentFolder(string folderPath)
+        => string.Equals(folderPath, CurrentFolderPath, StringComparison.Ordinal);
+
+    private string FolderCssClass(string folderPath)
+        => IsCurrentFolder(folderPath)
+            ? "tm-report-explorer__folder tm-report-explorer__folder--active"
+            : "tm-report-explorer__folder";
+
+    private static string FolderDepthStyle(int depth)
+        => $"--tm-report-explorer-folder-depth:{depth.ToString(CultureInfo.InvariantCulture)}";
+
+    private static string FolderTestId(string path)
+        => $"tm-report-folder-{path}";
+
+    private static string ReportTestId(ReportExplorerReportItem report)
+        => $"tm-report-item-{Slug(report.Id)}";
+
+    private static string OpenTestId(ReportExplorerReportItem report)
+        => $"tm-report-open-{Slug(report.Id)}";
+
+    private static string ActionsTestId(ReportExplorerReportItem report)
+        => $"tm-report-actions-{Slug(report.Id)}";
+
+    private static string MoveTargetTestId(ReportExplorerReportItem report)
+        => $"tm-report-move-target-{Slug(report.Id)}";
+
+    private static string MoveTestId(ReportExplorerReportItem report)
+        => $"tm-report-move-{Slug(report.Id)}";
+
+    private static string Slug(string value)
+        => value.Trim().ToLowerInvariant().Replace(' ', '-');
+}

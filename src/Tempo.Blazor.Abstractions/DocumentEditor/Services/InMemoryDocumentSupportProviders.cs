@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
 
@@ -334,6 +335,16 @@ public class InMemoryDocumentImageProvider : IDocumentImageProvider, IDocumentIm
 {
     private readonly Dictionary<string, StoredImage> _images = [];
 
+    /// <inheritdoc />
+    public TmFileProviderCapabilities Capabilities
+        => TmFileProviderCapabilities.Upload
+         | TmFileProviderCapabilities.Resolve
+         | TmFileProviderCapabilities.Delete
+         | TmFileProviderCapabilities.DraftAssets
+         | TmFileProviderCapabilities.CommitDraftAssets
+         | TmFileProviderCapabilities.SignedUrls
+         | TmFileProviderCapabilities.RefreshUrls;
+
     /// <summary>Provider options.</summary>
     public DocumentImageProviderOptions Options { get; }
 
@@ -461,9 +472,93 @@ public class InMemoryDocumentImageProvider : IDocumentImageProvider, IDocumentIm
         return result.Success ? result.Url! : string.Empty;
     }
 
+    /// <inheritdoc />
+    public async Task<TmFileUploadResult> UploadAsync(
+        TmFileUploadRequest request,
+        Stream content,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(content);
+
+        var upload = await UploadAsync(
+            new DocumentImageUploadRequest
+            {
+                DocumentId = GetDocumentId(request.EntityRef, request.Metadata),
+                LocalAssetId = request.LocalAssetId,
+                FileName = request.FileName,
+                ContentType = string.IsNullOrWhiteSpace(request.ContentType) ? "image/png" : request.ContentType,
+                SizeBytes = request.SizeBytes ?? (content.CanSeek ? content.Length : 0)
+            },
+            content,
+            cancellationToken);
+
+        return new TmFileUploadResult
+        {
+            Success = upload.Success,
+            IsComplete = upload.Success,
+            AssetId = upload.AssetId,
+            Url = upload.Url,
+            FileName = request.FileName,
+            ContentType = request.ContentType,
+            SizeBytes = request.SizeBytes,
+            ErrorMessage = upload.ErrorMessage
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<TmFileResolveResult> ResolveAsync(
+        TmFileResolveRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var result = await ResolveAsync(
+            new DocumentImageResolveRequest
+            {
+                DocumentId = GetDocumentId(request.EntityRef, request.Metadata),
+                AssetId = request.AssetId
+            },
+            cancellationToken);
+
+        _images.TryGetValue(request.AssetId, out var image);
+        return new TmFileResolveResult
+        {
+            Success = result.Success,
+            AssetId = request.AssetId,
+            Url = result.Url,
+            FileName = image?.FileName,
+            ContentType = result.ContentType ?? image?.ContentType,
+            SizeBytes = image?.Bytes.LongLength,
+            ErrorMessage = result.ErrorMessage
+        };
+    }
+
+    /// <inheritdoc />
+    public Task DeleteAsync(string assetId, CancellationToken cancellationToken = default)
+    {
+        _images.Remove(assetId);
+        return Task.CompletedTask;
+    }
+
     private static string BuildUrl(string documentId, string assetId)
     {
         return $"memory://document-images/{Uri.EscapeDataString(documentId)}/{Uri.EscapeDataString(assetId)}?ticket={Guid.NewGuid():N}";
+    }
+
+    private static string GetDocumentId(TmEntityRef? entityRef, Dictionary<string, object>? metadata)
+    {
+        if (!string.IsNullOrWhiteSpace(entityRef?.EntityId))
+            return entityRef.EntityId;
+
+        if (metadata is not null
+            && metadata.TryGetValue("DocumentId", out var value)
+            && !string.IsNullOrWhiteSpace(value?.ToString()))
+        {
+            return value.ToString()!;
+        }
+
+        return "document";
     }
 
     private sealed record StoredImage(
@@ -479,14 +574,14 @@ public class InMemoryDocumentImageProvider : IDocumentImageProvider, IDocumentIm
 public class InMemoryDocumentRenditionProvider : IDocumentRenditionProvider
 {
     private readonly IDocumentVersionProvider _versionProvider;
-    private readonly IDocumentAuditSink? _auditSink;
+    private readonly ITmActivityProvider? _activityProvider;
     private readonly Dictionary<string, DocumentRendition> _renditions = [];
 
     /// <summary>Creates a rendition provider.</summary>
-    public InMemoryDocumentRenditionProvider(IDocumentVersionProvider versionProvider, IDocumentAuditSink? auditSink = null)
+    public InMemoryDocumentRenditionProvider(IDocumentVersionProvider versionProvider, ITmActivityProvider? activityProvider = null)
     {
         _versionProvider = versionProvider;
-        _auditSink = auditSink;
+        _activityProvider = activityProvider;
     }
 
     /// <inheritdoc />
@@ -537,15 +632,15 @@ public class InMemoryDocumentRenditionProvider : IDocumentRenditionProvider
         rendition.Hash.Value = ComputeHash(version.Snapshot.Hash, rendition.Id);
         _renditions[rendition.Id] = Clone(rendition);
 
-        if (_auditSink is not null)
+        if (_activityProvider is not null)
         {
-            await _auditSink.RecordAsync(new DocumentEditorAuditEvent
+            await _activityProvider.AppendAsync(DocumentEditorActivityBridge.ToTmActivityEntry(new DocumentEditorAuditEvent
             {
                 DocumentId = request.DocumentId,
                 Action = DocumentEditorAuditAction.CreateRendition,
                 Actor = request.Actor,
                 Target = new DocumentEditorAuditTarget { Type = "rendition", Id = rendition.Id }
-            }, cancellationToken);
+            }), cancellationToken);
         }
 
         return new DocumentRenditionResult

@@ -1,0 +1,42 @@
+{
+  "itemName": "TmNotionAuditLogPanel",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Filterable audit log panel for Notion workspace actions.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionAuditLogPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "ActivityProvider",
+      "type": "ITmActivityProvider",
+      "isRequired": true,
+      "description": "Provider used to query audit entries.",
+      "editorRequired": true
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class."
+    },
+    {
+      "name": "OnClosed",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Additional CSS class."
+    },
+    {
+      "name": "PageSize",
+      "type": "int",
+      "isRequired": false,
+      "default": "DefaultPageSize",
+      "description": "Raised when the close button is clicked."
+    }
+  ],
+  "subcategory": "UI"
+}

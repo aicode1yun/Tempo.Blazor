@@ -1,0 +1,120 @@
+{
+  "itemName": "TmSigningPhoneStep",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "Renders a phone verification signing step with country code, phone input, and OTP state.",
+  "packageId": "Tempo.Blazor.Signing",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmSigningPhoneStep.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "AppearsOn",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when a verification code should be sent."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Fallback culture used when localized field text is missing."
+    },
+    {
+      "name": "CodeSent",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Callback invoked when OTP code changes."
+    },
+    {
+      "name": "CountryCode",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"+1\"",
+      "description": "Signing field represented by this step."
+    },
+    {
+      "name": "CountryCodeChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Selected country calling code."
+    },
+    {
+      "name": "CountryOptions",
+      "type": "IReadOnlyList<PhoneCountryOption>",
+      "isRequired": false,
+      "default": "DefaultCountryOptions",
+      "description": "Seconds shown in the resend countdown state."
+    },
+    {
+      "name": "Culture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the controls are disabled."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Short text describing where the field appears in the document."
+    },
+    {
+      "name": "FallbackCulture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Culture used to resolve localized field text."
+    },
+    {
+      "name": "OnSendCode",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Available country code options."
+    },
+    {
+      "name": "OtpCode",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when the normalized phone value changes."
+    },
+    {
+      "name": "OtpCodeChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Current OTP code."
+    },
+    {
+      "name": "PhoneNumber",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when country code changes."
+    },
+    {
+      "name": "PhoneNumberChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Local phone number."
+    },
+    {
+      "name": "ResendSeconds",
+      "type": "int",
+      "isRequired": false,
+      "default": "30",
+      "description": "Whether the OTP input is already visible."
+    },
+    {
+      "name": "Value",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when phone number changes."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Normalized full phone number."
+    }
+  ]
+}

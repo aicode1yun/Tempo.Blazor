@@ -1,0 +1,40 @@
+{
+  "kind": "RecordStruct",
+  "category": "Fonts",
+  "namespace": "Tempo.Reporting.Engine.Fonts",
+  "description": "Normalized font style selector used by reporting metric tables.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Fonts/FontStyleKey.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "From",
+      "kind": "Method",
+      "type": "FontStyleKey",
+      "description": "Creates a style key from UI booleans.",
+      "parameters": [
+        {
+          "name": "bold",
+          "type": "bool"
+        },
+        {
+          "name": "italic",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "Bold",
+      "kind": "Property",
+      "type": "static FontStyleKey",
+      "description": "Bold 700 normal style."
+    },
+    {
+      "name": "Regular",
+      "kind": "Property",
+      "type": "static FontStyleKey",
+      "description": "Regular 400 normal style."
+    }
+  ],
+  "itemName": "FontStyleKey"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Export",
+  "namespace": "Tempo.Reporting.Engine.Export",
+  "description": "One export cell with optional spreadsheet styling.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Export/ReportTabularExportModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportTabularExportCell"
+}

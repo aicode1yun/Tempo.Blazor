@@ -52,11 +52,11 @@
       "name": "MentionDocumentAutocompleteProvider",
       "kind": "Method",
       "type": "class",
-      "description": "Adapts the existing mention provider to the generic autocomplete contract.",
+      "description": "Adapts the shared people provider to the generic autocomplete contract.",
       "parameters": [
         {
-          "name": "mentionProvider",
-          "type": "IMentionDataProvider"
+          "name": "peopleProvider",
+          "type": "ITmPeopleProvider"
         }
       ]
     },

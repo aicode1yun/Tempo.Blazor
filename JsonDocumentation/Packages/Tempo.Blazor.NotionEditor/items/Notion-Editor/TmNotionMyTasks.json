@@ -1,0 +1,41 @@
+{
+  "itemName": "TmNotionMyTasks",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Aggregated task panel for Notion action items.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionMyTasks.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Current user id used by the \"my tasks\" filter."
+    },
+    {
+      "name": "CurrentUserId",
+      "type": "string?",
+      "isRequired": true,
+      "description": "Task provider used to query and update tasks.",
+      "editorRequired": true
+    },
+    {
+      "name": "OnClosed",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Additional CSS class."
+    },
+    {
+      "name": "OnNavigateToBlock",
+      "type": "EventCallback<(string PageId, string BlockId)>",
+      "isRequired": false,
+      "description": "Raised when the panel close button is clicked."
+    }
+  ],
+  "subcategory": "UI"
+}

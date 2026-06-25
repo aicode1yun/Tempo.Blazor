@@ -1,0 +1,22 @@
+{
+  "itemName": "TmNotionDbFilterBar",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionDbFilterBar Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDbFilterBar.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
+  ],
+  "parameters": [
+    {
+      "name": "OnFilterChanged",
+      "type": "EventCallback<INotionDatabaseFilter?>",
+      "isRequired": true,
+      "editorRequired": true
+    }
+  ],
+  "subcategory": "Blocks / Database"
+}

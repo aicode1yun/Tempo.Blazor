@@ -2,32 +2,53 @@
   "kind": "Class",
   "category": "Services",
   "namespace": "Tempo.Blazor.Services",
-  "description": "In-memory implementation of and for demos and tests.",
+  "description": "In-memory implementation of ITmNotificationService for demos and tests.",
   "packageId": "Tempo.Blazor",
   "sourcePath": "src/Tempo.Blazor/Services/InMemoryNotificationStore.cs",
   "documentationStatus": "generated",
   "members": [
     {
-      "name": "ClearAll",
+      "name": "Capabilities",
+      "kind": "Property",
+      "type": "TmNotificationServiceCapabilities"
+    },
+    {
+      "name": "UnreadCount",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "OnChanged",
+      "kind": "Event",
+      "type": "Action?"
+    },
+    {
+      "name": "PublishAsync",
       "kind": "Method",
-      "type": "void"
+      "type": "Task<TmNotification>",
+      "parameters": [
+        {
+          "name": "notification",
+          "type": "TmNotification"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
     },
     {
       "name": "GetNotificationsAsync",
       "kind": "Method",
-      "type": "Task<IReadOnlyList<INotification>>",
+      "type": "Task<IReadOnlyList<TmNotification>>",
       "parameters": [
         {
-          "name": "userId",
-          "type": "string"
+          "name": "query",
+          "type": "TmNotificationQuery"
         },
         {
-          "name": "limit",
-          "type": "int",
-          "default": "20"
-        },
-        {
-          "name": "ct",
+          "name": "cancellationToken",
           "type": "CancellationToken",
           "default": "default"
         }
@@ -39,32 +60,11 @@
       "type": "Task<int>",
       "parameters": [
         {
-          "name": "userId",
+          "name": "recipientUserId",
           "type": "string"
         },
         {
-          "name": "ct",
-          "type": "CancellationToken",
-          "default": "default"
-        }
-      ]
-    },
-    {
-      "name": "Increment",
-      "kind": "Method",
-      "type": "void"
-    },
-    {
-      "name": "MarkAllAsReadAsync",
-      "kind": "Method",
-      "type": "Task",
-      "parameters": [
-        {
-          "name": "userId",
-          "type": "string"
-        },
-        {
-          "name": "ct",
+          "name": "cancellationToken",
           "type": "CancellationToken",
           "default": "default"
         }
@@ -80,27 +80,27 @@
           "type": "string"
         },
         {
-          "name": "userId",
+          "name": "recipientUserId",
           "type": "string"
         },
         {
-          "name": "ct",
+          "name": "cancellationToken",
           "type": "CancellationToken",
           "default": "default"
         }
       ]
     },
     {
-      "name": "NotifyAsync",
+      "name": "MarkAllAsReadAsync",
       "kind": "Method",
       "type": "Task",
       "parameters": [
         {
-          "name": "notificationEvent",
-          "type": "INotificationEvent"
+          "name": "recipientUserId",
+          "type": "string"
         },
         {
-          "name": "ct",
+          "name": "cancellationToken",
           "type": "CancellationToken",
           "default": "default"
         }
@@ -108,6 +108,11 @@
     },
     {
       "name": "Reset",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "ClearAll",
       "kind": "Method",
       "type": "void"
     }

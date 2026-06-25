@@ -84,6 +84,7 @@ public class TempoWireframeMcpRegistrationTests
 
         names.Should().BeEquivalentTo(new[]
         {
+            "create_report",
             "diagram_apply_operations",
             "diagram_create_document",
             "diagram_get_document",
@@ -103,6 +104,8 @@ public class TempoWireframeMcpRegistrationTests
             "document_editor_save_document",
             "document_editor_search_text",
             "document_editor_validate_document",
+            "get_report_definition",
+            "list_reports",
             "notion_apply_block_operations",
             "notion_create_page",
             "notion_delete_page",
@@ -118,6 +121,9 @@ public class TempoWireframeMcpRegistrationTests
             "notion_restore_page",
             "notion_update_page",
             "notion_validate_page",
+            "render_report_preview",
+            "update_report_elements",
+            "validate_report",
             "wireframe_apply_operations",
             "wireframe_create_document",
             "wireframe_get_component_schema",

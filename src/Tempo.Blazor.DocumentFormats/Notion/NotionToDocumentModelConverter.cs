@@ -350,7 +350,7 @@ public static partial class NotionToDocumentModelConverter
             Nm.IDiagramBlockContent diagram => FormatLabel("Diagram", FirstNonEmpty(diagram.Caption, diagram.DiagramDocumentId.ToString("D"))),
             Nm.IWireframeBlockContent wireframe => FormatLabel("Wireframe", FirstNonEmpty(wireframe.Caption, wireframe.WireframeDocumentId.ToString("D"))),
             Nm.ISpreadsheetBlockContent spreadsheet => FormatLabel("Spreadsheet", FirstNonEmpty(spreadsheet.Caption, spreadsheet.SpreadsheetDocumentId.ToString("D"))),
-            Nm.IWorkItemBlockContent workItem => FormatLabel("Work item", FirstNonEmpty(workItem.CachedSnapshot?.Title, workItem.ExternalId), workItem.CachedSnapshot?.Status),
+            Nm.IWorkItemBlockContent workItem => FormatLabel("Work item", FirstNonEmpty(workItem.CachedSnapshot?.Title, workItem.ExternalId), workItem.CachedSnapshot?.StatusLabel),
             Nm.IContentByLabelBlockContent labels => FormatLabel("Content by label", string.Join(", ", labels.Labels)),
             Nm.IIncludePageBlockContent includePage => FormatLabel("Included page", includePage.SourcePageId?.ToString("D") ?? string.Empty),
             Nm.IChildrenDisplayBlockContent children => FormatLabel("Children", children.RootPageId?.ToString("D") ?? "current page"),

@@ -1,0 +1,26 @@
+{
+  "title": "Getting Started with Tempo.Reporting.Abstractions",
+  "overview": "Tempo.Reporting.Abstractions contains the report definition model, validation contracts, tenant-aware data provider interfaces, report definition storage contracts, report server DTOs, and the typed HTTP client used by remote Blazor reporting components.",
+  "targetFramework": ".NET 8.0 / 9.0 / 10.0 (multi-target)",
+  "installation": {
+    "nuget": [
+      "dotnet add package Tempo.Reporting.Abstractions"
+    ],
+    "programCs": {
+      "description": "Register the typed report server client when a host communicates with Tempo.ReportServer.Api.",
+      "code": "using Tempo.Reporting.Abstractions.Dtos;\n\nbuilder.Services.AddHttpClient<ITempoReportServerClient, TempoReportServerClient>(client =>\n{\n    client.BaseAddress = new Uri(builder.Configuration[\"ReportServer:BaseUrl\"]!);\n});\n\nbuilder.Services.AddSingleton<IReportServerTokenProvider, MyReportServerTokenProvider>();"
+    }
+  },
+  "namespaces": [
+    "Tempo.Reporting.Abstractions",
+    "Tempo.Reporting.Abstractions.Data",
+    "Tempo.Reporting.Abstractions.Definitions",
+    "Tempo.Reporting.Abstractions.Dtos",
+    "Tempo.Reporting.Abstractions.Serialization",
+    "Tempo.Reporting.Abstractions.Validation"
+  ],
+  "notes": [
+    "The package has no Blazor or ASP.NET dependency and is safe to reference from API, worker, shared DTO, and embedded-report projects.",
+    "Report server request and response DTOs live here so Blazor clients, external applications, and the server share one contract."
+  ]
+}

@@ -2,14 +2,14 @@
   "package": {
     "packageId": "Tempo.Blazor.Mcp",
     "title": "Tempo.Blazor.Mcp",
-    "description": "Model Context Protocol (MCP) tools for designing Tempo.Blazor wireframes with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server.",
+    "description": "Model Context Protocol (MCP) tools for designing and editing Tempo.Blazor wireframes, diagrams, editor documents and reports with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server.",
     "authors": "ptyll",
     "targetFrameworks": [
       "net8.0",
       "net9.0",
       "net10.0"
     ],
-    "tags": "blazor;mcp;wireframe;ai;llm;tools",
+    "tags": "blazor;mcp;wireframe;diagram;draw;editor;reporting;reports;ai;llm;tools",
     "repositoryUrl": null,
     "projectUrl": null,
     "installation": {
@@ -19,21 +19,43 @@
     },
     "dependencies": [
       {
+        "name": "FluentValidation",
+        "version": "12.1.1"
+      },
+      {
         "name": "ModelContextProtocol.Core",
         "version": "1.2.0"
+      },
+      {
+        "name": "Microsoft.Extensions.Localization.Abstractions",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.Extensions.Localization.Abstractions",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.Extensions.Localization.Abstractions",
+        "version": "10.0.3"
       }
     ],
     "projectReferences": [
-      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
+      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj",
+      "../Tempo.Reporting.Abstractions/Tempo.Reporting.Abstractions.csproj",
+      "../Tempo.Reporting.Engine/Tempo.Reporting.Engine.csproj"
     ],
     "namespaces": [
       "Tempo.Blazor.Mcp",
+      "Tempo.Blazor.Mcp.Diagram",
+      "Tempo.Blazor.Mcp.DocumentEditor",
+      "Tempo.Blazor.Mcp.Notion",
+      "Tempo.Blazor.Mcp.Reporting",
       "Tempo.Blazor.Mcp.Wireframe"
     ]
   },
   "gettingStarted": {
     "title": "Tempo.Blazor.Mcp",
-    "overview": "Model Context Protocol (MCP) tools for designing Tempo.Blazor wireframes with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server.",
+    "overview": "Model Context Protocol (MCP) tools for designing and editing Tempo.Blazor wireframes, diagrams, editor documents and reports with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server.",
     "targetFramework": "net8.0 / net9.0 / net10.0",
     "installation": {
       "nuget": [
@@ -42,12 +64,309 @@
     },
     "dependencies": [
       {
+        "name": "FluentValidation",
+        "version": "12.1.1"
+      },
+      {
         "name": "ModelContextProtocol.Core",
         "version": "1.2.0"
+      },
+      {
+        "name": "Microsoft.Extensions.Localization.Abstractions",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.Extensions.Localization.Abstractions",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.Extensions.Localization.Abstractions",
+        "version": "10.0.3"
       }
     ]
   },
   "items": [
+    {
+      "kind": "Record",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Public record defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramBrief"
+    },
+    {
+      "kind": "Record",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Public record defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramBriefEdge"
+    },
+    {
+      "kind": "Record",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Public record defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramBriefLayer"
+    },
+    {
+      "kind": "Record",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Public record defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramBriefNode"
+    },
+    {
+      "kind": "Record",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Public record defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramBriefPage"
+    },
+    {
+      "kind": "Record",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Public record defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramBriefStencilUsage"
+    },
+    {
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramBriefTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramBriefTools"
+    },
+    {
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramDocumentTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramDocumentTools"
+    },
+    {
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Builds a deterministic implementation brief from a diagram document.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramImplementationBrief"
+    },
+    {
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Applies ordered diagram edit operations to a working copy of a document.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramOperationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramOperationEngine"
+    },
+    {
+      "kind": "Record",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Outcome of applying a granular operation batch to a diagram document.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramOperationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramOperationResult"
+    },
+    {
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramOperationTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramOperationTools"
+    },
+    {
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Projects diagram stencil providers into compact, LLM-friendly catalog shapes.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramStencilCatalog.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "All",
+          "kind": "Method",
+          "type": "IReadOnlyList<DiagramStencil>",
+          "parameters": [
+            {
+              "name": "providers",
+              "type": "IEnumerable<IDiagramStencilProvider>?"
+            }
+          ]
+        },
+        {
+          "name": "BuildKnownStencilIds",
+          "kind": "Method",
+          "type": "HashSet<string>?",
+          "parameters": [
+            {
+              "name": "providers",
+              "type": "IEnumerable<IDiagramStencilProvider>?"
+            }
+          ]
+        },
+        {
+          "name": "Compact",
+          "kind": "Method",
+          "type": "object",
+          "parameters": [
+            {
+              "name": "s",
+              "type": "DiagramStencil"
+            }
+          ]
+        },
+        {
+          "name": "Full",
+          "kind": "Method",
+          "type": "object",
+          "parameters": [
+            {
+              "name": "s",
+              "type": "DiagramStencil"
+            }
+          ]
+        },
+        {
+          "name": "SuggestId",
+          "kind": "Method",
+          "type": "string?",
+          "parameters": [
+            {
+              "name": "providers",
+              "type": "IEnumerable<IDiagramStencilProvider>?"
+            },
+            {
+              "name": "unknown",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "itemName": "DiagramStencilCatalog"
+    },
+    {
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramStencilCatalogTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramStencilCatalogTools"
+    },
+    {
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Validates diagram documents before MCP write tools persist them.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramValidationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramValidationEngine"
+    },
+    {
+      "kind": "Record",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "The outcome of validating a diagram document.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramValidationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramValidationResult"
+    },
+    {
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramValidationTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "DiagramValidationTools"
+    },
+    {
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorAnalysisTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "DocumentEditorAnalysisTools"
+    },
+    {
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorDocumentTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "DocumentEditorDocumentTools"
+    },
+    {
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorOperationTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "DocumentEditorOperationTools"
+    },
+    {
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Validates document editor snapshots before MCP write tools persist them.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorValidationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "DocumentEditorValidationEngine"
+    },
+    {
+      "kind": "Record",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "The outcome of validating a document editor snapshot.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorValidationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "DocumentEditorValidationResult"
+    },
     {
       "itemName": "McpJson",
       "kind": "Class",
@@ -81,10 +400,22 @@
           "description": "Generic error code."
         },
         {
+          "name": "InvalidOperation",
+          "kind": "Field",
+          "type": "string",
+          "description": "Error code for a syntactically valid but unsupported operation."
+        },
+        {
           "name": "NotFound",
           "kind": "Field",
           "type": "string",
           "description": "Error code for a missing resource."
+        },
+        {
+          "name": "Unsupported",
+          "kind": "Field",
+          "type": "string",
+          "description": "Error code for an optional host capability that is not registered."
         },
         {
           "name": "ValidationFailed",
@@ -106,6 +437,56 @@
           ]
         }
       ]
+    },
+    {
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Mcp",
+      "description": "Registration helpers for the complete Tempo.Blazor MCP toolset.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "itemName": "TempoBlazorMcp"
+    },
+    {
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Mcp",
+      "description": "Registration helpers for the diagram/draw MCP tools.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "itemName": "TempoDiagramMcp"
+    },
+    {
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Mcp",
+      "description": "Registration helpers for the DocumentEditor MCP tools.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "itemName": "TempoDocumentEditorMcp"
+    },
+    {
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Mcp",
+      "description": "Registration helpers for the NotionEditor MCP tools.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "itemName": "TempoNotionMcp"
+    },
+    {
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Mcp",
+      "description": "Registration helpers for the Tempo Reporting MCP tools.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "itemName": "TempoReportingMcp"
     },
     {
       "itemName": "TempoWireframeMcp",
@@ -136,6 +517,229 @@
           "description": "The wireframe tool types, exposed for hosts that register tools by type. Prefer WithToolsFromAssembly(typeof(TempoWireframeMcp).Assembly), which also advertises the tools capability in the handshake."
         }
       ]
+    },
+    {
+      "kind": "Class",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.Mcp.Notion",
+      "description": "Maps Notion block types to their polymorphic content payloads.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionBlockCatalog.cs",
+      "documentationStatus": "generated",
+      "itemName": "NotionBlockCatalog"
+    },
+    {
+      "kind": "Class",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.Mcp.Notion",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionBlockTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "NotionBlockTools"
+    },
+    {
+      "kind": "Record",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.Mcp.Notion",
+      "description": "Public record defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionBlockCatalog.cs",
+      "documentationStatus": "generated",
+      "itemName": "NotionBlockTypeSchema"
+    },
+    {
+      "kind": "Class",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.Mcp.Notion",
+      "description": "Applies ordered Notion page/block operations through host providers.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionOperationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "NotionOperationEngine"
+    },
+    {
+      "kind": "Record",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.Mcp.Notion",
+      "description": "Public record defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionOperationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "NotionOperationResult"
+    },
+    {
+      "kind": "Class",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.Mcp.Notion",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionPageTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "NotionPageTools"
+    },
+    {
+      "kind": "Class",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.Mcp.Notion",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionSchemaAndValidationTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "NotionSchemaAndValidationTools"
+    },
+    {
+      "kind": "Class",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.Mcp.Notion",
+      "description": "Validates Notion pages and block trees for MCP write tools.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionValidationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "NotionValidationEngine"
+    },
+    {
+      "kind": "Record",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.Mcp.Notion",
+      "description": "Public record defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionValidationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "NotionValidationResult"
+    },
+    {
+      "kind": "Class",
+      "category": "Reporting",
+      "namespace": "Tempo.Blazor.Mcp.Reporting",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportCatalogTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "ReportCatalogTools"
+    },
+    {
+      "kind": "Class",
+      "category": "Reporting",
+      "namespace": "Tempo.Blazor.Mcp.Reporting",
+      "description": "Prompt-friendly report definition schema documentation for AI tools.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportDefinitionPromptSchema.cs",
+      "documentationStatus": "generated",
+      "itemName": "ReportDefinitionPromptSchema"
+    },
+    {
+      "kind": "Class",
+      "category": "Reporting",
+      "namespace": "Tempo.Blazor.Mcp.Reporting",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportDefinitionTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "ReportDefinitionTools"
+    },
+    {
+      "kind": "Record",
+      "category": "Reporting",
+      "namespace": "Tempo.Blazor.Mcp.Reporting",
+      "description": "AI-readable description of one report element discriminator.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportDefinitionPromptSchema.cs",
+      "documentationStatus": "generated",
+      "itemName": "ReportElementSchemaDescriptor"
+    },
+    {
+      "kind": "Class",
+      "category": "Reporting",
+      "namespace": "Tempo.Blazor.Mcp.Reporting",
+      "description": "Fallback data provider for MCP preview smoke flows when the host has no provider.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportingMcpFallbackDataProvider.cs",
+      "documentationStatus": "generated",
+      "itemName": "ReportingMcpFallbackDataProvider"
+    },
+    {
+      "kind": "Class",
+      "category": "Reporting",
+      "namespace": "Tempo.Blazor.Mcp.Reporting",
+      "description": "Small deterministic text measurer used by MCP preview rendering.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportingMcpTextMeasurer.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "MeasureRun",
+          "kind": "Method",
+          "type": "TextMeasurement",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "TextMeasureRequest"
+            }
+          ]
+        }
+      ],
+      "itemName": "ReportingMcpTextMeasurer"
+    },
+    {
+      "kind": "Class",
+      "category": "Reporting",
+      "namespace": "Tempo.Blazor.Mcp.Reporting",
+      "description": "Applies ordered MCP report edit operations to a working copy.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportOperationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "ReportOperationEngine"
+    },
+    {
+      "kind": "Record",
+      "category": "Reporting",
+      "namespace": "Tempo.Blazor.Mcp.Reporting",
+      "description": "Outcome of applying a granular operation batch to a report definition.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportOperationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "ReportOperationResult"
+    },
+    {
+      "kind": "Class",
+      "category": "Reporting",
+      "namespace": "Tempo.Blazor.Mcp.Reporting",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportPreviewTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "ReportPreviewTools"
+    },
+    {
+      "kind": "Class",
+      "category": "Reporting",
+      "namespace": "Tempo.Blazor.Mcp.Reporting",
+      "description": "Report definition parsing and validation helpers used by MCP tools.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportValidationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "ReportValidationEngine"
+    },
+    {
+      "kind": "Record",
+      "category": "Reporting",
+      "namespace": "Tempo.Blazor.Mcp.Reporting",
+      "description": "Validation result for report definitions.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportValidationEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "ReportValidationResult"
+    },
+    {
+      "kind": "Class",
+      "category": "Reporting",
+      "namespace": "Tempo.Blazor.Mcp.Reporting",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportValidationTools.cs",
+      "documentationStatus": "generated",
+      "itemName": "ReportValidationTools"
     },
     {
       "itemName": "BriefComponent",
@@ -358,11 +962,11 @@
     }
   ],
   "summary": {
-    "itemCount": 20,
+    "itemCount": 68,
     "manualItemCount": 20,
-    "generatedItemCount": 20,
-    "generatedOnlyItemCount": 0,
+    "generatedItemCount": 68,
+    "generatedOnlyItemCount": 48,
     "componentCount": 0,
-    "publicApiTypeCount": 20
+    "publicApiTypeCount": 68
   }
 }

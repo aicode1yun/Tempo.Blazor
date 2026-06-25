@@ -1,5 +1,6 @@
 using Bunit;
 using FluentAssertions;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Activity;
 using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.Tests.Localization;
@@ -19,16 +20,6 @@ file record LogEntry(
     bool IsInternal = false,
     IReadOnlyDictionary<string, string>? Metadata = null) : ITimelineEntry;
 
-file record LogComment(
-    string Id,
-    string AuthorName,
-    string? AuthorAvatarUrl,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
-    string HtmlContent,
-    bool CanEdit,
-    bool CanDelete) : ICommentEntry;
-
 public class TmActivityLogTests : LocalizationTestBase
 {
     private static IReadOnlyList<ITimelineEntry> SampleEntries() =>
@@ -36,9 +27,17 @@ public class TmActivityLogTests : LocalizationTestBase
         new LogEntry("e1", "comment", "Alice", null, DateTimeOffset.Now.AddHours(-1), null, "Hello"),
     ];
 
-    private static IReadOnlyList<ICommentEntry> SampleComments() =>
+    private static IReadOnlyList<TmCommentEntry> SampleComments() =>
     [
-        new LogComment("c1", "Bob", null, DateTimeOffset.Now.AddMinutes(-30), null, "<p>Hi</p>", false, false),
+        new TmCommentEntry
+        {
+            Id = "c1",
+            ThreadId = "c1",
+            Author = new TmUserRef { DisplayName = "Bob" },
+            CreatedAt = DateTimeOffset.Now.AddMinutes(-30),
+            Body = "<p>Hi</p>",
+            BodyFormat = TmCommentBodyFormat.Html
+        },
     ];
 
     [Fact]

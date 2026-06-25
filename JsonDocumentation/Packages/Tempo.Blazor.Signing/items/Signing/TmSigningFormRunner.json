@@ -1,0 +1,133 @@
+{
+  "itemName": "TmSigningFormRunner",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "Coordinates a linear signing ceremony over document pages and signing field steps.",
+  "packageId": "Tempo.Blazor.Signing",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmSigningFormRunner.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "AutoSaveDelay",
+      "type": "TimeSpan",
+      "isRequired": false,
+      "default": "TimeSpan.FromMilliseconds(600)",
+      "description": "Callback invoked with a resolved localization snapshot for audit storage."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional selector for a fixed complete target that the mobile panel must avoid."
+    },
+    {
+      "name": "Culture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when all required fields are complete and the signer completes the form."
+    },
+    {
+      "name": "CultureChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Culture used to render the signing layer."
+    },
+    {
+      "name": "FallbackCulture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when the signing culture changes."
+    },
+    {
+      "name": "Fields",
+      "type": "IReadOnlyList<SigningField>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Document pages shown during signing."
+    },
+    {
+      "name": "IsCompleting",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether navigation and inputs are currently blocked by an external operation."
+    },
+    {
+      "name": "IsLoading",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Delay before autosave is invoked after a value change."
+    },
+    {
+      "name": "MobileCompleteTargetSelector",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Initial presentation mode for the mobile bottom panel."
+    },
+    {
+      "name": "MobilePanelMode",
+      "type": "TmSigningFormRunnerMobilePanelMode",
+      "isRequired": false,
+      "default": "TmSigningFormRunnerMobilePanelMode.Expanded",
+      "description": "Whether the complete action is currently running."
+    },
+    {
+      "name": "OnAutoSave",
+      "type": "EventCallback<IReadOnlyDictionary<string, object?>>",
+      "isRequired": false,
+      "description": "Callback invoked when the current step is submitted by moving forward."
+    },
+    {
+      "name": "OnComplete",
+      "type": "EventCallback<IReadOnlyDictionary<string, object?>>",
+      "isRequired": false,
+      "description": "Callback invoked after debounced autosave."
+    },
+    {
+      "name": "OnLocalizationSnapshotChanged",
+      "type": "EventCallback<SigningSubmissionLocalizationSnapshot>",
+      "isRequired": false,
+      "description": "Whether the runner should show a language selector when multiple cultures are available."
+    },
+    {
+      "name": "OnStepSubmit",
+      "type": "EventCallback<SigningStepItem>",
+      "isRequired": false,
+      "description": "Optional signer role filter."
+    },
+    {
+      "name": "ShowLanguageSelector",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Supported cultures offered by the language selector."
+    },
+    {
+      "name": "SubmitterUuid",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked whenever field values change."
+    },
+    {
+      "name": "SupportedCultures",
+      "type": "IReadOnlyList<string>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Fallback culture used when field translations are missing."
+    },
+    {
+      "name": "Values",
+      "type": "IReadOnlyDictionary<string, object?>",
+      "isRequired": true,
+      "description": "Signing fields available to the signer."
+    },
+    {
+      "name": "ValuesChanged",
+      "type": "EventCallback<IReadOnlyDictionary<string, object?>>",
+      "isRequired": false,
+      "description": "Current field values keyed by field UUID."
+    }
+  ]
+}

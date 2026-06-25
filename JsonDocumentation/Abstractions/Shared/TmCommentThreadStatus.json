@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Status of a shared comment thread.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCommentThreadStatus.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmCommentThreadStatus"
+}

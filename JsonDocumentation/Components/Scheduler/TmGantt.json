@@ -70,7 +70,7 @@
     },
     {
       "name": "CustomFields",
-      "type": "IReadOnlyList<GanttCustomField>",
+      "type": "IReadOnlyList<TmCustomFieldDefinition>",
       "isRequired": false,
       "default": "[]",
       "description": "Fires after a new baseline is saved."
@@ -91,10 +91,10 @@
     },
     {
       "name": "History",
-      "type": "IReadOnlyList<GanttHistoryEntry>",
+      "type": "IReadOnlyList<TmActivityEntry>",
       "isRequired": false,
       "default": "[]",
-      "description": "Fires when an import operation fails (contains error message)."
+      "description": "Activity history entries to display in the history drawer."
     },
     {
       "name": "IsOpen",
@@ -104,7 +104,7 @@
     },
     {
       "name": "NotificationSettings",
-      "type": "GanttNotificationSettings?",
+      "type": "TmNotificationPreferences?",
       "isRequired": false,
       "description": "Optional real-time SignalR connection for live task updates."
     },
@@ -224,7 +224,7 @@
     },
     {
       "name": "OnNotificationTriggered",
-      "type": "EventCallback<GanttNotification>",
+      "type": "EventCallback<TmNotification>",
       "isRequired": false,
       "description": "Fires when a task's status is changed from the board view."
     },
@@ -242,7 +242,7 @@
     },
     {
       "name": "OnRollbackRequested",
-      "type": "EventCallback<GanttHistoryEntry>",
+      "type": "EventCallback<TmActivityEntry>",
       "isRequired": false,
       "description": "Fires when the user requests time-travel to the given timestamp."
     },

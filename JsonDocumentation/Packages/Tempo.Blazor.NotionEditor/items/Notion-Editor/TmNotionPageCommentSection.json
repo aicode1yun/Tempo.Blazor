@@ -1,0 +1,40 @@
+{
+  "itemName": "TmNotionPageCommentSection",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionPageCommentSection Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionPageCommentSection.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "Expanded",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Page identifier whose page-level comment threads are displayed."
+    },
+    {
+      "name": "OnCountChanged",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the expanded state changes."
+    },
+    {
+      "name": "OnExpandedChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "Whether the page comment section is expanded."
+    },
+    {
+      "name": "OnMentionClicked",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Raised after the comment count may have changed."
+    }
+  ],
+  "subcategory": "UI"
+}

@@ -1,0 +1,40 @@
+{
+  "kind": "Class",
+  "category": "Fonts",
+  "namespace": "Tempo.Reporting.Engine.Fonts",
+  "description": "Compact binary serializer for reporting font metric tables.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Fonts/FontMetricTableBinarySerializer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Read",
+      "kind": "Method",
+      "type": "FontMetricTable",
+      "description": "Reads a metric table from a compact binary stream.",
+      "parameters": [
+        {
+          "name": "input",
+          "type": "Stream"
+        }
+      ]
+    },
+    {
+      "name": "Write",
+      "kind": "Method",
+      "type": "void",
+      "description": "Writes a metric table to a compact binary stream.",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "FontMetricTable"
+        },
+        {
+          "name": "output",
+          "type": "Stream"
+        }
+      ]
+    }
+  ],
+  "itemName": "FontMetricTableBinarySerializer"
+}

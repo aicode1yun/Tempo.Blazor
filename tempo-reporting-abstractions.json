@@ -1,0 +1,1548 @@
+{
+  "package": {
+    "packageId": "Tempo.Reporting.Abstractions",
+    "title": "Tempo.Reporting.Abstractions",
+    "description": "Contracts, JSON definition schema, validation models, data provider interfaces, and server DTOs for Tempo Reporting. No Blazor or ASP.NET dependency.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "reporting;reports;report-definition;json-schema;abstractions;contracts",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Reporting.Abstractions"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "FluentValidation",
+        "version": "12.1.1"
+      },
+      {
+        "name": "Microsoft.Extensions.Localization.Abstractions",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.Extensions.Localization.Abstractions",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.Extensions.Localization.Abstractions",
+        "version": "10.0.3"
+      }
+    ],
+    "projectReferences": [],
+    "namespaces": [
+      "Tempo.Reporting.Abstractions",
+      "Tempo.Reporting.Abstractions.Data",
+      "Tempo.Reporting.Abstractions.Definitions",
+      "Tempo.Reporting.Abstractions.Dtos",
+      "Tempo.Reporting.Abstractions.Resources",
+      "Tempo.Reporting.Abstractions.Serialization",
+      "Tempo.Reporting.Abstractions.Validation"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Getting Started with Tempo.Reporting.Abstractions",
+    "overview": "Tempo.Reporting.Abstractions contains the report definition model, validation contracts, tenant-aware data provider interfaces, report definition storage contracts, report server DTOs, and the typed HTTP client used by remote Blazor reporting components.",
+    "targetFramework": ".NET 8.0 / 9.0 / 10.0 (multi-target)",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Reporting.Abstractions"
+      ],
+      "programCs": {
+        "description": "Register the typed report server client when a host communicates with Tempo.ReportServer.Api.",
+        "code": "using Tempo.Reporting.Abstractions.Dtos;\n\nbuilder.Services.AddHttpClient<ITempoReportServerClient, TempoReportServerClient>(client =>\n{\n    client.BaseAddress = new Uri(builder.Configuration[\"ReportServer:BaseUrl\"]!);\n});\n\nbuilder.Services.AddSingleton<IReportServerTokenProvider, MyReportServerTokenProvider>();"
+      }
+    },
+    "namespaces": [
+      "Tempo.Reporting.Abstractions",
+      "Tempo.Reporting.Abstractions.Data",
+      "Tempo.Reporting.Abstractions.Definitions",
+      "Tempo.Reporting.Abstractions.Dtos",
+      "Tempo.Reporting.Abstractions.Serialization",
+      "Tempo.Reporting.Abstractions.Validation"
+    ],
+    "notes": [
+      "The package has no Blazor or ASP.NET dependency and is safe to reference from API, worker, shared DTO, and embedded-report projects.",
+      "Report server request and response DTOs live here so Blazor clients, external applications, and the server share one contract."
+    ],
+    "packages": [
+      {
+        "name": "Tempo.Blazor",
+        "description": "Comprehensive Blazor component library with 100+ components. Supports WebAssembly, Server, and InteractiveAuto render modes. Multi-targets .NET 8/9/10. Includes multilingual support (EN/CS), CSS variable theming, and dark mode. Optional FluentValidation integration is available through Tempo.Blazor.FluentValidation."
+      },
+      {
+        "name": "Tempo.Blazor.PdfViewer",
+        "description": "PDF.js powered PDF viewer component for Tempo.Blazor with thumbnails, search, text layer, rotation, zoom, and continuous scroll."
+      },
+      {
+        "name": "Tempo.Blazor.Codes",
+        "description": "QR code and barcode components for Tempo.Blazor backed by QRCoder and ZXing.Net."
+      },
+      {
+        "name": "Tempo.Blazor.DiagramEditor",
+        "description": "Diagram editor components for Tempo.Blazor, including stencil libraries, templates, import helpers, auto-layout, and diagram canvas interop."
+      },
+      {
+        "name": "Tempo.Blazor.Wireframe",
+        "description": "Wireframe editor components for Tempo.Blazor with toolbox, schema registry, canvas interop, page tabs, minimap, and export helpers."
+      },
+      {
+        "name": "Tempo.Blazor.Modeling",
+        "description": "Modeling editor components for Tempo.Blazor, including BPMN, UML, ArchiMate, ERD notation profiles and diagram generation."
+      },
+      {
+        "name": "Tempo.Blazor.Spreadsheet",
+        "description": "Excel-like spreadsheet components for Tempo.Blazor, including canvas rendering, formula editing, workbook import/export, and spreadsheet interop assets."
+      },
+      {
+        "name": "Tempo.Blazor.GanttXlsx",
+        "description": "Optional XLSX import and export helpers for Tempo.Blazor Gantt components, backed by DocumentFormat.OpenXml."
+      },
+      {
+        "name": "Tempo.Blazor.DocumentEditor",
+        "description": "Document editor components for Tempo.Blazor, including canvas rendering, collaboration UI, clipboard normalization, and document editor interop assets."
+      },
+      {
+        "name": "Tempo.Blazor.NotionEditor",
+        "description": "Notion-style editor components for Tempo.Blazor, including pages, blocks, databases, collaboration UI, comments, media, and Tempo embed blocks."
+      },
+      {
+        "name": "Tempo.Blazor.Signing",
+        "description": "Signing workflow components for Tempo.Blazor, including PDF template design, recipient roles, signing form runner, document comments, verification panels, and audit trail UI."
+      },
+      {
+        "name": "Tempo.Blazor.All",
+        "description": "Compatibility package for Tempo.Blazor that references the core package and split feature packages for applications that want the full component suite."
+      },
+      {
+        "name": "Tempo.Blazor.Abstractions",
+        "description": "Interfaces and models for Tempo.Blazor component library. Zero UI dependencies – safe to reference from API/service projects."
+      },
+      {
+        "name": "Tempo.Blazor.FluentValidation",
+        "description": "FluentValidation integration for Tempo.Blazor component library. Provides FluentValidationValidator component for EditForm and assembly scanning for validator registration."
+      },
+      {
+        "name": "Tempo.Blazor.Collaboration",
+        "description": "SignalR collaboration providers for Tempo.Blazor document editor abstractions."
+      },
+      {
+        "name": "Tempo.Blazor.DocumentFormats",
+        "description": "Optional server-side DOCX and ODT import/export support for TmDocumentEditor."
+      },
+      {
+        "name": "Tempo.Blazor.EmailTemplates.Abstractions",
+        "description": "Logic and contracts for the Tempo.Blazor email template editor: block model, MJML generation and import, Scriban templating sandbox, variable extraction, render pipeline, DTOs and validators. No Blazor dependency – safe to reference from API/service projects."
+      },
+      {
+        "name": "Tempo.Blazor.EmailTemplates",
+        "description": "Drag-and-drop email template editor component (TmEmailTemplateEditor) for Tempo.Blazor. Visual MJML editor with full MJML 4 parity, bidirectional MJML import/export, Scriban variable templating and live preview. Built entirely on Tempo.Blazor components."
+      },
+      {
+        "name": "Tempo.Blazor.Mcp",
+        "description": "Model Context Protocol (MCP) tools for designing and editing Tempo.Blazor wireframes, diagrams, editor documents and reports with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server."
+      },
+      {
+        "name": "Tempo.Reporting.Abstractions",
+        "description": "Contracts, JSON definition schema, validation models, data provider interfaces, and server DTOs for Tempo Reporting. No Blazor or ASP.NET dependency."
+      },
+      {
+        "name": "Tempo.Reporting.Engine",
+        "description": "Tempo Reporting processing engine with expression evaluation, parameter resolution, layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives."
+      },
+      {
+        "name": "Tempo.Blazor.Reporting",
+        "description": "Blazor reporting components for Tempo Reporting: report viewer, parameter panel, explorer, lightweight designer, embedded sources, and remote Report Server integration."
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "InMemoryReportDefinitionStore",
+      "kind": "Class",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "In-memory tenant-scoped report definition store for tests and embedded hosts.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDefinitionStore.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IReportDataProvider",
+      "kind": "Interface",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Tenant-aware provider contract that supplies report processing with a schema and streaming-friendly rows for a named data set.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+      "documentationStatus": "merged",
+      "methods": [
+        {
+          "name": "GetDataAsync",
+          "description": "Loads data for one report data set using the provider-specific query, resolved report parameters, and ReportExecutionContext."
+        }
+      ],
+      "relatedTypes": [
+        "ReportDataQuery",
+        "ReportDataSetResult",
+        "ReportDataColumn",
+        "ReportDataRow",
+        "ReportExecutionContext"
+      ]
+    },
+    {
+      "itemName": "IReportDefinitionStore",
+      "kind": "Interface",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Tenant-scoped storage contract for folders, report metadata, and immutable report definition revisions.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDefinitionStore.cs",
+      "documentationStatus": "merged",
+      "usage": "Use this contract for embedded hosts, tests, or custom storage implementations that need to save report definitions without referencing the ASP.NET Report Server application.",
+      "relatedTypes": [
+        "ReportFolderRecord",
+        "ReportDefinitionRecord",
+        "ReportDefinitionRevisionRecord",
+        "InMemoryReportDefinitionStore"
+      ]
+    },
+    {
+      "itemName": "ReportDataColumn",
+      "kind": "Record",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Column in a provider result schema.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataProviderException",
+      "kind": "Class",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Exception thrown by report data providers.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataQuery",
+      "kind": "Record",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Provider query descriptor.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataRow",
+      "kind": "Record",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Single streamed data row.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataSetResult",
+      "kind": "Record",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Data provider result with schema and streaming-friendly rows.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDefinitionRecord",
+      "kind": "Record",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Stored report metadata record.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDefinitionStore.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDefinitionRevisionRecord",
+      "kind": "Record",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Stored report definition revision record.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDefinitionStore.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportFolderRecord",
+      "kind": "Record",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Stored report folder record.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDefinitionStore.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterValue",
+      "kind": "Record",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Report parameter value passed to data providers.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "StaticDataProvider",
+      "kind": "Class",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Embedded/static report data provider for tests and host-provided inline data.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/StaticDataProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "Tempo.Reporting.Abstractions.Data.ReportDataFieldType",
+      "kind": "Enum",
+      "category": "Data",
+      "namespace": "Tempo.Reporting.Abstractions.Data",
+      "description": "Report data field type.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportBand",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Report band containing absolutely positioned elements.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Bands.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportBandCollection",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Top-level band slots for a report.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Bands.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportBandKind",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Band kind in a pixel/print-based report definition.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Bands.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportBorder",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Four-sided border value.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Styles.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportBorderLine",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Single border side.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Styles.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportChartElement",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Chart element structure rendered by the reporting engine.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportChartSeries",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Chart series definition.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportChartType",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Chart type.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataSetDefinition",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Data set definition consumed by report processing.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/DataSets.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataSetField",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Declared data set field.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/DataSets.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataSetParameterBinding",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Data set query parameter binding.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/DataSets.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataSourceReference",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Reference to a named data source registered by the host or server.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/DataSets.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDefinition",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Root schema-versioned report definition shared by designers, report servers, embedded hosts, serialization, validation, and the processing engine.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/ReportDefinition.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CurrentSchemaVersion",
+          "kind": "Field",
+          "type": "int",
+          "description": "Current report definition schema version."
+        },
+        {
+          "name": "Bands",
+          "kind": "Property",
+          "type": "ReportBandCollection",
+          "description": "Band definitions that make up the report body."
+        },
+        {
+          "name": "DataSets",
+          "kind": "Property",
+          "type": "List<ReportDataSetDefinition>",
+          "description": "Data set definitions consumed by processing."
+        },
+        {
+          "name": "Description",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional report description for catalog views."
+        },
+        {
+          "name": "Id",
+          "kind": "Property",
+          "type": "string",
+          "description": "Stable report identifier assigned by a host or server."
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string",
+          "description": "Human-readable report name."
+        },
+        {
+          "name": "PageSetup",
+          "kind": "Property",
+          "type": "ReportPageSetup",
+          "description": "Physical page setup used by the layout engine."
+        },
+        {
+          "name": "Parameters",
+          "kind": "Property",
+          "type": "List<ReportParameterDefinition>",
+          "description": "Parameter definitions exposed before rendering."
+        },
+        {
+          "name": "SchemaVersion",
+          "kind": "Property",
+          "type": "int",
+          "description": "Schema version used by migration and validation."
+        },
+        {
+          "name": "Styles",
+          "kind": "Property",
+          "type": "List<ReportStyleDefinition>",
+          "description": "Reusable named styles."
+        }
+      ],
+      "relatedTypes": [
+        "ReportPageSetup",
+        "ReportParameterDefinition",
+        "ReportDataSetDefinition",
+        "ReportBandCollection"
+      ]
+    },
+    {
+      "itemName": "ReportElement",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Public record defined by Tempo.Reporting.Abstractions.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportGroupDefinition",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Grouping definition with optional header and footer bands.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Bands.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportHorizontalAlignment",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Horizontal alignment for text content.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Styles.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportImageElement",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Image element.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportImageSizingMode",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Image sizing behavior.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportImageSourceKind",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Image source kind.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportLineElement",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Line element.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportMeasurementUnit",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Report measurement unit for physical layout values.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/PageSetup.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportPageOrientation",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Page orientation used during layout.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/PageSetup.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportPageSetup",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Page setup used by the band layout engine.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/PageSetup.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportPageSize",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Physical page size.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/PageSetup.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterAvailableValue",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Static parameter value option.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Parameters.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterAvailableValues",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Available values for a report parameter.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Parameters.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterAvailableValuesKind",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Available values source kind.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Parameters.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterDefinition",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Report parameter definition.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Parameters.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterType",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Report parameter data type.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Parameters.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportShapeElement",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Shape element.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportShapeKind",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Shape kind.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportStyleDefinition",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Reusable named style.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Styles.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportSubReportElement",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Sub-report element.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportSubReportParameterMapping",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Sub-report parameter mapping.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableBorderModel",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Border conflict behavior for adjacent table cells.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableCell",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Table cell template.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableColumn",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Table column definition.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableColumnWidthMode",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Table column width behavior.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableElement",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Table element structure. Detailed tablix behavior is implemented in a later phase.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableGroupDefinition",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Table grouping definition.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTableRow",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Table row template.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTextBoxElement",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Text box element with static text or expression content.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportTextStyle",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Text style shared by report definitions and snapshot text runs.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Styles.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportThickness",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Four-sided thickness value.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/PageSetup.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportVerticalAlignment",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Vertical alignment for text content.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Styles.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "Tempo.Reporting.Abstractions.Definitions.ReportDataFieldType",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Supported field data type in a report data set schema.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/DataSets.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "CreateReportFolderRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request for creating a report folder.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "CreateReportRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request for creating a report.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IReportServerTokenProvider",
+      "kind": "Interface",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Provides an optional bearer token for the typed report server client.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ITempoReportServerClient",
+      "kind": "Interface",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Typed HTTP boundary for Tempo Report Server operations, including folder/report catalog management, immutable revisions, parameter metadata, render jobs, and tenant-scoped data sources.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged",
+      "methods": [
+        "GetFoldersAsync",
+        "CreateFolderAsync",
+        "UpdateFolderAsync",
+        "MoveFolderAsync",
+        "DeleteFolderAsync",
+        "SearchReportsAsync",
+        "GetReportAsync",
+        "CreateReportAsync",
+        "MoveReportAsync",
+        "DeleteReportAsync",
+        "UpdateReportDefinitionAsync",
+        "GetRevisionsAsync",
+        "PublishRevisionAsync",
+        "RollbackRevisionAsync",
+        "GetParametersAsync",
+        "RenderAsync",
+        "QueueRenderAsync",
+        "GetRenderJobAsync",
+        "GetDataSourcesAsync",
+        "UpsertDataSourceAsync",
+        "DeleteDataSourceAsync",
+        "TestDataSourceConnectionAsync",
+        "GetDataSourceSchemaAsync",
+        "PreviewDataSourceAsync"
+      ],
+      "usage": "Inject this interface into Blazor, API, worker, or integration-test hosts that need to communicate with Tempo.ReportServer.Api without hand-building endpoint URLs.",
+      "relatedTypes": [
+        "TempoReportServerClient",
+        "IReportServerTokenProvider",
+        "RenderReportRequestDto",
+        "RenderReportResultDto",
+        "RenderJobDto",
+        "ReportDataSourceDto"
+      ]
+    },
+    {
+      "itemName": "MoveReportFolderRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request for moving a folder to another parent.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "MoveReportRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request for moving a report to another folder.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "PublishReportRevisionRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request for publishing a revision.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RenderJobDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Render job DTO.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RenderJobStatus",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Render job status.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RenderReportRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request for rendering a report.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RenderReportResultDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Report render response for synchronous renders and completed jobs.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataSourceConnectionTestResultDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Result of testing a data source connection.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataSourceDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Named report data source DTO.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataSourcePreviewDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Data source preview response.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataSourceSchemaColumnDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Single data source schema column.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDataSourceSchemaDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Data source schema discovery response.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDetailDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Report detail DTO.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportFolderDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Folder DTO used by report server APIs.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterMetadataDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Report parameter metadata used by viewer parameter panels.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterMetadataKind",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Supported report parameter metadata kind.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterOptionDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Parameter option metadata used by report server clients.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterValueDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Parameter value DTO used by render requests.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportRenderFormat",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Supported render output formats.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportRevisionDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Report revision DTO.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportSearchRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Report catalog search request.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportServerDtos",
+      "kind": "Model",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "DTO family shared by Report Server API, typed clients, and remote Blazor reporting components. It covers folders, reports, revisions, render requests/results/jobs, parameter metadata, and tenant-scoped data source administration.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "manual",
+      "groups": [
+        {
+          "name": "Catalog",
+          "types": [
+            "ReportFolderDto",
+            "ReportSummaryDto",
+            "ReportDetailDto",
+            "CreateReportFolderRequestDto",
+            "UpdateReportFolderRequestDto",
+            "MoveReportFolderRequestDto",
+            "ReportSearchRequestDto",
+            "MoveReportRequestDto"
+          ]
+        },
+        {
+          "name": "Revisions",
+          "types": [
+            "ReportRevisionDto",
+            "UpdateReportDefinitionRequestDto",
+            "PublishReportRevisionRequestDto",
+            "RollbackReportRevisionRequestDto"
+          ]
+        },
+        {
+          "name": "Rendering",
+          "types": [
+            "ReportRenderFormat",
+            "ReportParameterValueDto",
+            "ReportParameterMetadataDto",
+            "RenderReportRequestDto",
+            "RenderReportResultDto",
+            "RenderJobDto",
+            "RenderJobStatus"
+          ]
+        },
+        {
+          "name": "Data Sources",
+          "types": [
+            "ReportDataSourceDto",
+            "UpsertReportDataSourceRequestDto",
+            "ReportDataSourceConnectionTestResultDto",
+            "ReportDataSourceSchemaDto",
+            "ReportDataSourceSchemaColumnDto",
+            "ReportDataSourcePreviewDto"
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "ReportSummaryDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Report catalog summary DTO.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RollbackReportRevisionRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request for rolling back a report to a previous revision.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoReportServerClient",
+      "kind": "Class",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Default HttpClient-based implementation of ITempoReportServerClient. It applies an optional bearer token provider, serializes DTOs as JSON, and maps all Report Server API routes exposed by the F10 server.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/TempoReportServerClient.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "DeleteDataSourceAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "dataSourceId",
+              "type": "string"
+            },
+            {
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "DeleteFolderAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "folderId",
+              "type": "string"
+            },
+            {
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "DeleteReportAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "reportId",
+              "type": "string"
+            },
+            {
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ],
+      "constructor": {
+        "signature": "TempoReportServerClient(HttpClient httpClient, IReportServerTokenProvider? tokenProvider = null, string basePath = \"api\")",
+        "description": "Creates a typed client for a report server base address. basePath defaults to api and is trimmed before route composition."
+      },
+      "examples": [
+        {
+          "title": "DI registration",
+          "code": "builder.Services.AddHttpClient<ITempoReportServerClient, TempoReportServerClient>(client =>\n{\n    client.BaseAddress = new Uri(reportServerBaseUrl);\n});"
+        }
+      ],
+      "relatedTypes": [
+        "ITempoReportServerClient",
+        "IReportServerTokenProvider"
+      ]
+    },
+    {
+      "itemName": "UpdateReportDefinitionRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request for updating a report definition and creating a new revision.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "UpdateReportFolderRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request for updating a report folder.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "UpsertReportDataSourceRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request for creating or updating a named data source.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportExecutionContext",
+      "kind": "Record",
+      "category": "General",
+      "namespace": "Tempo.Reporting.Abstractions",
+      "description": "Tenant-scoped execution context passed through reporting providers and render jobs.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/ReportExecutionContext.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CancellationToken",
+          "kind": "Property",
+          "type": "CancellationToken",
+          "description": "Cancellation token for provider, store and render operations."
+        },
+        {
+          "name": "Claims",
+          "kind": "Property",
+          "type": "IReadOnlyDictionary<string, string>",
+          "description": "Immutable claim snapshot used by reporting providers."
+        },
+        {
+          "name": "CultureName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Culture name used during expression formatting and localization."
+        },
+        {
+          "name": "TenantId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Tenant identifier for data isolation and quotas."
+        },
+        {
+          "name": "UserId",
+          "kind": "Property",
+          "type": "string",
+          "description": "User identifier for auditing and data-provider filtering."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportingValidationResources",
+      "kind": "Class",
+      "category": "Resources",
+      "namespace": "Tempo.Reporting.Abstractions.Resources",
+      "description": "Marker type for report validation resources used by IStringLocalizer<ReportingValidationResources>.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Resources/ReportingValidationResources.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IReportDefinitionMigration",
+      "kind": "Interface",
+      "category": "Serialization",
+      "namespace": "Tempo.Reporting.Abstractions.Serialization",
+      "description": "Migrates a report definition JSON object between adjacent schema versions.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Serialization/IReportDefinitionMigration.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportApiJsonSerializer",
+      "kind": "Class",
+      "category": "Serialization",
+      "namespace": "Tempo.Reporting.Abstractions.Serialization",
+      "description": "JSON options for report server API DTO payloads.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Serialization/ReportApiJsonSerializer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Options",
+          "kind": "Property",
+          "type": "static JsonSerializerOptions",
+          "description": "Canonical API JSON options."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportDefinitionJsonException",
+      "kind": "Class",
+      "category": "Serialization",
+      "namespace": "Tempo.Reporting.Abstractions.Serialization",
+      "description": "Exception thrown when report definition JSON cannot be parsed or migrated.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Serialization/ReportDefinitionJsonException.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDefinitionJsonSerializer",
+      "kind": "Class",
+      "category": "Serialization",
+      "namespace": "Tempo.Reporting.Abstractions.Serialization",
+      "description": "Deterministic JSON serializer for ReportDefinition documents, including schema version handling and migration registry integration.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Serialization/ReportDefinitionJsonSerializer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Serialize",
+          "kind": "Method",
+          "type": "string",
+          "description": "Serializes a report definition to compact deterministic JSON.",
+          "parameters": [
+            {
+              "name": "definition",
+              "type": "ReportDefinition"
+            }
+          ]
+        },
+        {
+          "name": "Options",
+          "kind": "Property",
+          "type": "static JsonSerializerOptions",
+          "description": "Canonical serializer options used by report definition JSON."
+        }
+      ],
+      "usage": "Use this serializer when persisting report definitions or when creating canonical JSON revisions for Report Server APIs.",
+      "relatedTypes": [
+        "ReportDefinition",
+        "ReportDefinitionMigrationRegistry",
+        "IReportDefinitionMigration",
+        "ReportDefinitionJsonException"
+      ]
+    },
+    {
+      "itemName": "ReportDefinitionMigrationRegistry",
+      "kind": "Class",
+      "category": "Serialization",
+      "namespace": "Tempo.Reporting.Abstractions.Serialization",
+      "description": "Registry that applies report definition JSON migrations in schema-version order.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Serialization/ReportDefinitionMigrationRegistry.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Migrate",
+          "kind": "Method",
+          "type": "JsonObject",
+          "description": "Migrates a definition JSON object to the requested schema version.",
+          "parameters": [
+            {
+              "name": "definition",
+              "type": "JsonObject"
+            },
+            {
+              "name": "targetSchemaVersion",
+              "type": "int",
+              "default": "ReportDefinition.CurrentSchemaVersion"
+            }
+          ]
+        },
+        {
+          "name": "Empty",
+          "kind": "Property",
+          "type": "static ReportDefinitionMigrationRegistry",
+          "description": "Empty migration registry. Current-version JSON passes through unchanged."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportDefinitionValidator",
+      "kind": "Class",
+      "category": "Validation",
+      "namespace": "Tempo.Reporting.Abstractions.Validation",
+      "description": "FluentValidation validator for report definitions, including schema, page setup, band, element, data set, style, and parameter consistency rules.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Validation/ReportDefinitionValidator.cs",
+      "documentationStatus": "merged",
+      "relatedTypes": [
+        "ReportDefinition",
+        "ReportParameterDefinitionValidator",
+        "ReportingValidationResources"
+      ]
+    },
+    {
+      "itemName": "ReportParameterDefinitionValidator",
+      "kind": "Class",
+      "category": "Validation",
+      "namespace": "Tempo.Reporting.Abstractions.Validation",
+      "description": "Validates report parameter definitions.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Validation/ReportParameterDefinitionValidator.cs",
+      "documentationStatus": "merged"
+    }
+  ],
+  "libraryExamples": [
+    {
+      "title": "Create a Report Server Typed Client",
+      "category": "Report Server",
+      "description": "Registers the typed HTTP client and optional bearer-token provider used by Blazor, API, or worker hosts.",
+      "code": "builder.Services.AddHttpClient<ITempoReportServerClient, TempoReportServerClient>(client =>\n{\n    client.BaseAddress = new Uri(\"https://reports.example.com/\");\n});\n\nbuilder.Services.AddSingleton<IReportServerTokenProvider, MyTokenProvider>();"
+    },
+    {
+      "title": "Render a Remote Report",
+      "category": "Report Server",
+      "description": "Calls the synchronous render endpoint and receives a snapshot, PDF, CSV, XLSX, or PNG payload depending on the requested format.",
+      "code": "var result = await reportServer.RenderAsync(new RenderReportRequestDto\n{\n    TenantId = \"tenant-a\",\n    ReportId = \"sales-by-region\",\n    Format = ReportRenderFormat.Snapshot,\n    CultureName = \"en-US\",\n    Parameters =\n    [\n        new ReportParameterValueDto { Name = \"Year\", Values = [\"2026\"] }\n    ]\n}, cancellationToken);"
+    },
+    {
+      "title": "Implement a Data Provider",
+      "category": "Data",
+      "description": "Feeds report processing with schema plus streamed rows. Hosts can implement SQL, REST, domain service, or in-memory providers.",
+      "code": "public sealed class OrdersReportDataProvider : IReportDataProvider\n{\n    public Task<ReportDataSetResult> GetDataAsync(\n        string dataSetName,\n        ReportDataQuery query,\n        IReadOnlyDictionary<string, ReportParameterValue> parameters,\n        ReportExecutionContext context)\n    {\n        var schema = new[]\n        {\n            new ReportDataColumn(\"Region\", ReportDataFieldType.String),\n            new ReportDataColumn(\"Total\", ReportDataFieldType.Number)\n        };\n\n        return Task.FromResult(new ReportDataSetResult(schema, LoadRowsAsync(context.CancellationToken)));\n    }\n}"
+    }
+  ],
+  "summary": {
+    "itemCount": 101,
+    "manualItemCount": 101,
+    "generatedItemCount": 100,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 0,
+    "publicApiTypeCount": 100
+  }
+}

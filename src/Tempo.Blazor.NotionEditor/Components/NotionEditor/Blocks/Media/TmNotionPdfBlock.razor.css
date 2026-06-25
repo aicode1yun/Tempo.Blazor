@@ -1,0 +1,35 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionPdfBlock — Thin wrapper around optional TmPdfViewer
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-notion-pdf-block {
+    width: 100%;
+}
+
+/* ── Container ────────────────────────────────────────────────── */
+
+.tm-notion-pdf-block__container {
+    display:        flex;
+    flex-direction: column;
+    border:         1px solid var(--tm-border-subtle, #e8e8e8);
+    border-radius:  var(--tm-radius-md, 6px);
+    overflow:       hidden;
+    background:     var(--tm-surface-page, #fff);
+    resize:         vertical;
+    min-height:     200px;
+}
+
+/* Ensure TmPdfViewer fills the container */
+.tm-notion-pdf-block__container ::deep .tm-pdf-viewer {
+    border: none;
+    border-radius: 0;
+    height: 100% !important;
+}
+
+.tm-notion-pdf-block__embed {
+    flex: 1;
+    width: 100%;
+    min-height: 100%;
+    border: none;
+    background: var(--tm-surface-page, #fff);
+}

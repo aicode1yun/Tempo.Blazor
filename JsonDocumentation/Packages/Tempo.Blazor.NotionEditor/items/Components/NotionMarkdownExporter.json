@@ -1,0 +1,40 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
+  "description": "Converts an ordered list of objects into a Markdown string. Inline HTML attributes in block content (bold, italic, code, links…) are mapped to standard CommonMark / GFM syntax.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionMarkdownExporter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Export",
+      "kind": "Method",
+      "type": "string",
+      "parameters": [
+        {
+          "name": "blocks",
+          "type": "IReadOnlyList<IPageBlock>"
+        },
+        {
+          "name": "pageTitle",
+          "type": "string",
+          "default": "\"\""
+        }
+      ]
+    },
+    {
+      "name": "HtmlToMarkdownInline",
+      "kind": "Method",
+      "type": "string",
+      "description": "Converts simple inline HTML (as stored in block content) to CommonMark Markdown.",
+      "parameters": [
+        {
+          "name": "html",
+          "type": "string?"
+        }
+      ]
+    }
+  ],
+  "itemName": "NotionMarkdownExporter"
+}

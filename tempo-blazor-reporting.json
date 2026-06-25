@@ -1,0 +1,1098 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.Reporting",
+    "title": "Tempo.Blazor.Reporting",
+    "description": "Blazor reporting components for Tempo Reporting: report viewer, parameter panel, explorer, lightweight designer, embedded sources, and remote Report Server integration.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;reporting;reports;viewer;designer;explorer;parameters;pdf",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Reporting"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor/Tempo.Blazor.csproj",
+      "../Tempo.Reporting.Abstractions/Tempo.Reporting.Abstractions.csproj",
+      "../Tempo.Reporting.Engine/Tempo.Reporting.Engine.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Components.TmReportDesigner.razor",
+      "Tempo.Blazor.Components.TmReportExplorer.razor",
+      "Tempo.Blazor.Components.TmReportParameterPanel.razor",
+      "Tempo.Blazor.Components.TmReportViewer.razor",
+      "Tempo.Blazor.Reporting.Configuration",
+      "Tempo.Blazor.Reporting.Interop",
+      "Tempo.Blazor.Reporting.Models",
+      "Tempo.Blazor.Reporting.Services"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Getting Started with Tempo.Blazor.Reporting",
+    "overview": "Tempo.Blazor.Reporting provides Blazor components and services for viewing, exploring, designing, and embedding Tempo reports. It supports embedded rendering with local report definitions and remote rendering against Tempo Report Server endpoints.",
+    "targetFramework": ".NET 8.0 / 9.0 / 10.0 (multi-target)",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Reporting"
+      ],
+      "programCs": {
+        "description": "Register Tempo.Blazor and reporting viewer services.",
+        "code": "using Tempo.Blazor.Reporting.Configuration;\n\nbuilder.Services.AddTempoBlazorReporting();"
+      },
+      "cssAndJs": {
+        "description": "The package uses Tempo.Blazor styles and ships a reporting viewer JS bundle as a static web asset.",
+        "code": "<link href=\"_content/Tempo.Blazor/css/tempo-blazor.bundled.css\" rel=\"stylesheet\" />\n<!-- The report viewer loads _content/Tempo.Blazor.Reporting/js/reporting/tm-report-viewer.bundle.js as an ES module. -->"
+      },
+      "importsRazor": {
+        "description": "Add reporting namespaces for convenient component usage.",
+        "code": "@using Tempo.Blazor.Reporting.Components\n@using Tempo.Blazor.Reporting.Models\n@using Tempo.Blazor.Reporting.Services"
+      }
+    },
+    "namespaces": [
+      "Tempo.Blazor.Reporting.Components",
+      "Tempo.Blazor.Reporting.Configuration",
+      "Tempo.Blazor.Reporting.Models",
+      "Tempo.Blazor.Reporting.Services"
+    ],
+    "notes": [
+      "EmbeddedReportSource runs the reporting engine in the current Blazor render mode.",
+      "RemoteReportSource uses HTTP endpoints compatible with the report viewer-facing remote API shape.",
+      "For full Report Server catalog, revisions, render jobs, and data source administration use ITempoReportServerClient from Tempo.Reporting.Abstractions."
+    ],
+    "packages": [
+      {
+        "name": "Tempo.Blazor",
+        "description": "Comprehensive Blazor component library with 100+ components. Supports WebAssembly, Server, and InteractiveAuto render modes. Multi-targets .NET 8/9/10. Includes multilingual support (EN/CS), CSS variable theming, and dark mode. Optional FluentValidation integration is available through Tempo.Blazor.FluentValidation."
+      },
+      {
+        "name": "Tempo.Blazor.PdfViewer",
+        "description": "PDF.js powered PDF viewer component for Tempo.Blazor with thumbnails, search, text layer, rotation, zoom, and continuous scroll."
+      },
+      {
+        "name": "Tempo.Blazor.Codes",
+        "description": "QR code and barcode components for Tempo.Blazor backed by QRCoder and ZXing.Net."
+      },
+      {
+        "name": "Tempo.Blazor.DiagramEditor",
+        "description": "Diagram editor components for Tempo.Blazor, including stencil libraries, templates, import helpers, auto-layout, and diagram canvas interop."
+      },
+      {
+        "name": "Tempo.Blazor.Wireframe",
+        "description": "Wireframe editor components for Tempo.Blazor with toolbox, schema registry, canvas interop, page tabs, minimap, and export helpers."
+      },
+      {
+        "name": "Tempo.Blazor.Modeling",
+        "description": "Modeling editor components for Tempo.Blazor, including BPMN, UML, ArchiMate, ERD notation profiles and diagram generation."
+      },
+      {
+        "name": "Tempo.Blazor.Spreadsheet",
+        "description": "Excel-like spreadsheet components for Tempo.Blazor, including canvas rendering, formula editing, workbook import/export, and spreadsheet interop assets."
+      },
+      {
+        "name": "Tempo.Blazor.GanttXlsx",
+        "description": "Optional XLSX import and export helpers for Tempo.Blazor Gantt components, backed by DocumentFormat.OpenXml."
+      },
+      {
+        "name": "Tempo.Blazor.DocumentEditor",
+        "description": "Document editor components for Tempo.Blazor, including canvas rendering, collaboration UI, clipboard normalization, and document editor interop assets."
+      },
+      {
+        "name": "Tempo.Blazor.NotionEditor",
+        "description": "Notion-style editor components for Tempo.Blazor, including pages, blocks, databases, collaboration UI, comments, media, and Tempo embed blocks."
+      },
+      {
+        "name": "Tempo.Blazor.Signing",
+        "description": "Signing workflow components for Tempo.Blazor, including PDF template design, recipient roles, signing form runner, document comments, verification panels, and audit trail UI."
+      },
+      {
+        "name": "Tempo.Blazor.All",
+        "description": "Compatibility package for Tempo.Blazor that references the core package and split feature packages for applications that want the full component suite."
+      },
+      {
+        "name": "Tempo.Blazor.Abstractions",
+        "description": "Interfaces and models for Tempo.Blazor component library. Zero UI dependencies – safe to reference from API/service projects."
+      },
+      {
+        "name": "Tempo.Blazor.FluentValidation",
+        "description": "FluentValidation integration for Tempo.Blazor component library. Provides FluentValidationValidator component for EditForm and assembly scanning for validator registration."
+      },
+      {
+        "name": "Tempo.Blazor.Collaboration",
+        "description": "SignalR collaboration providers for Tempo.Blazor document editor abstractions."
+      },
+      {
+        "name": "Tempo.Blazor.DocumentFormats",
+        "description": "Optional server-side DOCX and ODT import/export support for TmDocumentEditor."
+      },
+      {
+        "name": "Tempo.Blazor.EmailTemplates.Abstractions",
+        "description": "Logic and contracts for the Tempo.Blazor email template editor: block model, MJML generation and import, Scriban templating sandbox, variable extraction, render pipeline, DTOs and validators. No Blazor dependency – safe to reference from API/service projects."
+      },
+      {
+        "name": "Tempo.Blazor.EmailTemplates",
+        "description": "Drag-and-drop email template editor component (TmEmailTemplateEditor) for Tempo.Blazor. Visual MJML editor with full MJML 4 parity, bidirectional MJML import/export, Scriban variable templating and live preview. Built entirely on Tempo.Blazor components."
+      },
+      {
+        "name": "Tempo.Blazor.Mcp",
+        "description": "Model Context Protocol (MCP) tools for designing and editing Tempo.Blazor wireframes, diagrams, editor documents and reports with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server."
+      },
+      {
+        "name": "Tempo.Reporting.Abstractions",
+        "description": "Contracts, JSON definition schema, validation models, data provider interfaces, and server DTOs for Tempo Reporting. No Blazor or ASP.NET dependency."
+      },
+      {
+        "name": "Tempo.Reporting.Engine",
+        "description": "Tempo Reporting processing engine with expression evaluation, parameter resolution, layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives."
+      },
+      {
+        "name": "Tempo.Blazor.Reporting",
+        "description": "Blazor reporting components for Tempo Reporting: report viewer, parameter panel, explorer, lightweight designer, embedded sources, and remote Report Server integration."
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "TmReportDesigner",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.TmReportDesigner.razor",
+      "description": "Lightweight report designer MVP with band canvas, element toolbox, properties panel, data/parameter editing, expression authoring, preview, validation summary, and draft/publish save callbacks.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Components/TmReportDesigner.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.TmReportDesigner.razor",
+        "@using Tempo.Blazor.Reporting.Components",
+        "@using Tempo.Blazor.Reporting.Models",
+        "@using Tempo.Reporting.Abstractions.Definitions"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Raised when users save a draft or publish a revision."
+        },
+        {
+          "name": "DefinitionChanged",
+          "type": "EventCallback<ReportDefinition>",
+          "isRequired": false,
+          "description": "Report definition edited by the designer."
+        },
+        {
+          "name": "Saved",
+          "type": "EventCallback<ReportDesignerSaveEventArgs>",
+          "isRequired": false,
+          "description": "Raised when the edited definition changes."
+        }
+      ],
+      "relatedTypes": [
+        "ReportDefinition",
+        "ReportDesignerSaveEventArgs",
+        "ReportDesignerSaveKind"
+      ]
+    },
+    {
+      "itemName": "TmReportExplorer",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.TmReportExplorer.razor",
+      "description": "Report catalog explorer with folder tree, grid/list report views, search, thumbnails, folder creation, report open actions, and report move callbacks.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Components/TmReportExplorer.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.TmReportExplorer.razor",
+        "@using Tempo.Blazor.Reporting.Components",
+        "@using Tempo.Blazor.Reporting.Models"
+      ],
+      "parameters": [
+        {
+          "name": "AllowFolderManagement",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Raised when the explorer view mode changes."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Raised when a report should be moved."
+        },
+        {
+          "name": "CreateFolderRequested",
+          "type": "EventCallback<ReportExplorerCreateFolderRequest>",
+          "isRequired": false,
+          "description": "Raised when a report should be opened."
+        },
+        {
+          "name": "CurrentFolderPath",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"/\"",
+          "description": "Reports in the current scope."
+        },
+        {
+          "name": "CurrentFolderPathChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Current folder path."
+        },
+        {
+          "name": "ReportMoveRequested",
+          "type": "EventCallback<ReportExplorerMoveReportRequest>",
+          "isRequired": false,
+          "description": "Raised when a folder should be created."
+        },
+        {
+          "name": "ReportOpened",
+          "type": "EventCallback<ReportExplorerReportItem>",
+          "isRequired": false,
+          "description": "Whether folder creation and move controls are available."
+        },
+        {
+          "name": "Reports",
+          "type": "IReadOnlyList<ReportExplorerReportItem>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Root folder for the folder tree."
+        },
+        {
+          "name": "SearchText",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Raised when the current folder path changes."
+        },
+        {
+          "name": "SearchTextChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Current search text."
+        },
+        {
+          "name": "ViewMode",
+          "type": "ReportExplorerViewMode",
+          "isRequired": false,
+          "default": "ReportExplorerViewMode.Grid",
+          "description": "Raised when search text changes."
+        },
+        {
+          "name": "ViewModeChanged",
+          "type": "EventCallback<ReportExplorerViewMode>",
+          "isRequired": false,
+          "description": "Current explorer view mode."
+        }
+      ],
+      "relatedTypes": [
+        "ReportExplorerFolder",
+        "ReportExplorerReportItem",
+        "ReportExplorerViewMode",
+        "ReportExplorerCreateFolderRequest",
+        "ReportExplorerMoveReportRequest"
+      ]
+    },
+    {
+      "itemName": "TmReportParameterPanel",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.TmReportParameterPanel.razor",
+      "description": "Auto-generated report parameter panel for text, number, date, bool, select, and multi-select parameter metadata. It emits changed values and submit events used by TmReportViewer.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Components/TmReportParameterPanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.TmReportParameterPanel.razor",
+        "@using Tempo.Blazor.Reporting.Components",
+        "@using Tempo.Blazor.Reporting.Models"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Disables parameter controls."
+        },
+        {
+          "name": "Disabled",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Fired when the user submits parameters."
+        },
+        {
+          "name": "OnParameterChanged",
+          "type": "EventCallback<ReportParameterChangedEventArgs>",
+          "isRequired": false,
+          "description": "Current parameter values."
+        },
+        {
+          "name": "OnSubmit",
+          "type": "EventCallback<ReportParameterSubmitEventArgs>",
+          "isRequired": false,
+          "description": "Fired when a parameter value changes."
+        },
+        {
+          "name": "Values",
+          "type": "IReadOnlyDictionary<string, ReportParameterValue>?",
+          "isRequired": false,
+          "description": "Parameter metadata to render."
+        }
+      ],
+      "relatedTypes": [
+        "ReportViewerParameterMetadata",
+        "ReportViewerParameterOption",
+        "ReportParameterChangedEventArgs",
+        "ReportParameterSubmitEventArgs"
+      ]
+    },
+    {
+      "itemName": "TmReportViewer",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.TmReportViewer.razor",
+      "description": "Interactive Blazor report viewer with toolbar navigation, zoom modes, parameter panel integration, refresh, PDF/CSV/XLSX export callbacks, loading/empty/error states, and canvas snapshot rendering.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Components/TmReportViewer.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.TmReportViewer.razor",
+        "@using Tempo.Blazor.Reporting.Components",
+        "@using Tempo.Blazor.Reporting.Models",
+        "@using Tempo.Blazor.Reporting.Services"
+      ],
+      "parameters": [
+        {
+          "name": "AutoLoad",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Initial parameter values."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "User identifier passed to report sources."
+        },
+        {
+          "name": "CsvExported",
+          "type": "EventCallback<ReportViewerExportResult>",
+          "isRequired": false,
+          "description": "Fired after a PDF export is produced."
+        },
+        {
+          "name": "CultureName",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"en-US\"",
+          "description": "Viewer height CSS value."
+        },
+        {
+          "name": "Height",
+          "type": "string?",
+          "isRequired": false,
+          "default": "\"720px\"",
+          "description": "Whether users can toggle the parameter panel from the toolbar."
+        },
+        {
+          "name": "ParameterValues",
+          "type": "IReadOnlyDictionary<string, ReportParameterValue>?",
+          "isRequired": false,
+          "description": "Report source to render."
+        },
+        {
+          "name": "PdfExported",
+          "type": "EventCallback<ReportViewerExportResult>",
+          "isRequired": false,
+          "description": "Fired after a snapshot is rendered."
+        },
+        {
+          "name": "ShowParameterPanel",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the viewer renders immediately after metadata is loaded."
+        },
+        {
+          "name": "ShowParameterPanelToggle",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the parameter panel starts visible."
+        },
+        {
+          "name": "SnapshotChanged",
+          "type": "EventCallback<ReportSnapshot>",
+          "isRequired": false,
+          "description": "Additional CSS classes."
+        },
+        {
+          "name": "TenantId",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Culture used for rendering."
+        },
+        {
+          "name": "UserId",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Tenant identifier passed to report sources."
+        },
+        {
+          "name": "XlsxExported",
+          "type": "EventCallback<ReportViewerExportResult>",
+          "isRequired": false,
+          "description": "Fired after a CSV export is produced."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Embedded report",
+          "code": "<TmReportViewer ReportSource=\"@new EmbeddedReportSource(definition, dataProvider)\" Height=\"760px\" />"
+        },
+        {
+          "title": "Remote report",
+          "code": "<TmReportViewer ReportSource=\"@new RemoteReportSource(Http, reportId)\" TenantId=\"tenant-a\" UserId=\"user-1\" />"
+        }
+      ],
+      "relatedTypes": [
+        "IReportSource",
+        "EmbeddedReportSource",
+        "RemoteReportSource",
+        "ReportViewerMetadata",
+        "ReportViewerRenderResult",
+        "ReportViewerExportResult"
+      ]
+    },
+    {
+      "itemName": "ServiceCollectionExtensions",
+      "kind": "Class",
+      "category": "Configuration",
+      "namespace": "Tempo.Blazor.Reporting.Configuration",
+      "description": "DI extension methods for registering Tempo.Blazor.Reporting services, including Tempo.Blazor core services, HttpClient, default text measurement, and PDF rendering support.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Configuration/ServiceCollectionExtensions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AddTempoBlazorReporting",
+          "kind": "Method",
+          "type": "IServiceCollection",
+          "description": "Registers services required by reporting viewer components.",
+          "parameters": [
+            {
+              "name": "services",
+              "type": "this IServiceCollection"
+            }
+          ]
+        }
+      ],
+      "methods": [
+        {
+          "name": "AddTempoBlazorReporting",
+          "description": "Registers the services required by reporting viewer components."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportParameterValueJsonConverter",
+      "kind": "Class",
+      "category": "Interop",
+      "namespace": "Tempo.Blazor.Reporting.Interop",
+      "description": "Serializes report parameter values for remote report viewer HTTP calls.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Interop/ReportParameterValueJsonConverter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportViewerJson",
+      "kind": "Class",
+      "category": "Interop",
+      "namespace": "Tempo.Blazor.Reporting.Interop",
+      "description": "JSON options shared by report viewer interop and HTTP sources.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Interop/ReportViewerJson.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "SerializeSnapshot",
+          "kind": "Method",
+          "type": "string",
+          "description": "Serializes a snapshot for the JavaScript painter.",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "ReportSnapshot"
+            }
+          ]
+        },
+        {
+          "name": "Options",
+          "kind": "Property",
+          "type": "static JsonSerializerOptions",
+          "description": "Viewer JSON options."
+        }
+      ]
+    },
+    {
+      "itemName": "IReportSource",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Report source abstraction consumed by TmReportViewer. Implementations can render locally from a definition or delegate to remote HTTP endpoints.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/IReportSource.cs",
+      "documentationStatus": "merged",
+      "methods": [
+        "GetMetadataAsync",
+        "RenderAsync",
+        "ExportPdfAsync",
+        "ExportCsvAsync",
+        "ExportXlsxAsync"
+      ],
+      "relatedTypes": [
+        "EmbeddedReportSource",
+        "RemoteReportSource",
+        "ReportViewerMetadata",
+        "ReportViewerRenderResult",
+        "ReportViewerExportResult"
+      ]
+    },
+    {
+      "itemName": "ReportDesignerSaveEventArgs",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Event args raised when a designer save operation completes.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportDesignerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDesignerSaveKind",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Designer save operation kind.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportDesignerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportExplorerCreateFolderRequest",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Request raised when a folder should be created.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportExplorerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportExplorerFolder",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Folder node displayed by TmReportExplorer.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportExplorerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportExplorerMoveReportRequest",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Request raised when a report should be moved to another folder.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportExplorerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportExplorerReportItem",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Report entry displayed by TmReportExplorer.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportExplorerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportExplorerViewMode",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Visual mode used by the report explorer.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportExplorerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterChangedEventArgs",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Parameter change raised by TmReportParameterPanel.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportParameterChangedEventArgs.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportParameterSubmitEventArgs",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Parameter submit event raised by TmReportParameterPanel.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportParameterSubmitEventArgs.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportViewerExportResult",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Binary export returned by a report source.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerExportResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Bytes",
+          "kind": "Property",
+          "type": "byte[]",
+          "description": "Export bytes."
+        },
+        {
+          "name": "ContentType",
+          "kind": "Property",
+          "type": "string",
+          "description": "MIME content type."
+        },
+        {
+          "name": "FileName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Suggested file name."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportViewerMetadata",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Report metadata needed before rendering.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerMetadata.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Parameters",
+          "kind": "Property",
+          "type": "IReadOnlyList<ReportViewerParameterMetadata>",
+          "description": "Viewer parameter metadata."
+        },
+        {
+          "name": "ReportId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Stable report identifier."
+        },
+        {
+          "name": "Title",
+          "kind": "Property",
+          "type": "string",
+          "description": "Report title."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportViewerMetadataRequest",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Request used to resolve report metadata and cascading parameter options.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerMetadataRequest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CultureName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Culture used for parameter parsing and option labels."
+        },
+        {
+          "name": "Parameters",
+          "kind": "Property",
+          "type": "IReadOnlyDictionary<string, ReportParameterValue>",
+          "description": "Current parameter values used for cascading option resolution."
+        },
+        {
+          "name": "TenantId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Tenant identifier passed to report providers."
+        },
+        {
+          "name": "UserId",
+          "kind": "Property",
+          "type": "string",
+          "description": "User identifier passed to report providers."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportViewerParameterMetadata",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Parameter definition plus resolved viewer options.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerParameterMetadata.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Definition",
+          "kind": "Property",
+          "type": "ReportParameterDefinition",
+          "description": "Parameter definition."
+        },
+        {
+          "name": "IsCascading",
+          "kind": "Property",
+          "type": "bool",
+          "description": "True when options are loaded from a data set and may depend on previous parameter values."
+        },
+        {
+          "name": "Options",
+          "kind": "Property",
+          "type": "IReadOnlyList<ReportViewerParameterOption>",
+          "description": "Resolved available values."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportViewerParameterOption",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Resolved parameter option displayed by the viewer parameter panel.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerParameterOption.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Label",
+          "kind": "Property",
+          "type": "string",
+          "description": "Display label."
+        },
+        {
+          "name": "Value",
+          "kind": "Property",
+          "type": "string",
+          "description": "Serialized parameter value."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportViewerRenderRequest",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Render request issued by TmReportViewer.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerRenderRequest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CultureName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Culture used for processing."
+        },
+        {
+          "name": "InteractionToken",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Stateless interaction token carrying toggle and drill-down state."
+        },
+        {
+          "name": "Parameters",
+          "kind": "Property",
+          "type": "IReadOnlyDictionary<string, ReportParameterValue>",
+          "description": "Resolved or user-supplied parameter values."
+        },
+        {
+          "name": "TenantId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Tenant identifier passed to report providers."
+        },
+        {
+          "name": "UserId",
+          "kind": "Property",
+          "type": "string",
+          "description": "User identifier passed to report providers."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportViewerRenderResult",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Rendered report snapshot with optional refreshed metadata.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerRenderResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "InteractionToken",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Interaction token used for this render."
+        },
+        {
+          "name": "Metadata",
+          "kind": "Property",
+          "type": "ReportViewerMetadata?",
+          "description": "Metadata resolved during render."
+        },
+        {
+          "name": "Parameters",
+          "kind": "Property",
+          "type": "IReadOnlyDictionary<string, ReportParameterValue>?",
+          "description": "Resolved parameter values used by the render."
+        },
+        {
+          "name": "RenderedAt",
+          "kind": "Property",
+          "type": "DateTimeOffset",
+          "description": "UTC render time."
+        },
+        {
+          "name": "Snapshot",
+          "kind": "Property",
+          "type": "ReportSnapshot",
+          "description": "Rendered fixed-page snapshot."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportViewerZoom",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Zoom state passed from the Blazor viewer to the canvas module.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerZoom.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Mode",
+          "kind": "Property",
+          "type": "ReportViewerZoomMode",
+          "description": "Zoom mode."
+        },
+        {
+          "name": "Percent",
+          "kind": "Property",
+          "type": "int",
+          "description": "Explicit zoom percentage used when is ."
+        }
+      ]
+    },
+    {
+      "itemName": "ReportViewerZoomMode",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Reporting.Models",
+      "description": "Report viewer zoom behavior.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerZoomMode.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DefaultReportViewerTextMeasurer",
+      "kind": "Class",
+      "category": "Services",
+      "namespace": "Tempo.Blazor.Reporting.Services",
+      "description": "Deterministic fallback text measurer used when a host does not register font metrics.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Services/DefaultReportViewerTextMeasurer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "MeasureRun",
+          "kind": "Method",
+          "type": "TextMeasurement",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "TextMeasureRequest"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "EmbeddedReportSource",
+      "kind": "Class",
+      "category": "Services",
+      "namespace": "Tempo.Blazor.Reporting.Services",
+      "description": "IReportSource implementation that runs a ReportDefinition directly in the current Blazor host using IReportDataProvider, Tempo.Reporting.Engine processing/layout, and local PDF/CSV/XLSX exporters.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Services/EmbeddedReportSource.cs",
+      "documentationStatus": "merged",
+      "relatedTypes": [
+        "IReportSource",
+        "ReportDefinition",
+        "IReportDataProvider",
+        "ReportSnapshotGenerator",
+        "ReportPdfRenderer"
+      ]
+    },
+    {
+      "itemName": "RemoteReportSource",
+      "kind": "Class",
+      "category": "Services",
+      "namespace": "Tempo.Blazor.Reporting.Services",
+      "description": "HTTP-backed IReportSource for viewer-facing remote report endpoints. It loads metadata, renders snapshots, and exports PDF/CSV/XLSX by posting ReportViewer request DTOs.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Services/RemoteReportSource.cs",
+      "documentationStatus": "merged",
+      "constructor": {
+        "signature": "RemoteReportSource(HttpClient httpClient, string reportId, string basePath = \"api/reports\")",
+        "description": "Creates a remote source for one report id. The base path is trimmed and defaults to api/reports."
+      },
+      "relatedTypes": [
+        "IReportSource",
+        "ReportViewerMetadataRequest",
+        "ReportViewerRenderRequest",
+        "ReportViewerExportResult"
+      ]
+    },
+    {
+      "itemName": "ReportInteractionState",
+      "kind": "Class",
+      "category": "Services",
+      "namespace": "Tempo.Blazor.Reporting.Services",
+      "description": "Helpers for stateless report viewer interaction tokens.",
+      "packageId": "Tempo.Blazor.Reporting",
+      "sourcePath": "src/Tempo.Blazor.Reporting/Services/ReportInteractionState.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Contains",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Returns true when the interaction token contains a key.",
+          "parameters": [
+            {
+              "name": "token",
+              "type": "string?"
+            },
+            {
+              "name": "key",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Toggle",
+          "kind": "Method",
+          "type": "string",
+          "description": "Toggles a key in a stable comma-separated interaction token.",
+          "parameters": [
+            {
+              "name": "token",
+              "type": "string?"
+            },
+            {
+              "name": "key",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [
+    {
+      "title": "Embedded Viewer",
+      "category": "Components",
+      "description": "Runs the reporting engine locally from a ReportDefinition and IReportDataProvider.",
+      "code": "@using Tempo.Blazor.Reporting.Services\n\n<TmReportViewer ReportSource=\"@_source\"\n                TenantId=\"tenant-a\"\n                UserId=\"user-1\"\n                Height=\"760px\" />\n\n@code {\n    private IReportSource _source = default!;\n\n    protected override void OnInitialized()\n    {\n        _source = new EmbeddedReportSource(_definition, _dataProvider);\n    }\n}"
+    },
+    {
+      "title": "Remote Viewer",
+      "category": "Components",
+      "description": "Uses HTTP endpoints for metadata, snapshot rendering, and export.",
+      "code": "@inject HttpClient Http\n\n<TmReportViewer ReportSource=\"@_source\"\n                TenantId=\"tenant-a\"\n                UserId=\"user-1\"\n                CultureName=\"cs-CZ\" />\n\n@code {\n    private IReportSource? _source;\n\n    protected override void OnInitialized()\n    {\n        _source = new RemoteReportSource(Http, \"sales-by-region\");\n    }\n}"
+    },
+    {
+      "title": "Explorer to Viewer Flow",
+      "category": "Components",
+      "description": "Shows a catalog with folder navigation and opens the selected report in the viewer.",
+      "code": "<TmReportExplorer RootFolder=\"@_root\"\n                  Reports=\"@_reports\"\n                  CurrentFolderPath=\"@_folder\"\n                  CurrentFolderPathChanged=\"folder => _folder = folder\"\n                  ReportOpened=\"OpenReport\" />\n\n@if (_selectedSource is not null)\n{\n    <TmReportViewer ReportSource=\"@_selectedSource\" />\n}"
+    },
+    {
+      "title": "Register Services",
+      "category": "Setup",
+      "description": "Registers Tempo.Blazor services, HttpClient, default text measurer, and PDF renderer dependencies used by reporting components.",
+      "code": "builder.Services.AddTempoBlazorReporting();"
+    }
+  ],
+  "assets": [
+    {
+      "path": "src/Tempo.Blazor.Reporting/wwwroot/css/tempo-blazor-reporting.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.Reporting/wwwroot/js/reporting/tm-report-viewer.bundle.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.Reporting/wwwroot/js/reporting/tm-report-viewer.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.Reporting/wwwroot/js/reporting/tm-report-viewer.test.mjs",
+      "kind": "JavaScript"
+    }
+  ],
+  "summary": {
+    "itemCount": 30,
+    "manualItemCount": 30,
+    "generatedItemCount": 30,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 4,
+    "publicApiTypeCount": 26
+  }
+}

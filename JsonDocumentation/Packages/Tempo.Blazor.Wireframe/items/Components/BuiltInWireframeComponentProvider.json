@@ -1,0 +1,17 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Registers wireframe definitions for all built-in Tempo.Blazor components. Priority 0 – custom providers with higher priority can override individual types.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/BuiltInWireframeComponentProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetDefinitions",
+      "kind": "Method",
+      "type": "IEnumerable<WireframeComponentDef>"
+    }
+  ],
+  "itemName": "BuiltInWireframeComponentProvider"
+}

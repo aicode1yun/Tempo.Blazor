@@ -1,3 +1,5 @@
+using Tempo.Blazor.Abstractions.Shared;
+
 namespace Tempo.Blazor.Abstractions.Models;
 
 /// <summary>Normalized anchor kind for a document comment thread.</summary>
@@ -216,6 +218,211 @@ public sealed class DocumentCommentThread
 
     /// <summary>Timestamp when the thread was resolved.</summary>
     public DateTimeOffset? ResolvedAt { get; set; }
+}
+
+/// <summary>Maps document-viewer comment models to the shared comment contract.</summary>
+public static class DocumentViewerCommentBridge
+{
+    /// <summary>Entity type used by document-viewer comments in shared comment providers.</summary>
+    public const string EntityType = "document-viewer-document";
+
+    /// <summary>Creates a shared entity reference for a document-viewer document.</summary>
+    /// <param name="documentId">Stable document identifier.</param>
+    public static TmEntityRef Entity(string documentId)
+        => TmEntityRef.Create(EntityType, documentId);
+
+    /// <summary>Converts a document-viewer comment thread to a shared comment thread.</summary>
+    /// <param name="thread">Document-viewer comment thread.</param>
+    /// <param name="documentId">Stable document identifier.</param>
+    public static TmCommentThread ToTmCommentThread(DocumentCommentThread thread, string documentId)
+    {
+        ArgumentNullException.ThrowIfNull(thread);
+
+        var threadId = string.IsNullOrWhiteSpace(thread.Id) ? Guid.NewGuid().ToString("N") : thread.Id;
+        var entries = thread.Comments
+            .Select(comment => ToTmCommentEntry(comment, threadId))
+            .ToList();
+
+        return new TmCommentThread
+        {
+            Id = threadId,
+            EntityRef = Entity(documentId),
+            Anchor = ToTmCommentAnchor(thread.Anchor),
+            Status = ToTmStatus(thread.Status),
+            CreatedAt = entries.Count == 0 ? DateTimeOffset.UtcNow : entries.Min(entry => entry.CreatedAt),
+            UpdatedAt = GetUpdatedAt(entries, thread.ResolvedAt),
+            ResolvedAt = thread.ResolvedAt,
+            ResolvedBy = ToNullableTmUserRef(thread.ResolvedByUserId, thread.ResolvedByName),
+            Entries = entries
+        };
+    }
+
+    /// <summary>Converts a shared comment thread to a document-viewer comment thread.</summary>
+    /// <param name="thread">Shared comment thread.</param>
+    public static DocumentCommentThread ToDocumentCommentThread(TmCommentThread thread)
+    {
+        ArgumentNullException.ThrowIfNull(thread);
+
+        return new DocumentCommentThread
+        {
+            Id = thread.Id,
+            Anchor = ToDocumentCommentAnchor(thread.Anchor),
+            Status = ToDocumentStatus(thread.Status),
+            Comments = thread.Entries.Select(ToDocumentComment).ToList(),
+            ResolvedByUserId = thread.ResolvedBy?.Id,
+            ResolvedByName = thread.ResolvedBy?.DisplayName,
+            ResolvedAt = thread.ResolvedAt
+        };
+    }
+
+    /// <summary>Converts a document-viewer comment entry to a shared comment entry.</summary>
+    /// <param name="comment">Document-viewer comment entry.</param>
+    /// <param name="threadId">Parent thread identifier.</param>
+    public static TmCommentEntry ToTmCommentEntry(DocumentComment comment, string threadId)
+    {
+        ArgumentNullException.ThrowIfNull(comment);
+
+        return new TmCommentEntry
+        {
+            Id = string.IsNullOrWhiteSpace(comment.Id) ? Guid.NewGuid().ToString("N") : comment.Id,
+            ThreadId = threadId,
+            Author = ToTmUserRef(comment.AuthorId, comment.AuthorName, comment.AuthorAvatarUrl),
+            Body = comment.Body,
+            BodyFormat = TmCommentBodyFormat.PlainText,
+            CreatedAt = comment.CreatedAt == default ? DateTimeOffset.UtcNow : comment.CreatedAt,
+            EditedAt = comment.EditedAt,
+            Mentions = comment.Mentions.Select(ToTmMention).ToList(),
+            Reactions = comment.Reactions.Select(ToTmReaction).ToList(),
+            CanEdit = comment.CanEdit,
+            CanDelete = comment.CanDelete
+        };
+    }
+
+    /// <summary>Converts a shared comment entry to a document-viewer comment entry.</summary>
+    /// <param name="entry">Shared comment entry.</param>
+    public static DocumentComment ToDocumentComment(TmCommentEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        return new DocumentComment
+        {
+            Id = entry.Id,
+            AuthorId = entry.Author.Id,
+            AuthorName = string.IsNullOrWhiteSpace(entry.Author.DisplayName) ? entry.Author.Id : entry.Author.DisplayName,
+            AuthorAvatarUrl = entry.Author.AvatarUrl,
+            Body = entry.Body,
+            CreatedAt = entry.CreatedAt == default ? DateTimeOffset.UtcNow : entry.CreatedAt,
+            EditedAt = entry.EditedAt,
+            Mentions = entry.Mentions.Select(ToDocumentMention).ToList(),
+            Reactions = entry.Reactions.Select(ToDocumentReaction).ToList(),
+            CanEdit = entry.CanEdit,
+            CanDelete = entry.CanDelete
+        };
+    }
+
+    private static TmCommentAnchor ToTmCommentAnchor(DocumentCommentAnchor anchor)
+        => anchor.Kind switch
+        {
+            DocumentCommentAnchorKind.Area => TmCommentAnchor.PageArea(
+                anchor.PageNumber,
+                anchor.X,
+                anchor.Y,
+                anchor.Width,
+                anchor.Height),
+            DocumentCommentAnchorKind.Page => TmCommentAnchor.Page(anchor.PageNumber),
+            _ => TmCommentAnchor.PagePoint(anchor.PageNumber, anchor.X, anchor.Y)
+        };
+
+    private static DocumentCommentAnchor ToDocumentCommentAnchor(TmCommentAnchor? anchor)
+        => anchor?.Kind switch
+        {
+            TmCommentAnchorKind.PageArea => DocumentCommentAnchor.Area(
+                anchor.PageNumber ?? 1,
+                anchor.X ?? 0,
+                anchor.Y ?? 0,
+                anchor.Width ?? 0,
+                anchor.Height ?? 0),
+            TmCommentAnchorKind.Page => DocumentCommentAnchor.Page(anchor.PageNumber ?? 1),
+            TmCommentAnchorKind.PagePoint => DocumentCommentAnchor.Point(
+                anchor.PageNumber ?? 1,
+                anchor.X ?? 0,
+                anchor.Y ?? 0),
+            _ => DocumentCommentAnchor.Page(anchor?.PageNumber ?? 1)
+        };
+
+    private static TmCommentMention ToTmMention(DocumentCommentMention mention)
+    {
+        var user = ToTmUserRef(mention.UserId, mention.DisplayName, null);
+        return new TmCommentMention
+        {
+            User = user,
+            DisplayText = string.IsNullOrWhiteSpace(mention.DisplayName) ? user.Id : mention.DisplayName
+        };
+    }
+
+    private static DocumentCommentMention ToDocumentMention(TmCommentMention mention)
+    {
+        var displayName = string.IsNullOrWhiteSpace(mention.DisplayText)
+            ? mention.User.DisplayName
+            : mention.DisplayText;
+
+        return new DocumentCommentMention
+        {
+            UserId = mention.User.Id,
+            DisplayName = string.IsNullOrWhiteSpace(displayName) ? mention.User.Id : displayName
+        };
+    }
+
+    private static TmCommentReaction ToTmReaction(DocumentCommentReaction reaction)
+        => new()
+        {
+            Value = reaction.Value,
+            UserIds = reaction.UserIds.ToList()
+        };
+
+    private static DocumentCommentReaction ToDocumentReaction(TmCommentReaction reaction)
+        => new()
+        {
+            Value = reaction.Value,
+            UserIds = reaction.UserIds.ToList()
+        };
+
+    private static TmUserRef ToTmUserRef(string? userId, string? displayName, string? avatarUrl)
+    {
+        var normalizedId = userId ?? string.Empty;
+        return new TmUserRef
+        {
+            Id = normalizedId,
+            DisplayName = string.IsNullOrWhiteSpace(displayName) ? normalizedId : displayName,
+            AvatarUrl = avatarUrl
+        };
+    }
+
+    private static TmUserRef? ToNullableTmUserRef(string? userId, string? displayName)
+        => string.IsNullOrWhiteSpace(userId) && string.IsNullOrWhiteSpace(displayName)
+            ? null
+            : ToTmUserRef(userId, displayName, null);
+
+    private static TmCommentThreadStatus ToTmStatus(DocumentCommentThreadStatus status)
+        => status == DocumentCommentThreadStatus.Resolved
+            ? TmCommentThreadStatus.Resolved
+            : TmCommentThreadStatus.Open;
+
+    private static DocumentCommentThreadStatus ToDocumentStatus(TmCommentThreadStatus status)
+        => status == TmCommentThreadStatus.Resolved
+            ? DocumentCommentThreadStatus.Resolved
+            : DocumentCommentThreadStatus.Open;
+
+    private static DateTimeOffset? GetUpdatedAt(IReadOnlyCollection<TmCommentEntry> entries, DateTimeOffset? resolvedAt)
+    {
+        DateTimeOffset? updatedAt = entries.Count == 0
+            ? null
+            : entries.Max(entry => entry.EditedAt ?? entry.CreatedAt);
+
+        return resolvedAt.HasValue && (!updatedAt.HasValue || resolvedAt.Value > updatedAt.Value)
+            ? resolvedAt
+            : updatedAt;
+    }
 }
 
 /// <summary>Payload emitted when a new document comment thread is requested.</summary>

@@ -13,7 +13,7 @@ public sealed class TmModelingDiagramPreviewTests : LocalizationTestBase
 {
     public TmModelingDiagramPreviewTests()
     {
-        Services.AddTempoBlazor();
+        Services.AddTempoBlazorModeling();
     }
 
     [Fact]

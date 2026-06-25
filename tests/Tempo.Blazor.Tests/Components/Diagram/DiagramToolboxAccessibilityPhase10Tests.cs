@@ -96,7 +96,7 @@ public class DiagramToolboxAccessibilityPhase10Tests : LocalizationTestBase
     {
         var css = File.ReadAllText(Path.Combine(
             FindRepositoryRoot(),
-            "src/Tempo.Blazor/wwwroot/css/components/_diagram-editor.css"));
+            "src/Tempo.Blazor.DiagramEditor/wwwroot/css/components/_diagram-editor.css"));
 
         css.Should().Contain(".tm-diagram-toolbox__item:focus-visible");
         css.Should().Contain(".tm-diagram-toolbox__category-header:focus-visible");

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Snapshot",
+  "namespace": "Tempo.Reporting.Engine.Snapshot",
+  "description": "Primitive command kinds supported by the F0 reporting painter contract.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportSnapshotCommandType.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportSnapshotCommandType"
+}

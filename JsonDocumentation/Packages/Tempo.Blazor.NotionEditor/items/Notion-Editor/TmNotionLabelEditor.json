@@ -1,0 +1,35 @@
+{
+  "itemName": "TmNotionLabelEditor",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionLabelEditor Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionLabelEditor.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "Labels",
+      "type": "IReadOnlyList<string>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Identifier of the page whose labels are edited."
+    },
+    {
+      "name": "OnLabelsChanged",
+      "type": "EventCallback<IReadOnlyList<string>>",
+      "isRequired": false,
+      "description": "Whether editing controls are hidden."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Current labels assigned to the page."
+    }
+  ],
+  "subcategory": "UI"
+}

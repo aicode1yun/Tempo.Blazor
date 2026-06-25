@@ -1,7 +1,6 @@
 @namespace Tempo.Blazor.Components.Activity
+@using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.Components.DataDisplay
-@using Tempo.Blazor.Interfaces
-@using Tempo.Blazor.Models
 @using Microsoft.AspNetCore.Components.Forms
 
 <div class="tm-attachments">
@@ -34,14 +33,14 @@
                     <span class="tm-attach-icon @GetIconClass(a.ContentType)" aria-hidden="true"></span>
                     <div class="tm-attach-info">
                         <span class="tm-attach-name">@a.FileName</span>
-                        <span class="tm-attach-size">@FormatSize(a.FileSizeBytes)</span>
-                        @if (!string.IsNullOrEmpty(a.UploadedByName))
+                        <span class="tm-attach-size">@FormatSize(a.SizeBytes)</span>
+                        @if (!string.IsNullOrEmpty(a.UploadedBy?.DisplayName))
                         {
-                            <span class="tm-attach-uploader">@Loc["TmActivityAttachments_UploadedBy", a.UploadedByName]</span>
+                            <span class="tm-attach-uploader">@Loc["TmActivityAttachments_UploadedBy", a.UploadedBy.DisplayName]</span>
                         }
                     </div>
                     <div class="tm-attach-actions">
-                        @if (Provider is not null)
+                        @if (CanDownload(a))
                         {
                             <a class="tm-btn-link tm-attach-download-link"
                                href="#"
@@ -84,15 +83,35 @@
     private const int ChunkSize = 256 * 1024; // 256 KB
 
     // ── Parameters ────────────────────────────────────────────────
+    /// <summary>Entity reference used to load and upload attachments.</summary>
+    [Parameter] public TmEntityRef? EntityRef { get; set; }
+
+    /// <summary>Entity ID convenience parameter used when <see cref="EntityRef"/> is not supplied.</summary>
     [Parameter] public string? EntityId { get; set; }
-    [Parameter] public IFileAttachmentProvider? Provider { get; set; }
-    [Parameter] public IReadOnlyList<IFileAttachment>? Attachments { get; set; }
+
+    /// <summary>Entity type used with <see cref="EntityId"/>. Defaults to <c>activity-entity</c>.</summary>
+    [Parameter] public string EntityType { get; set; } = "activity-entity";
+
+    /// <summary>Provider for loading and linking attachments to the entity.</summary>
+    [Parameter] public ITmAttachmentProvider? AttachmentProvider { get; set; }
+
+    /// <summary>Provider for uploading files and resolving asset URLs.</summary>
+    [Parameter] public ITmFileProvider? FileProvider { get; set; }
+
+    /// <summary>Attachments supplied directly by the parent component.</summary>
+    [Parameter] public IReadOnlyList<TmAttachment>? Attachments { get; set; }
+
+    /// <summary>Whether users may upload new files.</summary>
     [Parameter] public bool AllowUpload { get; set; } = true;
+
+    /// <summary>Maximum allowed browser upload size in bytes.</summary>
     [Parameter] public long MaxFileSizeBytes { get; set; } = 100L * 1024 * 1024;
+
+    /// <summary>Accepted file types passed to the browser file picker.</summary>
     [Parameter] public string? AcceptedFileTypes { get; set; }
 
     // ── State ─────────────────────────────────────────────────────
-    private List<IFileAttachment> _displayedAttachments = [];
+    private List<TmAttachment> _displayedAttachments = [];
     private bool _uploading;
     private int _uploadProgress;
     private string? _errorMessage;
@@ -106,9 +125,10 @@
     /// <summary>Reload attachments from the provider.</summary>
     public async Task RefreshAsync()
     {
-        if (Provider is not null && EntityId is not null)
+        var entityRef = EffectiveEntityRef;
+        if (AttachmentProvider is not null && entityRef is not null)
         {
-            _displayedAttachments = (await Provider.GetAttachmentsAsync(EntityId)).ToList();
+            _displayedAttachments = (await AttachmentProvider.GetForEntityAsync(entityRef)).ToList();
             StateHasChanged();
         }
     }
@@ -127,11 +147,11 @@
                 continue;
             }
 
-            if (Provider is not null)
+            if (AttachmentProvider is not null && EffectiveFileProvider is not null)
                 await UploadFileAsync(file);
         }
 
-        if (Provider is not null)
+        if (AttachmentProvider is not null)
             await RefreshAsync();
     }
 
@@ -143,30 +163,25 @@
 
         try
         {
-            var totalChunks = (int)Math.Ceiling((double)file.Size / ChunkSize);
-            if (totalChunks == 0) totalChunks = 1;
-
-            using var stream = file.OpenReadStream(maxAllowedSize: MaxFileSizeBytes);
-            var buffer = new byte[ChunkSize];
-
-            for (var i = 0; i < totalChunks; i++)
+            var entityRef = EffectiveEntityRef;
+            var fileProvider = EffectiveFileProvider;
+            if (entityRef is null || AttachmentProvider is null || fileProvider is null)
             {
-                var read = await stream.ReadAsync(buffer.AsMemory(0, ChunkSize));
-                if (read == 0) break;
-
-                var chunk = new FileChunkData(
-                    FileName:    file.Name,
-                    ContentType: file.ContentType,
-                    TotalSize:   file.Size,
-                    ChunkIndex:  i,
-                    TotalChunks: totalChunks,
-                    Data:        buffer[..read],
-                    EntityId:    EntityId);
-
-                await Provider!.UploadChunkAsync(chunk);
-                _uploadProgress = (int)((i + 1.0) / totalChunks * 100);
-                StateHasChanged();
+                return;
             }
+
+            var upload = fileProvider is ITmChunkedFileProvider chunked
+                         && fileProvider.Capabilities.HasCapability(TmFileProviderCapabilities.ChunkUpload)
+                ? await UploadFileInChunksAsync(file, entityRef, chunked)
+                : await UploadWholeFileAsync(file, entityRef, fileProvider);
+
+            if (!upload.Success)
+            {
+                _errorMessage = upload.ErrorMessage ?? Loc["TmActivityAttachments_DuplicateFile"];
+                return;
+            }
+
+            await AttachmentProvider.AddAsync(ToAttachment(upload, file, entityRef));
         }
         finally
         {
@@ -176,23 +191,122 @@
         }
     }
 
-    private async Task DeleteAsync(IFileAttachment att)
+    private async Task<TmFileUploadResult> UploadWholeFileAsync(
+        IBrowserFile file,
+        TmEntityRef entityRef,
+        ITmFileProvider fileProvider)
     {
-        if (Provider is not null)
-            await Provider.DeleteAttachmentAsync(att.Id);
+        await using var stream = file.OpenReadStream(maxAllowedSize: MaxFileSizeBytes);
+        var upload = await fileProvider.UploadAsync(new TmFileUploadRequest
+        {
+            FileName = file.Name,
+            ContentType = file.ContentType,
+            SizeBytes = file.Size,
+            EntityRef = entityRef,
+            Purpose = "activity-attachment"
+        }, stream);
+
+        _uploadProgress = 100;
+        StateHasChanged();
+        return upload;
+    }
+
+    private async Task<TmFileUploadResult> UploadFileInChunksAsync(
+        IBrowserFile file,
+        TmEntityRef entityRef,
+        ITmChunkedFileProvider fileProvider)
+    {
+        var totalChunks = (int)Math.Ceiling((double)file.Size / ChunkSize);
+        if (totalChunks == 0) totalChunks = 1;
+
+        await using var stream = file.OpenReadStream(maxAllowedSize: MaxFileSizeBytes);
+        var buffer = new byte[ChunkSize];
+        var result = new TmFileUploadResult { Success = true, IsComplete = false };
+
+        for (var i = 0; i < totalChunks; i++)
+        {
+            var read = await stream.ReadAsync(buffer.AsMemory(0, ChunkSize));
+            if (read == 0) break;
+
+            result = await fileProvider.UploadChunkAsync(new TmFileChunk
+            {
+                FileName = file.Name,
+                ContentType = file.ContentType,
+                TotalSizeBytes = file.Size,
+                ChunkIndex = i,
+                TotalChunks = totalChunks,
+                Data = buffer[..read],
+                UploadSessionId = result.UploadSessionId,
+                EntityRef = entityRef,
+                Purpose = "activity-attachment"
+            });
+
+            if (!result.Success)
+            {
+                return result;
+            }
+
+            _uploadProgress = (int)((i + 1.0) / totalChunks * 100);
+            StateHasChanged();
+        }
+
+        return result;
+    }
+
+    private async Task DeleteAsync(TmAttachment att)
+    {
+        var entityRef = EffectiveEntityRef;
+        if (AttachmentProvider is not null && entityRef is not null)
+            await AttachmentProvider.RemoveAsync(entityRef, att.Id);
 
         _displayedAttachments.Remove(att);
         StateHasChanged();
     }
 
-    private async Task DownloadAsync(IFileAttachment att)
+    private async Task DownloadAsync(TmAttachment att)
     {
-        if (Provider is null) return;
-        // URL is obtained from provider; navigation happens via JS or anchor
-        _ = await Provider.GetDownloadUrlAsync(att.Id);
+        var assetId = att.AssetId ?? att.Id;
+        if (EffectiveFileProvider is not null && !string.IsNullOrWhiteSpace(assetId))
+        {
+            _ = await EffectiveFileProvider.ResolveAsync(new TmFileResolveRequest
+            {
+                AssetId = assetId,
+                EntityRef = att.EntityRef,
+                Purpose = att.Purpose
+            });
+        }
     }
 
-    private static string GetIconClass(string contentType) => contentType switch
+    private TmEntityRef? EffectiveEntityRef
+        => EntityRef ?? (string.IsNullOrWhiteSpace(EntityId) ? null : TmEntityRef.Create(EntityType, EntityId));
+
+    private ITmFileProvider? EffectiveFileProvider
+        => FileProvider ?? AttachmentProvider as ITmFileProvider;
+
+    private static bool CanDownload(TmAttachment attachment)
+        => attachment.CanDownload && (!string.IsNullOrWhiteSpace(attachment.Url)
+            || !string.IsNullOrWhiteSpace(attachment.AssetId));
+
+    private static TmAttachment ToAttachment(TmFileUploadResult upload, IBrowserFile file, TmEntityRef entityRef)
+    {
+        var assetId = upload.AssetId ?? upload.UploadSessionId ?? Guid.NewGuid().ToString("N");
+        return new TmAttachment
+        {
+            Id = assetId,
+            EntityRef = entityRef,
+            AssetId = upload.AssetId ?? assetId,
+            Url = upload.Url,
+            FileName = upload.FileName ?? file.Name,
+            ContentType = upload.ContentType ?? file.ContentType,
+            SizeBytes = upload.SizeBytes ?? file.Size,
+            UploadedAt = DateTimeOffset.UtcNow,
+            Purpose = "activity-attachment",
+            CanDelete = true,
+            CanDownload = true
+        };
+    }
+
+    private static string GetIconClass(string? contentType) => (contentType ?? string.Empty) switch
     {
         var t when t.StartsWith("image/")                             => "tm-attach-icon-image",
         var t when t.StartsWith("video/")                             => "tm-attach-icon-video",

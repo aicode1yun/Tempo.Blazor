@@ -15,30 +15,30 @@ public class TmGanttPhase1Tests : LocalizationTestBase
 {
     // ─── Sample data ────────────────────────────────────────────────
 
-    private static IReadOnlyList<GanttTask> Tasks(params GanttTask[] tasks) => tasks;
+    private static IReadOnlyList<TmWorkItem> Tasks(params TmWorkItem[] tasks) => tasks;
 
-    private static GanttTask Task1 => new()
+    private static TmWorkItem Task1 => new()
     {
         Id = "1", Title = "Project",
         Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 30),
         PercentComplete = 0
     };
 
-    private static GanttTask Task2 => new()
+    private static TmWorkItem Task2 => new()
     {
         Id = "2", Title = "Design", ParentId = "1",
         Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10),
         PercentComplete = 100
     };
 
-    private static GanttTask Task3 => new()
+    private static TmWorkItem Task3 => new()
     {
         Id = "3", Title = "Dev", ParentId = "1",
         Start = new DateTime(2024, 6, 11), End = new DateTime(2024, 6, 25),
         PercentComplete = 50
     };
 
-    private static IReadOnlyList<GanttTask> SampleTasks() => Tasks(Task1, Task2, Task3);
+    private static IReadOnlyList<TmWorkItem> SampleTasks() => Tasks(Task1, Task2, Task3);
 
     // ═══════════════════════════════════════════════════════════════
     // F1.1 – Per-task Color + Progress Darken Overlay
@@ -47,21 +47,21 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void GanttTask_Has_Color_Property_DefaultNull()
     {
-        var task = new GanttTask();
+        var task = new TmWorkItem();
         task.Color.Should().BeNull();
     }
 
     [Fact]
     public void Bar_Has_CssVariable_For_Custom_Color()
     {
-        var task = new GanttTask
+        var task = new TmWorkItem
         {
             Id = "x", Title = "Colored",
             Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10),
             Color = "#ef4444"
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, Tasks(task)));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         var bar = cut.Find(".tm-gantt__bar");
         var style = bar.GetAttribute("style") ?? "";
@@ -72,7 +72,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Bar_Without_Color_Uses_Default_CssVariable()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, SampleTasks()));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         var bar = cut.Find(".tm-gantt__bar");
         var style = bar.GetAttribute("style") ?? "";
@@ -83,7 +83,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     public void Group_Task_Bar_Has_Group_CSS_Class()
     {
         // Task1 is a parent (has children Task2 and Task3)
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, SampleTasks()));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         var bars = cut.FindAll(".tm-gantt__bar");
         // First bar = Task1 (group)
@@ -93,7 +93,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Leaf_Task_Bar_Does_Not_Have_Group_CSS_Class()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, SampleTasks()));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         var bars = cut.FindAll(".tm-gantt__bar");
         // Second bar = Task2 (leaf)
@@ -107,14 +107,14 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Bar_With_Done_Status_Has_Completed_CSS_Class()
     {
-        var task = new GanttTask
+        var task = new TmWorkItem
         {
             Id = "1", Title = "Done Task",
             Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10),
-            Status = GanttTaskStatus.Done
+            Status = TmWorkItemStatus.Done
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, Tasks(task)));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         var bar = cut.Find(".tm-gantt__bar");
         bar.ClassList.Should().Contain("tm-gantt__bar--completed");
@@ -123,14 +123,14 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Bar_With_Closed_Status_Has_Completed_CSS_Class()
     {
-        var task = new GanttTask
+        var task = new TmWorkItem
         {
             Id = "1", Title = "Closed Task",
             Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10),
-            Status = GanttTaskStatus.Closed
+            Status = TmWorkItemStatus.Closed
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, Tasks(task)));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         var bar = cut.Find(".tm-gantt__bar");
         bar.ClassList.Should().Contain("tm-gantt__bar--completed");
@@ -139,14 +139,14 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Bar_With_Open_Status_Does_Not_Have_Completed_Class()
     {
-        var task = new GanttTask
+        var task = new TmWorkItem
         {
             Id = "1", Title = "Open Task",
             Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10),
-            Status = GanttTaskStatus.Open
+            Status = TmWorkItemStatus.Open
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, Tasks(task)));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         cut.Find(".tm-gantt__bar").ClassList.Should().NotContain("tm-gantt__bar--completed");
     }
@@ -158,7 +158,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Bar_Renders_Tooltip_Element()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, SampleTasks()));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         var tooltip = cut.Find("[data-testid='bar-tooltip']");
         tooltip.Should().NotBeNull();
@@ -167,10 +167,10 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Click_On_Bar_Fires_OnTaskSelected()
     {
-        GanttTask? selected = null;
+        TmWorkItem? selected = null;
         var tasks = SampleTasks();
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, tasks)
+            .Add(c => c.Items, tasks)
             .Add(c => c.OnTaskSelected, t => selected = t));
 
         cut.Find(".tm-gantt__bar").Click();
@@ -184,46 +184,46 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void GanttTaskStatus_Has_Four_Values()
+    public void TmWorkItemStatus_Has_Four_Values()
     {
-        var values = Enum.GetValues<GanttTaskStatus>();
+        var values = Enum.GetValues<TmWorkItemStatus>();
         values.Should().HaveCount(4);
-        values.Should().Contain(GanttTaskStatus.Open);
-        values.Should().Contain(GanttTaskStatus.InProgress);
-        values.Should().Contain(GanttTaskStatus.Done);
-        values.Should().Contain(GanttTaskStatus.Closed);
+        values.Should().Contain(TmWorkItemStatus.Open);
+        values.Should().Contain(TmWorkItemStatus.InProgress);
+        values.Should().Contain(TmWorkItemStatus.Done);
+        values.Should().Contain(TmWorkItemStatus.Closed);
     }
 
     [Fact]
-    public void GanttTaskPriority_Has_Five_Values()
+    public void TmWorkItemPriority_Has_Five_Values()
     {
-        var values = Enum.GetValues<GanttTaskPriority>();
+        var values = Enum.GetValues<TmWorkItemPriority>();
         values.Should().HaveCount(5);
-        values.Should().Contain(GanttTaskPriority.Highest);
-        values.Should().Contain(GanttTaskPriority.High);
-        values.Should().Contain(GanttTaskPriority.Medium);
-        values.Should().Contain(GanttTaskPriority.Low);
-        values.Should().Contain(GanttTaskPriority.Lowest);
+        values.Should().Contain(TmWorkItemPriority.Highest);
+        values.Should().Contain(TmWorkItemPriority.High);
+        values.Should().Contain(TmWorkItemPriority.Medium);
+        values.Should().Contain(TmWorkItemPriority.Low);
+        values.Should().Contain(TmWorkItemPriority.Lowest);
     }
 
     [Fact]
     public void GanttTask_Status_Default_Is_Open()
     {
-        var task = new GanttTask();
-        task.Status.Should().Be(GanttTaskStatus.Open);
+        var task = new TmWorkItem();
+        task.Status.Should().Be(TmWorkItemStatus.Open);
     }
 
     [Fact]
     public void GanttTask_Priority_Default_Is_Medium()
     {
-        var task = new GanttTask();
-        task.Priority.Should().Be(GanttTaskPriority.Medium);
+        var task = new TmWorkItem();
+        task.Priority.Should().Be(TmWorkItemPriority.Medium);
     }
 
     [Fact]
     public void Tree_Row_Has_Status_Badge_Element()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, SampleTasks()));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         var badges = cut.FindAll("[data-testid='status-badge']");
         badges.Count.Should().Be(SampleTasks().Count);
@@ -232,7 +232,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Tree_Row_Has_Priority_Icon_Element()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, SampleTasks()));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         var icons = cut.FindAll("[data-testid='priority-icon']");
         icons.Count.Should().Be(SampleTasks().Count);
@@ -241,14 +241,14 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Bar_Has_Priority_CSS_Class()
     {
-        var task = new GanttTask
+        var task = new TmWorkItem
         {
             Id = "1", Title = "High Priority",
             Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10),
-            Priority = GanttTaskPriority.High
+            Priority = TmWorkItemPriority.High
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, Tasks(task)));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         cut.Find(".tm-gantt__bar").ClassList.Should().Contain("tm-gantt__bar--priority-high");
     }
@@ -256,16 +256,16 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Bar_Priority_Class_Reflects_Each_Level()
     {
-        foreach (var priority in Enum.GetValues<GanttTaskPriority>())
+        foreach (var priority in Enum.GetValues<TmWorkItemPriority>())
         {
-            var task = new GanttTask
+            var task = new TmWorkItem
             {
                 Id = "1", Title = "T",
                 Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10),
                 Priority = priority
             };
 
-            var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, Tasks(task)));
+            var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
             var expectedClass = $"tm-gantt__bar--priority-{priority.ToString().ToLowerInvariant()}";
             cut.Find(".tm-gantt__bar").ClassList.Should().Contain(expectedClass,
                 $"priority {priority} should add class {expectedClass}");
@@ -279,21 +279,21 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void GanttTask_Has_Deadline_Property_DefaultNull()
     {
-        var task = new GanttTask();
-        task.Deadline.Should().BeNull();
+        var task = new TmWorkItem();
+        task.DueDate.Should().BeNull();
     }
 
     [Fact]
     public void Bar_Shows_Deadline_Marker_When_End_Exceeds_Deadline()
     {
-        var task = new GanttTask
+        var task = new TmWorkItem
         {
             Id = "1", Title = "Late",
             Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 20),
-            Deadline = new DateTime(2024, 6, 10)
+            DueDate = new DateTime(2024, 6, 10)
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, Tasks(task)));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         cut.Find("[data-testid='deadline-marker']").Should().NotBeNull();
     }
@@ -301,14 +301,14 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Bar_Does_Not_Show_Deadline_Marker_When_On_Time()
     {
-        var task = new GanttTask
+        var task = new TmWorkItem
         {
             Id = "1", Title = "On Time",
             Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10),
-            Deadline = new DateTime(2024, 6, 15)
+            DueDate = new DateTime(2024, 6, 15)
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, Tasks(task)));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         cut.FindAll("[data-testid='deadline-marker']").Should().BeEmpty();
     }
@@ -316,7 +316,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Bar_Does_Not_Show_Deadline_Marker_When_Deadline_Null()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, SampleTasks()));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         cut.FindAll("[data-testid='deadline-marker']").Should().BeEmpty();
     }
@@ -355,14 +355,14 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     public void Timeline_Renders_Today_Marker_By_Default()
     {
         // Timeline covers today
-        var tasks = Tasks(new GanttTask
+        var tasks = Tasks(new TmWorkItem
         {
             Id = "1", Title = "T",
             Start = DateTime.Today.AddDays(-5),
             End = DateTime.Today.AddDays(5)
         });
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, tasks));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, tasks));
 
         cut.Find("[data-testid='today-marker']").Should().NotBeNull();
     }
@@ -370,7 +370,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Timeline_Hides_Today_Marker_When_ViewSettings_ShowTodayMarker_False()
     {
-        var tasks = Tasks(new GanttTask
+        var tasks = Tasks(new TmWorkItem
         {
             Id = "1", Title = "T",
             Start = DateTime.Today.AddDays(-5),
@@ -380,7 +380,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
         var settings = new GanttViewSettings { ShowTodayMarker = false };
 
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, tasks)
+            .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
         cut.FindAll("[data-testid='today-marker']").Should().BeEmpty();
@@ -456,7 +456,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     {
         var schedule = new WorkingSchedule();
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, SampleTasks())
+            .Add(c => c.Items, SampleTasks())
             .Add(c => c.WorkingSchedule, schedule));
 
         cut.Find(".tm-gantt").Should().NotBeNull();
@@ -466,7 +466,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     public void TmGantt_Renders_NonWorking_Overlay_When_ShowDaysOff_True()
     {
         // Use a task range that includes a weekend
-        var tasks = Tasks(new GanttTask
+        var tasks = Tasks(new TmWorkItem
         {
             Id = "1", Title = "T",
             Start = new DateTime(2024, 6, 3),  // Monday
@@ -475,7 +475,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
 
         var settings = new GanttViewSettings { ShowDaysOff = true };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, tasks)
+            .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
         var overlays = cut.FindAll("[data-testid='nonworking-overlay']");
@@ -485,7 +485,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Hides_NonWorking_Overlay_When_ShowDaysOff_False()
     {
-        var tasks = Tasks(new GanttTask
+        var tasks = Tasks(new TmWorkItem
         {
             Id = "1", Title = "T",
             Start = new DateTime(2024, 6, 3),
@@ -494,7 +494,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
 
         var settings = new GanttViewSettings { ShowDaysOff = false };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, tasks)
+            .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
         cut.FindAll("[data-testid='nonworking-overlay']").Should().BeEmpty();
@@ -533,7 +533,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void GanttHelper_SetAllExpanded_Works_On_Deep_Nesting()
     {
-        var tasks = new List<GanttTask>
+        var tasks = new List<TmWorkItem>
         {
             new() { Id = "1", Title = "L1", Start = DateTime.Today, End = DateTime.Today.AddDays(1) },
             new() { Id = "2", Title = "L2", ParentId = "1", Start = DateTime.Today, End = DateTime.Today.AddDays(1) },
@@ -551,21 +551,21 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Toolbar_Has_ExpandAll_Button()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, SampleTasks()));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
         cut.Find("[data-testid='gantt-expand-all']").Should().NotBeNull();
     }
 
     [Fact]
     public void Toolbar_Has_CollapseAll_Button()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, SampleTasks()));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
         cut.Find("[data-testid='gantt-collapse-all']").Should().NotBeNull();
     }
 
     [Fact]
     public void CollapseAll_Button_Collapses_Tree()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, SampleTasks()));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         cut.Find("[data-testid='gantt-collapse-all']").Click();
 
@@ -575,7 +575,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void ExpandAll_Button_Expands_Tree()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, SampleTasks()));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         // Collapse first, then expand
         cut.Find("[data-testid='gantt-collapse-all']").Click();
@@ -607,7 +607,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     {
         var settings = new GanttViewSettings();
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, SampleTasks())
+            .Add(c => c.Items, SampleTasks())
             .Add(c => c.ViewSettings, settings));
 
         cut.Find(".tm-gantt").Should().NotBeNull();
@@ -617,14 +617,14 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     public void ShowClosedTasks_False_Hides_Done_Tasks_From_Tree()
     {
         var tasks = Tasks(
-            new GanttTask { Id = "1", Title = "Open", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5), Status = GanttTaskStatus.Open },
-            new GanttTask { Id = "2", Title = "Done", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5), Status = GanttTaskStatus.Done },
-            new GanttTask { Id = "3", Title = "Closed", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5), Status = GanttTaskStatus.Closed }
+            new TmWorkItem { Id = "1", Title = "Open", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5), Status = TmWorkItemStatus.Open },
+            new TmWorkItem { Id = "2", Title = "Done", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5), Status = TmWorkItemStatus.Done },
+            new TmWorkItem { Id = "3", Title = "Closed", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5), Status = TmWorkItemStatus.Closed }
         );
 
         var settings = new GanttViewSettings { ShowClosedTasks = false };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, tasks)
+            .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
         var rows = cut.FindAll(".tm-gantt__tree-row");
@@ -635,13 +635,13 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     public void ShowClosedTasks_True_Shows_All_Tasks()
     {
         var tasks = Tasks(
-            new GanttTask { Id = "1", Title = "Open", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5), Status = GanttTaskStatus.Open },
-            new GanttTask { Id = "2", Title = "Done", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5), Status = GanttTaskStatus.Done }
+            new TmWorkItem { Id = "1", Title = "Open", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5), Status = TmWorkItemStatus.Open },
+            new TmWorkItem { Id = "2", Title = "Done", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5), Status = TmWorkItemStatus.Done }
         );
 
         var settings = new GanttViewSettings { ShowClosedTasks = true };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, tasks)
+            .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
         cut.FindAll(".tm-gantt__tree-row").Should().HaveCount(2);
@@ -650,7 +650,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void TaskNameLocation_Hidden_Renders_No_Bar_Label()
     {
-        var tasks = Tasks(new GanttTask
+        var tasks = Tasks(new TmWorkItem
         {
             Id = "1", Title = "Wide Task",
             Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 30)
@@ -658,7 +658,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
 
         var settings = new GanttViewSettings { TaskNameLocation = GanttTaskNameLocation.Hidden };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, tasks)
+            .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
         cut.FindAll(".tm-gantt__bar-label").Should().BeEmpty();
@@ -667,7 +667,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void TaskNameLocation_InsideBar_Renders_Bar_Label_For_Wide_Bars()
     {
-        var tasks = Tasks(new GanttTask
+        var tasks = Tasks(new TmWorkItem
         {
             Id = "1", Title = "Wide Task",
             Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 30)
@@ -675,7 +675,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
 
         var settings = new GanttViewSettings { TaskNameLocation = GanttTaskNameLocation.InsideBar };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, tasks)
+            .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
         cut.FindAll(".tm-gantt__bar-label").Should().HaveCountGreaterThan(0);
@@ -685,15 +685,15 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     public void ViewDensity_Compact_Reduces_RowHeight_In_Timeline_Content()
     {
         var tasks = Tasks(
-            new GanttTask { Id = "1", Title = "A", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5) },
-            new GanttTask { Id = "2", Title = "B", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5) }
+            new TmWorkItem { Id = "1", Title = "A", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5) },
+            new TmWorkItem { Id = "2", Title = "B", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5) }
         );
 
         var compact = new GanttViewSettings { ViewDensity = GanttViewDensity.Compact };
         var comfortable = new GanttViewSettings { ViewDensity = GanttViewDensity.Comfortable };
 
-        var cutCompact = RenderComponent<TmGantt>(p => p.Add(c => c.Data, tasks).Add(c => c.ViewSettings, compact));
-        var cutComfortable = RenderComponent<TmGantt>(p => p.Add(c => c.Data, tasks).Add(c => c.ViewSettings, comfortable));
+        var cutCompact = RenderComponent<TmGantt>(p => p.Add(c => c.Items, tasks).Add(c => c.ViewSettings, compact));
+        var cutComfortable = RenderComponent<TmGantt>(p => p.Add(c => c.Items, tasks).Add(c => c.ViewSettings, comfortable));
 
         var compactStyle = cutCompact.Find(".tm-gantt__timeline-content").GetAttribute("style") ?? "";
         var comfortableStyle = cutComfortable.Find(".tm-gantt__timeline-content").GetAttribute("style") ?? "";
@@ -710,7 +710,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
         var settings = new GanttViewSettings();
 
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, SampleTasks())
+            .Add(c => c.Items, SampleTasks())
             .Add(c => c.ViewSettings, settings)
             .Add(c => c.OnViewSettingsChanged, vs => received = vs));
 
@@ -741,7 +741,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     {
         var settings = new GanttViewSettings { Theme = GanttTheme.Dark };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, SampleTasks())
+            .Add(c => c.Items, SampleTasks())
             .Add(c => c.ViewSettings, settings));
 
         cut.Find(".tm-gantt").ClassList.Should().Contain("tm-gantt--theme-dark");
@@ -752,7 +752,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     {
         var settings = new GanttViewSettings { Theme = GanttTheme.Light };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, SampleTasks())
+            .Add(c => c.Items, SampleTasks())
             .Add(c => c.ViewSettings, settings));
 
         cut.Find(".tm-gantt").ClassList.Should().Contain("tm-gantt--theme-light");
@@ -763,7 +763,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     {
         var settings = new GanttViewSettings { Theme = GanttTheme.Auto };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, SampleTasks())
+            .Add(c => c.Items, SampleTasks())
             .Add(c => c.ViewSettings, settings));
 
         var classList = cut.Find(".tm-gantt").ClassList;
@@ -774,7 +774,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Toolbar_Has_ViewSettings_Button()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Data, SampleTasks()));
+        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
         cut.Find("[data-testid='gantt-view-settings-btn']").Should().NotBeNull();
     }
 }

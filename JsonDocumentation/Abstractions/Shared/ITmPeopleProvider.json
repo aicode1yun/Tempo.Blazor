@@ -1,0 +1,36 @@
+{
+  "kind": "Interface",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Shared provider for searching and resolving users across Tempo.Blazor components.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmPeopleProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Capabilities",
+      "kind": "Property",
+      "type": "TmPeopleProviderCapabilities",
+      "description": "Operations this provider supports."
+    },
+    {
+      "name": "SearchAsync",
+      "kind": "Method",
+      "type": "Task<IReadOnlyList<TmUser>>",
+      "description": "Searches users matching the query."
+    },
+    {
+      "name": "GetByIdAsync",
+      "kind": "Method",
+      "type": "Task<TmUser?>",
+      "description": "Resolves a single user by id, or null when not found."
+    },
+    {
+      "name": "GetByIdsAsync",
+      "kind": "Method",
+      "type": "Task<IReadOnlyList<TmUser>>",
+      "description": "Resolves multiple users by id."
+    }
+  ],
+  "itemName": "ITmPeopleProvider"
+}

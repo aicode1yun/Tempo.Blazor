@@ -1,0 +1,30 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Parameter definition plus resolved viewer options.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportViewerParameterMetadata.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Definition",
+      "kind": "Property",
+      "type": "ReportParameterDefinition",
+      "description": "Parameter definition."
+    },
+    {
+      "name": "IsCascading",
+      "kind": "Property",
+      "type": "bool",
+      "description": "True when options are loaded from a data set and may depend on previous parameter values."
+    },
+    {
+      "name": "Options",
+      "kind": "Property",
+      "type": "IReadOnlyList<ReportViewerParameterOption>",
+      "description": "Resolved available values."
+    }
+  ],
+  "itemName": "ReportViewerParameterMetadata"
+}

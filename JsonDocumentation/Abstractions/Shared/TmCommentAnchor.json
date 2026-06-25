@@ -1,0 +1,216 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Structured anchor that ties a comment thread to a region of an entity.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCommentAnchor.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Block",
+      "kind": "Method",
+      "type": "TmCommentAnchor",
+      "description": "Creates a block anchor.",
+      "parameters": [
+        {
+          "name": "blockId",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "External",
+      "kind": "Method",
+      "type": "TmCommentAnchor",
+      "description": "Creates an external anchor.",
+      "parameters": [
+        {
+          "name": "externalAnchorId",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "IsValid",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns true when the anchor has enough data for its kind."
+    },
+    {
+      "name": "None",
+      "kind": "Method",
+      "type": "TmCommentAnchor",
+      "description": "Creates an empty anchor."
+    },
+    {
+      "name": "Page",
+      "kind": "Method",
+      "type": "TmCommentAnchor",
+      "description": "Creates a page anchor.",
+      "parameters": [
+        {
+          "name": "pageNumber",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "PageArea",
+      "kind": "Method",
+      "type": "TmCommentAnchor",
+      "description": "Creates a page area anchor.",
+      "parameters": [
+        {
+          "name": "pageNumber",
+          "type": "int"
+        },
+        {
+          "name": "x",
+          "type": "double"
+        },
+        {
+          "name": "y",
+          "type": "double"
+        },
+        {
+          "name": "width",
+          "type": "double"
+        },
+        {
+          "name": "height",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "PagePoint",
+      "kind": "Method",
+      "type": "TmCommentAnchor",
+      "description": "Creates a page point anchor.",
+      "parameters": [
+        {
+          "name": "pageNumber",
+          "type": "int"
+        },
+        {
+          "name": "x",
+          "type": "double"
+        },
+        {
+          "name": "y",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "Rendition",
+      "kind": "Method",
+      "type": "TmCommentAnchor",
+      "description": "Creates a rendition anchor.",
+      "parameters": [
+        {
+          "name": "renditionAnchorId",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "BlockId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Logical block identifier for block or text range anchors."
+    },
+    {
+      "name": "EndInlineIndex",
+      "kind": "Property",
+      "type": "int?",
+      "description": "End inline index for text range anchors."
+    },
+    {
+      "name": "EndOffset",
+      "kind": "Property",
+      "type": "int?",
+      "description": "End character offset for text range anchors."
+    },
+    {
+      "name": "ExternalAnchorId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "External anchor id from an imported or host-owned format."
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Normalized area height on a page, from 0 to 1."
+    },
+    {
+      "name": "HighlightedText",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Text captured when the comment was anchored to a range."
+    },
+    {
+      "name": "IsOrphaned",
+      "kind": "Property",
+      "type": "bool",
+      "description": "True when the original anchor can no longer be resolved in the live entity."
+    },
+    {
+      "name": "Kind",
+      "kind": "Property",
+      "type": "TmCommentAnchorKind",
+      "description": "Anchor kind."
+    },
+    {
+      "name": "Metadata",
+      "kind": "Property",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for consumer use."
+    },
+    {
+      "name": "PageNumber",
+      "kind": "Property",
+      "type": "int?",
+      "description": "One-based page number for page, point, and area anchors."
+    },
+    {
+      "name": "RenditionAnchorId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Anchor id in an immutable rendition."
+    },
+    {
+      "name": "StartInlineIndex",
+      "kind": "Property",
+      "type": "int?",
+      "description": "Start inline index for text range anchors."
+    },
+    {
+      "name": "StartOffset",
+      "kind": "Property",
+      "type": "int?",
+      "description": "Start character offset for text range anchors."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Normalized area width on a page, from 0 to 1."
+    },
+    {
+      "name": "X",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Normalized horizontal position on a page, from 0 to 1."
+    },
+    {
+      "name": "Y",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Normalized vertical position on a page, from 0 to 1."
+    }
+  ],
+  "itemName": "TmCommentAnchor"
+}

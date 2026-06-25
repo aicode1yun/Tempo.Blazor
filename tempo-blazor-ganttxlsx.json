@@ -1,0 +1,129 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.GanttXlsx",
+    "title": "Tempo.Blazor.GanttXlsx",
+    "description": "Optional XLSX import and export helpers for Tempo.Blazor Gantt components, backed by DocumentFormat.OpenXml.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;gantt;xlsx;excel;openxml;import;export",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.GanttXlsx"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "DocumentFormat.OpenXml",
+        "version": "3.3.0"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "8.0.2"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "10.0.3"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Configuration",
+      "Tempo.Blazor.Services"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.GanttXlsx",
+    "overview": "Optional XLSX import and export helpers for Tempo.Blazor Gantt components, backed by DocumentFormat.OpenXml.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.GanttXlsx"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "DocumentFormat.OpenXml",
+        "version": "3.3.0"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "8.0.2"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "10.0.3"
+      }
+    ]
+  },
+  "items": [
+    {
+      "kind": "Class",
+      "category": "Configuration",
+      "namespace": "Tempo.Blazor.Configuration",
+      "description": "Extension methods for registering optional Tempo.Blazor Gantt XLSX helpers.",
+      "packageId": "Tempo.Blazor.GanttXlsx",
+      "sourcePath": "src/Tempo.Blazor.GanttXlsx/Configuration/GanttXlsxServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "AddTempoBlazorGanttXlsx",
+          "kind": "Method",
+          "type": "IServiceCollection",
+          "description": "Marks the optional Gantt XLSX feature package as registered.",
+          "parameters": [
+            {
+              "name": "services",
+              "type": "this IServiceCollection"
+            }
+          ]
+        }
+      ],
+      "itemName": "GanttXlsxServiceCollectionExtensions"
+    },
+    {
+      "itemName": "GanttExcelImporter",
+      "kind": "Class",
+      "category": "Services",
+      "namespace": "Tempo.Blazor.Services",
+      "description": "Imports Gantt tasks from an XLSX spreadsheet stream.",
+      "packageId": "Tempo.Blazor.GanttXlsx",
+      "sourcePath": "src/Tempo.Blazor.GanttXlsx/Services/GanttExcelImporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "GanttXlsxExporter",
+      "kind": "Class",
+      "category": "Services",
+      "namespace": "Tempo.Blazor.Services",
+      "description": "Exports Gantt tasks to an XLSX spreadsheet.",
+      "packageId": "Tempo.Blazor.GanttXlsx",
+      "sourcePath": "src/Tempo.Blazor.GanttXlsx/Services/GanttXlsxExporter.cs",
+      "documentationStatus": "merged"
+    }
+  ],
+  "libraryExamples": [],
+  "summary": {
+    "itemCount": 3,
+    "manualItemCount": 2,
+    "generatedItemCount": 3,
+    "generatedOnlyItemCount": 1,
+    "componentCount": 0,
+    "publicApiTypeCount": 3
+  }
+}

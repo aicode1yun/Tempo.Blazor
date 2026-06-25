@@ -8,13 +8,13 @@ public class TmDocumentEditorCssTests
     public void CssFiles_AreSplitImportedAndBundledByProject()
     {
         var root = FindRepositoryRoot();
-        var cssRoot = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css");
+        var cssRoot = Path.Combine(root, "src", "Tempo.Blazor.DocumentEditor", "wwwroot", "css");
         var mainCss = Path.Combine(cssRoot, "components", "_document-editor.css");
         var toolbarCss = Path.Combine(cssRoot, "components", "_document-editor-toolbar.css");
         var commentsCss = Path.Combine(cssRoot, "components", "_document-editor-comments.css");
-        var entryCss = Path.Combine(cssRoot, "tempo-blazor.css");
-        var bundledCss = Path.Combine(cssRoot, "tempo-blazor.bundled.css");
-        var projectFile = Path.Combine(root, "src", "Tempo.Blazor", "Tempo.Blazor.csproj");
+        var entryCss = Path.Combine(cssRoot, "tempo-blazor-document-editor.css");
+        var coreEntryCss = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "tempo-blazor.css");
+        var projectFile = Path.Combine(root, "src", "Tempo.Blazor.DocumentEditor", "Tempo.Blazor.DocumentEditor.csproj");
 
         File.Exists(mainCss).Should().BeTrue();
         File.Exists(toolbarCss).Should().BeTrue();
@@ -24,23 +24,24 @@ public class TmDocumentEditorCssTests
         imports.Should().Contain("@import \"components/_document-editor.css\";");
         imports.Should().Contain("@import \"components/_document-editor-toolbar.css\";");
         imports.Should().Contain("@import \"components/_document-editor-comments.css\";");
+        imports.Should().Contain("@import \"components/_document-editor-find.css\";");
+
+        var coreImports = File.ReadAllText(coreEntryCss);
+        coreImports.Should().NotContain("@import \"components/_document-editor.css\";");
+        coreImports.Should().NotContain("@import \"components/_document-editor-toolbar.css\";");
+        coreImports.Should().NotContain("@import \"components/_document-editor-comments.css\";");
 
         var project = File.ReadAllText(projectFile);
-        project.Should().Contain("BundleCssFiles");
-        project.Should().Contain("tempo-blazor.bundled.css");
-        project.Should().Contain("CssBundleInputs");
-
-        var bundled = File.ReadAllText(bundledCss);
-        bundled.Should().Contain(".tm-document-editor__ribbon{position:sticky");
-        bundled.Should().Contain(".tm-document-editor__comment-rail{display:flex");
+        project.Should().Contain("<PackageId>Tempo.Blazor.DocumentEditor</PackageId>");
+        project.Should().Contain("AngleSharp");
     }
 
     [Fact]
     public void CssFiles_CoverEditorStatesResponsivenessAndDarkMode()
     {
         var root = FindRepositoryRoot();
-        var cssRoot = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "components");
-        var componentRoot = Path.Combine(root, "src", "Tempo.Blazor", "Components", "DocumentEditor");
+        var cssRoot = Path.Combine(root, "src", "Tempo.Blazor.DocumentEditor", "wwwroot", "css", "components");
+        var componentRoot = Path.Combine(root, "src", "Tempo.Blazor.DocumentEditor", "Components", "DocumentEditor");
         var css = string.Concat(
             File.ReadAllText(Path.Combine(cssRoot, "_document-editor.css")),
             File.ReadAllText(Path.Combine(cssRoot, "_document-editor-toolbar.css")),
@@ -96,8 +97,8 @@ public class TmDocumentEditorCssTests
     {
         var root = FindRepositoryRoot();
         var css = string.Concat(
-            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "components", "_document-editor.css")),
-            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "Components", "DocumentEditor", "TmDocumentCanvasEngineHost.razor.css")));
+            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor.DocumentEditor", "wwwroot", "css", "components", "_document-editor.css")),
+            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor.DocumentEditor", "Components", "DocumentEditor", "TmDocumentCanvasEngineHost.razor.css")));
 
         css.Should().Contain(".tm-document-canvas-engine-host__canvas");
         css.Should().Contain(".tm-document-canvas-selection-rect");
@@ -115,8 +116,8 @@ public class TmDocumentEditorCssTests
     {
         var root = FindRepositoryRoot();
         var css = string.Concat(
-            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "components", "_document-editor.css")),
-            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "Components", "DocumentEditor", "TmDocumentCanvasEngineHost.razor.css")));
+            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor.DocumentEditor", "wwwroot", "css", "components", "_document-editor.css")),
+            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor.DocumentEditor", "Components", "DocumentEditor", "TmDocumentCanvasEngineHost.razor.css")));
 
         css.Should().Contain(".tm-document-editor__ribbon-button--active");
         css.Should().Contain(".tm-document-canvas-engine-host--readonly");

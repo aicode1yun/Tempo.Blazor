@@ -248,7 +248,7 @@ public sealed class DocumentEditorCanvasSearchOutlineTocE2ETests : WasmTestBase
             async expectedMinimum => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(interop.getModelJson(handle) || '{}');
                 const count = (model?.body?.blocks || []).filter(block => block?.content?.tableOfContents?.isEntry === true).length;
                 return count >= expectedMinimum;
@@ -293,7 +293,7 @@ public sealed class DocumentEditorCanvasSearchOutlineTocE2ETests : WasmTestBase
             async text => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(interop.getModelJson(handle) || '{}');
                 const blocks = Array.isArray(model?.body?.blocks) ? model.body.blocks : [];
                 return blocks
@@ -310,7 +310,7 @@ public sealed class DocumentEditorCanvasSearchOutlineTocE2ETests : WasmTestBase
             async ({ blockId, text }) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(interop.getModelJson(handle) || '{}');
                 const block = (model?.body?.blocks || []).find(item => item?.id === blockId);
                 const value = (block?.content?.runs || []).map(run => String(run?.text || run?.field?.displayText || '')).join('');
@@ -326,7 +326,7 @@ public sealed class DocumentEditorCanvasSearchOutlineTocE2ETests : WasmTestBase
             async text => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(interop.getModelJson(handle) || '{}');
                 const value = (model?.body?.blocks || [])
                     .flatMap(block => block?.content?.runs || [])
@@ -344,7 +344,7 @@ public sealed class DocumentEditorCanvasSearchOutlineTocE2ETests : WasmTestBase
             async bookmarkName => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const navigation = JSON.parse(interop.getNavigationStateJson(handle) || '{}');
                 return Array.isArray(navigation?.bookmarks) && navigation.bookmarks.some(item => item?.name === bookmarkName);
             }
@@ -359,7 +359,7 @@ public sealed class DocumentEditorCanvasSearchOutlineTocE2ETests : WasmTestBase
                 const first = document.querySelector('[data-testid="document-canvas-page"]');
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(interop.getModelJson(handle) || '{}');
                 const text = (model?.body?.blocks || [])
                     .flatMap(block => block?.content?.runs || [])
@@ -384,7 +384,7 @@ public sealed class DocumentEditorCanvasSearchOutlineTocE2ETests : WasmTestBase
                     return [];
                 }
 
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(interop.getModelJson(handle));
                 const blocks = Array.isArray(model?.body?.blocks) && model.body.blocks.length > 0
                     ? model.body.blocks
@@ -403,7 +403,7 @@ public sealed class DocumentEditorCanvasSearchOutlineTocE2ETests : WasmTestBase
             async () => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const navigation = JSON.parse(interop.getNavigationStateJson(handle) || '{}');
                 return (navigation?.outline || []).map(item => ({
                     blockId: String(item?.blockId || ''),
@@ -420,7 +420,7 @@ public sealed class DocumentEditorCanvasSearchOutlineTocE2ETests : WasmTestBase
             async blockId => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(interop.getModelJson(handle) || '{}');
                 const block = (model?.body?.blocks || []).find(item => item?.id === blockId);
                 return (block?.content?.runs || []).map(run => String(run?.text || run?.field?.displayText || '')).join('');
@@ -440,7 +440,7 @@ public sealed class DocumentEditorCanvasSearchOutlineTocE2ETests : WasmTestBase
                     async ({ commandId, json }) => {
                         const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                         const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                        const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                        const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                         const raw = interop.execCommand(handle, commandId, json);
                         const parsed = JSON.parse(raw || '{}');
                         return {
@@ -486,7 +486,7 @@ public sealed class DocumentEditorCanvasSearchOutlineTocE2ETests : WasmTestBase
                     async commands => {
                         const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                         const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                        const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                        const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                         return commands.map(command => {
                             const raw = interop.execCommand(handle, command.commandId, command.json);
                             const parsed = JSON.parse(raw || '{}');
@@ -519,7 +519,7 @@ public sealed class DocumentEditorCanvasSearchOutlineTocE2ETests : WasmTestBase
             async () => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const navigation = JSON.parse(interop.getNavigationStateJson(handle) || '{}');
                 return {
                     outline: (navigation?.outline || []).map(item => ({

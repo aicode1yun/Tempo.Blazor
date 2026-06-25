@@ -1,0 +1,52 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Components.Wireframe.Models
+
+<div class="tm-notion-wireframe-edit-modal"
+     role="dialog"
+     aria-modal="true"
+     aria-label="@Loc["TmNotionWireframeEditModal_Title"]">
+
+    @if (_loading)
+    {
+        <div class="tm-notion-wireframe-edit-modal__loading">
+            <span class="tm-notion-wireframe-edit-modal__spinner" aria-hidden="true"></span>
+        </div>
+    }
+    else if (_document is not null)
+    {
+        @if (WireframeEditorComponentType is not null)
+        {
+            <DynamicComponent @ref="_editorRef"
+                              Type="WireframeEditorComponentType"
+                              Parameters="WireframeEditorParameters" />
+        }
+        else
+        {
+            <div class="tm-notion-wireframe-edit-modal__missing" role="status">
+                @Loc["TmNotionWireframeEditModal_MissingPackage"]
+            </div>
+        }
+
+        <div class="tm-notion-wireframe-edit-modal__footer">
+            <button class="tm-notion-wireframe-edit-modal__btn tm-notion-wireframe-edit-modal__btn--primary"
+                    type="button"
+                    disabled="@(_saving || WireframeEditorComponentType is null)"
+                    @onclick="SaveAsync">
+                @if (_saving)
+                {
+                    <span class="tm-notion-wireframe-edit-modal__spinner tm-notion-wireframe-edit-modal__spinner--sm"
+                          aria-hidden="true"></span>
+                }
+                @Loc["TmNotionWireframeEditModal_Save"]
+            </button>
+            <button class="tm-notion-wireframe-edit-modal__btn"
+                    type="button"
+                    disabled="@_saving"
+                    @onclick="DiscardAsync">
+                @Loc["TmNotionWireframeEditModal_Discard"]
+            </button>
+        </div>
+    }
+
+</div>

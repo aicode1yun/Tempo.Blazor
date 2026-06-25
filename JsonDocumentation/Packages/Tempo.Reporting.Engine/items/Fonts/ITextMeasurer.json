@@ -1,0 +1,16 @@
+{
+  "itemName": "ITextMeasurer",
+  "kind": "Interface",
+  "category": "Fonts",
+  "namespace": "Tempo.Reporting.Engine.Fonts",
+  "description": "Text measurement abstraction used by line breaking, text box layout, table layout, chart labels, and snapshot generation.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Fonts/ITextMeasurer.cs",
+  "documentationStatus": "manual",
+  "relatedTypes": [
+    "TextMeasureRequest",
+    "TextMeasurement",
+    "TableTextMeasurer",
+    "FontMetricTable"
+  ]
+}

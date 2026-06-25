@@ -1,0 +1,159 @@
+{
+  "kind": "Class",
+  "category": "Work Items",
+  "namespace": "Tempo.Blazor.Abstractions.WorkItems",
+  "description": "Convenience base class for implementations. Read-only providers only need to override (and optionally ); all mutating members throw by default and should be overridden when the matching capability is declared.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemProviderBase.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Capabilities",
+      "kind": "Field",
+      "type": "virtual TmWorkItemCapabilities"
+    },
+    {
+      "name": "AddDependencyAsync",
+      "kind": "Method",
+      "type": "Task<TmWorkItemDependency>",
+      "parameters": [
+        {
+          "name": "dependency",
+          "type": "TmWorkItemDependency"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "CreateAsync",
+      "kind": "Method",
+      "type": "Task<TmWorkItem>",
+      "parameters": [
+        {
+          "name": "item",
+          "type": "TmWorkItem"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "DeleteAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "GetByIdAsync",
+      "kind": "Method",
+      "type": "Task<TmWorkItem?>",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "RemoveDependencyAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "dependencyId",
+          "type": "string"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "SearchAsync",
+      "kind": "Method",
+      "type": "Task<PagedResult<TmWorkItem>>",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "TmWorkItemQuery"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "SetCompletedAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "completed",
+          "type": "bool"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "UpdateAsync",
+      "kind": "Method",
+      "type": "Task<TmWorkItem>",
+      "parameters": [
+        {
+          "name": "item",
+          "type": "TmWorkItem"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "DisplayName",
+      "kind": "Property",
+      "type": "abstract string"
+    },
+    {
+      "name": "SourceKey",
+      "kind": "Property",
+      "type": "abstract string"
+    }
+  ],
+  "itemName": "TmWorkItemProviderBase"
+}

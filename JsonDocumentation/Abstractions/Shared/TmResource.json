@@ -1,0 +1,78 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Canonical schedulable resource shared across Tempo.Blazor components. Use it for rooms, equipment, teams, people-like capacity, or other resources that should not be modeled as users.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmResource.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable resource identifier within the source and tenant scope."
+    },
+    {
+      "name": "DisplayName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name shown in user-facing UI."
+    },
+    {
+      "name": "ResourceType",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional resource type, for example person, team, room, or equipment."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional color token or sanitized CSS color used for resource labels and timelines."
+    },
+    {
+      "name": "GroupId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional group identifier for nested grouping."
+    },
+    {
+      "name": "SortOrder",
+      "kind": "Property",
+      "type": "int",
+      "description": "Display order within the group."
+    },
+    {
+      "name": "SourceKey",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional provider/source discriminator for applications with multiple resource sources."
+    },
+    {
+      "name": "TenantId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional tenant, workspace, or application scope identifier."
+    },
+    {
+      "name": "Metadata",
+      "kind": "Property",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for consumer use."
+    },
+    {
+      "name": "ToRef",
+      "kind": "Method",
+      "type": "TmResourceRef",
+      "description": "Creates a lightweight reference snapshot from this resource."
+    },
+    {
+      "name": "FromRef",
+      "kind": "Method",
+      "type": "TmResource",
+      "description": "Creates a full resource model from a lightweight reference snapshot."
+    }
+  ],
+  "itemName": "TmResource"
+}

@@ -1,99 +1,106 @@
 using System.Text.Json;
 using FluentAssertions;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Abstractions.Shared;
+using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Tests.Components.NotionEditor;
 
 public sealed class NotionAuditContractTests
 {
     [Fact]
-    public void AuditEntryDto_RoundtripsThroughJson()
+    public void TmActivityEntry_RoundtripsThroughJson()
     {
-        var dto = new AuditEntryDto
+        var entry = Entry("audit-001", "alice", "edit", new DateTimeOffset(2026, 1, 15, 10, 30, 0, TimeSpan.Zero));
+        entry.Metadata = new Dictionary<string, object>
         {
-            Id = "audit-001",
-            Timestamp = new DateTime(2026, 1, 15, 10, 30, 0, DateTimeKind.Utc),
-            UserId = "alice",
-            UserDisplayName = "Alice Morgan",
-            Action = "edit",
-            TargetType = "page",
-            TargetId = "11111111-1111-1111-1111-111111111111",
-            Details = new Dictionary<string, string>
-            {
-                ["title"] = "Audit workspace",
-                ["field"] = "Description"
-            }
+            ["title"] = "Audit workspace",
+            ["field"] = "Description"
         };
 
-        var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-        var restored = JsonSerializer.Deserialize<AuditEntryDto>(json, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var json = JsonSerializer.Serialize(entry, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var restored = JsonSerializer.Deserialize<TmActivityEntry>(json, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
-        restored.Should().BeEquivalentTo(dto);
+        restored.Should().NotBeNull();
+        restored!.Id.Should().Be(entry.Id);
+        restored.Actor!.Id.Should().Be("alice");
+        restored.Action.Should().Be("edit");
+        restored.EntityRef.EntityType.Should().Be("page");
+        restored.EntityRef.EntityId.Should().Be("audit-001");
+        restored.Metadata!["title"].ToString().Should().Be("Audit workspace");
     }
 
     [Fact]
-    public async Task INotionAuditProvider_FiltersAndPagesEntries()
+    public async Task ITmActivityProvider_FiltersAndPagesEntries()
     {
-        var provider = new InMemoryAuditProvider();
-        await provider.LogAsync(Entry("1", "alice", "create", new DateTime(2026, 1, 10, 8, 0, 0, DateTimeKind.Utc)));
-        await provider.LogAsync(Entry("2", "bob", "edit", new DateTime(2026, 1, 11, 8, 0, 0, DateTimeKind.Utc)));
-        await provider.LogAsync(Entry("3", "alice", "edit", new DateTime(2026, 1, 12, 8, 0, 0, DateTimeKind.Utc)));
+        ITmActivityProvider provider = new InMemoryActivityProvider();
+        await provider.AppendAsync(Entry("1", "alice", "create", new DateTimeOffset(2026, 1, 10, 8, 0, 0, TimeSpan.Zero)));
+        await provider.AppendAsync(Entry("2", "bob", "edit", new DateTimeOffset(2026, 1, 11, 8, 0, 0, TimeSpan.Zero)));
+        await provider.AppendAsync(Entry("3", "alice", "edit", new DateTimeOffset(2026, 1, 12, 8, 0, 0, TimeSpan.Zero)));
 
-        var result = await provider.GetEntriesAsync(
-            new AuditLogFilter
-            {
-                UserId = "alice",
-                Action = "edit",
-                From = new DateOnly(2026, 1, 11),
-                To = new DateOnly(2026, 1, 12)
-            },
-            new NotionAuditQuery { Skip = 0, Take = 1 });
+        var result = await provider.QueryAsync(new TmActivityQuery
+        {
+            SearchText = "alice",
+            Action = "edit",
+            From = new DateTimeOffset(2026, 1, 11, 0, 0, 0, TimeSpan.Zero),
+            To = new DateTimeOffset(2026, 1, 12, 23, 59, 59, TimeSpan.Zero),
+            Skip = 0,
+            Take = 1
+        });
 
         result.TotalCount.Should().Be(1);
         result.Items.Should().ContainSingle().Which.Id.Should().Be("3");
         result.Page.Should().Be(1);
     }
 
-    private static AuditEntryDto Entry(string id, string userId, string action, DateTime timestamp)
+    private static TmActivityEntry Entry(string id, string userId, string action, DateTimeOffset timestamp)
         => new()
         {
             Id = id,
             Timestamp = timestamp,
-            UserId = userId,
-            UserDisplayName = userId,
+            Actor = new TmUserRef { Id = userId, DisplayName = userId },
             Action = action,
-            TargetType = "page",
-            TargetId = id,
-            Details = new Dictionary<string, string> { ["title"] = $"Entry {id}" }
+            EntityRef = TmEntityRef.Create("page", id),
+            Metadata = new Dictionary<string, object> { ["title"] = $"Entry {id}" }
         };
 
-    private sealed class InMemoryAuditProvider : INotionAuditProvider
+    private sealed class InMemoryActivityProvider : ITmActivityProvider
     {
-        private readonly List<AuditEntryDto> _entries = [];
+        private readonly List<TmActivityEntry> _entries = [];
 
-        public Task LogAsync(AuditEntryDto entry, CancellationToken cancellationToken = default)
+        public TmActivityProviderCapabilities Capabilities
+            => TmActivityProviderCapabilities.Read
+            | TmActivityProviderCapabilities.Query
+            | TmActivityProviderCapabilities.Append;
+
+        TmActivityProviderCapabilities ITmCapabilityProvider<TmActivityProviderCapabilities>.Capabilities => Capabilities;
+
+        public Task<IReadOnlyList<TmActivityEntry>> GetForEntityAsync(TmEntityRef entityRef, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<TmActivityEntry>>(_entries.Where(entry => entry.EntityRef.Equals(entityRef)).ToArray());
+
+        public Task<TmActivityEntry> AppendAsync(TmActivityEntry entry, CancellationToken cancellationToken = default)
         {
             _entries.Add(entry);
-            return Task.CompletedTask;
+            return Task.FromResult(entry);
         }
 
-        public Task<PagedResult<AuditEntryDto>> GetEntriesAsync(AuditLogFilter filter, NotionAuditQuery paging, CancellationToken cancellationToken = default)
+        public Task<PagedResult<TmActivityEntry>> QueryAsync(TmActivityQuery query, CancellationToken cancellationToken = default)
         {
             var matches = _entries
-                .Where(entry => string.IsNullOrWhiteSpace(filter.UserId) || entry.UserId.Contains(filter.UserId, StringComparison.OrdinalIgnoreCase))
-                .Where(entry => string.IsNullOrWhiteSpace(filter.Action) || string.Equals(entry.Action, filter.Action, StringComparison.OrdinalIgnoreCase))
-                .Where(entry => filter.From is null || DateOnly.FromDateTime(entry.Timestamp) >= filter.From.Value)
-                .Where(entry => filter.To is null || DateOnly.FromDateTime(entry.Timestamp) <= filter.To.Value)
+                .Where(entry => string.IsNullOrWhiteSpace(query.SearchText)
+                    || entry.Actor?.Id.Contains(query.SearchText, StringComparison.OrdinalIgnoreCase) == true
+                    || entry.Actor?.DisplayName.Contains(query.SearchText, StringComparison.OrdinalIgnoreCase) == true)
+                .Where(entry => string.IsNullOrWhiteSpace(query.Action) || string.Equals(entry.Action, query.Action, StringComparison.OrdinalIgnoreCase))
+                .Where(entry => query.From is null || entry.Timestamp >= query.From.Value)
+                .Where(entry => query.To is null || entry.Timestamp <= query.To.Value)
                 .OrderByDescending(entry => entry.Timestamp)
                 .ToArray();
 
-            var take = Math.Clamp(paging.Take, 1, 100);
-            return Task.FromResult(new PagedResult<AuditEntryDto>
+            var take = Math.Clamp(query.Take, 1, 100);
+            return Task.FromResult(new PagedResult<TmActivityEntry>
             {
-                Items = matches.Skip(Math.Max(0, paging.Skip)).Take(take).ToArray(),
+                Items = matches.Skip(Math.Max(0, query.Skip)).Take(take).ToArray(),
                 TotalCount = matches.Length,
-                Page = Math.Max(0, paging.Skip) / take + 1,
+                Page = Math.Max(0, query.Skip) / take + 1,
                 PageSize = take
             });
         }

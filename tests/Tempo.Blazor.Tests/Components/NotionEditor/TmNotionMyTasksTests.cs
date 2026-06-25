@@ -2,10 +2,9 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using AngleSharp.Dom;
+using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Components.NotionEditor.UI;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Models;
 using Tempo.Blazor.Tests.Localization;
 
 namespace Tempo.Blazor.Tests.Components.NotionEditor;
@@ -151,7 +150,7 @@ public class TmNotionMyTasksTests : LocalizationTestBase
             await ClickSegmentFilterAsync(cut, 2, scenario.Due);
 
             var expected = tasks
-                .Where(task => string.Equals(task.AssigneeId, "alice", StringComparison.OrdinalIgnoreCase))
+                .Where(task => string.Equals(AssigneeId(task), "alice", StringComparison.OrdinalIgnoreCase))
                 .Where(task => MatchesStatus(task, scenario.Status))
                 .Where(task => MatchesDue(task, scenario.Due))
                 .Count();
@@ -193,10 +192,10 @@ public class TmNotionMyTasksTests : LocalizationTestBase
     }
 
     private IRenderedComponent<TmNotionMyTasks> RenderTasks(
-        INotionTaskProvider provider,
+        ITmWorkItemProvider provider,
         EventCallback<(string, string)> navigateCallback = default)
         => RenderComponent<TmNotionMyTasks>(parameters => parameters
-            .Add(component => component.TaskProvider, provider)
+            .Add(component => component.WorkItemSource, provider)
             .Add(component => component.CurrentUserId, "alice")
             .Add(component => component.OnNavigateToBlock, navigateCallback));
 
@@ -212,14 +211,16 @@ public class TmNotionMyTasksTests : LocalizationTestBase
         return button.ClickAsync(new MouseEventArgs());
     }
 
-    private static bool MatchesStatus(NotionTaskDto task, string status) => status switch
+    private static string? AssigneeId(TmWorkItem task) => task.Assignees.FirstOrDefault()?.Id;
+
+    private static bool MatchesStatus(TmWorkItem task, string status) => status switch
     {
         "Open" => !task.IsCompleted,
         "Done" => task.IsCompleted,
         _ => true
     };
 
-    private static bool MatchesDue(NotionTaskDto task, string due)
+    private static bool MatchesDue(TmWorkItem task, string due)
     {
         var today = DateTime.Today;
         return due switch
@@ -230,210 +231,88 @@ public class TmNotionMyTasksTests : LocalizationTestBase
         };
     }
 
-    private static IReadOnlyList<NotionTaskDto> SampleTasks()
+    private static TmWorkItem MakeTask(
+        string id, string pageId, string pageTitle, string blockId, string text,
+        string? assigneeId = null, string? assigneeName = null,
+        DateTime? dueDate = null, bool isCompleted = false, DateTime createdAt = default)
+    {
+        var assignees = new List<TmWorkItemAssignee>();
+        if (!string.IsNullOrWhiteSpace(assigneeId))
+            assignees.Add(new TmWorkItemAssignee { Id = assigneeId, Name = assigneeName ?? assigneeId });
+
+        return new TmWorkItem
+        {
+            Id = id,
+            SourceKey = "notion",
+            OriginPageId = pageId,
+            OriginPageTitle = pageTitle,
+            OriginBlockId = blockId,
+            Title = text,
+            Assignees = assignees,
+            DueDate = dueDate,
+            IsCompleted = isCompleted,
+            Status = isCompleted ? TmWorkItemStatus.Done : TmWorkItemStatus.Open,
+            CreatedAt = createdAt
+        };
+    }
+
+    private static IReadOnlyList<TmWorkItem> SampleTasks()
     {
         var now = DateTime.Today;
         return
         [
-            new()
-            {
-                Id = "task-overdue",
-                PageId = "page-a",
-                PageTitle = "Workspace Launch",
-                BlockId = "block-overdue",
-                Text = "Send launch checklist",
-                AssigneeId = "alice",
-                AssigneeDisplayName = "Alice Johnson",
-                DueDate = now.AddDays(-1),
-                CreatedAt = now.AddDays(-4)
-            },
-            new()
-            {
-                Id = "task-today",
-                PageId = "page-a",
-                PageTitle = "Workspace Launch",
-                BlockId = "block-today",
-                Text = "Review onboarding copy",
-                AssigneeId = "alice",
-                AssigneeDisplayName = "Alice Johnson",
-                DueDate = now,
-                CreatedAt = now.AddDays(-3)
-            },
-            new()
-            {
-                Id = "task-release",
-                PageId = "page-b",
-                PageTitle = "Release Plan",
-                BlockId = "block-release",
-                Text = "Confirm rollout owner",
-                AssigneeId = "alice",
-                AssigneeDisplayName = "Alice Johnson",
-                DueDate = now.AddDays(3),
-                CreatedAt = now.AddDays(-2)
-            },
-            new()
-            {
-                Id = "task-other-user",
-                PageId = "page-c",
-                PageTitle = "Partner Notes",
-                BlockId = "block-other",
-                Text = "Not visible in Mine scope",
-                AssigneeId = "bob",
-                AssigneeDisplayName = "Bob Stone",
-                DueDate = now,
-                CreatedAt = now.AddDays(-1)
-            }
+            MakeTask("task-overdue", "page-a", "Workspace Launch", "block-overdue", "Send launch checklist", "alice", "Alice Johnson", now.AddDays(-1), createdAt: now.AddDays(-4)),
+            MakeTask("task-today", "page-a", "Workspace Launch", "block-today", "Review onboarding copy", "alice", "Alice Johnson", now, createdAt: now.AddDays(-3)),
+            MakeTask("task-release", "page-b", "Release Plan", "block-release", "Confirm rollout owner", "alice", "Alice Johnson", now.AddDays(3), createdAt: now.AddDays(-2)),
+            MakeTask("task-other-user", "page-c", "Partner Notes", "block-other", "Not visible in Mine scope", "bob", "Bob Stone", now, createdAt: now.AddDays(-1))
         ];
     }
 
-    private static IReadOnlyList<NotionTaskDto> SampleTasksWithCompleted()
+    private static IReadOnlyList<TmWorkItem> SampleTasksWithCompleted()
     {
-        var tasks = SampleTasks().Select(task => new NotionTaskDto
-        {
-            Id = task.Id,
-            PageId = task.PageId,
-            PageTitle = task.PageTitle,
-            BlockId = task.BlockId,
-            Text = task.Text,
-            AssigneeId = task.AssigneeId,
-            AssigneeDisplayName = task.AssigneeDisplayName,
-            DueDate = task.DueDate,
-            IsCompleted = task.IsCompleted,
-            CreatedAt = task.CreatedAt
-        }).ToList();
-
-        tasks.Add(new NotionTaskDto
-        {
-            Id = "task-completed",
-            PageId = "page-a",
-            PageTitle = "Workspace Launch",
-            BlockId = "block-completed",
-            Text = "Archive launch notes",
-            AssigneeId = "alice",
-            AssigneeDisplayName = "Alice Johnson",
-            DueDate = DateTime.Today.AddDays(-2),
-            IsCompleted = true,
-            CreatedAt = DateTime.Today.AddDays(-5)
-        });
-
+        var tasks = SampleTasks().ToList();
+        tasks.Add(MakeTask("task-completed", "page-a", "Workspace Launch", "block-completed", "Archive launch notes",
+            "alice", "Alice Johnson", DateTime.Today.AddDays(-2), isCompleted: true, createdAt: DateTime.Today.AddDays(-5)));
         return tasks;
     }
 
-    private static IReadOnlyList<NotionTaskDto> SampleFilterMatrixTasks()
+    private static IReadOnlyList<TmWorkItem> SampleFilterMatrixTasks()
     {
         var today = DateTime.Today;
         return
         [
-            new()
-            {
-                Id = "open-overdue",
-                PageId = "page-a",
-                PageTitle = "Planning",
-                BlockId = "block-open-overdue",
-                Text = "Open overdue",
-                AssigneeId = "alice",
-                DueDate = today.AddDays(-2),
-                CreatedAt = today.AddDays(-4)
-            },
-            new()
-            {
-                Id = "open-today",
-                PageId = "page-a",
-                PageTitle = "Planning",
-                BlockId = "block-open-today",
-                Text = "Open today",
-                AssigneeId = "alice",
-                DueDate = today,
-                CreatedAt = today.AddDays(-3)
-            },
-            new()
-            {
-                Id = "open-future",
-                PageId = "page-a",
-                PageTitle = "Planning",
-                BlockId = "block-open-future",
-                Text = "Open future",
-                AssigneeId = "alice",
-                DueDate = today.AddDays(5),
-                CreatedAt = today.AddDays(-2)
-            },
-            new()
-            {
-                Id = "open-no-due",
-                PageId = "page-a",
-                PageTitle = "Planning",
-                BlockId = "block-open-no-due",
-                Text = "Open no due date",
-                AssigneeId = "alice",
-                CreatedAt = today.AddDays(-1)
-            },
-            new()
-            {
-                Id = "done-overdue",
-                PageId = "page-b",
-                PageTitle = "Release",
-                BlockId = "block-done-overdue",
-                Text = "Done overdue",
-                AssigneeId = "alice",
-                DueDate = today.AddDays(-1),
-                IsCompleted = true,
-                CreatedAt = today.AddDays(-5)
-            },
-            new()
-            {
-                Id = "done-today",
-                PageId = "page-b",
-                PageTitle = "Release",
-                BlockId = "block-done-today",
-                Text = "Done today",
-                AssigneeId = "alice",
-                DueDate = today,
-                IsCompleted = true,
-                CreatedAt = today.AddDays(-4)
-            },
-            new()
-            {
-                Id = "done-future",
-                PageId = "page-b",
-                PageTitle = "Release",
-                BlockId = "block-done-future",
-                Text = "Done future",
-                AssigneeId = "alice",
-                DueDate = today.AddDays(2),
-                IsCompleted = true,
-                CreatedAt = today.AddDays(-3)
-            },
-            new()
-            {
-                Id = "other-user",
-                PageId = "page-c",
-                PageTitle = "Hidden",
-                BlockId = "block-other-user",
-                Text = "Other user task",
-                AssigneeId = "bob",
-                DueDate = today,
-                CreatedAt = today
-            }
+            MakeTask("open-overdue", "page-a", "Planning", "block-open-overdue", "Open overdue", "alice", dueDate: today.AddDays(-2), createdAt: today.AddDays(-4)),
+            MakeTask("open-today", "page-a", "Planning", "block-open-today", "Open today", "alice", dueDate: today, createdAt: today.AddDays(-3)),
+            MakeTask("open-future", "page-a", "Planning", "block-open-future", "Open future", "alice", dueDate: today.AddDays(5), createdAt: today.AddDays(-2)),
+            MakeTask("open-no-due", "page-a", "Planning", "block-open-no-due", "Open no due date", "alice", createdAt: today.AddDays(-1)),
+            MakeTask("done-overdue", "page-b", "Release", "block-done-overdue", "Done overdue", "alice", dueDate: today.AddDays(-1), isCompleted: true, createdAt: today.AddDays(-5)),
+            MakeTask("done-today", "page-b", "Release", "block-done-today", "Done today", "alice", dueDate: today, isCompleted: true, createdAt: today.AddDays(-4)),
+            MakeTask("done-future", "page-b", "Release", "block-done-future", "Done future", "alice", dueDate: today.AddDays(2), isCompleted: true, createdAt: today.AddDays(-3)),
+            MakeTask("other-user", "page-c", "Hidden", "block-other-user", "Other user task", "bob", dueDate: today, createdAt: today)
         ];
     }
 
-    private sealed class FakeTaskProvider : INotionTaskProvider
+    private sealed class FakeTaskProvider : TmWorkItemProviderBase
     {
-        private readonly List<NotionTaskDto> _tasks;
+        private readonly List<TmWorkItem> _tasks;
 
-        public FakeTaskProvider(IEnumerable<NotionTaskDto> tasks)
+        public FakeTaskProvider(IEnumerable<TmWorkItem> tasks)
         {
             _tasks = tasks.Select(Clone).ToList();
         }
 
+        public override string SourceKey => "notion";
+        public override string DisplayName => "Notion tasks";
+        public override TmWorkItemCapabilities Capabilities => TmWorkItemCapabilities.All;
+
         public List<(string TaskId, bool Completed)> CompletedUpdates { get; } = [];
 
-        public Task<PagedResult<NotionTaskDto>> GetTasksAsync(NotionTaskQuery query, CancellationToken cancellationToken = default)
+        public override Task<PagedResult<TmWorkItem>> SearchAsync(TmWorkItemQuery query, CancellationToken cancellationToken = default)
         {
-            IEnumerable<NotionTaskDto> filtered = _tasks;
+            IEnumerable<TmWorkItem> filtered = _tasks;
 
             if (!string.IsNullOrWhiteSpace(query.AssigneeId))
-                filtered = filtered.Where(task => string.Equals(task.AssigneeId, query.AssigneeId, StringComparison.OrdinalIgnoreCase));
+                filtered = filtered.Where(task => task.Assignees.Any(a => string.Equals(a.Id, query.AssigneeId, StringComparison.OrdinalIgnoreCase)));
 
             if (!query.IncludeCompleted)
                 filtered = filtered.Where(task => !task.IsCompleted);
@@ -446,10 +325,10 @@ public class TmNotionMyTasksTests : LocalizationTestBase
 
             var items = filtered
                 .OrderBy(task => task.DueDate ?? DateTime.MaxValue)
-                .ThenBy(task => task.PageTitle, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(task => task.OriginPageTitle, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            return Task.FromResult(new PagedResult<NotionTaskDto>
+            return Task.FromResult(new PagedResult<TmWorkItem>
             {
                 Items = items.Skip(query.Skip).Take(query.Take).Select(Clone).ToList(),
                 TotalCount = items.Count,
@@ -458,40 +337,45 @@ public class TmNotionMyTasksTests : LocalizationTestBase
             });
         }
 
-        public Task SetCompletedAsync(string taskId, bool completed, CancellationToken cancellationToken = default)
+        public override Task SetCompletedAsync(string id, bool completed, CancellationToken cancellationToken = default)
         {
-            CompletedUpdates.Add((taskId, completed));
-            var task = _tasks.Single(item => item.Id == taskId);
+            CompletedUpdates.Add((id, completed));
+            var task = _tasks.Single(item => item.Id == id);
             task.IsCompleted = completed;
             return Task.CompletedTask;
         }
 
-        private static NotionTaskDto Clone(NotionTaskDto task) => new()
+        private static TmWorkItem Clone(TmWorkItem task) => new()
         {
             Id = task.Id,
-            PageId = task.PageId,
-            PageTitle = task.PageTitle,
-            BlockId = task.BlockId,
-            Text = task.Text,
-            AssigneeId = task.AssigneeId,
-            AssigneeDisplayName = task.AssigneeDisplayName,
+            SourceKey = task.SourceKey,
+            OriginPageId = task.OriginPageId,
+            OriginPageTitle = task.OriginPageTitle,
+            OriginBlockId = task.OriginBlockId,
+            Title = task.Title,
+            Assignees = task.Assignees.Select(a => new TmWorkItemAssignee { Id = a.Id, Name = a.Name }).ToList(),
             DueDate = task.DueDate,
             IsCompleted = task.IsCompleted,
+            Status = task.Status,
+            Tags = task.Tags.ToList(),
             CreatedAt = task.CreatedAt
         };
     }
 
-    private sealed class ThrowingTaskProvider : INotionTaskProvider
+    private sealed class ThrowingTaskProvider : TmWorkItemProviderBase
     {
         private readonly string _message;
 
         public ThrowingTaskProvider(string message)
             => _message = message;
 
-        public Task<PagedResult<NotionTaskDto>> GetTasksAsync(NotionTaskQuery query, CancellationToken cancellationToken = default)
+        public override string SourceKey => "notion";
+        public override string DisplayName => "Notion tasks";
+
+        public override Task<PagedResult<TmWorkItem>> SearchAsync(TmWorkItemQuery query, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException(_message);
 
-        public Task SetCompletedAsync(string taskId, bool completed, CancellationToken cancellationToken = default)
+        public override Task SetCompletedAsync(string id, bool completed, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
     }
 }

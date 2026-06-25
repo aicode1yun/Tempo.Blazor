@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Inputs;
-using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Components.Scheduler;
@@ -59,16 +59,16 @@ public partial class TmGanttTaskPanel
     };
 
     /// <summary>The task being edited.</summary>
-    [Parameter] public GanttTask? Task { get; set; }
+    [Parameter] public TmWorkItem? Task { get; set; }
 
     /// <summary>All tasks for parent selection.</summary>
-    [Parameter] public IReadOnlyList<GanttTask> AllTasks { get; set; } = [];
+    [Parameter] public IReadOnlyList<TmWorkItem> AllTasks { get; set; } = [];
 
     /// <summary>Existing dependencies.</summary>
     [Parameter] public IReadOnlyList<GanttDependency> Dependencies { get; set; } = [];
 
     /// <summary>Fires when the task is saved with valid data.</summary>
-    [Parameter] public EventCallback<GanttTask> OnTaskUpdated { get; set; }
+    [Parameter] public EventCallback<TmWorkItem> OnTaskUpdated { get; set; }
 
     /// <summary>Fires when a new dependency is added.</summary>
     [Parameter] public EventCallback<GanttDependency> OnDependencyAdded { get; set; }
@@ -86,7 +86,7 @@ public partial class TmGanttTaskPanel
     [Parameter] public EventCallback<string> OnAttachmentRemoved { get; set; }
 
     /// <summary>Fires when the user submits a new comment.</summary>
-    [Parameter] public EventCallback<GanttComment> OnCommentAdded { get; set; }
+    [Parameter] public EventCallback<TmCommentEntry> OnCommentAdded { get; set; }
 
     /// <summary>Fires when the user closes the panel via the close button.</summary>
     [Parameter] public EventCallback OnClose { get; set; }
@@ -112,7 +112,7 @@ public partial class TmGanttTaskPanel
             _editPercent = Task.PercentComplete;
             _editIsMilestone = Task.IsMilestone;
             _editParentId = Task.ParentId;
-            _editDeadline = Task.Deadline?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            _editDeadline = Task.DueDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             _editEstimation = Task.EstimationHours;
             _editLoggedHours = Task.LoggedHours;
             _editColor       = Task.Color;
@@ -262,7 +262,7 @@ public partial class TmGanttTaskPanel
             DateTime.TryParseExact(_editDeadline, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dl))
             deadline = dl;
 
-        var updated = new GanttTask
+        var updated = new TmWorkItem
         {
             Id              = Task.Id,
             Title           = _editTitle,
@@ -271,7 +271,7 @@ public partial class TmGanttTaskPanel
             PercentComplete = _editPercent ?? 0,
             IsMilestone     = _editIsMilestone,
             ParentId        = _editParentId,
-            Deadline        = deadline,
+            DueDate         = deadline,
             EstimationHours = _editEstimation,
             LoggedHours     = _editLoggedHours,
             Color           = _editColor,
@@ -281,7 +281,8 @@ public partial class TmGanttTaskPanel
             Status          = Task.Status,
             Priority        = Task.Priority,
             Assignees       = Task.Assignees,
-            CustomValues    = Task.CustomValues,
+            Tags            = Task.Tags.ToList(),
+            CustomFields    = Task.CustomFields,
             Attachments     = Task.Attachments,
             Comments        = Task.Comments,
             TimeLog         = Task.TimeLog,
@@ -327,14 +328,7 @@ public partial class TmGanttTaskPanel
     private async Task AddCommentAsync()
     {
         if (Task is null || string.IsNullOrWhiteSpace(_newCommentText)) return;
-        var comment = new GanttComment
-        {
-            TaskId     = Task.Id,
-            AuthorId   = string.Empty,
-            AuthorName = string.Empty,
-            Text       = _newCommentText.Trim(),
-            CreatedAt  = DateTime.UtcNow
-        };
+        var comment = CreateCommentEntry(_newCommentText.Trim());
         _newCommentText = string.Empty;
         await OnCommentAdded.InvokeAsync(comment);
     }
@@ -373,32 +367,31 @@ public partial class TmGanttTaskPanel
         if (Task is null || string.IsNullOrWhiteSpace(html)) return;
         var text = Regex.Replace(html, "<[^>]+>", string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(text)) return;
-        var comment = new GanttComment
-        {
-            TaskId     = Task.Id,
-            AuthorId   = string.Empty,
-            AuthorName = string.Empty,
-            Text       = text,
-            CreatedAt  = DateTime.UtcNow
-        };
+        var comment = CreateCommentEntry(text);
         await OnCommentAdded.InvokeAsync(comment);
     }
 
-    internal IReadOnlyList<ICommentEntry> GetCommentEntries()
-        => (Task?.Comments ?? []).Select(c => (ICommentEntry)new GanttCommentAdapter(c)).ToList();
+    internal IReadOnlyList<TmCommentEntry> GetCommentEntries()
+        => Task?.Comments ?? [];
 
-    private sealed class GanttCommentAdapter : ICommentEntry
+    private TmCommentEntry CreateCommentEntry(string text)
     {
-        private readonly GanttComment _c;
-        public GanttCommentAdapter(GanttComment c) => _c = c;
-        public string Id => _c.Id;
-        public string AuthorName => _c.AuthorName;
-        public string? AuthorAvatarUrl => _c.AvatarUrl;
-        public DateTimeOffset CreatedAt => new(_c.CreatedAt, TimeSpan.Zero);
-        public DateTimeOffset? UpdatedAt => null;
-        public string HtmlContent => ParseMentions(_c.Text).Value.Replace("\n", "<br/>");
-        public bool CanEdit => false;
-        public bool CanDelete => false;
+        var entry = new TmCommentEntry
+        {
+            ThreadId = Task?.Id ?? string.Empty,
+            Author = new TmUserRef(),
+            Body = ParseMentions(text).Value.Replace("\n", "<br/>", StringComparison.Ordinal),
+            BodyFormat = TmCommentBodyFormat.Html,
+            CreatedAt = DateTimeOffset.UtcNow,
+            CanEdit = false,
+            CanDelete = false,
+            Metadata = new Dictionary<string, object>()
+        };
+
+        if (Task is not null)
+            entry.Metadata["TaskId"] = Task.Id;
+
+        return entry;
     }
 
     private bool Validate()

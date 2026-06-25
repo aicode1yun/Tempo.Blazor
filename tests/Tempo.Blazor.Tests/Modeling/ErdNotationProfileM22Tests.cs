@@ -37,11 +37,11 @@ public sealed class ErdNotationProfileM22Tests : LocalizationTestBase
     }
 
     [Fact]
-    public void AddTempoBlazor_does_not_register_erd_profile_by_default()
+    public void AddTempoBlazorModeling_does_not_register_erd_profile_by_default()
     {
         var services = new ServiceCollection();
 
-        services.AddTempoBlazor();
+        services.AddTempoBlazorModeling();
 
         using var provider = services.BuildServiceProvider();
         var registry = provider.GetRequiredService<ModelingNotationProfileRegistry>();
@@ -50,11 +50,11 @@ public sealed class ErdNotationProfileM22Tests : LocalizationTestBase
     }
 
     [Fact]
-    public void Consumer_can_register_erd_profile_after_AddTempoBlazor()
+    public void Consumer_can_register_erd_profile_after_AddTempoBlazorModeling()
     {
         var services = new ServiceCollection();
 
-        services.AddTempoBlazor();
+        services.AddTempoBlazorModeling();
         services.AddSingleton<IModelingNotationProfile, ErdNotationProfile>();
 
         using var provider = services.BuildServiceProvider();

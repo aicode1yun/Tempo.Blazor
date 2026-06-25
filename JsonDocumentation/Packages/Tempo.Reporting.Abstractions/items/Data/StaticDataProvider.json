@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Data",
+  "namespace": "Tempo.Reporting.Abstractions.Data",
+  "description": "Embedded/static report data provider for tests and host-provided inline data.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Data/StaticDataProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "StaticDataProvider"
+}

@@ -1,0 +1,14 @@
+{
+  "itemName": "TmDiagramLayersPanel",
+  "kind": "Component",
+  "category": "Diagram",
+  "description": "Right-side layers panel for managing diagram layers.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "namespace": "Tempo.Blazor.Components.Diagram",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramLayersPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Diagram"
+  ],
+  "parameters": []
+}

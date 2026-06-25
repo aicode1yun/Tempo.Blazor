@@ -1,0 +1,27 @@
+{
+  "itemName": "TmDiagramToolbox",
+  "kind": "Component",
+  "category": "Diagram",
+  "description": "Toolbox panel showing available diagram stencils that can be dragged onto the canvas.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "namespace": "Tempo.Blazor.Components.Diagram",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramToolbox.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Diagram"
+  ],
+  "parameters": [
+    {
+      "name": "StencilDragStart",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Additional CSS class."
+    },
+    {
+      "name": "StencilKeyboardInsert",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Raised when a stencil drag starts."
+    }
+  ]
+}

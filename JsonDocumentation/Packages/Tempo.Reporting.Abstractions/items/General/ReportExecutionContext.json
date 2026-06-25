@@ -1,0 +1,42 @@
+{
+  "kind": "Record",
+  "category": "General",
+  "namespace": "Tempo.Reporting.Abstractions",
+  "description": "Tenant-scoped execution context passed through reporting providers and render jobs.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/ReportExecutionContext.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CancellationToken",
+      "kind": "Property",
+      "type": "CancellationToken",
+      "description": "Cancellation token for provider, store and render operations."
+    },
+    {
+      "name": "Claims",
+      "kind": "Property",
+      "type": "IReadOnlyDictionary<string, string>",
+      "description": "Immutable claim snapshot used by reporting providers."
+    },
+    {
+      "name": "CultureName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Culture name used during expression formatting and localization."
+    },
+    {
+      "name": "TenantId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Tenant identifier for data isolation and quotas."
+    },
+    {
+      "name": "UserId",
+      "kind": "Property",
+      "type": "string",
+      "description": "User identifier for auditing and data-provider filtering."
+    }
+  ],
+  "itemName": "ReportExecutionContext"
+}

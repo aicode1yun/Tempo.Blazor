@@ -16,7 +16,7 @@
     {
       "name": "Attachments",
       "kind": "Property",
-      "type": "IReadOnlyList<FileAttachment>",
+      "type": "IReadOnlyList<TmAttachment>",
       "description": "Physical file attachments linked to this item."
     },
     {

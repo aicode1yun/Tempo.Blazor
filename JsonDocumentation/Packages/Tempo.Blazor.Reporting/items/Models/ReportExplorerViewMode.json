@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Visual mode used by the report explorer.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportExplorerModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportExplorerViewMode"
+}

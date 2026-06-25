@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Work Items",
+  "namespace": "Tempo.Blazor.Abstractions.WorkItems",
+  "description": "DI helpers for registering the unified work-item providers in one place, so every task-bearing component in the application shares the same source(s).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AddTmWorkItems",
+      "kind": "Method",
+      "type": "IServiceCollection",
+      "description": "Registers the . Call for each source. Safe to call multiple times.",
+      "parameters": [
+        {
+          "name": "services",
+          "type": "this IServiceCollection"
+        }
+      ]
+    }
+  ],
+  "itemName": "TmWorkItemServiceCollectionExtensions"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "RecordStruct",
+  "category": "Fonts",
+  "namespace": "Tempo.Reporting.Engine.Fonts",
+  "description": "Unicode code-point pair for kerning adjustment lookup.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Fonts/FontKerningPair.cs",
+  "documentationStatus": "generated",
+  "itemName": "FontKerningPair"
+}

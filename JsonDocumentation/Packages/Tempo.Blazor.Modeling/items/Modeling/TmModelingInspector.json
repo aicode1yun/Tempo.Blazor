@@ -1,0 +1,34 @@
+{
+  "itemName": "TmModelingInspector",
+  "kind": "Component",
+  "category": "Modeling",
+  "description": "Displays details for a selected modeling element or relationship.",
+  "packageId": "Tempo.Blazor.Modeling",
+  "namespace": "Tempo.Blazor.Components.Modeling",
+  "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/TmModelingInspector.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Modeling"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Elements used to resolve relationship source and target display names."
+    },
+    {
+      "name": "Elements",
+      "type": "IReadOnlyList<ModelingElementDto>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Selected modeling relationship."
+    },
+    {
+      "name": "Relationship",
+      "type": "ModelingRelationshipDto?",
+      "isRequired": false,
+      "description": "Selected modeling element. Takes precedence when both element and relationship are supplied."
+    }
+  ]
+}

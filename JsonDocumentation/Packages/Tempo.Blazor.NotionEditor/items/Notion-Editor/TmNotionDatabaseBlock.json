@@ -1,0 +1,15 @@
+{
+  "itemName": "TmNotionDatabaseBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionDatabaseBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDatabaseBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
+  ],
+  "parameters": [],
+  "subcategory": "Blocks / Database"
+}

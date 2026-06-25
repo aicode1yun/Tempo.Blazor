@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Data",
+  "namespace": "Tempo.Reporting.Abstractions.Data",
+  "description": "Exception thrown by report data providers.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDataProviderException"
+}

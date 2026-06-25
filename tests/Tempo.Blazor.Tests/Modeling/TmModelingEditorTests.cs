@@ -14,7 +14,7 @@ public sealed class TmModelingEditorTests : LocalizationTestBase
 {
     public TmModelingEditorTests()
     {
-        Services.AddTempoBlazor();
+        Services.AddTempoBlazorModeling();
     }
 
     [Fact]

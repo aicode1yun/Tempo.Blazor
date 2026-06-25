@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Supported field data type in a report data set schema.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/DataSets.cs",
+  "documentationStatus": "generated",
+  "itemName": "Tempo.Reporting.Abstractions.Definitions.ReportDataFieldType"
+}

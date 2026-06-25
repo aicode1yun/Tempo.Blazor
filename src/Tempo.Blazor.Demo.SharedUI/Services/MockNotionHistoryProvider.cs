@@ -10,7 +10,7 @@ namespace Tempo.Blazor.Demo.Services;
 /// RestoreVersionAsync inserts a new "restored" version at the top and is a no-op for
 /// the live block store (acceptable in a demo context).
 /// </summary>
-public class MockNotionHistoryProvider : INotionHistoryProvider
+public class MockNotionHistoryProvider : INotionVersionProvider
 {
     private static readonly Guid _page1Id = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid _page2Id = Guid.Parse("22222222-2222-2222-2222-222222222222");
@@ -164,7 +164,7 @@ public class MockNotionHistoryProvider : INotionHistoryProvider
         return new Guid(bytes);
     }
 
-    // ── INotionHistoryProvider ────────────────────────────────────────────────
+    // ── INotionVersionProvider ────────────────────────────────────────────────
 
     public Task<PagedResult<IPageVersion>> GetVersionsAsync(string pageId, int page, int pageSize)
     {

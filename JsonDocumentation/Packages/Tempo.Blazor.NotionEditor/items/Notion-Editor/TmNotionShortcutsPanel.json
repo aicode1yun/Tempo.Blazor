@@ -1,0 +1,35 @@
+{
+  "itemName": "TmNotionShortcutsPanel",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Modal overlay that lists Notion editor keyboard shortcuts.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionShortcutsPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "Groups",
+      "type": "IReadOnlyList<NotionShortcutGroup>",
+      "isRequired": false,
+      "default": "NotionShortcutCatalog.DefaultGroups",
+      "description": "Shortcut groups rendered by the panel. Defaults to the built-in Notion catalog."
+    },
+    {
+      "name": "Visible",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Controls whether the shortcut panel is visible."
+    },
+    {
+      "name": "VisibleChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "Raised when changes."
+    }
+  ],
+  "subcategory": "UI"
+}

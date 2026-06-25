@@ -1,0 +1,39 @@
+{
+  "itemName": "TmModelingViewSelector",
+  "kind": "Component",
+  "category": "Modeling",
+  "description": "Selects the active modeling notation and notation-specific viewpoint.",
+  "packageId": "Tempo.Blazor.Modeling",
+  "namespace": "Tempo.Blazor.Components.Modeling",
+  "sourcePath": "src/Tempo.Blazor.Modeling/Components/Modeling/TmModelingViewSelector.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Modeling"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Raised when the viewpoint changes."
+    },
+    {
+      "name": "OnNotationChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Selected viewpoint key."
+    },
+    {
+      "name": "OnViewpointChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Raised when the notation changes."
+    },
+    {
+      "name": "ViewpointKey",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Selected notation key."
+    }
+  ]
+}

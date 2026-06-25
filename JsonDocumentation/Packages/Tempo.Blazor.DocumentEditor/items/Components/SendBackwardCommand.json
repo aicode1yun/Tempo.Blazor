@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Commands",
+  "description": "Moves one positioned image one z-order step backward.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Commands/SendBackwardCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "SendBackwardCommand"
+}

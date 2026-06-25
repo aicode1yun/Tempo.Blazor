@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "description": "Payload emitted when a document comment thread requests page navigation.",
+  "packageId": "Tempo.Blazor.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/DocumentCommentThreadNavigateRequest.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Anchor",
+      "kind": "Property",
+      "type": "DocumentCommentAnchor",
+      "description": "Thread anchor used for the navigation request."
+    },
+    {
+      "name": "PageNumber",
+      "kind": "Property",
+      "type": "int",
+      "description": "One-based page number requested by the thread."
+    },
+    {
+      "name": "ThreadId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Target thread identifier."
+    }
+  ],
+  "itemName": "DocumentCommentThreadNavigateRequest"
+}

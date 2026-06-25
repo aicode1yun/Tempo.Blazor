@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Static clipboard for wireframe format painter (style + size).",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeClipboard.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CloneProps",
+      "kind": "Method",
+      "type": "Dictionary<string, JsonElement>",
+      "description": "Deep-clones a props dictionary.",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "JsonElement>"
+        }
+      ]
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "static double?",
+      "description": "Copied height (set when CopyStyleCommand includes size)."
+    },
+    {
+      "name": "StyleProps",
+      "kind": "Property",
+      "type": "static Dictionary<string, JsonElement>?",
+      "description": "Copied style properties from a source element."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "static double?",
+      "description": "Copied width (set when CopyStyleCommand includes size)."
+    }
+  ],
+  "itemName": "WireframeClipboard"
+}

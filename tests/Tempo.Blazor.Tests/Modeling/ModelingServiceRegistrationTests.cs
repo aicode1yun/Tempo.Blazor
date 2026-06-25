@@ -10,11 +10,11 @@ namespace Tempo.Blazor.Tests.Modeling;
 public sealed class ModelingServiceRegistrationTests
 {
     [Fact]
-    public async Task AddTempoBlazor_resolves_modeling_services_and_generates_demo_document()
+    public async Task AddTempoBlazorModeling_resolves_modeling_services_and_generates_demo_document()
     {
         var services = new ServiceCollection();
 
-        services.AddTempoBlazor();
+        services.AddTempoBlazorModeling();
 
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
@@ -53,11 +53,11 @@ public sealed class ModelingServiceRegistrationTests
     }
 
     [Fact]
-    public void AddTempoBlazor_registers_exactly_one_modeling_provider_by_default()
+    public void AddTempoBlazorModeling_registers_exactly_one_modeling_provider_by_default()
     {
         var services = new ServiceCollection();
 
-        services.AddTempoBlazor();
+        services.AddTempoBlazorModeling();
 
         using var provider = services.BuildServiceProvider();
         var providers = provider.GetServices<IModelingModelProvider>().ToList();
@@ -71,7 +71,7 @@ public sealed class ModelingServiceRegistrationTests
     {
         var services = new ServiceCollection();
 
-        services.AddTempoBlazor();
+        services.AddTempoBlazorModeling();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingModelProvider>(new ExtraModelingModelProvider()));
 
         using var provider = services.BuildServiceProvider();
@@ -88,7 +88,7 @@ public sealed class ModelingServiceRegistrationTests
         var services = new ServiceCollection();
 
         services.AddLogging(builder => builder.AddProvider(logs));
-        services.AddTempoBlazor();
+        services.AddTempoBlazorModeling();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationProfile>(new DuplicateBpmnProfile()));
 
         using var provider = services.BuildServiceProvider();

@@ -1,0 +1,22 @@
+{
+  "itemName": "ReportSnapshotGenerator",
+  "kind": "Class",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Generates deterministic fixed-page report snapshots from processed report instances. The output command stream is consumed by the Blazor canvas viewer and the PDF/PNG renderer.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/ReportSnapshotGenerator.cs",
+  "documentationStatus": "manual",
+  "methods": [
+    {
+      "name": "Generate",
+      "description": "Composes pages, resolves deferred page globals, lays out bands/elements/tables/charts, and returns a ReportSnapshot."
+    }
+  ],
+  "relatedTypes": [
+    "ReportSnapshotGeneratorOptions",
+    "ReportInstance",
+    "ITextMeasurer",
+    "ReportSnapshot"
+  ]
+}

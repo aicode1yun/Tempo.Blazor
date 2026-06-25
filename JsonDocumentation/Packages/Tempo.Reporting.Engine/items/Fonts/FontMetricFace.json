@@ -1,0 +1,154 @@
+{
+  "kind": "Class",
+  "category": "Fonts",
+  "namespace": "Tempo.Reporting.Engine.Fonts",
+  "description": "Precomputed metrics for one font family/style face.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Fonts/FontMetricFace.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AdvanceWidths",
+      "kind": "Field",
+      "type": "IReadOnlyDictionary<int, ushort>",
+      "description": "Unicode advance width table."
+    },
+    {
+      "name": "HintedAdvanceWidths",
+      "kind": "Field",
+      "type": "IReadOnlyDictionary<int, IReadOnlyDictionary<int, ushort>>",
+      "description": "Hinted Unicode advance widths keyed by CSS pixels per em."
+    },
+    {
+      "name": "KerningPairs",
+      "kind": "Field",
+      "type": "IReadOnlyDictionary<FontKerningPair, short>",
+      "description": "Unicode kerning table."
+    },
+    {
+      "name": "MissingGlyphHintedAdvanceWidths",
+      "kind": "Field",
+      "type": "IReadOnlyDictionary<int, ushort>",
+      "description": "Hinted missing-glyph advance widths keyed by CSS pixels per em."
+    },
+    {
+      "name": "ContainsCodePoint",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns true when the face contains a code point.",
+      "parameters": [
+        {
+          "name": "codePoint",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "GetAdvanceWidth",
+      "kind": "Method",
+      "type": "ushort",
+      "description": "Gets an advance width for a Unicode code point.",
+      "parameters": [
+        {
+          "name": "codePoint",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "GetKerning",
+      "kind": "Method",
+      "type": "short",
+      "description": "Gets kerning in font units for a code-point pair.",
+      "parameters": [
+        {
+          "name": "leftCodePoint",
+          "type": "int"
+        },
+        {
+          "name": "rightCodePoint",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "TryGetHintedAdvanceWidth",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Attempts to get a hinted CSS pixel advance width for a Unicode code point.",
+      "parameters": [
+        {
+          "name": "codePoint",
+          "type": "int"
+        },
+        {
+          "name": "pixelsPerEm",
+          "type": "int"
+        },
+        {
+          "name": "width",
+          "type": "out ushort"
+        }
+      ]
+    },
+    {
+      "name": "TryGetHintedMissingGlyphAdvanceWidth",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Attempts to get a hinted CSS pixel advance width for a missing glyph.",
+      "parameters": [
+        {
+          "name": "pixelsPerEm",
+          "type": "int"
+        },
+        {
+          "name": "width",
+          "type": "out ushort"
+        }
+      ]
+    },
+    {
+      "name": "Ascent",
+      "kind": "Property",
+      "type": "short",
+      "description": "Ascender in font units."
+    },
+    {
+      "name": "Descent",
+      "kind": "Property",
+      "type": "short",
+      "description": "Descender in font units."
+    },
+    {
+      "name": "FamilyName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Font family name."
+    },
+    {
+      "name": "LineGap",
+      "kind": "Property",
+      "type": "short",
+      "description": "Line gap in font units."
+    },
+    {
+      "name": "MissingGlyphAdvanceWidth",
+      "kind": "Property",
+      "type": "ushort",
+      "description": "Advance width used when no glyph is available."
+    },
+    {
+      "name": "StyleKey",
+      "kind": "Property",
+      "type": "FontStyleKey",
+      "description": "Font style key."
+    },
+    {
+      "name": "UnitsPerEm",
+      "kind": "Property",
+      "type": "int",
+      "description": "Units per em from the TrueType head table."
+    }
+  ],
+  "itemName": "FontMetricFace"
+}

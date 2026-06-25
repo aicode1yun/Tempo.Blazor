@@ -1,120 +1,42 @@
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Abstractions.WorkItems;
+using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Demo.Api.Data;
 
 public sealed class DemoWorkItemStore
 {
-    private static readonly DateTimeOffset SeedUpdatedAt = new(2026, 6, 1, 10, 15, 0, TimeSpan.Zero);
+    private static readonly DateTime SeedUpdatedAt = new(2026, 6, 1, 10, 15, 0, DateTimeKind.Utc);
 
-    private readonly IReadOnlyList<WorkItemDto> _items =
+    private readonly IReadOnlyList<TmWorkItem> _items =
     [
-        new()
-        {
-            ProviderKey = "demo",
-            ExternalId = "DEMO-101",
-            Url = "https://tracker.demo.local/work/DEMO-101",
-            Title = "Prepare release checklist",
-            Status = "To Do",
-            StatusColor = "#3b82f6",
-            TypeLabel = "Story",
-            TypeIconUrl = IconDataUrl("#3b82f6", "S"),
-            AssigneeDisplayName = "Ada Lovelace",
-            Priority = "High",
-            UpdatedAt = SeedUpdatedAt.AddDays(-3),
-            Fields = new Dictionary<string, string>
-            {
-                ["Sprint"] = "CF5",
-                ["Team"] = "Editor"
-            }
-        },
-        new()
-        {
-            ProviderKey = "demo",
-            ExternalId = "DEMO-202",
-            Url = "https://tracker.demo.local/work/DEMO-202",
-            Title = "Wire provider registry into Notion editor",
-            Status = "In Progress",
-            StatusColor = "#f59e0b",
-            TypeLabel = "Task",
-            TypeIconUrl = IconDataUrl("#f59e0b", "T"),
-            AssigneeDisplayName = "Grace Hopper",
-            Priority = "Medium",
-            UpdatedAt = SeedUpdatedAt.AddDays(-2),
-            Fields = new Dictionary<string, string>
-            {
-                ["Sprint"] = "CF5",
-                ["Component"] = "Notion"
-            }
-        },
-        new()
-        {
-            ProviderKey = "demo",
-            ExternalId = "DEMO-303",
-            Url = "https://tracker.demo.local/work/DEMO-303",
-            Title = "Polish inline work item chip",
-            Status = "Done",
-            StatusColor = "#22c55e",
-            TypeLabel = "Feature",
-            TypeIconUrl = IconDataUrl("#22c55e", "F"),
-            AssigneeDisplayName = "Katherine Johnson",
-            Priority = "Low",
-            UpdatedAt = SeedUpdatedAt.AddDays(-1),
-            Fields = new Dictionary<string, string>
-            {
-                ["Sprint"] = "CF5",
-                ["UX"] = "Baseline"
-            }
-        },
-        new()
-        {
-            ProviderKey = "demo",
-            ExternalId = "DEMO-404",
-            Url = "https://tracker.demo.local/work/DEMO-404",
-            Title = "Investigate provider outage fallback",
-            Status = "Blocked",
-            StatusColor = "#ef4444",
-            TypeLabel = "Bug",
-            TypeIconUrl = IconDataUrl("#ef4444", "B"),
-            AssigneeDisplayName = "Hedy Lamarr",
-            Priority = "Critical",
-            UpdatedAt = SeedUpdatedAt,
-            Fields = new Dictionary<string, string>
-            {
-                ["Sprint"] = "CF5",
-                ["Risk"] = "Fallback"
-            }
-        },
-        new()
-        {
-            ProviderKey = "ops",
-            ExternalId = "OPS-7",
-            Url = "https://ops.demo.local/work/OPS-7",
-            Title = "Rotate demo API certificate",
-            Status = "Scheduled",
-            StatusColor = "#06b6d4",
-            TypeLabel = "Change",
-            TypeIconUrl = IconDataUrl("#06b6d4", "C"),
-            AssigneeDisplayName = "Linus Pauling",
-            Priority = "Normal",
-            UpdatedAt = SeedUpdatedAt.AddHours(-6),
-            Fields = new Dictionary<string, string>
-            {
-                ["Window"] = "Night",
-                ["Environment"] = "Demo"
-            }
-        }
+        Make("demo", "DEMO-101", "https://tracker.demo.local/work/DEMO-101", "Prepare release checklist",
+            "To Do", "#3b82f6", "Story", "S", "Ada Lovelace", "High", SeedUpdatedAt.AddDays(-3),
+            new() { ["Sprint"] = "CF5", ["Team"] = "Editor" }),
+        Make("demo", "DEMO-202", "https://tracker.demo.local/work/DEMO-202", "Wire provider registry into Notion editor",
+            "In Progress", "#f59e0b", "Task", "T", "Grace Hopper", "Medium", SeedUpdatedAt.AddDays(-2),
+            new() { ["Sprint"] = "CF5", ["Component"] = "Notion" }),
+        Make("demo", "DEMO-303", "https://tracker.demo.local/work/DEMO-303", "Polish inline work item chip",
+            "Done", "#22c55e", "Feature", "F", "Katherine Johnson", "Low", SeedUpdatedAt.AddDays(-1),
+            new() { ["Sprint"] = "CF5", ["UX"] = "Baseline" }),
+        Make("demo", "DEMO-404", "https://tracker.demo.local/work/DEMO-404", "Investigate provider outage fallback",
+            "Blocked", "#ef4444", "Bug", "B", "Hedy Lamarr", "Critical", SeedUpdatedAt,
+            new() { ["Sprint"] = "CF5", ["Risk"] = "Fallback" }),
+        Make("ops", "OPS-7", "https://ops.demo.local/work/OPS-7", "Rotate demo API certificate",
+            "Scheduled", "#06b6d4", "Change", "C", "Linus Pauling", "Normal", SeedUpdatedAt.AddHours(-6),
+            new() { ["Window"] = "Night", ["Environment"] = "Demo" })
     ];
 
-    public WorkItemDto? GetById(string providerKey, string externalId)
+    public TmWorkItem? GetById(string sourceKey, string externalId)
         => _items.FirstOrDefault(item =>
-            string.Equals(item.ProviderKey, providerKey, StringComparison.OrdinalIgnoreCase)
+            string.Equals(item.SourceKey, sourceKey, StringComparison.OrdinalIgnoreCase)
             && string.Equals(item.ExternalId, externalId, StringComparison.OrdinalIgnoreCase));
 
-    public PagedResult<WorkItemDto> Search(WorkItemQuery query)
+    public PagedResult<TmWorkItem> Search(TmWorkItemQuery query)
     {
-        var providerKey = query.ProviderKey.Trim();
-        IEnumerable<WorkItemDto> filtered = _items.Where(item =>
-            string.Equals(item.ProviderKey, providerKey, StringComparison.OrdinalIgnoreCase));
+        var sourceKey = (query.SourceKey ?? string.Empty).Trim();
+        IEnumerable<TmWorkItem> filtered = string.IsNullOrWhiteSpace(sourceKey)
+            ? _items
+            : _items.Where(item => string.Equals(item.SourceKey, sourceKey, StringComparison.OrdinalIgnoreCase));
 
         if (query.Ids.Count > 0)
         {
@@ -124,16 +46,16 @@ public sealed class DemoWorkItemStore
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             if (ids.Count > 0)
-                filtered = filtered.Where(item => ids.Contains(item.ExternalId));
+                filtered = filtered.Where(item => ids.Contains(item.ExternalId ?? item.Id));
         }
 
         if (!string.IsNullOrWhiteSpace(query.FreeText))
         {
             var term = query.FreeText.Trim();
             filtered = filtered.Where(item =>
-                item.ExternalId.Contains(term, StringComparison.OrdinalIgnoreCase)
+                (item.ExternalId ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase)
                 || item.Title.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || item.Status.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || (item.StatusLabel?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false)
                 || (item.TypeLabel?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false)
                 || item.Fields.Values.Any(value => value.Contains(term, StringComparison.OrdinalIgnoreCase)));
         }
@@ -145,7 +67,7 @@ public sealed class DemoWorkItemStore
             .ThenBy(item => item.ExternalId, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        return new PagedResult<WorkItemDto>
+        return new PagedResult<TmWorkItem>
         {
             Items = matches.Skip(skip).Take(take).ToArray(),
             TotalCount = matches.Length,
@@ -153,6 +75,27 @@ public sealed class DemoWorkItemStore
             PageSize = take
         };
     }
+
+    private static TmWorkItem Make(
+        string sourceKey, string externalId, string url, string title,
+        string status, string statusColor, string typeLabel, string typeLetter,
+        string assignee, string priority, DateTime updatedAt, Dictionary<string, string> fields)
+        => new()
+        {
+            Id = externalId,
+            SourceKey = sourceKey,
+            ExternalId = externalId,
+            Url = url,
+            Title = title,
+            StatusLabel = status,
+            StatusColor = statusColor,
+            TypeLabel = typeLabel,
+            TypeIconUrl = IconDataUrl(statusColor, typeLetter),
+            Assignees = [new TmWorkItemAssignee { Id = assignee, Name = assignee }],
+            PriorityLabel = priority,
+            UpdatedAt = updatedAt,
+            Fields = fields
+        };
 
     private static string IconDataUrl(string color, string letter)
     {

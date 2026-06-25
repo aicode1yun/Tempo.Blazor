@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Features",
+  "description": "Find and replace feature skeleton.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Features/DocumentEditorBuiltInFeatures.cs",
+  "documentationStatus": "generated",
+  "itemName": "FindReplaceFeature"
+}

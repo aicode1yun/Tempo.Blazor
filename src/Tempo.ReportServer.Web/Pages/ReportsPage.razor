@@ -1,0 +1,58 @@
+@page "/reports"
+@inject NavigationManager Navigation
+@inject ReportServerSessionState Session
+@inject ReportServerCatalogStore Catalog
+
+<ReportServerShell Title="Reports" ActiveSection="reports">
+    <div class="rs-page rs-page--explorer" data-testid="f12-explorer-page">
+        <div class="rs-page__heading">
+            <div>
+                <p class="rs-kicker">Catalog</p>
+                <h2>Report explorer</h2>
+            </div>
+            <div class="rs-page__stats">
+                <span>@TenantCatalog.Reports.Count reports</span>
+                <span>@TenantCatalog.DataSources.Count data sources</span>
+            </div>
+        </div>
+
+        <TmReportExplorer RootFolder="@TenantCatalog.RootFolder"
+                          Reports="@TenantCatalog.Reports"
+                          CurrentFolderPath="@_currentFolderPath"
+                          CurrentFolderPathChanged="SetFolder"
+                          ViewMode="@_viewMode"
+                          ViewModeChanged="SetViewMode"
+                          AllowFolderManagement="true"
+                          ReportOpened="OpenReport"
+                          CreateFolderRequested="CreateFolder"
+                          ReportMoveRequested="MoveReport" />
+    </div>
+</ReportServerShell>
+
+@code {
+    private string _currentFolderPath = "/finance";
+    private ReportExplorerViewMode _viewMode = ReportExplorerViewMode.Grid;
+
+    private ReportServerTenantCatalog TenantCatalog => Catalog.GetCatalog(Session.CurrentTenantId);
+
+    private void SetFolder(string folderPath)
+        => _currentFolderPath = folderPath;
+
+    private void SetViewMode(ReportExplorerViewMode viewMode)
+        => _viewMode = viewMode;
+
+    private void OpenReport(ReportExplorerReportItem report)
+        => Navigation.NavigateTo($"{report.Path}?Region=EU&MinimumTotal=0&IncludeClosed=true");
+
+    private void CreateFolder(ReportExplorerCreateFolderRequest request)
+    {
+        Catalog.CreateFolder(Session.CurrentTenantId, request.ParentPath, request.Name);
+        _currentFolderPath = request.ParentPath;
+    }
+
+    private void MoveReport(ReportExplorerMoveReportRequest request)
+    {
+        Catalog.MoveReport(Session.CurrentTenantId, request.ReportId, request.TargetFolderPath);
+        _currentFolderPath = request.TargetFolderPath;
+    }
+}

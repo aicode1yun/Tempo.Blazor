@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "PDF",
+  "namespace": "Tempo.Reporting.Engine.Pdf",
+  "description": "Single TrueType/OpenType font face available to the PDF renderer.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Pdf/ReportPdfRenderer.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportPdfFontFace"
+}

@@ -1,0 +1,76 @@
+{
+  "itemName": "TmSigningCompletionPanel",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "TmSigningCompletionPanel Blazor component in the Signing category.",
+  "packageId": "Tempo.Blazor.Signing",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmSigningCompletionPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when the custom action is clicked."
+    },
+    {
+      "name": "CustomActionIcon",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional custom action text."
+    },
+    {
+      "name": "CustomActionText",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the send-copy action is shown."
+    },
+    {
+      "name": "Description",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional completed title override."
+    },
+    {
+      "name": "DownloadUrl",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the signer is done but the submission is waiting for other recipients."
+    },
+    {
+      "name": "IsWaitingForOthers",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Optional completed description override."
+    },
+    {
+      "name": "OnCustomAction",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Callback invoked when sending a copy is requested."
+    },
+    {
+      "name": "OnDownload",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Optional custom action icon."
+    },
+    {
+      "name": "OnSendCopy",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Callback invoked when download is requested and no DownloadUrl is set."
+    },
+    {
+      "name": "ShowSendCopy",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Optional completed document download URL."
+    }
+  ]
+}

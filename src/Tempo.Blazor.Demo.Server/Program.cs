@@ -1,10 +1,13 @@
 using Tempo.Blazor.Configuration;
 using Tempo.Blazor.Demo.Services;
+using Tempo.Blazor.Demo.SharedUI.Services;
 using Tempo.Blazor.Demo.Validators;
 using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.FluentValidation;
+using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.Reporting.Configuration;
 using Tempo.Blazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -54,9 +57,10 @@ builder.Services.AddScoped<DemoNotionAnalyticsProvider>();
 builder.Services.AddScoped<DemoNotionPagePropertiesProvider>();
 builder.Services.AddScoped<DemoSmartLinkProvider>();
 builder.Services.AddScoped<DemoNotionDatabaseProvider>();
-builder.Services.AddScoped<IWorkItemProvider, DemoWorkItemProvider>();
-builder.Services.AddScoped<IWorkItemProvider, DemoOpsWorkItemProvider>();
-builder.Services.AddScoped<WorkItemProviderRegistry>();
+builder.Services.AddTmWorkItemProvider<DemoWorkItemProvider>();
+builder.Services.AddTmWorkItemProvider<DemoOpsWorkItemProvider>();
+builder.Services.AddScoped<DemoSharedWorkItemProvider>();
+builder.Services.AddScoped<ITmWorkItemProvider>(sp => sp.GetRequiredService<DemoSharedWorkItemProvider>());
 builder.Services.AddScoped<MockNotionDatabaseProvider>();
 builder.Services.AddScoped<MockNotionCommentProvider>();
 builder.Services.AddScoped<MockNotionHistoryProvider>();
@@ -68,7 +72,19 @@ builder.Services.AddScoped<ApiSpreadsheetDocumentProvider>();
 
 // Register Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)
 builder.Services.AddTempoBlazor();
+builder.Services.AddTempoBlazorPdfViewer();
+builder.Services.AddTempoBlazorCodes();
+builder.Services.AddTempoBlazorDocumentEditor();
+builder.Services.AddTempoBlazorDiagramEditor();
+builder.Services.AddTempoBlazorWireframe();
+builder.Services.AddTempoBlazorModeling();
+builder.Services.AddTempoBlazorSpreadsheet();
+builder.Services.AddTempoBlazorGanttXlsx();
+builder.Services.AddTempoBlazorNotionEditor();
+builder.Services.AddTempoBlazorSigning();
+builder.Services.AddTempoBlazorReporting();
 builder.Services.AddInMemoryNotifications();
+builder.Services.AddScoped<DemoReportEmbeddingSourceFactory>();
 
 // Register Dashboard services
 builder.Services.AddSingleton<IWidgetRegistry, InMemoryWidgetRegistry>();

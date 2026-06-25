@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Request raised when a folder should be created.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportExplorerModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportExplorerCreateFolderRequest"
+}

@@ -1,0 +1,72 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Lightweight user snapshot embedded in comments, notifications, activity entries, assignments, and other shared models.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmUserRef.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable user identifier within the source and tenant scope."
+    },
+    {
+      "name": "DisplayName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name captured at the time the reference was created."
+    },
+    {
+      "name": "UserName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional username or mention handle."
+    },
+    {
+      "name": "Email",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional e-mail address."
+    },
+    {
+      "name": "AvatarUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional avatar image URL."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional color token or sanitized CSS color used for avatars and timelines."
+    },
+    {
+      "name": "IsVirtual",
+      "kind": "Property",
+      "type": "bool",
+      "description": "True when this represents a virtual resource rather than an account-backed user."
+    },
+    {
+      "name": "SourceKey",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional provider/source discriminator for applications with multiple people sources."
+    },
+    {
+      "name": "TenantId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional tenant, workspace, or application scope identifier."
+    },
+    {
+      "name": "FromUser",
+      "kind": "Method",
+      "type": "TmUserRef",
+      "description": "Creates a reference snapshot from a full user model."
+    }
+  ],
+  "itemName": "TmUserRef"
+}

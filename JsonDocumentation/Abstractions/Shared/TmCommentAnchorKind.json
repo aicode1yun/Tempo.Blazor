@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Normalized anchor kind for a shared comment thread.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCommentAnchorKind.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmCommentAnchorKind"
+}

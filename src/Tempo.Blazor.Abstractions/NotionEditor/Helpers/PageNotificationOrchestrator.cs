@@ -1,15 +1,14 @@
-using Tempo.Blazor.NotionEditor.Enums;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.NotionEditor.Helpers;
 
 /// <summary>Generates page-level notifications for users watching a page or subtree.</summary>
 public sealed class PageNotificationOrchestrator
 {
-    private readonly INotificationService _notificationService;
+    private readonly ITmNotificationService _notificationService;
 
-    public PageNotificationOrchestrator(INotificationService notificationService)
+    public PageNotificationOrchestrator(ITmNotificationService notificationService)
     {
         _notificationService = notificationService;
     }
@@ -24,7 +23,7 @@ public sealed class PageNotificationOrchestrator
         => NotifyWatchersAsync(
             watchProvider,
             pageId,
-            NotificationType.PageEdited,
+            TmNotificationTypes.PageEdited,
             actorUserId,
             actorName,
             $"{DisplayName(actorName, actorUserId)} edited {DisplayTitle(pageTitle)}",
@@ -43,7 +42,7 @@ public sealed class PageNotificationOrchestrator
         => NotifyWatchersAsync(
             watchProvider,
             pageId,
-            NotificationType.PageCommentAdded,
+            TmNotificationTypes.PageCommentAdded,
             actorUserId,
             actorName,
             $"{DisplayName(actorName, actorUserId)} commented on {DisplayTitle(pageTitle)}",
@@ -69,15 +68,18 @@ public sealed class PageNotificationOrchestrator
 
         foreach (var recipient in recipients)
         {
-            await _notificationService.NotifyAsync(new NotificationEvent
+            await _notificationService.PublishAsync(new TmNotification
             {
-                Type = NotificationType.TaskAssigned,
+                Type = TmNotificationTypes.TaskAssigned,
                 RecipientUserId = recipient,
-                SenderUserId = actorUserId,
-                SenderName = actorName,
-                Message = $"{DisplayName(actorName, actorUserId)} assigned a task on {DisplayTitle(pageTitle)}",
-                DeepLink = $"/notion-editor?page={Uri.EscapeDataString(pageId)}#block-{Uri.EscapeDataString(taskId)}",
-                EntryId = taskId
+                Actor = Actor(actorUserId, actorName),
+                Title = $"{DisplayName(actorName, actorUserId)} assigned a task on {DisplayTitle(pageTitle)}",
+                ActionUrl = $"/notion-editor?page={Uri.EscapeDataString(pageId)}#block-{Uri.EscapeDataString(taskId)}",
+                EntityRef = PageRef(pageId, pageTitle),
+                Metadata = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["EntryId"] = taskId
+                }
             }, cancellationToken);
         }
     }
@@ -92,7 +94,7 @@ public sealed class PageNotificationOrchestrator
         => NotifyWatchersAsync(
             watchProvider,
             pageId,
-            NotificationType.PageShared,
+            TmNotificationTypes.PageShared,
             actorUserId,
             actorName,
             $"{DisplayName(actorName, actorUserId)} shared {DisplayTitle(pageTitle)}",
@@ -103,7 +105,7 @@ public sealed class PageNotificationOrchestrator
     private async Task NotifyWatchersAsync(
         INotionWatchProvider watchProvider,
         string pageId,
-        NotificationType type,
+        string type,
         string? actorUserId,
         string? actorName,
         string message,
@@ -113,15 +115,18 @@ public sealed class PageNotificationOrchestrator
     {
         foreach (var recipient in await GetWatcherRecipientsAsync(watchProvider, pageId, actorUserId, cancellationToken))
         {
-            await _notificationService.NotifyAsync(new NotificationEvent
+            await _notificationService.PublishAsync(new TmNotification
             {
                 Type = type,
                 RecipientUserId = recipient,
-                SenderUserId = actorUserId,
-                SenderName = actorName,
-                Message = message,
-                DeepLink = deepLink,
-                EntryId = entryId
+                Actor = Actor(actorUserId, actorName),
+                Title = message,
+                ActionUrl = deepLink,
+                EntityRef = PageRef(pageId, pageTitle: null),
+                Metadata = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["EntryId"] = entryId
+                }
             }, cancellationToken);
         }
     }
@@ -146,4 +151,12 @@ public sealed class PageNotificationOrchestrator
 
     private static string DisplayTitle(string pageTitle)
         => string.IsNullOrWhiteSpace(pageTitle) ? "an untitled page" : pageTitle.Trim();
+
+    private static TmUserRef? Actor(string? actorUserId, string? actorName)
+        => string.IsNullOrWhiteSpace(actorUserId) && string.IsNullOrWhiteSpace(actorName)
+            ? null
+            : new TmUserRef { Id = actorUserId ?? string.Empty, DisplayName = DisplayName(actorName, actorUserId) };
+
+    private static TmEntityRef PageRef(string pageId, string? pageTitle)
+        => TmEntityRef.Create("page", pageId, displayName: pageTitle);
 }

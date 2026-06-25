@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "description": "Maps Word-like document editor keyboard shortcuts to editor commands.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/DocumentEditorKeyboardManager.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorKeyboardManager"
+}

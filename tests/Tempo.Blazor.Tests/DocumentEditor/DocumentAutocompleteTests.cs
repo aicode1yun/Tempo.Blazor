@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.Interfaces;
 
@@ -154,13 +155,13 @@ public class DocumentAutocompleteTests
         }
     }
 
-    private sealed class TestMentionProvider : IMentionDataProvider
+    private sealed class TestMentionProvider : TmPeopleProviderBase
     {
-        public Task<IEnumerable<IMentionUser>> SearchUsersAsync(string query, CancellationToken ct = default)
+        public override Task<IReadOnlyList<TmUser>> SearchAsync(TmPeopleQuery query, CancellationToken ct = default)
         {
-            IEnumerable<IMentionUser> users =
+            IReadOnlyList<TmUser> users =
             [
-                new TestMentionUser
+                new TmUser
                 {
                     Id = "u1",
                     UserName = "alex",
@@ -188,17 +189,6 @@ public class DocumentAutocompleteTests
         public string? ColorClass { get; init; }
 
         public string? TypeLabel { get; init; }
-    }
-
-    private sealed class TestMentionUser : IMentionUser
-    {
-        public string Id { get; init; } = string.Empty;
-
-        public string UserName { get; init; } = string.Empty;
-
-        public string DisplayName { get; init; } = string.Empty;
-
-        public string? AvatarUrl { get; init; }
     }
 
     private sealed class ControlledAutocompleteProvider : IDocumentAutocompleteProvider

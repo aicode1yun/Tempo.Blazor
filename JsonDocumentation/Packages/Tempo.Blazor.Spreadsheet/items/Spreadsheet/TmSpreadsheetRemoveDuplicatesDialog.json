@@ -1,0 +1,35 @@
+{
+  "itemName": "TmSpreadsheetRemoveDuplicatesDialog",
+  "kind": "Component",
+  "category": "Spreadsheet",
+  "description": "The Remove Duplicates dialog. Lists every column in the range with a checkbox, offers a \"my data has headers\" toggle (which switches the column labels between header text and the column letter), select-all / deselect-all helpers and a case-sensitivity option. Applying yields a . All text is localized.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetRemoveDuplicatesDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+  ],
+  "parameters": [
+    {
+      "name": "HeaderLabels",
+      "type": "IReadOnlyDictionary<int, string>?",
+      "isRequired": true,
+      "description": "The range being deduplicated.",
+      "editorRequired": true
+    },
+    {
+      "name": "OnApply",
+      "type": "EventCallback<SpreadsheetRemoveDuplicatesOptions>",
+      "isRequired": false,
+      "description": "Header text per absolute column index, used to label columns when my data has headers is on. Columns without an entry fall back to their column letter."
+    },
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the user applies the dialog."
+    }
+  ],
+  "subcategory": "Dialogs"
+}

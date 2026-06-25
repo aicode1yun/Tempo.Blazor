@@ -1,0 +1,14 @@
+{
+  "itemName": "TmDocumentCollaborationCursorOverlay",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "TmDocumentCollaborationCursorOverlay Blazor component in the Document Editor category.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCollaborationCursorOverlay.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": []
+}

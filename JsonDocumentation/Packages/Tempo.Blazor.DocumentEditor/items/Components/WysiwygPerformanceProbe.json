@@ -1,0 +1,81 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Performance",
+  "description": "Thin C# wrapper over window.tmDocumentEditorPerformance. Use from benchmarks, manual profiling, or automated regression guards. The probe is not part of the editor's normal hot path — instantiate around a discrete action and dispose / stop when finished.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Performance/WysiwygPerformanceProbe.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ClearAllAsync",
+      "kind": "Method",
+      "type": "ValueTask",
+      "description": "Clears all active captures globally. Mainly used by tests.",
+      "parameters": [
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "NoteInteropCallAsync",
+      "kind": "Method",
+      "type": "ValueTask",
+      "description": "Notes an out-of-band JS interop call so the next capture's reflects it.",
+      "parameters": [
+        {
+          "name": "count",
+          "type": "int",
+          "default": "1"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "StartCaptureAsync",
+      "kind": "Method",
+      "type": "ValueTask",
+      "description": "Starts a capture window for the given editor instance. Re-starting an existing capture overwrites the previous one without emitting a report.",
+      "parameters": [
+        {
+          "name": "instanceId",
+          "type": "string"
+        },
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "StopCaptureAsync",
+      "kind": "Method",
+      "type": "ValueTask<WysiwygPerformanceReport?>",
+      "description": "Stops the capture window and returns the aggregated report. Returns null if no capture was active for the supplied instance.",
+      "parameters": [
+        {
+          "name": "instanceId",
+          "type": "string"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    }
+  ],
+  "itemName": "WysiwygPerformanceProbe"
+}

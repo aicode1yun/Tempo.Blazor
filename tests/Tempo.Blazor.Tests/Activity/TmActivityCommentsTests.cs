@@ -1,28 +1,18 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Activity;
-using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.Tests.Localization;
 
 namespace Tempo.Blazor.Tests.Activity;
 
-file record CommentEntry(
-    string Id,
-    string AuthorName,
-    string? AuthorAvatarUrl,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
-    string HtmlContent,
-    bool CanEdit,
-    bool CanDelete) : ICommentEntry;
-
 public class TmActivityCommentsTests : LocalizationTestBase
 {
-    private static List<ICommentEntry> TwoComments() =>
+    private static List<TmCommentEntry> TwoComments() =>
     [
-        new CommentEntry("c1", "Alice", null, DateTimeOffset.Now.AddHours(-2), null, "<p>First comment</p>",  true,  true),
-        new CommentEntry("c2", "Bob",   null, DateTimeOffset.Now.AddHours(-1), null, "<p>Second comment</p>", false, false),
+        Comment("c1", "Alice", "<p>First comment</p>", true, true, DateTimeOffset.Now.AddHours(-2)),
+        Comment("c2", "Bob", "<p>Second comment</p>", false, false, DateTimeOffset.Now.AddHours(-1)),
     ];
 
     [Fact]
@@ -38,7 +28,7 @@ public class TmActivityCommentsTests : LocalizationTestBase
     public void Comments_Empty_RendersEmptyState()
     {
         var cut = RenderComponent<TmActivityComments>(p => p
-            .Add(c => c.Comments, Array.Empty<ICommentEntry>()));
+            .Add(c => c.Comments, Array.Empty<TmCommentEntry>()));
 
         cut.FindAll(".tm-comment-item").Should().BeEmpty();
         cut.FindAll(".tm-empty-state, .tm-comments-empty").Should().NotBeEmpty();
@@ -142,4 +132,23 @@ public class TmActivityCommentsTests : LocalizationTestBase
         cut.FindAll(".tm-comment-time").Should().NotBeEmpty();
         cut.FindAll(".tm-comment-time")[0].TextContent.Should().NotBeNullOrWhiteSpace();
     }
+
+    private static TmCommentEntry Comment(
+        string id,
+        string authorName,
+        string html,
+        bool canEdit,
+        bool canDelete,
+        DateTimeOffset createdAt)
+        => new()
+        {
+            Id = id,
+            ThreadId = id,
+            Author = new TmUserRef { DisplayName = authorName },
+            CreatedAt = createdAt,
+            Body = html,
+            BodyFormat = TmCommentBodyFormat.Html,
+            CanEdit = canEdit,
+            CanDelete = canDelete
+        };
 }

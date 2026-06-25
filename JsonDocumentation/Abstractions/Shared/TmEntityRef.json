@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Stable reference to an entity that can be targeted by shared concepts such as comments, attachments, activity entries, and notifications.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmEntityRef.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmEntityRef"
+}

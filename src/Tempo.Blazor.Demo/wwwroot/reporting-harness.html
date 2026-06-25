@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tempo reporting harness</title>
+    <link href="_content/Tempo.Blazor/css/tempo-blazor.css" rel="stylesheet" />
+    <style>
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            background: var(--tm-bg-muted);
+            color: var(--tm-text-primary);
+            font-family: var(--tm-font-sans);
+        }
+
+        .tm-reporting-harness {
+            min-height: 100vh;
+            box-sizing: border-box;
+            display: grid;
+            justify-content: center;
+            align-items: start;
+            padding: var(--tm-space-8);
+        }
+
+        .tm-reporting-harness__page {
+            position: relative;
+            background: var(--tm-bg-surface);
+            box-shadow: var(--tm-shadow-lg);
+            overflow: hidden;
+        }
+
+        .tm-reporting-harness__canvas {
+            display: block;
+            background: var(--tm-bg-surface);
+        }
+
+        .tm-reporting-harness__text-rect {
+            position: absolute;
+            pointer-events: none;
+            border: 0;
+        }
+
+        .tm-reporting-harness__status {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <main class="tm-reporting-harness" data-testid="reporting-harness-host">
+        <section class="tm-reporting-harness__page" data-testid="reporting-harness-page">
+            <canvas class="tm-reporting-harness__canvas" data-testid="reporting-canvas"></canvas>
+            <div data-testid="reporting-text-rect-layer"></div>
+        </section>
+        <div class="tm-reporting-harness__status" aria-live="polite" data-testid="reporting-harness-status"></div>
+    </main>
+    <script type="module">
+        import {
+            loadReportingFonts,
+            measureReportingSamples,
+            paintReportingSnapshot
+        } from './_content/Tempo.Blazor/js/reporting/reporting-painter.bundle.js';
+
+        const page = document.querySelector('[data-testid="reporting-harness-page"]');
+        const canvas = document.querySelector('[data-testid="reporting-canvas"]');
+        const rectLayer = document.querySelector('[data-testid="reporting-text-rect-layer"]');
+        const status = document.querySelector('[data-testid="reporting-harness-status"]');
+
+        function renderTextRects(summary) {
+            rectLayer.replaceChildren();
+            for (const rect of summary.textRects || []) {
+                const node = document.createElement('span');
+                node.className = 'tm-reporting-harness__text-rect';
+                node.setAttribute('data-canvas-text-rect', '');
+                node.setAttribute('data-id', rect.id || '');
+                node.setAttribute('data-run-id', rect.id || '');
+                node.setAttribute('data-canvas-text', rect.text || '');
+                node.style.left = `${rect.x}px`;
+                node.style.top = `${rect.y}px`;
+                node.style.width = `${rect.width}px`;
+                node.style.height = `${rect.height}px`;
+                rectLayer.appendChild(node);
+            }
+        }
+
+        async function loadSnapshot(snapshot, fontFaces = []) {
+            await loadReportingFonts(fontFaces);
+            const summary = await paintReportingSnapshot(canvas, snapshot);
+            page.style.width = `${summary.width}px`;
+            page.style.height = `${summary.height}px`;
+            renderTextRects(summary);
+            page.setAttribute('data-reporting-ready', 'true');
+            page.setAttribute('data-reporting-command-count', String(summary.commandCount));
+            page.setAttribute('data-reporting-painted-command-count', String(summary.paintedCommandCount));
+            page.setAttribute('data-reporting-text-run-count', String(summary.textRunCount));
+            status.textContent = `ready:${summary.commandCount}:${summary.textRunCount}`;
+            window.__tempoReportingHarness.summary = summary;
+            return summary;
+        }
+
+        window.__tempoReportingHarness = {
+            ready: true,
+            loadFonts: loadReportingFonts,
+            loadSnapshot,
+            measureSamples: measureReportingSamples,
+            getSummary: () => window.__tempoReportingHarness.summary || null,
+        };
+    </script>
+</body>
+</html>

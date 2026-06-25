@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Processed group node containing rows and child groups.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/GroupingProcessing.cs",
+  "documentationStatus": "generated",
+  "itemName": "ProcessedGroup"
+}

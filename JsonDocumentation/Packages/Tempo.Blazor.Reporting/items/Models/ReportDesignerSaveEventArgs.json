@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Event args raised when a designer save operation completes.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportDesignerModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDesignerSaveEventArgs"
+}

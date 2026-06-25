@@ -1,0 +1,35 @@
+{
+  "itemName": "TmNotionBlogPost",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Read-only blog post detail that reuses the Notion block renderer.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionBlogPost.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "True while the post is being published."
+    },
+    {
+      "name": "IsPublishing",
+      "type": "bool",
+      "isRequired": true,
+      "description": "Blog post to render.",
+      "editorRequired": true
+    },
+    {
+      "name": "OnPublish",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Additional CSS class."
+    }
+  ],
+  "subcategory": "UI"
+}

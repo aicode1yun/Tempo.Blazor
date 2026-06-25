@@ -1,0 +1,45 @@
+{
+  "phase": "F6",
+  "testName": "F6_ReportingHarness_RendersTwoPageInvoiceScreenshots",
+  "snapshotId": "f6-invoice",
+  "functionalReview": "The invoice snapshot is generated from the F6 band composer: page header/footer repeat, detail bands flow to page 2, report footer lands after the final details, and page footers resolve PageNumber/TotalPages.",
+  "uxReview": "The default invoice fixture uses restrained margins, a compact brand header, clear address blocks, aligned money columns, readable row rhythm and no overlapping text rectangles.",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "screenshotPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f6/01-invoice-p1.png",
+      "textRunCount": 160,
+      "paintedCommandCount": 186,
+      "canvasMetrics": {
+        "width": 640,
+        "height": 860,
+        "pixelCount": 550400,
+        "nonTransparentPixels": 550400,
+        "distinctColorCount": 167,
+        "minX": 0,
+        "minY": 0,
+        "maxX": 639,
+        "maxY": 859,
+        "nonTransparentRatio": 1
+      }
+    },
+    {
+      "pageNumber": 2,
+      "screenshotPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f6/02-invoice-p2.png",
+      "textRunCount": 79,
+      "paintedCommandCount": 94,
+      "canvasMetrics": {
+        "width": 640,
+        "height": 860,
+        "pixelCount": 550400,
+        "nonTransparentPixels": 550400,
+        "distinctColorCount": 91,
+        "minX": 0,
+        "minY": 0,
+        "maxX": 639,
+        "maxY": 859,
+        "nonTransparentRatio": 1
+      }
+    }
+  ]
+}

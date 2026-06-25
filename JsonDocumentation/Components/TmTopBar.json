@@ -80,7 +80,7 @@
     },
     {
       "title": "Top bar with custom center content",
-      "code": "<TmTopBar BrandTitle=\"Admin\">\n    <CenterContent>\n        <TmBreadcrumbs Items=\"breadcrumbs\" />\n    </CenterContent>\n    <ActionsContent>\n        <TmNotificationBell Notifications=\"notifications\" />\n    </ActionsContent>\n</TmTopBar>"
+      "code": "<TmTopBar BrandTitle=\"Admin\">\n    <CenterContent>\n        <TmBreadcrumbs Items=\"breadcrumbs\" />\n    </CenterContent>\n    <ActionsContent>\n        <TmNotificationBell CurrentUserId=\"current-user\" />\n    </ActionsContent>\n</TmTopBar>"
     }
   ]
 }

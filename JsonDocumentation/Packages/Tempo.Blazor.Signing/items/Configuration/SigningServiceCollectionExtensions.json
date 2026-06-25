@@ -1,0 +1,18 @@
+{
+  "itemName": "SigningServiceCollectionExtensions",
+  "kind": "Class",
+  "category": "Configuration",
+  "namespace": "Tempo.Blazor.Configuration",
+  "description": "Extension methods for registering Tempo.Blazor signing services.",
+  "packageId": "Tempo.Blazor.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Configuration/SigningServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AddTempoBlazorSigning",
+      "kind": "Method",
+      "type": "IServiceCollection",
+      "description": "Registers services required by the signing component group."
+    }
+  ]
+}

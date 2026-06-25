@@ -1,0 +1,84 @@
+{
+  "kind": "Class",
+  "category": "Work Items",
+  "namespace": "Tempo.Blazor.Abstractions.WorkItems",
+  "description": "A person or virtual resource assigned to a TmWorkItem. The assignment keeps scheduling metadata while exposing conversion to the shared TmUserRef snapshot.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemAssignee.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AvatarUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional avatar URL."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional CSS color used to tint the person in timelines/avatars."
+    },
+    {
+      "name": "Email",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional e-mail address."
+    },
+    {
+      "name": "HourlyRate",
+      "kind": "Property",
+      "type": "decimal?",
+      "description": "Hourly billing rate for cost tracking. Null = not specified."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable user identifier."
+    },
+    {
+      "name": "IsVirtual",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When true, this is a generic placeholder resource (not a real user account)."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name."
+    },
+    {
+      "name": "UserName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional username or mention handle."
+    },
+    {
+      "name": "SourceKey",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional provider/source discriminator for applications with multiple people sources."
+    },
+    {
+      "name": "TenantId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional tenant, workspace, or application scope identifier."
+    },
+    {
+      "name": "ToUserRef",
+      "kind": "Method",
+      "type": "TmUserRef",
+      "description": "Creates a shared user reference from this assignment snapshot."
+    },
+    {
+      "name": "FromUserRef",
+      "kind": "Method",
+      "type": "TmWorkItemAssignee",
+      "description": "Creates an assignment snapshot from a shared user reference."
+    }
+  ],
+  "itemName": "TmWorkItemAssignee"
+}

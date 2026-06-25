@@ -2,6 +2,7 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using NSubstitute;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Blocks.Media;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
@@ -23,7 +24,7 @@ public class TmNotionImageBlockPasteTests : LocalizationTestBase
     private static readonly string SampleDataUrl =
         "data:image/jpeg;base64," + Convert.ToBase64String(new byte[] { 0xFF, 0xD8, 0xFF });
 
-    private static NotionEditorContext BuildContext(INotionFileProvider? fileProvider = null)
+    private static NotionEditorContext BuildContext(ITmFileProvider? fileProvider = null)
         => new()
         {
             DataProvider  = Substitute.For<INotionDataProvider>(),
@@ -31,23 +32,34 @@ public class TmNotionImageBlockPasteTests : LocalizationTestBase
             FileProvider  = fileProvider,
         };
 
-    private static INotionFileProvider ProviderThatUploads(
+    private static ITmFileProvider ProviderThatUploads(
         string fileId = "file-123",
         string url    = "https://cdn.example.com/image.jpg")
     {
-        var p = Substitute.For<INotionFileProvider>();
-        p.UploadFileAsync(Arg.Any<Stream>(), Arg.Any<string>(), Arg.Any<string>())
-         .Returns(fileId);
-        p.GetFileUrlAsync(fileId).Returns(url);
+        var p = Substitute.For<ITmFileProvider>();
+        p.Capabilities.Returns(TmFileProviderCapabilities.Upload | TmFileProviderCapabilities.Resolve);
+        p.UploadAsync(Arg.Any<TmFileUploadRequest>(), Arg.Any<Stream>(), Arg.Any<CancellationToken>())
+         .Returns(Task.FromResult(new TmFileUploadResult
+         {
+             Success = true,
+             AssetId = fileId
+         }));
+        p.ResolveAsync(Arg.Is<TmFileResolveRequest>(r => r.AssetId == fileId), Arg.Any<CancellationToken>())
+         .Returns(Task.FromResult(new TmFileResolveResult
+         {
+             Success = true,
+             AssetId = fileId,
+             Url = url
+         }));
         return p;
     }
 
     private static IImageBlockContent EmptyImageContent() => new TestImageContent();
 
-    // ── CBP-01: OnImagePasted calls UploadFileAsync ───────────────────────────
+    // ── CBP-01: OnImagePasted calls UploadAsync ───────────────────────────────
 
     [Fact]
-    public async Task OnImagePasted_CallsUploadFileAsync_WithCorrectMimeAndName()
+    public async Task OnImagePasted_CallsUploadAsync_WithCorrectMimeAndName()
     {
         var provider = ProviderThatUploads();
         var ctx = BuildContext(fileProvider: provider);
@@ -60,8 +72,10 @@ public class TmNotionImageBlockPasteTests : LocalizationTestBase
         await cut.InvokeAsync(() =>
             cut.Instance.OnImagePasted(SampleDataUrl, "image/jpeg", "paste.jpg"));
 
-        await provider.Received(1).UploadFileAsync(
-            Arg.Any<Stream>(), "paste.jpg", "image/jpeg");
+        await provider.Received(1).UploadAsync(
+            Arg.Is<TmFileUploadRequest>(r => r.FileName == "paste.jpg" && r.ContentType == "image/jpeg"),
+            Arg.Any<Stream>(),
+            Arg.Any<CancellationToken>());
     }
 
     // ── CBP-02: OnImagePasted fires OnMediaSet with fileId + url ─────────────
@@ -108,8 +122,10 @@ public class TmNotionImageBlockPasteTests : LocalizationTestBase
         await cut.InvokeAsync(() =>
             cut.Instance.OnImagePasted(SampleDataUrl, "image/jpeg", "paste.jpg"));
 
-        await provider.DidNotReceive().UploadFileAsync(
-            Arg.Any<Stream>(), Arg.Any<string>(), Arg.Any<string>());
+        await provider.DidNotReceive().UploadAsync(
+            Arg.Any<TmFileUploadRequest>(),
+            Arg.Any<Stream>(),
+            Arg.Any<CancellationToken>());
     }
 
     // ── Stub ─────────────────────────────────────────────────────────────────

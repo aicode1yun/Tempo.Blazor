@@ -1,0 +1,17 @@
+{
+  "itemName": "ReportDefinitionJsonSerializer",
+  "kind": "Class",
+  "category": "Serialization",
+  "namespace": "Tempo.Reporting.Abstractions.Serialization",
+  "description": "Deterministic JSON serializer for ReportDefinition documents, including schema version handling and migration registry integration.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Serialization/ReportDefinitionJsonSerializer.cs",
+  "documentationStatus": "manual",
+  "usage": "Use this serializer when persisting report definitions or when creating canonical JSON revisions for Report Server APIs.",
+  "relatedTypes": [
+    "ReportDefinition",
+    "ReportDefinitionMigrationRegistry",
+    "IReportDefinitionMigration",
+    "ReportDefinitionJsonException"
+  ]
+}

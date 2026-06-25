@@ -4,6 +4,7 @@
   "category": "Tags",
   "description": "Tag selection component displaying selected tags as colored chips with a dropdown for adding more. Supports inline search with filtering, optional inline tag creation via OnCreateTag callback, and disabled state.",
   "requiredImports": [
+    "@using Tempo.Blazor.Abstractions.Shared",
     "@using Tempo.Blazor.Components.Tags",
     "@using Tempo.Blazor.Interfaces"
   ],
@@ -55,7 +56,7 @@
     {
       "name": "ITag",
       "namespace": "Tempo.Blazor.Interfaces",
-      "description": "Represents a single tag. Implement this interface on your domain/DTO class to use it with TmTagPicker.",
+      "description": "Minimal tag UI contract. Use shared TmTag or TmTagRef when you do not need a custom domain tag class.",
       "members": [
         {
           "name": "Id",
@@ -94,8 +95,8 @@
     },
     {
       "title": "Tag picker with inline creation — complete page example",
-      "description": "Full example showing ITag implementation, state management, and OnCreateTag handler that creates and immediately selects the new tag.",
-      "code": "@page \"/demo/tags\"\n@using Tempo.Blazor.Components.Tags\n@using Tempo.Blazor.Interfaces\n\n<TmTagPicker AllTags=\"@_allTags\"\n             SelectedTags=\"@_selectedTags\"\n             OnTagsChanged=\"@HandleTagsChanged\"\n             AllowCreate=\"true\"\n             OnCreateTag=\"@HandleCreateTag\" />\n\n@code {\n    // --- ITag implementation ---\n    private record AppTag(string Id, string Name, string Color) : ITag;\n\n    // --- State ---\n    private List<ITag> _allTags = new()\n    {\n        new AppTag(\"t1\", \"Bug\",     \"#ef4444\"),\n        new AppTag(\"t2\", \"Feature\", \"#3b82f6\"),\n        new AppTag(\"t3\", \"Docs\",    \"#10b981\"),\n    };\n\n    private List<ITag> _selectedTags = new();\n\n    // --- Handlers ---\n    private void HandleTagsChanged(IEnumerable<ITag> updated)\n        => _selectedTags = updated.ToList();\n\n    private void HandleCreateTag(string name)\n    {\n        // Generate a new unique tag (in a real app persist to the server first)\n        var newTag = new AppTag(\n            Id:    Guid.NewGuid().ToString(),\n            Name:  name,\n            Color: \"#8b5cf6\");\n\n        // Make it available in the dropdown for future use\n        _allTags.Add(newTag);\n\n        // Immediately select the newly created tag\n        _selectedTags.Add(newTag);\n    }\n}"
+      "description": "Full example using shared TmTag state and OnCreateTag handler that creates and immediately selects the new tag.",
+      "code": "@page \"/demo/tags\"\n@using Tempo.Blazor.Abstractions.Shared\n@using Tempo.Blazor.Components.Tags\n@using Tempo.Blazor.Interfaces\n\n<TmTagPicker AllTags=\"@_allTags\"\n             SelectedTags=\"@_selectedTags\"\n             OnTagsChanged=\"@HandleTagsChanged\"\n             AllowCreate=\"true\"\n             OnCreateTag=\"@HandleCreateTag\" />\n\n@code {\n    private List<TmTag> _allTags = new()\n    {\n        new() { Id = \"t1\", Label = \"Bug\",     Color = \"#ef4444\" },\n        new() { Id = \"t2\", Label = \"Feature\", Color = \"#3b82f6\" },\n        new() { Id = \"t3\", Label = \"Docs\",    Color = \"#10b981\" },\n    };\n\n    private List<ITag> _selectedTags = new();\n\n    private void HandleTagsChanged(IEnumerable<ITag> updated)\n        => _selectedTags = updated.ToList();\n\n    private void HandleCreateTag(string name)\n    {\n        var newTag = new TmTag\n        {\n            Id = Guid.NewGuid().ToString(),\n            Label = name,\n            Color = \"#8b5cf6\"\n        };\n\n        _allTags.Add(newTag);\n        _selectedTags.Add(newTag);\n    }\n}"
     },
     {
       "title": "Disabled tag picker (read-only display)",

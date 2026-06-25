@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "description": "Reason that triggered a document editor save.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/DocumentEditorEditRequests.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorSaveTrigger"
+}

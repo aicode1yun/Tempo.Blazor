@@ -1,0 +1,40 @@
+{
+  "itemName": "TmDocumentBlockRenderer",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "Renders one block from the document editor JSON model.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentBlockRenderer.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": [
+    {
+      "name": "Block",
+      "type": "DocumentBlock?",
+      "isRequired": false,
+      "description": "Document id used by provider-backed image resolution."
+    },
+    {
+      "name": "ImageUrlResolver",
+      "type": "IDocumentImageUrlResolver?",
+      "isRequired": false,
+      "description": "Block to render."
+    },
+    {
+      "name": "OnCommentSelected",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Pending provider-backed suggestions to decorate near their block."
+    },
+    {
+      "name": "Suggestions",
+      "type": "IReadOnlyList<DocumentSuggestion>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Optional resolver for provider-managed image assets."
+    }
+  ]
+}

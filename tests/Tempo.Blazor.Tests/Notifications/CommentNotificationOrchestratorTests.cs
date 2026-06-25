@@ -1,7 +1,6 @@
 using FluentAssertions;
-using Tempo.Blazor.NotionEditor.Enums;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.NotionEditor.Helpers;
-using Tempo.Blazor.NotionEditor.Models;
 using Tempo.Blazor.Services;
 
 namespace Tempo.Blazor.Tests.Notifications;
@@ -19,134 +18,109 @@ public class CommentNotificationOrchestratorTests
     [Fact]
     public async Task OnNewReplyAsync_NotifiesParentAuthor()
     {
-        var thread = new FakeBlockComment(Guid.NewGuid(), new[]
-        {
-            new FakeEntry(Guid.NewGuid(), "parent", "Parent Author", null),
-        });
-        var parent = thread.Thread.First();
-        var reply = new FakeEntry(Guid.NewGuid(), "replier", "Replier Name", parent.Id);
+        var thread = Thread(Entry("parent", "Parent Author"));
+        var parent = thread.Entries.First();
+        var reply = Entry("replier", "Replier Name", parent.Id);
 
         await _orchestrator.OnNewReplyAsync(thread, reply);
 
-        var notes = await _store.GetNotificationsAsync("parent");
+        var notes = await GetNotificationsAsync("parent");
         notes.Should().ContainSingle();
-        notes[0].Event.Type.Should().Be(NotificationType.Reply);
-        notes[0].Event.RecipientUserId.Should().Be("parent");
+        notes[0].Type.Should().Be(TmNotificationTypes.Reply);
+        notes[0].EffectiveRecipientUserId.Should().Be("parent");
     }
 
     [Fact]
     public async Task OnNewReplyAsync_SkipsSelfReply()
     {
-        var thread = new FakeBlockComment(Guid.NewGuid(), new[]
-        {
-            new FakeEntry(Guid.NewGuid(), "same", "Same User", null),
-        });
-        var parent = thread.Thread.First();
-        var reply = new FakeEntry(Guid.NewGuid(), "same", "Same User", parent.Id);
+        var thread = Thread(Entry("same", "Same User"));
+        var parent = thread.Entries.First();
+        var reply = Entry("same", "Same User", parent.Id);
 
         await _orchestrator.OnNewReplyAsync(thread, reply);
 
-        var notes = await _store.GetNotificationsAsync("same");
+        var notes = await GetNotificationsAsync("same");
         notes.Should().BeEmpty();
     }
 
     [Fact]
     public async Task OnNewReplyAsync_SkipsWhenNoParent()
     {
-        var thread = new FakeBlockComment(Guid.NewGuid(), Array.Empty<FakeEntry>());
-        var reply = new FakeEntry(Guid.NewGuid(), "u1", "User", null);
+        var thread = Thread();
+        var reply = Entry("u1", "User");
 
         await _orchestrator.OnNewReplyAsync(thread, reply);
 
-        var notes = await _store.GetNotificationsAsync("u1");
+        var notes = await GetNotificationsAsync("u1");
         notes.Should().BeEmpty();
     }
 
     [Fact]
     public async Task OnThreadResolvedAsync_NotifiesParticipants()
     {
-        var thread = new FakeBlockComment(Guid.NewGuid(), new[]
-        {
-            new FakeEntry(Guid.NewGuid(), "alice", "Alice", null),
-            new FakeEntry(Guid.NewGuid(), "bob", "Bob", null),
-        });
+        var thread = Thread(
+            Entry("alice", "Alice"),
+            Entry("bob", "Bob"));
 
         await _orchestrator.OnThreadResolvedAsync(thread, "alice", "Alice");
 
-        var bobNotes = await _store.GetNotificationsAsync("bob");
+        var bobNotes = await GetNotificationsAsync("bob");
         bobNotes.Should().ContainSingle();
-        bobNotes[0].Event.Type.Should().Be(NotificationType.ThreadResolved);
+        bobNotes[0].Type.Should().Be(TmNotificationTypes.ThreadResolved);
 
-        var aliceNotes = await _store.GetNotificationsAsync("alice");
+        var aliceNotes = await GetNotificationsAsync("alice");
         aliceNotes.Should().BeEmpty(); // resolver not notified
     }
 
     [Fact]
     public async Task OnMentionAsync_NotifiesMentionedUser()
     {
-        var entry = new FakeEntry(Guid.NewGuid(), "author", "Author", null);
+        var entry = Entry("author", "Author");
 
         await _orchestrator.OnMentionAsync(entry, new[] { "mentioned" }, "t1", "page-1");
 
-        var notes = await _store.GetNotificationsAsync("mentioned");
+        var notes = await GetNotificationsAsync("mentioned");
         notes.Should().ContainSingle();
-        notes[0].Event.Type.Should().Be(NotificationType.Mention);
+        notes[0].Type.Should().Be(TmNotificationTypes.Mention);
     }
 
     [Fact]
     public async Task OnReactionAsync_NotifiesEntryAuthor()
     {
-        var entry = new FakeEntry(Guid.NewGuid(), "author", "Author", null);
+        var entry = Entry("author", "Author");
 
         await _orchestrator.OnReactionAsync(entry, "👍", "reactor", "Reactor", "t1", "page-1");
 
-        var notes = await _store.GetNotificationsAsync("author");
+        var notes = await GetNotificationsAsync("author");
         notes.Should().ContainSingle();
-        notes[0].Event.Type.Should().Be(NotificationType.Reaction);
+        notes[0].Type.Should().Be(TmNotificationTypes.Reaction);
     }
+
+    private Task<IReadOnlyList<TmNotification>> GetNotificationsAsync(string recipient)
+        => _store.GetNotificationsAsync(new TmNotificationQuery { RecipientUserId = recipient });
 
     // ─── Fakes ──────────────────────────────────────────────────────────────
 
-    private class FakeBlockComment : IBlockComment
-    {
-        public Guid Id { get; } = Guid.NewGuid();
-        public Guid BlockId { get; }
-        public IReadOnlyList<INotionCommentEntry> Thread { get; }
-        public bool IsResolved { get; set; }
-        public DateTime? ResolvedAt { get; set; }
-        public string? ResolvedByUserId { get; set; }
-        public IReadOnlyList<string> ReadByUserIds { get; } = Array.Empty<string>();
-        public DateTime? LastActivityAt { get; set; }
-        public IReadOnlyList<string> SubscribedUserIds { get; } = Array.Empty<string>();
-
-        public FakeBlockComment(Guid blockId, IEnumerable<FakeEntry> entries)
+    private static TmCommentThread Thread(params TmCommentEntry[] entries)
+        => new()
         {
-            BlockId = blockId;
-            Thread = entries.ToList();
-        }
-    }
+            Id = "thread-1",
+            EntityRef = TmEntityRef.Create("notion-page", "page-1"),
+            Anchor = TmCommentAnchor.Block("block-1"),
+            Entries = entries.ToList()
+        };
 
-    private class FakeEntry : INotionCommentEntry
-    {
-        public Guid Id { get; }
-        public string AuthorUserId { get; }
-        public string AuthorDisplayName { get; }
-        public string? AuthorAvatarUrl => "";
-        public string HtmlContent => "<p>test</p>";
-        public DateTime CreatedAt => DateTime.UtcNow;
-        public DateTime UpdatedAt => DateTime.UtcNow;
-        public bool IsDeleted => false;
-        public Guid? ParentEntryId { get; }
-        public bool CanEdit => true;
-        public bool CanDelete => true;
-        public IReadOnlyList<ICommentReaction> Reactions => Array.Empty<ICommentReaction>();
-
-        public FakeEntry(Guid id, string userId, string name, Guid? parentId)
+    private static TmCommentEntry Entry(string userId, string name, string? parentEntryId = null)
+        => new()
         {
-            Id = id;
-            AuthorUserId = userId;
-            AuthorDisplayName = name;
-            ParentEntryId = parentId;
-        }
-    }
+            Id = Guid.NewGuid().ToString("N"),
+            ThreadId = "thread-1",
+            ParentEntryId = parentEntryId,
+            Author = new TmUserRef { Id = userId, DisplayName = name, AvatarUrl = "" },
+            Body = "<p>test</p>",
+            BodyFormat = TmCommentBodyFormat.Html,
+            CreatedAt = DateTimeOffset.UtcNow,
+            CanEdit = true,
+            CanDelete = true
+        };
 }

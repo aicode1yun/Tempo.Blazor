@@ -1,10 +1,9 @@
 using System.Net.Http.Json;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Abstractions.Shared;
 
 namespace Tempo.Blazor.Demo.Services;
 
-public sealed class DemoNotionNotificationService : INotificationService, INotificationBadgeState
+public sealed class DemoNotionNotificationService : ITmNotificationService
 {
     private readonly HttpClient _http;
     private int _unreadCount;
@@ -16,22 +15,26 @@ public sealed class DemoNotionNotificationService : INotificationService, INotif
 
     public event Action? OnChanged;
 
-    public void Increment()
-    {
-        Interlocked.Increment(ref _unreadCount);
-        OnChanged?.Invoke();
-    }
+    public TmNotificationServiceCapabilities Capabilities
+        => TmNotificationServiceCapabilities.Publish
+        | TmNotificationServiceCapabilities.Read
+        | TmNotificationServiceCapabilities.Query
+        | TmNotificationServiceCapabilities.UnreadCount
+        | TmNotificationServiceCapabilities.ReadState;
 
-    public void Reset()
-    {
-        UpdateUnreadCount(0);
-    }
+    TmNotificationServiceCapabilities ITmCapabilityProvider<TmNotificationServiceCapabilities>.Capabilities => Capabilities;
 
-    public async Task NotifyAsync(INotificationEvent notificationEvent, CancellationToken ct = default)
+    public async Task<TmNotification> PublishAsync(TmNotification notification, CancellationToken ct = default)
     {
-        using var response = await _http.PostAsJsonAsync("/api/notion/notifications", ToConcreteEvent(notificationEvent), ct);
+        using var response = await _http.PostAsJsonAsync("/api/notion/notifications", notification, ct);
         response.EnsureSuccessStatusCode();
-        Increment();
+        var created = await response.Content.ReadFromJsonAsync<TmNotification>(cancellationToken: ct) ?? notification;
+        var recipientUserId = created.EffectiveRecipientUserId;
+        if (!string.IsNullOrWhiteSpace(recipientUserId))
+            UpdateUnreadCount(await GetUnreadCountAsync(recipientUserId, ct));
+        else
+            OnChanged?.Invoke();
+        return created;
     }
 
     public async Task MarkAsReadAsync(string notificationId, string userId, CancellationToken ct = default)
@@ -58,12 +61,12 @@ public sealed class DemoNotionNotificationService : INotificationService, INotif
         UpdateUnreadCount(_unreadCount + after - before);
     }
 
-    public async Task<IReadOnlyList<INotification>> GetNotificationsAsync(string userId, int limit = 20, CancellationToken ct = default)
+    public async Task<IReadOnlyList<TmNotification>> GetNotificationsAsync(TmNotificationQuery query, CancellationToken ct = default)
     {
-        var notifications = await _http.GetFromJsonAsync<List<NotificationDto>>(
-            $"/api/notion/notifications/users/{Uri.EscapeDataString(userId)}?limit={limit}",
+        var notifications = await _http.GetFromJsonAsync<List<TmNotification>>(
+            $"/api/notion/notifications/users/{Uri.EscapeDataString(query.RecipientUserId)}?skip={query.Skip}&take={query.Take}&includeRead={query.IncludeRead.ToString().ToLowerInvariant()}",
             ct);
-        return notifications?.Cast<INotification>().ToList() ?? [];
+        return notifications ?? [];
     }
 
     public async Task<int> GetUnreadCountAsync(string userId, CancellationToken ct = default)
@@ -88,20 +91,8 @@ public sealed class DemoNotionNotificationService : INotificationService, INotif
             OnChanged?.Invoke();
     }
 
-    private static NotificationEvent ToConcreteEvent(INotificationEvent notificationEvent)
-        => notificationEvent is NotificationEvent concrete
-            ? concrete
-            : new NotificationEvent
-            {
-                Type = notificationEvent.Type,
-                RecipientUserId = notificationEvent.RecipientUserId,
-                SenderUserId = notificationEvent.SenderUserId,
-                SenderName = notificationEvent.SenderName,
-                SenderAvatarUrl = notificationEvent.SenderAvatarUrl,
-                Message = notificationEvent.Message,
-                DeepLink = notificationEvent.DeepLink,
-                ThreadId = notificationEvent.ThreadId,
-                EntryId = notificationEvent.EntryId,
-                CreatedAt = notificationEvent.CreatedAt
-            };
+    public void Reset()
+    {
+        UpdateUnreadCount(0);
+    }
 }

@@ -1,9 +1,14 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Mcp.DocumentEditor;
 using Tempo.Blazor.Mcp.Diagram;
 using Tempo.Blazor.Mcp.Notion;
+using Tempo.Blazor.Mcp.Reporting;
 using Tempo.Blazor.Mcp.Wireframe;
+using Tempo.Reporting.Abstractions.Data;
+using Tempo.Reporting.Engine.Fonts;
+using Tempo.Reporting.Engine.Pdf;
 
 namespace Tempo.Blazor.Mcp;
 
@@ -118,6 +123,34 @@ public static class TempoNotionMcp
 }
 
 /// <summary>
+/// Registration helpers for the Tempo Reporting MCP tools.
+/// </summary>
+public static class TempoReportingMcp
+{
+    /// <summary>The reporting tool types, exposed for hosts that register tools by type.</summary>
+    public static IReadOnlyList<Type> ToolTypes { get; } =
+    [
+        typeof(ReportCatalogTools),
+        typeof(ReportDefinitionTools),
+        typeof(ReportValidationTools),
+        typeof(ReportPreviewTools)
+    ];
+
+    /// <summary>
+    /// Registers dependencies required by the reporting MCP tools. The host should supply an
+    /// <see cref="IReportDefinitionStore"/> and may supply its own <see cref="IReportDataProvider"/>
+    /// and renderer services. Fallback services support static/empty preview flows.
+    /// </summary>
+    public static IServiceCollection AddTempoReportingMcpTools(this IServiceCollection services)
+    {
+        services.TryAddSingleton<IReportDataProvider, ReportingMcpFallbackDataProvider>();
+        services.TryAddSingleton<ITextMeasurer, ReportingMcpTextMeasurer>();
+        services.TryAddSingleton<ReportPdfRenderer>();
+        return services;
+    }
+}
+
+/// <summary>
 /// Registration helpers for the complete Tempo.Blazor MCP toolset.
 /// </summary>
 public static class TempoBlazorMcp
@@ -128,6 +161,7 @@ public static class TempoBlazorMcp
             .Concat(TempoDiagramMcp.ToolTypes)
             .Concat(TempoDocumentEditorMcp.ToolTypes)
             .Concat(TempoNotionMcp.ToolTypes)
+            .Concat(TempoReportingMcp.ToolTypes)
             .ToList();
 
     /// <summary>
@@ -140,6 +174,7 @@ public static class TempoBlazorMcp
         services.AddTempoDiagramMcpTools();
         services.AddTempoDocumentEditorMcpTools();
         services.AddTempoNotionMcpTools();
+        services.AddTempoReportingMcpTools();
         return services;
     }
 }

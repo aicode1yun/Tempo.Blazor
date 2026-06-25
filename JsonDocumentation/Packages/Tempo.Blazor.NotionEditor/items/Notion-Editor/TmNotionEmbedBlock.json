@@ -1,0 +1,21 @@
+{
+  "itemName": "TmNotionEmbedBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionEmbedBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Embed",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Embed/TmNotionEmbedBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Embed"
+  ],
+  "parameters": [
+    {
+      "name": "OnUrlSet",
+      "type": "EventCallback<EmbedBlockContent>",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "Blocks / Embed"
+}

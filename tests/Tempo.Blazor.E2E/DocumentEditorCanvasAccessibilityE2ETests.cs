@@ -234,7 +234,7 @@ public sealed class DocumentEditorCanvasAccessibilityE2ETests : WasmTestBase
             async ([commandId, argument]) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 module.execCommand(handle, commandId, JSON.stringify(argument));
             }
             """,

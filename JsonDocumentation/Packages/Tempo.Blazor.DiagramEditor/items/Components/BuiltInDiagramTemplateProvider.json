@@ -1,0 +1,17 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Templates",
+  "description": "Built-in provider that loads diagram templates from embedded resources (compiled from wwwroot/diagram-templates/*.json).",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/BuiltInDiagramTemplateProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetTemplateCategoriesAsync",
+      "kind": "Method",
+      "type": "Task<IEnumerable<DiagramTemplateCategory>>"
+    }
+  ],
+  "itemName": "BuiltInDiagramTemplateProvider"
+}

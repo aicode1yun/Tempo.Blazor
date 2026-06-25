@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Folder node displayed by TmReportExplorer.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportExplorerModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportExplorerFolder"
+}

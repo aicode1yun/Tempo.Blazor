@@ -1,0 +1,258 @@
+{
+  "kind": "Class",
+  "category": "Work Items",
+  "namespace": "Tempo.Blazor.Abstractions.WorkItems",
+  "description": "Canonical, unified task / work-item model shared by every task-bearing component (Gantt, Notion tasks, external work-item blocks, scheduler). A single supplies these so the same item can appear consistently across components within one application.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItem.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Duration",
+      "kind": "Field",
+      "type": "TimeSpan",
+      "description": "Computed duration ( − )."
+    },
+    {
+      "name": "HasParent",
+      "kind": "Field",
+      "type": "bool",
+      "description": "Whether this item has a parent."
+    },
+    {
+      "name": "ActualCost",
+      "kind": "Property",
+      "type": "decimal?",
+      "description": "Actual monetary cost incurred so far."
+    },
+    {
+      "name": "Assignees",
+      "kind": "Property",
+      "type": "List<TmWorkItemAssignee>",
+      "description": "People assigned to this item."
+    },
+    {
+      "name": "Attachments",
+      "kind": "Property",
+      "type": "List<TmAttachment>",
+      "description": "Files attached to this item."
+    },
+    {
+      "name": "BudgetHours",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Planned effort in hours (for budget tracking)."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Bar/accent color as a CSS color string. Null uses the default."
+    },
+    {
+      "name": "Comments",
+      "kind": "Property",
+      "type": "List<GanttComment>",
+      "description": "Comments on this item."
+    },
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "Creation timestamp."
+    },
+    {
+      "name": "CustomFields",
+      "kind": "Property",
+      "type": "Dictionary<string, string?>",
+      "description": "User-defined custom field values keyed by field id."
+    },
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Rich-text or plain description."
+    },
+    {
+      "name": "DueDate",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Optional due date / deadline."
+    },
+    {
+      "name": "End",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "Planned end. Defaults to for unscheduled sources."
+    },
+    {
+      "name": "EstimationHours",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Estimated effort in hours."
+    },
+    {
+      "name": "ExternalId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Provider-native identifier (e.g. DEMO-101, issue number) when sourced externally."
+    },
+    {
+      "name": "Fields",
+      "kind": "Property",
+      "type": "Dictionary<string, string>",
+      "description": "Opaque provider-specific fields shown only by consumers that understand them."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable identifier of the work item."
+    },
+    {
+      "name": "IsCompleted",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Convenience completed flag (kept in sync by consumers; Done status implies completed)."
+    },
+    {
+      "name": "IsExpanded",
+      "kind": "Property",
+      "type": "bool",
+      "description": "UI state: whether children are expanded (relevant for parent items)."
+    },
+    {
+      "name": "IsMilestone",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When true, the item is rendered as a milestone (diamond)."
+    },
+    {
+      "name": "LoggedHours",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Actually logged hours."
+    },
+    {
+      "name": "OriginBlockId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Source block identifier, when applicable."
+    },
+    {
+      "name": "OriginPageId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Source page identifier (e.g. Notion page), when applicable."
+    },
+    {
+      "name": "OriginPageTitle",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Source page title, when applicable."
+    },
+    {
+      "name": "ParentId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Parent work item identifier. Null for root-level items."
+    },
+    {
+      "name": "PercentComplete",
+      "kind": "Property",
+      "type": "int",
+      "description": "Completion percentage (0–100)."
+    },
+    {
+      "name": "Priority",
+      "kind": "Property",
+      "type": "TmWorkItemPriority",
+      "description": "Unified priority."
+    },
+    {
+      "name": "PriorityLabel",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Provider-native priority label, when richer than the unified enum."
+    },
+    {
+      "name": "SourceKey",
+      "kind": "Property",
+      "type": "string",
+      "description": "Key of the source/provider this item belongs to (registry discriminator)."
+    },
+    {
+      "name": "Start",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "Planned start. Defaults to for unscheduled sources (e.g. Notion tasks, which use instead)."
+    },
+    {
+      "name": "Status",
+      "kind": "Property",
+      "type": "TmWorkItemStatus",
+      "description": "Unified workflow status."
+    },
+    {
+      "name": "StatusColor",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Status color token or sanitized CSS color supplied by the provider."
+    },
+    {
+      "name": "StatusLabel",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Provider-native status label, when richer than the unified enum."
+    },
+    {
+      "name": "Tags",
+      "kind": "Property",
+      "type": "List<string>",
+      "description": "Free-form tags / labels."
+    },
+    {
+      "name": "TimeLog",
+      "kind": "Property",
+      "type": "List<GanttTimeLogEntry>",
+      "description": "Time log entries recorded against this item."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display title."
+    },
+    {
+      "name": "TypeIconUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional icon URL for the item type."
+    },
+    {
+      "name": "TypeLabel",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Provider-native item type label (e.g. Bug, Story)."
+    },
+    {
+      "name": "UpdatedAt",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Last updated timestamp reported by the provider."
+    },
+    {
+      "name": "Url",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Absolute URL to the source item, when available."
+    },
+    {
+      "name": "UseManualDates",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When false (default), a group bar spans min(Start)→max(End) of its direct children. Set to true to use this item's own Start/End regardless of children."
+    }
+  ],
+  "itemName": "TmWorkItem"
+}

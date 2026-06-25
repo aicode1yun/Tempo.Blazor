@@ -1,0 +1,111 @@
+@namespace Tempo.Blazor.Components.Signing
+
+<section @attributes="AdditionalAttributes"
+         class="@RootClass"
+         aria-disabled="@BoolText(!Enabled)">
+    <header class="tm-share-link-panel__header">
+        <div>
+            <h2 class="tm-share-link-panel__title">@Loc["TmShareLinkPanel_Title"]</h2>
+            @if (ExpiresAt is not null)
+            {
+                <p class="tm-share-link-panel__expiration">@Loc["TmShareLinkPanel_Expires", ExpiresAt.Value.ToLocalTime().ToString("g")]</p>
+            }
+        </div>
+        <label class="tm-share-link-panel__toggle">
+            <input type="checkbox"
+                   checked="@Enabled"
+                   @onchange="HandleEnabledChangedAsync" />
+            <span>@(Enabled ? Loc["TmShareLinkPanel_Enabled"] : Loc["TmShareLinkPanel_Disabled"])</span>
+        </label>
+    </header>
+
+    <div class="tm-share-link-panel__link">
+        <input class="tm-share-link-panel__input"
+               value="@Link"
+               readonly
+               disabled="@(!Enabled)"
+               aria-label="@Loc["TmShareLinkPanel_LinkLabel"]" />
+        <TmCopyButton Text="@Link"
+                      Disabled="@(!Enabled)"
+                      data-testid="share-link-copy" />
+    </div>
+
+    @if (ShowQrCode && !string.IsNullOrWhiteSpace(Link))
+    {
+        <div class="tm-share-link-panel__qr">
+            @if (QrCodeComponentType is not null)
+            {
+                <DynamicComponent Type="QrCodeComponentType" Parameters="QrCodeParameters" />
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(EmbedCode))
+    {
+        <div class="tm-share-link-panel__embed">
+            <label class="tm-share-link-panel__embed-label">@Loc["TmShareLinkPanel_EmbedCode"]</label>
+            <textarea class="tm-share-link-panel__embed-code"
+                      readonly
+                      disabled="@(!Enabled)">@EmbedCode</textarea>
+            <TmCopyButton Text="@EmbedCode"
+                          Disabled="@(!Enabled)"
+                          data-testid="share-link-embed-copy" />
+        </div>
+    }
+</section>
+
+@code {
+    /// <summary>Public signing link.</summary>
+    [Parameter] public string Link { get; set; } = string.Empty;
+
+    /// <summary>Optional embed code for publishing the signing link.</summary>
+    [Parameter] public string? EmbedCode { get; set; }
+
+    /// <summary>Whether sharing is enabled.</summary>
+    [Parameter] public bool Enabled { get; set; } = true;
+
+    /// <summary>Callback invoked when sharing is enabled or disabled.</summary>
+    [Parameter] public EventCallback<bool> EnabledChanged { get; set; }
+
+    /// <summary>Optional link expiration time.</summary>
+    [Parameter] public DateTimeOffset? ExpiresAt { get; set; }
+
+    /// <summary>Whether a QR code is rendered.</summary>
+    [Parameter] public bool ShowQrCode { get; set; } = true;
+
+    /// <summary>Additional CSS classes for the root element.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Additional HTML attributes passed to the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private static readonly Type? QrCodeComponentType = ResolveQrCodeComponentType();
+
+    private Dictionary<string, object?> QrCodeParameters => new()
+    {
+        ["Value"] = Link,
+        ["Size"] = 144
+    };
+
+    private string RootClass => string.Join(" ", new[]
+    {
+        "tm-share-link-panel",
+        Enabled ? null : "tm-share-link-panel--disabled",
+        Class
+    }.Where(item => !string.IsNullOrWhiteSpace(item)));
+
+    private async Task HandleEnabledChangedAsync(ChangeEventArgs args)
+    {
+        var enabled = args.Value is bool value && value;
+        Enabled = enabled;
+        await EnabledChanged.InvokeAsync(enabled);
+    }
+
+    private static string BoolText(bool value) => value ? "true" : "false";
+
+    private static Type? ResolveQrCodeComponentType()
+        => Type.GetType("Tempo.Blazor.Components.DataDisplay.TmQRCode, Tempo.Blazor.Codes")
+           ?? AppDomain.CurrentDomain.GetAssemblies()
+               .Select(assembly => assembly.GetType("Tempo.Blazor.Components.DataDisplay.TmQRCode", throwOnError: false))
+               .FirstOrDefault(type => type is not null);
+}

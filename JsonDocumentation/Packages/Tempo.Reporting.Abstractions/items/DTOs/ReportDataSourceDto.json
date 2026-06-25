@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Named report data source DTO.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDataSourceDto"
+}

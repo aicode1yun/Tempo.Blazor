@@ -1,0 +1,51 @@
+{
+  "itemName": "TmNotionImageBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionImageBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Media",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Media/TmNotionImageBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Media"
+  ],
+  "parameters": [
+    {
+      "name": "OnAlignmentChanged",
+      "type": "EventCallback<MediaAlignment>",
+      "isRequired": false,
+      "description": "Raised on caption blur when text changed. Null = empty."
+    },
+    {
+      "name": "OnCaptionSaved",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Raised when resize drag ends. Arg = new pixel width."
+    },
+    {
+      "name": "OnDeleteRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when alignment changes."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the block requests deletion."
+    },
+    {
+      "name": "OnMediaSet",
+      "type": "EventCallback<(string? FileId, string? Url)>",
+      "isRequired": false
+    },
+    {
+      "name": "OnWidthChanged",
+      "type": "EventCallback<int>",
+      "isRequired": false,
+      "description": "Raised when the user sets a new image (URL or uploaded file)."
+    }
+  ],
+  "subcategory": "Blocks / Media"
+}

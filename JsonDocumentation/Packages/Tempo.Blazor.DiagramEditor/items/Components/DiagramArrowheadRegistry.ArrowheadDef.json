@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram",
+  "description": "Public class defined by Tempo.Blazor.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/DiagramArrowheadRegistry.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramArrowheadRegistry.ArrowheadDef"
+}

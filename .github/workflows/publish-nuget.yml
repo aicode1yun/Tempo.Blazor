@@ -35,6 +35,9 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
+      - name: Verify NuGet package manifest
+        run: bash eng/verify-nuget-package-manifest.sh
+
       # Nastavíme verzi podle tagu nebo inputu
       - name: Set version
         id: version
@@ -93,6 +96,9 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
+      - name: Verify NuGet package manifest
+        run: bash eng/verify-nuget-package-manifest.sh
+
       # Nastavíme verzi podle tagu nebo inputu
       - name: Set version
         id: version
@@ -121,26 +127,9 @@ jobs:
         run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.version.outputs.VERSION }}
 
       - name: Build packages
-        run: |
-          dotnet pack src/Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj \
-            --configuration Release \
-            --no-restore \
-            --no-build \
-            -p:Version=${{ steps.version.outputs.VERSION }} \
-            --output ./packages
-
-          dotnet pack src/Tempo.Blazor/Tempo.Blazor.csproj \
-            --configuration Release \
-            --no-restore \
-            -p:Version=${{ steps.version.outputs.VERSION }} \
-            --output ./packages
-
-          dotnet pack src/Tempo.Blazor.FluentValidation/Tempo.Blazor.FluentValidation.csproj \
-            --configuration Release \
-            --no-restore \
-            --no-build \
-            -p:Version=${{ steps.version.outputs.VERSION }} \
-            --output ./packages
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: bash eng/pack-nuget-packages.sh
 
       - name: List packages
         run: ls -la ./packages

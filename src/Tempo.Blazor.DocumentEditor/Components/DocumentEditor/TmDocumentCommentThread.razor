@@ -1,0 +1,344 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.Abstractions.Shared
+@using Tempo.Blazor.DocumentEditor.Models
+
+@if (Comment is not null)
+{
+    <article class="@ThreadClass"
+             data-testid="document-comment-thread"
+             data-comment-id="@Comment.Id"
+             @onclick="SelectAsync">
+        <header class="tm-document-comment-thread__header">
+            <button type="button"
+                    class="tm-document-comment-thread__title"
+                    data-testid="document-comment-thread-select"
+                    @onclick="SelectAsync">
+                @AnchorLabel
+            </button>
+            <span class="tm-document-comment-thread__status" data-testid="document-comment-status">
+                @(Comment.Status == DocumentCommentStatus.Resolved
+                    ? Loc["TmDocumentEditor_CommentResolved"]
+                    : Loc["TmDocumentEditor_CommentOpen"])
+            </span>
+        </header>
+
+        @if (IsCollapsed)
+        {
+            <div class="tm-document-comment-thread__collapsed" data-testid="document-comment-thread-collapsed">
+                <p>@CollapsedPreview</p>
+                <div class="tm-document-comment-thread__actions">
+                    <button type="button"
+                            data-testid="document-comment-expand"
+                            @onclick:stopPropagation="true"
+                            @onclick="ExpandAsync">
+                        @Loc["TmDocumentEditor_ExpandComment"]
+                    </button>
+                    <button type="button"
+                            data-testid="document-comment-reopen"
+                            disabled="@(!CanResolve || IsBusy)"
+                            @onclick:stopPropagation="true"
+                            @onclick="ReopenAsync">
+                        @Loc["TmDocumentEditor_ReopenComment"]
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="tm-document-comment-thread__expanded" data-testid="document-comment-thread-expanded">
+                <div class="tm-document-comment-thread__entries">
+                    @foreach (var entry in Comment.Entries.OrderBy(item => item.CreatedAt))
+                    {
+                        <section class="@GetEntryClass(entry)" data-testid="document-comment-entry">
+                            <div class="tm-document-comment-entry__meta">
+                                <strong>@GetAuthorName(entry.Author)</strong>
+                                <time class="tm-document-comment-entry__time"
+                                      datetime="@entry.CreatedAt.UtcDateTime.ToString("O")">
+                                    @entry.CreatedAt.ToLocalTime().ToString("g")
+                                </time>
+                                @if (entry.IsExternalAuthor)
+                                {
+                                    <span class="tm-document-comment-entry__external">@Loc["TmDocumentEditor_ExternalAuthor"]</span>
+                                }
+                                @if (CanEditEntry(entry))
+                                {
+                                    <button type="button"
+                                            class="tm-document-comment-entry__edit"
+                                            data-testid="document-comment-edit"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => BeginEdit(entry)">
+                                        @Loc["TmDocumentEditor_EditComment"]
+                                    </button>
+                                }
+                            </div>
+                            @if (_editingEntryId == entry.Id)
+                            {
+                                <TmDocumentCommentComposer CanComment="@CanComment"
+                                                           IsBusy="@IsBusy"
+                                                           MentionProvider="@MentionProvider"
+                                                           InitialText="@entry.Text"
+                                                           Placeholder="@Loc["TmDocumentEditor_CommentPlaceholder"]"
+                                                           SubmitLabel="@Loc["TmDocumentEditor_SaveComment"]"
+                                                           TestId="document-comment-edit-composer"
+                                                           InputTestId="document-comment-edit-input"
+                                                           SubmitTestId="document-comment-edit-submit"
+                                                           CancelTestId="document-comment-edit-cancel"
+                                                           OnSubmit="EditAsync"
+                                                           OnCancel="CancelEditAsync" />
+                            }
+                            else
+                            {
+                                <p>@entry.Text</p>
+                            }
+                        </section>
+                    }
+                </div>
+
+                <div class="tm-document-comment-thread__actions">
+                    @if (Comment.Status == DocumentCommentStatus.Open)
+                    {
+                        <button type="button"
+                                data-testid="document-comment-resolve"
+                                disabled="@(!CanResolve || IsBusy)"
+                                @onclick="ResolveAsync">
+                            @Loc["TmDocumentEditor_ResolveComment"]
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button"
+                                data-testid="document-comment-reopen"
+                                disabled="@(!CanResolve || IsBusy)"
+                                @onclick="ReopenAsync">
+                            @Loc["TmDocumentEditor_ReopenComment"]
+                        </button>
+                    }
+                    @if (CanDeleteThread)
+                    {
+                        <button type="button"
+                                data-testid="document-comment-delete"
+                                disabled="@IsBusy"
+                                @onclick:stopPropagation="true"
+                                @onclick="DeleteAsync">
+                            @Loc["TmDocumentEditor_DeleteComment"]
+                        </button>
+                    }
+                </div>
+
+                @if (CanComment && Comment.Status == DocumentCommentStatus.Open)
+                {
+                    <TmDocumentCommentComposer CanComment="@CanComment"
+                                               IsBusy="@IsBusy"
+                                               MentionProvider="@MentionProvider"
+                                               Placeholder="@Loc["TmDocumentEditor_ReplyPlaceholder"]"
+                                               SubmitLabel="@Loc["TmDocumentEditor_Reply"]"
+                                               TestId="document-comment-reply-composer"
+                                               InputTestId="document-comment-reply-input"
+                                               SubmitTestId="document-comment-reply-submit"
+                                               OnSubmit="ReplyAsync" />
+                }
+            </div>
+        }
+    </article>
+}
+
+@code {
+    /// <summary>Comment thread to render.</summary>
+    [Parameter] public DocumentComment? Comment { get; set; }
+
+    /// <summary>Whether this thread is selected.</summary>
+    [Parameter] public bool IsSelected { get; set; }
+
+    /// <summary>Whether the current user can add replies.</summary>
+    [Parameter] public bool CanComment { get; set; } = true;
+
+    /// <summary>Whether the current user can resolve or reopen threads.</summary>
+    [Parameter] public bool CanResolve { get; set; } = true;
+
+    /// <summary>Whether the current user can delete comment threads they own.</summary>
+    [Parameter] public bool CanDeleteOwnComments { get; set; }
+
+    /// <summary>Current author identifier used for ownership checks.</summary>
+    [Parameter] public string? CurrentAuthorId { get; set; }
+
+    /// <summary>Whether a comment operation is currently running.</summary>
+    [Parameter] public bool IsBusy { get; set; }
+
+    /// <summary>Whether resolved threads are collapsed by default.</summary>
+    [Parameter] public bool CollapseResolved { get; set; } = true;
+
+    /// <summary>Optional mention provider reused by the reply composer.</summary>
+    [Parameter] public ITmPeopleProvider? MentionProvider { get; set; }
+
+    /// <summary>Raised when the thread is selected.</summary>
+    [Parameter] public EventCallback<string> OnSelect { get; set; }
+
+    /// <summary>Raised when a reply is submitted.</summary>
+    [Parameter] public EventCallback<DocumentEditorCommentReplyRequest> OnReply { get; set; }
+
+    /// <summary>Raised when an existing entry is edited.</summary>
+    [Parameter] public EventCallback<DocumentEditorCommentEditRequest> OnEdit { get; set; }
+
+    /// <summary>Raised when the thread should be resolved.</summary>
+    [Parameter] public EventCallback<string> OnResolve { get; set; }
+
+    /// <summary>Raised when the thread should be reopened.</summary>
+    [Parameter] public EventCallback<string> OnReopen { get; set; }
+
+    /// <summary>Raised when the thread should be deleted.</summary>
+    [Parameter] public EventCallback<string> OnDelete { get; set; }
+
+    private bool _expandedByUser;
+    private string? _editingEntryId;
+
+    private bool IsCollapsed
+        => CollapseResolved
+        && !_expandedByUser
+        && !IsSelected
+        && Comment?.Status == DocumentCommentStatus.Resolved;
+
+    private string CollapsedPreview
+        => Comment?.Entries.OrderBy(item => item.CreatedAt).FirstOrDefault()?.Text
+        ?? Loc["TmDocumentEditor_ResolvedCommentCollapsed"];
+
+    private bool CanDeleteThread => CanDeleteOwnComments && IsOwnThread;
+
+    private bool CanEditEntry(DocumentCommentEntry entry)
+        => CanComment
+        && Comment?.Status == DocumentCommentStatus.Open
+        && !entry.IsExternalAuthor
+        && !string.IsNullOrWhiteSpace(CurrentAuthorId)
+        && string.Equals(entry.Author.Id, CurrentAuthorId, StringComparison.Ordinal);
+
+    private bool IsOwnThread
+    {
+        get
+        {
+            if (Comment is null || string.IsNullOrWhiteSpace(CurrentAuthorId))
+            {
+                return false;
+            }
+
+            var authorId = Comment.Entries.OrderBy(item => item.CreatedAt).FirstOrDefault()?.Author.Id;
+            return string.Equals(authorId, CurrentAuthorId, StringComparison.Ordinal);
+        }
+    }
+
+    private string ThreadClass
+    {
+        get
+        {
+            var classes = new List<string> { "tm-document-comment-thread" };
+            if (IsSelected)
+            {
+                classes.Add("tm-document-comment-thread--selected");
+            }
+
+            if (Comment?.Status == DocumentCommentStatus.Resolved)
+            {
+                classes.Add("tm-document-comment-thread--resolved");
+            }
+
+            if (Comment?.Visibility is DocumentCommentVisibility.External or DocumentCommentVisibility.Client or DocumentCommentVisibility.Public)
+            {
+                classes.Add("tm-document-comment-thread--external");
+            }
+
+            return string.Join(" ", classes);
+        }
+    }
+
+    private string AnchorLabel => Comment?.Anchor.Type switch
+    {
+        DocumentCommentAnchorType.TextRange => Loc["TmDocumentEditor_TextCommentAnchor"],
+        DocumentCommentAnchorType.Block => Loc["TmDocumentEditor_BlockCommentAnchor", Comment.Anchor.BlockId ?? Loc["TmDocumentEditor_UnknownAnchor"]],
+        _ => Loc["TmDocumentEditor_CommentAnchor"]
+    };
+
+    private static string GetEntryClass(DocumentCommentEntry entry)
+    {
+        var classes = new List<string> { "tm-document-comment-entry" };
+        if (entry.IsExternalAuthor)
+        {
+            classes.Add("tm-document-comment-entry--external");
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetAuthorName(DocumentEditorAuthor? author)
+    {
+        if (!string.IsNullOrWhiteSpace(author?.DisplayName))
+        {
+            return author!.DisplayName;
+        }
+
+        if (!string.IsNullOrWhiteSpace(author?.Email))
+        {
+            return author!.Email!;
+        }
+
+        return Loc["TmDocumentEditor_UnknownAuthor"];
+    }
+
+    private Task SelectAsync()
+    {
+        return Comment is null ? Task.CompletedTask : OnSelect.InvokeAsync(Comment.Id);
+    }
+
+    private Task ReplyAsync(string text)
+    {
+        return Comment is null
+            ? Task.CompletedTask
+            : OnReply.InvokeAsync(new DocumentEditorCommentReplyRequest { CommentId = Comment.Id, Text = text });
+    }
+
+    private void BeginEdit(DocumentCommentEntry entry)
+    {
+        _editingEntryId = entry.Id;
+    }
+
+    private Task CancelEditAsync()
+    {
+        _editingEntryId = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task EditAsync(string text)
+    {
+        if (Comment is null || string.IsNullOrWhiteSpace(_editingEntryId))
+        {
+            return;
+        }
+
+        var entryId = _editingEntryId;
+        _editingEntryId = null;
+        await OnEdit.InvokeAsync(new DocumentEditorCommentEditRequest
+        {
+            CommentId = Comment.Id,
+            EntryId = entryId,
+            Text = text
+        });
+    }
+
+    private Task ResolveAsync()
+    {
+        return Comment is null ? Task.CompletedTask : OnResolve.InvokeAsync(Comment.Id);
+    }
+
+    private Task ReopenAsync()
+    {
+        return Comment is null ? Task.CompletedTask : OnReopen.InvokeAsync(Comment.Id);
+    }
+
+    private Task DeleteAsync()
+    {
+        return Comment is null ? Task.CompletedTask : OnDelete.InvokeAsync(Comment.Id);
+    }
+
+    private Task ExpandAsync()
+    {
+        _expandedByUser = true;
+        return Task.CompletedTask;
+    }
+}

@@ -9,6 +9,7 @@ Key features:
 - CSS design system based on custom properties with dark mode
 - Injectable `ToastService` and `ThemeService` registered automatically
 - Lightweight abstractions package (`Tempo.Blazor.Abstractions`) for use in API/service projects without UI dependencies
+- Optional Tempo Reporting packages for embedded viewers, report definitions, rendering, export, and Report Server integration
 
 ## Installation
 
@@ -19,8 +20,22 @@ dotnet add package Tempo.Blazor
 Optional packages:
 
 ```bash
+dotnet add package Tempo.Blazor.All              # Compatibility package: core + split feature packages
 dotnet add package Tempo.Blazor.Abstractions      # Interfaces only (for API/service projects)
+dotnet add package Tempo.Blazor.PdfViewer         # PDF.js powered PDF viewer
+dotnet add package Tempo.Blazor.Codes             # QR code and barcode components
+dotnet add package Tempo.Blazor.DiagramEditor     # Diagram editor and diagram assets
+dotnet add package Tempo.Blazor.Wireframe         # Wireframe editor and wireframe assets
+dotnet add package Tempo.Blazor.Modeling          # Modeling editor built on DiagramEditor
+dotnet add package Tempo.Blazor.Spreadsheet       # Spreadsheet editor and XLSX support
+dotnet add package Tempo.Blazor.GanttXlsx         # Optional Gantt XLSX import/export helpers
+dotnet add package Tempo.Blazor.DocumentEditor    # Document editor and canvas runtime
+dotnet add package Tempo.Blazor.NotionEditor      # Notion-style editor and block/database UI
+dotnet add package Tempo.Blazor.Signing           # Signing workflows and PDF template designer
 dotnet add package Tempo.Blazor.FluentValidation   # FluentValidation integration for EditForm
+dotnet add package Tempo.Reporting.Abstractions    # Report definition JSON, validation, data contracts
+dotnet add package Tempo.Reporting.Engine          # Processing, layout, PDF/PNG, CSV/XLSX
+dotnet add package Tempo.Blazor.Reporting          # Blazor report viewer/designer/explorer components
 ```
 
 ## Document Editor Cutover
@@ -36,9 +51,30 @@ dotnet add package Tempo.Blazor.FluentValidation   # FluentValidation integratio
 builder.Services.AddTempoBlazor();
 ```
 
+To keep the pre-split all-in setup, install `Tempo.Blazor.All` and register:
+
+```csharp
+builder.Services.AddTempoBlazorAll();
+```
+
+`Tempo.Blazor.All` includes `Tempo.Blazor.Signing` and calls `AddTempoBlazorSigning()` automatically.
+
+For a lean app, reference and register only the feature packages you use:
+
+```csharp
+builder.Services.AddTempoBlazor();
+builder.Services.AddTempoBlazorPdfViewer();
+builder.Services.AddTempoBlazorDiagramEditor();
+builder.Services.AddTempoBlazorWireframe();
+builder.Services.AddTempoBlazorSpreadsheet();
+builder.Services.AddTempoBlazorDocumentEditor();
+builder.Services.AddTempoBlazorNotionEditor();
+builder.Services.AddTempoBlazorSigning();
+```
+
 ### Custom Diagram Stencils
 
-Register custom diagram stencils after `AddTempoBlazor()`. Keep provider output as your own data and mark built-in application stencils with `DiagramStencilOrigin.TempoOriginal`.
+Install `Tempo.Blazor.DiagramEditor` and register custom diagram stencils after `AddTempoBlazorDiagramEditor()`. Keep provider output as your own data and mark built-in application stencils with `DiagramStencilOrigin.TempoOriginal`.
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -46,7 +82,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.Diagram.Stencils;
 
-builder.Services.AddTempoBlazor();
+builder.Services.AddTempoBlazorDiagramEditor();
 builder.Services.TryAddEnumerable(
     ServiceDescriptor.Singleton<IDiagramStencilProvider, MyStencilProvider>());
 
@@ -81,7 +117,15 @@ public sealed class MyStencilProvider : IDiagramStencilProvider
 ```html
 <!-- index.html or App.razor -->
 <link href="_content/Tempo.Blazor/css/tempo-blazor.bundled.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.DiagramEditor/css/tempo-blazor-diagram-editor.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.Wireframe/css/tempo-blazor-wireframe.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.Spreadsheet/css/tempo-blazor-spreadsheet.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.DocumentEditor/css/tempo-blazor-document-editor.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.NotionEditor/css/tempo-blazor-notion-editor.css" rel="stylesheet" />
+<link href="_content/Tempo.Blazor.Signing/css/tempo-blazor-signing.css" rel="stylesheet" />
 ```
+
+`TmPdfTemplateDesigner` loads its ES module from `_content/Tempo.Blazor.Signing/js/pdf-template-designer.js`. If your host app uses CSP or a static-asset allowlist, include that path. `TmSignatureCapture` still uses the core `_content/Tempo.Blazor/js/signature-capture.js` asset.
 
 ### 3. Add Toast Container to Layout
 
@@ -147,6 +191,84 @@ public sealed class MyStencilProvider : IDiagramStencilProvider
     <TmDataTableColumn TItem="Person" Title="Name" Field="p => p.Name" Sortable />
     <TmDataTableColumn TItem="Person" Title="Email" Field="p => p.Email" />
 </TmDataTable>
+```
+
+## Embedding do vaší aplikace
+
+`TmReportViewer` lze vložit do běžné Blazor aplikace dvěma způsoby. Embedded režim spouští report engine v hostitelské aplikaci nad vlastním `IReportDataProvider`; Remote režim volá Tempo Report Server API přes `RemoteReportSource`.
+
+### Embedded: lokální engine a vlastní data
+
+```csharp
+// Program.cs
+using Tempo.Blazor.Reporting.Configuration;
+
+builder.Services.AddTempoBlazorReporting();
+builder.Services.AddScoped<MyReportDataProvider>();
+```
+
+```razor
+@using Tempo.Blazor.Reporting.Components
+@using Tempo.Blazor.Reporting.Services
+@using Tempo.Reporting.Abstractions.Definitions
+@inject MyReportDataProvider DataProvider
+
+<TmReportViewer ReportSource="_source"
+                TenantId="northwind"
+                UserId="embedded-user"
+                CultureName="en-US" />
+
+@code {
+    private IReportSource? _source;
+
+    protected override void OnInitialized()
+    {
+        ReportDefinition definition = BuildDefinition();
+        _source = new EmbeddedReportSource(definition, DataProvider);
+    }
+}
+```
+
+### Remote: Report Server API
+
+```csharp
+// Program.cs
+using Tempo.Blazor.Reporting.Configuration;
+
+builder.Services.AddTempoBlazorReporting();
+builder.Services.AddHttpClient("Reports", client =>
+{
+    client.BaseAddress = new Uri("https://reports.example.com/");
+    client.DefaultRequestHeaders.Add("X-Api-Key", builder.Configuration["Reports:ApiKey"]);
+});
+```
+
+```razor
+@using Tempo.Blazor.Reporting.Components
+@using Tempo.Blazor.Reporting.Services
+@inject IHttpClientFactory HttpClientFactory
+
+<TmReportViewer ReportSource="_source"
+                TenantId="northwind"
+                UserId="embedded-user"
+                CultureName="en-US" />
+
+@code {
+    private IReportSource? _source;
+
+    protected override void OnInitialized()
+    {
+        _source = new RemoteReportSource(HttpClientFactory.CreateClient("Reports"), "sales-dashboard");
+    }
+}
+```
+
+Na serveru musí API key mapovat na tenant/application scope s oprávněními `View`, `Render` a volitelně `Export`. Demo používá hlavičku `X-Api-Key`; pro produkci ukládejte klíč mimo klientský kód, rotujte ho přes serverovou administraci a pro WebAssembly povolte CORS jen pro známé origins.
+
+Přidejte také reporting stylesheet:
+
+```html
+<link href="_content/Tempo.Blazor.Reporting/css/tempo-blazor-reporting.css" rel="stylesheet" />
 ```
 
 ### Toast Notifications

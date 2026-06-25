@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Parameter submit event raised by TmReportParameterPanel.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/ReportParameterSubmitEventArgs.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportParameterSubmitEventArgs"
+}

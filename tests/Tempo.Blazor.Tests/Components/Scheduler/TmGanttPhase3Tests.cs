@@ -1,6 +1,7 @@
 using Bunit;
 using FluentAssertions;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Scheduler;
 using Tempo.Blazor.Tests.Localization;
 using Xunit;
@@ -15,13 +16,13 @@ public class TmGanttPhase3Tests : LocalizationTestBase
 {
     // ─── Sample data helpers ────────────────────────────────────────
 
-    private static GanttTask MakeTask(string id, string title, DateTime start, DateTime end,
+    private static TmWorkItem MakeTask(string id, string title, DateTime start, DateTime end,
         string? parentId = null) => new()
     {
         Id = id, Title = title, Start = start, End = end, ParentId = parentId
     };
 
-    private static GanttTask T(string id, int startDay, int endDay) =>
+    private static TmWorkItem T(string id, int startDay, int endDay) =>
         MakeTask(id, $"Task {id}", new DateTime(2024, 1, startDay), new DateTime(2024, 1, endDay));
 
     private static GanttDependency Dep(string from, string to,
@@ -38,7 +39,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         // predecessor ends Jan 10, successor must start Jan 10 or later (FS)
         var predecessor = T("1", 1, 10);
         var successor   = T("2", 5, 8);   // currently starts before predecessor ends
-        var tasks = new List<GanttTask> { predecessor, successor };
+        var tasks = new List<TmWorkItem> { predecessor, successor };
         var deps  = new List<GanttDependency> { Dep("1", "2") };
 
         GanttScheduler.Schedule(tasks, deps);
@@ -52,7 +53,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var predecessor = T("1", 5, 10);
         var successor   = T("2", 1, 4);  // starts earlier
-        var tasks = new List<GanttTask> { predecessor, successor };
+        var tasks = new List<TmWorkItem> { predecessor, successor };
         var deps  = new List<GanttDependency> { Dep("1", "2", GanttDependencyType.StartToStart) };
 
         GanttScheduler.Schedule(tasks, deps);
@@ -65,7 +66,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var predecessor = T("1", 1, 10);
         var successor   = T("2", 1, 5);  // ends before predecessor
-        var tasks = new List<GanttTask> { predecessor, successor };
+        var tasks = new List<TmWorkItem> { predecessor, successor };
         var deps  = new List<GanttDependency> { Dep("1", "2", GanttDependencyType.FinishToFinish) };
 
         GanttScheduler.Schedule(tasks, deps);
@@ -79,7 +80,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         // SF: successor must finish no earlier than predecessor starts
         var predecessor = T("1", 10, 15);
         var successor   = T("2", 1, 5);
-        var tasks = new List<GanttTask> { predecessor, successor };
+        var tasks = new List<TmWorkItem> { predecessor, successor };
         var deps  = new List<GanttDependency> { Dep("1", "2", GanttDependencyType.StartToFinish) };
 
         GanttScheduler.Schedule(tasks, deps);
@@ -92,7 +93,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var predecessor = T("1", 1, 5);
         var successor   = T("2", 1, 3);
-        var tasks = new List<GanttTask> { predecessor, successor };
+        var tasks = new List<TmWorkItem> { predecessor, successor };
         var deps  = new List<GanttDependency> { Dep("1", "2", GanttDependencyType.FinishToStart, lag: 3) };
 
         GanttScheduler.Schedule(tasks, deps);
@@ -105,7 +106,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var t1 = T("1", 1, 5);
         var t2 = T("2", 6, 10);
-        var tasks = new List<GanttTask> { t1, t2 };
+        var tasks = new List<TmWorkItem> { t1, t2 };
         var deps  = new List<GanttDependency>
         {
             Dep("1", "2"),
@@ -121,7 +122,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var tasks = new[] { T("1", 1, 5) };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, tasks)
+            .Add(x => x.Items, tasks)
             .Add(x => x.AutoSchedule, true));
 
         cut.Instance.AutoSchedule.Should().BeTrue();
@@ -130,17 +131,17 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_OnAutoScheduled_Fires_When_AutoSchedule_Enabled()
     {
-        IReadOnlyList<GanttTask>? firedTasks = null;
+        IReadOnlyList<TmWorkItem>? firedTasks = null;
         var predecessor = T("1", 1, 5);
         var successor   = T("2", 1, 3);
         var tasks = new[] { predecessor, successor };
         var deps = new[] { Dep("1", "2") };
 
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, tasks)
-            .Add(x => x.Dependencies, deps)
+            .Add(x => x.Items, tasks)
+            .Add(x => x.DependencyItems, deps)
             .Add(x => x.AutoSchedule, true)
-            .Add(x => x.OnAutoScheduled, (IReadOnlyList<GanttTask> t) => firedTasks = t));
+            .Add(x => x.OnAutoScheduled, (IReadOnlyList<TmWorkItem> t) => firedTasks = t));
 
         firedTasks.Should().NotBeNull();
     }
@@ -153,7 +154,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void CriticalPathCalculator_Calculate_Returns_Critical_Task_Ids()
     {
         // Single chain: 1 → 2 → 3. All on critical path.
-        var tasks = new List<GanttTask>
+        var tasks = new List<TmWorkItem>
         {
             T("1", 1, 5),
             T("2", 5, 10),
@@ -172,7 +173,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void CriticalPathCalculator_Task_With_Zero_Float_Is_Critical()
     {
         // Chain with zero float = critical
-        var tasks = new List<GanttTask>
+        var tasks = new List<TmWorkItem>
         {
             T("1", 1, 5),
             T("2", 5, 10),
@@ -188,7 +189,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void CriticalPathCalculator_Parallel_Branches_Only_Longer_Is_Critical()
     {
         // Start → A (5d) → End; Start → B (10d) → End: only B path is critical
-        var tasks = new List<GanttTask>
+        var tasks = new List<TmWorkItem>
         {
             T("start",  1,  2),   // 1 day
             T("A",      2,  7),   // 5 days
@@ -215,7 +216,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void TmGantt_Has_ShowCriticalPath_Parameter()
     {
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, Array.Empty<GanttTask>())
+            .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.ShowCriticalPath, true));
 
         cut.Instance.ShowCriticalPath.Should().BeTrue();
@@ -227,7 +228,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         // Single task with no deps: it IS the only task, so it's on the critical path
         var task = T("1", 1, 5);
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, new[] { task })
+            .Add(x => x.Items, new[] { task })
             .Add(x => x.ShowCriticalPath, true));
 
         var bar = cut.Find("[data-testid='task-bar-1']");
@@ -269,7 +270,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var baseline = new GanttBaseline { Id = "b1", Name = "Baseline 1" };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, Array.Empty<GanttTask>())
+            .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.Baselines, new[] { baseline })
             .Add(x => x.ActiveBaselineId, "b1"));
 
@@ -280,7 +281,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Ghost_Bar_Rendered_When_ActiveBaseline_Set()
     {
-        var task = new GanttTask
+        var task = new TmWorkItem
         {
             Id = "t1", Title = "Task",
             Start = new DateTime(2024, 1, 5), End = new DateTime(2024, 1, 10)
@@ -293,7 +294,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         };
 
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, new[] { task })
+            .Add(x => x.Items, new[] { task })
             .Add(x => x.Baselines, new[] { baseline })
             .Add(x => x.ActiveBaselineId, "b1"));
 
@@ -304,7 +305,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Deviation_Badge_Rendered_When_ActiveBaseline_Set()
     {
-        var task = new GanttTask
+        var task = new TmWorkItem
         {
             Id = "t1", Title = "Task",
             Start = new DateTime(2024, 1, 5), End = new DateTime(2024, 1, 10)
@@ -317,7 +318,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         };
 
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, new[] { task })
+            .Add(x => x.Items, new[] { task })
             .Add(x => x.Baselines, new[] { baseline })
             .Add(x => x.ActiveBaselineId, "b1"));
 
@@ -331,7 +332,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         GanttBaseline? savedBaseline = null;
         var task = T("1", 1, 5);
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, new[] { task })
+            .Add(x => x.Items, new[] { task })
             .Add(x => x.OnBaselineSaved, (GanttBaseline b) => savedBaseline = b));
 
         cut.Instance.SaveBaselineAsync("My Baseline");
@@ -346,51 +347,51 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void GanttFieldType_Enum_Has_All_Values()
+    public void TmCustomFieldType_Enum_Has_All_Gantt_Values()
     {
-        var values = Enum.GetValues<GanttFieldType>();
-        values.Should().Contain(GanttFieldType.Text);
-        values.Should().Contain(GanttFieldType.Number);
-        values.Should().Contain(GanttFieldType.Date);
-        values.Should().Contain(GanttFieldType.List);
-        values.Should().Contain(GanttFieldType.Checkbox);
-        values.Should().Contain(GanttFieldType.Color);
-        values.Should().Contain(GanttFieldType.Multiselect);
-        values.Should().Contain(GanttFieldType.People);
-        values.Should().Contain(GanttFieldType.Labels);
+        var values = Enum.GetValues<TmCustomFieldType>();
+        values.Should().Contain(TmCustomFieldType.Text);
+        values.Should().Contain(TmCustomFieldType.Number);
+        values.Should().Contain(TmCustomFieldType.Date);
+        values.Should().Contain(TmCustomFieldType.List);
+        values.Should().Contain(TmCustomFieldType.Checkbox);
+        values.Should().Contain(TmCustomFieldType.Color);
+        values.Should().Contain(TmCustomFieldType.Multiselect);
+        values.Should().Contain(TmCustomFieldType.People);
+        values.Should().Contain(TmCustomFieldType.Labels);
     }
 
     [Fact]
-    public void GanttCustomField_Class_Has_Required_Properties()
+    public void TmCustomFieldDefinition_Class_Has_Required_Properties()
     {
-        var field = new GanttCustomField
+        var field = new TmCustomFieldDefinition
         {
             Id = "f1",
             Name = "Notes",
-            Type = GanttFieldType.Text,
-            Options = null
+            Type = TmCustomFieldType.Text,
+            Options = []
         };
 
         field.Id.Should().Be("f1");
         field.Name.Should().Be("Notes");
-        field.Type.Should().Be(GanttFieldType.Text);
+        field.Type.Should().Be(TmCustomFieldType.Text);
     }
 
     [Fact]
-    public void GanttTask_Has_CustomValues_Dictionary()
+    public void GanttTask_Has_CustomFields_Dictionary()
     {
-        var task = new GanttTask();
-        task.CustomValues.Should().NotBeNull();
-        task.CustomValues["key"] = "value";
-        task.CustomValues["key"].Should().Be("value");
+        var task = new TmWorkItem();
+        task.CustomFields.Should().NotBeNull();
+        task.CustomFields["key"] = "value";
+        task.CustomFields["key"].Should().Be("value");
     }
 
     [Fact]
     public void TmGantt_Has_CustomFields_Parameter()
     {
-        var field = new GanttCustomField { Id = "f1", Name = "Notes", Type = GanttFieldType.Text };
+        var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, Array.Empty<GanttTask>())
+            .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.CustomFields, new[] { field }));
 
         cut.Instance.CustomFields.Should().HaveCount(1);
@@ -399,9 +400,9 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_CustomField_Text_Renders_In_Header()
     {
-        var field = new GanttCustomField { Id = "f1", Name = "Notes", Type = GanttFieldType.Text };
+        var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, Array.Empty<GanttTask>())
+            .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.CustomFields, new[] { field }));
 
         cut.Markup.Should().Contain("Notes");
@@ -410,15 +411,15 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_CustomField_Value_Renders_In_Row()
     {
-        var task = new GanttTask
+        var task = new TmWorkItem
         {
             Id = "t1", Title = "T", Start = new DateTime(2024, 1, 1), End = new DateTime(2024, 1, 5),
-            CustomValues = { ["f1"] = "my note" }
+            CustomFields = { ["f1"] = "my note" }
         };
-        var field = new GanttCustomField { Id = "f1", Name = "Notes", Type = GanttFieldType.Text };
+        var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
 
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, new[] { task })
+            .Add(x => x.Items, new[] { task })
             .Add(x => x.CustomFields, new[] { field }));
 
         cut.Markup.Should().Contain("my note");
@@ -427,14 +428,14 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_CustomField_Inline_Edit_Renders_Input()
     {
-        var task = new GanttTask
+        var task = new TmWorkItem
         {
             Id = "t1", Title = "T", Start = new DateTime(2024, 1, 1), End = new DateTime(2024, 1, 5)
         };
-        var field = new GanttCustomField { Id = "f1", Name = "Notes", Type = GanttFieldType.Text };
+        var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
 
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, new[] { task })
+            .Add(x => x.Items, new[] { task })
             .Add(x => x.CustomFields, new[] { field }));
 
         // Start inline edit on custom field cell
@@ -449,14 +450,14 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void TmGantt_OnCustomFieldChanged_Fires_After_Commit()
     {
         (string? taskId, string? fieldId, string? value) fired = default;
-        var task = new GanttTask
+        var task = new TmWorkItem
         {
             Id = "t1", Title = "T", Start = new DateTime(2024, 1, 1), End = new DateTime(2024, 1, 5)
         };
-        var field = new GanttCustomField { Id = "f1", Name = "Notes", Type = GanttFieldType.Text };
+        var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
 
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, new[] { task })
+            .Add(x => x.Items, new[] { task })
             .Add(x => x.CustomFields, new[] { field })
             .Add(x => x.OnCustomFieldChanged, ((string tid, string fid, string? v) args) =>
                 fired = args));
@@ -507,8 +508,8 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var nodes = GanttHelper.BuildTree(new[]
         {
-            new GanttTask { Id = "1", Title = "A", Start = DateTime.Today, End = DateTime.Today.AddDays(1), Status = GanttTaskStatus.Done },
-            new GanttTask { Id = "2", Title = "B", Start = DateTime.Today, End = DateTime.Today.AddDays(1), Status = GanttTaskStatus.Open },
+            new TmWorkItem { Id = "1", Title = "A", Start = DateTime.Today, End = DateTime.Today.AddDays(1), Status = TmWorkItemStatus.Done },
+            new TmWorkItem { Id = "2", Title = "B", Start = DateTime.Today, End = DateTime.Today.AddDays(1), Status = TmWorkItemStatus.Open },
         }).ToList();
 
         var filters = new[] { new GanttFilter("Status", GanttFilterOperator.Equals, "Done") };
@@ -523,8 +524,8 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var nodes = GanttHelper.BuildTree(new[]
         {
-            new GanttTask { Id = "parent", Title = "Parent", Start = DateTime.Today, End = DateTime.Today.AddDays(5), Status = GanttTaskStatus.Open },
-            new GanttTask { Id = "child",  Title = "Child",  Start = DateTime.Today, End = DateTime.Today.AddDays(1), Status = GanttTaskStatus.Done, ParentId = "parent" },
+            new TmWorkItem { Id = "parent", Title = "Parent", Start = DateTime.Today, End = DateTime.Today.AddDays(5), Status = TmWorkItemStatus.Open },
+            new TmWorkItem { Id = "child",  Title = "Child",  Start = DateTime.Today, End = DateTime.Today.AddDays(1), Status = TmWorkItemStatus.Done, ParentId = "parent" },
         }).ToList();
 
         var filters = new[] { new GanttFilter("Status", GanttFilterOperator.Equals, "Done") };
@@ -540,8 +541,8 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var nodes = GanttHelper.BuildTree(new[]
         {
-            new GanttTask { Id = "1", Title = "Deploy to prod",  Start = DateTime.Today, End = DateTime.Today.AddDays(1) },
-            new GanttTask { Id = "2", Title = "Write unit tests", Start = DateTime.Today, End = DateTime.Today.AddDays(1) },
+            new TmWorkItem { Id = "1", Title = "Deploy to prod",  Start = DateTime.Today, End = DateTime.Today.AddDays(1) },
+            new TmWorkItem { Id = "2", Title = "Write unit tests", Start = DateTime.Today, End = DateTime.Today.AddDays(1) },
         }).ToList();
 
         var filters = new[] { new GanttFilter("Title", GanttFilterOperator.Contains, "deploy") };
@@ -556,8 +557,8 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var tasks = new[]
         {
-            new GanttTask { Id = "1", Title = "A", Start = DateTime.Today, End = DateTime.Today.AddDays(1), CustomValues = { ["priority"] = "high" } },
-            new GanttTask { Id = "2", Title = "B", Start = DateTime.Today, End = DateTime.Today.AddDays(1), CustomValues = { ["priority"] = "low"  } },
+            new TmWorkItem { Id = "1", Title = "A", Start = DateTime.Today, End = DateTime.Today.AddDays(1), CustomFields = { ["priority"] = "high" } },
+            new TmWorkItem { Id = "2", Title = "B", Start = DateTime.Today, End = DateTime.Today.AddDays(1), CustomFields = { ["priority"] = "low"  } },
         };
         var nodes = GanttHelper.BuildTree(tasks).ToList();
         var filters = new[] { new GanttFilter("custom:priority", GanttFilterOperator.Equals, "high") };
@@ -573,8 +574,8 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var nodes = GanttHelper.BuildTree(new[]
         {
-            new GanttTask { Id = "1", Title = "A", Start = DateTime.Today, End = DateTime.Today.AddDays(1) },
-            new GanttTask { Id = "2", Title = "B", Start = DateTime.Today, End = DateTime.Today.AddDays(1) },
+            new TmWorkItem { Id = "1", Title = "A", Start = DateTime.Today, End = DateTime.Today.AddDays(1) },
+            new TmWorkItem { Id = "2", Title = "B", Start = DateTime.Today, End = DateTime.Today.AddDays(1) },
         }).ToList();
 
         var result = GanttHelper.ApplyFilters(nodes, Array.Empty<GanttFilter>());
@@ -587,7 +588,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var filter = new GanttFilter("Status", GanttFilterOperator.Equals, "Done");
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, Array.Empty<GanttTask>())
+            .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.Filters, new[] { filter }));
 
         cut.Instance.Filters.Should().HaveCount(1);
@@ -598,13 +599,13 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         var tasks = new[]
         {
-            new GanttTask { Id = "1", Title = "Alpha", Start = new DateTime(2024,1,1), End = new DateTime(2024,1,5), Status = GanttTaskStatus.Done },
-            new GanttTask { Id = "2", Title = "Beta",  Start = new DateTime(2024,1,1), End = new DateTime(2024,1,5), Status = GanttTaskStatus.Open },
+            new TmWorkItem { Id = "1", Title = "Alpha", Start = new DateTime(2024,1,1), End = new DateTime(2024,1,5), Status = TmWorkItemStatus.Done },
+            new TmWorkItem { Id = "2", Title = "Beta",  Start = new DateTime(2024,1,1), End = new DateTime(2024,1,5), Status = TmWorkItemStatus.Open },
         };
         var filter = new GanttFilter("Status", GanttFilterOperator.Equals, "Done");
 
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, tasks)
+            .Add(x => x.Items, tasks)
             .Add(x => x.Filters, new[] { filter }));
 
         // Only task 1 (Done) should be visible
@@ -616,7 +617,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void TmGantt_Renders_Filter_Button_In_Toolbar()
     {
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, Array.Empty<GanttTask>()));
+            .Add(x => x.Items, Array.Empty<TmWorkItem>()));
 
         cut.Find("[data-testid='gantt-filter-btn']").Should().NotBeNull();
     }
@@ -625,7 +626,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void TmGantt_Filter_Panel_Toggles_On_Filter_Button_Click()
     {
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, Array.Empty<GanttTask>()));
+            .Add(x => x.Items, Array.Empty<TmWorkItem>()));
 
         cut.Find("[data-testid='gantt-filter-btn']").Click();
         cut.Render();
@@ -638,7 +639,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         IReadOnlyList<GanttFilter>? firedFilters = null;
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(x => x.Data, Array.Empty<GanttTask>())
+            .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.OnFiltersChanged,
                 (IReadOnlyList<GanttFilter> f) => firedFilters = f));
 

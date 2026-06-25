@@ -1,0 +1,40 @@
+{
+  "itemName": "TmNotionChildrenDisplayBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionChildrenDisplayBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionChildrenDisplayBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
+  ],
+  "parameters": [
+    {
+      "name": "Content",
+      "type": "IChildrenDisplayBlockContent?",
+      "isRequired": false,
+      "description": "Owning page block used to resolve the current page when no root page is configured."
+    },
+    {
+      "name": "OnContentChanged",
+      "type": "EventCallback<ChildrenDisplayBlockContent>",
+      "isRequired": false,
+      "description": "Whether editing controls are hidden."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised after the block configuration changes."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Saved Children Display block configuration."
+    }
+  ],
+  "subcategory": "Blocks / Special"
+}

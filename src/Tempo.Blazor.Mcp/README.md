@@ -1,9 +1,12 @@
 # Tempo.Blazor.Mcp
 
 [Model Context Protocol](https://modelcontextprotocol.io/) tools that let an LLM design and read
-Tempo.Blazor **wireframes** programmatically: list the available components, build a design from a
-batch of operations, validate it against the component schema, and produce a deterministic
-implementation brief.
+Tempo.Blazor documents programmatically. The package includes tool sets for wireframes, diagrams,
+DocumentEditor/NotionEditor content, and Tempo Reporting definitions.
+
+For reporting, an agent can list stored reports, create a starter definition, apply structured
+element operations, validate the definition against the runtime schema, and render a deterministic
+PNG preview.
 
 The package ships the tool implementations and their dependencies only — it is **transport- and
 host-agnostic**. The host application owns the MCP server, the storage, and the wiring.
@@ -25,9 +28,11 @@ transport) to actually serve the tools.
 // 1. Supply the storage the tools read and write through (host-specific implementations).
 builder.Services.AddSingleton<ITempoDocumentLibraryProvider, MyDocumentLibraryProvider>();
 builder.Services.AddSingleton<IWireframeDocumentProvider, MyWireframeDocumentProvider>();
+builder.Services.AddSingleton<IReportDefinitionStore, MyReportDefinitionStore>();
+builder.Services.AddSingleton<IReportDataProvider, MyReportDataProvider>(); // optional; fallback returns one empty row
 
-// 2. Register the tools' own dependencies (the component schema registry).
-builder.Services.AddTempoWireframeMcpTools();
+// 2. Register the tools' own dependencies.
+builder.Services.AddTempoBlazorMcpTools();
 
 // 3. Map the tools onto an MCP server.
 builder.Services.AddMcpServer()
@@ -115,6 +120,25 @@ alongside `"success": true`; failures use the [result contract](#result-contract
 | `wireframe_replace_document` | Replace the whole document with provided JSON and save (also validated first). |
 | `wireframe_get_implementation_brief` | Deterministic brief: each page's regions (header/sidebar/content/footer inferred from geometry), components used with counts, and navigation flows from connectors. |
 
+### Reporting tools
+
+Reporting tools use `IReportDefinitionStore` for metadata/revisions. `AddTempoReportingMcpTools`
+also registers preview fallbacks for `IReportDataProvider`, `ITextMeasurer`, and `ReportPdfRenderer`;
+hosts should replace the data provider with their real report data source when previews need live
+data.
+
+| Tool | Purpose |
+|------|---------|
+| `list_reports` | List report definitions in a tenant/folder with optional search and paging. |
+| `get_report_definition` | Load report metadata, a revision token, and canonical definition JSON. |
+| `create_report` | Create a stored report from supplied JSON or from an AI-friendly starter definition. |
+| `update_report_elements` | Apply ordered JSON operations (`setName`, `setDescription`, `setPageSetup`, `setBandHeight`, `clearBand`, `addElement`, `updateElement`, `replaceElement`, `removeElement`) and save a new revision. |
+| `validate_report` | Validate a report definition and optionally return the prompt schema for all element types. |
+| `render_report_preview` | Render a stored report or supplied definition JSON to a PNG preview (`contentType`, `base64`, page dimensions, page count). |
+
+The prompt schema documents every runtime report element discriminator: `textBox`, `image`,
+`shape`, `line`, `table`, `chart`, and `subReport`.
+
 ### Operations (`wireframe_apply_operations`)
 
 `operationsJson` is a JSON array; each item carries an `op` discriminator:
@@ -142,6 +166,16 @@ A typical design session:
 For concurrent edits, pass the `modifiedAt` from step 4 as `expectedModifiedAt` on the next write
 and handle a `conflict` result by re-reading.
 
+### Reporting flow for an LLM
+
+1. **Discover** — `list_reports` to find existing definitions, or start with `create_report`.
+2. **Build** — `update_report_elements` with a compact operation array using element payloads with
+   the report JSON discriminator `type`.
+3. **Verify** — `get_report_definition` and `validate_report` (`includeSchema=true` when the agent
+   needs the element contract).
+4. **Preview** — `render_report_preview` and inspect the returned PNG bytes before handing the
+   definition to a user.
+
 ## Result contract
 
 ```jsonc
@@ -158,8 +192,6 @@ Error codes: `not_found`, `validation_failed`, `conflict`, `error`. Build these 
 
 ## Extending to other document kinds
 
-The package is laid out by area (`Wireframe/…`) so diagram and spreadsheet tool sets can be added
-under their own namespaces against the same `ITempoDocumentLibraryProvider` and a kind-specific
-payload provider. Only wireframe tools ship today.
-</content>
-</invoke>
+The package is laid out by area (`Wireframe/…`, `Diagram/…`, `DocumentEditor/…`, `Notion/…`,
+`Reporting/…`) so new document kinds can be added under their own namespaces against either the
+shared document-library abstractions or a domain-specific store.

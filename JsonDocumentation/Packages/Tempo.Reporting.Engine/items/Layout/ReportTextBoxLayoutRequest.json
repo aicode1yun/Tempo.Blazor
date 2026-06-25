@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Text box layout request.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/TextBoxLayout.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportTextBoxLayoutRequest"
+}

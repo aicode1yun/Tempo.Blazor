@@ -10,7 +10,7 @@ namespace Tempo.Blazor.Tests.Components.Scheduler;
 
 public class TmGanttPanTests : LocalizationTestBase
 {
-    private static IReadOnlyList<GanttTask> GetSampleTasks() => new List<GanttTask>
+    private static IReadOnlyList<TmWorkItem> GetSampleTasks() => new List<TmWorkItem>
     {
         new() { Id = "1", Title = "Project", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 30), PercentComplete = 0 },
         new() { Id = "2", Title = "Design", ParentId = "1", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10), PercentComplete = 100 },
@@ -25,7 +25,7 @@ public class TmGanttPanTests : LocalizationTestBase
     public void TmGantt_Pan_Dragging_Moves_Scroll()
     {
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, GetSampleTasks()));
+            .Add(c => c.Items, GetSampleTasks()));
 
         var timeline = cut.Find(".tm-gantt__timeline");
 
@@ -57,9 +57,9 @@ public class TmGanttPanTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Pan_ClickOnBar_DoesNotPan()
     {
-        GanttTask? selected = null;
+        TmWorkItem? selected = null;
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, GetSampleTasks())
+            .Add(c => c.Items, GetSampleTasks())
             .Add(c => c.OnTaskSelected, t => selected = t));
 
         var bar = cut.Find(".tm-gantt__bar");
@@ -83,7 +83,7 @@ public class TmGanttPanTests : LocalizationTestBase
     public void TmGantt_Pan_Adds_Panning_Class()
     {
         var cut = RenderComponent<TmGantt>(p => p
-            .Add(c => c.Data, GetSampleTasks()));
+            .Add(c => c.Items, GetSampleTasks()));
 
         var timeline = cut.Find(".tm-gantt__timeline");
 

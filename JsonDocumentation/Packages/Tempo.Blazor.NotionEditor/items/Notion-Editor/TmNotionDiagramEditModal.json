@@ -1,0 +1,32 @@
+{
+  "itemName": "TmNotionDiagramEditModal",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionDiagramEditModal Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/TempoBlocks/TmNotionDiagramEditModal.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks"
+  ],
+  "parameters": [
+    {
+      "name": "DiagramDocumentId",
+      "type": "Guid",
+      "isRequired": true,
+      "editorRequired": true
+    },
+    {
+      "name": "ExportService",
+      "type": "IDiagramExportService?",
+      "isRequired": false
+    },
+    {
+      "name": "Provider",
+      "type": "IDiagramDocumentProvider?",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "Blocks / Tempo Blocks"
+}

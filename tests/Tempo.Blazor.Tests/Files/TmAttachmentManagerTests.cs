@@ -1,27 +1,13 @@
 using Bunit;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Files;
-using Tempo.Blazor.Interfaces;
-using Tempo.Blazor.Models;
 using Tempo.Blazor.Tests.Localization;
 
 namespace Tempo.Blazor.Tests.Files;
 
 public class TmAttachmentManagerTests : LocalizationTestBase
 {
-    private record TestAttachment(
-        string Id,
-        string FileName,
-        string ContentType    = "application/pdf",
-        long   FileSizeBytes  = 1024,
-        bool   CanDelete      = true,
-        bool   IsImage        = false) : IFileAttachment
-    {
-        public DateTimeOffset UploadedAt     { get; } = DateTimeOffset.Now;
-        public string?        UploadedByName => "Test User";
-    }
-
     [Fact]
     public void AttachmentManager_WithoutProvider_ShowsDropZoneOnly()
     {
@@ -36,10 +22,11 @@ public class TmAttachmentManagerTests : LocalizationTestBase
     {
         var provider = new FakeAttachmentProvider(new[]
         {
-            new TestAttachment("1", "report.pdf"),
+            Attachment("1", "report.pdf"),
         });
         var cut = RenderComponent<TmAttachmentManager>(p => p
-            .Add(c => c.Provider, provider)
+            .Add(c => c.AttachmentProvider, provider)
+            .Add(c => c.FileProvider, provider)
             .Add(c => c.EntityId, "entity-123"));
 
         cut.FindAll(".tm-attachment-item").Should().HaveCount(1);
@@ -50,11 +37,12 @@ public class TmAttachmentManagerTests : LocalizationTestBase
     {
         var provider = new FakeAttachmentProvider(new[]
         {
-            new TestAttachment("1", "document.pdf"),
-            new TestAttachment("2", "photo.jpg", "image/jpeg", IsImage: true),
+            Attachment("1", "document.pdf"),
+            Attachment("2", "photo.jpg", "image/jpeg"),
         });
         var cut = RenderComponent<TmAttachmentManager>(p => p
-            .Add(c => c.Provider, provider)
+            .Add(c => c.AttachmentProvider, provider)
+            .Add(c => c.FileProvider, provider)
             .Add(c => c.EntityId, "e1"));
 
         var items = cut.FindAll(".tm-attachment-item");
@@ -68,7 +56,8 @@ public class TmAttachmentManagerTests : LocalizationTestBase
     {
         var provider = new FakeAttachmentProvider([]);
         var cut = RenderComponent<TmAttachmentManager>(p => p
-            .Add(c => c.Provider, provider)
+            .Add(c => c.AttachmentProvider, provider)
+            .Add(c => c.FileProvider, provider)
             .Add(c => c.EntityId, "entity-1"));
 
         await cut.InvokeAsync(() => { });  // ensure async init completes
@@ -77,18 +66,72 @@ public class TmAttachmentManagerTests : LocalizationTestBase
         cut.FindAll(".tm-file-drop-zone").Should().NotBeEmpty();
     }
 
-    private sealed class FakeAttachmentProvider(IReadOnlyList<IFileAttachment> attachments) : IFileAttachmentProvider
+    private static TmAttachment Attachment(
+        string id,
+        string fileName,
+        string contentType = "application/pdf")
+        => new()
+        {
+            Id = id,
+            AssetId = id,
+            EntityRef = TmEntityRef.Create("attachment-manager-entity", "entity-123"),
+            FileName = fileName,
+            ContentType = contentType,
+            SizeBytes = 1024,
+            UploadedAt = DateTimeOffset.Now,
+            UploadedBy = new TmUserRef { Id = "test-user", DisplayName = "Test User" },
+            CanDelete = true,
+            CanDownload = true
+        };
+
+    private sealed class FakeAttachmentProvider(IReadOnlyList<TmAttachment> attachments) : ITmAttachmentProvider, ITmFileProvider
     {
-        public Task<IReadOnlyList<IFileAttachment>> GetAttachmentsAsync(string entityId, CancellationToken ct = default)
+        TmAttachmentProviderCapabilities ITmAttachmentProvider.Capabilities
+            => TmAttachmentProviderCapabilities.Read | TmAttachmentProviderCapabilities.Add | TmAttachmentProviderCapabilities.Remove;
+
+        TmAttachmentProviderCapabilities ITmCapabilityProvider<TmAttachmentProviderCapabilities>.Capabilities
+            => TmAttachmentProviderCapabilities.Read | TmAttachmentProviderCapabilities.Add | TmAttachmentProviderCapabilities.Remove;
+
+        TmFileProviderCapabilities ITmFileProvider.Capabilities
+            => TmFileProviderCapabilities.Upload | TmFileProviderCapabilities.Resolve | TmFileProviderCapabilities.Delete;
+
+        TmFileProviderCapabilities ITmCapabilityProvider<TmFileProviderCapabilities>.Capabilities
+            => TmFileProviderCapabilities.Upload | TmFileProviderCapabilities.Resolve | TmFileProviderCapabilities.Delete;
+
+        public Task<IReadOnlyList<TmAttachment>> GetForEntityAsync(TmEntityRef entityRef, CancellationToken cancellationToken = default)
             => Task.FromResult(attachments);
 
-        public Task<string> GetDownloadUrlAsync(string attachmentId, CancellationToken ct = default)
-            => Task.FromResult($"https://files.example.com/{attachmentId}");
+        public Task<TmAttachment> AddAsync(TmAttachment attachment, CancellationToken cancellationToken = default)
+            => Task.FromResult(attachment);
 
-        public Task DeleteAttachmentAsync(string attachmentId, CancellationToken ct = default)
+        public Task RemoveAsync(TmEntityRef entityRef, string attachmentId, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 
-        public Task<string?> UploadChunkAsync(FileChunkData chunk, CancellationToken ct = default)
-            => Task.FromResult<string?>(Guid.NewGuid().ToString());
+        public Task<TmFileUploadResult> UploadAsync(
+            TmFileUploadRequest request,
+            Stream content,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(new TmFileUploadResult
+            {
+                Success = true,
+                IsComplete = true,
+                AssetId = Guid.NewGuid().ToString("N"),
+                FileName = request.FileName,
+                ContentType = request.ContentType,
+                SizeBytes = request.SizeBytes
+            });
+
+        public Task<TmFileResolveResult> ResolveAsync(
+            TmFileResolveRequest request,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(new TmFileResolveResult
+            {
+                Success = true,
+                AssetId = request.AssetId,
+                Url = $"https://files.example.com/{request.AssetId}"
+            });
+
+        public Task DeleteAsync(string assetId, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 }

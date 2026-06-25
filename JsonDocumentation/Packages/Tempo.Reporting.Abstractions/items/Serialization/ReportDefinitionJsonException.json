@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Serialization",
+  "namespace": "Tempo.Reporting.Abstractions.Serialization",
+  "description": "Exception thrown when report definition JSON cannot be parsed or migrated.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Serialization/ReportDefinitionJsonException.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDefinitionJsonException"
+}

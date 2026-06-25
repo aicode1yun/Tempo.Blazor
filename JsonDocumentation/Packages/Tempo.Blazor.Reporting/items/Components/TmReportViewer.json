@@ -1,0 +1,33 @@
+{
+  "itemName": "TmReportViewer",
+  "kind": "Component",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Reporting.Components",
+  "description": "Interactive Blazor report viewer with toolbar navigation, zoom modes, parameter panel integration, refresh, PDF/CSV/XLSX export callbacks, loading/empty/error states, and canvas snapshot rendering.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Components/TmReportViewer.razor",
+  "documentationStatus": "manual",
+  "requiredImports": [
+    "@using Tempo.Blazor.Reporting.Components",
+    "@using Tempo.Blazor.Reporting.Models",
+    "@using Tempo.Blazor.Reporting.Services"
+  ],
+  "examples": [
+    {
+      "title": "Embedded report",
+      "code": "<TmReportViewer ReportSource=\"@new EmbeddedReportSource(definition, dataProvider)\" Height=\"760px\" />"
+    },
+    {
+      "title": "Remote report",
+      "code": "<TmReportViewer ReportSource=\"@new RemoteReportSource(Http, reportId)\" TenantId=\"tenant-a\" UserId=\"user-1\" />"
+    }
+  ],
+  "relatedTypes": [
+    "IReportSource",
+    "EmbeddedReportSource",
+    "RemoteReportSource",
+    "ReportViewerMetadata",
+    "ReportViewerRenderResult",
+    "ReportViewerExportResult"
+  ]
+}

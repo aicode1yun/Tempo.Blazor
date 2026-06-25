@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ExpressionLexer_UnexpectedCharacter" xml:space="preserve">
+    <value>Unexpected character '{0}' in expression.</value>
+  </data>
+  <data name="ExpressionLexer_UnterminatedString" xml:space="preserve">
+    <value>The string literal is not terminated.</value>
+  </data>
+  <data name="ExpressionParser_ExpectedToken" xml:space="preserve">
+    <value>Expected token {0}.</value>
+  </data>
+  <data name="ExpressionParser_UnexpectedToken" xml:space="preserve">
+    <value>Unexpected token '{0}'.</value>
+  </data>
+  <data name="ExpressionParser_AggregateNotAllowed" xml:space="preserve">
+    <value>Aggregate function '{0}' is not allowed in this expression location.</value>
+  </data>
+  <data name="ExpressionParser_ExpressionTooLong" xml:space="preserve">
+    <value>The expression exceeds the maximum length of {0} characters.</value>
+  </data>
+  <data name="ExpressionParser_ExpressionTooDeep" xml:space="preserve">
+    <value>The expression exceeds the maximum depth of {0}.</value>
+  </data>
+  <data name="ExpressionEvaluator_UnknownRoot" xml:space="preserve">
+    <value>Unknown expression root '{0}'.</value>
+  </data>
+  <data name="ExpressionEvaluator_UnknownMember" xml:space="preserve">
+    <value>Unknown expression member '{0}'.</value>
+  </data>
+  <data name="ExpressionEvaluator_UnknownFunction" xml:space="preserve">
+    <value>Unknown expression function '{0}'.</value>
+  </data>
+  <data name="ExpressionEvaluator_InvalidArgumentCount" xml:space="preserve">
+    <value>Invalid argument count for function '{0}'.</value>
+  </data>
+  <data name="ExpressionEvaluator_Timeout" xml:space="preserve">
+    <value>Expression evaluation was stopped because the safety budget was exceeded.</value>
+  </data>
+  <data name="ExpressionEvaluator_AggregateRequiresProcessing" xml:space="preserve">
+    <value>Aggregate expressions are evaluated by the processing phase.</value>
+  </data>
+  <data name="ExpressionEvaluator_UnsupportedNode" xml:space="preserve">
+    <value>The expression contains an unsupported AST node.</value>
+  </data>
+  <data name="ExpressionEvaluator_UnsupportedOperator" xml:space="preserve">
+    <value>The expression contains an unsupported operator.</value>
+  </data>
+</root>

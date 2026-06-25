@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Absolute placement of a processed band on a composed page.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/BandPageComposition.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportBandPlacement"
+}

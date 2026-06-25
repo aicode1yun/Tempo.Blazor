@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Rich text run consumed by the report text layout engine.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/RichTextLayout.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportRichTextRun"
+}

@@ -1,0 +1,35 @@
+{
+  "kind": "Class",
+  "category": "Serialization",
+  "namespace": "Tempo.Reporting.Abstractions.Serialization",
+  "description": "Registry that applies report definition JSON migrations in schema-version order.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Serialization/ReportDefinitionMigrationRegistry.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Migrate",
+      "kind": "Method",
+      "type": "JsonObject",
+      "description": "Migrates a definition JSON object to the requested schema version.",
+      "parameters": [
+        {
+          "name": "definition",
+          "type": "JsonObject"
+        },
+        {
+          "name": "targetSchemaVersion",
+          "type": "int",
+          "default": "ReportDefinition.CurrentSchemaVersion"
+        }
+      ]
+    },
+    {
+      "name": "Empty",
+      "kind": "Property",
+      "type": "static ReportDefinitionMigrationRegistry",
+      "description": "Empty migration registry. Current-version JSON passes through unchanged."
+    }
+  ],
+  "itemName": "ReportDefinitionMigrationRegistry"
+}

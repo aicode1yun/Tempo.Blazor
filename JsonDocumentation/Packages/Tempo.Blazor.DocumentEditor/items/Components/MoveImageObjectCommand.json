@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Commands",
+  "description": "Moves a positioned image object while preserving its anchor, wrap, transform, and stacking metadata.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Commands/MoveImageObjectCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ExecuteAsync",
+      "kind": "Method",
+      "type": "Task"
+    },
+    {
+      "name": "UndoAsync",
+      "kind": "Method",
+      "type": "Task"
+    },
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "MoveImageObjectCommand"
+}

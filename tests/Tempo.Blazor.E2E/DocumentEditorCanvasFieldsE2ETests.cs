@@ -206,7 +206,7 @@ public sealed class DocumentEditorCanvasFieldsE2ETests : WasmTestBase
                     return '';
                 }
 
-                const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(interop.getModelJson(handle) || '{}');
                 const blocks = Array.isArray(model?.body?.blocks) ? model.body.blocks : [];
                 const block = blocks.find(candidate => String(candidate?.id || '') === String(blockId || ''));
@@ -317,7 +317,7 @@ public sealed class DocumentEditorCanvasFieldsE2ETests : WasmTestBase
                     async ({ commandId, json }) => {
                         const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                         const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                        const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                        const interop = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                         const raw = interop.execCommand(handle, commandId, json);
                         const parsed = JSON.parse(raw || '{}');
                         return {

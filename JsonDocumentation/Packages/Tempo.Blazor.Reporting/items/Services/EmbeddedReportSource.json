@@ -1,0 +1,17 @@
+{
+  "itemName": "EmbeddedReportSource",
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Reporting.Services",
+  "description": "IReportSource implementation that runs a ReportDefinition directly in the current Blazor host using IReportDataProvider, Tempo.Reporting.Engine processing/layout, and local PDF/CSV/XLSX exporters.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Services/EmbeddedReportSource.cs",
+  "documentationStatus": "manual",
+  "relatedTypes": [
+    "IReportSource",
+    "ReportDefinition",
+    "IReportDataProvider",
+    "ReportSnapshotGenerator",
+    "ReportPdfRenderer"
+  ]
+}

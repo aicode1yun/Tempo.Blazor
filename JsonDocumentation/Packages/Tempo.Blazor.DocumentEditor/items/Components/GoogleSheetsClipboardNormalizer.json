@@ -1,0 +1,34 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard.Normalizers",
+  "description": "Public class defined by Tempo.Blazor.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Clipboard/Normalizers/GoogleSheetsClipboardNormalizer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CanHandle",
+      "kind": "Method",
+      "type": "bool",
+      "parameters": [
+        {
+          "name": "input",
+          "type": "DocumentClipboardInput"
+        }
+      ]
+    },
+    {
+      "name": "Normalize",
+      "kind": "Method",
+      "type": "DocumentClipboardOutput",
+      "parameters": [
+        {
+          "name": "input",
+          "type": "DocumentClipboardInput"
+        }
+      ]
+    }
+  ],
+  "itemName": "GoogleSheetsClipboardNormalizer"
+}

@@ -3,8 +3,8 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.UI;
-using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Helpers;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -20,26 +20,25 @@ public sealed class TmNotionWatchNotificationsTests : LocalizationTestBase
 
     public TmNotionWatchNotificationsTests()
     {
-        Services.AddSingleton<INotificationService>(_notifications);
-        Services.AddSingleton<INotificationBadgeState>(_notifications);
+        Services.AddSingleton<ITmNotificationService>(_notifications);
         Services.AddSingleton<NavigationManager>(new FakeNavManager());
     }
 
     [Fact]
-    public void NotificationType_AppendsPageTypes_WithoutChangingExistingValues()
+    public void TmNotificationTypes_ExposePageTypeKeys()
     {
-        ((int)NotificationType.Mention).Should().Be(0);
-        ((int)NotificationType.Reply).Should().Be(1);
-        ((int)NotificationType.Reaction).Should().Be(2);
-        ((int)NotificationType.ThreadResolved).Should().Be(3);
-        ((int)NotificationType.NewThread).Should().Be(4);
-        ((int)NotificationType.PageEdited).Should().Be(5);
-        ((int)NotificationType.PageCommentAdded).Should().Be(6);
-        ((int)NotificationType.TaskAssigned).Should().Be(7);
-        ((int)NotificationType.PageShared).Should().Be(8);
+        TmNotificationTypes.Mention.Should().Be("mention");
+        TmNotificationTypes.Reply.Should().Be("reply");
+        TmNotificationTypes.Reaction.Should().Be("reaction");
+        TmNotificationTypes.ThreadResolved.Should().Be("thread-resolved");
+        TmNotificationTypes.NewThread.Should().Be("new-thread");
+        TmNotificationTypes.PageEdited.Should().Be("page-edited");
+        TmNotificationTypes.PageCommentAdded.Should().Be("page-comment-added");
+        TmNotificationTypes.TaskAssigned.Should().Be("task-assigned");
+        TmNotificationTypes.PageShared.Should().Be("page-shared");
 
-        var json = JsonSerializer.Serialize(NotificationType.PageEdited);
-        JsonSerializer.Deserialize<NotificationType>(json).Should().Be(NotificationType.PageEdited);
+        var json = JsonSerializer.Serialize(TmNotificationTypes.PageEdited);
+        JsonSerializer.Deserialize<string>(json).Should().Be(TmNotificationTypes.PageEdited);
     }
 
     [Fact]
@@ -51,11 +50,11 @@ public sealed class TmNotionWatchNotificationsTests : LocalizationTestBase
 
         await orchestrator.OnPageEditedAsync(_watchProvider, "page-1", "Launch Plan", "alice", "Alice");
 
-        (await _notifications.GetNotificationsAsync("alice")).Should().BeEmpty();
-        var bob = await _notifications.GetNotificationsAsync("bob");
+        (await GetNotificationsAsync("alice")).Should().BeEmpty();
+        var bob = await GetNotificationsAsync("bob");
         bob.Should().ContainSingle();
-        bob[0].Event.Type.Should().Be(NotificationType.PageEdited);
-        bob[0].Event.DeepLink.Should().Contain("page-1");
+        bob[0].Type.Should().Be(TmNotificationTypes.PageEdited);
+        bob[0].ActionUrl.Should().Contain("page-1");
     }
 
     [Fact]
@@ -79,14 +78,13 @@ public sealed class TmNotionWatchNotificationsTests : LocalizationTestBase
     [Fact]
     public void NotificationCenter_ShowsBadge_MarksAllRead_AndNavigates()
     {
-        _notifications.NotifyAsync(new NotificationEvent
+        _notifications.PublishAsync(new TmNotification
         {
-            Type = NotificationType.PageEdited,
+            Type = TmNotificationTypes.PageEdited,
             RecipientUserId = "alice",
-            SenderUserId = "bob",
-            SenderName = "Bob",
-            Message = "Bob edited Launch Plan",
-            DeepLink = "/notion-editor?page=page-1"
+            Actor = new TmUserRef { Id = "bob", DisplayName = "Bob" },
+            Title = "Bob edited Launch Plan",
+            ActionUrl = "/notion-editor?page=page-1"
         }).Wait();
 
         var nav = (FakeNavManager)Services.GetRequiredService<NavigationManager>();
@@ -102,6 +100,9 @@ public sealed class TmNotionWatchNotificationsTests : LocalizationTestBase
         nav.Uri.Should().Contain("/notion-editor?page=page-1");
         _notifications.GetUnreadCountAsync("alice").Result.Should().Be(0);
     }
+
+    private Task<IReadOnlyList<TmNotification>> GetNotificationsAsync(string recipient)
+        => _notifications.GetNotificationsAsync(new TmNotificationQuery { RecipientUserId = recipient });
 
     private sealed class TestWatchProvider : INotionWatchProvider
     {

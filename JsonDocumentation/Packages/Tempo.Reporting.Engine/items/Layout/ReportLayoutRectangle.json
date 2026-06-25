@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Simple rectangle used by layout results.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/RichTextLayout.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportLayoutRectangle"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Helpers for working with provider capability flags.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmProviderCapabilityExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmProviderCapabilityExtensions"
+}

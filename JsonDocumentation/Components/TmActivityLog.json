@@ -20,19 +20,24 @@
     },
     {
       "name": "Comments",
-      "type": "IReadOnlyList<ICommentEntry>",
+      "type": "IReadOnlyList<TmCommentEntry>",
       "isRequired": false,
       "default": "[]"
     },
     {
       "name": "Attachments",
-      "type": "IReadOnlyList<IFileAttachment>",
+      "type": "IReadOnlyList<TmAttachment>",
       "isRequired": false,
       "default": "[]"
     },
     {
       "name": "AttachmentProvider",
-      "type": "IFileAttachmentProvider?",
+      "type": "ITmAttachmentProvider?",
+      "isRequired": false
+    },
+    {
+      "name": "FileProvider",
+      "type": "ITmFileProvider?",
       "isRequired": false
     },
     {
@@ -75,7 +80,7 @@
   "examples": [
     {
       "title": "Full activity log with all tabs",
-      "code": "<TmActivityLog EntityId=\"@entityId\"\n               TimelineEntries=\"@timelineEntries\"\n               Comments=\"@comments\"\n               Attachments=\"@attachments\"\n               AttachmentProvider=\"@attachmentProvider\"\n               OnCommentAdded=\"HandleCommentAdded\"\n               OnCommentDeleted=\"HandleCommentDeleted\" />"
+      "code": "<TmActivityLog EntityId=\"@entityId\"\n               TimelineEntries=\"@timelineEntries\"\n               Comments=\"@comments\"\n               Attachments=\"@attachments\"\n               AttachmentProvider=\"@attachmentProvider\"\n               FileProvider=\"@fileProvider\"\n               OnCommentAdded=\"HandleCommentAdded\"\n               OnCommentDeleted=\"HandleCommentDeleted\" />"
     },
     {
       "title": "Comments and attachments only",

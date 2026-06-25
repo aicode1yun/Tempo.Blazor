@@ -1,0 +1,34 @@
+{
+  "itemName": "TmNotionTemplateGallery",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionTemplateGallery Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionTemplateGallery.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "OnClosed",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when a template is selected."
+    },
+    {
+      "name": "OnTemplateSelected",
+      "type": "EventCallback<NotionTemplateDto>",
+      "isRequired": false,
+      "description": "Optional provider that supplies workspace page templates."
+    },
+    {
+      "name": "TemplateProvider",
+      "type": "INotionTemplateProvider?",
+      "isRequired": false,
+      "description": "Controls whether the template gallery dialog is rendered."
+    }
+  ],
+  "subcategory": "UI"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "description": "Payload emitted by the document comment composer when text is submitted.",
+  "packageId": "Tempo.Blazor.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/DocumentCommentComposerSubmitEventArgs.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentCommentComposerSubmitEventArgs"
+}

@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Xlsx",
+  "description": "Exports a to an XLSX file.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Xlsx/XlsxExporter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Export",
+      "kind": "Method",
+      "type": "byte[]",
+      "description": "Exports the given workbook to a byte array representing an XLSX file.",
+      "parameters": [
+        {
+          "name": "workbook",
+          "type": "SpreadsheetWorkbook"
+        }
+      ]
+    }
+  ],
+  "itemName": "XlsxExporter"
+}

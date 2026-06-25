@@ -1,0 +1,174 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.Abstractions.WorkItems
+
+<section class="tm-my-tasks @Class" aria-label="@Loc["Notion_Tasks_Title"]">
+    <header class="tm-my-tasks__header">
+        <div class="tm-my-tasks__title-wrap">
+            <h2 class="tm-my-tasks__title">@Loc["Notion_Tasks_Title"]</h2>
+            <span class="tm-my-tasks__count" aria-live="polite">@Loc["Notion_Tasks_Count", _visibleTasks.Count]</span>
+        </div>
+
+        <button type="button"
+                class="tm-my-tasks__icon-btn"
+                title="@Loc["Tm_Close"]"
+                aria-label="@Loc["Tm_Close"]"
+                @onclick="() => OnClosed.InvokeAsync()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+        </button>
+    </header>
+
+    <div class="tm-my-tasks__filters" aria-label="@Loc["Notion_Tasks_Filters"]">
+        <div class="tm-my-tasks__segment" role="group" aria-label="@Loc["Notion_Tasks_Filter_Assignee"]">
+            <button type="button"
+                    class="@FilterClass(_scope == TaskScope.Mine)"
+                    disabled="@string.IsNullOrWhiteSpace(CurrentUserId)"
+                    aria-pressed="@(_scope == TaskScope.Mine)"
+                    @onclick="() => SetScopeAsync(TaskScope.Mine)">
+                @Loc["Notion_Tasks_Filter_My"]
+            </button>
+            <button type="button"
+                    class="@FilterClass(_scope == TaskScope.All)"
+                    aria-pressed="@(_scope == TaskScope.All)"
+                    @onclick="() => SetScopeAsync(TaskScope.All)">
+                @Loc["Notion_Tasks_Filter_All"]
+            </button>
+        </div>
+
+        <div class="tm-my-tasks__segment" role="group" aria-label="@Loc["Notion_Tasks_Filter_Status"]">
+            <button type="button"
+                    class="@FilterClass(_status == TaskStatusFilter.Open)"
+                    aria-pressed="@(_status == TaskStatusFilter.Open)"
+                    @onclick="() => SetStatusAsync(TaskStatusFilter.Open)">
+                @Loc["Notion_Tasks_Filter_Open"]
+            </button>
+            <button type="button"
+                    class="@FilterClass(_status == TaskStatusFilter.Completed)"
+                    aria-pressed="@(_status == TaskStatusFilter.Completed)"
+                    @onclick="() => SetStatusAsync(TaskStatusFilter.Completed)">
+                @Loc["Notion_Tasks_Filter_Completed"]
+            </button>
+            <button type="button"
+                    class="@FilterClass(_status == TaskStatusFilter.All)"
+                    aria-pressed="@(_status == TaskStatusFilter.All)"
+                    @onclick="() => SetStatusAsync(TaskStatusFilter.All)">
+                @Loc["Notion_Tasks_Filter_AllStatuses"]
+            </button>
+        </div>
+
+        <div class="tm-my-tasks__segment" role="group" aria-label="@Loc["Notion_Tasks_Filter_Due"]">
+            <button type="button"
+                    class="@FilterClass(_due == TaskDueFilter.All)"
+                    aria-pressed="@(_due == TaskDueFilter.All)"
+                    @onclick="() => SetDueAsync(TaskDueFilter.All)">
+                @Loc["Notion_Tasks_Filter_DueAll"]
+            </button>
+            <button type="button"
+                    class="@FilterClass(_due == TaskDueFilter.Overdue)"
+                    aria-pressed="@(_due == TaskDueFilter.Overdue)"
+                    @onclick="() => SetDueAsync(TaskDueFilter.Overdue)">
+                @Loc["Notion_Tasks_Filter_Overdue"]
+            </button>
+            <button type="button"
+                    class="@FilterClass(_due == TaskDueFilter.Upcoming)"
+                    aria-pressed="@(_due == TaskDueFilter.Upcoming)"
+                    @onclick="() => SetDueAsync(TaskDueFilter.Upcoming)">
+                @Loc["Notion_Tasks_Filter_Upcoming"]
+            </button>
+        </div>
+
+        <div class="tm-my-tasks__segment" role="group" aria-label="@Loc["Notion_Tasks_GroupBy"]">
+            <button type="button"
+                    class="@FilterClass(_groupBy == TaskGroupBy.DueDate)"
+                    aria-pressed="@(_groupBy == TaskGroupBy.DueDate)"
+                    @onclick="() => SetGroupBy(TaskGroupBy.DueDate)">
+                @Loc["Notion_Tasks_GroupBy_DueDate"]
+            </button>
+            <button type="button"
+                    class="@FilterClass(_groupBy == TaskGroupBy.Page)"
+                    aria-pressed="@(_groupBy == TaskGroupBy.Page)"
+                    @onclick="() => SetGroupBy(TaskGroupBy.Page)">
+                @Loc["Notion_Tasks_GroupBy_Page"]
+            </button>
+        </div>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="tm-my-tasks__state" role="status" aria-busy="true">
+            <span class="tm-my-tasks__spinner" aria-hidden="true"></span>
+            <span>@Loc["Tm_Loading"]</span>
+        </div>
+    }
+    else if (_loadError is not null)
+    {
+        <div class="tm-my-tasks__state tm-my-tasks__state--error" role="alert">
+            <span>@Loc["Notion_Tasks_LoadError"]</span>
+            <button type="button" class="tm-my-tasks__retry" @onclick="LoadTasksAsync">@Loc["Tm_Retry"]</button>
+        </div>
+    }
+    else if (_visibleTasks.Count == 0)
+    {
+        <div class="tm-my-tasks__empty" role="status">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                <rect x="6" y="7" width="20" height="18" rx="4" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M11 14l3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 22h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>@Loc["Notion_Tasks_Empty"]</span>
+        </div>
+    }
+    else
+    {
+        <div class="tm-my-tasks__groups">
+            @foreach (var group in _groups)
+            {
+                <section class="tm-my-tasks__group" data-group-key="@group.Key">
+                    <h3 class="tm-my-tasks__group-title">
+                        <span>@group.Title</span>
+                        <span class="tm-my-tasks__group-count">@group.Tasks.Count</span>
+                    </h3>
+
+                    <div class="tm-my-tasks__list">
+                        @foreach (var task in group.Tasks)
+                        {
+                            <article class="@TaskClass(task)" data-task-id="@task.Id">
+                                <button type="button"
+                                        class="tm-my-tasks__check"
+                                        aria-label="@Loc["Notion_Tasks_ToggleComplete"]"
+                                        aria-pressed="@task.IsCompleted"
+                                        @onclick="() => ToggleTaskAsync(task)">
+                                    @if (task.IsCompleted)
+                                    {
+                                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                                            <path d="M3 7l2.5 2.5L11 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    }
+                                </button>
+
+                                <button type="button"
+                                        class="tm-my-tasks__body"
+                                        @onclick="() => NavigateAsync(task)">
+                                    <span class="tm-my-tasks__text">@task.Title</span>
+                                    <span class="tm-my-tasks__meta">
+                                        <span class="tm-my-tasks__page">@PageTitle(task)</span>
+                                        @{ var assigneeName = AssigneeName(task); }
+                                        @if (!string.IsNullOrWhiteSpace(assigneeName))
+                                        {
+                                            <span class="tm-my-tasks__assignee">@assigneeName</span>
+                                        }
+                                        @if (task.DueDate is not null)
+                                        {
+                                            <span class="@DueClass(task)">@FormatDueDate(task.DueDate.Value)</span>
+                                        }
+                                    </span>
+                                </button>
+                            </article>
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+    }
+</section>

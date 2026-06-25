@@ -1,4 +1,5 @@
 @page "/activity"
+@using Tempo.Blazor.Abstractions.Shared
 <PageTitle>Activity – Tempo.Blazor</PageTitle>
 
 <!-- Page Header -->
@@ -39,6 +40,7 @@
                        Comments="@_comments"
                        Attachments="@_attachments"
                        AttachmentProvider="@_attachmentProvider"
+                       FileProvider="@_fileProvider"
                        OnCommentAdded="@AddComment"
                        OnCommentDeleted="@DeleteComment" />
     </div>
@@ -142,22 +144,25 @@
     private string _simpleEditorValue = string.Empty;
     private string _fullEditorValue = string.Empty;
     private string? _loadError;
-    private IMentionDataProvider? _mentionProvider;
+    private ITmPeopleProvider? _mentionProvider;
 
     private IReadOnlyList<ITimelineEntry> _timelineEntries = [];
-    private IReadOnlyList<ICommentEntry> _comments = [];
-    private IReadOnlyList<IFileAttachment> _attachments = [];
-    private IFileAttachmentProvider _attachmentProvider = default!;
+    private IReadOnlyList<TmCommentEntry> _comments = [];
+    private IReadOnlyList<TmAttachment> _attachments = [];
+    private ITmAttachmentProvider _attachmentProvider = default!;
+    private ITmFileProvider _fileProvider = default!;
 
     protected override async Task OnInitializedAsync()
     {
         _attachmentProvider = AttachmentProvider;
+        _fileProvider = AttachmentProvider;
         _mentionProvider = new DemoMentionProvider();
         try
         {
             _timelineEntries = await ActivityService.GetTimelineAsync(EntityId);
             _comments = await ActivityService.GetCommentsAsync(EntityId);
-            _attachments = await AttachmentProvider.GetAttachmentsAsync(EntityId);
+            _attachments = await _attachmentProvider.GetForEntityAsync(
+                TmEntityRef.Create("activity-entity", EntityId));
         }
         catch (HttpRequestException)
         {

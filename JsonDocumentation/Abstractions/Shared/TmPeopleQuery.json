@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Query options for resolving users from an ITmPeopleProvider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmPeopleQuery.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "SearchText",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Free-text search matched against display name, username, or e-mail."
+    },
+    {
+      "name": "Ids",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>",
+      "description": "Specific user ids to resolve."
+    },
+    {
+      "name": "IncludeVirtual",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Includes virtual users/resources when true."
+    },
+    {
+      "name": "Take",
+      "kind": "Property",
+      "type": "int",
+      "description": "Maximum number of users to return."
+    }
+  ],
+  "itemName": "TmPeopleQuery"
+}

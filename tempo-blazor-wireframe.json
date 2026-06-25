@@ -1,0 +1,2506 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.Wireframe",
+    "title": "Tempo.Blazor.Wireframe",
+    "description": "Wireframe editor components for Tempo.Blazor with toolbox, schema registry, canvas interop, page tabs, minimap, and export helpers.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;components;wireframe;editor;prototype;ux",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Wireframe"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor/Tempo.Blazor.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Components.Wireframe",
+      "Tempo.Blazor.Components.Wireframe.Commands",
+      "Tempo.Blazor.Components.Wireframe.Models",
+      "Tempo.Blazor.Configuration"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.Wireframe",
+    "overview": "Wireframe editor components for Tempo.Blazor with toolbox, schema registry, canvas interop, page tabs, minimap, and export helpers.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Wireframe"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "AddConnectorCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Adds a connector between two elements.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/AddConnectorCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "AddElementCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Adds a single element to the document.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/AddElementCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that adds a new layer to the active page.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/AddLayerCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "AddLayerCommand"
+    },
+    {
+      "itemName": "AlignElementsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Aligns selected elements along the specified axis (undoable).",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/AlignElementsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Brings the selected elements to the front by assigning them a ZIndex higher than all other elements.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/BringToFrontCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "BringToFrontCommand"
+    },
+    {
+      "itemName": "BuiltInWireframeComponentProvider",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Registers wireframe definitions for all built-in Tempo.Blazor components. Priority 0 – custom providers with higher priority can override individual types.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/BuiltInWireframeComponentProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Priority",
+          "kind": "Field",
+          "type": "int"
+        },
+        {
+          "name": "ProviderId",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "GetDefinitions",
+          "kind": "Method",
+          "type": "IEnumerable<WireframeComponentDef>"
+        }
+      ]
+    },
+    {
+      "itemName": "BulkRotateCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Rotates multiple elements to a common angle. Stores original per-element angles for undo.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/BulkRotateCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "BulkUpdateCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Applies the same prop changes to multiple selected elements at once (e.g. changing a shared property via the Properties Panel multi-select mode).",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/BulkUpdateCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Copies the style (Props) and optionally size of a single element to the static clipboard.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/CopyStyleCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "CopyStyleCommand"
+    },
+    {
+      "itemName": "DistributeElementsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Distributes selected elements with equal spacing (undoable).",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/DistributeElementsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "GroupElementsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Groups the selected elements under a new group container (undoable).",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/GroupElementsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "IWireframeCommand",
+      "kind": "Interface",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Represents a single reversible user action in the wireframe editor.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/IWireframeCommand.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IWireframeComponentProvider",
+      "kind": "Interface",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Provides a set of wireframe component definitions to the . Built-in Tempo.Blazor components are registered via . Custom components can be registered by implementing this interface and calling services.AddWireframeComponentProvider<T>() in Program.cs. When two providers register the same , the one with the higher wins.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeComponentProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "JsonWireframeComponentProvider",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "An that loads component definitions from a JSON string or file content. JSON format example: [ { \"type\": \"MyCustomCard\", \"displayName\": \"Custom Card\", \"category\": \"Custom\", \"icon\": \"square\", \"defaultWidth\": 200, \"defaultHeight\": 120, \"svgTemplate\": \"<rect width='{{w}}' height='{{h}}' rx='8' fill='{{props.bgColor}}'/> <text x='10' y='24'>{{props.title}}</text>\", \"props\": [ { \"name\": \"title\", \"displayName\": \"Title\", \"type\": \"String\", \"default\": \"Card Title\", \"category\": \"Content\" }, { \"name\": \"bgColor\", \"displayName\": \"Background\", \"type\": \"Color\", \"default\": \"#ffffff\", \"category\": \"Appearance\" } ] } ] SVG template placeholders: {{w}} – element width {{h}} – element height {{props.xxx}} – value of prop named xxx",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/JsonWireframeComponentProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetDefinitions",
+          "kind": "Method",
+          "type": "IEnumerable<WireframeComponentDef>"
+        },
+        {
+          "name": "LoadFromFile",
+          "kind": "Method",
+          "type": "void",
+          "description": "Loads definitions from a file on disk.",
+          "parameters": [
+            {
+              "name": "filePath",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "LoadFromJson",
+          "kind": "Method",
+          "type": "void",
+          "description": "Parses component definitions from a JSON string.",
+          "parameters": [
+            {
+              "name": "json",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Priority",
+          "kind": "Property",
+          "type": "int"
+        },
+        {
+          "name": "ProviderId",
+          "kind": "Property",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "itemName": "LockElementsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Locks one or more elements so they cannot be moved, resized, or deleted.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/LockElementsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "MinimapNavigateArgs",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Navigate-to arguments: document-space centre point.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeMinimap.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "MinimapViewport",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Current viewport region in document coordinates.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeMinimap.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "MoveElementsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Moves one or more elements to new positions. Supports coalescing: consecutive move commands targeting the same element ids within a 100 ms window are merged. The \"before\" snapshot is kept from the first move; only the \"after\" positions are updated. This keeps undo snapping back to where the drag began rather than to an intermediate frame.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/MoveElementsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "MoveElementsToLayerCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that moves selected elements to a different layer.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/MoveElementsToLayerCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Applies the copied width/height from to selected elements (undoable).",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/PasteSizeCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "PasteSizeCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Applies the copied style from to selected elements (undoable).",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/PasteStyleCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "PasteStyleCommand"
+    },
+    {
+      "itemName": "RemoveConnectorsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Removes one or more connectors from the document.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/RemoveConnectorsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "RemoveElementsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Removes one or more elements from the document (Delete key / toolbar).",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/RemoveElementsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that removes a layer and moves its elements to the default layer.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/RemoveLayerCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "RemoveLayerCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that renames a layer.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/RenameLayerCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "RenameLayerCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that reorders layers.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ReorderLayersCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "ReorderLayersCommand"
+    },
+    {
+      "itemName": "ResizeCanvasCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Changes the canvas width and height of the active page.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ResizeCanvasCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "ResizeElementCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Resizes (and optionally repositions) a single element.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ResizeElementCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "RotateElementCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Changes the rotation angle of a single element.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/RotateElementCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Sends the selected elements to the back by assigning them a ZIndex lower than all other elements.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/SendToBackCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "SendToBackCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that adds a new layer to the active page.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/AddLayerCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Wireframe.Commands.AddLayerCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Brings the selected elements to the front by assigning them a ZIndex higher than all other elements.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/BringToFrontCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Wireframe.Commands.BringToFrontCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Copies the style (Props) and optionally size of a single element to the static clipboard.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/CopyStyleCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Wireframe.Commands.CopyStyleCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Applies the copied width/height from to selected elements (undoable).",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/PasteSizeCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Wireframe.Commands.PasteSizeCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Applies the copied style from to selected elements (undoable).",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/PasteStyleCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Wireframe.Commands.PasteStyleCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that removes a layer and moves its elements to the default layer.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/RemoveLayerCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Wireframe.Commands.RemoveLayerCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that renames a layer.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/RenameLayerCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Wireframe.Commands.RenameLayerCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that reorders layers.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ReorderLayersCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Wireframe.Commands.ReorderLayersCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Sends the selected elements to the back by assigning them a ZIndex lower than all other elements.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/SendToBackCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Wireframe.Commands.SendToBackCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that toggles a layer's lock state.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ToggleLayerLockCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Wireframe.Commands.ToggleLayerLockCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that toggles a layer's visibility.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ToggleLayerVisibilityCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Wireframe.Commands.ToggleLayerVisibilityCommand"
+    },
+    {
+      "itemName": "TmWireframeDesignerCanvas.ElementMove",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Payload sent by JS for a bulk move operation.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeDesignerCanvas.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that toggles a layer's lock state.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ToggleLayerLockCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "ToggleLayerLockCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undoable command that toggles a layer's visibility.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ToggleLayerVisibilityCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "ToggleLayerVisibilityCommand"
+    },
+    {
+      "itemName": "UngroupElementsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Ungroups elements by removing the group container and reparenting children (undoable).",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/UngroupElementsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UnlockElementsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Unlocks one or more elements so they can be edited again.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/UnlockElementsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateConnectorLabelCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Updates the label of a connector.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/UpdateConnectorLabelCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateConnectorRoutingCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Updates the routing type and optionally the waypoints of a connector.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/UpdateConnectorRoutingCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateConnectorStyleCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Updates visual style properties of a connector.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/UpdateConnectorStyleCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateConnectorWaypointsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Updates the waypoints of a connector (used by waypoint drag).",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/UpdateConnectorWaypointsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdatePropsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Updates one or more props on a single element. Supports undo by storing a snapshot of the previous prop values.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/UpdatePropsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "WireframeClipboard",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Static clipboard for wireframe format painter (style + size).",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeClipboard.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "HasStyle",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Whether the clipboard contains any style properties."
+        },
+        {
+          "name": "CloneProps",
+          "kind": "Method",
+          "type": "Dictionary<string, JsonElement>",
+          "description": "Deep-clones a props dictionary.",
+          "parameters": [
+            {
+              "name": "source",
+              "type": "JsonElement>"
+            }
+          ]
+        },
+        {
+          "name": "Height",
+          "kind": "Property",
+          "type": "static double?",
+          "description": "Copied height (set when CopyStyleCommand includes size)."
+        },
+        {
+          "name": "StyleProps",
+          "kind": "Property",
+          "type": "static Dictionary<string, JsonElement>?",
+          "description": "Copied style properties from a source element."
+        },
+        {
+          "name": "Width",
+          "kind": "Property",
+          "type": "static double?",
+          "description": "Copied width (set when CopyStyleCommand includes size)."
+        }
+      ]
+    },
+    {
+      "itemName": "WireframeCommandStack",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Undo/redo history for a single wireframe editor instance. Not a DI service. TmWireframeEditor creates one instance and cascades it to child components via CascadingValue. Each editor on the page gets its own isolated stack.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/WireframeCommandStack.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CanRedo",
+          "kind": "Field",
+          "type": "bool"
+        },
+        {
+          "name": "CanUndo",
+          "kind": "Field",
+          "type": "bool"
+        },
+        {
+          "name": "NextRedoName",
+          "kind": "Field",
+          "type": "string?",
+          "description": "Name of the next command that would be redone, or null."
+        },
+        {
+          "name": "NextUndoName",
+          "kind": "Field",
+          "type": "string?",
+          "description": "Name of the next command that would be undone, or null."
+        },
+        {
+          "name": "Clear",
+          "kind": "Method",
+          "type": "void",
+          "description": "Clears both stacks (e.g. after loading a new document)."
+        },
+        {
+          "name": "Push",
+          "kind": "Method",
+          "type": "void",
+          "description": "Executes and pushes it onto the undo stack. Clears the redo stack. Move coalescing: if the previous command is a targeting the same element ids and was pushed within 100 ms, the new command is merged into it (keeps the original \"before\" positions, updates \"after\").",
+          "parameters": [
+            {
+              "name": "command",
+              "type": "IWireframeCommand"
+            }
+          ]
+        },
+        {
+          "name": "Redo",
+          "kind": "Method",
+          "type": "void",
+          "description": "Re-applies the most recently undone command. No-op if stack is empty."
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void",
+          "description": "Reverses the most recent command. No-op if stack is empty."
+        }
+      ]
+    },
+    {
+      "itemName": "WireframeComponentDef",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+      "description": "Describes a component that can be placed on the wireframe canvas. Each Tempo.Blazor component (TmButton, TmDataTable, …) has exactly one definition. Custom components register their own via .",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Models/WireframeComponentDef.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Category",
+          "kind": "Property",
+          "type": "required string",
+          "description": "Toolbox group (Buttons / Inputs / Layout / Custom / …)."
+        },
+        {
+          "name": "DefaultHeight",
+          "kind": "Property",
+          "type": "double",
+          "description": "Default height in pixels applied when dropping from the Toolbox."
+        },
+        {
+          "name": "DefaultWidth",
+          "kind": "Property",
+          "type": "double",
+          "description": "Default width in pixels applied when dropping from the Toolbox."
+        },
+        {
+          "name": "DisplayName",
+          "kind": "Property",
+          "type": "required string",
+          "description": "Human-readable name shown in the Toolbox and Properties Panel header."
+        },
+        {
+          "name": "Icon",
+          "kind": "Property",
+          "type": "string?",
+          "description": "TmIcon name used in the Toolbox list item."
+        },
+        {
+          "name": "IsBuiltIn",
+          "kind": "Property",
+          "type": "bool",
+          "description": "True for built-in Tempo.Blazor components; false for custom/JSON-defined ones."
+        },
+        {
+          "name": "Props",
+          "kind": "Property",
+          "type": "IReadOnlyList<PropDef>",
+          "description": "Property definitions that drive the Properties Panel UI."
+        },
+        {
+          "name": "RenderSvg",
+          "kind": "Property",
+          "type": "required Action<WireframeElement, RenderTreeBuilder>",
+          "description": "Renders the wireframe SVG shape into . Coordinates inside the render are relative to the element's top-left (0, 0). The outer <g> transform is applied by the canvas."
+        },
+        {
+          "name": "SizePresets",
+          "kind": "Property",
+          "type": "IReadOnlyDictionary<string, (double W, double H)>?",
+          "description": "Optional map from a size prop value to canonical element dimensions. When the user changes the size prop and the new value has an entry here, the canvas element is automatically resized to these dimensions. Components where size describes an internal sub-element (e.g. TmModal's dialog inside a full-screen overlay) should leave this null and handle sizing in their render lambda."
+        },
+        {
+          "name": "Type",
+          "kind": "Property",
+          "type": "required string",
+          "description": "Unique type identifier – must match . Examples: \"TmButton\", \"TmDataTable\", \"MyProductCard\"."
+        }
+      ]
+    },
+    {
+      "itemName": "WireframeComponentRegistry",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Central registry of all wireframe component definitions. Registered as a singleton DI service. Multiple instances can be registered; when two providers supply the same , the definition from the higher-priority provider wins.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeComponentRegistry.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Count",
+          "kind": "Field",
+          "type": "int",
+          "description": "Total number of registered definitions."
+        },
+        {
+          "name": "GetAll",
+          "kind": "Method",
+          "type": "IEnumerable<WireframeComponentDef>",
+          "description": "Returns all registered definitions ordered by Category then DisplayName."
+        },
+        {
+          "name": "GetByCategory",
+          "kind": "Method",
+          "type": "IEnumerable<WireframeComponentDef>",
+          "description": "Returns definitions belonging to .",
+          "parameters": [
+            {
+              "name": "category",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "GetCategories",
+          "kind": "Method",
+          "type": "string[]",
+          "description": "Returns all distinct category names in display order."
+        },
+        {
+          "name": "GetDef",
+          "kind": "Method",
+          "type": "WireframeComponentDef?",
+          "description": "Returns the definition for , or null if not found.",
+          "parameters": [
+            {
+              "name": "type",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "RegisterDefinition",
+          "kind": "Method",
+          "type": "void",
+          "description": "Registers a single definition. If a definition with the same type already exists, the one with higher wins (ties keep the existing entry).",
+          "parameters": [
+            {
+              "name": "def",
+              "type": "WireframeComponentDef"
+            },
+            {
+              "name": "priority",
+              "type": "int",
+              "default": "0"
+            }
+          ]
+        },
+        {
+          "name": "RegisterProvider",
+          "kind": "Method",
+          "type": "void",
+          "description": "Loads all definitions from into the registry.",
+          "parameters": [
+            {
+              "name": "provider",
+              "type": "IWireframeComponentProvider"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "WireframeConnectorRenderer",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Computes SVG paths, endpoint positions, and arrowhead geometry for wireframe connectors. All methods are pure (no side effects) and can be unit-tested without a Blazor host.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeConnectorRenderer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BuildArrowMarkers",
+          "kind": "Method",
+          "type": "string",
+          "description": "Generates SVG marker definitions for start and end arrowheads.",
+          "parameters": [
+            {
+              "name": "connector",
+              "type": "WireframeConnector"
+            }
+          ]
+        },
+        {
+          "name": "BuildPath",
+          "kind": "Method",
+          "type": "string",
+          "description": "Builds an SVG path d attribute for the given connector.",
+          "parameters": [
+            {
+              "name": "connector",
+              "type": "WireframeConnector"
+            },
+            {
+              "name": "source",
+              "type": "WireframeElement?"
+            },
+            {
+              "name": "target",
+              "type": "WireframeElement?"
+            }
+          ]
+        },
+        {
+          "name": "GetArrowMarkerRef",
+          "kind": "Method",
+          "type": "string?",
+          "description": "Returns SVG marker-end / marker-start attribute value for a registered arrowhead. Callers should embed the referenced marker definitions in SVG <defs>.",
+          "parameters": [
+            {
+              "name": "arrowType",
+              "type": "string"
+            },
+            {
+              "name": "isStart",
+              "type": "bool"
+            },
+            {
+              "name": "connectorId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "GetLabelPosition",
+          "kind": "Method",
+          "type": "DiagramPoint",
+          "description": "Returns a point approximately halfway along the path for label placement.",
+          "parameters": [
+            {
+              "name": "connector",
+              "type": "WireframeConnector"
+            },
+            {
+              "name": "source",
+              "type": "WireframeElement?"
+            },
+            {
+              "name": "target",
+              "type": "WireframeElement?"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "WireframeContextMenuType",
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Types of context menu for the wireframe editor.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeContextMenu.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "WireframeElementCopyExtensions",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Deep-copy extension for .",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeElementCopyExtensions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "DeepCopy",
+          "kind": "Method",
+          "type": "WireframeElement",
+          "description": "Creates a deep copy of the element with a new Id.",
+          "parameters": [
+            {
+              "name": "src",
+              "type": "this WireframeElement"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "WireframeExportDialogResult",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Result emitted by when the user confirms export.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeExportDialogResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "FileName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Desired file name without extension."
+        },
+        {
+          "name": "Format",
+          "kind": "Property",
+          "type": "string",
+          "description": "\"png\" or \"pdf\"."
+        },
+        {
+          "name": "Options",
+          "kind": "Property",
+          "type": "WireframeExportOptions",
+          "description": "Export options (scale, background, etc.)."
+        }
+      ]
+    },
+    {
+      "itemName": "ZIndexCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+      "description": "Changes the of a single element. Supports undo/redo through the command stack.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ZIndexCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Configuration",
+      "namespace": "Tempo.Blazor.Configuration",
+      "description": "Extension methods for registering Tempo.Blazor wireframe editor services.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Configuration/WireframeServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "AddTempoBlazorWireframe",
+          "kind": "Method",
+          "type": "IServiceCollection",
+          "description": "Registers services required by the wireframe editor component group.",
+          "parameters": [
+            {
+              "name": "services",
+              "type": "this IServiceCollection"
+            }
+          ]
+        }
+      ],
+      "itemName": "WireframeServiceCollectionExtensions"
+    },
+    {
+      "itemName": "TmWireframeContextMenu",
+      "kind": "Component",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Floating context menu for the wireframe editor. Rendered at screen coordinates via position:fixed. Supports Canvas, Element and MultiSelect menu variants.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeContextMenu.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": [
+        {
+          "name": "CanUndo",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
+          "name": "OnClose",
+          "type": "bool CanGroup => SelectedCount >= 2; // ── Actions ────────────────────────────────────────────────────────────── [Parameter] public EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "OnEditConnectorLabel",
+          "type": "EventCallback",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "itemName": "TmWireframeDesignerCanvas",
+      "kind": "Component",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "SVG-based wireframe canvas. Renders WireframeDocument elements as scalable SVG shapes and handles pan, zoom, drag-move, resize (8-handle), rubber-band multi-select, element drop from toolbox, keyboard nudge, and context menu. Communicates with wireframe-designer.js for all mouse/touch interactions. All mutations go through the cascaded WireframeCommandStack when available. Typically used as a child of TmWireframeEditor rather than directly.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeDesignerCanvas.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the canvas wrapper div."
+        },
+        {
+          "name": "DocumentChanged",
+          "type": "EventCallback<WireframeDocument>",
+          "isRequired": false,
+          "description": "Raised after every mutation."
+        },
+        {
+          "name": "GridSize",
+          "type": "int",
+          "isRequired": false,
+          "default": "8",
+          "description": "Snap-to-grid cell size in pixels. 0 = disabled.",
+          "defaultValue": "8"
+        },
+        {
+          "name": "OnCanvasContextMenuRequested",
+          "type": "EventCallback<(double SvgX, double SvgY, double ScreenX, double ScreenY)>",
+          "isRequired": false,
+          "description": "Raised when user opens context menu on a connector (right-click)."
+        },
+        {
+          "name": "OnCanvasMouseMoved",
+          "type": "EventCallback<(double SvgX, double SvgY)>",
+          "isRequired": false,
+          "description": "Raised when the viewBox changes (pan/zoom)."
+        },
+        {
+          "name": "OnCloseContextMenu",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when user opens context menu on empty canvas (right-click)."
+        },
+        {
+          "name": "OnConnectorContextMenuRequested",
+          "type": "EventCallback<(string Id, double ScreenX, double ScreenY)>",
+          "isRequired": false,
+          "description": "Raised when user opens context menu on an element (right-click)."
+        },
+        {
+          "name": "OnConnectorCreated",
+          "type": "EventCallback<(string FromId, string ToId)>",
+          "isRequired": false,
+          "description": "Raised when the user changes the connector selection."
+        },
+        {
+          "name": "OnConnectorDragged",
+          "type": "EventCallback<(string ConnectorId, double Dx, double Dy)>",
+          "isRequired": false,
+          "description": "Raised when user double-clicks a connector path to add a new waypoint."
+        },
+        {
+          "name": "OnConnectorSelectionChanged",
+          "type": "EventCallback<string[]>",
+          "isRequired": false,
+          "description": "Raised when the user changes the selection (single or multi)."
+        },
+        {
+          "name": "OnConnectorWaypointAdded",
+          "type": "EventCallback<(string ConnectorId, double X, double Y)>",
+          "isRequired": false,
+          "description": "Raised when user drags a connector waypoint to a new position."
+        },
+        {
+          "name": "OnConnectorWaypointDragged",
+          "type": "EventCallback<(string ConnectorId, int WaypointIndex, double X, double Y)>",
+          "isRequired": false,
+          "description": "Raised when user requests deletion of selected connectors."
+        },
+        {
+          "name": "OnCopyStyleRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user switches tool mode via H/V keyboard shortcut."
+        },
+        {
+          "name": "OnDeleteConnectors",
+          "type": "EventCallback<string[]>",
+          "isRequired": false,
+          "description": "Raised when the user creates a connector by dragging from one element to another."
+        },
+        {
+          "name": "OnElementContextMenuRequested",
+          "type": "EventCallback<(string Id, double ScreenX, double ScreenY)>",
+          "isRequired": false,
+          "description": "Raised when user requests paste size (Ctrl+Shift+S)."
+        },
+        {
+          "name": "OnPasteSizeRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when user requests paste style (Ctrl+Shift+V)."
+        },
+        {
+          "name": "OnPasteStyleRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when user requests copy style (Ctrl+Shift+C)."
+        },
+        {
+          "name": "OnRedo",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when Ctrl+Y/Ctrl+Shift+Z is pressed and no CommandStack is cascaded."
+        },
+        {
+          "name": "OnSelectionChanged",
+          "type": "EventCallback<string[]>",
+          "isRequired": false,
+          "description": "Raised when the user changes the selection. Payload is an array of selected element IDs."
+        },
+        {
+          "name": "OnToolModeChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when the user switches tool mode via H/V keyboard shortcuts. Values: 'select' | 'pan'."
+        },
+        {
+          "name": "OnUndo",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when Ctrl+Z is pressed and no CommandStack is cascaded."
+        },
+        {
+          "name": "OnViewBoxChangedEvent",
+          "type": "EventCallback<(double X, double Y, double W, double H)>",
+          "isRequired": false,
+          "description": "Raised when context menu should close (click outside / Escape)."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Disables all editing interactions (drag, resize, drop). Pan via middle-mouse or Space+drag still works.",
+          "defaultValue": "false"
+        },
+        {
+          "name": "ShowGrid",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Render grid lines on the canvas background.",
+          "defaultValue": "true"
+        },
+        {
+          "name": "SnapToObjects",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Snap-to-grid cell size in SVG units (pixels). 0 = disabled."
+        },
+        {
+          "name": "Document",
+          "type": "WireframeDocument?",
+          "isRequired": false,
+          "description": "Document to display and edit."
+        }
+      ],
+      "publicMethods": [
+        {
+          "name": "SetToolMode(string mode)",
+          "description": "Programmatically switches JS tool mode. Values: 'select' | 'pan'."
+        },
+        {
+          "name": "UpdateCanvasSize(double w, double h)",
+          "description": "Notifies JS of updated canvas dimensions after a ResizeCanvasCommand."
+        },
+        {
+          "name": "SelectElements(params string[] ids)",
+          "description": "Sets JS-side selection highlights without raising OnSelectionChanged."
+        },
+        {
+          "name": "ClearSelection()",
+          "description": "Clears all selection highlights."
+        },
+        {
+          "name": "ExportSvg()",
+          "description": "Returns the canvas as a clean SVG string with all selection handles stripped."
+        }
+      ],
+      "cssClasses": [
+        "tm-wd-canvas-wrap",
+        "tm-wd-canvas__svg"
+      ],
+      "examples": [
+        {
+          "title": "Standalone canvas (without full editor)",
+          "code": "<TmWireframeDesignerCanvas @ref=\"_canvas\"\n                           Document=\"_document\"\n                           DocumentChanged=\"OnChanged\"\n                           OnSelectionChanged=\"OnSelect\" />\n\n@code {\n    private TmWireframeDesignerCanvas? _canvas;\n    private WireframeDocument _document = new();\n\n    private void OnSelect(string[] ids)\n    {\n        Console.WriteLine($\"Selected: {string.Join(\", \", ids)}\");\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "TmWireframeEditor",
+      "kind": "Component",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Top-level wireframe editor component. Composes the canvas, toolbox, properties panel, minimap, and toolbar into a fully working editor. Creates and owns a WireframeCommandStack (undo/redo) and exposes it to all child components via CascadingValue. Supports JSON import/export, SVG export, zoom, grid, read-only mode, and collapsible panels. Tool mode (Select/Pan) can be switched via toolbar buttons or keyboard shortcuts V/H. Canvas size is editable from the toolbar.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeEditor.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the editor root element."
+        },
+        {
+          "name": "DocumentChanged",
+          "type": "EventCallback<WireframeDocument>",
+          "isRequired": false,
+          "description": "Raised after every mutation so callers can persist the document."
+        },
+        {
+          "name": "GridSize",
+          "type": "int",
+          "isRequired": false,
+          "default": "8",
+          "description": "Snap-to-grid cell size in pixels. Set to 0 to disable snapping.",
+          "defaultValue": "8"
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Prevent all editing interactions (drag, resize, drop, prop changes).",
+          "defaultValue": "false"
+        },
+        {
+          "name": "ShowGrid",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Show grid lines on the canvas.",
+          "defaultValue": "true"
+        },
+        {
+          "name": "ShowMinimap",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Show the minimap overlay in the bottom-right corner of the canvas.",
+          "defaultValue": "true"
+        },
+        {
+          "name": "ShowPageTabs",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Additional CSS class on the editor root."
+        },
+        {
+          "name": "ShowPropertiesPanel",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Show the properties panel on the right.",
+          "defaultValue": "true"
+        },
+        {
+          "name": "ShowRulers",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Always show page tabs even when there is only one page."
+        },
+        {
+          "name": "ShowToolbar",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Show the top toolbar (title, tool mode, zoom, undo/redo, export/import, canvas size).",
+          "defaultValue": "true"
+        },
+        {
+          "name": "ShowToolbox",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Show the component toolbox panel on the left.",
+          "defaultValue": "true"
+        },
+        {
+          "name": "Document",
+          "type": "WireframeDocument?",
+          "isRequired": false,
+          "description": "Document being edited. Bind with @bind-Document. When null an empty document is created automatically."
+        }
+      ],
+      "keyboardShortcuts": [
+        {
+          "key": "V",
+          "action": "Switch to Select tool"
+        },
+        {
+          "key": "H",
+          "action": "Switch to Pan tool"
+        },
+        {
+          "key": "Space + drag",
+          "action": "Temporary pan (any tool mode)"
+        },
+        {
+          "key": "Ctrl+Z",
+          "action": "Undo"
+        },
+        {
+          "key": "Ctrl+Y / Ctrl+Shift+Z",
+          "action": "Redo"
+        },
+        {
+          "key": "Ctrl+A",
+          "action": "Select all elements"
+        },
+        {
+          "key": "Ctrl+D",
+          "action": "Duplicate selected"
+        },
+        {
+          "key": "Delete / Backspace",
+          "action": "Delete selected elements"
+        },
+        {
+          "key": "Arrow keys",
+          "action": "Nudge selected elements by 1px (Shift = 10px)"
+        },
+        {
+          "key": "Scroll wheel",
+          "action": "Zoom in/out"
+        },
+        {
+          "key": "Middle mouse button + drag",
+          "action": "Pan canvas"
+        }
+      ],
+      "cssClasses": [
+        "tm-wd-editor",
+        "tm-wd-editor__toolbar",
+        "tm-wd-editor__canvas-wrap",
+        "tm-wd-editor__toolbox-wrap",
+        "tm-wd-editor__props-wrap"
+      ],
+      "examples": [
+        {
+          "title": "Basic wireframe editor with two-way binding",
+          "code": "@page \"/wireframe\"\n@using Tempo.Blazor.Components.Wireframe\n@using Tempo.Blazor.Components.Wireframe.Models\n\n<TmWireframeEditor @bind-Document=\"_document\" />\n\n@code {\n    private WireframeDocument _document = new();\n}"
+        },
+        {
+          "title": "Read-only viewer (no toolbox/props)",
+          "code": "<TmWireframeEditor Document=\"_document\"\n                   ReadOnly=\"true\"\n                   ShowToolbox=\"false\"\n                   ShowPropertiesPanel=\"false\"\n                   ShowToolbar=\"false\" />"
+        },
+        {
+          "title": "Editor without grid, custom canvas size",
+          "code": "@code {\n    private WireframeDocument _document = new()\n    {\n        Width  = 1920,\n        Height = 1080,\n        Title  = \"Dashboard layout\"\n    };\n}\n\n<TmWireframeEditor @bind-Document=\"_document\"\n                   ShowGrid=\"false\"\n                   GridSize=\"0\" />"
+        },
+        {
+          "title": "Persist document to server on every change",
+          "code": "<TmWireframeEditor @bind-Document=\"_document\"\n                   DocumentChanged=\"SaveAsync\" />\n\n@code {\n    private WireframeDocument _document = new();\n\n    private async Task SaveAsync(WireframeDocument doc)\n    {\n        var json = WireframeSerializer.Serialize(doc);\n        await Http.PutAsJsonAsync(\"api/wireframes/my-doc\", json);\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "TmWireframeExportDialog",
+      "kind": "Component",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "TmWireframeExportDialog Blazor component in the Wireframe category.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeExportDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmWireframeLayersPanel",
+      "kind": "Component",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Right-side layers panel for managing wireframe layers.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeLayersPanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmWireframeMinimap",
+      "kind": "Component",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "SVG minimap overlay for the wireframe canvas. Renders a scaled-down thumbnail of the full document with a viewport indicator rectangle. Clicking or dragging on the minimap pans the main canvas. Selected elements are highlighted. Typically rendered as an overlay inside TmWireframeDesignerCanvas via TmWireframeEditor.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeMinimap.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the minimap wrapper."
+        },
+        {
+          "name": "NavigateRequested",
+          "type": "EventCallback<MinimapNavigateArgs>",
+          "isRequired": false,
+          "description": "Raised when the user clicks/drags on the minimap. Parent should pan the canvas to the requested centre point."
+        },
+        {
+          "name": "SelectedIds",
+          "type": "string[]",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Currently selected element IDs – highlighted in the minimap.",
+          "defaultValue": "[]"
+        },
+        {
+          "name": "Viewport",
+          "type": "MinimapViewport?",
+          "isRequired": false,
+          "description": "Current visible viewport region in document coordinates. Updated by the canvas on pan/zoom."
+        },
+        {
+          "name": "Width",
+          "type": "int",
+          "isRequired": false,
+          "default": "200",
+          "description": "Width of the minimap in pixels.",
+          "defaultValue": "200"
+        },
+        {
+          "name": "Document",
+          "type": "WireframeDocument?",
+          "isRequired": false,
+          "description": "Document whose elements are rendered in the minimap."
+        }
+      ],
+      "relatedTypes": [
+        {
+          "name": "MinimapViewport",
+          "description": "Current viewport region: X, Y, Width, Height in document coordinates."
+        },
+        {
+          "name": "MinimapNavigateArgs",
+          "description": "Navigate-to request: CentreX, CentreY in document coordinates."
+        }
+      ],
+      "cssClasses": [
+        "tm-wd-minimap",
+        "tm-wd-minimap__svg",
+        "tm-wd-minimap__viewport"
+      ],
+      "examples": [
+        {
+          "title": "Minimap bound to canvas viewport",
+          "code": "<TmWireframeMinimap Document=\"_document\"\n                    SelectedIds=\"_selectedIds\"\n                    Viewport=\"_viewport\"\n                    Width=\"180\"\n                    NavigateRequested=\"OnMinimapNavigate\" />\n\n@code {\n    private MinimapViewport? _viewport;\n\n    private async Task OnMinimapNavigate(MinimapNavigateArgs args)\n    {\n        if (_canvas is not null)\n            await _canvas.ScrollTo(args.CentreX, args.CentreY);\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "TmWireframePropertiesPanel",
+      "kind": "Component",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Properties panel for the wireframe editor. Shows editable fields for the currently selected element(s). Supports single-select (all PropDef fields grouped by category, plus Layout X/Y/W/H and Element/ZIndex sections) and multi-select (intersection of common props, Mixed indicator when values differ). All mutations are routed through the cascaded WireframeCommandStack when available. Text and number inputs use per-field debounce (350 ms); dropdowns and checkboxes apply immediately. Changing a size prop with SizePresets defined automatically resizes the element.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframePropertiesPanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the panel wrapper."
+        },
+        {
+          "name": "DocumentChanged",
+          "type": "EventCallback<WireframeDocument>",
+          "isRequired": false,
+          "description": "Raised after every property change."
+        },
+        {
+          "name": "OnCopyStyle",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Currently selected connector ids."
+        },
+        {
+          "name": "OnPasteSize",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user requests paste style to the selected elements."
+        },
+        {
+          "name": "OnPasteStyle",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user requests copy style from the selected element."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Raised when the user requests paste size to the selected elements."
+        },
+        {
+          "name": "SelectedConnectorIds",
+          "type": "string[]",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Currently selected element ids."
+        },
+        {
+          "name": "SelectedIds",
+          "type": "string[]",
+          "isRequired": false,
+          "default": "[]",
+          "description": "IDs of the currently selected elements. Empty = no selection shown.",
+          "defaultValue": "[]"
+        },
+        {
+          "name": "Document",
+          "type": "WireframeDocument?",
+          "isRequired": false,
+          "description": "Document being edited."
+        },
+        {
+          "name": "CommandStack",
+          "type": "WireframeCommandStack?",
+          "isRequired": false,
+          "description": "Cascaded from TmWireframeEditor. When present all mutations are recorded for undo/redo."
+        }
+      ],
+      "cssClasses": [
+        "tm-wd-props",
+        "tm-wd-props__section",
+        "tm-wd-props__field",
+        "tm-wd-props__input",
+        "tm-wd-props__select",
+        "tm-wd-props__toggle"
+      ],
+      "examples": [
+        {
+          "title": "Properties panel bound to canvas selection",
+          "code": "<TmWireframeDesignerCanvas @ref=\"_canvas\"\n                           Document=\"_document\"\n                           DocumentChanged=\"d => _document = d\"\n                           OnSelectionChanged=\"ids => _selectedIds = ids\" />\n\n<TmWireframePropertiesPanel Document=\"_document\"\n                             DocumentChanged=\"d => _document = d\"\n                             SelectedIds=\"_selectedIds\" />\n\n@code {\n    private WireframeDocument _document = new();\n    private string[] _selectedIds = [];\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "TmWireframeRuler",
+      "kind": "Component",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "SVG-based ruler that shares the canvas viewBox for accurate pan/zoom.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeRuler.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Cursor position in SVG space (null = hidden)."
+        },
+        {
+          "name": "IndicatorPos",
+          "type": "double?",
+          "isRequired": false,
+          "description": "Current zoom scale."
+        },
+        {
+          "name": "Scale",
+          "type": "double",
+          "isRequired": false,
+          "default": "1.0",
+          "description": "Canvas viewBox H."
+        },
+        {
+          "name": "Size",
+          "type": "int",
+          "isRequired": false,
+          "default": "20",
+          "description": "\"Horizontal\" or \"Vertical\"."
+        },
+        {
+          "name": "ViewBoxH",
+          "type": "double",
+          "isRequired": false,
+          "default": "800",
+          "description": "Canvas viewBox W."
+        },
+        {
+          "name": "ViewBoxW",
+          "type": "double",
+          "isRequired": false,
+          "default": "1200",
+          "description": "Canvas viewBox Y."
+        },
+        {
+          "name": "ViewBoxX",
+          "type": "double",
+          "isRequired": false,
+          "description": "Pixel size of the ruler (height for H, width for V)."
+        },
+        {
+          "name": "ViewBoxY",
+          "type": "double",
+          "isRequired": false,
+          "description": "Canvas viewBox X."
+        }
+      ]
+    },
+    {
+      "itemName": "TmWireframeToolbox",
+      "kind": "Component",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Draggable component palette for the wireframe editor. Displays all registered WireframeComponentDef entries grouped by category with a search filter. Items are draggable onto TmWireframeDesignerCanvas via HTML drag-and-drop (data-component-type attribute). Custom components registered via IWireframeComponentProvider appear in a separate 'Custom' tab. Typically used as a child of TmWireframeEditor rather than directly.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/TmWireframeToolbox.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": [
+        {
+          "name": "OnComponentActivated",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when the user activates a component via keyboard (Enter/Space). Payload is the component type string (e.g. 'TmButton')."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the toolbox wrapper."
+        }
+      ],
+      "cssClasses": [
+        "tm-wd-toolbox",
+        "tm-wd-toolbox__search",
+        "tm-wd-toolbox__item",
+        "tm-wd-toolbox__category"
+      ],
+      "examples": [
+        {
+          "title": "Toolbox inside a custom editor layout",
+          "code": "<TmWireframeToolbox OnComponentActivated=\"OnActivated\" />\n\n@code {\n    private void OnActivated(string type)\n    {\n        // Add element to canvas at default position\n        Console.WriteLine($\"Activated: {type}\");\n    }\n}"
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [],
+  "assets": [
+    {
+      "path": "src/Tempo.Blazor.Wireframe/wwwroot/css/components/_wireframe-editor.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.Wireframe/wwwroot/css/tempo-blazor-wireframe.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.Wireframe/wwwroot/js/wireframe-designer.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.Wireframe/wwwroot/wireframe-document.schema.json",
+      "kind": "Json"
+    }
+  ],
+  "summary": {
+    "itemCount": 70,
+    "manualItemCount": 58,
+    "generatedItemCount": 59,
+    "generatedOnlyItemCount": 12,
+    "componentCount": 9,
+    "publicApiTypeCount": 50
+  }
+}

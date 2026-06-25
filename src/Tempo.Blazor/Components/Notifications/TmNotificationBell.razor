@@ -1,7 +1,5 @@
 @namespace Tempo.Blazor.Components.Notifications
-@using Tempo.Blazor.NotionEditor.Interfaces
-@using Tempo.Blazor.NotionEditor.Models
-@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.Components.Icons
 @implements IDisposable
 
@@ -50,18 +48,18 @@
                         <div class="tm-notification-bell__item @(n.IsRead ? "" : "tm-notification-bell__item--unread")"
                              @onclick="() => OnItemClickAsync(n)">
                             <div class="tm-notification-bell__avatar">
-                                @if (!string.IsNullOrEmpty(n.Event.SenderAvatarUrl))
+                                @if (!string.IsNullOrEmpty(n.Actor?.AvatarUrl))
                                 {
-                                    <img src="@n.Event.SenderAvatarUrl" alt="" />
+                                    <img src="@n.Actor.AvatarUrl" alt="" />
                                 }
                                 else
                                 {
-                                    <TmIcon Name="@TypeIcon(n.Event.Type)" Size="IconSize.Sm" />
+                                    <TmIcon Name="@TypeIcon(n.Type)" Size="IconSize.Sm" />
                                 }
                             </div>
                             <div class="tm-notification-bell__content">
-                                <span class="tm-notification-bell__message">@n.Event.Message</span>
-                                <span class="tm-notification-bell__time">@FormatTime(n.Event.CreatedAt)</span>
+                                <span class="tm-notification-bell__message">@n.Title</span>
+                                <span class="tm-notification-bell__time">@FormatTime(n.CreatedAt)</span>
                             </div>
                             @if (!n.IsRead)
                             {
@@ -80,8 +78,7 @@
 </div>
 
 @code {
-    [Inject] private INotificationService NotificationService { get; set; } = default!;
-    [Inject] private INotificationBadgeState BadgeState { get; set; } = default!;
+    [Inject] private ITmNotificationService NotificationService { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -94,25 +91,25 @@
     private bool _hasNew;
     private bool _showOnlyUnread;
     private int _serviceUnreadCount;
-    private List<INotification> _notifications = new();
+    private List<TmNotification> _notifications = new();
     private ElementReference _rootRef;
 
-    private int UnreadCount => Math.Max(_serviceUnreadCount, BadgeState.UnreadCount);
+    private int UnreadCount => _serviceUnreadCount;
 
     private string AriaLabelText => UnreadCount > 0
         ? Loc["TmNotificationBell_NewCount", UnreadCount]
         : Loc["TmNotificationBell_AriaLabel"];
 
-    private IEnumerable<INotification> VisibleNotifications =>
+    private IEnumerable<TmNotification> VisibleNotifications =>
         _showOnlyUnread ? _notifications.Where(n => !n.IsRead) : _notifications;
 
     protected override async Task OnInitializedAsync()
     {
-        BadgeState.OnChanged += OnBadgeChanged;
+        NotificationService.OnChanged += OnNotificationsChanged;
         await LoadUnreadCountAsync();
     }
 
-    private async void OnBadgeChanged()
+    private async void OnNotificationsChanged()
     {
         await InvokeAsync(async () =>
         {
@@ -141,7 +138,11 @@
 
     private async Task LoadNotificationsAsync()
     {
-        _notifications = (await NotificationService.GetNotificationsAsync(CurrentUserId, limit: 50)).ToList();
+        _notifications = (await NotificationService.GetNotificationsAsync(new TmNotificationQuery
+        {
+            RecipientUserId = CurrentUserId,
+            Take = 50
+        })).ToList();
         _serviceUnreadCount = _notifications.Count(n => !n.IsRead);
     }
 
@@ -156,39 +157,39 @@
         await LoadNotificationsAsync();
     }
 
-    private async Task OnItemClickAsync(INotification notification)
+    private async Task OnItemClickAsync(TmNotification notification)
     {
         if (!notification.IsRead)
             await NotificationService.MarkAsReadAsync(notification.Id, CurrentUserId);
 
-        if (!string.IsNullOrEmpty(notification.Event.DeepLink))
-            Navigation.NavigateTo(notification.Event.DeepLink);
+        if (!string.IsNullOrEmpty(notification.ActionUrl))
+            Navigation.NavigateTo(notification.ActionUrl);
 
         await LoadNotificationsAsync();
     }
 
-    private static string FormatTime(DateTime dt)
+    private static string FormatTime(DateTimeOffset dt)
     {
-        var diff = DateTime.UtcNow - dt.ToUniversalTime();
+        var diff = DateTimeOffset.UtcNow - dt.ToUniversalTime();
         if (diff.TotalMinutes < 1) return "just now";
         if (diff.TotalHours < 1) return $"{(int)diff.TotalMinutes}m ago";
         if (diff.TotalDays < 1) return $"{(int)diff.TotalHours}h ago";
         if (diff.TotalDays < 7) return $"{(int)diff.TotalDays}d ago";
-        return dt.ToString("MMM d");
+        return dt.ToLocalTime().ToString("MMM d");
     }
 
-    private static string TypeIcon(NotificationType type) => type switch
+    private static string TypeIcon(string type) => type switch
     {
-        NotificationType.Mention => IconNames.AtSign,
-        NotificationType.Reply => IconNames.MessageSquare,
-        NotificationType.Reaction => IconNames.ThumbsUp,
-        NotificationType.ThreadResolved => IconNames.CheckCircle,
-        NotificationType.NewThread => IconNames.PlusCircle,
+        TmNotificationTypes.Mention => IconNames.AtSign,
+        TmNotificationTypes.Reply => IconNames.MessageSquare,
+        TmNotificationTypes.Reaction => IconNames.ThumbsUp,
+        TmNotificationTypes.ThreadResolved => IconNames.CheckCircle,
+        TmNotificationTypes.NewThread => IconNames.PlusCircle,
         _ => IconNames.Bell
     };
 
     public void Dispose()
     {
-        BadgeState.OnChanged -= OnBadgeChanged;
+        NotificationService.OnChanged -= OnNotificationsChanged;
     }
 }

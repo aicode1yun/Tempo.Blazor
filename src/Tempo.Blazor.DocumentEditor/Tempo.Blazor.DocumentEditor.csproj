@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Tempo.Blazor</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>Tempo.Blazor.DocumentEditor</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>ptyll</Authors>
+    <Title>Tempo.Blazor.DocumentEditor</Title>
+    <Description>Document editor components for Tempo.Blazor, including canvas rendering, collaboration UI, clipboard normalization, and document editor interop assets.</Description>
+    <PackageTags>blazor;components;document-editor;word;canvas;collaboration;clipboard</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ptyll/Tempo.Blazor</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ptyll/Tempo.Blazor</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AngleSharp" Version="1.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="wwwroot\js\**\*.test.mjs" />
+    <Content Remove="wwwroot\js\**\__tests__\**" />
+    <Content Remove="wwwroot\js\**\*.md" />
+    <Content Remove="wwwroot\js\**\.gitkeep" />
+    <None Include="wwwroot\js\**\*.test.mjs" Pack="false" Visible="false" />
+    <None Include="wwwroot\js\**\__tests__\**" Pack="false" Visible="false" />
+    <None Include="wwwroot\js\**\*.md" Pack="false" Visible="false" />
+    <None Include="wwwroot\js\**\.gitkeep" Pack="false" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.12" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.3" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tempo.Blazor\Tempo.Blazor.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Tempo.Blazor.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Condition="Exists('..\..\README.md')" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Processed rich-text run placeholder produced from a text box value.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/BandInstantiation.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportTextRun"
+}

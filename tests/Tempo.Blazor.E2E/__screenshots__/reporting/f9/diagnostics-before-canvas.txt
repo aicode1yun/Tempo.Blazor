@@ -1,0 +1,13 @@
+{
+  "$id": "1",
+  "canvasWidth": 560,
+  "canvasHeight": 360,
+  "canvasClientWidth": 558,
+  "canvasClientHeight": 358,
+  "viewerText": "Page\n1 of 3\nZoom\nFit width\nFit page\n50%\n75%\n100%\n125%\n150%\n200%\nParameters\nExport",
+  "statusText": "",
+  "browserDiagnostics": [
+    "console.info: [2026-06-22T12:08:50.730Z] Information: Normalizing \u0027_blazor\u0027 to \u0027http://127.0.0.1:36101/_blazor\u0027.",
+    "console.info: [2026-06-22T12:08:50.764Z] Information: WebSocket connected to ws://127.0.0.1:36101/_blazor?id=iU0tcC-48lCM2KdwjWZLDA."
+  ]
+}

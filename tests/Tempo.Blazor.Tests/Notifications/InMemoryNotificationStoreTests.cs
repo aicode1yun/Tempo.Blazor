@@ -1,6 +1,5 @@
 using FluentAssertions;
-using Tempo.Blazor.NotionEditor.Enums;
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Services;
 
 namespace Tempo.Blazor.Tests.Notifications;
@@ -12,12 +11,12 @@ public class InMemoryNotificationStoreTests
     [Fact]
     public void NotifyAsync_AddsNotification()
     {
-        var evt = NewEvent("u1", "u2", NotificationType.Reply, "hello");
-        _store.NotifyAsync(evt).Wait();
+        var notification = NewNotification("u1", "u2", TmNotificationTypes.Reply, "hello");
+        _store.PublishAsync(notification).Wait();
 
-        var list = _store.GetNotificationsAsync("u2").Result;
+        var list = GetNotifications("u2");
         list.Should().ContainSingle();
-        list[0].Event.Message.Should().Be("hello");
+        list[0].Title.Should().Be("hello");
     }
 
     [Fact]
@@ -26,7 +25,7 @@ public class InMemoryNotificationStoreTests
         int changed = 0;
         _store.OnChanged += () => changed++;
 
-        _store.NotifyAsync(NewEvent("u1", "u2", NotificationType.Reply)).Wait();
+        _store.PublishAsync(NewNotification("u1", "u2", TmNotificationTypes.Reply)).Wait();
 
         _store.UnreadCount.Should().Be(1);
         changed.Should().Be(1);
@@ -35,8 +34,8 @@ public class InMemoryNotificationStoreTests
     [Fact]
     public void MarkAsReadAsync_DecrementsBadge()
     {
-        _store.NotifyAsync(NewEvent("u1", "u2", NotificationType.Reply)).Wait();
-        var list = _store.GetNotificationsAsync("u2").Result;
+        _store.PublishAsync(NewNotification("u1", "u2", TmNotificationTypes.Reply)).Wait();
+        var list = GetNotifications("u2");
 
         _store.MarkAsReadAsync(list[0].Id, "u2").Wait();
 
@@ -46,8 +45,8 @@ public class InMemoryNotificationStoreTests
     [Fact]
     public void MarkAllAsReadAsync_ResetsBadge()
     {
-        _store.NotifyAsync(NewEvent("u1", "u2", NotificationType.Reply)).Wait();
-        _store.NotifyAsync(NewEvent("u1", "u2", NotificationType.Mention)).Wait();
+        _store.PublishAsync(NewNotification("u1", "u2", TmNotificationTypes.Reply)).Wait();
+        _store.PublishAsync(NewNotification("u1", "u2", TmNotificationTypes.Mention)).Wait();
 
         _store.MarkAllAsReadAsync("u2").Wait();
 
@@ -58,22 +57,25 @@ public class InMemoryNotificationStoreTests
     [Fact]
     public void GetUnreadCountAsync_ReturnsUnreadOnly()
     {
-        _store.NotifyAsync(NewEvent("u1", "u2", NotificationType.Reply)).Wait();
-        _store.NotifyAsync(NewEvent("u1", "u2", NotificationType.Reply)).Wait();
-        var list = _store.GetNotificationsAsync("u2").Result;
+        _store.PublishAsync(NewNotification("u1", "u2", TmNotificationTypes.Reply)).Wait();
+        _store.PublishAsync(NewNotification("u1", "u2", TmNotificationTypes.Reply)).Wait();
+        var list = GetNotifications("u2");
         _store.MarkAsReadAsync(list[0].Id, "u2").Wait();
 
         _store.GetUnreadCountAsync("u2").Result.Should().Be(1);
     }
 
-    private static NotificationEvent NewEvent(
-        string sender, string recipient, NotificationType type, string message = "msg")
+    private IReadOnlyList<TmNotification> GetNotifications(string recipient)
+        => _store.GetNotificationsAsync(new TmNotificationQuery { RecipientUserId = recipient }).Result;
+
+    private static TmNotification NewNotification(
+        string sender, string recipient, string type, string message = "msg")
         => new()
         {
             Type = type,
-            SenderUserId = sender,
             RecipientUserId = recipient,
-            Message = message,
-            CreatedAt = DateTime.UtcNow
+            Actor = new TmUserRef { Id = sender, DisplayName = sender },
+            Title = message,
+            CreatedAt = DateTimeOffset.UtcNow
         };
 }

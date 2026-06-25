@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Fonts",
+  "namespace": "Tempo.Reporting.Engine.Fonts",
+  "description": "Text run measurement request.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Fonts/TextMeasureRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "TextMeasureRequest"
+}

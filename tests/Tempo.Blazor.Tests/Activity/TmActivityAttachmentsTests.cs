@@ -3,43 +3,77 @@ using Bunit.TestDoubles;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components.Forms;
 using NSubstitute;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Activity;
-using Tempo.Blazor.Interfaces;
-using Tempo.Blazor.Models;
 using Tempo.Blazor.Tests.Localization;
 
 namespace Tempo.Blazor.Tests.Activity;
 
-file record Attachment(
-    string Id,
-    string FileName,
-    string ContentType,
-    long FileSizeBytes,
-    DateTimeOffset UploadedAt,
-    string? UploadedByName,
-    bool CanDelete,
-    bool IsImage) : IFileAttachment;
-
 public class TmActivityAttachmentsTests : LocalizationTestBase
 {
-    private static List<IFileAttachment> SampleAttachments() =>
+    private static List<TmAttachment> SampleAttachments() =>
     [
-        new Attachment("a1", "photo.png",  "image/png",        1_024,        DateTimeOffset.Now.AddDays(-1), "Alice", true,  true),
-        new Attachment("a2", "report.pdf", "application/pdf",  512 * 1_024,  DateTimeOffset.Now.AddDays(-2), "Bob",   false, false),
+        new()
+        {
+            Id = "a1",
+            EntityRef = Entity("entity-1"),
+            FileName = "photo.png",
+            ContentType = "image/png",
+            SizeBytes = 1_024,
+            UploadedAt = DateTimeOffset.Now.AddDays(-1),
+            UploadedBy = new TmUserRef { Id = "alice", DisplayName = "Alice" },
+            CanDelete = true,
+            CanDownload = true
+        },
+        new()
+        {
+            Id = "a2",
+            EntityRef = Entity("entity-1"),
+            FileName = "report.pdf",
+            ContentType = "application/pdf",
+            SizeBytes = 512 * 1_024,
+            UploadedAt = DateTimeOffset.Now.AddDays(-2),
+            UploadedBy = new TmUserRef { Id = "bob", DisplayName = "Bob" },
+            CanDelete = false,
+            CanDownload = true
+        },
     ];
 
-    private static IFileAttachmentProvider BuildProvider(
-        IReadOnlyList<IFileAttachment>? list = null)
+    private static ITmAttachmentProvider BuildProvider(
+        IReadOnlyList<TmAttachment>? list = null)
     {
-        var p = Substitute.For<IFileAttachmentProvider>();
-        p.GetAttachmentsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-         .Returns(Task.FromResult(list ?? (IReadOnlyList<IFileAttachment>)SampleAttachments()));
-        p.UploadChunkAsync(Arg.Any<FileChunkData>(), Arg.Any<CancellationToken>())
-         .Returns(Task.FromResult<string?>(null));
-        p.DeleteAttachmentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        var p = Substitute.For<ITmAttachmentProvider, ITmFileProvider, ITmChunkedFileProvider>();
+        p.Capabilities.Returns(TmAttachmentProviderCapabilities.Read | TmAttachmentProviderCapabilities.Add | TmAttachmentProviderCapabilities.Remove);
+        p.GetForEntityAsync(Arg.Any<TmEntityRef>(), Arg.Any<CancellationToken>())
+         .Returns(Task.FromResult(list ?? (IReadOnlyList<TmAttachment>)SampleAttachments()));
+        p.AddAsync(Arg.Any<TmAttachment>(), Arg.Any<CancellationToken>())
+         .Returns(call => Task.FromResult(call.Arg<TmAttachment>()));
+        p.RemoveAsync(Arg.Any<TmEntityRef>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
          .Returns(Task.CompletedTask);
-        p.GetDownloadUrlAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-         .Returns(Task.FromResult("https://cdn.example.com/file"));
+
+        var fileProvider = (ITmFileProvider)p;
+        fileProvider.Capabilities.Returns(
+            TmFileProviderCapabilities.Upload
+            | TmFileProviderCapabilities.Resolve
+            | TmFileProviderCapabilities.Delete
+            | TmFileProviderCapabilities.ChunkUpload);
+        fileProvider.ResolveAsync(Arg.Any<TmFileResolveRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new TmFileResolveResult
+            {
+                Success = true,
+                Url = "https://cdn.example.com/file"
+            }));
+
+        var chunkedProvider = (ITmChunkedFileProvider)p;
+        chunkedProvider.UploadChunkAsync(Arg.Any<TmFileChunk>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult(new TmFileUploadResult
+            {
+                Success = true,
+                IsComplete = call.Arg<TmFileChunk>().IsLast,
+                AssetId = call.Arg<TmFileChunk>().IsLast ? "asset-1" : null,
+                UploadSessionId = "session-1"
+            }));
+
         return p;
     }
 
@@ -56,7 +90,7 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
     public void Attachments_Empty_RendersEmptyState()
     {
         var cut = RenderComponent<TmActivityAttachments>(p => p
-            .Add(c => c.Attachments, Array.Empty<IFileAttachment>()));
+            .Add(c => c.Attachments, Array.Empty<TmAttachment>()));
 
         cut.FindAll(".tm-attach-item").Should().BeEmpty();
         cut.FindAll(".tm-empty-state, .tm-attach-empty").Should().NotBeEmpty();
@@ -80,9 +114,9 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
     {
         var list = new[]
         {
-            new Attachment("a1", "tiny.txt",  "text/plain",       512,            DateTimeOffset.Now, null, false, false),
-            new Attachment("a2", "mid.zip",   "application/zip",  2 * 1024,       DateTimeOffset.Now, null, false, false),
-            new Attachment("a3", "big.mp4",   "video/mp4",        3 * 1024 * 1024, DateTimeOffset.Now, null, false, false),
+            Attachment("a1", "tiny.txt", "text/plain", 512),
+            Attachment("a2", "mid.zip", "application/zip", 2 * 1024),
+            Attachment("a3", "big.mp4", "video/mp4", 3 * 1024 * 1024),
         };
         var cut = RenderComponent<TmActivityAttachments>(p => p.Add(c => c.Attachments, list));
 
@@ -109,22 +143,26 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
         var provider = BuildProvider();
         var cut = RenderComponent<TmActivityAttachments>(p => p
             .Add(c => c.Attachments, SampleAttachments())
-            .Add(c => c.Provider, provider)
+            .Add(c => c.AttachmentProvider, provider)
             .Add(c => c.EntityId, "entity-1"));
 
         cut.Find(".tm-attach-delete-btn").Click();
         await cut.InvokeAsync(() => { });
 
-        await provider.Received(1).DeleteAttachmentAsync("a1", Arg.Any<CancellationToken>());
+        await provider.Received(1).RemoveAsync(
+            Arg.Is<TmEntityRef>(e => e.EntityId == "entity-1"),
+            "a1",
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Attachments_Upload_ChunksFile_256KB()
     {
         const int ChunkSize = 256 * 1024;
-        var provider = BuildProvider(new List<IFileAttachment>());
+        var provider = BuildProvider(new List<TmAttachment>());
         var cut = RenderComponent<TmActivityAttachments>(p => p
-            .Add(c => c.Provider, provider)
+            .Add(c => c.AttachmentProvider, provider)
+            .Add(c => c.FileProvider, (ITmFileProvider)provider)
             .Add(c => c.EntityId, "entity-1")
             .Add(c => c.AllowUpload, true));
 
@@ -135,17 +173,17 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
 
         await cut.InvokeAsync(() => { });
 
-        await provider.Received(2).UploadChunkAsync(
-            Arg.Any<FileChunkData>(), Arg.Any<CancellationToken>());
+        await ((ITmChunkedFileProvider)provider).Received(2).UploadChunkAsync(
+            Arg.Any<TmFileChunk>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Attachments_UploadProgress_Displayed()
     {
-        var blocker = new TaskCompletionSource<string?>();
+        var blocker = new TaskCompletionSource<TmFileUploadResult>();
         var chunkCalled = new SemaphoreSlim(0, 1);
-        var provider = BuildProvider(new List<IFileAttachment>());
-        provider.UploadChunkAsync(Arg.Any<FileChunkData>(), Arg.Any<CancellationToken>())
+        var provider = BuildProvider(new List<TmAttachment>());
+        ((ITmChunkedFileProvider)provider).UploadChunkAsync(Arg.Any<TmFileChunk>(), Arg.Any<CancellationToken>())
                 .Returns(_ =>
                 {
                     chunkCalled.Release();
@@ -153,7 +191,8 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
                 });
 
         var cut = RenderComponent<TmActivityAttachments>(p => p
-            .Add(c => c.Provider, provider)
+            .Add(c => c.AttachmentProvider, provider)
+            .Add(c => c.FileProvider, (ITmFileProvider)provider)
             .Add(c => c.EntityId, "entity-1")
             .Add(c => c.AllowUpload, true));
 
@@ -168,15 +207,16 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
 
         cut.FindAll(".tm-attach-progress").Should().NotBeEmpty();
 
-        blocker.SetResult(null);
+        blocker.SetResult(new TmFileUploadResult { Success = true, IsComplete = true, AssetId = "asset-1" });
     }
 
     [Fact]
     public async Task Attachments_Upload_Complete_RefreshesListAsync()
     {
-        var provider = BuildProvider(new List<IFileAttachment>());
+        var provider = BuildProvider(new List<TmAttachment>());
         var cut = RenderComponent<TmActivityAttachments>(p => p
-            .Add(c => c.Provider, provider)
+            .Add(c => c.AttachmentProvider, provider)
+            .Add(c => c.FileProvider, (ITmFileProvider)provider)
             .Add(c => c.EntityId, "entity-1")
             .Add(c => c.AllowUpload, true));
 
@@ -184,7 +224,9 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
             InputFileContent.CreateFromBinary(new byte[100], "f.txt", contentType: "text/plain"));
         await cut.InvokeAsync(() => { });
 
-        await provider.Received(1).GetAttachmentsAsync("entity-1", Arg.Any<CancellationToken>());
+        await provider.Received(1).GetForEntityAsync(
+            Arg.Is<TmEntityRef>(e => e.EntityId == "entity-1"),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -200,4 +242,18 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
 
         cut.FindAll(".tm-attach-error").Should().NotBeEmpty();
     }
+
+    private static TmAttachment Attachment(string id, string fileName, string contentType, long sizeBytes)
+        => new()
+        {
+            Id = id,
+            EntityRef = Entity("entity-1"),
+            FileName = fileName,
+            ContentType = contentType,
+            SizeBytes = sizeBytes,
+            CanDownload = true
+        };
+
+    private static TmEntityRef Entity(string entityId)
+        => TmEntityRef.Create("activity-entity", entityId);
 }

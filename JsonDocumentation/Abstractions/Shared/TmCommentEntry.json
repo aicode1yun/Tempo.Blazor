@@ -1,0 +1,90 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Single entry inside a shared comment thread.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCommentEntry.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Author",
+      "kind": "Property",
+      "type": "TmUserRef",
+      "description": "Author snapshot captured when the entry was created."
+    },
+    {
+      "name": "Body",
+      "kind": "Property",
+      "type": "string",
+      "description": "Entry body."
+    },
+    {
+      "name": "BodyFormat",
+      "kind": "Property",
+      "type": "TmCommentBodyFormat",
+      "description": "Entry body format."
+    },
+    {
+      "name": "CanDelete",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the current viewer may delete this entry."
+    },
+    {
+      "name": "CanEdit",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the current viewer may edit this entry."
+    },
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTimeOffset",
+      "description": "Creation timestamp."
+    },
+    {
+      "name": "EditedAt",
+      "kind": "Property",
+      "type": "DateTimeOffset?",
+      "description": "Last edit timestamp, when edited."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable entry identifier."
+    },
+    {
+      "name": "Mentions",
+      "kind": "Property",
+      "type": "List<TmCommentMention>",
+      "description": "Users mentioned by this entry."
+    },
+    {
+      "name": "Metadata",
+      "kind": "Property",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for consumer use."
+    },
+    {
+      "name": "ParentEntryId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional parent entry identifier for threaded replies."
+    },
+    {
+      "name": "Reactions",
+      "kind": "Property",
+      "type": "List<TmCommentReaction>",
+      "description": "Reactions applied to this entry."
+    },
+    {
+      "name": "ThreadId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Parent thread identifier."
+    }
+  ],
+  "itemName": "TmCommentEntry"
+}

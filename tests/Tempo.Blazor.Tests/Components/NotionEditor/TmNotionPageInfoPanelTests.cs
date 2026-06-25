@@ -1,6 +1,7 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.Page;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
@@ -89,7 +90,7 @@ public sealed class TmNotionPageInfoPanelTests : LocalizationTestBase
 
     private static NotionEditorContext BuildContext(
         INotionAnalyticsProvider? analyticsProvider = null,
-        INotionMentionProvider? mentionProvider = null)
+        ITmPeopleProvider? mentionProvider = null)
         => new()
         {
             DataProvider = new FakeDataProvider(),
@@ -130,29 +131,30 @@ public sealed class TmNotionPageInfoPanelTests : LocalizationTestBase
             => Task.FromResult<IReadOnlyList<PageAnalyticsDto>>([]);
     }
 
-    private sealed class FakeMentionProvider : INotionMentionProvider
+    private sealed class FakeMentionProvider : TmPeopleProviderBase
     {
-        private static readonly IReadOnlyList<IMentionUser> Users =
+        private static readonly IReadOnlyList<TmUser> Users =
         [
-            new FakeMentionUser("ada", "Ada Lovelace"),
-            new FakeMentionUser("grace", "Grace Hopper")
+            new() { Id = "ada", UserName = "ada", DisplayName = "Ada Lovelace" },
+            new() { Id = "grace", UserName = "grace", DisplayName = "Grace Hopper" }
         ];
 
-        public Task<IEnumerable<IMentionUser>> SearchUsersAsync(string query)
-            => Task.FromResult(Users
-                .Where(user => string.Equals(user.UserId, query, StringComparison.OrdinalIgnoreCase))
-                .AsEnumerable());
+        public override Task<IReadOnlyList<TmUser>> SearchAsync(TmPeopleQuery query, CancellationToken cancellationToken = default)
+        {
+            IEnumerable<TmUser> users = Users;
+            if (query.Ids.Count > 0)
+            {
+                var ids = query.Ids.ToHashSet(StringComparer.Ordinal);
+                users = users.Where(user => ids.Contains(user.Id));
+            }
+            else if (!string.IsNullOrWhiteSpace(query.SearchText))
+            {
+                users = users.Where(user => string.Equals(user.Id, query.SearchText, StringComparison.OrdinalIgnoreCase));
+            }
 
-        public Task<IEnumerable<INotionPage>> SearchPagesAsync(string query)
-            => Task.FromResult(Enumerable.Empty<INotionPage>());
+            return Task.FromResult<IReadOnlyList<TmUser>>(users.ToArray());
+        }
     }
-
-    private sealed record FakeMentionUser(string UserId, string DisplayName) : IMentionUser
-    {
-        public string? AvatarUrl => null;
-        public string? Email => null;
-    }
-
     private sealed class FakeDataProvider : INotionDataProvider
     {
         public Task<INotionPage> GetPageAsync(string pageId) => throw new NotSupportedException();

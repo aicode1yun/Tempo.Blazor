@@ -1,0 +1,28 @@
+{
+  "examples": [
+    {
+      "title": "Evaluate a Report Expression",
+      "category": "Expressions",
+      "description": "Evaluates a safe report expression against fields, parameters, and globals without reflection or environment access.",
+      "code": "var value = ExpressionEvaluator.Evaluate(\n    \"=Fields.Price * Parameters.Rate\",\n    new ExpressionContext(\n        new Dictionary<string, object?> { [\"Price\"] = 120m },\n        new Dictionary<string, object?> { [\"Rate\"] = 1.21m },\n        new ExpressionGlobals(DateTimeOffset.UtcNow, \"user-1\", \"tenant-a\")));"
+    },
+    {
+      "title": "Generate a Snapshot",
+      "category": "Layout",
+      "description": "Converts a processed report instance into deterministic fixed-page snapshot commands for the Blazor canvas viewer and PDF renderer.",
+      "code": "var instance = ReportBandInstantiator.Instantiate(definition, dataSet, processingContext);\nvar snapshot = ReportSnapshotGenerator.Generate(instance, textMeasurer);"
+    },
+    {
+      "title": "Render PDF and PNG",
+      "category": "PDF",
+      "description": "Uses the same snapshot command stream for PDF and PNG output.",
+      "code": "var renderer = new ReportPdfRenderer();\nbyte[] pdf = renderer.Render(snapshot);\nbyte[] firstPagePng = renderer.RenderPagePng(snapshot.Pages[0]);"
+    },
+    {
+      "title": "Export Tabular Data",
+      "category": "Export",
+      "description": "Builds a tabular export document from processed report data and serializes it to CSV or XLSX.",
+      "code": "var document = ReportTabularExportBuilder.Build(definition, processingContext);\nvar csv = ReportCsvExporter.Export(document, new ReportCsvExportOptions { IncludeBom = true });\nvar xlsx = ReportXlsxExporter.Export(document, new ReportXlsxExportOptions());"
+    }
+  ]
+}

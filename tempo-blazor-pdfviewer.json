@@ -1,0 +1,235 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.PdfViewer",
+    "title": "Tempo.Blazor.PdfViewer",
+    "description": "PDF.js powered PDF viewer component for Tempo.Blazor with thumbnails, search, text layer, rotation, zoom, and continuous scroll.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;components;pdf;viewer;pdfjs",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.PdfViewer"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor/Tempo.Blazor.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Components.Files",
+      "Tempo.Blazor.Configuration"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.PdfViewer",
+    "overview": "PDF.js powered PDF viewer component for Tempo.Blazor with thumbnails, search, text layer, rotation, zoom, and continuous scroll.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.PdfViewer"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "PdfViewMode",
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "View mode for the PDF viewer.",
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfViewer.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "kind": "Class",
+      "category": "Configuration",
+      "namespace": "Tempo.Blazor.Configuration",
+      "description": "Extension methods for registering Tempo.Blazor PDF viewer services.",
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "sourcePath": "src/Tempo.Blazor.PdfViewer/Configuration/PdfViewerServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "AddTempoBlazorPdfViewer",
+          "kind": "Method",
+          "type": "IServiceCollection",
+          "description": "Registers services required by the PDF viewer component group.",
+          "parameters": [
+            {
+              "name": "services",
+              "type": "this IServiceCollection"
+            }
+          ]
+        }
+      ],
+      "itemName": "PdfViewerServiceCollectionExtensions"
+    },
+    {
+      "itemName": "TmPdfViewer",
+      "kind": "Component",
+      "category": "Files",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "A reusable PDF viewer component powered by PDF.js v5. Supports page navigation, zoom, rotation, text layer, thumbnails, search, and continuous scroll.",
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfViewer.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Files"
+      ],
+      "parameters": [
+        {
+          "name": "AllowDownload",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether to show the toolbar. Default is true."
+        },
+        {
+          "name": "AllowRotation",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether to allow downloading the PDF. Default is true."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Callback when the view mode changes."
+        },
+        {
+          "name": "Height",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "Page",
+          "type": "int",
+          "isRequired": false,
+          "default": "1",
+          "description": "URL of the PDF document to display."
+        },
+        {
+          "name": "PageChanged",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Current page number (1-based). Supports two-way binding."
+        },
+        {
+          "name": "Scale",
+          "type": "double",
+          "isRequired": false,
+          "default": "1.0",
+          "description": "Callback when the page changes."
+        },
+        {
+          "name": "ScaleChanged",
+          "type": "EventCallback<double>",
+          "isRequired": false,
+          "description": "Current zoom scale. Supports two-way binding."
+        },
+        {
+          "name": "ShowSearch",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether to show a thumbnails sidebar. Default is false."
+        },
+        {
+          "name": "ShowTextLayer",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether to allow rotation. Default is false."
+        },
+        {
+          "name": "ShowThumbnails",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether to render a selectable text layer over the canvas. Default is false."
+        },
+        {
+          "name": "ShowToolbar",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Callback when the scale changes."
+        },
+        {
+          "name": "ShowViewModeToggle",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether to show a search input. Default is false."
+        },
+        {
+          "name": "ViewMode",
+          "type": "PdfViewMode",
+          "isRequired": false,
+          "default": "PdfViewMode.SinglePage",
+          "description": "Whether to show a view mode toggle (single/continuous). Default is false."
+        },
+        {
+          "name": "ViewModeChanged",
+          "type": "EventCallback<PdfViewMode>",
+          "isRequired": false,
+          "description": "Current view mode. Default is SinglePage."
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [],
+  "assets": [
+    {
+      "path": "src/Tempo.Blazor.PdfViewer/wwwroot/js/pdf-viewer.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.PdfViewer/wwwroot/js/pdf.min.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.PdfViewer/wwwroot/js/pdf.worker.min.mjs",
+      "kind": "JavaScript"
+    }
+  ],
+  "summary": {
+    "itemCount": 3,
+    "manualItemCount": 2,
+    "generatedItemCount": 3,
+    "generatedOnlyItemCount": 1,
+    "componentCount": 1,
+    "publicApiTypeCount": 2
+  }
+}

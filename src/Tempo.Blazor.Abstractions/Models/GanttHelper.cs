@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.WorkItems;
 namespace Tempo.Blazor.Abstractions.Models;
 
 /// <summary>
@@ -6,9 +7,9 @@ namespace Tempo.Blazor.Abstractions.Models;
 public static class GanttHelper
 {
     /// <summary>
-    /// Builds a tree structure from flat tasks using <see cref="GanttTask.ParentId"/>.
+    /// Builds a tree structure from flat tasks using <see cref="TmWorkItem.ParentId"/>.
     /// </summary>
-    public static IReadOnlyList<GanttTaskNode> BuildTree(IReadOnlyList<GanttTask> tasks)
+    public static IReadOnlyList<GanttTaskNode> BuildTree(IReadOnlyList<TmWorkItem> tasks)
     {
         var nodes = tasks.Select(t => new GanttTaskNode(t)).ToDictionary(n => n.Task.Id);
 
@@ -45,7 +46,7 @@ public static class GanttHelper
     /// </summary>
     public static List<GanttTaskNode> CascadeSort(List<GanttTaskNode> roots)
     {
-        var sorted = roots.OrderBy(n => n.Task.Start).ToList();
+        var sorted = roots.OrderBy(n => n.Task.ScheduledStart()).ToList();
         foreach (var node in sorted)
         {
             if (node.Children.Count > 0)
@@ -281,11 +282,11 @@ public static class GanttHelper
     /// <summary>
     /// Computes the overall time range for a set of tasks.
     /// </summary>
-    public static (DateTime Start, DateTime End) GetTimeRange(IReadOnlyList<GanttTask> tasks)
+    public static (DateTime Start, DateTime End) GetTimeRange(IReadOnlyList<TmWorkItem> tasks)
     {
         if (tasks.Count == 0) return (DateTime.Today, DateTime.Today.AddDays(7));
-        var start = tasks.Min(t => t.Start);
-        var end = tasks.Max(t => t.End);
+        var start = tasks.Min(t => t.ScheduledStart());
+        var end = tasks.Max(t => t.ScheduledEnd());
         if (start == end) end = end.AddDays(1);
         return (start, end);
     }
@@ -305,7 +306,7 @@ public static class GanttHelper
     }
 
     /// <summary>
-    /// Recursively sets <see cref="GanttTask.IsExpanded"/> on every node in the tree.
+    /// Recursively sets <see cref="TmWorkItem.IsExpanded"/> on every node in the tree.
     /// </summary>
     public static void SetAllExpanded(IEnumerable<GanttTaskNode> roots, bool expanded)
     {
@@ -395,7 +396,7 @@ public static class GanttHelper
         return true;
     }
 
-    private static bool MatchesFilter(GanttTask task, GanttFilter filter)
+    private static bool MatchesFilter(TmWorkItem task, GanttFilter filter)
     {
         var field = filter.Field;
         var op    = filter.Operator;
@@ -404,7 +405,7 @@ public static class GanttHelper
         if (field.StartsWith("custom:", StringComparison.OrdinalIgnoreCase))
         {
             var fieldId = field["custom:".Length..];
-            var taskVal = task.CustomValues.TryGetValue(fieldId, out var cv) ? cv ?? "" : "";
+            var taskVal = task.CustomFields.TryGetValue(fieldId, out var cv) ? cv ?? "" : "";
             return ApplyStringOp(taskVal, op, value);
         }
 
@@ -428,17 +429,17 @@ public static class GanttHelper
     };
 
     /// <summary>
-    /// Filters an audit-log sequence to only entries whose <see cref="GanttHistoryEntry.ChangeType"/>
+    /// Filters an activity-log sequence to only entries whose <see cref="Tempo.Blazor.Abstractions.Shared.TmActivityEntry.Action"/>
     /// is in <paramref name="changeTypes"/>. Passing an empty collection returns all entries.
     /// </summary>
-    public static IReadOnlyList<GanttHistoryEntry> FilterHistory(
-        IEnumerable<GanttHistoryEntry> history,
+    public static IReadOnlyList<Tempo.Blazor.Abstractions.Shared.TmActivityEntry> FilterHistory(
+        IEnumerable<Tempo.Blazor.Abstractions.Shared.TmActivityEntry> history,
         IEnumerable<string> changeTypes)
     {
         var types = changeTypes.ToHashSet(StringComparer.OrdinalIgnoreCase);
         return types.Count == 0
             ? history.ToList()
-            : history.Where(e => types.Contains(e.ChangeType)).ToList();
+            : history.Where(e => types.Contains(e.Action)).ToList();
     }
 
     /// <summary>
@@ -446,11 +447,11 @@ public static class GanttHelper
     /// Returns null when the list is empty.
     /// </summary>
     public static (DateTime MinStart, DateTime MaxEnd)? CalculateGroupBounds(
-        IReadOnlyList<GanttTask> children)
+        IReadOnlyList<TmWorkItem> children)
     {
         if (children.Count == 0) return null;
-        var min = children.Min(c => c.Start);
-        var max = children.Max(c => c.End);
+        var min = children.Min(c => c.ScheduledStart());
+        var max = children.Max(c => c.ScheduledEnd());
         return (min, max);
     }
 
@@ -471,7 +472,7 @@ public static class GanttHelper
 public class GanttTaskNode
 {
     /// <summary>The task data.</summary>
-    public GanttTask Task { get; }
+    public TmWorkItem Task { get; }
 
     /// <summary>Child nodes.</summary>
     public List<GanttTaskNode> Children { get; } = [];
@@ -482,7 +483,7 @@ public class GanttTaskNode
     /// <summary>WBS number assigned by <see cref="GanttHelper.BuildTree"/>.</summary>
     public string WbsNumber { get; set; } = string.Empty;
 
-    public GanttTaskNode(GanttTask task) => Task = task;
+    public GanttTaskNode(TmWorkItem task) => Task = task;
 }
 
 /// <summary>A header cell in the two-row Gantt timeline header.</summary>

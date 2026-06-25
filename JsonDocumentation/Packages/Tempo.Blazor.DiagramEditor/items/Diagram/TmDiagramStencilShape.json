@@ -1,0 +1,14 @@
+{
+  "itemName": "TmDiagramStencilShape",
+  "kind": "Component",
+  "category": "Diagram",
+  "description": "Renders a diagram stencil shape inside a node.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "namespace": "Tempo.Blazor.Components.Diagram",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramStencilShape.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Diagram"
+  ],
+  "parameters": []
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "description": "Describes one keyboard shortcut rendered by the Notion shortcuts panel.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/NotionShortcutCatalog.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionShortcutItem"
+}

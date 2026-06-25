@@ -1,0 +1,24 @@
+{
+  "itemName": "IReportSource",
+  "kind": "Interface",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Reporting.Models",
+  "description": "Report source abstraction consumed by TmReportViewer. Implementations can render locally from a definition or delegate to remote HTTP endpoints.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Models/IReportSource.cs",
+  "documentationStatus": "manual",
+  "methods": [
+    "GetMetadataAsync",
+    "RenderAsync",
+    "ExportPdfAsync",
+    "ExportCsvAsync",
+    "ExportXlsxAsync"
+  ],
+  "relatedTypes": [
+    "EmbeddedReportSource",
+    "RemoteReportSource",
+    "ReportViewerMetadata",
+    "ReportViewerRenderResult",
+    "ReportViewerExportResult"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Commands",
+  "description": "Constraints applied while resizing an image object.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Commands/ResizeImageObjectCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "ResizeImageObjectConstraints"
+}

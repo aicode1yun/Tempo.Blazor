@@ -1,0 +1,34 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard.Normalizers",
+  "description": "Normalizes HTML clipboard content from Google Docs. Detects the docs-internal-guid marker, converts font-weight/font-style CSS spans to semantic marks, and delegates final block extraction to RawHtmlClipboardNormalizer.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Clipboard/Normalizers/GoogleDocsClipboardNormalizer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CanHandle",
+      "kind": "Method",
+      "type": "bool",
+      "parameters": [
+        {
+          "name": "input",
+          "type": "DocumentClipboardInput"
+        }
+      ]
+    },
+    {
+      "name": "Normalize",
+      "kind": "Method",
+      "type": "DocumentClipboardOutput",
+      "parameters": [
+        {
+          "name": "input",
+          "type": "DocumentClipboardInput"
+        }
+      ]
+    }
+  ],
+  "itemName": "GoogleDocsClipboardNormalizer"
+}

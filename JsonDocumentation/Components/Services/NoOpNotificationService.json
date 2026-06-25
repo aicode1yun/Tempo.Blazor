@@ -2,27 +2,48 @@
   "kind": "Class",
   "category": "Services",
   "namespace": "Tempo.Blazor.Services",
-  "description": "Default no-op implementation of . Does nothing.",
+  "description": "Default no-op implementation of ITmNotificationService. Does nothing.",
   "packageId": "Tempo.Blazor",
   "sourcePath": "src/Tempo.Blazor/Services/NoOpNotificationService.cs",
   "documentationStatus": "generated",
   "members": [
     {
-      "name": "GetNotificationsAsync",
+      "name": "OnChanged",
+      "kind": "Event",
+      "type": "Action?"
+    },
+    {
+      "name": "Capabilities",
+      "kind": "Property",
+      "type": "TmNotificationServiceCapabilities"
+    },
+    {
+      "name": "PublishAsync",
       "kind": "Method",
-      "type": "Task<IReadOnlyList<INotification>>",
+      "type": "Task<TmNotification>",
       "parameters": [
         {
-          "name": "userId",
-          "type": "string"
+          "name": "notification",
+          "type": "TmNotification"
         },
         {
-          "name": "limit",
-          "type": "int",
-          "default": "20"
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "GetNotificationsAsync",
+      "kind": "Method",
+      "type": "Task<IReadOnlyList<TmNotification>>",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "TmNotificationQuery"
         },
         {
-          "name": "ct",
+          "name": "cancellationToken",
           "type": "CancellationToken",
           "default": "default"
         }
@@ -34,27 +55,11 @@
       "type": "Task<int>",
       "parameters": [
         {
-          "name": "userId",
+          "name": "recipientUserId",
           "type": "string"
         },
         {
-          "name": "ct",
-          "type": "CancellationToken",
-          "default": "default"
-        }
-      ]
-    },
-    {
-      "name": "MarkAllAsReadAsync",
-      "kind": "Method",
-      "type": "Task",
-      "parameters": [
-        {
-          "name": "userId",
-          "type": "string"
-        },
-        {
-          "name": "ct",
+          "name": "cancellationToken",
           "type": "CancellationToken",
           "default": "default"
         }
@@ -70,27 +75,27 @@
           "type": "string"
         },
         {
-          "name": "userId",
+          "name": "recipientUserId",
           "type": "string"
         },
         {
-          "name": "ct",
+          "name": "cancellationToken",
           "type": "CancellationToken",
           "default": "default"
         }
       ]
     },
     {
-      "name": "NotifyAsync",
+      "name": "MarkAllAsReadAsync",
       "kind": "Method",
       "type": "Task",
       "parameters": [
         {
-          "name": "notificationEvent",
-          "type": "INotificationEvent"
+          "name": "recipientUserId",
+          "type": "string"
         },
         {
-          "name": "ct",
+          "name": "cancellationToken",
           "type": "CancellationToken",
           "default": "default"
         }

@@ -1,0 +1,78 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Canonical user or virtual person-like resource shared across Tempo.Blazor components.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmUser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable user identifier within the source and tenant scope."
+    },
+    {
+      "name": "DisplayName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name shown in user-facing UI."
+    },
+    {
+      "name": "UserName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional username or mention handle."
+    },
+    {
+      "name": "Email",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional e-mail address."
+    },
+    {
+      "name": "AvatarUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional avatar image URL."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional color token or sanitized CSS color used for avatars and timelines."
+    },
+    {
+      "name": "IsVirtual",
+      "kind": "Property",
+      "type": "bool",
+      "description": "True when this represents a virtual resource rather than an account-backed user."
+    },
+    {
+      "name": "SourceKey",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional provider/source discriminator for applications with multiple people sources."
+    },
+    {
+      "name": "TenantId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional tenant, workspace, or application scope identifier."
+    },
+    {
+      "name": "ToRef",
+      "kind": "Method",
+      "type": "TmUserRef",
+      "description": "Creates a lightweight reference snapshot from this user."
+    },
+    {
+      "name": "FromRef",
+      "kind": "Method",
+      "type": "TmUser",
+      "description": "Creates a full user model from a lightweight reference snapshot."
+    }
+  ],
+  "itemName": "TmUser"
+}

@@ -2,10 +2,8 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Notifications;
-using Tempo.Blazor.NotionEditor.Enums;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
 using Tempo.Blazor.Services;
 
 namespace Tempo.Blazor.Tests.Localization;
@@ -20,8 +18,7 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
 
     public TmNotificationBellLocalizationTests()
     {
-        Services.AddSingleton<INotificationService>(_store);
-        Services.AddSingleton<INotificationBadgeState>(_store);
+        Services.AddSingleton<ITmNotificationService>(_store);
         Services.AddSingleton<NavigationManager>(new FakeNavManager());
     }
 
@@ -49,7 +46,7 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
     public void TmNotificationBell_Title_UsesLocalizer()
     {
         UseCzechLocalization();
-        _store.NotifyAsync(MakeEvent("Test")).Wait();
+        _store.PublishAsync(MakeNotification("Test")).Wait();
 
         var cut = RenderComponent<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
@@ -62,7 +59,7 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
     public void TmNotificationBell_MarkAllRead_UsesLocalizer()
     {
         UseCzechLocalization();
-        _store.NotifyAsync(MakeEvent("Test")).Wait();
+        _store.PublishAsync(MakeNotification("Test")).Wait();
 
         var cut = RenderComponent<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
@@ -93,14 +90,13 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
             .Should().Be("No notifications");
     }
 
-    private static NotificationEvent MakeEvent(string message) => new()
+    private static TmNotification MakeNotification(string message) => new()
     {
-        Type = NotificationType.Mention,
+        Type = TmNotificationTypes.Mention,
         RecipientUserId = "demo",
-        SenderUserId = "alice",
-        SenderName = "Alice",
-        Message = message,
-        CreatedAt = DateTime.UtcNow
+        Actor = new TmUserRef { Id = "alice", DisplayName = "Alice" },
+        Title = message,
+        CreatedAt = DateTimeOffset.UtcNow
     };
 
     private sealed class FakeNavManager : NavigationManager

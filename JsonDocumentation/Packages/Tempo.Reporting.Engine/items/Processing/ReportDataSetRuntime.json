@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Loads provider streams into processing-friendly data sets.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetRuntime.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDataSetRuntime"
+}

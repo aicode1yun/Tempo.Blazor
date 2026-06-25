@@ -1,5 +1,5 @@
 @namespace Tempo.Blazor.Components.Activity
-@using Tempo.Blazor.Interfaces
+@using Tempo.Blazor.Abstractions.Shared
 
 <div class="tm-activity-log">
     <div class="tm-activity-tabs" role="tablist">
@@ -61,8 +61,10 @@
             case ActivityTab.Attachments:
                 <TmActivityAttachments @ref="_attachmentsRef"
                                        Attachments="Attachments"
-                                       Provider="AttachmentProvider"
-                                       EntityId="EntityId" />
+                                       AttachmentProvider="AttachmentProvider"
+                                       FileProvider="FileProvider"
+                                       EntityId="EntityId"
+                                       EntityType="EntityType" />
                 break;
         }
     </div>
@@ -73,10 +75,12 @@
 
     // ── Parameters ────────────────────────────────────────────────
     [Parameter] public string? EntityId { get; set; }
+    [Parameter] public string EntityType { get; set; } = "activity-entity";
     [Parameter] public IReadOnlyList<ITimelineEntry> TimelineEntries { get; set; } = [];
-    [Parameter] public IReadOnlyList<ICommentEntry> Comments { get; set; } = [];
-    [Parameter] public IReadOnlyList<IFileAttachment> Attachments { get; set; } = [];
-    [Parameter] public IFileAttachmentProvider? AttachmentProvider { get; set; }
+    [Parameter] public IReadOnlyList<TmCommentEntry> Comments { get; set; } = [];
+    [Parameter] public IReadOnlyList<TmAttachment> Attachments { get; set; } = [];
+    [Parameter] public ITmAttachmentProvider? AttachmentProvider { get; set; }
+    [Parameter] public ITmFileProvider? FileProvider { get; set; }
     [Parameter] public bool ShowTimeline { get; set; } = true;
     [Parameter] public bool ShowComments { get; set; } = true;
     [Parameter] public bool ShowAttachments { get; set; } = true;

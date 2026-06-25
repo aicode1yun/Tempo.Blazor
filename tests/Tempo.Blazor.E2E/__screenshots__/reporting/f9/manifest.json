@@ -1,0 +1,14 @@
+{
+  "phase": "F9",
+  "testName": "F9_ReportViewer_DemoSupportsParametersPagingZoomAndPdfExport",
+  "baseUrl": "http://127.0.0.1:36101",
+  "screenshots": [
+    "01-viewer-default.png",
+    "02-parameters.png",
+    "03-zoom-fit.png",
+    "04-export-menu.png",
+    "05-loading-state.png"
+  ],
+  "functionalReview": "The Blazor report viewer opened an embedded report, accepted parameters, paged to page 2, applied fit-width zoom and downloaded a PDF export.",
+  "uxReview": "The toolbar uses Tempo button styling, native keyboard-friendly inputs/selects, clear loading/empty/error surfaces and design-token based styling."
+}

@@ -1,0 +1,44 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Reporting.Services",
+  "description": "Helpers for stateless report viewer interaction tokens.",
+  "packageId": "Tempo.Blazor.Reporting",
+  "sourcePath": "src/Tempo.Blazor.Reporting/Services/ReportInteractionState.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Contains",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns true when the interaction token contains a key.",
+      "parameters": [
+        {
+          "name": "token",
+          "type": "string?"
+        },
+        {
+          "name": "key",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Toggle",
+      "kind": "Method",
+      "type": "string",
+      "description": "Toggles a key in a stable comma-separated interaction token.",
+      "parameters": [
+        {
+          "name": "token",
+          "type": "string?"
+        },
+        {
+          "name": "key",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "ReportInteractionState"
+}

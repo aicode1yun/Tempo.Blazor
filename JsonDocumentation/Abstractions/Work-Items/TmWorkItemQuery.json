@@ -1,0 +1,102 @@
+{
+  "kind": "Class",
+  "category": "Work Items",
+  "namespace": "Tempo.Blazor.Abstractions.WorkItems",
+  "description": "Unified filter and paging options for querying s.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemQuery.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AssigneeId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional assigned user id filter."
+    },
+    {
+      "name": "DueAfter",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Inclusive lower due-date bound."
+    },
+    {
+      "name": "DueBefore",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Inclusive upper due-date bound."
+    },
+    {
+      "name": "FreeText",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Free-text search string."
+    },
+    {
+      "name": "Ids",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>",
+      "description": "Specific work item ids to resolve."
+    },
+    {
+      "name": "IncludeCompleted",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Includes completed items when true."
+    },
+    {
+      "name": "OriginPageId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional source page id filter (e.g. Notion page)."
+    },
+    {
+      "name": "ParentId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional parent id filter (children of a given item)."
+    },
+    {
+      "name": "QueryString",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Opaque provider-native query string (e.g. Jira JQL)."
+    },
+    {
+      "name": "RangeEnd",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Items overlapping this range (scheduling queries). Inclusive upper bound."
+    },
+    {
+      "name": "RangeStart",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Items overlapping this range (scheduling queries). Inclusive lower bound."
+    },
+    {
+      "name": "Skip",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of matching items to skip."
+    },
+    {
+      "name": "SourceKey",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional source/provider key filter (registry lookup). Null queries the resolved provider as-is."
+    },
+    {
+      "name": "Status",
+      "kind": "Property",
+      "type": "TmWorkItemStatus?",
+      "description": "Optional status filter."
+    },
+    {
+      "name": "Take",
+      "kind": "Property",
+      "type": "int",
+      "description": "Maximum number of items to return."
+    }
+  ],
+  "itemName": "TmWorkItemQuery"
+}

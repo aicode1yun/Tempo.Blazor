@@ -249,7 +249,7 @@ public sealed class DocumentEditorCanvasAutocorrectE2ETests : WasmTestBase
                     ([blockId, startOffset, endOffset]) => {
                         const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                         const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                        return import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs')
+                        return import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs')
                             .then(module => module.selectTextRange(handle, blockId, startOffset, endOffset) || '');
                     }
                     """,
@@ -300,7 +300,7 @@ public sealed class DocumentEditorCanvasAutocorrectE2ETests : WasmTestBase
             async ({ commandId, json }) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const raw = module.execCommand(handle, commandId, json);
                 const parsed = JSON.parse(raw || '{}');
                 return {
@@ -340,7 +340,7 @@ public sealed class DocumentEditorCanvasAutocorrectE2ETests : WasmTestBase
             async () => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
                 const model = JSON.parse(module.getModelJson(handle));
                 const blocks = model?.body?.blocks || [];
                 const block = id => blocks.find(item => item.id === id) || {};

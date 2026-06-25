@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Generates a timeline diagram from CSV data.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/CsvToTimelineGenerator.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Generate",
+      "kind": "Method",
+      "type": "DiagramDocument",
+      "parameters": [
+        {
+          "name": "parseResult",
+          "type": "CsvParseResult"
+        },
+        {
+          "name": "mappings",
+          "type": "IReadOnlyList<CsvColumnMapping>"
+        }
+      ]
+    }
+  ],
+  "itemName": "CsvToTimelineGenerator"
+}

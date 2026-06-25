@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Snapshot",
+  "namespace": "Tempo.Reporting.Engine.Snapshot",
+  "description": "Thrown when a report snapshot cannot be read safely.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportSnapshotJsonException.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportSnapshotJsonException"
+}

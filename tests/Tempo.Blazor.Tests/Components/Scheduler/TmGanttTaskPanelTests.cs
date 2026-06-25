@@ -10,7 +10,7 @@ namespace Tempo.Blazor.Tests.Components.Scheduler;
 
 public class TmGanttTaskPanelTests : LocalizationTestBase
 {
-    private static GanttTask CreateTask() => new()
+    private static TmWorkItem CreateTask() => new()
     {
         Id = "1",
         Title = "Design",
@@ -20,7 +20,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
         ParentId = null
     };
 
-    private static List<GanttTask> AllTasksWithTwo => new()
+    private static List<TmWorkItem> AllTasksWithTwo => new()
     {
         new() { Id = "1", Title = "Design", Start = new(2024, 6, 1), End = new(2024, 6, 10), PercentComplete = 50 },
         new() { Id = "2", Title = "Dev", Start = new(2024, 6, 11), End = new(2024, 6, 20), PercentComplete = 0 }
@@ -34,7 +34,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     {
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
-            .Add(c => c.AllTasks, new List<GanttTask>()));
+            .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
         cut.Find(".tm-gantt-task-panel").Should().NotBeNull();
         cut.Find("[data-testid='task-title']").Should().NotBeNull();
@@ -255,7 +255,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     public void TmGanttTaskPanel_DoesNotRender_WhenNoTask()
     {
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
-            .Add(c => c.AllTasks, new List<GanttTask>()));
+            .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
         cut.Nodes.Should().BeEmpty("panel should not render when Task is null");
     }
@@ -266,10 +266,10 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     [Fact]
     public void TmGanttTaskPanel_UpdatesTask_OnSave()
     {
-        GanttTask? updated = null;
+        TmWorkItem? updated = null;
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
-            .Add(c => c.AllTasks, new List<GanttTask>())
+            .Add(c => c.AllTasks, new List<TmWorkItem>())
             .Add(c => c.OnTaskUpdated, t => updated = t));
 
         // Change title
@@ -292,7 +292,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     {
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
-            .Add(c => c.AllTasks, new List<GanttTask>()));
+            .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
         // Simulate setting End before Start via the date inputs
         // We use the date inputs directly (native HTML date inputs rendered by TmDatePicker or plain input)
@@ -325,7 +325,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     {
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
-            .Add(c => c.AllTasks, new List<GanttTask>()));
+            .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
         var titleInput = cut.Find("[data-testid='task-title'] input");
         titleInput.Input("Changed Title");
@@ -349,7 +349,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
 
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, task)
-            .Add(c => c.AllTasks, new List<GanttTask>()));
+            .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
         cut.Find("[data-testid='task-budget']").Should().NotBeNull();
         cut.Find("[data-testid='task-actual-cost']").Should().NotBeNull();
@@ -358,15 +358,15 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     [Fact]
     public void TmGanttTaskPanel_Save_Propagates_BudgetHours_And_ActualCost()
     {
-        GanttTask? saved = null;
+        TmWorkItem? saved = null;
         var task = CreateTask();
         task.BudgetHours = 40.0;
         task.ActualCost  = 500m;
 
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, task)
-            .Add(c => c.AllTasks, new List<GanttTask>())
-            .Add(c => c.OnTaskUpdated, EventCallback.Factory.Create<GanttTask>(this, t => saved = t)));
+            .Add(c => c.AllTasks, new List<TmWorkItem>())
+            .Add(c => c.OnTaskUpdated, EventCallback.Factory.Create<TmWorkItem>(this, t => saved = t)));
 
         cut.Find("[data-testid='task-budget'] input").Change("80");
         cut.Find("[data-testid='task-save']").Click();
@@ -395,7 +395,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
 
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, task)
-            .Add(c => c.AllTasks, new List<GanttTask>()));
+            .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
         cut.Find("[data-testid='task-timelog-section']").Should().NotBeNull();
         cut.FindAll("[data-testid^='timelog-entry-']").Should().HaveCount(1);
@@ -414,7 +414,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
 
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, task)
-            .Add(c => c.AllTasks, new List<GanttTask>()));
+            .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
         cut.Find("[data-testid='task-timelog-total']").TextContent.Should().Contain("2");
     }
@@ -424,7 +424,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     {
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
-            .Add(c => c.AllTasks, new List<GanttTask>())
+            .Add(c => c.AllTasks, new List<TmWorkItem>())
             .Add(c => c.ActiveTimerTaskId, (string?)null));
 
         cut.Find("[data-testid='timer-start-btn']").Should().NotBeNull();
@@ -436,7 +436,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     {
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())          // Task.Id == "1"
-            .Add(c => c.AllTasks, new List<GanttTask>())
+            .Add(c => c.AllTasks, new List<TmWorkItem>())
             .Add(c => c.ActiveTimerTaskId, "1"));
 
         cut.Find("[data-testid='timer-stop-btn']").Should().NotBeNull();
@@ -449,7 +449,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
         string? firedId = null;
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
-            .Add(c => c.AllTasks, new List<GanttTask>())
+            .Add(c => c.AllTasks, new List<TmWorkItem>())
             .Add(c => c.ActiveTimerTaskId, (string?)null)
             .Add(c => c.OnTimerStarted, EventCallback.Factory.Create<string>(this, id => firedId = id)));
 
@@ -464,7 +464,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
         (string TaskId, GanttTimeLogEntry Entry)? fired = null;
         var cut = RenderComponent<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
-            .Add(c => c.AllTasks, new List<GanttTask>())
+            .Add(c => c.AllTasks, new List<TmWorkItem>())
             .Add(c => c.ActiveTimerTaskId, "1")
             .Add(c => c.OnTimerStopped, EventCallback.Factory.Create<(string, GanttTimeLogEntry)>(this, e => fired = e)));
 

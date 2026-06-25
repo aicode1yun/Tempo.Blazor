@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using Tempo.Blazor.Abstractions.Interfaces;
 using Tempo.Blazor.Abstractions.Models;
-using Tempo.Blazor.Models;
+using Tempo.Blazor.Abstractions.Shared;
 
 namespace Tempo.Blazor.Demo.Services;
 
@@ -12,7 +12,7 @@ namespace Tempo.Blazor.Demo.Services;
 public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<DocumentMetadata>
 {
     private readonly List<DocumentManagerItem<DocumentMetadata>> _items;
-    private readonly Dictionary<string, List<FileAttachment>> _attachments = new();
+    private readonly Dictionary<string, List<TmAttachment>> _attachments = new();
     private readonly Dictionary<string, Dictionary<string, byte[]>> _attachmentData = new();
 
     public DemoDocumentManagerProvider(bool readOnly = false)
@@ -137,12 +137,12 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
         // Seed some attachments for demo
         _attachments["d1"] =
         [
-            new FileAttachment { Id = "a1", Name = "Annual Report.pdf", Size = 1_024_000, ContentType = "application/pdf", CreatedDate = new DateTime(2025, 3, 15) },
-            new FileAttachment { Id = "a2", Name = "Appendix.xlsx", Size = 256_000, ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", CreatedDate = new DateTime(2025, 3, 15) }
+            new TmAttachment { Id = "a1", EntityRef = Entity("d1"), FileName = "Annual Report.pdf", SizeBytes = 1_024_000, ContentType = "application/pdf", UploadedAt = new DateTimeOffset(2025, 3, 15, 0, 0, 0, TimeSpan.Zero), Purpose = "document-manager" },
+            new TmAttachment { Id = "a2", EntityRef = Entity("d1"), FileName = "Appendix.xlsx", SizeBytes = 256_000, ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", UploadedAt = new DateTimeOffset(2025, 3, 15, 0, 0, 0, TimeSpan.Zero), Purpose = "document-manager" }
         ];
         _attachments["d2"] =
         [
-            new FileAttachment { Id = "a3", Name = "Budget.xlsx", Size = 512_000, ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", CreatedDate = new DateTime(2025, 4, 1) }
+            new TmAttachment { Id = "a3", EntityRef = Entity("d2"), FileName = "Budget.xlsx", SizeBytes = 512_000, ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", UploadedAt = new DateTimeOffset(2025, 4, 1, 0, 0, 0, TimeSpan.Zero), Purpose = "document-manager" }
         ];
         foreach (var kvp in _attachments)
         {
@@ -264,7 +264,7 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
                 ModifiedDate = DateTime.Now
             };
 
-            var attachments = new List<FileAttachment>();
+            var attachments = new List<TmAttachment>();
             _attachmentData[entity.Id] = new Dictionary<string, byte[]>();
             foreach (var file in files)
             {
@@ -272,13 +272,15 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
                 await file.Stream.CopyToAsync(ms);
                 var data = ms.ToArray();
 
-                var attachment = new FileAttachment
+                var attachment = new TmAttachment
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Name = file.FileName,
-                    Size = file.Size,
+                    EntityRef = Entity(entity.Id),
+                    FileName = file.FileName,
+                    SizeBytes = file.Size,
                     ContentType = file.ContentType,
-                    CreatedDate = DateTime.Now
+                    UploadedAt = DateTimeOffset.Now,
+                    Purpose = "document-manager"
                 };
                 attachments.Add(attachment);
                 _attachmentData[entity.Id][attachment.Id] = data;
@@ -366,19 +368,19 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
         return Task.FromResult(copy);
     }
 
-    public Task<string?> UploadChunkAsync(FileChunkData chunk, CancellationToken cancellationToken = default)
+    public Task<TmFileUploadResult> UploadChunkAsync(TmFileChunk chunk, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult<string?>(null);
+        return Task.FromResult(new TmFileUploadResult { Success = true, IsComplete = chunk.IsLast });
     }
 
-    public Task<IReadOnlyList<FileAttachment>> GetAttachmentsAsync(string itemId, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<TmAttachment>> GetAttachmentsAsync(string itemId, CancellationToken cancellationToken = default)
     {
         if (_attachments.TryGetValue(itemId, out var list))
-            return Task.FromResult<IReadOnlyList<FileAttachment>>(list);
-        return Task.FromResult<IReadOnlyList<FileAttachment>>([]);
+            return Task.FromResult<IReadOnlyList<TmAttachment>>(list);
+        return Task.FromResult<IReadOnlyList<TmAttachment>>([]);
     }
 
-    public async Task<IReadOnlyList<FileAttachment>> AddAttachmentsAsync(
+    public async Task<IReadOnlyList<TmAttachment>> AddAttachmentsAsync(
         string itemId, IReadOnlyList<FileUploadInfo> files, CancellationToken cancellationToken = default)
     {
         if (!_attachments.ContainsKey(itemId))
@@ -394,13 +396,15 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
             await file.Stream.CopyToAsync(ms);
             var data = ms.ToArray();
 
-            var attachment = new FileAttachment
+            var attachment = new TmAttachment
             {
                 Id = Guid.NewGuid().ToString(),
-                Name = file.FileName,
-                Size = file.Size,
+                EntityRef = Entity(itemId),
+                FileName = file.FileName,
+                SizeBytes = file.Size,
                 ContentType = file.ContentType,
-                CreatedDate = DateTime.Now
+                UploadedAt = DateTimeOffset.Now,
+                Purpose = "document-manager"
             };
             list.Add(attachment);
             dataDict[attachment.Id] = data;
@@ -447,7 +451,7 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
             {
                 if (_attachmentData.TryGetValue(itemId, out var dict) && dict.TryGetValue(att.Id, out var data))
                 {
-                    var entry = archive.CreateEntry(att.Name);
+                    var entry = archive.CreateEntry(att.FileName);
                     using var entryStream = entry.Open();
                     entryStream.Write(data, 0, data.Length);
                 }
@@ -464,4 +468,7 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
         if (lastSlash <= 0) return "/";
         return itemPath.Substring(0, lastSlash);
     }
+
+    private static TmEntityRef Entity(string itemId)
+        => TmEntityRef.Create("document-manager-item", itemId);
 }

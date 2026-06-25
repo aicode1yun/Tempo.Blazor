@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.WorkItems;
 namespace Tempo.Blazor.Abstractions.Models;
 
 /// <summary>
@@ -11,7 +12,7 @@ public static class GanttScheduler
     /// Modifies <paramref name="tasks"/> in place.
     /// </summary>
     /// <exception cref="GanttCircularDependencyException">Thrown when a cycle is detected.</exception>
-    public static void Schedule(IList<GanttTask> tasks, IEnumerable<GanttDependency> dependencies)
+    public static void Schedule(IList<TmWorkItem> tasks, IEnumerable<GanttDependency> dependencies)
     {
         var taskMap = tasks.ToDictionary(t => t.Id);
         var deps = dependencies.ToList();
@@ -64,14 +65,14 @@ public static class GanttScheduler
             {
                 if (!taskMap.TryGetValue(dep.FromId, out var pred)) continue;
 
-                var duration = task.End - task.Start;
+                var duration = task.ScheduledDuration();
 
                 switch (dep.DepType)
                 {
                     case GanttDependencyType.FinishToStart:
                     {
-                        var minStart = pred.End.AddDays(dep.LagDays);
-                        if (task.Start < minStart)
+                        var minStart = pred.ScheduledEnd().AddDays(dep.LagDays);
+                        if (task.ScheduledStart() < minStart)
                         {
                             task.Start = minStart;
                             task.End   = minStart + duration;
@@ -80,8 +81,8 @@ public static class GanttScheduler
                     }
                     case GanttDependencyType.StartToStart:
                     {
-                        var minStart = pred.Start.AddDays(dep.LagDays);
-                        if (task.Start < minStart)
+                        var minStart = pred.ScheduledStart().AddDays(dep.LagDays);
+                        if (task.ScheduledStart() < minStart)
                         {
                             task.Start = minStart;
                             task.End   = minStart + duration;
@@ -90,8 +91,8 @@ public static class GanttScheduler
                     }
                     case GanttDependencyType.FinishToFinish:
                     {
-                        var minEnd = pred.End.AddDays(dep.LagDays);
-                        if (task.End < minEnd)
+                        var minEnd = pred.ScheduledEnd().AddDays(dep.LagDays);
+                        if (task.ScheduledEnd() < minEnd)
                         {
                             task.End   = minEnd;
                             task.Start = minEnd - duration;
@@ -100,8 +101,8 @@ public static class GanttScheduler
                     }
                     case GanttDependencyType.StartToFinish:
                     {
-                        var minEnd = pred.Start.AddDays(dep.LagDays);
-                        if (task.End < minEnd)
+                        var minEnd = pred.ScheduledStart().AddDays(dep.LagDays);
+                        if (task.ScheduledEnd() < minEnd)
                         {
                             task.End   = minEnd;
                             task.Start = minEnd - duration;

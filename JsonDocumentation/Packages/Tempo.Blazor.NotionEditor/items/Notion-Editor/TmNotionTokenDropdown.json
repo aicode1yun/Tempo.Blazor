@@ -1,0 +1,39 @@
+{
+  "itemName": "TmNotionTokenDropdown",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionTokenDropdown Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionTokenDropdown.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "CurrentKey",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Raised when the user clicks \"Create token\" (optional). Arg = current search query."
+    },
+    {
+      "name": "OnClosed",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the user selects a token. Args = (Key, DisplayName, ColorClass)."
+    },
+    {
+      "name": "OnCreateRequested",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Raised when the user dismisses the dropdown (Escape / backdrop click)."
+    },
+    {
+      "name": "OnItemSelected",
+      "type": "EventCallback<(string Key, string DisplayName, string? ColorClass)>",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "UI"
+}

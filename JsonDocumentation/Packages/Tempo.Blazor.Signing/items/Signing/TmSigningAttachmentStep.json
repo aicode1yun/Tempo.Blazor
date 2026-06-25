@@ -1,0 +1,76 @@
+{
+  "itemName": "TmSigningAttachmentStep",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "Renders image, file, and generated stamp signing steps.",
+  "packageId": "Tempo.Blazor.Signing",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmSigningAttachmentStep.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "Accept",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether file input allows multiple files."
+    },
+    {
+      "name": "AllowMultiple",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Short text describing where the field appears in the document."
+    },
+    {
+      "name": "AppearsOn",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Generated stamp text or image identifier."
+    },
+    {
+      "name": "Attachments",
+      "type": "IReadOnlyList<TmSigningStepAttachment>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Signing field represented by this step."
+    },
+    {
+      "name": "AttachmentsChanged",
+      "type": "EventCallback<IReadOnlyList<TmSigningStepAttachment>>",
+      "isRequired": false,
+      "description": "Current uploaded attachments."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Fallback culture used when localized field text is missing."
+    },
+    {
+      "name": "Culture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the controls are disabled."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Accepted file types for upload."
+    },
+    {
+      "name": "FallbackCulture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Culture used to resolve localized field text."
+    },
+    {
+      "name": "StampValue",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when attachments change."
+    }
+  ]
+}

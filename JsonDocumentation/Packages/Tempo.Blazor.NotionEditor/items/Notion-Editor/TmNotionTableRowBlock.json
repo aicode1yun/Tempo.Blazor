@@ -1,0 +1,27 @@
+{
+  "itemName": "TmNotionTableRowBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionTableRowBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Table",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Table/TmNotionTableRowBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Table"
+  ],
+  "parameters": [
+    {
+      "name": "OnCellsChanged",
+      "type": "EventCallback<IReadOnlyList<NotionTableCell>>",
+      "isRequired": false
+    },
+    {
+      "name": "Row",
+      "type": "IPageBlock",
+      "isRequired": true,
+      "editorRequired": true
+    }
+  ],
+  "subcategory": "Blocks / Table"
+}

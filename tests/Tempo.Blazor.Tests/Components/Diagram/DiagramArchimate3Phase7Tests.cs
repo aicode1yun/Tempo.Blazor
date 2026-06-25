@@ -201,11 +201,11 @@ public class DiagramArchimate3Phase7Tests : LocalizationTestBase
     }
 
     [Fact]
-    public void AddTempoBlazor_Registers_Archimate3_Provider()
+    public void AddTempoBlazorDiagramEditor_Registers_Archimate3_Provider()
     {
         var services = new ServiceCollection();
 
-        services.AddTempoBlazor();
+        services.AddTempoBlazorDiagramEditor();
 
         var provider = services.BuildServiceProvider();
         provider.GetServices<IDiagramStencilProvider>()

@@ -207,7 +207,7 @@ public sealed class DocumentEditorCanvasInlineFormatE2ETests : WasmTestBase
                     ([blockId, startOffset, endOffset]) => {
                         const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                         const handle = host?.getAttribute('data-canvas-engine-handle') || '';
-                        return import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs')
+                        return import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs')
                             .then(module => module.selectTextRange(handle, blockId, startOffset, endOffset) || '');
                     }
                     """,

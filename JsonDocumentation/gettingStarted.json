@@ -1,4 +1,4 @@
-﻿{
+{
   "title": "Getting Started with Tempo.Blazor",
   "overview": "Tempo.Blazor is a comprehensive Blazor WebAssembly component library providing 100+ UI components for building modern web applications. It includes inputs, forms, data tables, pickers, charts, layout, navigation, feedback, workflow designer, scheduler, and more. All components use the Tm prefix (e.g., TmButton, TmDataTable).",
   "targetFramework": ".NET 8.0 / 9.0 / 10.0 (multi-target)",
@@ -6,12 +6,67 @@
   "packages": [
     {
       "name": "Tempo.Blazor",
-      "description": "Main component library with all UI components, CSS, and JS interop.",
+      "description": "Core component library with common UI components, CSS, and JS interop. Larger optional components are distributed through feature packages.",
       "required": true
     },
     {
+      "name": "Tempo.Blazor.All",
+      "description": "Compatibility package that references Tempo.Blazor plus the split feature packages and exposes AddTempoBlazorAll().",
+      "required": false
+    },
+    {
+      "name": "Tempo.Blazor.PdfViewer",
+      "description": "Optional PDF.js powered PDF viewer component and PDF.js static web assets.",
+      "required": false
+    },
+    {
+      "name": "Tempo.Blazor.Codes",
+      "description": "Optional QR code and barcode components backed by QRCoder and ZXing.Net.",
+      "required": false
+    },
+    {
+      "name": "Tempo.Blazor.DiagramEditor",
+      "description": "Optional diagram editor components and diagram static web assets.",
+      "required": false
+    },
+    {
+      "name": "Tempo.Blazor.DocumentEditor",
+      "description": "Optional document editor components, canvas runtime, clipboard normalization, and document editor static web assets.",
+      "required": false
+    },
+    {
+      "name": "Tempo.Blazor.NotionEditor",
+      "description": "Optional Notion-style editor components, block/database UI, collaboration UI, comments, media, and Tempo embed blocks.",
+      "required": false
+    },
+    {
+      "name": "Tempo.Blazor.Signing",
+      "description": "Optional signing workflow components, PDF template designer, recipient roles, signing form runner, verification panels, and audit trail UI.",
+      "required": false
+    },
+    {
+      "name": "Tempo.Blazor.Wireframe",
+      "description": "Optional wireframe editor components and wireframe static web assets.",
+      "required": false
+    },
+    {
+      "name": "Tempo.Blazor.Modeling",
+      "description": "Optional modeling editor components built on the diagram editor package.",
+      "required": false
+    },
+    {
+      "name": "Tempo.Blazor.Spreadsheet",
+      "description": "Optional Excel-like spreadsheet editor, XLSX import/export, and spreadsheet static web assets.",
+      "required": false
+    },
+    {
+      "name": "Tempo.Blazor.GanttXlsx",
+      "description": "Optional Gantt XLSX import/export helpers backed by DocumentFormat.OpenXml.",
+      "required": false
+    },
+    {
       "name": "Tempo.Blazor.Abstractions",
-      "description": "Interfaces and models (zero UI dependencies). Safe to reference from API/service projects for shared contracts like IFileAttachmentProvider, IDashboardProvider, etc.",
+      "description": "Interfaces and models (zero UI dependencies). Safe to reference from API/service projects for shared contracts like ITmAttachmentProvider, ITmFileProvider, IDashboardProvider, etc.",
       "required": false
     },
     {
@@ -43,42 +98,80 @@
       "name": "Tempo.Blazor.Mcp",
       "description": "MCP tools for Tempo.Blazor wireframe schemas, document operations, validation, and implementation briefs.",
       "required": false
+    },
+    {
+      "name": "Tempo.Reporting.Abstractions",
+      "description": "Report definition contracts, validation models, data provider interfaces, report server DTOs, and the typed HTTP client for remote report servers.",
+      "required": false
+    },
+    {
+      "name": "Tempo.Reporting.Engine",
+      "description": "Server/WASM-capable reporting engine for expressions, processing, fixed-page layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives.",
+      "required": false
+    },
+    {
+      "name": "Tempo.Blazor.Reporting",
+      "description": "Blazor reporting components: report viewer, parameter panel, explorer, lightweight designer, embedded sources, and remote Report Server integration.",
+      "required": false
     }
   ],
   "installation": {
     "nuget": [
       "dotnet add package Tempo.Blazor",
+      "dotnet add package Tempo.Blazor.All  # compatibility package for the full split suite",
+      "dotnet add package Tempo.Blazor.PdfViewer  # optional PDF viewer",
+      "dotnet add package Tempo.Blazor.Codes  # optional QR code and barcode components",
+      "dotnet add package Tempo.Blazor.DiagramEditor  # optional diagram editor",
+      "dotnet add package Tempo.Blazor.DocumentEditor  # optional document editor",
+      "dotnet add package Tempo.Blazor.NotionEditor  # optional Notion-style editor",
+      "dotnet add package Tempo.Blazor.Signing  # optional signing workflows and PDF template designer",
+      "dotnet add package Tempo.Blazor.Wireframe  # optional wireframe editor",
+      "dotnet add package Tempo.Blazor.Modeling  # optional modeling editor",
+      "dotnet add package Tempo.Blazor.Spreadsheet  # optional spreadsheet editor and XLSX import/export",
+      "dotnet add package Tempo.Blazor.GanttXlsx  # optional Gantt XLSX import/export",
       "dotnet add package Tempo.Blazor.Abstractions  # optional for shared contracts",
       "dotnet add package Tempo.Blazor.FluentValidation  # optional",
       "dotnet add package Tempo.Blazor.Collaboration  # optional",
       "dotnet add package Tempo.Blazor.DocumentFormats  # optional server-side import/export",
       "dotnet add package Tempo.Blazor.EmailTemplates.Abstractions  # optional email template contracts",
       "dotnet add package Tempo.Blazor.EmailTemplates  # optional email template editor UI",
-      "dotnet add package Tempo.Blazor.Mcp  # optional MCP wireframe tools"
+      "dotnet add package Tempo.Blazor.Mcp  # optional MCP wireframe tools",
+      "dotnet add package Tempo.Reporting.Abstractions  # optional reporting contracts and typed client",
+      "dotnet add package Tempo.Reporting.Engine  # optional reporting processing/rendering engine",
+      "dotnet add package Tempo.Blazor.Reporting  # optional reporting UI components"
     ],
     "programCs": {
       "description": "Register Tempo.Blazor services in Program.cs. AddTempoBlazor() registers ITmLocalizer (Singleton), ThemeService (Scoped), and ToastService (Scoped).",
-      "code": "using Tempo.Blazor.Configuration;\n\nvar builder = WebAssemblyHostBuilder.CreateDefault(args);\n\n// Required: register Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)\nbuilder.Services.AddTempoBlazor();\n\n// Optional: register FluentValidation validators from your assemblies\nbuilder.Services.AddTempoFluentValidation(typeof(MyValidator).Assembly);\n\n// Optional: set culture for localization (supports 'en' and 'cs')\nvar culture = new System.Globalization.CultureInfo(\"cs\");\nSystem.Globalization.CultureInfo.DefaultThreadCurrentCulture = culture;\nSystem.Globalization.CultureInfo.DefaultThreadCurrentUICulture = culture;\n\nawait builder.Build().RunAsync();"
+      "code": "using Tempo.Blazor.Configuration;\n\nvar builder = WebAssemblyHostBuilder.CreateDefault(args);\n\n// Required: register core Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)\nbuilder.Services.AddTempoBlazor();\n\n// Compatibility option when using Tempo.Blazor.All instead of explicit feature registration\n// builder.Services.AddTempoBlazorAll();\n\n// Optional feature packages\nbuilder.Services.AddTempoBlazorPdfViewer();\nbuilder.Services.AddTempoBlazorCodes();\nbuilder.Services.AddTempoBlazorDiagramEditor();\nbuilder.Services.AddTempoBlazorDocumentEditor();\nbuilder.Services.AddTempoBlazorNotionEditor();\nbuilder.Services.AddTempoBlazorSigning();\nbuilder.Services.AddTempoBlazorWireframe();\nbuilder.Services.AddTempoBlazorModeling();\nbuilder.Services.AddTempoBlazorSpreadsheet();\nbuilder.Services.AddTempoBlazorGanttXlsx();\n\n// Optional: register FluentValidation validators from your assemblies\nbuilder.Services.AddTempoFluentValidation(typeof(MyValidator).Assembly);\n\n// Optional: set culture for localization (supports 'en' and 'cs')\nvar culture = new System.Globalization.CultureInfo(\"cs\");\nSystem.Globalization.CultureInfo.DefaultThreadCurrentCulture = culture;\nSystem.Globalization.CultureInfo.DefaultThreadCurrentUICulture = culture;\n\nawait builder.Build().RunAsync();"
     },
     "indexHtml": {
       "description": "Add CSS and JS references to wwwroot/index.html",
-      "code": "<!DOCTYPE html>\n<html>\n<head>\n    <!-- Required: Tempo.Blazor CSS (includes all component styles + design tokens) -->\n    <link href=\"_content/Tempo.Blazor/css/tempo-blazor.bundled.css\" rel=\"stylesheet\" />\n</head>\n<body>\n    <div id=\"app\">Loading...</div>\n\n    <!-- Optional component interop assets; include only the scripts used by your app. -->\n    <script src=\"_content/Tempo.Blazor/js/richEditor.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/dashboard.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/workflow-designer.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/scheduler.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/pdf-viewer.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/dagre.min.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/diagram-editor.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/color-picker.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/file-manager.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/gantt.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/notion-editor.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/document-editor.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/document-editor-wysiwyg.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/pdf-template-designer.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/signature-capture.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/spreadsheet.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/spreadsheet-canvas.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/wireframe-designer.js\"></script>\n    <script src=\"_content/Tempo.Blazor.EmailTemplates/tm-email-variable-insert.js\"></script>\n\n    <script src=\"_framework/blazor.webassembly.js\"></script>\n</body>\n</html>"
+      "code": "<!DOCTYPE html>\n<html>\n<head>\n    <!-- Required: Tempo.Blazor CSS (includes all component styles + design tokens) -->\n    <link href=\"_content/Tempo.Blazor/css/tempo-blazor.bundled.css\" rel=\"stylesheet\" />\n    <link href=\"_content/Tempo.Blazor.DocumentEditor/css/tempo-blazor-document-editor.css\" rel=\"stylesheet\" />\n    <link href=\"_content/Tempo.Blazor.NotionEditor/css/tempo-blazor-notion-editor.css\" rel=\"stylesheet\" />\n    <link href=\"_content/Tempo.Blazor.Signing/css/tempo-blazor-signing.css\" rel=\"stylesheet\" />\n    <link href=\"_content/Tempo.Blazor.Spreadsheet/css/tempo-blazor-spreadsheet.css\" rel=\"stylesheet\" />\n</head>\n<body>\n    <div id=\"app\">Loading...</div>\n\n    <!-- Optional component interop assets; include only the scripts used by your app. -->\n    <script src=\"_content/Tempo.Blazor/js/richEditor.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/dashboard.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/workflow-designer.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/scheduler.js\"></script>\n    <script src=\"_content/Tempo.Blazor.PdfViewer/js/pdf-viewer.js\"></script>\n    <script src=\"_content/Tempo.Blazor.DiagramEditor/js/dagre.min.js\"></script>\n    <script src=\"_content/Tempo.Blazor.DiagramEditor/js/diagram-editor.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/color-picker.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/file-manager.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/gantt.js\"></script>\n    <script src=\"_content/Tempo.Blazor.NotionEditor/js/notion-editor.js\"></script>\n    <script src=\"_content/Tempo.Blazor.Signing/js/pdf-template-designer.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/signature-capture.js\"></script>\n    <script src=\"_content/Tempo.Blazor.Spreadsheet/js/spreadsheet.js\"></script>\n    <script src=\"_content/Tempo.Blazor.Spreadsheet/js/spreadsheet-canvas.js\"></script>\n    <script src=\"_content/Tempo.Blazor.Wireframe/js/wireframe-designer.js\"></script>\n    <script src=\"_content/Tempo.Blazor.EmailTemplates/tm-email-variable-insert.js\"></script>\n\n    <script src=\"_framework/blazor.webassembly.js\"></script>\n</body>\n</html>"
     },
     "importsRazor": {
       "description": "Add component namespaces to _Imports.razor for convenient usage without per-file @using directives.",
-      "code": "@using Tempo.Blazor.Components.Avatars\n@using Tempo.Blazor.Components.Buttons\n@using Tempo.Blazor.Components.Charts\n@using Tempo.Blazor.Components.Dashboard\n@using Tempo.Blazor.Components.DataDisplay\n@using Tempo.Blazor.Components.DataTable\n@using Tempo.Blazor.Components.Dropdowns\n@using Tempo.Blazor.Components.Feedback\n@using Tempo.Blazor.Components.Files\n@using Tempo.Blazor.Components.Filters\n@using Tempo.Blazor.Components.Forms\n@using Tempo.Blazor.Components.Gallery\n@using Tempo.Blazor.Components.Icons\n@using Tempo.Blazor.Components.ImportExport\n@using Tempo.Blazor.Components.Inputs\n@using Tempo.Blazor.Components.Layout\n@using Tempo.Blazor.Components.Navigation\n@using Tempo.Blazor.Components.Notifications\n@using Tempo.Blazor.Components.Pickers\n@using Tempo.Blazor.Components.Scheduler\n@using Tempo.Blazor.Components.Tags\n@using Tempo.Blazor.Components.Timeline\n@using Tempo.Blazor.Components.Toolbar\n@using Tempo.Blazor.Components.TreeView\n@using Tempo.Blazor.Components.Workflow\n@using Tempo.Blazor.Interfaces\n@using Tempo.Blazor.Models"
+      "code": "@using Tempo.Blazor.Components.Avatars\n@using Tempo.Blazor.Components.Buttons\n@using Tempo.Blazor.Components.Charts\n@using Tempo.Blazor.Components.Dashboard\n@using Tempo.Blazor.Components.DataDisplay\n@using Tempo.Blazor.Components.DataTable\n@using Tempo.Blazor.Components.DocumentEditor\n@using Tempo.Blazor.Components.NotionEditor\n@using Tempo.Blazor.Components.Signing\n@using Tempo.Blazor.Components.Dropdowns\n@using Tempo.Blazor.Components.Feedback\n@using Tempo.Blazor.Components.Files\n@using Tempo.Blazor.Components.Filters\n@using Tempo.Blazor.Components.Forms\n@using Tempo.Blazor.Components.Gallery\n@using Tempo.Blazor.Components.Icons\n@using Tempo.Blazor.Components.ImportExport\n@using Tempo.Blazor.Components.Inputs\n@using Tempo.Blazor.Components.Layout\n@using Tempo.Blazor.Components.Navigation\n@using Tempo.Blazor.Components.Notifications\n@using Tempo.Blazor.Components.Pickers\n@using Tempo.Blazor.Components.Scheduler\n@using Tempo.Blazor.Components.Tags\n@using Tempo.Blazor.Components.Timeline\n@using Tempo.Blazor.Components.Toolbar\n@using Tempo.Blazor.Components.TreeView\n@using Tempo.Blazor.Components.Workflow\n@using Tempo.Blazor.Reporting.Components\n@using Tempo.Blazor.Reporting.Models\n@using Tempo.Blazor.Reporting.Services\n@using Tempo.Blazor.Interfaces\n@using Tempo.Blazor.Models"
     },
     "interactiveAutoSetup": {
       "description": "Tempo.Blazor supports InteractiveAuto (hybrid) rendering in .NET 8+ Blazor Web Apps. Components handle prerendering, double initialization, and JS interop safety automatically. Register services in both Server and Client projects.",
-      "appRazor": "<!DOCTYPE html>\n<html>\n<head>\n    <link href=\"_content/Tempo.Blazor/css/tempo-blazor.bundled.css\" rel=\"stylesheet\" />\n    <HeadOutlet @rendermode=\"InteractiveAuto\" />\n</head>\n<body>\n    <Routes @rendermode=\"InteractiveAuto\" />\n    <script src=\"_content/Tempo.Blazor/js/richEditor.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/dashboard.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/workflow-designer.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/scheduler.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/pdf-viewer.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/dagre.min.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/diagram-editor.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/color-picker.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/file-manager.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/gantt.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/notion-editor.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/document-editor.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/document-editor-wysiwyg.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/pdf-template-designer.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/signature-capture.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/spreadsheet.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/spreadsheet-canvas.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/wireframe-designer.js\"></script>\n    <script src=\"_content/Tempo.Blazor.EmailTemplates/tm-email-variable-insert.js\"></script>\n    <script src=\"_framework/blazor.web.js\"></script>\n</body>\n</html>",
-      "serverProgramCs": "// Server Program.cs\nbuilder.Services.AddRazorComponents()\n    .AddInteractiveServerComponents()\n    .AddInteractiveWebAssemblyComponents();\n\nbuilder.Services.AddTempoBlazor();",
-      "clientProgramCs": "// Client (WASM) Program.cs\nbuilder.Services.AddTempoBlazor();",
+      "appRazor": "<!DOCTYPE html>\n<html>\n<head>\n    <link href=\"_content/Tempo.Blazor/css/tempo-blazor.bundled.css\" rel=\"stylesheet\" />\n    <link href=\"_content/Tempo.Blazor.DocumentEditor/css/tempo-blazor-document-editor.css\" rel=\"stylesheet\" />\n    <link href=\"_content/Tempo.Blazor.NotionEditor/css/tempo-blazor-notion-editor.css\" rel=\"stylesheet\" />\n    <link href=\"_content/Tempo.Blazor.Signing/css/tempo-blazor-signing.css\" rel=\"stylesheet\" />\n    <link href=\"_content/Tempo.Blazor.Spreadsheet/css/tempo-blazor-spreadsheet.css\" rel=\"stylesheet\" />\n    <HeadOutlet @rendermode=\"InteractiveAuto\" />\n</head>\n<body>\n    <Routes @rendermode=\"InteractiveAuto\" />\n    <script src=\"_content/Tempo.Blazor/js/richEditor.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/dashboard.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/workflow-designer.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/scheduler.js\"></script>\n    <script src=\"_content/Tempo.Blazor.PdfViewer/js/pdf-viewer.js\"></script>\n    <script src=\"_content/Tempo.Blazor.DiagramEditor/js/dagre.min.js\"></script>\n    <script src=\"_content/Tempo.Blazor.DiagramEditor/js/diagram-editor.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/color-picker.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/file-manager.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/gantt.js\"></script>\n    <script src=\"_content/Tempo.Blazor.NotionEditor/js/notion-editor.js\"></script>\n    <script src=\"_content/Tempo.Blazor.Signing/js/pdf-template-designer.js\"></script>\n    <script src=\"_content/Tempo.Blazor/js/signature-capture.js\"></script>\n    <script src=\"_content/Tempo.Blazor.Spreadsheet/js/spreadsheet.js\"></script>\n    <script src=\"_content/Tempo.Blazor.Spreadsheet/js/spreadsheet-canvas.js\"></script>\n    <script src=\"_content/Tempo.Blazor.Wireframe/js/wireframe-designer.js\"></script>\n    <script src=\"_content/Tempo.Blazor.EmailTemplates/tm-email-variable-insert.js\"></script>\n    <script src=\"_framework/blazor.web.js\"></script>\n</body>\n</html>",
+      "serverProgramCs": "// Server Program.cs\nbuilder.Services.AddRazorComponents()\n    .AddInteractiveServerComponents()\n    .AddInteractiveWebAssemblyComponents();\n\nbuilder.Services.AddTempoBlazor();\nbuilder.Services.AddTempoBlazorPdfViewer();\nbuilder.Services.AddTempoBlazorCodes();\nbuilder.Services.AddTempoBlazorDocumentEditor();\nbuilder.Services.AddTempoBlazorNotionEditor();\nbuilder.Services.AddTempoBlazorSigning();\nbuilder.Services.AddTempoBlazorSpreadsheet();\nbuilder.Services.AddTempoBlazorGanttXlsx();",
+      "clientProgramCs": "// Client (WASM) Program.cs\nbuilder.Services.AddTempoBlazor();\nbuilder.Services.AddTempoBlazorPdfViewer();\nbuilder.Services.AddTempoBlazorCodes();\nbuilder.Services.AddTempoBlazorDocumentEditor();\nbuilder.Services.AddTempoBlazorNotionEditor();\nbuilder.Services.AddTempoBlazorSigning();\nbuilder.Services.AddTempoBlazorSpreadsheet();\nbuilder.Services.AddTempoBlazorGanttXlsx();",
       "renderModes": {
         "description": "Tempo.Blazor supports all Blazor render modes.",
         "modes": [
-          { "name": "InteractiveWebAssembly", "description": "Full client-side rendering in the browser via WebAssembly." },
-          { "name": "InteractiveServer", "description": "Server-side rendering with SignalR connection for interactivity." },
-          { "name": "InteractiveAuto", "description": "Starts with Server rendering, switches to WebAssembly once downloaded. Recommended for best UX." }
+          {
+            "name": "InteractiveWebAssembly",
+            "description": "Full client-side rendering in the browser via WebAssembly."
+          },
+          {
+            "name": "InteractiveServer",
+            "description": "Server-side rendering with SignalR connection for interactivity."
+          },
+          {
+            "name": "InteractiveAuto",
+            "description": "Starts with Server rendering, switches to WebAssembly once downloaded. Recommended for best UX."
+          }
         ],
         "notes": "Components with JS interop (dashboard, workflow designer, rich editor, scheduler, PDF viewer, diagram editor, color picker, file manager, Gantt, Notion editor, document editor, signing, spreadsheet, wireframe designer, and email variable insertion) gracefully degrade during prerendering and activate once the client-side runtime is available."
       }
@@ -303,7 +396,10 @@
   },
   "localization": {
     "description": "Tempo.Blazor supports localization via the ITmLocalizer interface (namespace Tempo.Blazor.Localization, defined in Tempo.Blazor.Abstractions). All built-in component UI strings (button labels, tooltips, placeholders, validation messages, aria-labels, etc.) go through this interface. The library ships with 500+ localization keys covering all components.",
-    "builtInLanguages": ["en", "cs"],
+    "builtInLanguages": [
+      "en",
+      "cs"
+    ],
     "architecture": {
       "interface": "ITmLocalizer — two indexer overloads: this[string key] for simple lookups, this[string key, params object[] arguments] for formatted strings (e.g. Loc[\"TmImageGallery_Counter\", 5, 20] → \"5 of 20\").",
       "defaultImplementation": "DefaultTmLocalizer (internal) — backed by IStringLocalizer<TmResources> using embedded .resx files (TmResources.resx for English, TmResources.cs.resx for Czech).",

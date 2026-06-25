@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.WorkItems;
 namespace Tempo.Blazor.Abstractions.Models;
 
 /// <summary>
@@ -6,9 +7,9 @@ namespace Tempo.Blazor.Abstractions.Models;
 /// </summary>
 public class GanttSignalRConnection : IGanttRealtimeConnection
 {
-    public event Action<GanttTask>? OnTaskUpdated;
+    public event Action<TmWorkItem>? OnTaskUpdated;
 
-    public Task SendTaskUpdate(GanttTask task)
+    public Task SendTaskUpdate(TmWorkItem task)
     {
         // Broadcast to the hub; implementation injects HubConnection
         OnTaskUpdated?.Invoke(task);
@@ -16,5 +17,5 @@ public class GanttSignalRConnection : IGanttRealtimeConnection
     }
 
     /// <summary>Invoke from hub message handler to propagate update to TmGantt.</summary>
-    public void ReceiveTaskUpdate(GanttTask task) => OnTaskUpdated?.Invoke(task);
+    public void ReceiveTaskUpdate(TmWorkItem task) => OnTaskUpdated?.Invoke(task);
 }

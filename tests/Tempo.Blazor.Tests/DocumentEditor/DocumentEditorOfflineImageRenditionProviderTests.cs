@@ -252,6 +252,6 @@ public class DocumentEditorOfflineImageRenditionProviderTests
         loadedRendition!.IsImmutable.Should().BeTrue();
         pages.Should().ContainSingle(page => page.PageNumber == 1);
         anchors.Should().ContainSingle(anchor => anchor.Type == DocumentRenditionAnchorType.Token && anchor.Key == "client.name");
-        provider.AuditEvents.Should().ContainSingle(item => item.Action == DocumentEditorAuditAction.CreateRendition);
+        provider.ActivityEntries.Should().ContainSingle(item => item.Action == "create-rendition");
     }
 }

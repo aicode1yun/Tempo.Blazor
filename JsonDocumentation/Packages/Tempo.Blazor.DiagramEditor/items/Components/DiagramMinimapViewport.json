@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram",
+  "description": "Current viewport region in document coordinates.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramMinimap.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramMinimapViewport"
+}

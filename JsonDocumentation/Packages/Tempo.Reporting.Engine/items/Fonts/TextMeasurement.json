@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Fonts",
+  "namespace": "Tempo.Reporting.Engine.Fonts",
+  "description": "Measured text run geometry.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Fonts/TextMeasurement.cs",
+  "documentationStatus": "generated",
+  "itemName": "TextMeasurement"
+}

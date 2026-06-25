@@ -7,8 +7,12 @@ using Tempo.Blazor.Configuration;
 using Tempo.Blazor.Modeling;
 using Tempo.Blazor.Demo.Services;
 using Tempo.Blazor.Demo.SharedUI;
+using Tempo.Blazor.Demo.SharedUI.Services;
 using Tempo.Blazor.EmailTemplates;
+using Tempo.Blazor.Abstractions.Shared;
+using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.Reporting.Configuration;
 using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.Demo.Validators;
 using Tempo.Blazor.FluentValidation;
@@ -62,9 +66,10 @@ builder.Services.AddScoped<DemoNotionPublicShareProvider>();
 builder.Services.AddScoped<DemoNotionAuditProvider>();
 builder.Services.AddScoped<DemoSmartLinkProvider>();
 builder.Services.AddScoped<DemoNotionDatabaseProvider>();
-builder.Services.AddScoped<IWorkItemProvider, DemoWorkItemProvider>();
-builder.Services.AddScoped<IWorkItemProvider, DemoOpsWorkItemProvider>();
-builder.Services.AddScoped<WorkItemProviderRegistry>();
+builder.Services.AddTmWorkItemProvider<DemoWorkItemProvider>();
+builder.Services.AddTmWorkItemProvider<DemoOpsWorkItemProvider>();
+builder.Services.AddScoped<DemoSharedWorkItemProvider>();
+builder.Services.AddScoped<ITmWorkItemProvider>(sp => sp.GetRequiredService<DemoSharedWorkItemProvider>());
 builder.Services.AddScoped<MockNotionDatabaseProvider>();
 builder.Services.AddScoped<MockNotionCommentProvider>();
 builder.Services.AddScoped<MockNotionHistoryProvider>();
@@ -87,11 +92,21 @@ builder.Services.AddScoped<SignalRCollaborationProvider>();
 
 // Register Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)
 builder.Services.AddTempoBlazor();
+builder.Services.AddTempoBlazorPdfViewer();
+builder.Services.AddTempoBlazorCodes();
+builder.Services.AddTempoBlazorDocumentEditor();
+builder.Services.AddTempoBlazorDiagramEditor();
+builder.Services.AddTempoBlazorWireframe();
+builder.Services.AddTempoBlazorModeling();
+builder.Services.AddTempoBlazorSpreadsheet();
+builder.Services.AddTempoBlazorGanttXlsx();
+builder.Services.AddTempoBlazorNotionEditor();
+builder.Services.AddTempoBlazorSigning();
+builder.Services.AddTempoBlazorReporting();
 builder.Services.AddSingleton<IModelingNotationProfile, ErdNotationProfile>();
 builder.Services.AddInMemoryNotifications();
 builder.Services.AddScoped<DemoNotionNotificationService>();
-builder.Services.AddScoped<INotificationService>(sp => sp.GetRequiredService<DemoNotionNotificationService>());
-builder.Services.AddScoped<INotificationBadgeState>(sp => sp.GetRequiredService<DemoNotionNotificationService>());
+builder.Services.AddScoped<ITmNotificationService>(sp => sp.GetRequiredService<DemoNotionNotificationService>());
 
 // Register Dashboard services
 builder.Services.AddSingleton<IWidgetRegistry, InMemoryWidgetRegistry>();
@@ -103,11 +118,12 @@ builder.Services.AddTempoFluentValidation(typeof(PersonFormValidator).Assembly);
 // Email template editor demo: engine + localization, and the typed API client.
 builder.Services.AddTempoEmailTemplates();
 builder.Services.AddScoped<Tempo.Blazor.Demo.Services.IEmailTemplateApiClient, Tempo.Blazor.Demo.Services.EmailTemplateApiClient>();
+builder.Services.AddScoped<DemoReportEmbeddingSourceFactory>();
 
 var host = builder.Build();
 
 // Initialize E2E test helper
-DemoJsInterop.Initialize(host.Services.GetRequiredService<INotificationService>());
+DemoJsInterop.Initialize(host.Services.GetRequiredService<ITmNotificationService>());
 
 // Apply persisted culture preference from localStorage before rendering
 try

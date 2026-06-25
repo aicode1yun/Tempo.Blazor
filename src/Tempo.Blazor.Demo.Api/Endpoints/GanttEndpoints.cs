@@ -1,4 +1,6 @@
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
+using Tempo.Blazor.Abstractions.WorkItems;
 using Tempo.Blazor.Demo.Api.Data;
 
 namespace Tempo.Blazor.Demo.Api.Endpoints;
@@ -27,13 +29,13 @@ public static class GanttEndpoints
 
         // ── Task CRUD ─────────────────────────────────────────────
 
-        group.MapPost("/tasks", (GanttTask task, MockGanttStore s) =>
+        group.MapPost("/tasks", (TmWorkItem task, MockGanttStore s) =>
         {
             var created = s.AddTask(task);
             return Results.Created($"/api/gantt/tasks/{created.Id}", created);
         });
 
-        group.MapPut("/tasks/{id}", (string id, GanttTask task, MockGanttStore s) =>
+        group.MapPut("/tasks/{id}", (string id, TmWorkItem task, MockGanttStore s) =>
             s.UpdateTask(id, task) ? Results.NoContent() : Results.NotFound());
 
         group.MapDelete("/tasks/{id}", (string id, MockGanttStore s) =>
@@ -69,7 +71,7 @@ public static class GanttEndpoints
 
         // ── History ───────────────────────────────────────────────
 
-        group.MapPost("/history", (GanttHistoryEntry entry, MockGanttStore s) =>
+        group.MapPost("/history", (TmActivityEntry entry, MockGanttStore s) =>
         {
             var created = s.AddHistory(entry);
             return Results.Created($"/api/gantt/history/{created.Id}", created);

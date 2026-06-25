@@ -1,7 +1,5 @@
 using Microsoft.JSInterop;
-using Tempo.Blazor.NotionEditor.Enums;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Services;
 
 namespace Tempo.Blazor.Demo.Services;
@@ -12,10 +10,10 @@ namespace Tempo.Blazor.Demo.Services;
 /// </summary>
 public static class DemoJsInterop
 {
-    private static INotificationService? _notificationService;
+    private static ITmNotificationService? _notificationService;
     private static InMemoryNotificationStore? _store;
 
-    public static void Initialize(INotificationService service)
+    public static void Initialize(ITmNotificationService service)
     {
         _notificationService = service;
         _store = service as InMemoryNotificationStore;
@@ -27,14 +25,13 @@ public static class DemoJsInterop
         if (_notificationService is null)
             throw new InvalidOperationException("DemoJsInterop not initialized");
 
-        await _notificationService.NotifyAsync(new NotificationEvent
+        await _notificationService.PublishAsync(new TmNotification
         {
-            Type = NotificationType.Mention,
+            Type = TmNotificationTypes.Mention,
             RecipientUserId = "demo",
-            SenderUserId = "system",
-            SenderName = "System",
-            Message = message,
-            DeepLink = deepLink
+            Actor = new TmUserRef { Id = "system", DisplayName = "System" },
+            Title = message,
+            ActionUrl = deepLink
         });
     }
 

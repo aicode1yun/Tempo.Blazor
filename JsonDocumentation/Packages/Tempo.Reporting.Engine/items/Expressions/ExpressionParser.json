@@ -1,0 +1,29 @@
+{
+  "kind": "Class",
+  "category": "Expressions",
+  "namespace": "Tempo.Reporting.Engine.Expressions",
+  "description": "Parser for report expressions.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Expressions/ExpressionParser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Parse",
+      "kind": "Method",
+      "type": "ExpressionNode",
+      "description": "Parses an expression into an AST.",
+      "parameters": [
+        {
+          "name": "expression",
+          "type": "string"
+        },
+        {
+          "name": "options",
+          "type": "ExpressionParseOptions?",
+          "default": "null"
+        }
+      ]
+    }
+  ],
+  "itemName": "ExpressionParser"
+}

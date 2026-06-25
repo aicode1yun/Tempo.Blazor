@@ -1,0 +1,237 @@
+{
+  "itemName": "TmNotionEditor",
+  "kind": "Component",
+  "category": "Editors",
+  "description": "Full-featured Notion-style block editor. Supports 20+ block types (paragraphs, headings, lists, code, callouts, toggles, columns, images, video, PDF, file, equation, bookmark, embed, database, diagram, wireframe, spreadsheet), drag-and-drop reordering, slash menu (/), inline formatting toolbar, @@ mentions, [[ page links, {{ token variables, multi-page sidebar navigation, real-time collaboration, comments, page history, import/export, and full keyboard support.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor"
+  ],
+  "requiredScript": "_content/Tempo.Blazor.NotionEditor/js/notion-editor.js",
+  "parameters": [
+    {
+      "name": "DataProvider",
+      "type": "INotionDataProvider",
+      "isRequired": true,
+      "description": "Core page data provider — lists, loads, creates and deletes pages."
+    },
+    {
+      "name": "BlockProvider",
+      "type": "INotionBlockProvider",
+      "isRequired": true,
+      "description": "Block read/write provider — CRUD, reorder, convert and duplicate blocks."
+    },
+    {
+      "name": "SearchProvider",
+      "type": "INotionSearchProvider?",
+      "isRequired": false,
+      "description": "Enables the Ctrl+P full-screen page search dialog and [[ page link autocomplete."
+    },
+    {
+      "name": "DatabaseProvider",
+      "type": "INotionDatabaseProvider?",
+      "isRequired": false,
+      "description": "Enables inline database blocks (table, board, list, gallery, calendar, timeline views)."
+    },
+    {
+      "name": "CommentProvider",
+      "type": "ITmCommentProvider?",
+      "isRequired": false,
+      "description": "Enables block-level and text-anchor comments with threads and reactions through the shared comment provider."
+    },
+    {
+      "name": "HistoryProvider",
+      "type": "INotionVersionProvider?",
+      "isRequired": false,
+      "description": "Enables page version history with diff view and restore."
+    },
+    {
+      "name": "AuditProvider",
+      "type": "ITmActivityProvider?",
+      "isRequired": false,
+      "description": "Enables workspace activity/audit log queries through the shared activity provider."
+    },
+    {
+      "name": "CollaborationProvider",
+      "type": "INotionCollaborationProvider?",
+      "isRequired": false,
+      "description": "Enables real-time collaboration — live cursor presence and remote block sync."
+    },
+    {
+      "name": "MentionProvider",
+      "type": "ITmPeopleProvider?",
+      "isRequired": false,
+      "description": "Enables @@ user mentions through the shared people provider."
+    },
+    {
+      "name": "BookmarkProvider",
+      "type": "INotionBookmarkProvider?",
+      "isRequired": false,
+      "description": "Enables bookmark blocks that fetch Open Graph metadata from URLs."
+    },
+    {
+      "name": "FileProvider",
+      "type": "ITmFileProvider?",
+      "isRequired": false,
+      "description": "Enables file upload for image, PDF, audio, and file blocks via drag-and-drop or the Upload tab."
+    },
+    {
+      "name": "MediaLibraryProvider",
+      "type": "INotionMediaLibraryProvider?",
+      "isRequired": false,
+      "description": "Enables a media library tab in the upload dialog — browse and select previously uploaded files."
+    },
+    {
+      "name": "TokenProvider",
+      "type": "ITokenDataProvider?",
+      "isRequired": false,
+      "description": "Enables {{ token autocomplete. Type {{ in any text block to open the token dropdown and insert a variable chip."
+    },
+    {
+      "name": "ImportExportProvider",
+      "type": "INotionImportExportProvider?",
+      "isRequired": false,
+      "description": "Enables Markdown/HTML import and export via Page Settings."
+    },
+    {
+      "name": "DiagramDocumentProvider",
+      "type": "IDiagramDocumentProvider?",
+      "isRequired": false,
+      "description": "Enables diagram blocks with a full-screen diagram editor."
+    },
+    {
+      "name": "WireframeDocumentProvider",
+      "type": "IWireframeDocumentProvider?",
+      "isRequired": false,
+      "description": "Enables wireframe blocks with a full-screen wireframe editor."
+    },
+    {
+      "name": "SpreadsheetDocumentProvider",
+      "type": "ISpreadsheetDocumentProvider?",
+      "isRequired": false,
+      "description": "Enables spreadsheet blocks embedded in the page."
+    },
+    {
+      "name": "SyncedBlockProvider",
+      "type": "INotionSyncedBlockProvider?",
+      "isRequired": false,
+      "description": "Enables synced block support — blocks shared across multiple pages."
+    },
+    {
+      "name": "AllowedBlockTypes",
+      "type": "IReadOnlySet<BlockType>?",
+      "isRequired": false,
+      "description": "When non-null, restricts the slash menu and Turn Into menu to only these block types. Existing blocks of other types are still displayed. When null, all types are available."
+    },
+    {
+      "name": "InitialPageId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Page ID to open on first render."
+    },
+    {
+      "name": "ShowSidebar",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Show the left navigation sidebar."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Prevents all editing interactions."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class on the root element."
+    },
+    {
+      "name": "OnPageChanged",
+      "type": "EventCallback<INotionPage>",
+      "isRequired": false,
+      "description": "Raised whenever the active page changes."
+    },
+    {
+      "name": "OnTrashRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the user requests to open the trash panel from the sidebar."
+    }
+  ],
+  "publicMethods": [
+    {
+      "name": "NavigateToPageAsync",
+      "returnType": "Task",
+      "parameters": [
+        {
+          "name": "pageId",
+          "type": "string",
+          "description": "ID of the page to navigate to."
+        }
+      ],
+      "description": "Programmatically navigates to a page and pushes it onto the internal navigation stack. Calling with the current page ID is a no-op."
+    }
+  ],
+  "usedAbstractions": [
+    {
+      "name": "INotionDataProvider",
+      "description": "Required — core page CRUD operations.",
+      "parameter": "DataProvider"
+    },
+    {
+      "name": "INotionBlockProvider",
+      "description": "Required — block CRUD, reorder, convert, duplicate.",
+      "parameter": "BlockProvider"
+    },
+    {
+      "name": "ITokenDataProvider",
+      "description": "Optional — supplies token autocomplete items when the user types {{.",
+      "parameter": "TokenProvider"
+    },
+    {
+      "name": "ITmFileProvider",
+      "description": "Optional — enables file/image upload via drag-and-drop and the Upload tab.",
+      "parameter": "FileProvider"
+    },
+    {
+      "name": "INotionMediaLibraryProvider",
+      "description": "Optional — enables media library browsing in the upload dialog.",
+      "parameter": "MediaLibraryProvider"
+    },
+    {
+      "name": "ITmPeopleProvider",
+      "description": "Optional — enables @@ user mention autocomplete through the shared people provider.",
+      "parameter": "MentionProvider"
+    },
+    {
+      "name": "ITmCommentProvider",
+      "description": "Optional — enables block and text-anchor comments through the shared comment provider.",
+      "parameter": "CommentProvider"
+    }
+  ],
+  "examples": [
+    {
+      "title": "Minimal setup (pages + blocks only)",
+      "code": "@inject MyNotionDataProvider DataProvider\n@inject MyNotionBlockProvider BlockProvider\n\n<div style=\"height: 600px;\">\n    <TmNotionEditor DataProvider=\"@DataProvider\"\n                    BlockProvider=\"@BlockProvider\"\n                    InitialPageId=\"my-page-id\" />\n</div>"
+    },
+    {
+      "title": "With token autocomplete (type {{ to insert variables)",
+      "code": "@inject MyNotionDataProvider DataProvider\n@inject MyNotionBlockProvider BlockProvider\n@inject MyTokenProvider TokenProvider\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                TokenProvider=\"@TokenProvider\"\n                InitialPageId=\"my-page-id\"\n                Class=\"h-full\" />"
+    },
+    {
+      "title": "Full featured — all optional providers",
+      "code": "<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                SearchProvider=\"@SearchProvider\"\n                CommentProvider=\"@CommentProvider\"\n                HistoryProvider=\"@HistoryProvider\"\n                MentionProvider=\"@MentionProvider\"\n                CollaborationProvider=\"@CollaborationProvider\"\n                FileProvider=\"@FileProvider\"\n                MediaLibraryProvider=\"@MediaLibraryProvider\"\n                TokenProvider=\"@TokenProvider\"\n                ImportExportProvider=\"@ImportExportProvider\"\n                InitialPageId=\"@_pageId\"\n                ShowSidebar=\"true\"\n                OnPageChanged=\"HandlePageChanged\"\n                Class=\"h-full\" />"
+    },
+    {
+      "title": "Read-only viewer",
+      "code": "<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                InitialPageId=\"@_pageId\"\n                ReadOnly=\"true\"\n                ShowSidebar=\"false\" />"
+    },
+    {
+      "title": "Restrict to a subset of block types",
+      "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    private static readonly IReadOnlySet<BlockType> AllowedTypes = new HashSet<BlockType>\n    {\n        BlockType.Paragraph,\n        BlockType.Heading1,\n        BlockType.Heading2,\n        BlockType.BulletList,\n        BlockType.NumberedList,\n        BlockType.TodoItem,\n    };\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                AllowedBlockTypes=\"@AllowedTypes\"\n                InitialPageId=\"@_pageId\" />"
+    }
+  ],
+  "packageId": "Tempo.Blazor.NotionEditor"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Positions wrapped text lines inside a paragraph rectangle.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/ParagraphLayout.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportParagraphLayouter"
+}

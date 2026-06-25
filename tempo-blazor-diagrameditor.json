@@ -1,0 +1,4453 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.DiagramEditor",
+    "title": "Tempo.Blazor.DiagramEditor",
+    "description": "Diagram editor components for Tempo.Blazor, including stencil libraries, templates, import helpers, auto-layout, and diagram canvas interop.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;components;diagram;editor;draw;dagre;d3",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.DiagramEditor"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "CsvHelper",
+        "version": "33.0.1"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor/Tempo.Blazor.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Components.Diagram",
+      "Tempo.Blazor.Components.Diagram.Commands",
+      "Tempo.Blazor.Components.Diagram.Services",
+      "Tempo.Blazor.Components.Diagram.Stencils",
+      "Tempo.Blazor.Components.Diagram.Templates",
+      "Tempo.Blazor.Configuration"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.DiagramEditor",
+    "overview": "Diagram editor components for Tempo.Blazor, including stencil libraries, templates, import helpers, auto-layout, and diagram canvas interop.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.DiagramEditor"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "CsvHelper",
+        "version": "33.0.1"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "AddEdgeCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Adds a single edge to the diagram document.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/AddEdgeCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Adds a new layer to the diagram (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/AddLayerCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Layer",
+          "kind": "Field",
+          "type": "DiagramLayer"
+        },
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "AddLayerCommand"
+    },
+    {
+      "itemName": "AddNodeCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Adds a single node to the diagram document.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/AddNodeCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "AddSwimlaneColumnCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Adds a column to a swimlane node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/AddSwimlaneColumnCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "AddSwimlaneRowCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Adds a row to a swimlane node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/AddSwimlaneRowCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "AlignNodesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Aligns multiple nodes horizontally or vertically (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/AlignNodesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "ApplyEdgeStencilCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Applies an edge stencil template to a diagram edge.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ApplyEdgeStencilCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "ApplyTo",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "edge",
+              "type": "DiagramEdge"
+            }
+          ]
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "FromEdge",
+          "kind": "Method",
+          "type": "EdgeTemplateSnapshot",
+          "parameters": [
+            {
+              "name": "edge",
+              "type": "DiagramEdge"
+            }
+          ]
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "ArcSize",
+          "kind": "Property",
+          "type": "double?"
+        },
+        {
+          "name": "ConnectorType",
+          "kind": "Property",
+          "type": "string"
+        },
+        {
+          "name": "CubicBezier",
+          "kind": "Property",
+          "type": "bool"
+        },
+        {
+          "name": "EndArrow",
+          "kind": "Property",
+          "type": "string"
+        },
+        {
+          "name": "EndArrowFill",
+          "kind": "Property",
+          "type": "bool?"
+        },
+        {
+          "name": "EndArrowSize",
+          "kind": "Property",
+          "type": "double?"
+        },
+        {
+          "name": "Rounded",
+          "kind": "Property",
+          "type": "bool"
+        },
+        {
+          "name": "Routing",
+          "kind": "Property",
+          "type": "string"
+        },
+        {
+          "name": "Shape",
+          "kind": "Property",
+          "type": "string"
+        },
+        {
+          "name": "StartArrow",
+          "kind": "Property",
+          "type": "string"
+        },
+        {
+          "name": "StartArrowFill",
+          "kind": "Property",
+          "type": "bool?"
+        },
+        {
+          "name": "StartArrowSize",
+          "kind": "Property",
+          "type": "double?"
+        },
+        {
+          "name": "Style",
+          "kind": "Property",
+          "type": "DiagramStyle"
+        }
+      ]
+    },
+    {
+      "itemName": "ApplyLayoutCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Applies a computed layout to diagram nodes (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ApplyLayoutCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "Archimate3DiagramStencilProvider",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+      "description": "Provides Tempo-original ArchiMate 3.2 stencil definitions.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/Archimate3DiagramStencilProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Priority",
+          "kind": "Field",
+          "type": "int"
+        },
+        {
+          "name": "GetStencilSets",
+          "kind": "Method",
+          "type": "IEnumerable<DiagramStencilSet>"
+        }
+      ]
+    },
+    {
+      "itemName": "ArrowheadAnchor",
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Determines which point of the arrowhead sits at the line end.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/DiagramArrowheadRegistry.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "Bpmn2DiagramStencilProvider",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+      "description": "Provides Tempo-original BPMN 2.0 stencil definitions.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/Bpmn2DiagramStencilProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Priority",
+          "kind": "Field",
+          "type": "int"
+        },
+        {
+          "name": "GetStencilSets",
+          "kind": "Method",
+          "type": "IEnumerable<DiagramStencilSet>"
+        }
+      ]
+    },
+    {
+      "itemName": "BuiltInDiagramStencilProvider",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+      "description": "Registers built-in diagram stencil definitions for Tempo.Blazor. Priority 0 â€“ custom providers with higher priority can override individual stencils.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/BuiltInDiagramStencilProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Priority",
+          "kind": "Field",
+          "type": "int"
+        },
+        {
+          "name": "GetStencilSets",
+          "kind": "Method",
+          "type": "IEnumerable<DiagramStencilSet>"
+        }
+      ]
+    },
+    {
+      "itemName": "BuiltInDiagramTemplateProvider",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Templates",
+      "description": "Built-in provider that loads diagram templates from embedded resources (compiled from wwwroot/diagram-templates/*.json).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/BuiltInDiagramTemplateProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Priority",
+          "kind": "Field",
+          "type": "int"
+        },
+        {
+          "name": "GetTemplateCategoriesAsync",
+          "kind": "Method",
+          "type": "Task<IEnumerable<DiagramTemplateCategory>>"
+        }
+      ]
+    },
+    {
+      "itemName": "CopyNodesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Captures selected nodes and their connecting edges into a JSON clipboard payload.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/CopyNodesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "ClipboardJson",
+          "kind": "Property",
+          "type": "string",
+          "description": "Serialized JSON payload containing the copied nodes and edges."
+        },
+        {
+          "name": "Edges",
+          "kind": "Property",
+          "type": "List<DiagramEdge>"
+        },
+        {
+          "name": "Nodes",
+          "kind": "Property",
+          "type": "List<DiagramNode>"
+        },
+        {
+          "name": "SharedClipboardJson",
+          "kind": "Property",
+          "type": "static string?",
+          "description": "Shared in-memory clipboard JSON."
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Copies the style and optionally size of a single node to the static clipboard.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/CopyStyleCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "CopyStyleCommand"
+    },
+    {
+      "itemName": "CsvParser",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Parses raw CSV text and auto-detects the delimiter.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/CsvParser.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Parse",
+          "kind": "Method",
+          "type": "CsvParseResult",
+          "description": "Parses CSV text and returns headers + rows. Throws if no valid delimiter is found or validation fails.",
+          "parameters": [
+            {
+              "name": "csvText",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "CsvToFlowchartGenerator",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Generates a flowchart diagram from CSV data.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/CsvToFlowchartGenerator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Generate",
+          "kind": "Method",
+          "type": "DiagramDocument",
+          "parameters": [
+            {
+              "name": "parseResult",
+              "type": "CsvParseResult"
+            },
+            {
+              "name": "mappings",
+              "type": "IReadOnlyList<CsvColumnMapping>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "CsvToOrgChartGenerator",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Generates an org-chart diagram from CSV data.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/CsvToOrgChartGenerator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Generate",
+          "kind": "Method",
+          "type": "DiagramDocument",
+          "parameters": [
+            {
+              "name": "parseResult",
+              "type": "CsvParseResult"
+            },
+            {
+              "name": "mappings",
+              "type": "IReadOnlyList<CsvColumnMapping>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "CsvToTimelineGenerator",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Generates a timeline diagram from CSV data.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/CsvToTimelineGenerator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Generate",
+          "kind": "Method",
+          "type": "DiagramDocument",
+          "parameters": [
+            {
+              "name": "parseResult",
+              "type": "CsvParseResult"
+            },
+            {
+              "name": "mappings",
+              "type": "IReadOnlyList<CsvColumnMapping>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "CutNodesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Copies selected nodes to the internal clipboard and removes them from the document.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/CutNodesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Edges",
+          "kind": "Property",
+          "type": "List<DiagramEdge>"
+        },
+        {
+          "name": "Nodes",
+          "kind": "Property",
+          "type": "List<DiagramNode>"
+        }
+      ]
+    },
+    {
+      "itemName": "DeleteEdgeWaypointCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Deletes a waypoint from an edge path (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/DeleteEdgeWaypointCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "DeleteTableColumnCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Deletes a column from a table node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/DeleteTableColumnCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "DeleteTableRowCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Deletes a row from a table node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/DeleteTableRowCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "DetachEdgeEndpointsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Detaches the terminal connections of an edge while preserving its current visible geometry: the current source/target screen position becomes the edge's floating / , and all node/port/edge/constraint references are cleared. Useful for converting a node-connected edge into a free line (Phase 3.8).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/DetachEdgeEndpointsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "DiagramArrowheadRegistry",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Registry of SVG arrowhead definitions for diagram edges. Maps arrowhead identifiers to SVG path data and default sizes.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/DiagramArrowheadRegistry.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DiagramArrowheadRegistry.ArrowheadDef",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Public class defined by Tempo.Blazor.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/DiagramArrowheadRegistry.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DiagramArrowheadRenderer",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Renders standalone SVG arrowheads for diagram edges. Extracted from TmDiagramCanvas for testability.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/DiagramArrowheadRenderer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetArrowheadInset",
+          "kind": "Method",
+          "type": "double",
+          "description": "Returns how many pixels the edge line should be shortened at the given end so the arrowhead sits correctly without being hidden under the HTML node overlay.",
+          "parameters": [
+            {
+              "name": "edge",
+              "type": "DiagramEdge"
+            },
+            {
+              "name": "isStart",
+              "type": "bool"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DiagramClipboard",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Static clipboard holding the last copied style, size, nodes and edges for diagram editing.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/DiagramClipboard.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "HasNodes",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Whether the clipboard contains any nodes."
+        },
+        {
+          "name": "Edges",
+          "kind": "Property",
+          "type": "static List<DiagramEdge>",
+          "description": "Copied edges."
+        },
+        {
+          "name": "Height",
+          "kind": "Property",
+          "type": "static double?",
+          "description": "Copied height."
+        },
+        {
+          "name": "Nodes",
+          "kind": "Property",
+          "type": "static List<DiagramNode>",
+          "description": "Copied nodes."
+        },
+        {
+          "name": "Style",
+          "kind": "Property",
+          "type": "static DiagramStyle?",
+          "description": "Copied style snapshot."
+        },
+        {
+          "name": "Width",
+          "kind": "Property",
+          "type": "static double?",
+          "description": "Copied width."
+        }
+      ]
+    },
+    {
+      "itemName": "DiagramCommandStack",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Undo/redo history for a single diagram editor instance. Not a DI service. TmDiagramEditor creates one instance and cascades it to child components via CascadingValue. Each editor on the page gets its own isolated stack.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/DiagramCommandStack.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CanRedo",
+          "kind": "Field",
+          "type": "bool"
+        },
+        {
+          "name": "CanUndo",
+          "kind": "Field",
+          "type": "bool"
+        },
+        {
+          "name": "IsInTransaction",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Whether a transaction is currently open."
+        },
+        {
+          "name": "NextRedoName",
+          "kind": "Field",
+          "type": "string?"
+        },
+        {
+          "name": "NextUndoName",
+          "kind": "Field",
+          "type": "string?"
+        },
+        {
+          "name": "BeginTransaction",
+          "kind": "Method",
+          "type": "void",
+          "description": "Begins a new transactional scope. Nested transactions are not allowed.",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Clear",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "CommitTransaction",
+          "kind": "Method",
+          "type": "void",
+          "description": "Commits the current transaction as a single undo/redo step."
+        },
+        {
+          "name": "Dispose",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Push",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "command",
+              "type": "IDiagramCommand"
+            }
+          ]
+        },
+        {
+          "name": "Redo",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "RollbackTransaction",
+          "kind": "Method",
+          "type": "void",
+          "description": "Rolls back the current transaction without recording it."
+        },
+        {
+          "name": "TransactionScope",
+          "kind": "Method",
+          "type": "IDisposable",
+          "description": "Returns an wrapper that begins and commits/rolls back a transaction.",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "DiagramCommandTransaction",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Groups multiple diagram commands into a single undo/redo unit.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/DiagramCommandTransaction.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Count",
+          "kind": "Field",
+          "type": "int",
+          "description": "Number of commands captured in this transaction."
+        },
+        {
+          "name": "Add",
+          "kind": "Method",
+          "type": "void",
+          "description": "Adds a command to this transaction without executing it again (assumes already executed).",
+          "parameters": [
+            {
+              "name": "command",
+              "type": "IDiagramCommand"
+            }
+          ]
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "GetCommand",
+          "kind": "Method",
+          "type": "IDiagramCommand",
+          "description": "Gets the command at the specified index.",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string",
+          "description": "Human-readable name shown in undo/redo tooltips."
+        }
+      ]
+    },
+    {
+      "itemName": "DiagramEdgeStencilFactory",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+      "description": "Creates and updates diagram edges from edge stencil definitions.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/DiagramEdgeStencilFactory.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ApplyDefaults",
+          "kind": "Method",
+          "type": "void",
+          "description": "Applies edge stencil defaults to an existing diagram edge.",
+          "parameters": [
+            {
+              "name": "edge",
+              "type": "DiagramEdge"
+            },
+            {
+              "name": "stencil",
+              "type": "DiagramStencil"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DiagramGeometryHelper",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Static geometry helpers used by the diagram canvas and commands.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/DiagramGeometryHelper.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "FindClosestT",
+          "kind": "Method",
+          "type": "double",
+          "parameters": [
+            {
+              "name": "doc",
+              "type": "DiagramDocument"
+            },
+            {
+              "name": "edge",
+              "type": "DiagramEdge"
+            },
+            {
+              "name": "targetX",
+              "type": "double"
+            },
+            {
+              "name": "targetY",
+              "type": "double"
+            },
+            {
+              "name": "samples",
+              "type": "int",
+              "default": "100"
+            }
+          ]
+        },
+        {
+          "name": "InferSideFromConstraint",
+          "kind": "Method",
+          "type": "PortSide",
+          "parameters": [
+            {
+              "name": "cx",
+              "type": "double"
+            },
+            {
+              "name": "cy",
+              "type": "double"
+            }
+          ]
+        },
+        {
+          "name": "IsCollinear",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Determines whether three points are collinear within the given tolerance (in pixels).",
+          "parameters": [
+            {
+              "name": "X",
+              "type": "(double"
+            },
+            {
+              "name": "Y",
+              "type": "double"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DiagramMinimapNavigateArgs",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Navigate-to arguments: document-space centre point.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramMinimap.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DiagramMinimapViewport",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Current viewport region in document coordinates.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramMinimap.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DiagramSearchReplaceResult",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Describes a replaceable change identified by a search result.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/DiagramSearchService.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DiagramSearchService",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Searches a diagram document for nodes and edges matching a free-text query.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/DiagramSearchService.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DiagramStencilLibraryValidationException",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+      "description": "Exception raised when a data-driven diagram stencil library is invalid.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/DiagramStencilLibraryValidationException.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Errors",
+          "kind": "Property",
+          "type": "IReadOnlyList<DiagramStencilLibraryValidationError>",
+          "description": "Machine-readable validation errors."
+        }
+      ]
+    },
+    {
+      "itemName": "DiagramStencilLibraryValidator",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+      "description": "Validates data-driven diagram stencil libraries before registration.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/DiagramStencilLibraryValidator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Validate",
+          "kind": "Method",
+          "type": "DiagramStencilLibraryValidationResult",
+          "description": "Validates and returns stable error codes.",
+          "parameters": [
+            {
+              "name": "library",
+              "type": "DiagramStencilLibrary"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DiagramStencilRegistry",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+      "description": "Central registry of all diagram stencil definitions. Registered as a singleton DI service. Multiple instances can be registered; when two providers supply the same , the definition from the higher-priority provider wins.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/DiagramStencilRegistry.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Count",
+          "kind": "Field",
+          "type": "int",
+          "description": "Total number of registered stencils."
+        },
+        {
+          "name": "GetAll",
+          "kind": "Method",
+          "type": "IEnumerable<DiagramStencil>",
+          "description": "Returns all registered stencils ordered by Category then Name."
+        },
+        {
+          "name": "GetByCategory",
+          "kind": "Method",
+          "type": "IEnumerable<DiagramStencil>",
+          "description": "Returns stencils belonging to .",
+          "parameters": [
+            {
+              "name": "category",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "GetCategories",
+          "kind": "Method",
+          "type": "string[]",
+          "description": "Returns all distinct category names in display order."
+        },
+        {
+          "name": "GetStencil",
+          "kind": "Method",
+          "type": "DiagramStencil?",
+          "description": "Returns the stencil for , or null if not found.",
+          "parameters": [
+            {
+              "name": "stencilId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "GetTempoOriginal",
+          "kind": "Method",
+          "type": "IEnumerable<DiagramStencil>",
+          "description": "Returns all registered Tempo-original stencils ordered by set, palette and display order."
+        },
+        {
+          "name": "RegisterProvider",
+          "kind": "Method",
+          "type": "void",
+          "description": "Loads all stencil sets from into the registry.",
+          "parameters": [
+            {
+              "name": "provider",
+              "type": "IDiagramStencilProvider"
+            }
+          ]
+        },
+        {
+          "name": "RegisterStencil",
+          "kind": "Method",
+          "type": "void",
+          "description": "Registers a single stencil. If a stencil with the same id already exists, the one with higher wins (ties keep the existing entry).",
+          "parameters": [
+            {
+              "name": "stencil",
+              "type": "DiagramStencil"
+            },
+            {
+              "name": "priority",
+              "type": "int",
+              "default": "0"
+            }
+          ]
+        },
+        {
+          "name": "Search",
+          "kind": "Method",
+          "type": "IEnumerable<DiagramStencil>",
+          "description": "Searches stencils by name, tags and keywords.",
+          "parameters": [
+            {
+              "name": "query",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DiagramTemplateRegistry",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Templates",
+      "description": "Central registry of all diagram templates. Registered as a singleton DI service.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/DiagramTemplateRegistry.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Count",
+          "kind": "Field",
+          "type": "int",
+          "description": "Total number of registered templates."
+        },
+        {
+          "name": "GetAll",
+          "kind": "Method",
+          "type": "IEnumerable<DiagramTemplate>",
+          "description": "Returns all registered templates ordered by Category then Name."
+        },
+        {
+          "name": "GetByCategory",
+          "kind": "Method",
+          "type": "IEnumerable<DiagramTemplate>",
+          "description": "Returns templates belonging to .",
+          "parameters": [
+            {
+              "name": "category",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "GetCategories",
+          "kind": "Method",
+          "type": "string[]",
+          "description": "Returns all distinct category names in display order."
+        },
+        {
+          "name": "GetTemplate",
+          "kind": "Method",
+          "type": "DiagramTemplate?",
+          "description": "Returns the template for , or null if not found.",
+          "parameters": [
+            {
+              "name": "templateId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "InitializeAsync",
+          "kind": "Method",
+          "type": "Task",
+          "description": "Initializes the registry by loading all templates from registered providers. Safe to call multiple times (subsequent calls are no-ops)."
+        },
+        {
+          "name": "RegisterProvider",
+          "kind": "Method",
+          "type": "void",
+          "description": "Registers a provider for lazy async loading.",
+          "parameters": [
+            {
+              "name": "provider",
+              "type": "IDiagramTemplateProvider"
+            }
+          ]
+        },
+        {
+          "name": "RegisterTemplate",
+          "kind": "Method",
+          "type": "void",
+          "description": "Registers a single template. If a template with the same id already exists, the one with higher wins (ties keep the existing entry).",
+          "parameters": [
+            {
+              "name": "template",
+              "type": "DiagramTemplate"
+            },
+            {
+              "name": "priority",
+              "type": "int",
+              "default": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DiagramTemplateStencilValidationResult",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Templates",
+      "description": "Validation result for stencil references used by a diagram template.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/DiagramTemplateStencilValidationResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "IsValid",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Gets whether the template references only valid stencils."
+        },
+        {
+          "name": "Errors",
+          "kind": "Property",
+          "type": "IReadOnlyList<string>",
+          "description": "Gets machine-readable validation errors."
+        }
+      ]
+    },
+    {
+      "itemName": "DiagramTemplateStencilValidator",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Templates",
+      "description": "Validates that a diagram template references registered Tempo-original stencils.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/DiagramTemplateStencilValidator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Validate",
+          "kind": "Method",
+          "type": "DiagramTemplateStencilValidationResult",
+          "description": "Validates node stencil ids and edge connector types in .",
+          "parameters": [
+            {
+              "name": "template",
+              "type": "DiagramTemplate"
+            },
+            {
+              "name": "stencilRegistry",
+              "type": "DiagramStencilRegistry"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DistributeNodesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Distributes multiple nodes evenly horizontally or vertically (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/DistributeNodesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "DragWholeEdgeCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Drags an entire edge as a unit, detaching both ends from nodes/ports/constraints/edges and shifting all points by delta.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/DragWholeEdgeCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "DuplicateNodesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Duplicates selected nodes with a small offset and copies their internal edges.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/DuplicateNodesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "ExtendedDiagramStencilProvider",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+      "description": "Provides additional Tempo-original diagram stencil libraries.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/ExtendedDiagramStencilProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Priority",
+          "kind": "Field",
+          "type": "int"
+        },
+        {
+          "name": "GetStencilSets",
+          "kind": "Method",
+          "type": "IEnumerable<DiagramStencilSet>"
+        }
+      ]
+    },
+    {
+      "itemName": "ExtendedDiagramTemplateProvider",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Templates",
+      "description": "Provides Tempo-original templates for extended stencil libraries.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/ExtendedDiagramTemplateProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Priority",
+          "kind": "Field",
+          "type": "int"
+        },
+        {
+          "name": "GetTemplateCategoriesAsync",
+          "kind": "Method",
+          "type": "Task<IEnumerable<DiagramTemplateCategory>>"
+        }
+      ]
+    },
+    {
+      "itemName": "FlipElbowOrientationCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Toggles the elbow orientation of an edge between horizontal-first and vertical-first (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/FlipElbowOrientationCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "GroupNodesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Groups the selected nodes under a new group container node (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/GroupNodesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "InsertEdgeWaypointCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Inserts a waypoint into an edge path (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/InsertEdgeWaypointCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "InsertTableColumnCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Inserts a column into a table node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/InsertTableColumnCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "InsertTableRowCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Inserts a row into a table node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/InsertTableRowCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "JsonDiagramStencilLibrarySource",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+      "description": "Descriptor for a JSON stencil library source.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/JsonDiagramStencilLibrarySource.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "LoadJson",
+          "kind": "Method",
+          "type": "string",
+          "description": "Loads the JSON payload for this source."
+        },
+        {
+          "name": "Optional",
+          "kind": "Method",
+          "type": "JsonDiagramStencilLibrarySource",
+          "description": "Creates a source that is loaded only after .",
+          "parameters": [
+            {
+              "name": "sourceId",
+              "type": "string"
+            },
+            {
+              "name": "loadJson",
+              "type": "Func<string>"
+            }
+          ]
+        },
+        {
+          "name": "Required",
+          "kind": "Method",
+          "type": "JsonDiagramStencilLibrarySource",
+          "description": "Creates a source that is loaded together with the provider.",
+          "parameters": [
+            {
+              "name": "sourceId",
+              "type": "string"
+            },
+            {
+              "name": "loadJson",
+              "type": "Func<string>"
+            }
+          ]
+        },
+        {
+          "name": "IsOptional",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Whether this source should be loaded only when requested."
+        },
+        {
+          "name": "SourceId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Unique source identifier used for optional library activation."
+        }
+      ]
+    },
+    {
+      "itemName": "JsonDiagramStencilProvider",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+      "description": "Loads diagram stencil libraries from JSON sources.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/JsonDiagramStencilProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetStencilSets",
+          "kind": "Method",
+          "type": "IEnumerable<DiagramStencilSet>"
+        },
+        {
+          "name": "LoadOptionalLibrary",
+          "kind": "Method",
+          "type": "void",
+          "description": "Loads an optional source and makes its stencils available from .",
+          "parameters": [
+            {
+              "name": "sourceId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Priority",
+          "kind": "Property",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "itemName": "LockNodesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Locks the selected nodes so they cannot be moved, resized or deleted. When a group node is locked, all its members are locked as well.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/LockNodesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "MergeTableCellsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Merges selected cells inside a table node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/MergeTableCellsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "MoveNodesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Moves one or more nodes to new positions and updates their swimlane parent state. Supports coalescing: consecutive move commands targeting the same node ids within a 100 ms window are merged. The \"before\" snapshot is kept from the first move; only the \"after\" positions are updated.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/MoveNodesCommand.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "MoveNodesToLayerCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Moves selected nodes to a different layer (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/MoveNodesToLayerCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "NodeMoveState",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Tracks the full movement state of a node including swimlane parent.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/MoveNodesCommand.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NodeRect",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Simple rectangle record for resize commands.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ResizeGroupCommand.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "PasteNodesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Pastes nodes and edges from the shared clipboard payload (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/PasteNodesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "PastedEdges",
+          "kind": "Field",
+          "type": "IReadOnlyList<DiagramEdge>"
+        },
+        {
+          "name": "PastedNodes",
+          "kind": "Field",
+          "type": "IReadOnlyList<DiagramNode>"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Edges",
+          "kind": "Property",
+          "type": "List<DiagramEdge>"
+        },
+        {
+          "name": "LastPastedNodeIds",
+          "kind": "Property",
+          "type": "static List<string>",
+          "description": "Node IDs from the most recent paste operation."
+        },
+        {
+          "name": "Nodes",
+          "kind": "Property",
+          "type": "List<DiagramNode>"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Applies the copied width/height from to the selected nodes (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/PasteSizeCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "PasteSizeCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Applies the copied style from to the selected nodes (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/PasteStyleCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "PasteStyleCommand"
+    },
+    {
+      "itemName": "PlaceholderHelper",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Replaces diagram-specific placeholders in node text.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/PlaceholderHelper.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ReplacePlaceholders",
+          "kind": "Method",
+          "type": "string",
+          "description": "Supported placeholders: %page% — current page name %pagenumber% — current page number (1-based) %totalpages% — total number of pages %date% — current UTC date in ISO format (yyyy-MM-dd)",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string?"
+            },
+            {
+              "name": "page",
+              "type": "DiagramPage"
+            },
+            {
+              "name": "doc",
+              "type": "DiagramDocument"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "RemoveEdgesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Removes one or more edges from the diagram document.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RemoveEdgesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Removes a layer and moves its nodes to the default (null) layer (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RemoveLayerCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "RemoveLayerCommand"
+    },
+    {
+      "itemName": "RemoveNodesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Removes one or more nodes from the diagram document.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RemoveNodesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "RemoveSwimlaneColumnCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Removes a column from a swimlane node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RemoveSwimlaneColumnCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "RemoveSwimlaneRowCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Removes a row from a swimlane node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RemoveSwimlaneRowCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Renames a layer (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RenameLayerCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "RenameLayerCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Reorders layers by their Order property (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ReorderLayersCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "ReorderLayersCommand"
+    },
+    {
+      "itemName": "ReplaceShapeCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Replaces the stencil of a single node, regenerating ports and remapping connected edges.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ReplaceShapeCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "ResetEdgeRoutingCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Resets an edge from manual routing back to automatic routing (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ResetEdgeRoutingCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "ResizeGroupCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Resizes a group container and proportionally scales all member nodes (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ResizeGroupCommand.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ResizeNodeCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Resizes a single node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ResizeNodeCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "ResizeSwimlaneCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Updates swimlane row/column sizes and resizes the container node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ResizeSwimlaneCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "ReverseEdgeCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Reverses the direction of an edge by swapping source/target endpoints and arrowheads (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ReverseEdgeCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "RotateGroupCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Rotates a group container and all its members by the same delta (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RotateGroupCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "RotateNodeCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Command that rotates a single diagram node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RotateNodeCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "SplitTableCellCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Splits a merged cell inside a table node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/SplitTableCellCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "SqlParser",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Parses SQL DDL statements into structured table definitions.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/SqlParser.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Parse",
+          "kind": "Method",
+          "type": "List<SqlTableDefinition>",
+          "parameters": [
+            {
+              "name": "sql",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "SqlToErDiagramGenerator",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Generates an ER diagram from parsed SQL table definitions.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/SqlToErDiagramGenerator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Generate",
+          "kind": "Method",
+          "type": "DiagramDocument",
+          "parameters": [
+            {
+              "name": "tables",
+              "type": "List<SqlTableDefinition>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "SwimlaneLayoutService",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Calculates swimlane cell positions and arranges child nodes.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/SwimlaneLayoutService.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ArrangeChild",
+          "kind": "Method",
+          "type": "void",
+          "description": "Positions a child node inside the centre of its assigned swimlane cell.",
+          "parameters": [
+            {
+              "name": "swimlane",
+              "type": "DiagramNode"
+            },
+            {
+              "name": "child",
+              "type": "DiagramNode"
+            }
+          ]
+        },
+        {
+          "name": "GetDefaultLaneSize",
+          "kind": "Method",
+          "type": "double",
+          "description": "Returns the default size for a newly added row or column.",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "DiagramNodeSwimlaneData"
+            },
+            {
+              "name": "forRow",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "name": "RecalculateSize",
+          "kind": "Method",
+          "type": "void",
+          "description": "Updates swimlane dimensions so that all rows and columns fit their defined sizes.",
+          "parameters": [
+            {
+              "name": "swimlane",
+              "type": "DiagramNode"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "TableLayoutService",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Provides table cell manipulation helpers for diagram table nodes.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/TableLayoutService.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CanMerge",
+          "kind": "Method",
+          "type": "bool",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            },
+            {
+              "name": "Row",
+              "type": "IEnumerable<(int"
+            },
+            {
+              "name": "Column",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "CanSplit",
+          "kind": "Method",
+          "type": "bool",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            },
+            {
+              "name": "row",
+              "type": "int"
+            },
+            {
+              "name": "column",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "DeleteColumn",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            },
+            {
+              "name": "index",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "DeleteRow",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            },
+            {
+              "name": "index",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "GetCells",
+          "kind": "Method",
+          "type": "List<DiagramTableCellData>",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            }
+          ]
+        },
+        {
+          "name": "GetColumnCount",
+          "kind": "Method",
+          "type": "int",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            }
+          ]
+        },
+        {
+          "name": "GetRowCount",
+          "kind": "Method",
+          "type": "int",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            }
+          ]
+        },
+        {
+          "name": "InsertColumn",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            },
+            {
+              "name": "index",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "InsertRow",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            },
+            {
+              "name": "index",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "MergeCells",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            },
+            {
+              "name": "Row",
+              "type": "IEnumerable<(int"
+            },
+            {
+              "name": "Column",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "SetCells",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            },
+            {
+              "name": "cells",
+              "type": "List<DiagramTableCellData>"
+            }
+          ]
+        },
+        {
+          "name": "SetColumnCount",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            },
+            {
+              "name": "count",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "SetRowCount",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            },
+            {
+              "name": "count",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "SplitCell",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "DiagramNode"
+            },
+            {
+              "name": "row",
+              "type": "int"
+            },
+            {
+              "name": "column",
+              "type": "int"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Adds a new layer to the diagram (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/AddLayerCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Diagram.Commands.AddLayerCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Copies the style and optionally size of a single node to the static clipboard.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/CopyStyleCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Diagram.Commands.CopyStyleCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Applies the copied width/height from to the selected nodes (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/PasteSizeCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Diagram.Commands.PasteSizeCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Applies the copied style from to the selected nodes (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/PasteStyleCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Diagram.Commands.PasteStyleCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Removes a layer and moves its nodes to the default (null) layer (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RemoveLayerCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Diagram.Commands.RemoveLayerCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Renames a layer (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RenameLayerCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Diagram.Commands.RenameLayerCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Reorders layers by their Order property (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ReorderLayersCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Diagram.Commands.ReorderLayersCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Toggles the lock state of a layer (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ToggleLayerLockCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Diagram.Commands.ToggleLayerLockCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Toggles the visibility of a layer (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ToggleLayerVisibilityCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "Tempo.Blazor.Components.Diagram.Commands.ToggleLayerVisibilityCommand"
+    },
+    {
+      "itemName": "TmDiagramCanvas.ElementMove",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Public class defined by Tempo.Blazor.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramCanvas.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ToggleCollapseCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Undoable command that toggles the collapsed state of a node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ToggleCollapseCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Toggles the lock state of a layer (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ToggleLayerLockCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "ToggleLayerLockCommand"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Toggles the visibility of a layer (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ToggleLayerVisibilityCommand.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ],
+      "itemName": "ToggleLayerVisibilityCommand"
+    },
+    {
+      "itemName": "Uml25DiagramStencilProvider",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Stencils",
+      "description": "Provides Tempo-original UML 2.5 stencil definitions.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Stencils/Uml25DiagramStencilProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Priority",
+          "kind": "Field",
+          "type": "int"
+        },
+        {
+          "name": "GetStencilSets",
+          "kind": "Method",
+          "type": "IEnumerable<DiagramStencilSet>"
+        }
+      ]
+    },
+    {
+      "itemName": "UngroupNodesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Ungroups nodes by removing the group container and reparenting children (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UngroupNodesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UnlockNodesCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Unlocks the selected nodes so they can be edited again. When a group node is unlocked, all its members are unlocked as well.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UnlockNodesCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEdgeArrowheadsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Updates the start and/or end arrowhead of selected edges.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgeArrowheadsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEdgeLabelCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Updates the label of a single edge.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgeLabelCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEdgeLabelPositionCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Updates the label position (t + offset) of an edge (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgeLabelPositionCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEdgeLineStyleCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Updates the line style (stroke dasharray) of selected edges.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgeLineStyleCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEdgeRoutingCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Updates the routing and waypoints of an edge (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgeRoutingCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEdgeSegmentOffsetCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Updates edge waypoints after a segment drag. Semantically equivalent to but named to reflect that the change originated from dragging an orthogonal/elbow segment rather than an individual waypoint.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgeSegmentOffsetCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEdgeSpacingCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Updates the source or target spacing of an edge (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgeSpacingCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEdgesStyleCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Batch updates style properties of multiple edges (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgesStyleCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEdgeStyleCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Batch updates style properties of a single edge (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgeStyleCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEdgeTerminalCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Updates an edge terminal (source or target) between node/port, point, or constraint modes.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgeTerminalCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEdgeWaypointsCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Updates the waypoints of a single edge and recalculates attachment points for connected edges.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgeWaypointsCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEdgeZIndexCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Undoable command that changes the Z-index of one or more edges.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgeZIndexCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateNodeDataCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Updates data properties of a single node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateNodeDataCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateNodesStyleCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Batch updates style properties of multiple nodes (undoable).",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateNodesStyleCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateTableCellStyleCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Updates the style of a specific table cell.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateTableCellStyleCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateZIndexCommand",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+      "description": "Undoable command that changes the Z-index of one or more nodes.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateZIndexCommand.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Name",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Execute",
+          "kind": "Method",
+          "type": "void"
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "void"
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Configuration",
+      "namespace": "Tempo.Blazor.Configuration",
+      "description": "Extension methods for registering Tempo.Blazor diagram editor services.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Configuration/DiagramEditorServiceCollectionExtensions.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "AddTempoBlazorDiagramEditor",
+          "kind": "Method",
+          "type": "IServiceCollection",
+          "description": "Registers services required by the diagram editor component group.",
+          "parameters": [
+            {
+              "name": "services",
+              "type": "this IServiceCollection"
+            }
+          ]
+        }
+      ],
+      "itemName": "DiagramEditorServiceCollectionExtensions"
+    },
+    {
+      "itemName": "TmDiagramArrowSelect",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "TmDiagramArrowSelect Blazor component in the Diagram category.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramArrowSelect.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmDiagramCanvas",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Unified SVG diagram canvas (draw.io‑inspired 4‑pane architecture: backgroundPane / drawPane / overlayPane / decoratorPane). Renders nodes and edges as native SVG primitives and labels, and communicates with diagram-editor.js for pan, zoom, drag, and selection.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramCanvas.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": [
+        {
+          "name": "ActiveGroupId",
+          "type": "string?",
+          "isRequired": false
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Prevent all editing interactions."
+        },
+        {
+          "name": "DocumentChanged",
+          "type": "EventCallback<DiagramDocument>",
+          "isRequired": false,
+          "description": "Document to display and edit."
+        },
+        {
+          "name": "GridSize",
+          "type": "int",
+          "isRequired": false,
+          "default": "8",
+          "description": "Show grid lines on the canvas background."
+        },
+        {
+          "name": "OnCanvasContextMenu",
+          "type": "EventCallback<(double CanvasX, double CanvasY, double ScreenX, double ScreenY)>",
+          "isRequired": false,
+          "description": "Raised when the user presses Escape and there is a table cell sub-selection that should be cleared before the node selection. Used to implement the draw.io-style \"drill-out\" cascade (first Escape exits cell mode, second Escape clears node selection)."
+        },
+        {
+          "name": "OnClearTableCellSelection",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when a table cell is right-clicked to open a context menu."
+        },
+        {
+          "name": "OnCloseContextMenu",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the empty canvas is right-clicked to open a context menu."
+        },
+        {
+          "name": "OnEdgeContextMenu",
+          "type": "EventCallback<(string EdgeId, double ScreenX, double ScreenY)>",
+          "isRequired": false,
+          "description": "Raised when a node is right-clicked or long-pressed to open a context menu."
+        },
+        {
+          "name": "OnEdgeCreated",
+          "type": "EventCallback<(string? SourceNodeId, string? SourcePortId, string? TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset, string? TargetEdgeId, double TargetEdgeT, double? SourceConstraintRx, double? SourceConstraintRy, bool? SourceConstraintPerimeter, double? TargetConstraintRx, double? TargetConstraintRy, bool? TargetConstraintPerimeter, double? TargetPointX, double? TargetPointY, double? SourcePointX, double? SourcePointY, double[]? WaypointsXY)>",
+          "isRequired": false
+        },
+        {
+          "name": "OnEnterGroup",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when the user presses Ctrl+Shift+L to lock selected nodes."
+        },
+        {
+          "name": "OnExitGroup",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user double-clicks or presses Ctrl+Shift+G on a group to enter it."
+        },
+        {
+          "name": "OnGroupSelected",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user presses Ctrl+PageUp/PageDown to switch page."
+        },
+        {
+          "name": "OnLockSelected",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user presses Ctrl+Shift+G to group selected nodes."
+        },
+        {
+          "name": "OnNavigateToCorner",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when the user presses a quick-insert stencil key (A,S,D,F,R)."
+        },
+        {
+          "name": "OnNodeContextMenu",
+          "type": "EventCallback<(string NodeId, double ScreenX, double ScreenY)>",
+          "isRequired": false,
+          "description": "Raised when a port is clicked to start drawing an edge."
+        },
+        {
+          "name": "OnNodeLinkClicked",
+          "type": "EventCallback<(string NodeId, string Link)>",
+          "isRequired": false,
+          "description": "Raised when a table cell is clicked (with or without Ctrl)."
+        },
+        {
+          "name": "OnPortMouseDown",
+          "type": "EventCallback<(string NodeId, string PortId)>",
+          "isRequired": false,
+          "description": "Raised when the ruler cursor moves."
+        },
+        {
+          "name": "OnQuickInsert",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Active group identifier. Only nodes with matching ParentGroupId are rendered."
+        },
+        {
+          "name": "OnRedo",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when user requests undo."
+        },
+        {
+          "name": "OnRulerCursorMoved",
+          "type": "EventCallback<(double X, double Y)>",
+          "isRequired": false,
+          "description": "Raised when the viewport changes after pan, zoom, or fit."
+        },
+        {
+          "name": "OnSelectionChanged",
+          "type": "EventCallback<string[]>",
+          "isRequired": false,
+          "description": "Current zoom level used for pixel-to-document conversion."
+        },
+        {
+          "name": "OnShowReplace",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user presses Ctrl+F."
+        },
+        {
+          "name": "OnShowSearch",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user switches tool mode."
+        },
+        {
+          "name": "OnSwitchPage",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Raised when the user presses Ctrl+Home/End to navigate to a corner."
+        },
+        {
+          "name": "OnTableCellContextMenu",
+          "type": "EventCallback<(string NodeId, int Row, int Column, double ScreenX, double ScreenY)>",
+          "isRequired": false,
+          "description": "Raised when an edge is right-clicked to open a context menu."
+        },
+        {
+          "name": "OnTableCellSelect",
+          "type": "EventCallback<(string NodeId, int Row, int Column, bool IsCtrlHeld)>",
+          "isRequired": false,
+          "description": "Selected table cells for multi-select merge UI."
+        },
+        {
+          "name": "OnToggleBold",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user presses Ctrl+Shift+F to exit the current group."
+        },
+        {
+          "name": "OnToggleItalic",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user presses Ctrl+B to toggle bold on selected nodes."
+        },
+        {
+          "name": "OnToggleUnderline",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user presses Ctrl+I to toggle italic on selected nodes."
+        },
+        {
+          "name": "OnToolModeChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when user requests redo."
+        },
+        {
+          "name": "OnUndo",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the user changes the selection."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Snap-to-grid cell size in pixels. 0 = disabled."
+        },
+        {
+          "name": "SelectedTableCells",
+          "type": "List<(int Row, int Column)>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Raised when the context menu should be closed (e.g. second right-click)."
+        },
+        {
+          "name": "ShowGrid",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Raised after every mutation."
+        },
+        {
+          "name": "ViewportChanged",
+          "type": "EventCallback<DiagramMinimapViewport>",
+          "isRequired": false,
+          "description": "Raised when the zoom level changes (e.g. via wheel)."
+        },
+        {
+          "name": "Zoom",
+          "type": "double",
+          "isRequired": false,
+          "default": "1.0",
+          "description": "Additional CSS class applied to the canvas wrapper."
+        },
+        {
+          "name": "ZoomChanged",
+          "type": "EventCallback<double>",
+          "isRequired": false,
+          "description": "Raised when the user presses Ctrl+U to toggle underline on selected nodes."
+        }
+      ]
+    },
+    {
+      "itemName": "TmDiagramCsvImportDialog",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "TmDiagramCsvImportDialog Blazor component in the Diagram category.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramCsvImportDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmDiagramEditor",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Top-level diagram editor component. Composes the canvas, toolbox, properties panel, and toolbar into a fully working editor.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramEditor.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional named HttpClient to use for SVG/PNG/PDF export calls."
+        },
+        {
+          "name": "DocumentChanged",
+          "type": "EventCallback<DiagramDocument>",
+          "isRequired": false,
+          "description": "Document being edited. Bind with @bind-Document."
+        },
+        {
+          "name": "ExportHttpClientName",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Show page view with shadow and boundaries on the canvas."
+        },
+        {
+          "name": "GridSize",
+          "type": "int",
+          "isRequired": false,
+          "default": "8",
+          "description": "Show grid lines on the canvas background."
+        },
+        {
+          "name": "OnSelectedIdsChanged",
+          "type": "EventCallback<string[]>",
+          "isRequired": false,
+          "description": "Additional CSS class on the editor root."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Raised after every mutation."
+        },
+        {
+          "name": "ShowGrid",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Show the top toolbar."
+        },
+        {
+          "name": "ShowLayersPanel",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Show the properties panel on the right."
+        },
+        {
+          "name": "ShowMinimap",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Show the layers panel on the right."
+        },
+        {
+          "name": "ShowPageView",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Snap-to-grid cell size in pixels. 0 = disabled."
+        },
+        {
+          "name": "ShowPropertiesPanel",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Show the component toolbox panel on the left."
+        },
+        {
+          "name": "ShowToolbar",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Show the minimap at the bottom of the right sidebar."
+        },
+        {
+          "name": "ShowToolbox",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Prevent all editing interactions."
+        }
+      ]
+    },
+    {
+      "itemName": "TmDiagramLayersPanel",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Right-side layers panel for managing diagram layers.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramLayersPanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmDiagramMinimap",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Minimap — a scaled-down SVG overview of the diagram canvas. Shows all node bounding boxes and simplified edge lines. The current viewport is shown as a dashed rectangle that the user can drag to pan the main canvas. Clicking outside the viewport navigates to that point.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramMinimap.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Raised when the user clicks or drags the minimap to navigate. Arguments are the document-space centre point."
+        },
+        {
+          "name": "NavigateRequested",
+          "type": "EventCallback<DiagramMinimapNavigateArgs>",
+          "isRequired": false,
+          "description": "Fixed pixel width of the minimap panel. Height is derived from canvas aspect ratio."
+        },
+        {
+          "name": "SelectedIds",
+          "type": "string[]",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Document to render."
+        },
+        {
+          "name": "Viewport",
+          "type": "DiagramMinimapViewport?",
+          "isRequired": false,
+          "description": "IDs of currently selected elements (highlighted in blue)."
+        },
+        {
+          "name": "Width",
+          "type": "int",
+          "isRequired": false,
+          "default": "200",
+          "description": "Current viewport state in document coordinates. When null the viewport rect is not shown."
+        }
+      ]
+    },
+    {
+      "itemName": "TmDiagramPropertiesPanel",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Right-side properties panel for the selected diagram element(s). Supports single node, single edge, and multi-selection with collapsible sections.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramPropertiesPanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": [
+        {
+          "name": "OnEdgeManualRoutingChanged",
+          "type": "EventCallback<(string EdgeId, bool Value)>",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "itemName": "TmDiagramRoutingPreview",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "TmDiagramRoutingPreview Blazor component in the Diagram category.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramRoutingPreview.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmDiagramRuler",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Horizontal or vertical ruler synchronized with the diagram canvas viewport.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramRuler.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": [
+        {
+          "name": "CursorX",
+          "type": "double",
+          "isRequired": false,
+          "description": "Page scale factor (1.0 = 1:1)."
+        },
+        {
+          "name": "CursorY",
+          "type": "double",
+          "isRequired": false,
+          "description": "Cursor position for crosshair."
+        },
+        {
+          "name": "Scale",
+          "type": "double",
+          "isRequired": false,
+          "default": "1.0",
+          "description": "Measurement unit."
+        },
+        {
+          "name": "Unit",
+          "type": "MeasurementUnit",
+          "isRequired": false,
+          "default": "MeasurementUnit.Px",
+          "description": "Current zoom level (1.0 = 100%)."
+        },
+        {
+          "name": "ViewportH",
+          "type": "double",
+          "isRequired": false,
+          "description": "Viewport width in document coordinates."
+        },
+        {
+          "name": "ViewportW",
+          "type": "double",
+          "isRequired": false,
+          "description": "Viewport Y in document coordinates."
+        },
+        {
+          "name": "ViewportX",
+          "type": "double",
+          "isRequired": false,
+          "description": "Either horizontal or vertical."
+        },
+        {
+          "name": "ViewportY",
+          "type": "double",
+          "isRequired": false,
+          "description": "Viewport X in document coordinates."
+        },
+        {
+          "name": "Zoom",
+          "type": "double",
+          "isRequired": false,
+          "default": "1.0",
+          "description": "Viewport height in document coordinates."
+        }
+      ]
+    },
+    {
+      "itemName": "TmDiagramSearchPanel",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Floating search panel for the diagram editor.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramSearchPanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": [
+        {
+          "name": "CurrentIndex",
+          "type": "int",
+          "isRequired": false,
+          "description": "Total number of matches."
+        },
+        {
+          "name": "CurrentIndexChanged",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Zero-based index of the currently highlighted match."
+        },
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fires when the active match index changes."
+        },
+        {
+          "name": "OnReplace",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Error message displayed when the regex pattern is invalid."
+        },
+        {
+          "name": "OnReplaceAll",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fires when the user clicks the Replace button."
+        },
+        {
+          "name": "QueryChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Current search query."
+        },
+        {
+          "name": "RegexError",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Fires when the regex toggle changes."
+        },
+        {
+          "name": "ReplaceQuery",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Fires when the \"search all pages\" toggle changes."
+        },
+        {
+          "name": "ReplaceQueryChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Current replacement text."
+        },
+        {
+          "name": "ResultsCount",
+          "type": "int",
+          "isRequired": false,
+          "description": "Fires when the query changes."
+        },
+        {
+          "name": "SearchAllPages",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Fires when the panel should close."
+        },
+        {
+          "name": "SearchAllPagesChanged",
+          "type": "EventCallback<bool>",
+          "isRequired": false,
+          "description": "When true, search spans all pages instead of just the active one."
+        },
+        {
+          "name": "UseRegex",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Fires when the replacement text changes."
+        },
+        {
+          "name": "UseRegexChanged",
+          "type": "EventCallback<bool>",
+          "isRequired": false,
+          "description": "When true, the query is treated as a regular expression."
+        }
+      ]
+    },
+    {
+      "itemName": "TmDiagramSqlImportDialog",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "TmDiagramSqlImportDialog Blazor component in the Diagram category.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramSqlImportDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmDiagramStencilShape",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Renders a diagram stencil shape inside a node.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramStencilShape.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmDiagramTableInserter",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "TmDiagramTableInserter Blazor component in the Diagram category.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramTableInserter.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmDiagramTemplateCard",
+      "kind": "Component",
+      "category": "Diagram",
+      "subcategory": "Templates",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "TmDiagramTemplateCard Blazor component in the Diagram category.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/TmDiagramTemplateCard.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmDiagramTemplateGallery",
+      "kind": "Component",
+      "category": "Diagram",
+      "subcategory": "Templates",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "TmDiagramTemplateGallery Blazor component in the Diagram category.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/TmDiagramTemplateGallery.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": []
+    },
+    {
+      "itemName": "TmDiagramToolbox",
+      "kind": "Component",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram",
+      "description": "Toolbox panel showing available diagram stencils that can be dragged onto the canvas.",
+      "packageId": "Tempo.Blazor.DiagramEditor",
+      "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramToolbox.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Diagram"
+      ],
+      "parameters": [
+        {
+          "name": "StencilDragStart",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Additional CSS class."
+        },
+        {
+          "name": "StencilKeyboardInsert",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when a stencil drag starts."
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [],
+  "assets": [
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/css/components/_diagram-editor.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/css/tempo-blazor-diagram-editor.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/diagram-templates/blank.diagram.json",
+      "kind": "Json"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/diagram-templates/er-diagram.diagram.json",
+      "kind": "Json"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/diagram-templates/flowchart-basic.diagram.json",
+      "kind": "Json"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/diagram-templates/index.json",
+      "kind": "Json"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/diagram-templates/network-topology.diagram.json",
+      "kind": "Json"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/diagram-templates/uml-class.diagram.json",
+      "kind": "Json"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/js/d3-dispatch.min.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/js/d3-force.min.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/js/d3-hierarchy.min.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/js/d3-quadtree.min.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/js/d3-timer.min.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/js/dagre.min.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/js/diagram-arrow-select.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/js/diagram-editor.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DiagramEditor/wwwroot/test-layouts.html",
+      "kind": "Asset"
+    }
+  ],
+  "summary": {
+    "itemCount": 133,
+    "manualItemCount": 123,
+    "generatedItemCount": 124,
+    "generatedOnlyItemCount": 10,
+    "componentCount": 16,
+    "publicApiTypeCount": 108
+  }
+}

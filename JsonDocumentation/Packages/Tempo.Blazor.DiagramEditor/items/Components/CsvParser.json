@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Parses raw CSV text and auto-detects the delimiter.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/CsvParser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Parse",
+      "kind": "Method",
+      "type": "CsvParseResult",
+      "description": "Parses CSV text and returns headers + rows. Throws if no valid delimiter is found or validation fails.",
+      "parameters": [
+        {
+          "name": "csvText",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "CsvParser"
+}

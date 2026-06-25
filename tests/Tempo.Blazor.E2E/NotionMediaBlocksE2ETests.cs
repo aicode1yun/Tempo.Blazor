@@ -88,7 +88,7 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
         var dialog = page.Locator(".tm-media-dialog");
         await dialog.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
 
-        // Determine number of tabs (Upload may be hidden when IFileAttachmentProvider is not registered)
+        // Determine number of tabs (Upload may be hidden when ITmFileProvider is not registered)
         var tabs = dialog.Locator(".tm-media-dialog__tab");
         var tabCount = await tabs.CountAsync();
         if (tabCount > 1)

@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Common contract for providers that advertise optional operations through a provider-specific flags enum.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmCapabilityProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITmCapabilityProvider<TCapabilities>"
+}

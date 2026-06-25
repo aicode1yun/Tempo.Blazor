@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.WorkItems;
 namespace Tempo.Blazor.Abstractions.Models;
 
 /// <summary>Calculates per-assignee per-day workload from a list of tasks.</summary>
@@ -9,7 +10,7 @@ public static class WorkloadCalculator
     /// CapacityHours = WorkDayEndHour − WorkDayStartHour.
     /// </summary>
     public static IReadOnlyList<WorkloadEntry> Calculate(
-        IEnumerable<GanttTask> tasks,
+        IEnumerable<TmWorkItem> tasks,
         WorkingSchedule schedule)
     {
         var capacityPerDay = schedule.WorkDayEndHour - schedule.WorkDayStartHour;
@@ -26,7 +27,7 @@ public static class WorkloadCalculator
         {
             foreach (var assignee in task.Assignees)
             {
-                var workingDays = EnumerateDays(task.Start.Date, task.End.Date)
+                var workingDays = EnumerateDays(task.ScheduledStart().Date, task.ScheduledEnd().Date)
                     .Where(IsWorkingDay)
                     .ToList();
 

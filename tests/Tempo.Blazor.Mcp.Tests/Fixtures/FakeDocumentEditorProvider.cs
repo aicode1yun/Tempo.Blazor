@@ -1,3 +1,4 @@
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
 
@@ -14,6 +15,14 @@ public sealed class FakeDocumentEditorProvider : IDocumentEditorProvider
     }
 
     private readonly Dictionary<string, Entry> _docs = new(StringComparer.Ordinal);
+
+    public TmCommentProviderCapabilities Capabilities
+        => TmCommentProviderCapabilities.Read
+        | TmCommentProviderCapabilities.CreateThread
+        | TmCommentProviderCapabilities.Reply
+        | TmCommentProviderCapabilities.EditEntry
+        | TmCommentProviderCapabilities.Delete
+        | TmCommentProviderCapabilities.Resolve;
 
     public string Add(DocumentEditorDocument document)
     {
@@ -145,4 +154,118 @@ public sealed class FakeDocumentEditorProvider : IDocumentEditorProvider
 
     public Task DeleteCommentAsync(string documentId, string commentId, DocumentEditorAuthor deletedBy, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
+
+    public Task<IReadOnlyList<TmCommentThread>> GetForEntityAsync(
+        TmEntityRef entityRef,
+        CancellationToken cancellationToken = default)
+    {
+        if (!string.Equals(entityRef.EntityType, DocumentCommentBridge.EntityType, StringComparison.OrdinalIgnoreCase)
+            || !_docs.TryGetValue(entityRef.EntityId, out var entry))
+        {
+            return Task.FromResult<IReadOnlyList<TmCommentThread>>([]);
+        }
+
+        var threads = entry.Document.Comments
+            .Select(comment => DocumentCommentBridge.ToTmCommentThread(comment, entityRef.EntityId))
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<TmCommentThread>>(threads);
+    }
+
+    public Task<TmCommentThread> CreateThreadAsync(
+        TmCommentThread thread,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_docs.TryGetValue(thread.EntityRef.EntityId, out var entry))
+        {
+            throw new InvalidOperationException("Document not found.");
+        }
+
+        var comment = DocumentCommentBridge.ToDocumentComment(thread);
+        entry.Document.Comments.Add(comment);
+        return Task.FromResult(DocumentCommentBridge.ToTmCommentThread(comment, thread.EntityRef.EntityId));
+    }
+
+    public Task<TmCommentEntry> ReplyAsync(
+        string threadId,
+        TmCommentEntry entry,
+        CancellationToken cancellationToken = default)
+    {
+        var comment = FindComment(threadId, out _);
+        entry.ThreadId = threadId;
+        var documentEntry = DocumentCommentBridge.ToDocumentCommentEntry(entry);
+        comment.Entries.Add(documentEntry);
+        return Task.FromResult(DocumentCommentBridge.ToTmCommentEntry(documentEntry, threadId));
+    }
+
+    public Task<TmCommentEntry> UpdateEntryAsync(
+        string threadId,
+        string entryId,
+        TmCommentEntry entry,
+        CancellationToken cancellationToken = default)
+    {
+        var comment = FindComment(threadId, out _);
+        var documentEntry = comment.Entries.First(item => item.Id == entryId);
+        documentEntry.Text = entry.Body;
+        documentEntry.ModifiedAt = DateTimeOffset.UtcNow;
+        return Task.FromResult(DocumentCommentBridge.ToTmCommentEntry(documentEntry, threadId));
+    }
+
+    public Task DeleteThreadAsync(
+        string threadId,
+        CancellationToken cancellationToken = default)
+    {
+        var comment = FindComment(threadId, out var document);
+        document.Comments.Remove(comment);
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteEntryAsync(
+        string threadId,
+        string entryId,
+        CancellationToken cancellationToken = default)
+    {
+        var comment = FindComment(threadId, out _);
+        comment.Entries.RemoveAll(entry => entry.Id == entryId);
+        return Task.CompletedTask;
+    }
+
+    public Task<TmCommentThread> ResolveAsync(
+        string threadId,
+        TmUserRef? resolvedBy = null,
+        CancellationToken cancellationToken = default)
+    {
+        var comment = FindComment(threadId, out var document);
+        comment.Status = DocumentCommentStatus.Resolved;
+        comment.ResolvedAt = DateTimeOffset.UtcNow;
+        comment.ResolvedBy = resolvedBy is null ? null : DocumentCommentBridge.ToDocumentEditorAuthor(resolvedBy);
+        return Task.FromResult(DocumentCommentBridge.ToTmCommentThread(comment, document.DocumentId));
+    }
+
+    public Task<TmCommentThread> ReopenAsync(
+        string threadId,
+        TmUserRef? reopenedBy = null,
+        CancellationToken cancellationToken = default)
+    {
+        var comment = FindComment(threadId, out var document);
+        comment.Status = DocumentCommentStatus.Open;
+        comment.ResolvedAt = null;
+        comment.ResolvedBy = null;
+        return Task.FromResult(DocumentCommentBridge.ToTmCommentThread(comment, document.DocumentId));
+    }
+
+    private DocumentComment FindComment(string commentId, out DocumentEditorDocument document)
+    {
+        foreach (var entry in _docs.Values)
+        {
+            var comment = entry.Document.Comments.FirstOrDefault(item => item.Id == commentId);
+            if (comment is not null)
+            {
+                document = entry.Document;
+                return comment;
+            }
+        }
+
+        throw new InvalidOperationException("Comment not found.");
+    }
 }

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard",
+  "description": "Intermediate clipboard fragment after conversion to Tempo document blocks.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Clipboard/DocumentClipboardStageModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentClipboardFragment"
+}

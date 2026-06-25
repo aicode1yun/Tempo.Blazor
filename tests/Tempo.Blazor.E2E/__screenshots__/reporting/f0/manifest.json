@@ -1,0 +1,71 @@
+{
+  "phase": "F0",
+  "testName": "F0_ReportingHarness_MatchesBrowserMeasureTextAndCapturesFidelityScreenshot",
+  "screenshotPath": "/home/pavel/NetProjects/Tempo.Blazor/tests/Tempo.Blazor.E2E/__screenshots__/reporting/f0/01-fidelity-sample.png",
+  "functionalReview": "Text runs are rendered at the C# supplied x/y/width values; browser measurements stay within the 0.5 % fidelity gate; no text rectangles overlap.",
+  "uxReview": "The sample page uses a quiet print-sheet composition, stable baselines, readable line spacing, and unobtrusive measurement guides.",
+  "canvasMetrics": {
+    "width": 794,
+    "height": 520,
+    "pixelCount": 412880,
+    "nonTransparentPixels": 412880,
+    "distinctColorCount": 61,
+    "minX": 0,
+    "minY": 0,
+    "maxX": 793,
+    "maxY": 519,
+    "nonTransparentRatio": 1
+  },
+  "measurements": [
+    {
+      "id": "latin-regular",
+      "text": "Tempo Reporting 012345",
+      "fontFamily": "Tempo F0 Sans",
+      "fontSize": 18,
+      "bold": false,
+      "letterSpacing": 0,
+      "csharpWidth": 204,
+      "browserWidth": 204
+    },
+    {
+      "id": "czech-diacritics",
+      "text": "\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148 \u011B\u0161\u010D\u0159\u017E\u00FD\u00E1\u00ED\u00E9",
+      "fontFamily": "Tempo F0 Sans",
+      "fontSize": 16,
+      "bold": false,
+      "letterSpacing": 0.2,
+      "csharpWidth": 177.4,
+      "browserWidth": 177.4
+    },
+    {
+      "id": "bold-run",
+      "text": "Bold metrics 123",
+      "fontFamily": "Tempo F0 Sans",
+      "fontSize": 22,
+      "bold": true,
+      "letterSpacing": 0,
+      "csharpWidth": 176,
+      "browserWidth": 176
+    },
+    {
+      "id": "greek-cyrillic",
+      "text": "\u03A9mega \u041C\u043E\u0441\u043A\u0432\u0430",
+      "fontFamily": "Tempo F0 Sans",
+      "fontSize": 17,
+      "bold": false,
+      "letterSpacing": 0,
+      "csharpWidth": 115,
+      "browserWidth": 115
+    },
+    {
+      "id": "cjk",
+      "text": "\u4F1A\u793E\u5831\u544A",
+      "fontFamily": "Tempo F0 CJK",
+      "fontSize": 20,
+      "bold": false,
+      "letterSpacing": 0,
+      "csharpWidth": 80,
+      "browserWidth": 80
+    }
+  ]
+}

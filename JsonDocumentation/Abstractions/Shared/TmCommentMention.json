@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "User mention metadata stored with a comment entry.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCommentMention.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "FromUser",
+      "kind": "Method",
+      "type": "TmCommentMention",
+      "description": "Creates mention metadata from a user reference.",
+      "parameters": [
+        {
+          "name": "user",
+          "type": "TmUserRef"
+        }
+      ]
+    },
+    {
+      "name": "DisplayText",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display text captured for the mention."
+    },
+    {
+      "name": "Length",
+      "kind": "Property",
+      "type": "int?",
+      "description": "Optional mention length in the body."
+    },
+    {
+      "name": "StartOffset",
+      "kind": "Property",
+      "type": "int?",
+      "description": "Optional start offset in the body."
+    },
+    {
+      "name": "User",
+      "kind": "Property",
+      "type": "TmUserRef",
+      "description": "Mentioned user snapshot."
+    }
+  ],
+  "itemName": "TmCommentMention"
+}

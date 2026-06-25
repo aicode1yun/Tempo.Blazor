@@ -49,7 +49,8 @@ Kompletní přehled všech komponent knihovny Tempo.Blazor, jejich parametrů, p
 26. [AI Tools](#ai-tools) — TmAIPrompt
 27. [Chat](#chat) — TmChat
 28. [Knihovna dokumentů](#knihovna-dokumentů-document-library) — ITempoDocumentLibraryProvider, TmDocumentOpenDialog, ITempoDocumentChangeNotifier, NotionEditor insert-existing, MCP
-29. [Validace formulářů - kompletní příklady](#validace-formulářů---kompletní-příklady)
+29. [Reporting](#reporting) — TmReportViewer, TmReportParameterPanel, TmReportExplorer, TmReportDesigner
+30. [Validace formulářů - kompletní příklady](#validace-formulářů---kompletní-příklady)
 
 ---
 
@@ -7055,6 +7056,144 @@ Balíček `Tempo.Blazor.Mcp` vystavuje wireframe knihovnu jako nástroje Model C
 LLM mohl navrhovat a číst wireframy (procházení komponent, dávkové operace, validace, implementační
 brief). Hostuje se přes `AddTempoWireframeMcpTools()` + `AddMcpServer().WithToolsFromAssembly(…)`.
 Detaily, kontrakt výsledků a optimistický concurrency model viz `src/Tempo.Blazor.Mcp/README.md`.
+
+---
+
+## Reporting
+
+Reporting komponenty jsou v samostatném balíčku `Tempo.Blazor.Reporting`. Používají definice z
+`Tempo.Reporting.Abstractions` a lokální nebo vzdálený zdroj implementující `IReportSource`.
+
+### Instalace
+
+```csharp
+using Tempo.Blazor.Reporting.Configuration;
+
+builder.Services.AddTempoBlazorReporting();
+```
+
+```html
+<link href="_content/Tempo.Blazor.Reporting/css/tempo-blazor-reporting.css" rel="stylesheet" />
+```
+
+### TmReportViewer
+
+Canvasový report viewer s pagingem, zoomem, přepínatelným panelem parametrů, refresh akcí, printem
+a exportem do PDF/CSV/XLSX. Umí běžet nad lokálním `EmbeddedReportSource` i vzdáleným
+`RemoteReportSource`.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `ReportSource` | `IReportSource?` | `null` | Zdroj metadat, snapshotu a exportů. |
+| `ParameterValues` | `IReadOnlyDictionary<string, ReportParameterValue>?` | `null` | Počáteční hodnoty parametrů. |
+| `AutoLoad` | `bool` | `true` | Automaticky renderovat po načtení metadat. |
+| `ShowParameterPanel` | `bool` | `true` | Zobrazit panel parametrů po načtení. |
+| `ShowParameterPanelToggle` | `bool` | `true` | Zobrazit toolbar tlačítko pro parametry. |
+| `Height` | `string?` | `"720px"` | CSS výška vieweru. |
+| `CultureName` | `string` | `"en-US"` | Kultura předaná do render pipeline. |
+| `TenantId` | `string` | `""` | Tenant/scope pro zdroj reportu. |
+| `UserId` | `string` | `""` | Uživatel pro audit/data provider. |
+| `Class` | `string?` | `null` | Další CSS třídy. |
+| `SnapshotChanged` | `EventCallback<ReportSnapshot>` | — | Vyvoláno po renderu snapshotu. |
+| `PdfExported` / `CsvExported` / `XlsxExported` | `EventCallback<ReportViewerExportResult>` | — | Vyvoláno po exportu. |
+| `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy root elementu. |
+
+#### Použití
+
+```razor
+@using Tempo.Blazor.Reporting.Components
+@using Tempo.Blazor.Reporting.Models
+@using Tempo.Blazor.Reporting.Services
+
+<TmReportViewer ReportSource="_source"
+                TenantId="northwind"
+                UserId="demo-user"
+                CultureName="en-US"
+                PdfExported="HandlePdfExported" />
+```
+
+### TmReportParameterPanel
+
+Samostatný panel parametrů pro string/number/date/boolean/list hodnoty. Používá metadata
+`ReportViewerParameterMetadata`, podporuje single-select i multi-select a kontroluje povinné
+hodnoty před odesláním.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Parameters` | `IReadOnlyList<ReportViewerParameterMetadata>` | `[]` | Parametry k vykreslení. |
+| `Values` | `IReadOnlyDictionary<string, ReportParameterValue>?` | `null` | Aktuální hodnoty. |
+| `OnParameterChanged` | `EventCallback<ReportParameterChangedEventArgs>` | — | Změna jedné hodnoty. |
+| `OnSubmit` | `EventCallback<ReportParameterSubmitEventArgs>` | — | Potvrzení hodnot. |
+| `Disabled` | `bool` | `false` | Zakáže ovládací prvky. |
+| `Class` | `string?` | `null` | Další CSS třídy. |
+
+```razor
+<TmReportParameterPanel Parameters="_metadata.Parameters"
+                        Values="_values"
+                        OnParameterChanged="HandleChanged"
+                        OnSubmit="RunReportAsync" />
+```
+
+### TmReportExplorer
+
+Katalog reportů se stromem složek, vyhledáváním, přepínáním grid/list režimu, otevřením reportu a
+volitelnou správou složek/přesunem reportů.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `RootFolder` | `ReportExplorerFolder?` | `null` | Kořen stromu složek. |
+| `Reports` | `IReadOnlyList<ReportExplorerReportItem>` | `[]` | Reporty v katalogu. |
+| `CurrentFolderPath` / `CurrentFolderPathChanged` | `string` / `EventCallback<string>` | `"/"` | Vybraná složka. |
+| `SearchText` / `SearchTextChanged` | `string` / `EventCallback<string>` | `""` | Vyhledávací dotaz. |
+| `ViewMode` / `ViewModeChanged` | `ReportExplorerViewMode` / `EventCallback<ReportExplorerViewMode>` | `Grid` | Grid/list režim. |
+| `AllowFolderManagement` | `bool` | `false` | Zobrazit vytvoření složky a přesun reportu. |
+| `ReportOpened` | `EventCallback<ReportExplorerReportItem>` | — | Otevření reportu. |
+| `CreateFolderRequested` | `EventCallback<ReportExplorerCreateFolderRequest>` | — | Požadavek na složku. |
+| `ReportMoveRequested` | `EventCallback<ReportExplorerMoveReportRequest>` | — | Požadavek na přesun. |
+| `Class` | `string?` | `null` | Další CSS třídy. |
+| `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy. |
+
+```razor
+<TmReportExplorer RootFolder="_root"
+                  Reports="_reports"
+                  @bind-CurrentFolderPath="_folder"
+                  ReportOpened="OpenReportAsync"
+                  AllowFolderManagement="true" />
+```
+
+### TmReportDesigner
+
+Lehký designer definice reportu. Nabízí page setup, band canvas, výběr elementů, základní palette
+(`textBox`, `image`, `shape`, `table`, `chart`), field list, expression editor, validaci, preview a
+události pro save draft/publish.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Definition` / `DefinitionChanged` | `ReportDefinition` / `EventCallback<ReportDefinition>` | starter definice | Editovaná definice. |
+| `Saved` | `EventCallback<ReportDesignerSaveEventArgs>` | — | Save draft/publish událost. |
+| `Class` | `string?` | `null` | Další CSS třídy. |
+| `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy root elementu. |
+
+```razor
+<TmReportDesigner Definition="_definition"
+                  DefinitionChanged="definition => _definition = definition"
+                  Saved="PersistRevisionAsync" />
+```
+
+### Související balíčky
+
+- `Tempo.Reporting.Abstractions` — definice reportu, JSON serializer, validace, data provider
+  kontrakty a `docs/report-definition.schema.json`.
+- `Tempo.Reporting.Engine` — processing, layout, snapshoty, PDF/PNG rendering a CSV/XLSX export.
+- `Tempo.Blazor.Reporting` — Blazor komponenty, embedded/remote report source a klientské assety.
 
 ---
 

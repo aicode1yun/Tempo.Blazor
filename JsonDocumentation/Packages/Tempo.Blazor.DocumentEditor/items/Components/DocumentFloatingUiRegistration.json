@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Features",
+  "description": "Floating UI layer definition owned by a feature.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Features/DocumentEditorFeatureInfrastructure.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentFloatingUiRegistration"
+}

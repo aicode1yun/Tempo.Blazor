@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Parses SQL DDL statements into structured table definitions.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/SqlParser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Parse",
+      "kind": "Method",
+      "type": "List<SqlTableDefinition>",
+      "parameters": [
+        {
+          "name": "sql",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "SqlParser"
+}

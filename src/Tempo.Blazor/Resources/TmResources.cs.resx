@@ -1415,6 +1415,52 @@
   <data name="TmPdfViewer_Thumbnails"                        xml:space="preserve"><value>Miniatury</value></data>
   <data name="TmPdfViewer_Search"                            xml:space="preserve"><value>Hledat</value></data>
   <data name="TmPdfViewer_SearchResults"                     xml:space="preserve"><value>{0} z {1}</value></data>
+  <!-- TmReportViewer -->
+  <data name="TmReportViewer_ToolbarLabel"                    xml:space="preserve"><value>Ovládání reportu</value></data>
+  <data name="TmReportViewer_Loading"                         xml:space="preserve"><value>Načítám report...</value></data>
+  <data name="TmReportViewer_EmptyTitle"                      xml:space="preserve"><value>Report není vykreslený</value></data>
+  <data name="TmReportViewer_EmptyDescription"                xml:space="preserve"><value>Nastavte parametry a spusťte report.</value></data>
+  <data name="TmReportViewer_NoSource"                        xml:space="preserve"><value>Není nastavený zdroj reportu.</value></data>
+  <data name="TmReportViewer_ErrorTitle"                      xml:space="preserve"><value>Report se nepodařilo vykreslit</value></data>
+  <data name="TmReportViewer_Parameters"                      xml:space="preserve"><value>Parametry</value></data>
+  <data name="TmReportViewer_Run"                             xml:space="preserve"><value>Zobrazit report</value></data>
+  <data name="TmReportViewer_Refresh"                         xml:space="preserve"><value>Obnovit</value></data>
+  <data name="TmReportViewer_FirstPage"                       xml:space="preserve"><value>První stránka</value></data>
+  <data name="TmReportViewer_PreviousPage"                    xml:space="preserve"><value>Předchozí stránka</value></data>
+  <data name="TmReportViewer_NextPage"                        xml:space="preserve"><value>Další stránka</value></data>
+  <data name="TmReportViewer_LastPage"                        xml:space="preserve"><value>Poslední stránka</value></data>
+  <data name="TmReportViewer_Page"                            xml:space="preserve"><value>Stránka</value></data>
+  <data name="TmReportViewer_PageOf"                          xml:space="preserve"><value>{0} z {1}</value></data>
+  <data name="TmReportViewer_Zoom"                            xml:space="preserve"><value>Přiblížení</value></data>
+  <data name="TmReportViewer_ZoomIn"                          xml:space="preserve"><value>Přiblížit</value></data>
+  <data name="TmReportViewer_ZoomOut"                         xml:space="preserve"><value>Oddálit</value></data>
+  <data name="TmReportViewer_FitWidth"                        xml:space="preserve"><value>Na šířku</value></data>
+  <data name="TmReportViewer_FitPage"                         xml:space="preserve"><value>Celá stránka</value></data>
+  <data name="TmReportViewer_Export"                          xml:space="preserve"><value>Export</value></data>
+  <data name="TmReportViewer_ExportPdf"                       xml:space="preserve"><value>PDF</value></data>
+  <data name="TmReportViewer_ExportCsv"                       xml:space="preserve"><value>CSV</value></data>
+  <data name="TmReportViewer_ExportXlsx"                      xml:space="preserve"><value>XLSX</value></data>
+  <data name="TmReportViewer_ExportCsvUnavailable"            xml:space="preserve"><value>CSV / XLSX po F15</value></data>
+  <data name="TmReportViewer_Print"                           xml:space="preserve"><value>Tisk</value></data>
+  <data name="TmReportViewer_SelectValue"                     xml:space="preserve"><value>Vyberte hodnotu</value></data>
+  <data name="TmReportViewer_ParameterRequired"               xml:space="preserve"><value>{0} je povinný parametr.</value></data>
+  <!-- TmReportExplorer -->
+  <data name="TmReportExplorer_Folders"                        xml:space="preserve"><value>Složky</value></data>
+  <data name="TmReportExplorer_Search"                         xml:space="preserve"><value>Hledat reporty</value></data>
+  <data name="TmReportExplorer_SearchPlaceholder"              xml:space="preserve"><value>Hledat reporty...</value></data>
+  <data name="TmReportExplorer_GridView"                       xml:space="preserve"><value>Mřížka</value></data>
+  <data name="TmReportExplorer_ListView"                       xml:space="preserve"><value>Seznam</value></data>
+  <data name="TmReportExplorer_NewFolderPlaceholder"           xml:space="preserve"><value>Název nové složky</value></data>
+  <data name="TmReportExplorer_CreateFolder"                   xml:space="preserve"><value>Vytvořit složku</value></data>
+  <data name="TmReportExplorer_EmptyTitle"                     xml:space="preserve"><value>Nenalezeny žádné reporty</value></data>
+  <data name="TmReportExplorer_EmptyDescription"               xml:space="preserve"><value>Zkuste jinou složku nebo hledaný výraz.</value></data>
+  <data name="TmReportExplorer_ThumbnailAlt"                   xml:space="preserve"><value>Náhled reportu {0}</value></data>
+  <data name="TmReportExplorer_OpenReport"                     xml:space="preserve"><value>Otevřít</value></data>
+  <data name="TmReportExplorer_OpenReportNamed"                xml:space="preserve"><value>Otevřít {0}</value></data>
+  <data name="TmReportExplorer_Revision"                       xml:space="preserve"><value>Rev {0}</value></data>
+  <data name="TmReportExplorer_ActionsFor"                     xml:space="preserve"><value>Akce pro {0}</value></data>
+  <data name="TmReportExplorer_MoveTo"                         xml:space="preserve"><value>Přesunout do</value></data>
+  <data name="TmReportExplorer_MoveReport"                     xml:space="preserve"><value>Přesunout report</value></data>
   <data name="TmAIPrompt_Placeholder"                        xml:space="preserve"><value>Zeptejte se mě na cokoliv...</value></data>
   <data name="TmAIPrompt_Submit"                             xml:space="preserve"><value>Odeslat</value></data>
   <data name="TmAIPrompt_CommandsLabel"                      xml:space="preserve"><value>Rychlé akce</value></data>
@@ -2102,7 +2148,6 @@
   <data name="TmSpreadsheet_BorderStyleDashed" xml:space="preserve"><value>Přerušovaný</value></data>
   <data name="TmSpreadsheet_BorderStyleDotted" xml:space="preserve"><value>Tečkovaný</value></data>
   <data name="TmSpreadsheet_BorderStyleDouble" xml:space="preserve"><value>Dvojitý</value></data>
-  <data name="TmSpreadsheet_BackgroundColor" xml:space="preserve"><value>Barva pozadí</value></data>
   <data name="TmSpreadsheet_NoFill" xml:space="preserve"><value>Bez výplně</value></data>
   <data name="TmSpreadsheet_CustomColor" xml:space="preserve"><value>Vlastní barva</value></data>
   <data name="TmSpreadsheet_BorderPicker" xml:space="preserve"><value>Výběr ohraničení</value></data>
@@ -2734,6 +2779,7 @@
   <data name="TmNotionDiagramEditModal_Title"          xml:space="preserve"><value>Editor diagramů</value></data>
   <data name="TmNotionDiagramEditModal_Save"           xml:space="preserve"><value>Uložit a zavřít</value></data>
   <data name="TmNotionDiagramEditModal_Discard"        xml:space="preserve"><value>Zahodit změny</value></data>
+  <data name="TmNotionDiagramEditModal_MissingPackage" xml:space="preserve"><value>Pro úpravu diagramů zde přidejte balíček Tempo.Blazor.DiagramEditor.</value></data>
 
   <!-- Wireframe block -->
   <data name="TmNotionWireframeBlock_CreateWireframe"  xml:space="preserve"><value>Vytvořit drátový model</value></data>
@@ -2747,10 +2793,12 @@
   <data name="TmNotionWireframeEditModal_Title"        xml:space="preserve"><value>Editor drátových modelů</value></data>
   <data name="TmNotionWireframeEditModal_Save"         xml:space="preserve"><value>Uložit a zavřít</value></data>
   <data name="TmNotionWireframeEditModal_Discard"      xml:space="preserve"><value>Zahodit změny</value></data>
+  <data name="TmNotionWireframeEditModal_MissingPackage" xml:space="preserve"><value>Pro úpravu drátových modelů zde přidejte balíček Tempo.Blazor.Wireframe.</value></data>
 
   <data name="TmNotionSpreadsheetEditModal_Title"      xml:space="preserve"><value>Editor tabulky</value></data>
   <data name="TmNotionSpreadsheetEditModal_Save"       xml:space="preserve"><value>Uložit a zavřít</value></data>
   <data name="TmNotionSpreadsheetEditModal_Discard"    xml:space="preserve"><value>Zahodit změny</value></data>
+  <data name="TmNotionSpreadsheetEditModal_MissingPackage" xml:space="preserve"><value>Pro úpravu tabulek zde přidejte balíček Tempo.Blazor.Spreadsheet.</value></data>
 
   <!-- Page search (Ctrl+P) -->
   <data name="TmNotionPageSearch_Placeholder"          xml:space="preserve"><value>Hledat stránky a obsah…</value></data>
@@ -2840,7 +2888,6 @@
   <data name="TmNotionPageSettingsMenu_ErrorDelete"          xml:space="preserve"><value>Stránku se nepodařilo smazat.</value></data>
 
   <!-- Document Manager -->
-  <data name="TmFileManager_UploadTitle"               xml:space="preserve"><value>Nahrát soubory</value></data>
   <data name="TmFileManager_Edit"                      xml:space="preserve"><value>Upravit</value></data>
   <data name="TmFileManager_Detail"                    xml:space="preserve"><value>Detail</value></data>
   <data name="TmFileManager_AddAttachment"             xml:space="preserve"><value>Přidat přílohu</value></data>
@@ -3846,15 +3893,15 @@
   <data name="TmGantt_BaselineDeviation" xml:space="preserve"><value>Odchylka od základního plánu</value></data>
   <data name="TmGantt_AddCustomField" xml:space="preserve"><value>Přidat vlastní pole</value></data>
   <data name="TmGantt_CustomFieldName" xml:space="preserve"><value>Název pole</value></data>
-  <data name="GanttFieldType_Text" xml:space="preserve"><value>Text</value></data>
-  <data name="GanttFieldType_Number" xml:space="preserve"><value>Číslo</value></data>
-  <data name="GanttFieldType_Date" xml:space="preserve"><value>Datum</value></data>
-  <data name="GanttFieldType_List" xml:space="preserve"><value>Seznam</value></data>
-  <data name="GanttFieldType_Checkbox" xml:space="preserve"><value>Zaškrtávací políčko</value></data>
-  <data name="GanttFieldType_Color" xml:space="preserve"><value>Barva</value></data>
-  <data name="GanttFieldType_Multiselect" xml:space="preserve"><value>Vícenásobný výběr</value></data>
-  <data name="GanttFieldType_People" xml:space="preserve"><value>Lidé</value></data>
-  <data name="GanttFieldType_Labels" xml:space="preserve"><value>Štítky</value></data>
+  <data name="TmCustomFieldType_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="TmCustomFieldType_Number" xml:space="preserve"><value>Číslo</value></data>
+  <data name="TmCustomFieldType_Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="TmCustomFieldType_List" xml:space="preserve"><value>Seznam</value></data>
+  <data name="TmCustomFieldType_Checkbox" xml:space="preserve"><value>Zaškrtávací políčko</value></data>
+  <data name="TmCustomFieldType_Color" xml:space="preserve"><value>Barva</value></data>
+  <data name="TmCustomFieldType_Multiselect" xml:space="preserve"><value>Vícenásobný výběr</value></data>
+  <data name="TmCustomFieldType_People" xml:space="preserve"><value>Lidé</value></data>
+  <data name="TmCustomFieldType_Labels" xml:space="preserve"><value>Štítky</value></data>
   <data name="TmGantt_Filter" xml:space="preserve"><value>Filtr</value></data>
   <data name="TmGantt_AddFilter" xml:space="preserve"><value>Přidat filtr</value></data>
   <data name="TmGantt_FilterField" xml:space="preserve"><value>Pole</value></data>
@@ -3891,6 +3938,7 @@
   <data name="TmGantt_ImportMpp" xml:space="preserve"><value>Importovat MS Project</value></data>
   <data name="TmGantt_ImportJira" xml:space="preserve"><value>Importovat z JIRA</value></data>
   <data name="TmGantt_ImportError" xml:space="preserve"><value>Import selhal: {0}</value></data>
+  <data name="TmGantt_ImportXlsxPackageMissing" xml:space="preserve"><value>Pro import souborů Excel přidejte balíček Tempo.Blazor.GanttXlsx.</value></data>
   <data name="TmGantt_ImportMapping" xml:space="preserve"><value>Mapování sloupců</value></data>
   <data name="TmGantt_ImportSourceColumn" xml:space="preserve"><value>Zdrojový sloupec</value></data>
   <data name="TmGantt_ImportTargetField" xml:space="preserve"><value>Cílové pole</value></data>
@@ -4778,4 +4826,74 @@
   <data name="TmNotionBlock_InsertExisting" xml:space="preserve"><value>Vložit existující…</value></data>
   <data name="TmNotionBlock_DocumentNotFound" xml:space="preserve"><value>Dokument nenalezen</value></data>
   <data name="TmNotionBlock_RemoveBlock" xml:space="preserve"><value>Odebrat</value></data>
+  <data name="TmReportDesigner_Label" xml:space="preserve"><value>Návrhář sestav</value></data>
+  <data name="TmReportDesigner_Zoom" xml:space="preserve"><value>Přiblížení</value></data>
+  <data name="TmReportDesigner_Undo" xml:space="preserve"><value>Zpět</value></data>
+  <data name="TmReportDesigner_Redo" xml:space="preserve"><value>Znovu</value></data>
+  <data name="TmReportDesigner_Copy" xml:space="preserve"><value>Kopírovat</value></data>
+  <data name="TmReportDesigner_PageSetup" xml:space="preserve"><value>Nastavení stránky</value></data>
+  <data name="TmReportDesigner_Tabs" xml:space="preserve"><value>Sekce návrháře</value></data>
+  <data name="TmReportDesigner_PageWidth" xml:space="preserve"><value>Šířka stránky</value></data>
+  <data name="TmReportDesigner_PageHeight" xml:space="preserve"><value>Výška stránky</value></data>
+  <data name="TmReportDesigner_Margins" xml:space="preserve"><value>Okraje</value></data>
+  <data name="TmReportDesigner_Orientation" xml:space="preserve"><value>Orientace</value></data>
+  <data name="TmReportDesigner_Portrait" xml:space="preserve"><value>Na výšku</value></data>
+  <data name="TmReportDesigner_Landscape" xml:space="preserve"><value>Na šířku</value></data>
+  <data name="TmReportDesigner_Palette" xml:space="preserve"><value>Paleta</value></data>
+  <data name="TmReportDesigner_TextBox" xml:space="preserve"><value>Textové pole</value></data>
+  <data name="TmReportDesigner_Image" xml:space="preserve"><value>Obrázek</value></data>
+  <data name="TmReportDesigner_Shape" xml:space="preserve"><value>Tvar</value></data>
+  <data name="TmReportDesigner_Table" xml:space="preserve"><value>Tabulka</value></data>
+  <data name="TmReportDesigner_Chart" xml:space="preserve"><value>Graf</value></data>
+  <data name="TmReportDesigner_DefaultTextBox" xml:space="preserve"><value>Textové pole</value></data>
+  <data name="TmReportDesigner_BandHeight" xml:space="preserve"><value>Výška</value></data>
+  <data name="TmReportDesigner_Properties" xml:space="preserve"><value>Vlastnosti</value></data>
+  <data name="TmReportDesigner_NoSelection" xml:space="preserve"><value>Vyberte prvek.</value></data>
+  <data name="TmReportDesigner_X" xml:space="preserve"><value>X</value></data>
+  <data name="TmReportDesigner_Y" xml:space="preserve"><value>Y</value></data>
+  <data name="TmReportDesigner_Width" xml:space="preserve"><value>Šířka</value></data>
+  <data name="TmReportDesigner_Height" xml:space="preserve"><value>Výška</value></data>
+  <data name="TmReportDesigner_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="TmReportDesigner_FieldList" xml:space="preserve"><value>Pole</value></data>
+  <data name="TmReportDesigner_NoDataSource" xml:space="preserve"><value>Bez zdroje</value></data>
+  <data name="TmReportDesigner_Datasets" xml:space="preserve"><value>Datasety</value></data>
+  <data name="TmReportDesigner_Query" xml:space="preserve"><value>Dotaz</value></data>
+  <data name="TmReportDesigner_PreviewTop" xml:space="preserve"><value>Náhled prvních řádků</value></data>
+  <data name="TmReportDesigner_Parameters" xml:space="preserve"><value>Parametry</value></data>
+  <data name="TmReportDesigner_ExpressionEditor" xml:space="preserve"><value>Editor výrazů</value></data>
+  <data name="TmReportDesigner_Expression" xml:space="preserve"><value>Výraz</value></data>
+  <data name="TmReportDesigner_ExpressionSelectField" xml:space="preserve"><value>Vyberte pole nebo parametr.</value></data>
+  <data name="TmReportDesigner_ExpressionMustStart" xml:space="preserve"><value>Výraz musí začínat znakem =.</value></data>
+  <data name="TmReportDesigner_Preview" xml:space="preserve"><value>Náhled</value></data>
+  <data name="TmReportDesigner_Validation" xml:space="preserve"><value>Validace</value></data>
+  <data name="TmReportDesigner_Revisions" xml:space="preserve"><value>Revize</value></data>
+  <data name="TmReportDesigner_CurrentRevision" xml:space="preserve"><value>Aktuální revize {0}</value></data>
+  <data name="TmReportDesigner_SaveDraft" xml:space="preserve"><value>Uložit koncept</value></data>
+  <data name="TmReportDesigner_Publish" xml:space="preserve"><value>Publikovat</value></data>
+  <data name="TmReportDesigner_ValidationName" xml:space="preserve"><value>Název sestavy je povinný.</value></data>
+  <data name="TmReportDesigner_ValidationDataset" xml:space="preserve"><value>Přidejte alespoň jeden dataset.</value></data>
+  <data name="TmReportDesigner_ValidationElements" xml:space="preserve"><value>Přidejte alespoň jeden prvek.</value></data>
+  <data name="TmReportDesigner_ValidationElementSize" xml:space="preserve"><value>{0} má neplatnou velikost.</value></data>
+  <data name="TmReportDesigner_InvalidSize" xml:space="preserve"><value>Neplatná velikost.</value></data>
+  <data name="TmReportDesigner_ValidElement" xml:space="preserve"><value>Prvek je v pořádku.</value></data>
+  <data name="TmReportDesigner_ChartTitle" xml:space="preserve"><value>Název grafu</value></data>
+  <data name="TmReportDesigner_ChartType" xml:space="preserve"><value>Typ grafu</value></data>
+  <data name="TmReportDesigner_ChartTypeColumn" xml:space="preserve"><value>Sloupcový</value></data>
+  <data name="TmReportDesigner_ChartTypeBar" xml:space="preserve"><value>Pruhový</value></data>
+  <data name="TmReportDesigner_ChartTypeLine" xml:space="preserve"><value>Spojnicový</value></data>
+  <data name="TmReportDesigner_ChartTypeArea" xml:space="preserve"><value>Plošný</value></data>
+  <data name="TmReportDesigner_ChartTypePie" xml:space="preserve"><value>Výsečový</value></data>
+  <data name="TmReportDesigner_ChartTypeDonut" xml:space="preserve"><value>Prstencový</value></data>
+  <data name="TmReportDesigner_ChartDataset" xml:space="preserve"><value>Dataset</value></data>
+  <data name="TmReportDesigner_ChartSeries" xml:space="preserve"><value>Série</value></data>
+  <data name="TmReportDesigner_ChartCategoryExpression" xml:space="preserve"><value>Výraz kategorie</value></data>
+  <data name="TmReportDesigner_ChartValueExpression" xml:space="preserve"><value>Výraz hodnoty</value></data>
+  <data name="TmReportDesigner_ChartColor" xml:space="preserve"><value>Barva</value></data>
+  <data name="TmReportDesigner_ChartLegend" xml:space="preserve"><value>Legenda</value></data>
+  <data name="TmReportDesigner_ChartPreview" xml:space="preserve"><value>Náhled grafu</value></data>
+  <data name="TmReportDesigner_DefaultChartTitle" xml:space="preserve"><value>Graf prodejů</value></data>
+  <data name="TmReportDesigner_DefaultChartSeries" xml:space="preserve"><value>Skutečnost</value></data>
+  <data name="TmReportDesigner_ChartInvalidSeries" xml:space="preserve"><value>Série grafu potřebuje výraz kategorie a hodnoty.</value></data>
+  <data name="TmReportDesigner_Data" xml:space="preserve"><value>Data</value></data>
+  <data name="TmReportDesigner_Design" xml:space="preserve"><value>Návrh</value></data>
 </root>

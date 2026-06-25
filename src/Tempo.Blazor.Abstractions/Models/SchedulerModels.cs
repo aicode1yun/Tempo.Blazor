@@ -1,3 +1,5 @@
+using Tempo.Blazor.Abstractions.Shared;
+
 namespace Tempo.Blazor.Models;
 
 /// <summary>Available scheduler view types.</summary>
@@ -58,7 +60,10 @@ public class TmScheduleEvent
     public Dictionary<string, object>? Metadata { get; set; }
 }
 
-/// <summary>Represents a schedulable resource (person, room, etc.).</summary>
+/// <summary>
+/// Represents a scheduler-specific resource snapshot. Use <see cref="ToResource"/>
+/// and <see cref="FromResource"/> to bridge to the shared <see cref="TmResource"/> model.
+/// </summary>
 public class TmScheduleResource
 {
     /// <summary>Unique identifier.</summary>
@@ -70,11 +75,53 @@ public class TmScheduleResource
     /// <summary>CSS color value for the resource.</summary>
     public string? Color { get; set; }
 
+    /// <summary>Optional resource type, for example <c>person</c>, <c>team</c>, <c>room</c>, or <c>equipment</c>.</summary>
+    public string? ResourceType { get; set; }
+
     /// <summary>Optional group identifier for nested grouping.</summary>
     public string? GroupId { get; set; }
 
     /// <summary>Display order within the group.</summary>
     public int SortOrder { get; set; }
+
+    /// <summary>Optional provider/source discriminator for applications with multiple resource sources.</summary>
+    public string? SourceKey { get; set; }
+
+    /// <summary>Optional tenant, workspace, or application scope identifier.</summary>
+    public string? TenantId { get; set; }
+
+    /// <summary>Creates a shared resource snapshot from this scheduler resource.</summary>
+    public TmResource ToResource()
+        => new()
+        {
+            Id = Id,
+            DisplayName = Name,
+            ResourceType = ResourceType,
+            Color = Color,
+            GroupId = GroupId,
+            SortOrder = SortOrder,
+            SourceKey = SourceKey,
+            TenantId = TenantId
+        };
+
+    /// <summary>Creates a scheduler resource snapshot from a shared resource model.</summary>
+    /// <param name="resource">Resource to copy.</param>
+    public static TmScheduleResource FromResource(TmResource resource)
+    {
+        ArgumentNullException.ThrowIfNull(resource);
+
+        return new TmScheduleResource
+        {
+            Id = resource.Id,
+            Name = resource.DisplayName,
+            Color = resource.Color,
+            ResourceType = resource.ResourceType,
+            GroupId = resource.GroupId,
+            SortOrder = resource.SortOrder,
+            SourceKey = resource.SourceKey,
+            TenantId = resource.TenantId
+        };
+    }
 }
 
 /// <summary>Query parameters for loading schedule events.</summary>

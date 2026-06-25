@@ -6,7 +6,7 @@ using Tempo.Blazor.NotionEditor.Services;
 
 namespace Tempo.Blazor.Demo.Services;
 
-public sealed class DemoNotionHistoryProvider : INotionHistoryProvider
+public sealed class DemoNotionHistoryProvider : INotionVersionProvider
 {
     private readonly HttpClient _http;
 

@@ -1,9 +1,9 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.NotionEditor.UI;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Models;
 using Tempo.Blazor.Tests.Localization;
 
 namespace Tempo.Blazor.Tests.Components.NotionEditor;
@@ -48,7 +48,7 @@ public sealed class TmNotionAuditLogPanelTests : LocalizationTestBase
     [Fact]
     public void PanelFiltersByUserActionAndDate()
     {
-        var cut = RenderPanel(new FakeAuditProvider(SampleEntries()));
+        var cut = RenderPanel(new FakeActivityProvider(SampleEntries()));
 
         cut.WaitForAssertion(() => cut.FindAll("[data-testid='notion-audit-entry']").Should().HaveCount(3));
         cut.Find("[data-testid='notion-audit-user-filter']").Input("Alice");
@@ -69,7 +69,7 @@ public sealed class TmNotionAuditLogPanelTests : LocalizationTestBase
     [Fact]
     public void PanelExportsFilteredCsv()
     {
-        var cut = RenderPanel(new FakeAuditProvider(SampleEntries()));
+        var cut = RenderPanel(new FakeActivityProvider(SampleEntries()));
 
         cut.Find("[data-testid='notion-audit-user-filter']").Input("Bob");
         cut.Find("[data-testid='notion-audit-apply']").Click();
@@ -90,14 +90,14 @@ public sealed class TmNotionAuditLogPanelTests : LocalizationTestBase
         var entries = Enumerable.Range(0, 13)
             .Select(index => Entry(
                 id: $"entry-{index:00}",
-                timestamp: new DateTime(2026, 1, 15, 10, 30, 0, DateTimeKind.Utc).AddMinutes(-index),
+                timestamp: new DateTimeOffset(2026, 1, 15, 10, 30, 0, TimeSpan.Zero).AddMinutes(-index),
                 userId: "alice",
                 user: "Alice Morgan",
                 action: "edit",
                 title: $"Paged {index:00}"))
             .ToArray();
 
-        var cut = RenderPanel(new FakeAuditProvider(entries), pageSize: 5);
+        var cut = RenderPanel(new FakeActivityProvider(entries), pageSize: 5);
 
         cut.WaitForAssertion(() =>
         {
@@ -113,59 +113,67 @@ public sealed class TmNotionAuditLogPanelTests : LocalizationTestBase
         cut.WaitForAssertion(() => cut.Find("[data-testid='notion-audit-empty']").TextContent.Should().Contain("No audit entries"));
     }
 
-    private IRenderedFragment RenderPanel(INotionAuditProvider provider, int pageSize = 10)
+    private IRenderedFragment RenderPanel(ITmActivityProvider provider, int pageSize = 10)
         => Render(builder =>
         {
             builder.OpenComponent<TmNotionAuditLogPanel>(0);
-            builder.AddAttribute(1, nameof(TmNotionAuditLogPanel.AuditProvider), provider);
+            builder.AddAttribute(1, nameof(TmNotionAuditLogPanel.ActivityProvider), provider);
             builder.AddAttribute(2, nameof(TmNotionAuditLogPanel.PageSize), pageSize);
             builder.CloseComponent();
         });
 
-    private static IReadOnlyList<AuditEntryDto> SampleEntries()
+    private static IReadOnlyList<TmActivityEntry> SampleEntries()
         =>
         [
-            Entry("audit-001", new DateTime(2026, 1, 10, 8, 0, 0, DateTimeKind.Utc), "bob", "Bob Stone", "create", "Created page"),
-            Entry("audit-002", new DateTime(2026, 1, 12, 8, 0, 0, DateTimeKind.Utc), "alice", "Alice Morgan", "edit", "Edited page"),
-            Entry("audit-003", new DateTime(2026, 1, 14, 8, 0, 0, DateTimeKind.Utc), "alice", "Alice Morgan", "restrict", "Restricted page")
+            Entry("audit-001", new DateTimeOffset(2026, 1, 10, 8, 0, 0, TimeSpan.Zero), "bob", "Bob Stone", "create", "Created page"),
+            Entry("audit-002", new DateTimeOffset(2026, 1, 12, 8, 0, 0, TimeSpan.Zero), "alice", "Alice Morgan", "edit", "Edited page"),
+            Entry("audit-003", new DateTimeOffset(2026, 1, 14, 8, 0, 0, TimeSpan.Zero), "alice", "Alice Morgan", "restrict", "Restricted page")
         ];
 
-    private static AuditEntryDto Entry(string id, DateTime timestamp, string userId, string user, string action, string title)
+    private static TmActivityEntry Entry(string id, DateTimeOffset timestamp, string userId, string user, string action, string title)
         => new()
         {
             Id = id,
             Timestamp = timestamp,
-            UserId = userId,
-            UserDisplayName = user,
+            Actor = new TmUserRef { Id = userId, DisplayName = user },
             Action = action,
-            TargetType = "page",
-            TargetId = "11111111-1111-1111-1111-111111111111",
-            Details = new Dictionary<string, string> { ["title"] = title }
+            EntityRef = TmEntityRef.Create("page", "11111111-1111-1111-1111-111111111111"),
+            Metadata = new Dictionary<string, object> { ["title"] = title }
         };
 
-    private sealed class FakeAuditProvider(IReadOnlyList<AuditEntryDto> entries) : INotionAuditProvider
+    private sealed class FakeActivityProvider(IReadOnlyList<TmActivityEntry> entries) : ITmActivityProvider
     {
-        public Task LogAsync(AuditEntryDto entry, CancellationToken cancellationToken = default)
+        public TmActivityProviderCapabilities Capabilities
+            => TmActivityProviderCapabilities.Read
+            | TmActivityProviderCapabilities.Query
+            | TmActivityProviderCapabilities.Append;
+
+        TmActivityProviderCapabilities ITmCapabilityProvider<TmActivityProviderCapabilities>.Capabilities => Capabilities;
+
+        public Task<IReadOnlyList<TmActivityEntry>> GetForEntityAsync(TmEntityRef entityRef, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<TmActivityEntry>>(entries.Where(entry => entry.EntityRef.Equals(entityRef)).ToArray());
+
+        public Task<TmActivityEntry> AppendAsync(TmActivityEntry entry, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
-        public Task<PagedResult<AuditEntryDto>> GetEntriesAsync(AuditLogFilter filter, NotionAuditQuery paging, CancellationToken cancellationToken = default)
+        public Task<PagedResult<TmActivityEntry>> QueryAsync(TmActivityQuery query, CancellationToken cancellationToken = default)
         {
             var matches = entries
-                .Where(entry => string.IsNullOrWhiteSpace(filter.UserId)
-                    || entry.UserId.Contains(filter.UserId, StringComparison.OrdinalIgnoreCase)
-                    || entry.UserDisplayName.Contains(filter.UserId, StringComparison.OrdinalIgnoreCase))
-                .Where(entry => string.IsNullOrWhiteSpace(filter.Action) || string.Equals(entry.Action, filter.Action, StringComparison.OrdinalIgnoreCase))
-                .Where(entry => filter.From is null || DateOnly.FromDateTime(entry.Timestamp) >= filter.From.Value)
-                .Where(entry => filter.To is null || DateOnly.FromDateTime(entry.Timestamp) <= filter.To.Value)
+                .Where(entry => string.IsNullOrWhiteSpace(query.SearchText)
+                    || entry.Actor?.Id.Contains(query.SearchText, StringComparison.OrdinalIgnoreCase) == true
+                    || entry.Actor?.DisplayName.Contains(query.SearchText, StringComparison.OrdinalIgnoreCase) == true)
+                .Where(entry => string.IsNullOrWhiteSpace(query.Action) || string.Equals(entry.Action, query.Action, StringComparison.OrdinalIgnoreCase))
+                .Where(entry => query.From is null || entry.Timestamp >= query.From.Value)
+                .Where(entry => query.To is null || entry.Timestamp <= query.To.Value)
                 .OrderByDescending(entry => entry.Timestamp)
                 .ToArray();
 
-            var take = Math.Clamp(paging.Take, 1, 100);
-            return Task.FromResult(new PagedResult<AuditEntryDto>
+            var take = Math.Clamp(query.Take, 1, 100);
+            return Task.FromResult(new PagedResult<TmActivityEntry>
             {
-                Items = matches.Skip(Math.Max(0, paging.Skip)).Take(take).ToArray(),
+                Items = matches.Skip(Math.Max(0, query.Skip)).Take(take).ToArray(),
                 TotalCount = matches.Length,
-                Page = Math.Max(0, paging.Skip) / take + 1,
+                Page = Math.Max(0, query.Skip) / take + 1,
                 PageSize = take
             });
         }

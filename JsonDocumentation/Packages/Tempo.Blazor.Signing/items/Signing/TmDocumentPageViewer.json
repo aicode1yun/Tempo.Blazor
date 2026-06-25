@@ -1,0 +1,327 @@
+{
+  "itemName": "TmDocumentPageViewer",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "Displays a normalized signing document page and optional overlays.",
+  "packageId": "Tempo.Blazor.Signing",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmDocumentPageViewer.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "AllowReplyToResolved",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Users available for comment mentions."
+    },
+    {
+      "name": "Alt",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Error message shown instead of the page."
+    },
+    {
+      "name": "ChildContent",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Optional template for replacing the rendered page image."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when draft mentioned users change."
+    },
+    {
+      "name": "ClearCommentSelectionOnPageClick",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether comment interactions are disabled. Defaults to false."
+    },
+    {
+      "name": "CommentMarkerTemplate",
+      "type": "RenderFragment<DocumentCommentThread>?",
+      "isRequired": false,
+      "description": "Whether replies are allowed on resolved comment threads."
+    },
+    {
+      "name": "CommentMode",
+      "type": "DocumentCommentMode",
+      "isRequired": false,
+      "default": "DocumentCommentMode.Browse",
+      "description": "Whether document comments are enabled for this viewer."
+    },
+    {
+      "name": "CommentModeChanged",
+      "type": "EventCallback<DocumentCommentMode>",
+      "isRequired": false,
+      "description": "Current document comment mode. Defaults to browse mode."
+    },
+    {
+      "name": "CommentsEnabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Callback invoked when the page context menu is requested."
+    },
+    {
+      "name": "CommentThreadPanelTemplate",
+      "type": "RenderFragment<IReadOnlyList<DocumentCommentThread>>?",
+      "isRequired": false,
+      "description": "Optional custom marker template for comment anchors."
+    },
+    {
+      "name": "CommentThreads",
+      "type": "IReadOnlyList<DocumentCommentThread>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Callback invoked when the comment mode changes."
+    },
+    {
+      "name": "CurrentUserId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether a plain page click clears the selected comment thread. Defaults to true."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether resolved comment threads are visible. Defaults to false."
+    },
+    {
+      "name": "Error",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether to show the loading skeleton instead of the page."
+    },
+    {
+      "name": "IsLoading",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Document page to render. When null, an empty state is shown."
+    },
+    {
+      "name": "IsOverlayInteractive",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Optional alt text for the page image. Defaults to page label or localized page number."
+    },
+    {
+      "name": "MaxScale",
+      "type": "double",
+      "isRequired": false,
+      "default": "2.0",
+      "description": "Smallest allowed visual scale. Defaults to 0.5."
+    },
+    {
+      "name": "MentionUsers",
+      "type": "IReadOnlyList<DocumentCommentUser>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Current user id used for mention and reaction indicators."
+    },
+    {
+      "name": "MinScale",
+      "type": "double",
+      "isRequired": false,
+      "default": "0.5",
+      "description": "Callback invoked when the visual scale changes."
+    },
+    {
+      "name": "NextPageRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Callback invoked when the previous page button is clicked."
+    },
+    {
+      "name": "OnCommentDeleteRequested",
+      "type": "EventCallback<DocumentCommentDeleteRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when editing a document comment is requested."
+    },
+    {
+      "name": "OnCommentEditRequested",
+      "type": "EventCallback<DocumentCommentEditRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when reopening a comment thread is requested."
+    },
+    {
+      "name": "OnCommentMentionedUsersChanged",
+      "type": "EventCallback<IReadOnlyList<DocumentCommentMention>>",
+      "isRequired": false,
+      "description": "Callback invoked when the comment panel requests navigation to a thread page."
+    },
+    {
+      "name": "OnCommentReactionToggled",
+      "type": "EventCallback<DocumentCommentReactionToggleRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when deleting a document comment is requested."
+    },
+    {
+      "name": "OnCommentReopenRequested",
+      "type": "EventCallback<DocumentCommentThreadStatusRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when resolving a comment thread is requested."
+    },
+    {
+      "name": "OnCommentReplyRequested",
+      "type": "EventCallback<DocumentCommentReplyRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when creating a new comment thread is requested."
+    },
+    {
+      "name": "OnCommentResolveRequested",
+      "type": "EventCallback<DocumentCommentThreadStatusRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when replying to a comment thread is requested."
+    },
+    {
+      "name": "OnCommentThreadCreateRequested",
+      "type": "EventCallback<DocumentCommentThreadCreateRequest>",
+      "isRequired": false,
+      "description": "Optional custom panel for rendering comment threads."
+    },
+    {
+      "name": "OnCommentThreadNavigateRequested",
+      "type": "EventCallback<DocumentCommentThreadNavigateRequest>",
+      "isRequired": false,
+      "description": "Callback invoked when toggling a document comment reaction is requested."
+    },
+    {
+      "name": "OnPageClick",
+      "type": "EventCallback<TmDocumentPageViewerPointerEventArgs>",
+      "isRequired": false,
+      "description": "Overlay template rendered over the document page with page context."
+    },
+    {
+      "name": "OnPageContextMenu",
+      "type": "EventCallback<TmDocumentPageViewerPointerEventArgs>",
+      "isRequired": false,
+      "description": "Callback invoked when the page is clicked."
+    },
+    {
+      "name": "OverlayTemplate",
+      "type": "RenderFragment<SigningDocumentPage>?",
+      "isRequired": false,
+      "description": "Overlay content rendered over the document page."
+    },
+    {
+      "name": "Page",
+      "type": "SigningDocumentPage?",
+      "isRequired": false,
+      "description": "Optional id assigned to the rendered page element."
+    },
+    {
+      "name": "PageNumber",
+      "type": "int?",
+      "isRequired": false,
+      "description": "Whether page navigation controls are visible when the toolbar is rendered. Defaults to false."
+    },
+    {
+      "name": "PageTemplate",
+      "type": "RenderFragment<SigningDocumentPage>?",
+      "isRequired": false,
+      "description": "Callback invoked when the next page button is clicked."
+    },
+    {
+      "name": "PreventDefaultContextMenu",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether overlay content should receive pointer events. Defaults to true."
+    },
+    {
+      "name": "PreviousPageRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Total displayed page count for pagination controls."
+    },
+    {
+      "name": "Scale",
+      "type": "double",
+      "isRequired": false,
+      "default": "1.0",
+      "description": "Whether to prevent the browser context menu on the page element. Defaults to true."
+    },
+    {
+      "name": "ScaleChanged",
+      "type": "EventCallback<double>",
+      "isRequired": false,
+      "description": "Current visual scale. Values are clamped between and ."
+    },
+    {
+      "name": "SelectedCommentThreadId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Comment threads rendered over the document page."
+    },
+    {
+      "name": "SelectedCommentThreadIdChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Selected comment thread id."
+    },
+    {
+      "name": "ShowPaginationControls",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether zoom controls are visible when the toolbar is rendered. Defaults to true."
+    },
+    {
+      "name": "ShowResolvedComments",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Callback invoked when the selected comment thread changes."
+    },
+    {
+      "name": "ShowToolbar",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Callback invoked when the page view mode changes."
+    },
+    {
+      "name": "ShowZoomControls",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to render the viewer toolbar. Defaults to false for layout compatibility."
+    },
+    {
+      "name": "TotalPages",
+      "type": "int?",
+      "isRequired": false,
+      "description": "Displayed current page number for pagination controls. Defaults to the page index plus one."
+    },
+    {
+      "name": "ViewMode",
+      "type": "DocumentPageViewMode",
+      "isRequired": false,
+      "default": "DocumentPageViewMode.SinglePage",
+      "description": "Callback invoked when the zoom behavior changes."
+    },
+    {
+      "name": "ViewModeChanged",
+      "type": "EventCallback<DocumentPageViewMode>",
+      "isRequired": false,
+      "description": "Current page view mode for parent tools. Defaults to ."
+    },
+    {
+      "name": "ZoomMode",
+      "type": "DocumentPageZoomMode",
+      "isRequired": false,
+      "default": "DocumentPageZoomMode.Custom",
+      "description": "Largest allowed visual scale. Defaults to 2.0."
+    },
+    {
+      "name": "ZoomModeChanged",
+      "type": "EventCallback<DocumentPageZoomMode>",
+      "isRequired": false,
+      "description": "Current zoom behavior. Defaults to ."
+    }
+  ]
+}

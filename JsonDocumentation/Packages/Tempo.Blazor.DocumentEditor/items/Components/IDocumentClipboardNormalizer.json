@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard",
+  "description": "Single stage in the clipboard normalization pipeline.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Clipboard/IDocumentClipboardNormalizer.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDocumentClipboardNormalizer"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Processing",
+  "namespace": "Tempo.Reporting.Engine.Processing",
+  "description": "Sort direction for report processing.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Processing/DataSetProcessing.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportSortDirection"
+}

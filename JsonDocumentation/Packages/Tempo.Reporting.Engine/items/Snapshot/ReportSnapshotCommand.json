@@ -1,0 +1,230 @@
+{
+  "kind": "Class",
+  "category": "Snapshot",
+  "namespace": "Tempo.Reporting.Engine.Snapshot",
+  "description": "Single absolute drawing primitive in a report snapshot page.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportSnapshotCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ClipPop",
+      "kind": "Method",
+      "type": "ReportSnapshotCommand",
+      "description": "Creates a clip-pop command.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ClipPush",
+      "kind": "Method",
+      "type": "ReportSnapshotCommand",
+      "description": "Creates a rectangular clip-push command.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "x",
+          "type": "double"
+        },
+        {
+          "name": "y",
+          "type": "double"
+        },
+        {
+          "name": "width",
+          "type": "double"
+        },
+        {
+          "name": "height",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "Image",
+      "kind": "Method",
+      "type": "ReportSnapshotCommand",
+      "description": "Creates an image command.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "x",
+          "type": "double"
+        },
+        {
+          "name": "y",
+          "type": "double"
+        },
+        {
+          "name": "width",
+          "type": "double"
+        },
+        {
+          "name": "height",
+          "type": "double"
+        },
+        {
+          "name": "source",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Line",
+      "kind": "Method",
+      "type": "ReportSnapshotCommand",
+      "description": "Creates a line command.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "x",
+          "type": "double"
+        },
+        {
+          "name": "y",
+          "type": "double"
+        },
+        {
+          "name": "width",
+          "type": "double"
+        },
+        {
+          "name": "height",
+          "type": "double"
+        },
+        {
+          "name": "stroke",
+          "type": "string"
+        },
+        {
+          "name": "strokeWidth",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "Baseline",
+      "kind": "Property",
+      "type": "double?"
+    },
+    {
+      "name": "Fill",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "FontFamily",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "FontSize",
+      "kind": "Property",
+      "type": "double?"
+    },
+    {
+      "name": "FontStyle",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "FontWeight",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "Highlight",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "LetterSpacing",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "PathData",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Rotation",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "Source",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "StrikeThrough",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "Stroke",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "StrokeWidth",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "Text",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "ReportSnapshotCommandType"
+    },
+    {
+      "name": "Underline",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "X",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "Y",
+      "kind": "Property",
+      "type": "double"
+    }
+  ],
+  "itemName": "ReportSnapshotCommand"
+}

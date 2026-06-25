@@ -1,0 +1,168 @@
+name: TmDocumentEditor — Performance baseline
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'src/Tempo.Blazor.DocumentEditor/**'
+      - 'src/Tempo.Blazor.Abstractions/DocumentEditor/**'
+      - 'tests/Tempo.Blazor.Tests/DocumentEditor/Performance/**'
+      - 'planning/baselines/**'
+      - '.github/workflows/document-editor-performance.yml'
+  workflow_dispatch:
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build editor projects
+        run: |
+          dotnet build src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj --no-restore --configuration Release
+          dotnet build tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj --no-restore --configuration Release
+
+      - name: Run performance baseline tests
+        run: |
+          dotnet test tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --filter "FullyQualifiedName~Tempo.Blazor.Tests.DocumentEditor.Performance" \
+            --logger "trx;LogFileName=perf.trx" \
+            --results-directory ./TestResults
+
+      - name: Upload baseline CSV
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: perf-baseline-csv
+          path: planning/baselines/*.csv
+
+      - name: Detect regression vs. checked-in baseline
+        env:
+          HARD_FAIL_ON_REGRESSION: ${{ github.event_name != 'pull_request' }}
+        run: |
+          set -euo pipefail
+          set +e
+          python3 - <<'PY'
+          import csv
+          import os
+          import pathlib
+          import subprocess
+          import sys
+
+          baseline_dir = pathlib.Path('planning/baselines')
+          threshold = 1.15
+          metrics = ('elapsed_ms', 'input_operations', 'render_swaps', 'full_render_swaps')
+
+          def is_in_process_baseline(path):
+              return path.name.startswith('perf-') and not path.name.startswith('perf-e2e-') and path.suffix == '.csv'
+
+          def changed_baselines():
+              result = subprocess.run(
+                  ['git', 'status', '--porcelain', '--', str(baseline_dir)],
+                  check=True,
+                  capture_output=True,
+                  text=True)
+              paths = []
+              for line in result.stdout.splitlines():
+                  if not line:
+                      continue
+                  path_text = line[3:].strip()
+                  if ' -> ' in path_text:
+                      path_text = path_text.split(' -> ', 1)[1]
+                  path = pathlib.Path(path_text)
+                  if path.exists() and is_in_process_baseline(path):
+                      paths.append(path)
+              return sorted(set(paths), key=lambda p: p.name)
+
+          current_candidates = changed_baselines()
+          if not current_candidates:
+              references = sorted(p.name for p in baseline_dir.glob('perf-*.csv') if is_in_process_baseline(p))
+              print('No generated or modified in-process performance baseline CSV found; skipping regression comparison.')
+              print('Checked-in in-process reference baselines: ' + (', '.join(references) if references else 'none'))
+              sys.exit(0)
+
+          current_path = current_candidates[-1]
+          reference_candidates = sorted(
+              (p for p in baseline_dir.glob('perf-*.csv') if is_in_process_baseline(p) and p != current_path),
+              key=lambda p: p.name)
+
+          if not reference_candidates:
+              print(f'No checked-in in-process reference baseline found for current={current_path}; skipping regression comparison.')
+              sys.exit(0)
+
+          previous_path = reference_candidates[-1]
+          print(f'Comparing current={current_path} vs reference={previous_path}')
+
+          def load(path):
+              rows = {}
+              with path.open(newline='', encoding='utf-8-sig') as fh:
+                  reader = csv.DictReader(fh)
+                  reader.fieldnames = [(name or '').lstrip('\ufeff') for name in (reader.fieldnames or [])]
+                  if 'scenario' not in reader.fieldnames:
+                      raise SystemExit(f"{path}: missing 'scenario' column. Columns: {reader.fieldnames}")
+                  for row in reader:
+                      scenario = (row.get('scenario') or '').strip()
+                      if scenario:
+                          rows[scenario] = row
+              return rows
+
+          current = load(current_path)
+          previous = load(previous_path)
+          regressions = []
+          compared_metrics = 0
+          compared_scenarios = 0
+
+          for scenario, row in current.items():
+              prev_row = previous.get(scenario)
+              if not prev_row:
+                  continue
+              scenario_compared = False
+              for metric in metrics:
+                  try:
+                      cur_val = float(row[metric])
+                      prev_val = float(prev_row[metric])
+                  except (KeyError, ValueError):
+                      continue
+                  if prev_val <= 0:
+                      continue
+                  compared_metrics += 1
+                  scenario_compared = True
+                  ratio = cur_val / prev_val
+                  if ratio > threshold:
+                      regressions.append(f"{scenario}.{metric}: {prev_val:.2f} -> {cur_val:.2f} (+{(ratio-1)*100:.1f}%)")
+              if scenario_compared:
+                  compared_scenarios += 1
+
+          print(f'Compared {compared_metrics} metrics across {compared_scenarios} scenarios.')
+          if compared_metrics == 0:
+              print('No comparable metrics found; skipping regression decision.')
+              sys.exit(0)
+
+          if regressions:
+              print("Performance regression detected:")
+              for line in regressions:
+                  print("  " + line)
+                  print(f"::warning::{line}")
+              sys.exit(2)
+
+          print(f"No regressions over {(threshold-1)*100:.0f}% threshold ({len(current)} scenarios).")
+          PY
+          status=$?
+          set -e
+          if [ "$status" -eq 2 ] && [ "$HARD_FAIL_ON_REGRESSION" != "true" ]; then
+            echo "::warning::Performance regression detected, but pull_request runs are informational."
+            exit 0
+          fi
+          exit "$status"

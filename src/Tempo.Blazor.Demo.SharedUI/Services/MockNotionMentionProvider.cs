@@ -1,59 +1,47 @@
-using System.Net.Http.Json;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Abstractions.Shared;
 
 namespace Tempo.Blazor.Demo.Services;
 
 /// <summary>
-/// Mention provider for the Notion editor. Users are in-memory; page search
-/// calls the Demo API to stay in sync with the live page list.
+/// People provider for the Notion editor demo. Users are in-memory; page search
+/// is handled by <see cref="MockNotionSearchProvider"/>.
 /// </summary>
-public class MockNotionMentionProvider : INotionMentionProvider
+public class MockNotionMentionProvider : TmPeopleProviderBase
 {
-    private static readonly List<NotionMentionUser> _users = new()
+    private static readonly List<TmUser> _users =
+    [
+        new() { Id = "alice", UserName = "alice", DisplayName = "Alice Johnson", AvatarUrl = "https://i.pravatar.cc/150?u=alice", Email = "alice@demo.com" },
+        new() { Id = "ada", UserName = "ada", DisplayName = "Ada Lovelace", AvatarUrl = "https://i.pravatar.cc/150?u=ada", Email = "ada@demo.com" },
+        new() { Id = "grace", UserName = "grace", DisplayName = "Grace Hopper", AvatarUrl = "https://i.pravatar.cc/150?u=grace", Email = "grace@demo.com" },
+        new() { Id = "linus", UserName = "linus", DisplayName = "Linus Torvalds", AvatarUrl = "https://i.pravatar.cc/150?u=linus", Email = "linus@demo.com" },
+        new() { Id = "margaret", UserName = "margaret", DisplayName = "Margaret Hamilton", AvatarUrl = "https://i.pravatar.cc/150?u=margaret", Email = "margaret@demo.com" },
+        new() { Id = "alan", UserName = "alan", DisplayName = "Alan Turing", AvatarUrl = "https://i.pravatar.cc/150?u=alan", Email = "alan@demo.com" },
+        new() { Id = "zaneta", UserName = "zaneta", DisplayName = "Zaneta Cerna", Email = "zaneta.cerna@demo.com" },
+        new() { Id = "bob", UserName = "bob", DisplayName = "Bob Smith", AvatarUrl = "https://i.pravatar.cc/150?u=bob", Email = "bob@demo.com" },
+        new() { Id = "charlie", UserName = "charlie", DisplayName = "Charlie Brown", Email = "charlie@demo.com" },
+        new() { Id = "diana", UserName = "diana", DisplayName = "Diana Prince", AvatarUrl = "https://i.pravatar.cc/150?u=diana", Email = "diana@demo.com" },
+        new() { Id = "demo", UserName = "demo", DisplayName = "Demo User", Email = "demo@demo.com" },
+    ];
+
+    /// <inheritdoc />
+    public override Task<IReadOnlyList<TmUser>> SearchAsync(TmPeopleQuery query, CancellationToken cancellationToken = default)
     {
-        new("alice",   "Alice Johnson",  "https://i.pravatar.cc/150?u=alice",  "alice@demo.com"),
-        new("ada",     "Ada Lovelace",   "https://i.pravatar.cc/150?u=ada",    "ada@demo.com"),
-        new("grace",   "Grace Hopper",   "https://i.pravatar.cc/150?u=grace",  "grace@demo.com"),
-        new("linus",   "Linus Torvalds", "https://i.pravatar.cc/150?u=linus",  "linus@demo.com"),
-        new("margaret","Margaret Hamilton", "https://i.pravatar.cc/150?u=margaret", "margaret@demo.com"),
-        new("alan",    "Alan Turing",    "https://i.pravatar.cc/150?u=alan",   "alan@demo.com"),
-        new("zaneta",  "Žaneta Černá",   null,                                  "zaneta.cerna@demo.com"),
-        new("bob",     "Bob Smith",      "https://i.pravatar.cc/150?u=bob",    "bob@demo.com"),
-        new("charlie", "Charlie Brown",  null,                                  "charlie@demo.com"),
-        new("diana",   "Diana Prince",   "https://i.pravatar.cc/150?u=diana",  "diana@demo.com"),
-        new("demo",    "Demo User",      null,                                  "demo@demo.com"),
-    };
-
-    private readonly HttpClient _http;
-
-    public MockNotionMentionProvider(IHttpClientFactory factory)
-        => _http = factory.CreateClient("DemoApi");
-
-    public Task<IEnumerable<IMentionUser>> SearchUsersAsync(string query)
-    {
-        IEnumerable<IMentionUser> results = string.IsNullOrWhiteSpace(query)
+        var searchText = query.SearchText ?? string.Empty;
+        IEnumerable<TmUser> results = string.IsNullOrWhiteSpace(searchText)
             ? _users
             : _users.Where(u =>
-                u.UserId.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                u.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                (u.Email?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
-        return Task.FromResult(results);
-    }
+                u.Id.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                (u.UserName?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                u.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                (u.Email?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false));
 
-    public async Task<IEnumerable<INotionPage>> SearchPagesAsync(string query)
-    {
-        var pages = await _http.GetFromJsonAsync<List<NotionPage>>("/api/notion/pages") ?? [];
-        return pages
-            .Where(p => !p.IsDeleted)
-            .Where(p => string.IsNullOrWhiteSpace(query) ||
-                        p.Title.Contains(query, StringComparison.OrdinalIgnoreCase))
-            .Cast<INotionPage>();
+        if (query.Ids.Count > 0)
+        {
+            var ids = query.Ids.ToHashSet(StringComparer.Ordinal);
+            results = results.Where(user => ids.Contains(user.Id));
+        }
+
+        var take = query.Take <= 0 ? _users.Count : query.Take;
+        return Task.FromResult<IReadOnlyList<TmUser>>(results.Take(take).ToArray());
     }
 }
-
-public sealed record NotionMentionUser(
-    string UserId,
-    string DisplayName,
-    string? AvatarUrl,
-    string? Email) : IMentionUser;

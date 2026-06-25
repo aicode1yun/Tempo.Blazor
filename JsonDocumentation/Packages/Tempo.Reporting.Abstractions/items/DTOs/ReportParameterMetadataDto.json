@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Report parameter metadata used by viewer parameter panels.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportParameterMetadataDto"
+}

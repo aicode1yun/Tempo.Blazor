@@ -2,10 +2,8 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Notifications;
-using Tempo.Blazor.NotionEditor.Enums;
-using Tempo.Blazor.NotionEditor.Interfaces;
-using Tempo.Blazor.NotionEditor.Models;
 using Tempo.Blazor.Services;
 using Tempo.Blazor.Tests.Localization;
 
@@ -14,19 +12,17 @@ namespace Tempo.Blazor.Tests.Notifications;
 public class TmNotificationBellTests : LocalizationTestBase
 {
     private readonly InMemoryNotificationStore _store = new();
-    private readonly NotificationBadgeState _badge = new();
 
     public TmNotificationBellTests()
     {
-        Services.AddSingleton<INotificationService>(_store);
-        Services.AddSingleton<INotificationBadgeState>(_badge);
+        Services.AddSingleton<ITmNotificationService>(_store);
         Services.AddSingleton<NavigationManager>(new FakeNavManager());
     }
 
     [Fact]
     public void Bell_ShowsBadge_WhenUnreadNotifications()
     {
-        _store.NotifyAsync(MakeEvent("alice", "Test")).Wait();
+        _store.PublishAsync(MakeNotification("alice", "Test")).Wait();
         var cut = RenderComponent<TmNotificationBell>();
         cut.FindAll(".tm-notification-bell__badge").Should().HaveCount(1);
     }
@@ -41,7 +37,7 @@ public class TmNotificationBellTests : LocalizationTestBase
     [Fact]
     public void Bell_Click_OpensPanel()
     {
-        _store.NotifyAsync(MakeEvent("alice", "Test")).Wait();
+        _store.PublishAsync(MakeNotification("alice", "Test")).Wait();
         var cut = RenderComponent<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
         cut.FindAll(".tm-notification-bell__dropdown").Should().HaveCount(1);
@@ -50,7 +46,7 @@ public class TmNotificationBellTests : LocalizationTestBase
     [Fact]
     public void Bell_MarkAllRead_ClearsBadge()
     {
-        _store.NotifyAsync(MakeEvent("alice", "Test")).Wait();
+        _store.PublishAsync(MakeNotification("alice", "Test")).Wait();
         var cut = RenderComponent<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
         cut.Find(".tm-notification-bell__mark-all").Click();
@@ -58,9 +54,9 @@ public class TmNotificationBellTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Bell_NotificationItem_RendersMessage()
+    public void Bell_Notification_RendersMessage()
     {
-        _store.NotifyAsync(MakeEvent("alice", "Deploy complete")).Wait();
+        _store.PublishAsync(MakeNotification("alice", "Deploy complete")).Wait();
         var cut = RenderComponent<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
         cut.Find(".tm-notification-bell__message").TextContent.Should().Contain("Deploy complete");
@@ -77,9 +73,9 @@ public class TmNotificationBellTests : LocalizationTestBase
     [Fact]
     public void Bell_Filter_ShowsOnlyUnread()
     {
-        _store.NotifyAsync(MakeEvent("alice", "Unread 1")).Wait();
+        _store.PublishAsync(MakeNotification("alice", "Unread 1")).Wait();
         _store.MarkAllAsReadAsync("demo").Wait();
-        _store.NotifyAsync(MakeEvent("bob", "Unread 2")).Wait();
+        _store.PublishAsync(MakeNotification("bob", "Unread 2")).Wait();
         var cut = RenderComponent<TmNotificationBell>(p => p.Add(c => c.CurrentUserId, "demo"));
         cut.Find(".tm-notification-bell__button").Click();
         cut.Find(".tm-notification-bell__filter").Click(); // switch to only unread
@@ -87,14 +83,13 @@ public class TmNotificationBellTests : LocalizationTestBase
         cut.Find(".tm-notification-bell__message").TextContent.Should().Contain("Unread 2");
     }
 
-    private static NotificationEvent MakeEvent(string sender, string message) => new()
+    private static TmNotification MakeNotification(string sender, string message) => new()
     {
-        Type = NotificationType.Mention,
+        Type = TmNotificationTypes.Mention,
         RecipientUserId = "demo",
-        SenderUserId = sender,
-        SenderName = sender,
-        Message = message,
-        CreatedAt = DateTime.UtcNow
+        Actor = new TmUserRef { Id = sender, DisplayName = sender },
+        Title = message,
+        CreatedAt = DateTimeOffset.UtcNow
     };
 
     private sealed class FakeNavManager : NavigationManager
