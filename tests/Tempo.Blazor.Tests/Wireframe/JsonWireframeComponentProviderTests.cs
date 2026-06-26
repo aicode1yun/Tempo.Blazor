@@ -100,6 +100,29 @@ public class JsonWireframeComponentProviderTests
     }
 
     [Fact]
+    public void LoadFromJson_ParsesScopeMetadata()
+    {
+        var appId = Guid.NewGuid().ToString("D");
+        var json = $$"""
+            [
+              {
+                "type": "InvoiceCard",
+                "localType": "InvoiceCard",
+                "scopeAppId": "{{appId}}"
+              }
+            ]
+            """;
+        var provider = new JsonWireframeComponentProvider();
+        provider.LoadFromJson(json);
+
+        var d = provider.GetDefinitions().Single();
+
+        d.Type.Should().Be("InvoiceCard");
+        d.LocalType.Should().Be("InvoiceCard");
+        d.ScopeAppId.Should().Be(appId);
+    }
+
+    [Fact]
     public void LoadFromJson_CanLoadMultipleDefinitions()
     {
         var json = """

@@ -97,6 +97,8 @@ public sealed class JsonWireframeComponentProvider : IWireframeComponentProvider
     {
         var type = el.GetProperty("type").GetString()
             ?? throw new WireframeDeserializationException("Component definition missing 'type'.");
+        var scopeAppId = el.TryGetProperty("scopeAppId", out var scopeProp) ? scopeProp.GetString() : null;
+        var localType = el.TryGetProperty("localType", out var localProp) ? localProp.GetString() : null;
         var displayName = el.TryGetProperty("displayName", out var dn) ? dn.GetString() ?? type : type;
         var category = el.TryGetProperty("category", out var cat) ? cat.GetString() ?? "Custom" : "Custom";
         var icon = el.TryGetProperty("icon", out var ic) ? ic.GetString() : null;
@@ -114,6 +116,8 @@ public sealed class JsonWireframeComponentProvider : IWireframeComponentProvider
         return new WireframeComponentDef
         {
             Type = type,
+            ScopeAppId = scopeAppId,
+            LocalType = localType,
             DisplayName = displayName,
             Category = category,
             Icon = icon,

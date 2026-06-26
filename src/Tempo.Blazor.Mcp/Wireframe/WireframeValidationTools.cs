@@ -10,20 +10,24 @@ public static class WireframeValidationTools
 {
     [McpServerTool(Name = "wireframe_validate_document")]
     [Description("Validate a wireframe document JSON against the component schema registry. Returns success with valid=true/false and a list of precise validationErrors (unknown types/props, invalid enum values, bad sizes, dangling connectors, duplicate ids). Call this before saving a generated design.")]
-    public static string ValidateDocument(
+    public static string ValidateDocumentScoped(
         WireframeSchemaRegistry registry,
-        [Description("The full wireframe document JSON to validate.")] string documentJson)
+        [Description("The full wireframe document JSON to validate.")] string documentJson,
+        [Description("Optional app id used to resolve local custom type names and scoped app component types.")] string? scopeAppId = null)
     {
         if (!WireframeSerializer.TryDeserialize(documentJson, out var document) || document is null)
         {
             return McpToolResults.Failure(McpToolResults.ValidationFailed, "The document JSON could not be parsed.");
         }
 
-        var result = WireframeValidationEngine.Validate(document, registry);
+        var result = WireframeValidationEngine.Validate(document, registry, WireframeComponentScope.FromAppId(scopeAppId));
         return McpToolResults.Success(new
         {
             valid = result.IsValid,
             validationErrors = result.Errors
         });
     }
+
+    public static string ValidateDocument(WireframeSchemaRegistry registry, string documentJson)
+        => ValidateDocumentScoped(registry, documentJson, scopeAppId: null);
 }

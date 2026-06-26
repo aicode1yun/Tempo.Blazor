@@ -51,6 +51,8 @@ public sealed class ServiceCollectionExtensionsPhase1Tests
             .Should().ContainSingle(provider => provider is BuiltInWireframeComponentProvider);
         registry.GetDef("TmButton").Should().NotBeNull();
         schemaRegistry.GetSchema("TmButton").Should().NotBeNull();
+        registry.GetDef("TmButton", WireframeComponentScope.ForApp(Guid.NewGuid())).Should().NotBeNull();
+        schemaRegistry.GetSchema("TmButton", WireframeComponentScope.ForApp(Guid.NewGuid())).Should().NotBeNull();
     }
 
     [Fact]

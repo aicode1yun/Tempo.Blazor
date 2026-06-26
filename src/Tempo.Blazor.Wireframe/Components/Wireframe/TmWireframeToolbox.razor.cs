@@ -27,6 +27,9 @@ public partial class TmWireframeToolbox : ComponentBase
     /// </summary>
     [Parameter] public EventCallback<string> OnComponentActivated { get; set; }
 
+    /// <summary>Optional application scope used to resolve custom wireframe components.</summary>
+    [Parameter] public WireframeComponentScope? ComponentScope { get; set; }
+
     // ── State ─────────────────────────────────────────────────────────────────
 
     private ElementReference _containerRef;
@@ -49,10 +52,10 @@ public partial class TmWireframeToolbox : ComponentBase
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     /// <inheritdoc/>
-    protected override void OnInitialized()
+    protected override void OnParametersSet()
     {
-        _allDefs          = _registry.GetAll().ToArray();
-        _allCategories    = _registry.GetCategories();
+        _allDefs          = _registry.GetAll(ComponentScope).ToArray();
+        _allCategories    = _registry.GetCategories(ComponentScope);
         _hasCustomComponents = _allDefs.Any(d => !d.IsBuiltIn);
     }
 

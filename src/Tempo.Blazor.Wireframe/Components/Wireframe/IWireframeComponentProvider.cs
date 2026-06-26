@@ -30,3 +30,13 @@ public interface IWireframeComponentProvider
     /// <summary>Returns all component definitions supplied by this provider.</summary>
     IEnumerable<WireframeComponentDef> GetDefinitions();
 }
+
+/// <summary>
+/// Marker interface for providers whose definitions belong to a single application scope.
+/// Registry entries are exposed under <c>app:{ScopeAppId}:{Type}</c>.
+/// </summary>
+public interface IWireframeScopedComponentProvider : IWireframeComponentProvider
+{
+    /// <summary>Application id used to namespace the provider's custom component types.</summary>
+    string ScopeAppId { get; }
+}

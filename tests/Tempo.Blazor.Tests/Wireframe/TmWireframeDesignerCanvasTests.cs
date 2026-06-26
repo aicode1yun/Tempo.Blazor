@@ -30,6 +30,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
                 builder.AddAttribute(1, "width", el.W);
                 builder.AddAttribute(2, "height", el.H);
                 builder.AddAttribute(3, "fill", "#eee");
+                builder.AddAttribute(4, "data-known-render", type);
                 builder.CloseElement();
             }
         };
@@ -197,6 +198,23 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
 
         // A group is rendered even for unknown types (fallback shape)
         cut.FindAll("g[data-el-id]").Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void Canvas_ComponentScope_RendersMatchingScopedCustomComponent()
+    {
+        var appId = Guid.NewGuid().ToString("D");
+        var registry = new WireframeComponentRegistry();
+        registry.RegisterDefinition(MakeDef("InvoiceCard"), scopeAppId: appId);
+        Services.AddSingleton(registry);
+
+        var doc = DocWith(($"app:{appId}:InvoiceCard", 0, 0));
+
+        var cut = RenderComponent<TmWireframeDesignerCanvas>(p => p
+            .Add(x => x.Document, doc)
+            .Add(x => x.ComponentScope, WireframeComponentScope.ForApp(appId)));
+
+        cut.Find("rect[data-known-render=\"InvoiceCard\"]").Should().NotBeNull();
     }
 
     // ── ReadOnly parameter ─────────────────────────────────────────────────────

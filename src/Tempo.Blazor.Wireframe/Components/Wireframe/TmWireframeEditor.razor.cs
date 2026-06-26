@@ -71,6 +71,9 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
     /// <summary>Show rulers around the canvas.</summary>
     [Parameter] public bool ShowRulers { get; set; }
 
+    /// <summary>Optional application scope used to resolve custom wireframe components.</summary>
+    [Parameter] public WireframeComponentScope? ComponentScope { get; set; }
+
     // ── Child component refs ──────────────────────────────────────────────────
 
     private TmWireframeDesignerCanvas? _canvas;
@@ -832,7 +835,7 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
         // Add at a sensible default position in the visible area
         var x   = 100.0;
         var y   = 100.0;
-        var def = _registry.GetDef(componentType);
+        var def = _registry.GetDef(componentType, ComponentScope);
 
         var el = WireframeDocumentExtensions.NewElement(
             componentType, x, y,

@@ -53,6 +53,9 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
     /// <summary>Additional CSS class applied to the canvas wrapper.</summary>
     [Parameter] public string? Class { get; set; }
 
+    /// <summary>Optional application scope used to resolve custom wireframe components.</summary>
+    [Parameter] public WireframeComponentScope? ComponentScope { get; set; }
+
     /// <summary>Raised when the user changes the selection (single or multi).</summary>
     [Parameter] public EventCallback<string[]> OnSelectionChanged { get; set; }
 
@@ -298,7 +301,7 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
     public async Task OnElementDropped(string type, double x, double y)
     {
         if (Document is null || ReadOnly) return;
-        var def = _registry.GetDef(type);
+        var def = _registry.GetDef(type, ComponentScope);
         var el  = WireframeDocumentExtensions.NewElement(
             type, x, y,
             def?.DefaultWidth  ?? 160,

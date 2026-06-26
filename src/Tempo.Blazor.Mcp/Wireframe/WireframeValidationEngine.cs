@@ -15,6 +15,12 @@ public sealed record WireframeValidationResult(bool IsValid, IReadOnlyList<strin
 public static class WireframeValidationEngine
 {
     public static WireframeValidationResult Validate(WireframeDocument document, WireframeSchemaRegistry registry)
+        => Validate(document, registry, scope: null);
+
+    public static WireframeValidationResult Validate(
+        WireframeDocument document,
+        WireframeSchemaRegistry registry,
+        WireframeComponentScope? scope)
     {
         var errors = new List<string>();
 
@@ -42,10 +48,10 @@ public static class WireframeValidationEngine
                     errors.Add($"{path}.h: height must be greater than 0 (was {el.H}).");
                 }
 
-                var schema = registry.GetSchema(el.Type);
+                var schema = registry.GetSchema(el.Type, scope);
                 if (schema is null)
                 {
-                    var suggestion = WireframeCatalog.SuggestType(registry, el.Type);
+                    var suggestion = WireframeCatalog.SuggestType(registry, el.Type, scope);
                     errors.Add(suggestion is null
                         ? $"{path}.type: unknown component type '{el.Type}'."
                         : $"{path}.type: unknown component type '{el.Type}'. Did you mean '{suggestion}'?");

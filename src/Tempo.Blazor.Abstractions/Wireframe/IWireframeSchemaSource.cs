@@ -22,3 +22,13 @@ public interface IWireframeSchemaSource
     /// <summary>Returns all component schemas supplied by this source.</summary>
     IEnumerable<WireframeComponentSchema> GetSchemas();
 }
+
+/// <summary>
+/// Marker interface for schema sources whose schemas belong to a single application scope.
+/// Registry entries are exposed under <c>app:{ScopeAppId}:{Type}</c>.
+/// </summary>
+public interface IWireframeScopedSchemaSource : IWireframeSchemaSource
+{
+    /// <summary>Application id used to namespace the source's custom component types.</summary>
+    string ScopeAppId { get; }
+}

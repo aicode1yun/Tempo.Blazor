@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Tempo.Blazor.Components.Wireframe;
+using Tempo.Blazor.Components.Wireframe.Models;
 using Tempo.Blazor.Mcp;
 using Tempo.Blazor.Mcp.Wireframe;
 
@@ -84,5 +85,89 @@ public class WireframeCatalogToolsTests
         root.GetProperty("success").GetBoolean().Should().BeFalse();
         root.GetProperty("error").GetString().Should().Be("not_found");
         root.GetProperty("message").GetString().Should().Contain(known);
+    }
+
+    [Fact]
+    public void ListComponents_WithScope_ReturnsBaselineAndMatchingScopedCustomsOnly()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var appB = Guid.NewGuid().ToString("D");
+        var registry = ScopedRegistry(appA, appB);
+
+        var root = Parse(WireframeComponentCatalogTools.ListComponentsScoped(
+            registry,
+            compact: true,
+            scopeAppId: appA));
+
+        var types = root.GetProperty("items").EnumerateArray()
+            .Select(i => i.GetProperty("type").GetString())
+            .ToList();
+
+        types.Should().BeEquivalentTo(["TmButton", $"app:{appA}:InvoiceCard"]);
+        types.Should().NotContain("LegacyCustom");
+        types.Should().NotContain($"app:{appB}:InvoiceCard");
+    }
+
+    [Fact]
+    public void GetComponentSchema_WithScope_ResolvesLocalCustomType()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var appB = Guid.NewGuid().ToString("D");
+        var registry = ScopedRegistry(appA, appB);
+
+        var root = Parse(WireframeComponentCatalogTools.GetComponentSchemaScoped(
+            registry,
+            "InvoiceCard",
+            scopeAppId: appA));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue();
+        var component = root.GetProperty("component");
+        component.GetProperty("type").GetString().Should().Be($"app:{appA}:InvoiceCard");
+        component.GetProperty("localType").GetString().Should().Be("InvoiceCard");
+        component.GetProperty("scopeAppId").GetString().Should().Be(appA);
+    }
+
+    private static WireframeSchemaRegistry ScopedRegistry(string appA, string appB)
+        => new(
+        [
+            new TestSchemaSource("BuiltIn", 0, Schema("TmButton", "Buttons", "Button", isBuiltIn: true)),
+            new TestSchemaSource("Legacy", 10, Schema("LegacyCustom", "Custom", "Legacy Custom")),
+            new ScopedSchemaSource("A", 10, appA, Schema("InvoiceCard", "Custom", "A Invoice")),
+            new ScopedSchemaSource("B", 10, appB, Schema("InvoiceCard", "Custom", "B Invoice"))
+        ]);
+
+    private static WireframeComponentSchema Schema(
+        string type,
+        string category,
+        string displayName,
+        bool isBuiltIn = false)
+        => new()
+        {
+            Type = type,
+            Category = category,
+            DisplayName = displayName,
+            IsBuiltIn = isBuiltIn,
+            Props = []
+        };
+
+    private sealed class TestSchemaSource(string id, int priority, params WireframeComponentSchema[] schemas)
+        : IWireframeSchemaSource
+    {
+        public string SourceId => id;
+        public int Priority => priority;
+        public IEnumerable<WireframeComponentSchema> GetSchemas() => schemas;
+    }
+
+    private sealed class ScopedSchemaSource(
+        string id,
+        int priority,
+        string scopeAppId,
+        params WireframeComponentSchema[] schemas)
+        : IWireframeScopedSchemaSource
+    {
+        public string SourceId => id;
+        public int Priority => priority;
+        public string ScopeAppId => scopeAppId;
+        public IEnumerable<WireframeComponentSchema> GetSchemas() => schemas;
     }
 }

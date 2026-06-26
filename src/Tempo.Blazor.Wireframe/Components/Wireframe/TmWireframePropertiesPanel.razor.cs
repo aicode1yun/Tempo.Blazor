@@ -61,6 +61,9 @@ public partial class TmWireframePropertiesPanel : ComponentBase, IDisposable
     /// <summary>Additional CSS class on the panel wrapper.</summary>
     [Parameter] public string? Class { get; set; }
 
+    /// <summary>Optional application scope used to resolve custom wireframe components.</summary>
+    [Parameter] public WireframeComponentScope? ComponentScope { get; set; }
+
     /// <summary>Whether the wireframe clipboard currently holds a copied style.</summary>
     public bool HasClipboardStyle => WireframeClipboard.HasStyle;
 
@@ -123,7 +126,7 @@ public partial class TmWireframePropertiesPanel : ComponentBase, IDisposable
         // Resolve definition(s)
         if (_sameType)
         {
-            _def = _registry.GetDef(_elements[0].Type);
+            _def = _registry.GetDef(_elements[0].Type, ComponentScope);
             _commonProps = _def?.Props.ToList() ?? [];
         }
         else
@@ -131,7 +134,7 @@ public partial class TmWireframePropertiesPanel : ComponentBase, IDisposable
             // Multi-type: intersect props by Name across all defs
             _def = null;
             var defLists = _elements
-                .Select(e => _registry.GetDef(e.Type)?.Props ?? (IReadOnlyList<PropDef>)[])
+                .Select(e => _registry.GetDef(e.Type, ComponentScope)?.Props ?? (IReadOnlyList<PropDef>)[])
                 .ToList();
             var commonNames = defLists
                 .Skip(1)
@@ -387,7 +390,7 @@ public partial class TmWireframePropertiesPanel : ComponentBase, IDisposable
     private void TryApplySizePreset(WireframeElement el, string? sizeValue)
     {
         if (Document is null || sizeValue is null) return;
-        var def = _registry.GetDef(el.Type);
+        var def = _registry.GetDef(el.Type, ComponentScope);
         if (def?.SizePresets is null) return;
         if (!def.SizePresets.TryGetValue(sizeValue, out var preset)) return;
 
@@ -637,4 +640,3 @@ public partial class TmWireframePropertiesPanel : ComponentBase, IDisposable
         return string.IsNullOrEmpty(label) ? "Group" : label;
     }
 }
-

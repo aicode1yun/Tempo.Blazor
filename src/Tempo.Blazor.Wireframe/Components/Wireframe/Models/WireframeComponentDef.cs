@@ -15,6 +15,18 @@ public sealed class WireframeComponentDef
     /// </summary>
     public required string Type { get; init; }
 
+    /// <summary>
+    /// Application id for an app-scoped custom component. When present, registries normalize
+    /// <see cref="Type"/> to <c>app:{ScopeAppId}:{LocalType}</c>.
+    /// </summary>
+    public string? ScopeAppId { get; init; }
+
+    /// <summary>
+    /// Component type name without the app scope prefix. Defaults to <see cref="Type"/> for
+    /// unscoped components and to the suffix of <c>app:{id}:{name}</c> for scoped components.
+    /// </summary>
+    public string? LocalType { get; init; }
+
     /// <summary>Toolbox group (Buttons / Inputs / Layout / Custom / …).</summary>
     public required string Category { get; init; }
 

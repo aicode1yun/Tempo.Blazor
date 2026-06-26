@@ -25,6 +25,9 @@ public static class WireframeCatalog
         displayName = s.DisplayName,
         defaultWidth = s.DefaultWidth,
         defaultHeight = s.DefaultHeight,
+        localType = s.LocalType ?? WireframeComponentScope.GetLocalType(s.Type),
+        scopeAppId = s.ScopeAppId,
+        isBuiltIn = s.IsBuiltIn,
         props = s.Props.Select(p => new
         {
             name = p.Name,
@@ -38,12 +41,19 @@ public static class WireframeCatalog
 
     /// <summary>Returns the registered type whose name is closest to <paramref name="unknown"/>, if reasonably near.</summary>
     public static string? SuggestType(WireframeSchemaRegistry registry, string unknown)
+        => SuggestType(registry, unknown, scope: null);
+
+    /// <summary>Returns the registered type whose name is closest to <paramref name="unknown"/> in <paramref name="scope"/>, if reasonably near.</summary>
+    public static string? SuggestType(WireframeSchemaRegistry registry, string unknown, WireframeComponentScope? scope)
     {
         string? best = null;
         var bestDistance = int.MaxValue;
-        foreach (var schema in registry.GetAll())
+        foreach (var schema in registry.GetAll(scope))
         {
-            var d = Levenshtein(unknown, schema.Type);
+            var localType = schema.LocalType ?? WireframeComponentScope.GetLocalType(schema.Type);
+            var d = Math.Min(
+                Levenshtein(unknown, schema.Type),
+                Levenshtein(unknown, localType));
             if (d < bestDistance)
             {
                 bestDistance = d;

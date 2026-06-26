@@ -16,13 +16,14 @@ public static class WireframeOperationTools
 {
     [McpServerTool(Name = "wireframe_apply_operations")]
     [Description("Apply an ordered batch of edit operations to a wireframe and save it. operationsJson is a JSON array; each item has an 'op' field: setTitle, addPage, updatePage, removePage, setCanvasSize, addElement, updateElement, removeElement, addConnector, updateConnector, removeConnector. The batch is validated against the schema before saving — nothing is persisted if validation fails. Pass expectedModifiedAt (from wireframe_get_document) to avoid overwriting concurrent edits.")]
-    public static async Task<string> ApplyOperations(
+    public static async Task<string> ApplyOperationsScoped(
         ITempoDocumentLibraryProvider library,
         IWireframeDocumentProvider documents,
         WireframeSchemaRegistry registry,
         [Description("Wireframe document id (GUID).")] Guid documentId,
         [Description("JSON array of operations.")] string operationsJson,
-        [Description("Optional optimistic-concurrency token from wireframe_get_document.")] DateTime? expectedModifiedAt = null)
+        [Description("Optional optimistic-concurrency token from wireframe_get_document.")] DateTime? expectedModifiedAt = null,
+        [Description("Optional app id used to resolve local custom type names and scoped app component types during validation.")] string? scopeAppId = null)
     {
         var entry = await library.GetEntryAsync(TempoDocumentKind.Wireframe, documentId);
         if (entry is null)
@@ -47,7 +48,7 @@ public static class WireframeOperationTools
             return McpToolResults.Failure(McpToolResults.ValidationFailed, "One or more operations failed.", opResult.Errors);
         }
 
-        var validation = WireframeValidationEngine.Validate(working, registry);
+        var validation = WireframeValidationEngine.Validate(working, registry, WireframeComponentScope.FromAppId(scopeAppId));
         if (!validation.IsValid)
         {
             return McpToolResults.Failure(McpToolResults.ValidationFailed, "The resulting document is invalid; nothing was saved.", validation.Errors);
@@ -65,15 +66,25 @@ public static class WireframeOperationTools
         });
     }
 
+    public static Task<string> ApplyOperations(
+        ITempoDocumentLibraryProvider library,
+        IWireframeDocumentProvider documents,
+        WireframeSchemaRegistry registry,
+        Guid documentId,
+        string operationsJson,
+        DateTime? expectedModifiedAt = null)
+        => ApplyOperationsScoped(library, documents, registry, documentId, operationsJson, expectedModifiedAt, scopeAppId: null);
+
     [McpServerTool(Name = "wireframe_replace_document")]
     [Description("Replace a wireframe's entire content with the provided document JSON and save it. The document is validated against the schema before saving — nothing is persisted if validation fails. Pass expectedModifiedAt (from wireframe_get_document) for optimistic concurrency.")]
-    public static async Task<string> ReplaceDocument(
+    public static async Task<string> ReplaceDocumentScoped(
         ITempoDocumentLibraryProvider library,
         IWireframeDocumentProvider documents,
         WireframeSchemaRegistry registry,
         [Description("Wireframe document id (GUID).")] Guid documentId,
         [Description("The full replacement wireframe document JSON.")] string documentJson,
-        [Description("Optional optimistic-concurrency token from wireframe_get_document.")] DateTime? expectedModifiedAt = null)
+        [Description("Optional optimistic-concurrency token from wireframe_get_document.")] DateTime? expectedModifiedAt = null,
+        [Description("Optional app id used to resolve local custom type names and scoped app component types during validation.")] string? scopeAppId = null)
     {
         var entry = await library.GetEntryAsync(TempoDocumentKind.Wireframe, documentId);
         if (entry is null)
@@ -90,7 +101,7 @@ public static class WireframeOperationTools
             return McpToolResults.Failure(McpToolResults.ValidationFailed, "The document JSON could not be parsed.");
         }
 
-        var validation = WireframeValidationEngine.Validate(document, registry);
+        var validation = WireframeValidationEngine.Validate(document, registry, WireframeComponentScope.FromAppId(scopeAppId));
         if (!validation.IsValid)
         {
             return McpToolResults.Failure(McpToolResults.ValidationFailed, "The document is invalid; nothing was saved.", validation.Errors);
@@ -101,5 +112,14 @@ public static class WireframeOperationTools
 
         return McpToolResults.Success(new { id = documentId, modifiedAt = saved?.ModifiedAt });
     }
+
+    public static Task<string> ReplaceDocument(
+        ITempoDocumentLibraryProvider library,
+        IWireframeDocumentProvider documents,
+        WireframeSchemaRegistry registry,
+        Guid documentId,
+        string documentJson,
+        DateTime? expectedModifiedAt = null)
+        => ReplaceDocumentScoped(library, documents, registry, documentId, documentJson, expectedModifiedAt, scopeAppId: null);
 
 }

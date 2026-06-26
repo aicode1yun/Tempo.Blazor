@@ -130,7 +130,7 @@
             {
                 if (!IsLayerVisible(el.LayerId)) continue;
 
-                var def    = _registry.GetDef(el.Type);
+                var def    = _registry.GetDef(el.Type, ComponentScope);
                 var transX = el.X.ToString("0.##", CultureInfo.InvariantCulture);
                 var transY = el.Y.ToString("0.##", CultureInfo.InvariantCulture);
                 var w      = el.W.ToString("0.##", CultureInfo.InvariantCulture);

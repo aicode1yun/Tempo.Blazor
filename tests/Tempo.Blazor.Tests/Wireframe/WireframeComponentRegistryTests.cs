@@ -8,8 +8,13 @@ namespace Tempo.Blazor.Tests.Wireframe;
 
 public class WireframeComponentRegistryTests
 {
-    private static WireframeComponentDef MakeDef(string type, string category = "Test",
-        int defaultWidth = 100, int defaultHeight = 40, string? displayName = null)
+    private static WireframeComponentDef MakeDef(
+        string type,
+        string category = "Test",
+        int defaultWidth = 100,
+        int defaultHeight = 40,
+        string? displayName = null,
+        bool isBuiltIn = false)
         => new()
         {
             Type = type,
@@ -17,6 +22,7 @@ public class WireframeComponentRegistryTests
             Category = category,
             DefaultWidth = defaultWidth,
             DefaultHeight = defaultHeight,
+            IsBuiltIn = isBuiltIn,
             Props = [],
             RenderSvg = (_, _) => { }
         };
@@ -141,6 +147,71 @@ public class WireframeComponentRegistryTests
         registry.GetDef("TypeA")!.DisplayName.Should().Be("High");
     }
 
+    [Fact]
+    public void GetAll_WithScope_ReturnsBuiltInsAndMatchingScopedCustomsOnly()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var appB = Guid.NewGuid().ToString("D");
+        var registry = new WireframeComponentRegistry();
+        registry.RegisterDefinition(MakeDef("TmButton", "Buttons", displayName: "Button", isBuiltIn: true));
+        registry.RegisterDefinition(MakeDef("LegacyCustom", "Custom", displayName: "Legacy Custom"));
+        registry.RegisterDefinition(MakeDef("InvoiceCard", "Custom", displayName: "App A Invoice"), scopeAppId: appA);
+        registry.RegisterDefinition(MakeDef("InvoiceCard", "Custom", displayName: "App B Invoice"), scopeAppId: appB);
+
+        var scoped = registry.GetAll(WireframeComponentScope.ForApp(appA)).ToList();
+
+        scoped.Select(d => d.Type).Should().BeEquivalentTo(
+        [
+            "TmButton",
+            $"app:{appA}:InvoiceCard"
+        ]);
+        scoped.Should().NotContain(d => d.Type == "LegacyCustom");
+        scoped.Should().NotContain(d => d.ScopeAppId == appB);
+    }
+
+    [Fact]
+    public void GetDef_WithScope_NamespacesLocalCustomType()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var appB = Guid.NewGuid().ToString("D");
+        var registry = new WireframeComponentRegistry();
+        registry.RegisterDefinition(MakeDef("InvoiceCard", displayName: "App A Invoice"), scopeAppId: appA);
+        registry.RegisterDefinition(MakeDef("InvoiceCard", displayName: "App B Invoice"), scopeAppId: appB);
+
+        var appADef = registry.GetDef("InvoiceCard", WireframeComponentScope.ForApp(appA));
+        var appBDef = registry.GetDef("InvoiceCard", WireframeComponentScope.ForApp(appB));
+
+        appADef.Should().NotBeNull();
+        appADef!.Type.Should().Be($"app:{appA}:InvoiceCard");
+        appADef.LocalType.Should().Be("InvoiceCard");
+        appADef.ScopeAppId.Should().Be(appA);
+        appBDef.Should().NotBeNull();
+        appBDef!.Type.Should().Be($"app:{appB}:InvoiceCard");
+    }
+
+    [Fact]
+    public void GetAll_WithoutScope_PreservesUnscopedCustomBehavior()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var registry = new WireframeComponentRegistry();
+        registry.RegisterDefinition(MakeDef("LegacyCustom", "Custom", displayName: "Legacy Custom"));
+        registry.RegisterDefinition(MakeDef("InvoiceCard", "Custom", displayName: "App A Invoice"), scopeAppId: appA);
+
+        registry.GetAll().Select(d => d.Type).Should().BeEquivalentTo(["LegacyCustom"]);
+        registry.GetDef("LegacyCustom").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void ScopedProvider_NamespacesDefinitions()
+    {
+        var appId = Guid.NewGuid().ToString("D");
+        var registry = new WireframeComponentRegistry();
+        registry.RegisterProvider(new ScopedTestProvider("Scoped", 10, appId, [MakeDef("InvoiceCard")]));
+
+        registry.GetDef($"app:{appId}:InvoiceCard").Should().NotBeNull();
+        registry.GetDef("InvoiceCard").Should().BeNull();
+    }
+
     // ── Test helper ───────────────────────────────────────────────────────────
 
     private sealed class TestProvider(string id, int priority, IEnumerable<WireframeComponentDef> defs)
@@ -148,6 +219,19 @@ public class WireframeComponentRegistryTests
     {
         public string ProviderId => id;
         public int Priority => priority;
+        public IEnumerable<WireframeComponentDef> GetDefinitions() => defs;
+    }
+
+    private sealed class ScopedTestProvider(
+        string id,
+        int priority,
+        string scopeAppId,
+        IEnumerable<WireframeComponentDef> defs)
+        : IWireframeScopedComponentProvider
+    {
+        public string ProviderId => id;
+        public int Priority => priority;
+        public string ScopeAppId => scopeAppId;
         public IEnumerable<WireframeComponentDef> GetDefinitions() => defs;
     }
 }
