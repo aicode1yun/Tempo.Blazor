@@ -29149,6 +29149,16 @@
       "usage": "services.AddWireframeSchemas(); // registers BuiltInComponentSchemas\nservices.AddWireframeSchemaSource<MyDbSchemaSource>(); // add custom source"
     },
     {
+      "kind": "Interface",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Marker interface for schema sources whose schemas belong to a single application scope. Registry entries are exposed under app:{ScopeAppId}:{Type}.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/IWireframeSchemaSource.cs",
+      "documentationStatus": "generated",
+      "itemName": "IWireframeScopedSchemaSource"
+    },
+    {
       "itemName": "PropDef",
       "kind": "Class",
       "category": "Wireframe",
@@ -29335,10 +29345,28 @@
           "description": "Human-readable component name."
         },
         {
+          "name": "IsBuiltIn",
+          "kind": "Property",
+          "type": "bool",
+          "description": "True for built-in Tempo.Blazor components; false for app/custom schemas."
+        },
+        {
+          "name": "LocalType",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Component type name without the app scope prefix. Defaults to for unscoped components and to the suffix of app:{id}:{name} for scoped components."
+        },
+        {
           "name": "Props",
           "kind": "Property",
           "type": "IReadOnlyList<PropDef>",
           "description": "Property definitions that drive the Properties Panel UI and document serialisation. Each entry describes one key in WireframeElement.Props."
+        },
+        {
+          "name": "ScopeAppId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Application id for an app-scoped custom component. When present, registries normalize to app:{ScopeAppId}:{LocalType}."
         },
         {
           "name": "SizePresets",
@@ -29392,6 +29420,135 @@
           "description": "Optional map from a 'size' prop value to canonical element dimensions. Null for components where the size prop does not affect element footprint."
         }
       ]
+    },
+    {
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Identifies the application-specific component scope used by wireframe registries. Scoped custom component types are namespaced as app:{appId}:{localType}.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/WireframeComponentScope.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "TypePrefix",
+          "kind": "Field",
+          "type": "string",
+          "description": "Type prefix used for custom components in this scope."
+        },
+        {
+          "name": "ContainsType",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Returns true when belongs to this app scope.",
+          "parameters": [
+            {
+              "name": "type",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "ForApp",
+          "kind": "Method",
+          "type": "WireframeComponentScope",
+          "description": "Creates a component scope for the supplied application id.",
+          "parameters": [
+            {
+              "name": "appId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "FromAppId",
+          "kind": "Method",
+          "type": "WireframeComponentScope?",
+          "description": "Creates a scope when an application id is present; otherwise returns null.",
+          "parameters": [
+            {
+              "name": "appId",
+              "type": "string?"
+            }
+          ]
+        },
+        {
+          "name": "GetLocalType",
+          "kind": "Method",
+          "type": "string",
+          "description": "Returns the local component type name without the app scope prefix.",
+          "parameters": [
+            {
+              "name": "type",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "IsScopedType",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Returns true when is an app-scoped component type.",
+          "parameters": [
+            {
+              "name": "type",
+              "type": "string?"
+            }
+          ]
+        },
+        {
+          "name": "MatchesAppId",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Returns true when identifies the same scope.",
+          "parameters": [
+            {
+              "name": "appId",
+              "type": "string?"
+            }
+          ]
+        },
+        {
+          "name": "NamespaceType",
+          "kind": "Method",
+          "type": "string",
+          "description": "Returns the scoped type for a local component type.",
+          "parameters": [
+            {
+              "name": "localType",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "ToString",
+          "kind": "Method",
+          "type": "string"
+        },
+        {
+          "name": "TryGetAppId",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Attempts to extract the application id from an app-scoped component type.",
+          "parameters": [
+            {
+              "name": "type",
+              "type": "string?"
+            },
+            {
+              "name": "appId",
+              "type": "out string?"
+            }
+          ]
+        },
+        {
+          "name": "AppId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Application id for this component scope."
+        }
+      ],
+      "itemName": "WireframeComponentScope"
     },
     {
       "itemName": "WireframeConnector",
@@ -31226,11 +31383,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1252,
+    "itemCount": 1254,
     "manualItemCount": 1215,
-    "generatedItemCount": 1235,
-    "generatedOnlyItemCount": 37,
+    "generatedItemCount": 1237,
+    "generatedOnlyItemCount": 39,
     "componentCount": 0,
-    "publicApiTypeCount": 1235
+    "publicApiTypeCount": 1237
   }
 }

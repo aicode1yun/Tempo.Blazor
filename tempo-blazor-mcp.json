@@ -871,7 +871,24 @@
       "description": "Public class defined by Tempo.Blazor.Mcp.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeComponentCatalogTools.cs",
-      "documentationStatus": "merged"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetComponentSchema",
+          "kind": "Method",
+          "type": "string",
+          "parameters": [
+            {
+              "name": "registry",
+              "type": "WireframeSchemaRegistry"
+            },
+            {
+              "name": "type",
+              "type": "string"
+            }
+          ]
+        }
+      ]
     },
     {
       "itemName": "WireframeDocumentTools",
@@ -951,7 +968,24 @@
       "description": "Public class defined by Tempo.Blazor.Mcp.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeValidationTools.cs",
-      "documentationStatus": "merged"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ValidateDocument",
+          "kind": "Method",
+          "type": "string",
+          "parameters": [
+            {
+              "name": "registry",
+              "type": "WireframeSchemaRegistry"
+            },
+            {
+              "name": "documentJson",
+              "type": "string"
+            }
+          ]
+        }
+      ]
     }
   ],
   "libraryExamples": [

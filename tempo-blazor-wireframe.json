@@ -374,6 +374,16 @@
       "documentationStatus": "merged"
     },
     {
+      "kind": "Interface",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Marker interface for providers whose definitions belong to a single application scope. Registry entries are exposed under app:{ScopeAppId}:{Type}.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeComponentProvider.cs",
+      "documentationStatus": "generated",
+      "itemName": "IWireframeScopedComponentProvider"
+    },
+    {
       "itemName": "JsonWireframeComponentProvider",
       "kind": "Class",
       "category": "Components",
@@ -1456,6 +1466,12 @@
           "description": "True for built-in Tempo.Blazor components; false for custom/JSON-defined ones."
         },
         {
+          "name": "LocalType",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Component type name without the app scope prefix. Defaults to for unscoped components and to the suffix of app:{id}:{name} for scoped components."
+        },
+        {
           "name": "Props",
           "kind": "Property",
           "type": "IReadOnlyList<PropDef>",
@@ -1466,6 +1482,12 @@
           "kind": "Property",
           "type": "required Action<WireframeElement, RenderTreeBuilder>",
           "description": "Renders the wireframe SVG shape into . Coordinates inside the render are relative to the element's top-left (0, 0). The outer <g> transform is applied by the canvas."
+        },
+        {
+          "name": "ScopeAppId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Application id for an app-scoped custom component. When present, registries normalize to app:{ScopeAppId}:{LocalType}."
         },
         {
           "name": "SizePresets",
@@ -1813,6 +1835,12 @@
           "description": "Additional CSS class applied to the canvas wrapper div."
         },
         {
+          "name": "ComponentScope",
+          "type": "WireframeComponentScope?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the canvas wrapper."
+        },
+        {
           "name": "DocumentChanged",
           "type": "EventCallback<WireframeDocument>",
           "isRequired": false,
@@ -2019,6 +2047,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Additional CSS class applied to the editor root element."
+        },
+        {
+          "name": "ComponentScope",
+          "type": "WireframeComponentScope?",
+          "isRequired": false,
+          "description": "Show rulers around the canvas."
         },
         {
           "name": "DocumentChanged",
@@ -2297,6 +2331,12 @@
           "description": "Additional CSS class applied to the panel wrapper."
         },
         {
+          "name": "ComponentScope",
+          "type": "WireframeComponentScope?",
+          "isRequired": false,
+          "description": "Additional CSS class on the panel wrapper."
+        },
+        {
           "name": "DocumentChanged",
           "type": "EventCallback<WireframeDocument>",
           "isRequired": false,
@@ -2450,6 +2490,12 @@
       ],
       "parameters": [
         {
+          "name": "ComponentScope",
+          "type": "WireframeComponentScope?",
+          "isRequired": false,
+          "description": "Raised when the user activates an item via keyboard (Enter/Space). Carries the component type string so the parent can add it at a default position."
+        },
+        {
           "name": "OnComponentActivated",
           "type": "EventCallback<string>",
           "isRequired": false,
@@ -2496,11 +2542,11 @@
     }
   ],
   "summary": {
-    "itemCount": 70,
+    "itemCount": 71,
     "manualItemCount": 58,
-    "generatedItemCount": 59,
-    "generatedOnlyItemCount": 12,
+    "generatedItemCount": 60,
+    "generatedOnlyItemCount": 13,
     "componentCount": 9,
-    "publicApiTypeCount": 50
+    "publicApiTypeCount": 51
   }
 }

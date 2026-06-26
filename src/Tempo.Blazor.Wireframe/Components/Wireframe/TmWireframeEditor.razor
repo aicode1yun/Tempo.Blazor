@@ -382,6 +382,7 @@
         {
             <div class="tm-wd-editor__toolbox-wrap">
                 <TmWireframeToolbox OnComponentActivated="OnToolboxActivated"
+                                    ComponentScope="@ComponentScope"
                                     Class="tm-wd-editor__toolbox" />
             </div>
         }
@@ -422,6 +423,7 @@
                     <TmWireframeDesignerCanvas @ref="_canvas"
                                        Document="@_document"
                                        DocumentChanged="OnDocumentChanged"
+                                       ComponentScope="@ComponentScope"
                                        ShowGrid="@ShowGrid"
                                        GridSize="@GridSize"
                                        SnapToObjects="@_snapToObjects"
@@ -505,6 +507,7 @@
             <div class="tm-wd-editor__props-wrap">
                 <TmWireframePropertiesPanel Document="@_document"
                                             DocumentChanged="OnDocumentChanged"
+                                            ComponentScope="@ComponentScope"
                                             SelectedIds="@_selectedIds"
                                             SelectedConnectorIds="@_selectedConnectorIds"
                                             OnCopyStyle="OnCopyStyle"

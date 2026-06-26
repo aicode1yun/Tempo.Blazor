@@ -137,4 +137,82 @@ public class WireframeValidationEngineTests
         root.GetProperty("success").GetBoolean().Should().BeFalse();
         root.GetProperty("error").GetString().Should().Be("validation_failed");
     }
+
+    [Fact]
+    public void Validate_WithScope_AcceptsMatchingScopedCustomAndRejectsOtherApp()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var appB = Guid.NewGuid().ToString("D");
+        var registry = new WireframeSchemaRegistry(
+        [
+            new TestSchemaSource("BuiltIn", 0, Schema("TmButton", "Buttons", "Button", isBuiltIn: true)),
+            new ScopedSchemaSource("A", 10, appA, Schema("InvoiceCard", "Custom", "A Invoice")),
+            new ScopedSchemaSource("B", 10, appB, Schema("InvoiceCard", "Custom", "B Invoice"))
+        ]);
+        var doc = DocWith(
+            new WireframeElement { Type = $"app:{appA}:InvoiceCard", W = 100, H = 40 },
+            new WireframeElement { Type = $"app:{appB}:InvoiceCard", W = 100, H = 40 });
+
+        var result = WireframeValidationEngine.Validate(
+            doc,
+            registry,
+            WireframeComponentScope.ForApp(appA));
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().ContainSingle()
+            .Which.Should().Contain($"app:{appB}:InvoiceCard");
+    }
+
+    [Fact]
+    public void ValidateTool_WithScope_ResolvesLocalScopedCustomType()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var registry = new WireframeSchemaRegistry(
+        [
+            new ScopedSchemaSource("A", 10, appA, Schema("InvoiceCard", "Custom", "A Invoice"))
+        ]);
+        var doc = DocWith(new WireframeElement { Type = "InvoiceCard", W = 100, H = 40 });
+        var json = WireframeSerializer.Serialize(doc);
+
+        var root = JsonDocument.Parse(
+            WireframeValidationTools.ValidateDocumentScoped(registry, json, scopeAppId: appA)).RootElement;
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue();
+        root.GetProperty("valid").GetBoolean().Should().BeTrue();
+    }
+
+    private static WireframeComponentSchema Schema(
+        string type,
+        string category,
+        string displayName,
+        bool isBuiltIn = false)
+        => new()
+        {
+            Type = type,
+            Category = category,
+            DisplayName = displayName,
+            IsBuiltIn = isBuiltIn,
+            Props = []
+        };
+
+    private sealed class TestSchemaSource(string id, int priority, params WireframeComponentSchema[] schemas)
+        : IWireframeSchemaSource
+    {
+        public string SourceId => id;
+        public int Priority => priority;
+        public IEnumerable<WireframeComponentSchema> GetSchemas() => schemas;
+    }
+
+    private sealed class ScopedSchemaSource(
+        string id,
+        int priority,
+        string scopeAppId,
+        params WireframeComponentSchema[] schemas)
+        : IWireframeScopedSchemaSource
+    {
+        public string SourceId => id;
+        public int Priority => priority;
+        public string ScopeAppId => scopeAppId;
+        public IEnumerable<WireframeComponentSchema> GetSchemas() => schemas;
+    }
 }

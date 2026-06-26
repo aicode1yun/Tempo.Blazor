@@ -233,6 +233,30 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         cut.FindAll(".tm-wd-toolbox__item-badge--custom").Should().BeEmpty();
     }
 
+    [Fact]
+    public void Toolbox_ComponentScope_RendersBuiltInsAndMatchingScopedCustomsOnly()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var appB = Guid.NewGuid().ToString("D");
+        var registry = new WireframeComponentRegistry();
+        registry.RegisterDefinition(MakeDef("TmButton", "Buttons", isBuiltIn: true, displayName: "Button"));
+        registry.RegisterDefinition(MakeDef("LegacyCustom", "Custom", isBuiltIn: false, displayName: "Legacy Custom"));
+        registry.RegisterDefinition(MakeDef("InvoiceCard", "Custom", isBuiltIn: false, displayName: "A Invoice"), scopeAppId: appA);
+        registry.RegisterDefinition(MakeDef("InvoiceCard", "Custom", isBuiltIn: false, displayName: "B Invoice"), scopeAppId: appB);
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>(p => p
+            .Add(x => x.ComponentScope, WireframeComponentScope.ForApp(appA)));
+
+        var types = cut.FindAll(".tm-wd-toolbox__item")
+            .Select(item => item.GetAttribute("data-component-type"))
+            .ToList();
+
+        types.Should().BeEquivalentTo(["TmButton", $"app:{appA}:InvoiceCard"]);
+        types.Should().NotContain("LegacyCustom");
+        types.Should().NotContain($"app:{appB}:InvoiceCard");
+    }
+
     // ── Keyboard activation ────────────────────────────────────────────────────
 
     [Fact]

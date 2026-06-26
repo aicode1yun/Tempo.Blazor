@@ -16,11 +16,26 @@ public sealed class WireframeComponentSchema
     /// <summary>Unique type identifier. Matches <c>WireframeElement.Type</c> in document JSON.</summary>
     public required string Type { get; init; }
 
+    /// <summary>
+    /// Application id for an app-scoped custom component. When present, registries normalize
+    /// <see cref="Type"/> to <c>app:{ScopeAppId}:{LocalType}</c>.
+    /// </summary>
+    public string? ScopeAppId { get; init; }
+
+    /// <summary>
+    /// Component type name without the app scope prefix. Defaults to <see cref="Type"/> for
+    /// unscoped components and to the suffix of <c>app:{id}:{name}</c> for scoped components.
+    /// </summary>
+    public string? LocalType { get; init; }
+
     /// <summary>Toolbox / grouping category. E.g. "Buttons", "Inputs", "Layout".</summary>
     public required string Category { get; init; }
 
     /// <summary>Human-readable component name.</summary>
     public required string DisplayName { get; init; }
+
+    /// <summary>True for built-in Tempo.Blazor components; false for app/custom schemas.</summary>
+    public bool IsBuiltIn { get; init; }
 
     /// <summary>Default element width when dropped onto the canvas.</summary>
     public double DefaultWidth { get; init; } = 120;
