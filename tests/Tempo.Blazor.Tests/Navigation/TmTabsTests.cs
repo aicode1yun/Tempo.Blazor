@@ -202,6 +202,34 @@ public class TmTabsTests : LocalizationTestBase
         cut.Find(".tm-tabs").ClassList.Should().Contain(expectedClass);
     }
 
+    [Fact]
+    public void Tabs_Wrap_AppliesWrapCssClassAlongsideVariant()
+    {
+        var cut = RenderComponent<TmTabs>(p => p
+            .Add(x => x.ActiveTabId, "tab1")
+            .Add(x => x.Variant, TabVariant.Line)
+            .Add(x => x.Wrap, true)
+            .AddChildContent<TmTabPanel>(tp => tp
+                .Add(x => x.Id, "tab1")
+                .Add(x => x.Title, "Tab")
+                .AddChildContent("Content")));
+
+        cut.Find(".tm-tabs").ClassList.Should().Contain(new[] { "tm-tabs--line", "tm-tabs--wrap" });
+    }
+
+    [Fact]
+    public void Tabs_WrapDefaultsOff_DoesNotApplyWrapClass()
+    {
+        var cut = RenderComponent<TmTabs>(p => p
+            .Add(x => x.ActiveTabId, "tab1")
+            .AddChildContent<TmTabPanel>(tp => tp
+                .Add(x => x.Id, "tab1")
+                .Add(x => x.Title, "Tab")
+                .AddChildContent("Content")));
+
+        cut.Find(".tm-tabs").ClassList.Should().NotContain("tm-tabs--wrap");
+    }
+
     // ── Custom class ───────────────────────────────────────
 
     [Fact]

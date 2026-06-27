@@ -65,6 +65,12 @@
     /// <summary>Visual variant of the tab strip.</summary>
     [Parameter] public TabVariant Variant { get; set; } = TabVariant.Line;
 
+    /// <summary>
+    /// When <c>true</c>, the tab strip wraps onto multiple rows to fit the available width instead of
+    /// scrolling horizontally. Use when many tabs would otherwise overflow/truncate in a narrow container.
+    /// </summary>
+    [Parameter] public bool Wrap { get; set; }
+
     /// <summary>Tab panel children.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
@@ -75,12 +81,20 @@
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
-    private string VariantClass => Variant switch
+    private string VariantClass
     {
-        TabVariant.Pill => "tm-tabs--pill",
-        TabVariant.Enclosed => "tm-tabs--enclosed",
-        _ => "tm-tabs--line"
-    };
+        get
+        {
+            var variant = Variant switch
+            {
+                TabVariant.Pill => "tm-tabs--pill",
+                TabVariant.Enclosed => "tm-tabs--enclosed",
+                _ => "tm-tabs--line"
+            };
+
+            return Wrap ? $"{variant} tm-tabs--wrap" : variant;
+        }
+    }
 
     internal void RegisterPanel(TmTabPanel panel)
     {
