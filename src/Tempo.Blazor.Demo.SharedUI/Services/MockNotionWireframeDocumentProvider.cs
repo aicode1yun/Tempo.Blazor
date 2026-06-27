@@ -7,8 +7,9 @@ public class MockNotionWireframeDocumentProvider : IWireframeDocumentProvider
 {
     private readonly Dictionary<Guid, WireframeDocument> _store = new();
 
-    public Task<(Guid Id, WireframeDocument Document)> CreateWireframeDocumentAsync(string title)
+    public Task<(Guid Id, WireframeDocument Document)> CreateWireframeDocumentAsync(string title, string? scopeAppId = null)
     {
+        _ = scopeAppId;
         var id  = Guid.NewGuid();
         var doc = new WireframeDocument { Title = title };
         doc.EnsureActivePage();

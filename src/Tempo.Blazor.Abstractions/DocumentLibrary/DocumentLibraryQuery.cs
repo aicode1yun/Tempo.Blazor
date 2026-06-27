@@ -31,4 +31,11 @@ public sealed class DocumentLibraryQuery
 
     /// <summary>Maximum number of items to return. Defaults to 50.</summary>
     public int Take { get; set; } = 50;
+
+    /// <summary>
+    /// Optional application scope (GUID string). Multi-app hosts (e.g. a single API key granting
+    /// access to several apps) set this so stateless callers such as MCP tools list documents from
+    /// the intended app. Single-app stores may ignore it.
+    /// </summary>
+    public string? ScopeAppId { get; set; }
 }

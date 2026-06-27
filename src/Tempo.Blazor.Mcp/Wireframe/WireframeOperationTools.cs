@@ -15,7 +15,7 @@ namespace Tempo.Blazor.Mcp.Wireframe;
 public static class WireframeOperationTools
 {
     [McpServerTool(Name = "wireframe_apply_operations")]
-    [Description("Apply an ordered batch of edit operations to a wireframe and save it. operationsJson is a JSON array; each item has an 'op' field: setTitle, addPage, updatePage, removePage, setCanvasSize, addElement, updateElement, removeElement, addConnector, updateConnector, removeConnector. The batch is validated against the schema before saving — nothing is persisted if validation fails. Pass expectedModifiedAt (from wireframe_get_document) to avoid overwriting concurrent edits.")]
+    [Description("Apply an ordered batch of edit operations to a wireframe and save it. operationsJson is a JSON array; each item has an 'op' field: setTitle, addPage, updatePage, removePage, setCanvasSize, addElement, updateElement, removeElement, addConnector, updateConnector, removeConnector. Page-targeted operations accept optional pageId; when omitted, the current active page is used. addPage returns the new page id in createdIds but does not make it active, so use that id as pageId for subsequent operations on the new page. The batch is validated against the schema before saving — nothing is persisted if validation fails. Pass expectedModifiedAt (from wireframe_get_document) to avoid overwriting concurrent edits.")]
     public static async Task<string> ApplyOperationsScoped(
         ITempoDocumentLibraryProvider library,
         IWireframeDocumentProvider documents,

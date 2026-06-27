@@ -61,4 +61,28 @@ public class WireframeDocumentToolsTests
         var id = root.GetProperty("id").GetGuid();
         (await backend.GetWireframeDocumentAsync(id)).Should().NotBeNull();
     }
+
+    [Fact]
+    public async Task CreateDocument_ForwardsScopeAppId_ToProvider()
+    {
+        var backend = new FakeWireframeBackend();
+        var appId = Guid.NewGuid().ToString("D");
+
+        var root = Parse(await WireframeDocumentTools.CreateDocument(backend, backend, "Scoped design", scopeAppId: appId));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue();
+        backend.LastCreateScopeAppId.Should().Be(appId);
+    }
+
+    [Fact]
+    public async Task ListDocuments_ForwardsScopeAppId_ViaQuery()
+    {
+        var backend = new FakeWireframeBackend();
+        var appId = Guid.NewGuid().ToString("D");
+
+        var root = Parse(await WireframeDocumentTools.ListDocuments(backend, scopeAppId: appId));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue();
+        backend.LastBrowseScopeAppId.Should().Be(appId);
+    }
 }
