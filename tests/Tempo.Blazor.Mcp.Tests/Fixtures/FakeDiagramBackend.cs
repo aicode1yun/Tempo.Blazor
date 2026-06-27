@@ -19,7 +19,16 @@ public sealed class FakeDiagramBackend : ITempoDocumentLibraryProvider, IDiagram
     private readonly Dictionary<Guid, Entry> _docs = new();
     private readonly HashSet<string> _folders = new() { "/" };
 
+    /// <summary>Last scopeAppId received by create / browse (for asserting MCP forwarding).</summary>
+    public string? LastScopeAppId { get; private set; }
+
     public DocumentLibraryCapabilities Capabilities => DocumentLibraryCapabilities.All;
+
+    public Task<(Guid Id, DiagramDocument Document)> CreateDiagramDocumentAsync(string title, string? scopeAppId)
+    {
+        LastScopeAppId = scopeAppId;
+        return CreateDiagramDocumentAsync(title);
+    }
 
     public Guid Add(string name, string folderPath, DiagramDocument? document = null)
     {
@@ -69,6 +78,7 @@ public sealed class FakeDiagramBackend : ITempoDocumentLibraryProvider, IDiagram
 
     public Task<DocumentLibraryPage> BrowseAsync(DocumentLibraryQuery query, CancellationToken ct = default)
     {
+        LastScopeAppId = query.ScopeAppId;
         if (query.Kind != TempoDocumentKind.Diagram)
         {
             return Task.FromResult(new DocumentLibraryPage { Items = [], TotalCount = 0 });

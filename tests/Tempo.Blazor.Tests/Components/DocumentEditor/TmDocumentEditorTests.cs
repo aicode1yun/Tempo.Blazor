@@ -1026,15 +1026,19 @@ public class TmDocumentEditorTests : LocalizationTestBase
             }
         });
 
+        // Celý blok asercí v jednom WaitForAssertion — panel je conditionally-rendered a pod
+        // paralelním během se mezi jednotlivými Find může přerenderovat; retry drží DOM stabilní.
         cut.WaitForAssertion(() =>
+        {
             cut.Find("[data-testid='document-image-properties-panel']")
-                .GetAttribute("data-active-object-id").Should().Be("drawing-1"));
-        cut.Find("[data-testid='document-image-properties-panel']")
-            .GetAttribute("data-active-anchor-block-id").Should().Be(paragraph.Id);
-        cut.Find("[data-testid='document-image-inspector-alt']")
-            .GetAttribute("value").Should().Be("Selected drawing object");
-        cut.Find("[data-testid='document-image-inspector-width']")
-            .GetAttribute("value").Should().Be("144");
+                .GetAttribute("data-active-object-id").Should().Be("drawing-1");
+            cut.Find("[data-testid='document-image-properties-panel']")
+                .GetAttribute("data-active-anchor-block-id").Should().Be(paragraph.Id);
+            cut.Find("[data-testid='document-image-inspector-alt']")
+                .GetAttribute("value").Should().Be("Selected drawing object");
+            cut.Find("[data-testid='document-image-inspector-width']")
+                .GetAttribute("value").Should().Be("144");
+        });
     }
 
     [Fact]

@@ -84,6 +84,30 @@ public class NotionToolsTests
     }
 
     [Fact]
+    public async Task CreatePage_ForwardsScopeAppId_ToProvider()
+    {
+        var backend = new FakeNotionBackend();
+        var appId = Guid.NewGuid().ToString("D");
+
+        var root = Parse(await NotionPageTools.CreatePage(backend, parentId: null, title: "Scoped root", scopeAppId: appId));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue();
+        backend.LastScopeAppId.Should().Be(appId);
+    }
+
+    [Fact]
+    public async Task ListPages_Favorites_ForwardsScopeAppId_ToProvider()
+    {
+        var backend = new FakeNotionBackend();
+        var appId = Guid.NewGuid().ToString("D");
+
+        var root = Parse(await NotionPageTools.ListPages(backend, favorites: true, scopeAppId: appId));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue();
+        backend.LastScopeAppId.Should().Be(appId);
+    }
+
+    [Fact]
     public async Task PageLifecycleTools_UpdateDeleteRestoreMoveAndDuplicate()
     {
         var backend = new FakeNotionBackend();

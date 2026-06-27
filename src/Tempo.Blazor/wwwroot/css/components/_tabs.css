@@ -22,6 +22,28 @@
     display: none;
 }
 
+/* ── Wrap mode: flow tabs onto multiple rows instead of scrolling ──────── */
+.tm-tabs--wrap .tm-tabs__header {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    row-gap: 0.125rem;
+}
+
+/* Line variant: give every row its own baseline so wrapped rows keep the
+   underline guide (the header's single bottom border only sits under the last row). */
+.tm-tabs--wrap.tm-tabs--line .tm-tabs__header {
+    border-bottom: none;
+}
+
+.tm-tabs--wrap.tm-tabs--line .tm-tab {
+    border-bottom: 2px solid var(--tm-color-neutral-200);
+    margin-bottom: 0;
+}
+
+.tm-tabs--wrap.tm-tabs--line .tm-tab--active {
+    border-bottom-color: var(--tm-color-primary-600);
+}
+
 /* ── Individual tab button ─────────────────────────────── */
 .tm-tab {
     display: inline-flex;

@@ -9,6 +9,46 @@ public sealed class FakeNotionBackend : INotionDataProvider, INotionBlockProvide
     private readonly Dictionary<Guid, NotionPage> _pages = new();
     private readonly Dictionary<Guid, PageBlock> _blocks = new();
 
+    /// <summary>Last scopeAppId received by an app-scoped overload (for asserting MCP forwarding).</summary>
+    public string? LastScopeAppId { get; private set; }
+
+    // App-scoped overloads capture the scope then delegate to the unscoped logic.
+    public Task<INotionPage> CreatePageAsync(string? parentId, string title, string? scopeAppId)
+    {
+        LastScopeAppId = scopeAppId;
+        return CreatePageAsync(parentId, title);
+    }
+
+    public Task<IEnumerable<INotionPage>> GetChildPagesAsync(string? parentId, string? scopeAppId)
+    {
+        LastScopeAppId = scopeAppId;
+        return GetChildPagesAsync(parentId);
+    }
+
+    public Task<IEnumerable<INotionPage>> GetFavoritesAsync(string? scopeAppId)
+    {
+        LastScopeAppId = scopeAppId;
+        return GetFavoritesAsync();
+    }
+
+    public Task<IEnumerable<INotionPage>> GetRecentPagesAsync(int count, string? scopeAppId)
+    {
+        LastScopeAppId = scopeAppId;
+        return GetRecentPagesAsync(count);
+    }
+
+    public Task<IEnumerable<INotionPage>> GetTrashAsync(string? scopeAppId)
+    {
+        LastScopeAppId = scopeAppId;
+        return GetTrashAsync();
+    }
+
+    public Task<IReadOnlyList<INotionPage>> GetPagesByLabelAsync(string label, string? scopeAppId, CancellationToken cancellationToken = default)
+    {
+        LastScopeAppId = scopeAppId;
+        return GetPagesByLabelAsync(label, cancellationToken);
+    }
+
     public Guid AddPage(string title, Guid? parentId = null)
     {
         var page = new NotionPage

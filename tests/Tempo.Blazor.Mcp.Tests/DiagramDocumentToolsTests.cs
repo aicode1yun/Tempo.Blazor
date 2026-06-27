@@ -59,4 +59,28 @@ public class DiagramDocumentToolsTests
         var id = root.GetProperty("id").GetGuid();
         (await backend.GetDiagramDocumentAsync(id)).Should().NotBeNull();
     }
+
+    [Fact]
+    public async Task CreateDocument_ForwardsScopeAppId_ToProvider()
+    {
+        var backend = new FakeDiagramBackend();
+        var appId = Guid.NewGuid().ToString("D");
+
+        var root = Parse(await DiagramDocumentTools.CreateDocument(backend, backend, "Scoped diagram", scopeAppId: appId));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue();
+        backend.LastScopeAppId.Should().Be(appId);
+    }
+
+    [Fact]
+    public async Task ListDocuments_ForwardsScopeAppId_ViaQuery()
+    {
+        var backend = new FakeDiagramBackend();
+        var appId = Guid.NewGuid().ToString("D");
+
+        var root = Parse(await DiagramDocumentTools.ListDocuments(backend, scopeAppId: appId));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue();
+        backend.LastScopeAppId.Should().Be(appId);
+    }
 }

@@ -17,8 +17,9 @@ public sealed class StoreWireframeDocumentProvider : IWireframeDocumentProvider
 
     public StoreWireframeDocumentProvider(DocumentLibraryStore store) => _store = store;
 
-    public Task<(Guid Id, WireframeDocument Document)> CreateWireframeDocumentAsync(string title)
+    public Task<(Guid Id, WireframeDocument Document)> CreateWireframeDocumentAsync(string title, string? scopeAppId = null)
     {
+        _ = scopeAppId;
         var doc = new WireframeDocument { Title = string.IsNullOrWhiteSpace(title) ? "Untitled wireframe" : title };
         doc.EnsureActivePage();
         var stored = _store.CreateDocument(

@@ -19,8 +19,9 @@ public sealed class ApiWireframeDocumentProvider : IWireframeDocumentProvider
     public ApiWireframeDocumentProvider(IHttpClientFactory factory)
         => _http = factory.CreateClient("DemoApi");
 
-    public async Task<(Guid Id, WireframeDocument Document)> CreateWireframeDocumentAsync(string title)
+    public async Task<(Guid Id, WireframeDocument Document)> CreateWireframeDocumentAsync(string title, string? scopeAppId = null)
     {
+        _ = scopeAppId;
         var doc = new WireframeDocument { Title = string.IsNullOrWhiteSpace(title) ? "Untitled wireframe" : title };
         doc.EnsureActivePage();
 

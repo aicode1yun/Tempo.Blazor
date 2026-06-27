@@ -9,7 +9,7 @@ namespace Tempo.Blazor.Mcp.Notion;
 public static class NotionPageTools
 {
     [McpServerTool(Name = "notion_list_pages")]
-    [Description("List NotionEditor pages. By default lists child pages under parentId (or root when omitted). Can list favorites, trash, recent pages, or pages by label.")]
+    [Description("List NotionEditor pages. By default lists child pages under parentId (or root when omitted). Can list favorites, trash, recent pages, or pages by label. Pass scopeAppId (app GUID) when your API key grants access to more than one app, so root/favorites/recent/trash/label listings target the intended app.")]
     public static async Task<string> ListPages(
         INotionDataProvider pages,
         [Description("Optional parent page id. Omit for root pages.")] string? parentId = null,
@@ -19,28 +19,29 @@ public static class NotionPageTools
         [Description("List trash instead of children.")] bool trash = false,
         [Description("When greater than zero, list this many recent pages instead of children.")] int recent = 0,
         [Description("Pagination offset.")] int skip = 0,
-        [Description("Maximum number of pages to return.")] int take = 50)
+        [Description("Maximum number of pages to return.")] int take = 50,
+        [Description("Optional app id (GUID) scoping app-ambiguous listings (root/favorites/recent/trash/label); required when the API key grants access to more than one app.")] string? scopeAppId = null)
     {
         IEnumerable<INotionPage> result;
         if (!string.IsNullOrWhiteSpace(label))
         {
-            result = await pages.GetPagesByLabelAsync(label);
+            result = await pages.GetPagesByLabelAsync(label, scopeAppId);
         }
         else if (favorites)
         {
-            result = await pages.GetFavoritesAsync();
+            result = await pages.GetFavoritesAsync(scopeAppId);
         }
         else if (trash)
         {
-            result = await pages.GetTrashAsync();
+            result = await pages.GetTrashAsync(scopeAppId);
         }
         else if (recent > 0)
         {
-            result = await pages.GetRecentPagesAsync(Math.Clamp(recent, 1, 500));
+            result = await pages.GetRecentPagesAsync(Math.Clamp(recent, 1, 500), scopeAppId);
         }
         else
         {
-            result = await pages.GetChildPagesAsync(parentId);
+            result = await pages.GetChildPagesAsync(parentId, scopeAppId);
         }
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -81,13 +82,14 @@ public static class NotionPageTools
     }
 
     [McpServerTool(Name = "notion_create_page")]
-    [Description("Create a new NotionEditor page under an optional parent page.")]
+    [Description("Create a new NotionEditor page under an optional parent page. Pass scopeAppId (app GUID) for root pages when your API key grants access to more than one app.")]
     public static async Task<string> CreatePage(
         INotionDataProvider pages,
         [Description("Optional parent page id.")] string? parentId,
-        [Description("New page title.")] string title)
+        [Description("New page title.")] string title,
+        [Description("Optional app id (GUID) scoping a new root page; required when the API key grants access to more than one app.")] string? scopeAppId = null)
     {
-        var page = await pages.CreatePageAsync(parentId, title);
+        var page = await pages.CreatePageAsync(parentId, title, scopeAppId);
         return McpToolResults.Success(new { page });
     }
 

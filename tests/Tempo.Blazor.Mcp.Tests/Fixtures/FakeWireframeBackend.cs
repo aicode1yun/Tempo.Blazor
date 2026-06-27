@@ -22,6 +22,9 @@ public sealed class FakeWireframeBackend : ITempoDocumentLibraryProvider, IWiref
     private readonly Dictionary<Guid, Entry> _docs = new();
     private readonly HashSet<string> _folders = new() { "/" };
 
+    /// <summary>Last scopeAppId received by <see cref="CreateWireframeDocumentAsync"/> (for asserting MCP forwarding).</summary>
+    public string? LastCreateScopeAppId { get; private set; }
+
     public DocumentLibraryCapabilities Capabilities => DocumentLibraryCapabilities.All;
 
     // ── Seeding helper ──────────────────────────────────────────────────────────
@@ -51,8 +54,9 @@ public sealed class FakeWireframeBackend : ITempoDocumentLibraryProvider, IWiref
 
     // ── IWireframeDocumentProvider ───────────────────────────────────────────────
 
-    public Task<(Guid Id, WireframeDocument Document)> CreateWireframeDocumentAsync(string title)
+    public Task<(Guid Id, WireframeDocument Document)> CreateWireframeDocumentAsync(string title, string? scopeAppId = null)
     {
+        LastCreateScopeAppId = scopeAppId;
         var doc = Build(string.IsNullOrWhiteSpace(title) ? "Untitled wireframe" : title);
         var id = Add(doc.Title, "/", doc);
         return Task.FromResult((id, doc));
@@ -77,8 +81,12 @@ public sealed class FakeWireframeBackend : ITempoDocumentLibraryProvider, IWiref
     public Task<DocumentLibraryFolder> GetFolderTreeAsync(TempoDocumentKind kind, CancellationToken ct = default)
         => Task.FromResult(new DocumentLibraryFolder { Path = "/", Name = "/" });
 
+    /// <summary>Last scopeAppId received by <see cref="BrowseAsync"/> (for asserting MCP list forwarding).</summary>
+    public string? LastBrowseScopeAppId { get; private set; }
+
     public Task<DocumentLibraryPage> BrowseAsync(DocumentLibraryQuery query, CancellationToken ct = default)
     {
+        LastBrowseScopeAppId = query.ScopeAppId;
         IEnumerable<KeyValuePair<Guid, Entry>> docs = _docs;
         if (!string.IsNullOrWhiteSpace(query.Search))
         {

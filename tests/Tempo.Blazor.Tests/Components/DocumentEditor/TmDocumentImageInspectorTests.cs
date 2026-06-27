@@ -111,7 +111,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
 
         cut.Find("[data-testid='document-image-inspector-caption']").Input("Live caption");
 
-        await Task.Delay(400);
+        await WaitForCallbackAsync(() => received == "Live caption");
         received.Should().Be("Live caption");
     }
 
@@ -176,7 +176,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
 
         cut.Find("[data-testid='document-image-inspector-width']").Input("260");
 
-        await Task.Delay(400);
+        await WaitForCallbackAsync(() => received is not null);
         received.Should().NotBeNull();
         received!.Width.Should().Be(260);
         received.Height.Should().Be(80);
@@ -198,7 +198,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
             .GetAttribute("value").Should().Be("https://old.example/image.png");
         cut.Find("[data-testid='document-image-inspector-link']").Input("https://new.example");
 
-        await Task.Delay(400);
+        await WaitForCallbackAsync(() => received == "https://new.example");
         received.Should().Be("https://new.example");
     }
 
@@ -226,6 +226,19 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
             })));
 
         cut.FindAll("[data-testid='document-image-inspector-link']").Should().BeEmpty();
+    }
+
+    // Debounce callback (CaptionChanged/SizeChanged/UrlChanged) nemění stav komponenty → bUnit
+    // render-triggered čekání (WaitForAssertion/WaitForState) ho nezachytí a navíc blokuje dispatcher,
+    // na který se callback marshaluje. Async poll s yieldem pustí dispatcher a adaptivně počká (robustní
+    // vůči paralelní zátěži, na rozdíl od fixní Task.Delay).
+    private static async Task WaitForCallbackAsync(Func<bool> condition, int timeoutMs = 2000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (!condition() && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(20);
+        }
     }
 
     private static ImageBlockContent ActiveDrawingImage(Action<DocumentDrawingRun>? configure = null)

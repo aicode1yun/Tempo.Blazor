@@ -14655,7 +14655,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Visual variant of the tab strip."
+          "description": "When true, the tab strip wraps onto multiple rows to fit the available width instead of scrolling horizontally. Use when many tabs would otherwise overflow/truncate in a narrow container."
         },
         {
           "name": "Class",
@@ -14668,6 +14668,12 @@
           "type": "TabVariant",
           "isRequired": false,
           "default": "TabVariant.Line",
+          "description": "Visual variant of the tab strip."
+        },
+        {
+          "name": "Wrap",
+          "type": "bool",
+          "isRequired": false,
           "description": "Visual variant of the tab strip."
         },
         {
