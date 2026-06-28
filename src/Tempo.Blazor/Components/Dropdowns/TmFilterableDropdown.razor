@@ -38,6 +38,7 @@
             <div class="tm-filterable-dropdown-filter">
                 <input type="text"
                        class="tm-filterable-dropdown-filter-input"
+                       @ref="_filterInput"
                        placeholder="@(FilterPlaceholder ?? Loc["TmFilterableDropdown_Search"])"
                        value="@_filterText"
                        @oninput="OnFilterInput" />
@@ -142,13 +143,36 @@
     private string _filterText = string.Empty;
     private int _selectedIndex = -1;
     private List<TItem> _providerItems = [];
+    private ElementReference _filterInput;
+    private bool _focusFilterPending;
 
     private async Task ToggleAsync()
     {
         if (Disabled) return;
         _isOpen = !_isOpen;
-        if (_isOpen && DataProvider is not null)
-            await LoadFromProviderAsync();
+        if (_isOpen)
+        {
+            // Move keyboard focus into the filter input once the menu has rendered.
+            _focusFilterPending = true;
+            if (DataProvider is not null)
+                await LoadFromProviderAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusFilterPending && _isOpen)
+        {
+            _focusFilterPending = false;
+            try
+            {
+                await _filterInput.FocusAsync();
+            }
+            catch (InvalidOperationException)
+            {
+                // Best-effort: the element/JS may not be ready (e.g. during prerender). Ignore.
+            }
+        }
     }
 
     private async Task LoadFromProviderAsync()

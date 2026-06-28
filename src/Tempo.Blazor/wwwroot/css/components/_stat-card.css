@@ -4,9 +4,29 @@
   border-radius: var(--tm-radius-lg);
   padding: var(--tm-space-5);
   display: flex;
-  align-items: flex-start;
-  gap: var(--tm-space-4);
+  flex-direction: column;
+  gap: var(--tm-space-1);
 }
+
+/* Value / label / subvalue spans rendered by TmStatCard. Without these the three spans render as
+   flat, same-size inline text; give the metric a clear hierarchy (big bold value, muted label). */
+.tm-stat-value {
+  font-size: var(--tm-font-size-2xl);
+  font-weight: var(--tm-font-weight-bold);
+  color: var(--tm-text-primary);
+  line-height: 1.1;
+}
+.tm-stat-label {
+  font-size: var(--tm-font-size-sm);
+  color: var(--tm-text-secondary);
+}
+.tm-stat-subvalue {
+  font-size: var(--tm-font-size-xs);
+  font-weight: var(--tm-font-weight-medium);
+  color: var(--tm-text-secondary);
+  margin-top: var(--tm-space-1);
+}
+
 .tm-stat-card-icon {
   display: flex;
   align-items: center;
