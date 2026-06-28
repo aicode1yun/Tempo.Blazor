@@ -34,7 +34,7 @@
                    type="@InputType"
                    value="@_value"
                    placeholder="@Loc["TmDataTable_Filter"]"
-                   @onchange="OnInputChange" />
+                   @oninput="OnInputChange" />
             @if (!string.IsNullOrEmpty(_value))
             {
                 <button class="tm-col-filter-clear"

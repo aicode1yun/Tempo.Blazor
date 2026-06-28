@@ -81,7 +81,7 @@ public class TmColumnFilterTests : LocalizationTestBase
             .Add(c => c.OnFilterChange,
                 EventCallback.Factory.Create<DataTableFilter?>(this, f => received = f)));
 
-        cut.Find("input[type='text']").Change("Alice");
+        cut.Find("input[type='text']").Input("Alice"); // live: column text filter applies on input
 
         received.Should().NotBeNull();
         received!.Column.Should().Be("Name");
@@ -100,7 +100,7 @@ public class TmColumnFilterTests : LocalizationTestBase
                 EventCallback.Factory.Create<DataTableFilter?>(this, f => received = f)));
 
         // Type something, then clear
-        cut.Find("input[type='text']").Change("Alice");
+        cut.Find("input[type='text']").Input("Alice"); // live: column text filter applies on input
         cut.Find(".tm-col-filter-clear").Click();
 
         received.Should().BeNull();

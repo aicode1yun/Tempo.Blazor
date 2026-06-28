@@ -4,8 +4,9 @@ using Tempo.Blazor.Resources;
 namespace Tempo.Blazor.Localization;
 
 /// <summary>
-/// Default implementation of ITmLocalizer backed by IStringLocalizer&lt;TmResources&gt;.
-/// Uses the embedded .resx files in Tempo.Blazor (English default, Czech available).
+/// Default implementation of ITmLocalizer backed by IStringLocalizer&lt;TmResources&gt; — which
+/// <see cref="JsonStringLocalizer{TResourceSource}"/> fulfils from the embedded JSON resources
+/// (English default, Czech and French available), resolving under both Server and WebAssembly.
 /// </summary>
 internal sealed class DefaultTmLocalizer : ITmLocalizer
 {

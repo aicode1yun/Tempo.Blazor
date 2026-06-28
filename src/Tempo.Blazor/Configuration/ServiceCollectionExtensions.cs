@@ -1,7 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Localization;
 using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Localization;
+using Tempo.Blazor.Resources;
 using Tempo.Blazor.Services;
 
 namespace Tempo.Blazor.Configuration;
@@ -14,7 +16,7 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers the core Tempo.Blazor services shared by all component groups.
     /// <list type="bullet">
-    ///   <item><description><see cref="ITmLocalizer"/>: Singleton (stateless, thread-safe, backed by .resx)</description></item>
+    ///   <item><description><see cref="ITmLocalizer"/>: Singleton (stateless, thread-safe, backed by embedded JSON)</description></item>
     ///   <item><description><see cref="ThemeService"/>: Scoped (per-circuit in Server mode, per-tab in WASM)</description></item>
     ///   <item><description><see cref="ToastService"/>: Scoped (per-circuit in Server mode, per-tab in WASM)</description></item>
     ///   <item><description><see cref="DragDropService"/>: Scoped drag/drop state shared by core components</description></item>
@@ -43,8 +45,12 @@ public static class ServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
 
-        // Localization: singleton, stateless, backed by .resx.
+        // Localization: singleton, stateless, backed by embedded JSON (Resources/TmResources*.json).
+        // The JSON IStringLocalizer resolves identically under Server and WebAssembly, unlike the
+        // resx/ResourceManager pipeline (which returns raw keys under WASM). The closed-generic
+        // registration takes precedence over AddLocalization's open-generic factory for TmResources.
         services.AddLocalization();
+        services.TryAddSingleton<IStringLocalizer<TmResources>, JsonStringLocalizer<TmResources>>();
         services.TryAddSingleton<ITmLocalizer, DefaultTmLocalizer>();
 
         // ThemeService: scoped so each circuit/tab gets its own theme state.
