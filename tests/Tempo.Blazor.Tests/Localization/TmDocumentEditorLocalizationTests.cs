@@ -1,5 +1,5 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Xml.Linq;
 using Bunit;
 using FluentAssertions;
 using Tempo.Blazor.Components.DocumentEditor;
@@ -17,9 +17,9 @@ public class TmDocumentEditorLocalizationTests : LocalizationTestBase
         var usedKeys = ReadUsedDocumentEditorKeys(root);
 
         usedKeys.Should().NotBeEmpty();
-        ReadResxKeys(root, "src/Tempo.Blazor/Resources/TmResources.resx").Should().Contain(usedKeys);
-        ReadResxKeys(root, "src/Tempo.Blazor/Resources/TmResources.cs.resx").Should().Contain(usedKeys);
-        ReadResxKeys(root, "src/Tempo.Blazor/Resources/TmResources.fr.resx").Should().Contain(usedKeys);
+        ReadJsonKeys(root, "src/Tempo.Blazor/Resources/TmResources.json").Should().Contain(usedKeys);
+        ReadJsonKeys(root, "src/Tempo.Blazor/Resources/TmResources.cs.json").Should().Contain(usedKeys);
+        ReadJsonKeys(root, "src/Tempo.Blazor/Resources/TmResources.fr.json").Should().Contain(usedKeys);
         ReadMockLocalizerKeys(root).Should().Contain(usedKeys);
     }
 
@@ -154,14 +154,13 @@ public class TmDocumentEditorLocalizationTests : LocalizationTestBase
         return keys;
     }
 
-    private static SortedSet<string> ReadResxKeys(string root, string relativePath)
+    private static SortedSet<string> ReadJsonKeys(string root, string relativePath)
     {
         var path = Path.Combine(root, relativePath);
-        var keys = XDocument.Load(path)
-            .Descendants("data")
-            .Select(element => element.Attribute("name")?.Value)
-            .Where(name => name is not null && name.StartsWith("TmDocumentEditor_", StringComparison.Ordinal))
-            .Select(name => name!);
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        var keys = document.RootElement.EnumerateObject()
+            .Select(property => property.Name)
+            .Where(name => name.StartsWith("TmDocumentEditor_", StringComparison.Ordinal));
 
         return new SortedSet<string>(keys, StringComparer.Ordinal);
     }

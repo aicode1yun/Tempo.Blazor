@@ -1,4 +1,4 @@
-using System.Xml.Linq;
+using System.Text.Json;
 using AngleSharp.Dom;
 using Microsoft.Extensions.DependencyInjection;
 using Tempo.Blazor.Components.Diagram;
@@ -22,7 +22,7 @@ public class DiagramLocalizationPhase9Tests : LocalizationTestBase
     [Fact]
     public void Custom_Toolbox_Libraries_Have_English_Resource_Keys()
     {
-        var resourceKeys = LoadResourceKeys("src/Tempo.Blazor/Resources/TmResources.resx");
+        var resourceKeys = LoadResourceKeys("src/Tempo.Blazor/Resources/TmResources.json");
 
         GetCustomToolboxResourceKeys()
             .Should()
@@ -32,7 +32,7 @@ public class DiagramLocalizationPhase9Tests : LocalizationTestBase
     [Fact]
     public void Custom_Toolbox_Libraries_Have_Czech_Resource_Keys()
     {
-        var resourceKeys = LoadResourceKeys("src/Tempo.Blazor/Resources/TmResources.cs.resx");
+        var resourceKeys = LoadResourceKeys("src/Tempo.Blazor/Resources/TmResources.cs.json");
 
         GetCustomToolboxResourceKeys()
             .Should()
@@ -184,11 +184,10 @@ public class DiagramLocalizationPhase9Tests : LocalizationTestBase
     {
         var root = FindRepositoryRoot();
         var fullPath = Path.Combine(root, relativePath);
-        return XDocument.Load(fullPath)
-            .Descendants("data")
-            .Select(element => element.Attribute("name")?.Value)
+        using var document = JsonDocument.Parse(File.ReadAllText(fullPath));
+        return document.RootElement.EnumerateObject()
+            .Select(property => property.Name)
             .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Select(name => name!)
             .ToHashSet(StringComparer.Ordinal);
     }
 

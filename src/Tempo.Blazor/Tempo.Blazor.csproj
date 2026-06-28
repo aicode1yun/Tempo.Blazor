@@ -61,6 +61,29 @@
     <ProjectReference Include="..\Tempo.Blazor.Abstractions\Tempo.Blazor.Abstractions.csproj" />
   </ItemGroup>
 
+  <!-- ═══ Localization: JSON resources embedded in the MAIN assembly ═══
+       Component strings live in Resources/TmResources[.<culture>].json and are read by
+       JsonTmStringLocalizer. JSON embedded in the main assembly resolves identically under Blazor
+       Server and WebAssembly, unlike resx/ResourceManager (satellite assemblies are not loaded in
+       the browser and the embedded neutral .resources is not resolved → raw keys under WASM). -->
+  <ItemGroup>
+    <!-- WithCulture=false stops the SDK inferring a culture from the ".cs."/".fr." in the file name
+         (which would route them into satellite assemblies — exactly what breaks under WASM). All
+         three embed into the main Tempo.Blazor.dll. -->
+    <EmbeddedResource Include="Resources/TmResources.json">
+      <WithCulture>false</WithCulture>
+      <LogicalName>Tempo.Blazor.Resources.TmResources.json</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources/TmResources.cs.json">
+      <WithCulture>false</WithCulture>
+      <LogicalName>Tempo.Blazor.Resources.TmResources.cs.json</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources/TmResources.fr.json">
+      <WithCulture>false</WithCulture>
+      <LogicalName>Tempo.Blazor.Resources.TmResources.fr.json</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Tempo.Blazor.Tests</_Parameter1>
