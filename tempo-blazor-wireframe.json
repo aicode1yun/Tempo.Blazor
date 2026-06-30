@@ -384,6 +384,16 @@
       "itemName": "IWireframeScopedComponentProvider"
     },
     {
+      "kind": "Interface",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Renders wireframe pages to standalone SVG strings fully headless — no browser, no JS interop — by reusing the live component visuals through WireframePageSvg.BuildFragment. Suitable for server-side preview generation, MCP, and backfill, where no DOM is available.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeSvgRenderer.cs",
+      "documentationStatus": "generated",
+      "itemName": "IWireframeSvgRenderer"
+    },
+    {
       "itemName": "JsonWireframeComponentProvider",
       "kind": "Class",
       "category": "Components",
@@ -1735,6 +1745,46 @@
       ]
     },
     {
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "One rendered wireframe page: its identity and dimensions plus the standalone SVG string.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeSvgRenderer.cs",
+      "documentationStatus": "generated",
+      "itemName": "WireframePageRender"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Produces a clean, interaction-free SVG RenderFragment for a single WireframePage. This is the shared presentation layer reused by the live canvas and by headless server-side rendering (IWireframeSvgRenderer), so the visual stays in one place and previews cannot drift from the editor. It renders ONLY presentation: - the page <svg> root + connector arrow markers (and an optional grid) in <defs>, - the page background, - visible connector paths and their labels, - each element as a translated inner-<svg> viewport hosting the component's WireframeComponentDef.RenderSvg (with a dashed fallback for unknown types). It deliberately omits every piece of interaction chrome: selection/resize handles, connector hit-test paths, waypoint handles, pointer-events surfaces and cursor styling.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframePageSvg.cs",
+      "documentationStatus": "generated",
+      "itemName": "WireframePageSvg"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Options controlling a static wireframe page → SVG render.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframePageSvg.cs",
+      "documentationStatus": "generated",
+      "itemName": "WireframePageSvgOptions"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Default IWireframeSvgRenderer built on the static HtmlRenderer. Each render hosts WireframePageSvg.BuildFragment in a tiny throwaway component and serializes the result to a string. No browser, no JS interop — safe to call on the server.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeSvgRenderer.cs",
+      "documentationStatus": "generated",
+      "itemName": "WireframeSvgRenderer"
+    },
+    {
       "itemName": "ZIndexCommand",
       "kind": "Class",
       "category": "Components",
@@ -2542,11 +2592,11 @@
     }
   ],
   "summary": {
-    "itemCount": 71,
+    "itemCount": 76,
     "manualItemCount": 58,
-    "generatedItemCount": 60,
-    "generatedOnlyItemCount": 13,
+    "generatedItemCount": 65,
+    "generatedOnlyItemCount": 18,
     "componentCount": 9,
-    "publicApiTypeCount": 51
+    "publicApiTypeCount": 56
   }
 }

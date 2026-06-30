@@ -34,6 +34,9 @@ public static class WireframeServiceCollectionExtensions
             return registry;
         });
 
+        // Headless server-side SVG renderer (no browser/JS) built on the registry above.
+        services.TryAddSingleton<IWireframeSvgRenderer, WireframeSvgRenderer>();
+
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IWireframeSchemaSource, BuiltInComponentSchemas>());
         services.TryAddSingleton<WireframeSchemaRegistry>(sp =>
             new WireframeSchemaRegistry(sp.GetServices<IWireframeSchemaSource>()));

@@ -12,6 +12,7 @@
     <ProjectReference Include="..\Tempo.Blazor.DocumentFormats\Tempo.Blazor.DocumentFormats.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.EmailTemplates.Abstractions\Tempo.Blazor.EmailTemplates.Abstractions.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.Mcp\Tempo.Blazor.Mcp.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.Wireframe\Tempo.Blazor.Wireframe.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MailKit" Version="4.17.0" />

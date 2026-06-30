@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Tempo.Blazor.Components.Diagram.Services;
+using Tempo.Blazor.Configuration;
 using Tempo.Blazor.Demo.Api.Data;
 using Tempo.Blazor.Demo.Api.Endpoints;
 using Tempo.Blazor.Demo.Api.Hubs;
@@ -71,6 +72,8 @@ builder.Services.AddSingleton<Tempo.Blazor.NotionEditor.Interfaces.IWireframeDoc
 builder.Services.AddSingleton<Tempo.Reporting.Abstractions.Data.IReportDefinitionStore,
     Tempo.Reporting.Abstractions.Data.InMemoryReportDefinitionStore>();
 builder.Services.AddTempoWireframeMcpTools();
+// Component registry + headless server-side SVG renderer (IWireframeSvgRenderer).
+builder.Services.AddTempoBlazorWireframe();
 builder.Services.AddTempoReportingMcpTools();
 builder.Services.AddMcpServer()
     .WithHttpTransport()
@@ -142,6 +145,7 @@ app.MapImportExportEndpoints();
 app.MapTokenEndpoints();
 app.MapWireframeEndpoints();
 app.MapWireframeExportEndpoints();
+app.MapWireframePreviewEndpoints();
 app.MapDiagramExportEndpoints();
 app.MapDiagramHistoryEndpoints();
 app.MapNotionEditorEndpoints();

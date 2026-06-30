@@ -4701,7 +4701,7 @@
               "name": "AddTempoBlazor",
               "kind": "Method",
               "type": "IServiceCollection",
-              "description": "Registers the core Tempo.Blazor services shared by all component groups. : Singleton (stateless, thread-safe, backed by .resx) : Scoped (per-circuit in Server mode, per-tab in WASM) : Scoped (per-circuit in Server mode, per-tab in WASM) : Scoped drag/drop state shared by core components Add this call to your Blazor Program.cs: builder.Services.AddTempoBlazor(); To override the built-in localization with your own strings, register a custom ITmLocalizer AFTER this call: builder.Services.AddTempoBlazor(); builder.Services.AddSingleton<ITmLocalizer, MyCustomTmLocalizer>(); To support Czech localization, configure culture in Program.cs: var culture = new System.Globalization.CultureInfo(\"cs\"); System.Globalization.CultureInfo.DefaultThreadCurrentCulture = culture; System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = culture;",
+              "description": "Registers the core Tempo.Blazor services shared by all component groups. : Singleton (stateless, thread-safe, backed by embedded JSON) : Scoped (per-circuit in Server mode, per-tab in WASM) : Scoped (per-circuit in Server mode, per-tab in WASM) : Scoped drag/drop state shared by core components Add this call to your Blazor Program.cs: builder.Services.AddTempoBlazor(); To override the built-in localization with your own strings, register a custom ITmLocalizer AFTER this call: builder.Services.AddTempoBlazor(); builder.Services.AddSingleton<ITmLocalizer, MyCustomTmLocalizer>(); To support Czech localization, configure culture in Program.cs: var culture = new System.Globalization.CultureInfo(\"cs\"); System.Globalization.CultureInfo.DefaultThreadCurrentCulture = culture; System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = culture;",
               "parameters": [
                 {
                   "name": "services",
@@ -14657,7 +14657,7 @@
               "name": "ChildContent",
               "type": "RenderFragment?",
               "isRequired": false,
-              "description": "Visual variant of the tab strip."
+              "description": "When true, the tab strip wraps onto multiple rows to fit the available width instead of scrolling horizontally. Use when many tabs would otherwise overflow/truncate in a narrow container."
             },
             {
               "name": "Class",
@@ -14670,6 +14670,12 @@
               "type": "TabVariant",
               "isRequired": false,
               "default": "TabVariant.Line",
+              "description": "Visual variant of the tab strip."
+            },
+            {
+              "name": "Wrap",
+              "type": "bool",
+              "isRequired": false,
               "description": "Visual variant of the tab strip."
             },
             {
@@ -25564,6 +25570,26 @@
           "documentationStatus": "merged"
         },
         {
+          "kind": "Interface",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Marker interface for providers whose definitions belong to a single application scope. Registry entries are exposed under app:{ScopeAppId}:{Type}.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeComponentProvider.cs",
+          "documentationStatus": "generated",
+          "itemName": "IWireframeScopedComponentProvider"
+        },
+        {
+          "kind": "Interface",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Renders wireframe pages to standalone SVG strings fully headless — no browser, no JS interop — by reusing the live component visuals through WireframePageSvg.BuildFragment. Suitable for server-side preview generation, MCP, and backfill, where no DOM is available.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeSvgRenderer.cs",
+          "documentationStatus": "generated",
+          "itemName": "IWireframeSvgRenderer"
+        },
+        {
           "itemName": "JsonWireframeComponentProvider",
           "kind": "Class",
           "category": "Components",
@@ -26646,6 +26672,12 @@
               "description": "True for built-in Tempo.Blazor components; false for custom/JSON-defined ones."
             },
             {
+              "name": "LocalType",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Component type name without the app scope prefix. Defaults to for unscoped components and to the suffix of app:{id}:{name} for scoped components."
+            },
+            {
               "name": "Props",
               "kind": "Property",
               "type": "IReadOnlyList<PropDef>",
@@ -26656,6 +26688,12 @@
               "kind": "Property",
               "type": "required Action<WireframeElement, RenderTreeBuilder>",
               "description": "Renders the wireframe SVG shape into . Coordinates inside the render are relative to the element's top-left (0, 0). The outer <g> transform is applied by the canvas."
+            },
+            {
+              "name": "ScopeAppId",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Application id for an app-scoped custom component. When present, registries normalize to app:{ScopeAppId}:{LocalType}."
             },
             {
               "name": "SizePresets",
@@ -26903,6 +26941,46 @@
           ]
         },
         {
+          "kind": "Record",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "One rendered wireframe page: its identity and dimensions plus the standalone SVG string.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeSvgRenderer.cs",
+          "documentationStatus": "generated",
+          "itemName": "WireframePageRender"
+        },
+        {
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Produces a clean, interaction-free SVG RenderFragment for a single WireframePage. This is the shared presentation layer reused by the live canvas and by headless server-side rendering (IWireframeSvgRenderer), so the visual stays in one place and previews cannot drift from the editor. It renders ONLY presentation: - the page <svg> root + connector arrow markers (and an optional grid) in <defs>, - the page background, - visible connector paths and their labels, - each element as a translated inner-<svg> viewport hosting the component's WireframeComponentDef.RenderSvg (with a dashed fallback for unknown types). It deliberately omits every piece of interaction chrome: selection/resize handles, connector hit-test paths, waypoint handles, pointer-events surfaces and cursor styling.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframePageSvg.cs",
+          "documentationStatus": "generated",
+          "itemName": "WireframePageSvg"
+        },
+        {
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Options controlling a static wireframe page → SVG render.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframePageSvg.cs",
+          "documentationStatus": "generated",
+          "itemName": "WireframePageSvgOptions"
+        },
+        {
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Default IWireframeSvgRenderer built on the static HtmlRenderer. Each render hosts WireframePageSvg.BuildFragment in a tiny throwaway component and serializes the result to a string. No browser, no JS interop — safe to call on the server.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeSvgRenderer.cs",
+          "documentationStatus": "generated",
+          "itemName": "WireframeSvgRenderer"
+        },
+        {
           "itemName": "ZIndexCommand",
           "kind": "Class",
           "category": "Components",
@@ -27001,6 +27079,12 @@
               "type": "string?",
               "isRequired": false,
               "description": "Additional CSS class applied to the canvas wrapper div."
+            },
+            {
+              "name": "ComponentScope",
+              "type": "WireframeComponentScope?",
+              "isRequired": false,
+              "description": "Additional CSS class applied to the canvas wrapper."
             },
             {
               "name": "DocumentChanged",
@@ -27209,6 +27293,12 @@
               "type": "string?",
               "isRequired": false,
               "description": "Additional CSS class applied to the editor root element."
+            },
+            {
+              "name": "ComponentScope",
+              "type": "WireframeComponentScope?",
+              "isRequired": false,
+              "description": "Show rulers around the canvas."
             },
             {
               "name": "DocumentChanged",
@@ -27487,6 +27577,12 @@
               "description": "Additional CSS class applied to the panel wrapper."
             },
             {
+              "name": "ComponentScope",
+              "type": "WireframeComponentScope?",
+              "isRequired": false,
+              "description": "Additional CSS class on the panel wrapper."
+            },
+            {
               "name": "DocumentChanged",
               "type": "EventCallback<WireframeDocument>",
               "isRequired": false,
@@ -27640,6 +27736,12 @@
           ],
           "parameters": [
             {
+              "name": "ComponentScope",
+              "type": "WireframeComponentScope?",
+              "isRequired": false,
+              "description": "Raised when the user activates an item via keyboard (Enter/Space). Carries the component type string so the parent can add it at a default position."
+            },
+            {
               "name": "OnComponentActivated",
               "type": "EventCallback<string>",
               "isRequired": false,
@@ -27686,12 +27788,12 @@
         }
       ],
       "summary": {
-        "itemCount": 70,
+        "itemCount": 76,
         "manualItemCount": 58,
-        "generatedItemCount": 59,
-        "generatedOnlyItemCount": 12,
+        "generatedItemCount": 65,
+        "generatedOnlyItemCount": 18,
         "componentCount": 9,
-        "publicApiTypeCount": 50
+        "publicApiTypeCount": 56
       }
     },
     {
@@ -59769,6 +59871,12 @@
               "description": "Which kind of documents to list."
             },
             {
+              "name": "ScopeAppId",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional application scope (GUID string). Multi-app hosts (e.g. a single API key granting access to several apps) set this so stateless callers such as MCP tools list documents from the intended app. Single-app stores may ignore it."
+            },
+            {
               "name": "Search",
               "kind": "Property",
               "type": "string?",
@@ -79158,6 +79266,16 @@
           "usage": "services.AddWireframeSchemas(); // registers BuiltInComponentSchemas\nservices.AddWireframeSchemaSource<MyDbSchemaSource>(); // add custom source"
         },
         {
+          "kind": "Interface",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Marker interface for schema sources whose schemas belong to a single application scope. Registry entries are exposed under app:{ScopeAppId}:{Type}.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/IWireframeSchemaSource.cs",
+          "documentationStatus": "generated",
+          "itemName": "IWireframeScopedSchemaSource"
+        },
+        {
           "itemName": "PropDef",
           "kind": "Class",
           "category": "Wireframe",
@@ -79344,10 +79462,28 @@
               "description": "Human-readable component name."
             },
             {
+              "name": "IsBuiltIn",
+              "kind": "Property",
+              "type": "bool",
+              "description": "True for built-in Tempo.Blazor components; false for app/custom schemas."
+            },
+            {
+              "name": "LocalType",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Component type name without the app scope prefix. Defaults to for unscoped components and to the suffix of app:{id}:{name} for scoped components."
+            },
+            {
               "name": "Props",
               "kind": "Property",
               "type": "IReadOnlyList<PropDef>",
               "description": "Property definitions that drive the Properties Panel UI and document serialisation. Each entry describes one key in WireframeElement.Props."
+            },
+            {
+              "name": "ScopeAppId",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Application id for an app-scoped custom component. When present, registries normalize to app:{ScopeAppId}:{LocalType}."
             },
             {
               "name": "SizePresets",
@@ -79401,6 +79537,135 @@
               "description": "Optional map from a 'size' prop value to canonical element dimensions. Null for components where the size prop does not affect element footprint."
             }
           ]
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Identifies the application-specific component scope used by wireframe registries. Scoped custom component types are namespaced as app:{appId}:{localType}.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/WireframeComponentScope.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "TypePrefix",
+              "kind": "Field",
+              "type": "string",
+              "description": "Type prefix used for custom components in this scope."
+            },
+            {
+              "name": "ContainsType",
+              "kind": "Method",
+              "type": "bool",
+              "description": "Returns true when belongs to this app scope.",
+              "parameters": [
+                {
+                  "name": "type",
+                  "type": "string"
+                }
+              ]
+            },
+            {
+              "name": "ForApp",
+              "kind": "Method",
+              "type": "WireframeComponentScope",
+              "description": "Creates a component scope for the supplied application id.",
+              "parameters": [
+                {
+                  "name": "appId",
+                  "type": "string"
+                }
+              ]
+            },
+            {
+              "name": "FromAppId",
+              "kind": "Method",
+              "type": "WireframeComponentScope?",
+              "description": "Creates a scope when an application id is present; otherwise returns null.",
+              "parameters": [
+                {
+                  "name": "appId",
+                  "type": "string?"
+                }
+              ]
+            },
+            {
+              "name": "GetLocalType",
+              "kind": "Method",
+              "type": "string",
+              "description": "Returns the local component type name without the app scope prefix.",
+              "parameters": [
+                {
+                  "name": "type",
+                  "type": "string"
+                }
+              ]
+            },
+            {
+              "name": "IsScopedType",
+              "kind": "Method",
+              "type": "bool",
+              "description": "Returns true when is an app-scoped component type.",
+              "parameters": [
+                {
+                  "name": "type",
+                  "type": "string?"
+                }
+              ]
+            },
+            {
+              "name": "MatchesAppId",
+              "kind": "Method",
+              "type": "bool",
+              "description": "Returns true when identifies the same scope.",
+              "parameters": [
+                {
+                  "name": "appId",
+                  "type": "string?"
+                }
+              ]
+            },
+            {
+              "name": "NamespaceType",
+              "kind": "Method",
+              "type": "string",
+              "description": "Returns the scoped type for a local component type.",
+              "parameters": [
+                {
+                  "name": "localType",
+                  "type": "string"
+                }
+              ]
+            },
+            {
+              "name": "ToString",
+              "kind": "Method",
+              "type": "string"
+            },
+            {
+              "name": "TryGetAppId",
+              "kind": "Method",
+              "type": "bool",
+              "description": "Attempts to extract the application id from an app-scoped component type.",
+              "parameters": [
+                {
+                  "name": "type",
+                  "type": "string?"
+                },
+                {
+                  "name": "appId",
+                  "type": "out string?"
+                }
+              ]
+            },
+            {
+              "name": "AppId",
+              "kind": "Property",
+              "type": "string",
+              "description": "Application id for this component scope."
+            }
+          ],
+          "itemName": "WireframeComponentScope"
         },
         {
           "itemName": "WireframeConnector",
@@ -81235,12 +81500,12 @@
       ],
       "libraryExamples": [],
       "summary": {
-        "itemCount": 1252,
+        "itemCount": 1254,
         "manualItemCount": 1215,
-        "generatedItemCount": 1235,
-        "generatedOnlyItemCount": 37,
+        "generatedItemCount": 1237,
+        "generatedOnlyItemCount": 39,
         "componentCount": 0,
-        "publicApiTypeCount": 1235
+        "publicApiTypeCount": 1237
       }
     },
     {
@@ -87907,7 +88172,24 @@
           "description": "Public class defined by Tempo.Blazor.Mcp.",
           "packageId": "Tempo.Blazor.Mcp",
           "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeComponentCatalogTools.cs",
-          "documentationStatus": "merged"
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "GetComponentSchema",
+              "kind": "Method",
+              "type": "string",
+              "parameters": [
+                {
+                  "name": "registry",
+                  "type": "WireframeSchemaRegistry"
+                },
+                {
+                  "name": "type",
+                  "type": "string"
+                }
+              ]
+            }
+          ]
         },
         {
           "itemName": "WireframeDocumentTools",
@@ -87987,7 +88269,24 @@
           "description": "Public class defined by Tempo.Blazor.Mcp.",
           "packageId": "Tempo.Blazor.Mcp",
           "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeValidationTools.cs",
-          "documentationStatus": "merged"
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "ValidateDocument",
+              "kind": "Method",
+              "type": "string",
+              "parameters": [
+                {
+                  "name": "registry",
+                  "type": "WireframeSchemaRegistry"
+                },
+                {
+                  "name": "documentJson",
+                  "type": "string"
+                }
+              ]
+            }
+          ]
         }
       ],
       "libraryExamples": [
@@ -92817,10 +93116,10 @@
   ],
   "summary": {
     "packageCount": 22,
-    "itemCount": 2720,
+    "itemCount": 2728,
     "manualItemCount": 2597,
-    "generatedOnlyItemCount": 123,
+    "generatedOnlyItemCount": 131,
     "componentCount": 440,
-    "publicApiTypeCount": 2227
+    "publicApiTypeCount": 2235
   }
 }
