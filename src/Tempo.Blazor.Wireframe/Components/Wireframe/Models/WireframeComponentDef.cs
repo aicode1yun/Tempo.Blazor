@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components.Rendering;
+using Tempo.Blazor.Components.Wireframe.Stencil;
 
 namespace Tempo.Blazor.Components.Wireframe.Models;
 
@@ -54,6 +55,15 @@ public sealed class WireframeComponentDef
 
     /// <summary>True for built-in Tempo.Blazor components; false for custom/JSON-defined ones.</summary>
     public bool IsBuiltIn { get; init; }
+
+    /// <summary>Identifier of the stencil pack that produced this definition, when applicable.</summary>
+    public string? PackId { get; init; }
+
+    /// <summary>Native renderer id for stencil components backed by registered C# renderers.</summary>
+    public string? NativeType { get; init; }
+
+    /// <summary>Runtime implementation metadata for stencil components that map to Blazor components.</summary>
+    public StencilImpl? Impl { get; init; }
 
     /// <summary>
     /// Optional map from a <c>size</c> prop value to canonical element dimensions.

@@ -34,7 +34,7 @@ public class WireframeServerSideRenderSpikeTests
     public async Task HtmlRenderer_RendersBuiltInElements_ToValidSvg()
     {
         var registry = new WireframeComponentRegistry();
-        registry.RegisterProvider(new BuiltInWireframeComponentProvider());
+        registry.RegisterProvider(new BuiltInStencilPackProvider());
 
         var page = new WireframePage { Name = "Login", Width = 800, Height = 600 };
         page.Elements.Add(new WireframeElement { Type = "TmButton", X = 40, Y = 40, W = 120, H = 36, ZIndex = 0 });
@@ -54,7 +54,7 @@ public class WireframeServerSideRenderSpikeTests
     public async Task HtmlRenderer_RendersEveryPage_Independently()
     {
         var registry = new WireframeComponentRegistry();
-        registry.RegisterProvider(new BuiltInWireframeComponentProvider());
+        registry.RegisterProvider(new BuiltInStencilPackProvider());
 
         var home = new WireframePage { Name = "Home", Width = 800, Height = 600 };
         home.Elements.Add(new WireframeElement { Type = "TmButton", X = 10, Y = 10, W = 120, H = 36 });
@@ -80,7 +80,7 @@ public class WireframeServerSideRenderSpikeTests
     public async Task HtmlRenderer_RendersAppScopedCustomComponent()
     {
         var registry = new WireframeComponentRegistry();
-        registry.RegisterProvider(new BuiltInWireframeComponentProvider());
+        registry.RegisterProvider(new BuiltInStencilPackProvider());
 
         var scope = WireframeComponentScope.ForApp("spike-app");
         registry.RegisterDefinition(

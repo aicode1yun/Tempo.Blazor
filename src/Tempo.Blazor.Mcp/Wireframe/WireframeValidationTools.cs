@@ -9,7 +9,7 @@ namespace Tempo.Blazor.Mcp.Wireframe;
 public static class WireframeValidationTools
 {
     [McpServerTool(Name = "wireframe_validate_document")]
-    [Description("Validate a wireframe document JSON against the component schema registry. Returns success with valid=true/false and a list of precise validationErrors (unknown types/props, invalid enum values, bad sizes, dangling connectors, duplicate ids). Call this before saving a generated design.")]
+    [Description("Validate a wireframe document JSON against the component schema registry. Returns success with valid=true/false, validationErrors for structural problems (unknown types, bad sizes, dangling connectors, duplicate ids), and warnings for prop/enum issues such as unknown-prop, enum-normalized, enum-out-of-range and type-mismatch plus advisory document warnings default-size, off-canvas, overlap, text-overflow and empty-required-content. Call this before saving a generated design.")]
     public static string ValidateDocumentScoped(
         WireframeSchemaRegistry registry,
         [Description("The full wireframe document JSON to validate.")] string documentJson,
@@ -24,7 +24,8 @@ public static class WireframeValidationTools
         return McpToolResults.Success(new
         {
             valid = result.IsValid,
-            validationErrors = result.Errors
+            validationErrors = result.Errors,
+            warnings = result.Warnings
         });
     }
 

@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.Wireframe;
+using Tempo.Blazor.Components.Wireframe.Stencil;
 
 namespace Tempo.Blazor.Configuration;
 
@@ -21,7 +22,7 @@ public static class WireframeServiceCollectionExtensions
         // WireframeCommandStack is created by TmWireframeEditor and cascaded to
         // children so multiple editor instances keep isolated undo/redo history.
 
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IWireframeComponentProvider, BuiltInWireframeComponentProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IWireframeComponentProvider, BuiltInStencilPackProvider>());
         services.TryAddSingleton<WireframeComponentRegistry>(sp =>
         {
             var registry = new WireframeComponentRegistry();
@@ -36,6 +37,8 @@ public static class WireframeServiceCollectionExtensions
 
         // Headless server-side SVG renderer (no browser/JS) built on the registry above.
         services.TryAddSingleton<IWireframeSvgRenderer, WireframeSvgRenderer>();
+        services.TryAddSingleton<NativeRendererRegistry>();
+        services.TryAddSingleton<StencilPackCompiler>();
 
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IWireframeSchemaSource, BuiltInComponentSchemas>());
         services.TryAddSingleton<WireframeSchemaRegistry>(sp =>

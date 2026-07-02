@@ -73,6 +73,353 @@ public class WireframeOperationToolsTests
         WireframeOperationEngine.Apply(doc, "{not an array}").Success.Should().BeFalse();
     }
 
+    [Fact]
+    public void Engine_AddElement_WithoutSize_SeedsSchemaDefaults()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            "[{\"op\":\"addElement\",\"type\":\"TmCard\",\"x\":10,\"y\":10}]",
+            Registry());
+
+        result.Success.Should().BeTrue();
+        var element = doc.Elements.Should().ContainSingle().Which;
+        element.W.Should().Be(280);
+        element.H.Should().Be(180);
+    }
+
+    [Fact]
+    public void Engine_AddElement_TextInputWithoutSize_SeedsPackSchemaDefault()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            "[{\"op\":\"addElement\",\"type\":\"TmTextInput\",\"props\":{\"placeholder\":\"Name\"}}]",
+            Registry());
+
+        result.Success.Should().BeTrue();
+        var element = doc.Elements.Should().ContainSingle().Which;
+        element.W.Should().Be(240);
+        element.H.Should().Be(56);
+    }
+
+    [Fact]
+    public void Engine_AddElement_WithSizeProp_AppliesPreset()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            "[{\"op\":\"addElement\",\"type\":\"TmButton\",\"props\":{\"size\":\"lg\"}}]",
+            Registry());
+
+        result.Success.Should().BeTrue();
+        var element = doc.Elements.Should().ContainSingle().Which;
+        element.W.Should().Be(140);
+        element.H.Should().Be(44);
+    }
+
+    [Fact]
+    public void Engine_AddElement_ExplicitSize_WinsOverPresetAndDefault()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            "[{\"op\":\"addElement\",\"type\":\"TmButton\",\"w\":321,\"h\":65,\"props\":{\"size\":\"lg\"}}]",
+            Registry());
+
+        result.Success.Should().BeTrue();
+        var element = doc.Elements.Should().ContainSingle().Which;
+        element.W.Should().Be(321);
+        element.H.Should().Be(65);
+    }
+
+    [Fact]
+    public void Engine_AddElement_TypeOutsideTargetPacks_IsNotResolvable()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var registry = new WireframeSchemaRegistry(
+        [
+            new BuiltInComponentSchemas(),
+            new ScopedSchemaSource("A", 10, appA, Schema("Foo"))
+        ]);
+        var doc = new WireframeDocument { TargetPackIds = ["tempo"] };
+        doc.EnsureActivePage();
+
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            $"[{{\"op\":\"addElement\",\"type\":\"app:{appA}:Foo\"}}]",
+            registry,
+            WireframeComponentScope.ForApp(appA));
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().ContainSingle()
+            .Which.Should().Contain("not available in target packs");
+        doc.Elements.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Engine_ScaffoldLanding_SeedsNavbarHeroGridFooter()
+    {
+        var registry = Registry();
+        var doc = new WireframeDocument();
+
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            """[{"op":"scaffold","archetype":"landing"}]""",
+            registry);
+
+        result.Success.Should().BeTrue();
+        result.Applied.Should().Be(1);
+        result.RegionMap.Keys.Should().Contain(["navbar", "hero", "featureGrid", "footer"]);
+
+        var desktop = doc.Pages.Should().ContainSingle(page => page.Width == 1440).Subject;
+        var mobile = doc.Pages.Should().ContainSingle(page => page.Width == 390).Subject;
+        mobile.Name.Should().Contain("Mobile");
+
+        desktop.Elements.Should().Contain(element => element.Type == "TmMenu");
+        desktop.Elements.Should().Contain(element => element.Type == "TmText");
+        desktop.Elements.Should().Contain(element => element.Type == "TmButton");
+        desktop.Elements.Count(element => element.Type == "TmCard").Should().BeGreaterThanOrEqualTo(3);
+        desktop.Elements.Should().Contain(element => element.Type == "TmDivider");
+
+        var containerTypes = new[] { "TmCard", "TmStatCard", "TmSection" };
+        foreach (var element in doc.Pages.SelectMany(page => page.Elements)
+                     .Where(element => containerTypes.Contains(element.Type)))
+        {
+            var schema = registry.GetSchema(element.Type)!;
+            element.W.Should().Be(schema.DefaultWidth);
+            element.H.Should().Be(schema.DefaultHeight);
+            (element.W, element.H).Should().NotBe((120, 36));
+        }
+    }
+
+    [Fact]
+    public void Engine_ScaffoldUnknownArchetype_Fails()
+    {
+        var doc = new WireframeDocument();
+
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            """[{"op":"scaffold","archetype":"settings"}]""",
+            Registry());
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().ContainSingle()
+            .Which.Should().Contain("operations[0]").And.Contain("settings");
+        doc.Pages.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Engine_Grid_PlacesChildrenInColumnsWithGapAndPadding()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+        var ops = """
+            [{
+              "op":"grid",
+              "columns":2,
+              "gap":10,
+              "padding":16,
+              "children":[
+                {"type":"TmButton","w":100,"h":40},
+                {"type":"TmButton","w":100,"h":40},
+                {"type":"TmButton","w":100,"h":40},
+                {"type":"TmButton","w":100,"h":40}
+              ]
+            }]
+            """;
+
+        var result = WireframeOperationEngine.Apply(doc, ops, Registry());
+
+        result.Success.Should().BeTrue();
+        result.CreatedIds.Should().HaveCount(4);
+        doc.Elements.Select(e => (e.X, e.Y, e.W, e.H)).Should().Equal(
+            (16, 16, 100, 40),
+            (126, 16, 100, 40),
+            (16, 66, 100, 40),
+            (126, 66, 100, 40));
+    }
+
+    [Fact]
+    public void Engine_Stack_StacksVerticallyByGap()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+        var ops = """
+            [{
+              "op":"stack",
+              "gap":8,
+              "padding":12,
+              "children":[
+                {"type":"TmButton","w":100,"h":30},
+                {"type":"TmButton","w":100,"h":30},
+                {"type":"TmButton","w":100,"h":30}
+              ]
+            }]
+            """;
+
+        var result = WireframeOperationEngine.Apply(doc, ops, Registry());
+
+        result.Success.Should().BeTrue();
+        doc.Elements.Select(e => (e.X, e.Y)).Should().Equal((12, 12), (12, 50), (12, 88));
+    }
+
+    [Fact]
+    public void Engine_Row_LaysOutHorizontally()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+        var ops = """
+            [{
+              "op":"row",
+              "gap":5,
+              "padding":20,
+              "children":[
+                {"type":"TmButton","w":50,"h":30},
+                {"type":"TmButton","w":60,"h":30},
+                {"type":"TmButton","w":70,"h":30}
+              ]
+            }]
+            """;
+
+        var result = WireframeOperationEngine.Apply(doc, ops, Registry());
+
+        result.Success.Should().BeTrue();
+        doc.Elements.Select(e => (e.X, e.Y)).Should().Equal((20, 20), (75, 20), (140, 20));
+    }
+
+    [Fact]
+    public void Engine_Grid_WithIds_RepositionsExistingElements()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+        doc.Elements.Add(new WireframeElement { Id = "a", Type = "TmButton", W = 80, H = 30 });
+        doc.Elements.Add(new WireframeElement { Id = "b", Type = "TmButton", W = 80, H = 30 });
+        var ops = """[{"op":"grid","columns":2,"gap":10,"padding":16,"ids":["a","b"]}]""";
+
+        var result = WireframeOperationEngine.Apply(doc, ops, Registry());
+
+        result.Success.Should().BeTrue();
+        result.CreatedIds.Should().BeEmpty();
+        doc.Elements.Select(e => (e.Id, e.X, e.Y)).Should().Equal(("a", 16, 16), ("b", 106, 16));
+    }
+
+    [Fact]
+    public void Engine_FillWidth_SpansPageWidthMinusPadding_AndAutoUsesSchemaDefault()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+        doc.Width = 500;
+        var schema = Registry().GetSchema("TmButton")!;
+        var ops = """
+            [{
+              "op":"grid",
+              "columns":1,
+              "padding":20,
+              "children":[{"type":"TmButton","w":"fill","h":"auto"}]
+            }]
+            """;
+
+        var result = WireframeOperationEngine.Apply(doc, ops, Registry());
+
+        result.Success.Should().BeTrue();
+        var element = doc.Elements.Should().ContainSingle().Which;
+        element.X.Should().Be(20);
+        element.W.Should().Be(460);
+        element.H.Should().Be(schema.DefaultHeight);
+    }
+
+    [Fact]
+    public void Engine_RelativeAnchor_PositionsBelowReferenceByMargin()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+        var ops = """
+            [
+              {"op":"addElement","id":"ref","type":"TmCard","x":30,"y":40,"w":100,"h":50},
+              {"op":"addElement","id":"child","type":"TmButton","below":"ref","margin":12,"w":80,"h":30}
+            ]
+            """;
+
+        var result = WireframeOperationEngine.Apply(doc, ops, Registry());
+
+        result.Success.Should().BeTrue();
+        var child = doc.Elements.Single(e => e.Id == "child");
+        child.X.Should().Be(30);
+        child.Y.Should().Be(102);
+    }
+
+    [Fact]
+    public void Engine_RelativeAnchor_MissingReferenceFails()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            """[{"op":"addElement","type":"TmButton","below":"missing"}]""",
+            Registry());
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().ContainSingle().Which.Should().Contain("reference element 'missing' not found");
+        doc.Elements.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Engine_UnknownLayoutParam_Fails()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            """[{"op":"grid","foo":1,"children":[]}]""",
+            Registry());
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().ContainSingle().Which.Should().Contain("unknown layout param 'foo'");
+        doc.Elements.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Engine_DocumentedLayoutParam_IsAccepted()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+        var ops = """
+            [{
+              "op":"row",
+              "pageId":null,
+              "direction":"horizontal",
+              "align":"start",
+              "wrap":true,
+              "margin":4,
+              "x":5,
+              "y":6,
+              "w":200,
+              "h":100,
+              "type":"TmButton",
+              "gap":4,
+              "padding":8,
+              "children":[{"type":"TmButton","w":40,"h":20}]
+            }]
+            """;
+
+        var result = WireframeOperationEngine.Apply(doc, ops, Registry());
+
+        result.Success.Should().BeTrue();
+        doc.Elements.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Engine_AddElement_ExplicitXY_Unaffected()
+    {
+        var doc = new WireframeDocument(); doc.EnsureActivePage();
+
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            """[{"op":"addElement","type":"TmButton","x":77,"y":88,"w":123,"h":45}]""",
+            Registry());
+
+        result.Success.Should().BeTrue();
+        var element = doc.Elements.Should().ContainSingle().Which;
+        element.X.Should().Be(77);
+        element.Y.Should().Be(88);
+        element.W.Should().Be(123);
+        element.H.Should().Be(45);
+    }
+
     // ── apply_operations tool ─────────────────────────────────────────────────────
 
     [Fact]
@@ -87,6 +434,25 @@ public class WireframeOperationToolsTests
         root.GetProperty("success").GetBoolean().Should().BeTrue();
         root.GetProperty("applied").GetInt32().Should().Be(1);
         (await backend.GetWireframeDocumentAsync(id))!.Elements.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task ApplyOperations_AddElementWithoutSize_SeedsDefault()
+    {
+        var backend = new FakeWireframeBackend();
+        var id = backend.Add("Design", "/");
+
+        var root = Parse(await WireframeOperationTools.ApplyOperationsScoped(
+            backend,
+            backend,
+            Registry(),
+            id,
+            "[{\"op\":\"addElement\",\"type\":\"TmCard\"}]"));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue();
+        var element = (await backend.GetWireframeDocumentAsync(id))!.Elements.Should().ContainSingle().Which;
+        element.W.Should().Be(280);
+        element.H.Should().Be(180);
     }
 
     [Fact]
@@ -128,6 +494,54 @@ public class WireframeOperationToolsTests
         root.GetProperty("error").GetString().Should().Be("not_found");
     }
 
+    [Fact]
+    public async Task ScaffoldTool_PersistsDesktopAndMobilePagesAndReturnsRegionMap()
+    {
+        var backend = new FakeWireframeBackend();
+        var id = backend.Add("Design", "/");
+
+        var root = Parse(await WireframeOperationTools.Scaffold(
+            backend,
+            backend,
+            Registry(),
+            id,
+            "landing"));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue(root.GetRawText());
+        root.GetProperty("applied").GetInt32().Should().Be(1);
+        root.GetProperty("regionMap").GetProperty("navbar").GetArrayLength().Should().BeGreaterThan(0);
+        root.GetProperty("createdIds").GetArrayLength().Should().BeGreaterThan(0);
+
+        var document = (await backend.GetWireframeDocumentAsync(id))!;
+        document.Pages.Should().Contain(page => page.Width == 1440);
+        document.Pages.Should().Contain(page => page.Width == 390);
+    }
+
+    [Fact]
+    public void AuthoringGuide_ReturnsCanvasConventionsAndPropVocabulary()
+    {
+        var appId = Guid.NewGuid().ToString("D");
+        var registry = new WireframeSchemaRegistry(
+        [
+            new BuiltInComponentSchemas(),
+            new ScopedSchemaSource("App", 10, appId, Schema("InvoiceCard"))
+        ]);
+
+        var root = Parse(WireframeAuthoringGuideTools.GetAuthoringGuideScoped(
+            registry,
+            scopeAppId: appId));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue(root.GetRawText());
+        root.GetProperty("canvas").GetProperty("desktopWidth").GetDouble().Should().Be(1440);
+        root.GetProperty("canvas").GetProperty("mobileWidth").GetDouble().Should().Be(390);
+        root.GetProperty("layoutOps").GetProperty("operations").EnumerateArray()
+            .Select(item => item.GetString())
+            .Should().Contain(["stack", "row", "grid"]);
+        root.GetProperty("propVocabulary").EnumerateArray()
+            .Select(item => item.GetProperty("type").GetString())
+            .Should().Contain($"app:{appId}:InvoiceCard");
+    }
+
     // ── replace_document tool ──────────────────────────────────────────────────────
 
     [Fact]
@@ -162,5 +576,27 @@ public class WireframeOperationToolsTests
 
         root.GetProperty("error").GetString().Should().Be("validation_failed");
         (await backend.GetWireframeDocumentAsync(id))!.Title.Should().Be("Design"); // unchanged
+    }
+
+    private static WireframeComponentSchema Schema(string type)
+        => new()
+        {
+            Type = type,
+            Category = "Custom",
+            DisplayName = type,
+            Props = []
+        };
+
+    private sealed class ScopedSchemaSource(
+        string id,
+        int priority,
+        string scopeAppId,
+        params WireframeComponentSchema[] schemas)
+        : IWireframeScopedSchemaSource
+    {
+        public string SourceId => id;
+        public int Priority => priority;
+        public string ScopeAppId => scopeAppId;
+        public IEnumerable<WireframeComponentSchema> GetSchemas() => schemas;
     }
 }

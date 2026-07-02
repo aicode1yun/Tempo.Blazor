@@ -19,12 +19,14 @@ public static class WireframeComponentCatalogTools
         [Description("Optional category filter (e.g. 'Buttons', 'Inputs', 'Layout').")] string? category = null,
         [Description("Pagination offset.")] int skip = 0,
         [Description("Maximum number of components to return (default 200).")] int take = 200,
-        [Description("Optional app id. When set, return Tempo baseline components plus custom components scoped to this app only.")] string? scopeAppId = null)
+        [Description("Optional app id. When set, return Tempo baseline components plus custom components scoped to this app only.")] string? scopeAppId = null,
+        [Description("Optional target pack ids from the active document. Built-in Tempo components stay visible; app-scoped components require their app:{id} pack.")] IReadOnlyList<string>? targetPackIds = null)
     {
         var scope = WireframeComponentScope.FromAppId(scopeAppId);
+        var available = registry.GetAll(scope, targetPackIds).ToList();
         var all = string.IsNullOrWhiteSpace(category)
-            ? registry.GetAll(scope)
-            : registry.GetByCategory(category, scope);
+            ? available
+            : available.Where(s => string.Equals(s.Category, category, StringComparison.OrdinalIgnoreCase)).ToList();
 
         var ordered = all.ToList();
         var page = ordered.Skip(Math.Max(0, skip)).Take(Math.Clamp(take, 1, 1000));
@@ -33,7 +35,11 @@ public static class WireframeComponentCatalogTools
         return McpToolResults.Success(new
         {
             totalCount = ordered.Count,
-            categories = registry.GetCategories(scope).ToList(),
+            categories = available
+                .Select(s => s.Category)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Order()
+                .ToList(),
             items
         });
     }
@@ -51,13 +57,14 @@ public static class WireframeComponentCatalogTools
     public static string GetComponentSchemaScoped(
         WireframeSchemaRegistry registry,
         [Description("The component type id, e.g. 'TmButton' or 'app:{id}:MyCard'.")] string type,
-        [Description("Optional app id used to resolve local custom type names.")] string? scopeAppId = null)
+        [Description("Optional app id used to resolve local custom type names.")] string? scopeAppId = null,
+        [Description("Optional target pack ids from the active document. Built-in Tempo components stay visible; app-scoped components require their app:{id} pack.")] IReadOnlyList<string>? targetPackIds = null)
     {
         var scope = WireframeComponentScope.FromAppId(scopeAppId);
-        var schema = registry.GetSchema(type, scope);
+        var schema = registry.GetSchema(type, scope, targetPackIds);
         if (schema is null)
         {
-            var suggestion = WireframeCatalog.SuggestType(registry, type, scope);
+            var suggestion = WireframeCatalog.SuggestType(registry, type, scope, targetPackIds);
             var message = suggestion is null
                 ? $"Unknown component type '{type}'."
                 : $"Unknown component type '{type}'. Did you mean '{suggestion}'?";
@@ -68,5 +75,5 @@ public static class WireframeComponentCatalogTools
     }
 
     public static string GetComponentSchema(WireframeSchemaRegistry registry, string type)
-        => GetComponentSchemaScoped(registry, type, scopeAppId: null);
+        => GetComponentSchemaScoped(registry, type, scopeAppId: null, targetPackIds: null);
 }

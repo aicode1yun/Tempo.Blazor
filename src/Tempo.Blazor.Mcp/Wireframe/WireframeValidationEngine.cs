@@ -1,11 +1,13 @@
-using System.Text.Json;
 using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Components.Wireframe.Models;
 
 namespace Tempo.Blazor.Mcp.Wireframe;
 
 /// <summary>The outcome of validating a wireframe document against the schema registry.</summary>
-public sealed record WireframeValidationResult(bool IsValid, IReadOnlyList<string> Errors);
+public sealed record WireframeValidationResult(
+    bool IsValid,
+    IReadOnlyList<string> Errors,
+    IReadOnlyList<WireframeLintWarning> Warnings);
 
 /// <summary>
 /// Validates a <see cref="WireframeDocument"/> against the <see cref="WireframeSchemaRegistry"/>,
@@ -23,11 +25,13 @@ public static class WireframeValidationEngine
         WireframeComponentScope? scope)
     {
         var errors = new List<string>();
+        var warnings = new List<WireframeLintWarning>();
 
         for (var pi = 0; pi < document.Pages.Count; pi++)
         {
             var page = document.Pages[pi];
             var elementIds = new HashSet<string>(StringComparer.Ordinal);
+            var targetPackIds = EffectiveTargetPackIds(document, page);
 
             for (var ei = 0; ei < page.Elements.Count; ei++)
             {
@@ -48,17 +52,17 @@ public static class WireframeValidationEngine
                     errors.Add($"{path}.h: height must be greater than 0 (was {el.H}).");
                 }
 
-                var schema = registry.GetSchema(el.Type, scope);
+                var schema = registry.GetSchema(el.Type, scope, targetPackIds);
                 if (schema is null)
                 {
-                    var suggestion = WireframeCatalog.SuggestType(registry, el.Type, scope);
+                    var suggestion = WireframeCatalog.SuggestType(registry, el.Type, scope, targetPackIds);
                     errors.Add(suggestion is null
                         ? $"{path}.type: unknown component type '{el.Type}'."
                         : $"{path}.type: unknown component type '{el.Type}'. Did you mean '{suggestion}'?");
                     continue;
                 }
 
-                ValidateProps(el, schema, path, errors);
+                ValidateProps(el, schema, warnings);
             }
 
             for (var ci = 0; ci < page.Connectors.Count; ci++)
@@ -76,32 +80,16 @@ public static class WireframeValidationEngine
             }
         }
 
-        return new WireframeValidationResult(errors.Count == 0, errors);
+        warnings.AddRange(WireframeDocumentLinter.Lint(document, registry, scope));
+        return new WireframeValidationResult(errors.Count == 0, errors, warnings);
     }
+
+    private static IReadOnlyList<string>? EffectiveTargetPackIds(WireframeDocument document, WireframePage page)
+        => page.TargetPackIds ?? document.TargetPackIds;
 
     private static void ValidateProps(
-        WireframeElement el, WireframeComponentSchema schema, string path, List<string> errors)
-    {
-        var defined = schema.Props.ToDictionary(p => p.Name, StringComparer.Ordinal);
-
-        foreach (var (key, value) in el.Props)
-        {
-            if (!defined.TryGetValue(key, out var prop))
-            {
-                errors.Add($"{path}.props.{key}: unknown property for component '{schema.Type}'.");
-                continue;
-            }
-
-            if (prop.Type == PropType.Enum && prop.Options is { Length: > 0 } options
-                && value.ValueKind == JsonValueKind.String)
-            {
-                var v = value.GetString();
-                if (v is not null && !options.Contains(v, StringComparer.Ordinal))
-                {
-                    errors.Add(
-                        $"{path}.props.{key}: '{v}' is not a valid value. Allowed: {string.Join(", ", options)}.");
-                }
-            }
-        }
-    }
+        WireframeElement el,
+        WireframeComponentSchema schema,
+        List<WireframeLintWarning> warnings)
+        => warnings.AddRange(WireframePropLinter.Lint(el, schema));
 }

@@ -1,0 +1,244 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "tempo-stencil.schema.json",
+  "title": "TempoStencilPack",
+  "description": "Tempo.Blazor framework-neutral wireframe stencil pack JSON format.",
+  "type": "object",
+  "required": ["format", "formatVersion", "id", "namespace", "components"],
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "type": "string",
+      "const": "tempo-stencil"
+    },
+    "formatVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "namespace": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Type-id prefix such as 'tempo' or 'app:{id}'."
+    },
+    "isBuiltIn": {
+      "type": "boolean"
+    },
+    "target": {
+      "$ref": "#/$defs/StencilTarget"
+    },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "themes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      }
+    },
+    "icons": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "parts": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/RenderNode" }
+    },
+    "components": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/StencilComponent" }
+    }
+  },
+  "$defs": {
+    "StencilTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "framework": { "type": "string" },
+        "library": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    },
+    "StencilComponent": {
+      "type": "object",
+      "required": ["type", "displayName", "category", "defaultSize"],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": ["render"],
+          "not": { "required": ["native"] }
+        },
+        {
+          "required": ["native"],
+          "not": { "required": ["render"] }
+        }
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Namespaced component type such as 'tempo:TmButton' or 'app:{id}:Foo'."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1
+        },
+        "icon": {
+          "type": "string"
+        },
+        "defaultSize": {
+          "$ref": "#/$defs/StencilSize"
+        },
+        "minSize": {
+          "$ref": "#/$defs/StencilSize"
+        },
+        "maxSize": {
+          "$ref": "#/$defs/StencilSize"
+        },
+        "sizePresets": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/StencilSize" }
+        },
+        "resize": {
+          "type": "string",
+          "enum": ["scale", "nineSlice", "reflow"]
+        },
+        "slice": {
+          "$ref": "#/$defs/StencilSlice"
+        },
+        "props": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PropDef" }
+        },
+        "contentSlots": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "impl": {
+          "$ref": "#/$defs/StencilImpl"
+        },
+        "render": {
+          "$ref": "#/$defs/RenderNode"
+        },
+        "native": {
+          "$ref": "#/$defs/StencilNative"
+        }
+      }
+    },
+    "StencilSize": {
+      "type": "object",
+      "required": ["width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "width": { "type": "number" },
+        "height": { "type": "number" }
+      }
+    },
+    "StencilSlice": {
+      "type": "object",
+      "required": ["left", "top", "right", "bottom"],
+      "additionalProperties": false,
+      "properties": {
+        "left": { "type": "number" },
+        "top": { "type": "number" },
+        "right": { "type": "number" },
+        "bottom": { "type": "number" }
+      }
+    },
+    "PropDef": {
+      "type": "object",
+      "required": ["name", "displayName"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "displayName": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["string", "int", "double", "bool", "enum", "color", "icon", "stringList", "object"]
+        },
+        "default": {},
+        "options": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "category": { "type": "string" },
+        "isRequired": { "type": "boolean" },
+        "validationRegex": { "type": "string" }
+      }
+    },
+    "StencilImpl": {
+      "type": "object",
+      "required": ["component"],
+      "additionalProperties": false,
+      "properties": {
+        "component": { "type": "string" },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "StencilNative": {
+      "type": "object",
+      "required": ["nativeType"],
+      "additionalProperties": false,
+      "properties": {
+        "nativeType": { "type": "string" },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "RenderNode": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": true,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "group",
+            "rect",
+            "text",
+            "line",
+            "path",
+            "icon",
+            "spinner",
+            "image",
+            "svg",
+            "component",
+            "stack",
+            "row",
+            "grid",
+            "repeat",
+            "part"
+          ]
+        },
+        "when": { "type": "string" },
+        "text": { "type": "string" },
+        "value": { "type": "string" },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RenderNode" }
+        },
+        "props": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "prop": { "type": "string" },
+        "as": { "type": "string" },
+        "node": { "$ref": "#/$defs/RenderNode" }
+      }
+    }
+  }
+}

@@ -66,6 +66,31 @@ public class WireframeSchemaRegistryScopeTests
         registry.GetSchema("LegacyCustom").Should().NotBeNull();
     }
 
+    [Fact]
+    public void GetAll_WithTargetPacks_HidesUndeclaredAppPacks()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var appB = Guid.NewGuid().ToString("D");
+        var registry = new WireframeSchemaRegistry(
+        [
+            new TestSchemaSource("BuiltIn", 0, Schema("TmButton", "Buttons", "Button", isBuiltIn: true)),
+            new ScopedSchemaSource("A", 10, appA, Schema("InvoiceCard", displayName: "A Invoice")),
+            new ScopedSchemaSource("B", 10, appB, Schema("InvoiceCard", displayName: "B Invoice"))
+        ]);
+        var scope = WireframeComponentScope.ForApp(appA);
+
+        registry.GetAll(scope, ["tempo"])
+            .Select(s => s.Type)
+            .Should().BeEquivalentTo(["TmButton"]);
+        registry.GetSchema("InvoiceCard", scope, ["tempo"]).Should().BeNull();
+
+        registry.GetAll(scope, ["tempo", $"app:{appA}"])
+            .Select(s => s.Type)
+            .Should().BeEquivalentTo(["TmButton", $"app:{appA}:InvoiceCard"]);
+        registry.GetSchema("InvoiceCard", scope, ["tempo", $"app:{appA}"])
+            .Should().NotBeNull();
+    }
+
     private static WireframeComponentSchema Schema(
         string type,
         string category = "Custom",

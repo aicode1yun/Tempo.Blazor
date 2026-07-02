@@ -109,6 +109,32 @@ public sealed class WireframeComponentScope
     public bool ContainsType(string type)
         => TryGetAppId(type, out var appId) && MatchesAppId(appId);
 
+    /// <summary>Returns the target pack id for an app-scoped pack.</summary>
+    public static string AppPackId(string appId)
+        => AppPrefix + NormalizeAppId(appId);
+
+    /// <summary>
+    /// Returns true when a schema/definition is visible for the supplied document target packs.
+    /// Null or empty target lists preserve legacy visibility; built-ins are always visible.
+    /// </summary>
+    public static bool IsVisibleInTargetPacks(
+        string? scopeAppId,
+        bool isBuiltIn,
+        IReadOnlyList<string>? targetPackIds)
+    {
+        if (isBuiltIn || targetPackIds is null || targetPackIds.Count == 0)
+            return true;
+
+        if (string.IsNullOrWhiteSpace(scopeAppId))
+            return false;
+
+        var normalizedScope = NormalizeAppId(scopeAppId);
+        var appPackId = AppPackId(normalizedScope);
+        return targetPackIds.Any(target =>
+            string.Equals(target?.Trim(), appPackId, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(target?.Trim(), normalizedScope, StringComparison.OrdinalIgnoreCase));
+    }
+
     /// <inheritdoc/>
     public override string ToString() => AppId;
 

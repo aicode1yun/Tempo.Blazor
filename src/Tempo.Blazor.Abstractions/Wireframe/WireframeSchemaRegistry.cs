@@ -68,6 +68,16 @@ public sealed class WireframeSchemaRegistry
                  .OrderBy(s => s.Category)
                  .ThenBy(s => s.DisplayName);
 
+    /// <summary>
+    /// Returns schemas visible in <paramref name="scope"/> and allowed by document target packs.
+    /// Null or empty target lists preserve legacy visibility.
+    /// </summary>
+    public IEnumerable<WireframeComponentSchema> GetAll(
+        WireframeComponentScope? scope,
+        IReadOnlyList<string>? targetPackIds)
+        => GetAll(scope)
+            .Where(s => WireframeComponentScope.IsVisibleInTargetPacks(s.ScopeAppId, s.IsBuiltIn, targetPackIds));
+
     /// <summary>Returns the schema for the given component type, or null if not registered.</summary>
     public WireframeComponentSchema? GetSchema(string type)
         => _index.TryGetValue(type, out var s) ? s : null;
@@ -91,6 +101,21 @@ public sealed class WireframeSchemaRegistry
 
         var baselineSchema = GetSchema(type);
         return baselineSchema?.IsBuiltIn == true ? baselineSchema : null;
+    }
+
+    /// <summary>
+    /// Returns the schema for <paramref name="type"/> when it is visible for the supplied target packs.
+    /// </summary>
+    public WireframeComponentSchema? GetSchema(
+        string type,
+        WireframeComponentScope? scope,
+        IReadOnlyList<string>? targetPackIds)
+    {
+        var schema = GetSchema(type, scope);
+        return schema is not null
+               && WireframeComponentScope.IsVisibleInTargetPacks(schema.ScopeAppId, schema.IsBuiltIn, targetPackIds)
+            ? schema
+            : null;
     }
 
     /// <summary>Returns all schemas in a given category.</summary>

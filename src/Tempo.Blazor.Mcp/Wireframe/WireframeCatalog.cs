@@ -45,10 +45,18 @@ public static class WireframeCatalog
 
     /// <summary>Returns the registered type whose name is closest to <paramref name="unknown"/> in <paramref name="scope"/>, if reasonably near.</summary>
     public static string? SuggestType(WireframeSchemaRegistry registry, string unknown, WireframeComponentScope? scope)
+        => SuggestType(registry, unknown, scope, targetPackIds: null);
+
+    /// <summary>Returns the registered type whose name is closest to <paramref name="unknown"/> when visible for the supplied target packs.</summary>
+    public static string? SuggestType(
+        WireframeSchemaRegistry registry,
+        string unknown,
+        WireframeComponentScope? scope,
+        IReadOnlyList<string>? targetPackIds)
     {
         string? best = null;
         var bestDistance = int.MaxValue;
-        foreach (var schema in registry.GetAll(scope))
+        foreach (var schema in registry.GetAll(scope, targetPackIds))
         {
             var localType = schema.LocalType ?? WireframeComponentScope.GetLocalType(schema.Type);
             var d = Math.Min(

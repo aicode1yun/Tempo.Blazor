@@ -201,6 +201,30 @@ public class WireframeSerializerTests
     }
 
     [Fact]
+    public void RoundTrip_PreservesTargetPacksAndTheme()
+    {
+        var doc = new WireframeDocument
+        {
+            Title = "Targeted",
+            TargetPackIds = ["tempo", "app:11111111-1111-1111-1111-111111111111"],
+            TargetTheme = "dark"
+        };
+        doc.EnsureActivePage();
+        doc.ActivePage!.TargetPackIds = ["tempo"];
+        doc.ActivePage.TargetTheme = "light";
+
+        var json = WireframeSerializer.Serialize(doc);
+        var restored = WireframeSerializer.Deserialize(json);
+
+        json.Should().Contain("\"targetPacks\"");
+        json.Should().Contain("\"targetTheme\"");
+        restored.TargetPackIds.Should().Equal("tempo", "app:11111111-1111-1111-1111-111111111111");
+        restored.TargetTheme.Should().Be("dark");
+        restored.ActivePage!.TargetPackIds.Should().Equal("tempo");
+        restored.ActivePage.TargetTheme.Should().Be("light");
+    }
+
+    [Fact]
     public void Deserialize_MalformedJson_ThrowsWireframeDeserializationException()
     {
         var act = () => WireframeSerializer.Deserialize("{ this is not valid json }");

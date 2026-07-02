@@ -42,8 +42,9 @@ internal static class WireframeSvg
 
     /// <summary>Single-line text label, vertically centred at y.</summary>
     internal static string Text(string content, double x, double y,
-        double fontSize = 11, string fill = ColorText, string anchor = "start", string fontWeight = "normal")
-        => $"<text x='{F(x)}' y='{F(y)}' font-size='{F(fontSize)}' fill='{fill}' text-anchor='{anchor}' dominant-baseline='middle' font-family='ui-sans-serif,system-ui' font-weight='{fontWeight}'>{Escape(content)}</text>";
+        double fontSize = 11, string fill = ColorText, string anchor = "start", string fontWeight = "normal",
+        string dominantBaseline = "middle")
+        => $"<text x='{F(x)}' y='{F(y)}' font-size='{F(fontSize)}' fill='{fill}' text-anchor='{anchor}' dominant-baseline='{dominantBaseline}' font-family='ui-sans-serif,system-ui' font-weight='{fontWeight}'>{Escape(content)}</text>";
 
     /// <summary>Centred text label inside a bounding box.</summary>
     internal static string TextCentred(string content, double boxW, double boxH,

@@ -23,6 +23,13 @@ public sealed class WireframeDocument
     /// <summary>UTC timestamp of last modification.</summary>
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>Namespaced stencil pack ids this document renders against, e.g. <c>tempo</c> or <c>app:{id}</c>.</summary>
+    [JsonPropertyName("targetPacks")]
+    public List<string> TargetPackIds { get; set; } = [];
+
+    /// <summary>Optional theme name selecting a token override set within the target packs.</summary>
+    public string? TargetTheme { get; set; }
+
     // ── Convenience accessors (delegate to the active page) ───────────────────
 
     /// <summary>

@@ -40,6 +40,7 @@ public static class TempoWireframeMcp
         typeof(WireframeDocumentTools),
         typeof(WireframeValidationTools),
         typeof(WireframeOperationTools),
+        typeof(WireframeAuthoringGuideTools),
         typeof(WireframeBriefTools)
     ];
 

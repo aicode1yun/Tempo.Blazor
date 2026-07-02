@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Components.Wireframe.Models;
+using Tempo.Blazor.Components.Wireframe.Stencil;
 using Tempo.Blazor.Configuration;
 
 namespace Tempo.Blazor.Tests.Wireframe;
@@ -40,6 +41,17 @@ public class WireframeSvgRendererDiTests
         var second = provider.GetRequiredService<IWireframeSvgRenderer>();
 
         first.Should().BeSameAs(second);
+    }
+
+    [Fact]
+    public void StencilCompilerServices_AreSingletons()
+    {
+        using var provider = BuildProvider();
+
+        provider.GetRequiredService<NativeRendererRegistry>()
+            .Should().BeSameAs(provider.GetRequiredService<NativeRendererRegistry>());
+        provider.GetRequiredService<StencilPackCompiler>()
+            .Should().BeSameAs(provider.GetRequiredService<StencilPackCompiler>());
     }
 
     [Fact]

@@ -59,16 +59,20 @@ public class WireframeValidationEngineTests
     }
 
     [Fact]
-    public void UnknownProperty_IsReported_WithPath()
+    public void UnknownProperty_IsReported_AsWarning_WithSuggestion()
     {
         var el = new WireframeElement { Type = KnownType(), W = 100, H = 40 };
-        el.Props["definitelyNotAProp"] = Json("x");
+        el.Props["childContent"] = Json("x");
         var doc = DocWith(el);
 
         var result = WireframeValidationEngine.Validate(doc, Registry());
 
-        result.Errors.Should().Contain(e =>
-            e.Contains("props.definitelyNotAProp") && e.Contains("unknown property"));
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+        result.Warnings.Should().ContainSingle(w =>
+            w.Code == "unknown-prop"
+            && w.Hint.Contains("props.childContent")
+            && w.Hint.Contains("Did you mean"));
     }
 
     [Fact]
@@ -95,7 +99,7 @@ public class WireframeValidationEngineTests
     }
 
     [Fact]
-    public void EnumProperty_OutOfRange_IsReported_WhenSchemaHasEnumProp()
+    public void EnumProperty_OutOfRange_IsReported_AsWarning_WhenSchemaHasEnumProp()
     {
         var registry = Registry();
         var enumSchema = registry.GetAll()
@@ -112,7 +116,12 @@ public class WireframeValidationEngineTests
 
         var result = WireframeValidationEngine.Validate(doc, registry);
 
-        result.Errors.Should().Contain(e => e.Contains($"props.{enumProp.Name}") && e.Contains("not a valid value"));
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+        result.Warnings.Should().Contain(w =>
+            w.Code == "enum-out-of-range"
+            && w.Hint.Contains($"props.{enumProp.Name}")
+            && w.Hint.Contains("not in"));
     }
 
     [Fact]
@@ -127,6 +136,7 @@ public class WireframeValidationEngineTests
         root.GetProperty("success").GetBoolean().Should().BeTrue();
         root.GetProperty("valid").GetBoolean().Should().BeFalse();
         root.GetProperty("validationErrors").GetArrayLength().Should().BeGreaterThan(0);
+        root.GetProperty("warnings").GetArrayLength().Should().Be(0);
     }
 
     [Fact]
@@ -179,6 +189,26 @@ public class WireframeValidationEngineTests
 
         root.GetProperty("success").GetBoolean().Should().BeTrue();
         root.GetProperty("valid").GetBoolean().Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_RespectsDocumentTargetPackIds()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var registry = new WireframeSchemaRegistry(
+        [
+            new TestSchemaSource("BuiltIn", 0, Schema("TmButton", "Buttons", "Button", isBuiltIn: true)),
+            new ScopedSchemaSource("A", 10, appA, Schema("InvoiceCard", "Custom", "A Invoice"))
+        ]);
+        var doc = new WireframeDocument { TargetPackIds = ["tempo"] };
+        doc.EnsureActivePage();
+        doc.Elements.Add(new WireframeElement { Type = $"app:{appA}:InvoiceCard", W = 100, H = 40 });
+
+        var result = WireframeValidationEngine.Validate(doc, registry, WireframeComponentScope.ForApp(appA));
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().ContainSingle()
+            .Which.Should().Contain("unknown component type");
     }
 
     private static WireframeComponentSchema Schema(

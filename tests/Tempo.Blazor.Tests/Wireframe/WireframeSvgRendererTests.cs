@@ -24,7 +24,7 @@ public class WireframeSvgRendererTests
     private static WireframeComponentRegistry BuiltInRegistry()
     {
         var registry = new WireframeComponentRegistry();
-        registry.RegisterProvider(new BuiltInWireframeComponentProvider());
+        registry.RegisterProvider(new BuiltInStencilPackProvider());
         return registry;
     }
 

@@ -54,12 +54,14 @@ public class TempoWireframeMcpRegistrationTests
         {
             "wireframe_apply_operations",
             "wireframe_create_document",
+            "wireframe_get_authoring_guide",
             "wireframe_get_component_schema",
             "wireframe_get_document",
             "wireframe_get_implementation_brief",
             "wireframe_list_components",
             "wireframe_list_documents",
             "wireframe_replace_document",
+            "wireframe_scaffold",
             "wireframe_validate_document"
         });
     }
@@ -126,12 +128,14 @@ public class TempoWireframeMcpRegistrationTests
             "validate_report",
             "wireframe_apply_operations",
             "wireframe_create_document",
+            "wireframe_get_authoring_guide",
             "wireframe_get_component_schema",
             "wireframe_get_document",
             "wireframe_get_implementation_brief",
             "wireframe_list_components",
             "wireframe_list_documents",
             "wireframe_replace_document",
+            "wireframe_scaffold",
             "wireframe_validate_document"
         });
     }

@@ -6,7 +6,7 @@ namespace Tempo.Blazor.Components.Wireframe;
 /// Provides a set of wireframe component definitions to the <see cref="WireframeComponentRegistry"/>.
 ///
 /// <para>
-/// Built-in Tempo.Blazor components are registered via <see cref="BuiltInWireframeComponentProvider"/>.
+/// Built-in Tempo.Blazor components are registered via <see cref="BuiltInStencilPackProvider"/>.
 /// Custom components can be registered by implementing this interface and calling
 /// <c>services.AddWireframeComponentProvider&lt;T&gt;()</c> in Program.cs.
 /// </para>
@@ -23,7 +23,8 @@ public interface IWireframeComponentProvider
 
     /// <summary>
     /// Higher priority wins when multiple providers register the same component type.
-    /// Built-in provider uses priority 0; custom providers should use values > 0 to override.
+    /// The built-in Tempo stencil pack uses priority 0; the legacy built-in fallback uses -1.
+    /// Custom providers should use values > 0 to override shipped components.
     /// </summary>
     int Priority { get; }
 

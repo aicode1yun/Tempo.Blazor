@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Components.Rendering;
 using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Components.Wireframe.Models;
+using Tempo.Blazor.Components.Wireframe.Stencil;
 using Xunit;
 
 namespace Tempo.Blazor.Tests.Wireframe;
@@ -210,6 +211,63 @@ public class WireframeComponentRegistryTests
 
         registry.GetDef($"app:{appId}:InvoiceCard").Should().NotBeNull();
         registry.GetDef("InvoiceCard").Should().BeNull();
+    }
+
+    [Fact]
+    public void RegisterDefinition_ScopedNormalization_PreservesStencilMetadata()
+    {
+        var registry = new WireframeComponentRegistry();
+        var impl = new StencilImpl
+        {
+            Component = "TmCard",
+            Parameters = new Dictionary<string, object?>
+            {
+                ["ChildContent"] = "{label}"
+            }
+        };
+
+        registry.RegisterDefinition(
+            new WireframeComponentDef
+            {
+                Type = "InvoiceCard",
+                DisplayName = "Invoice Card",
+                Category = "Custom",
+                PackId = "pack-1",
+                NativeType = "NativeCard",
+                Impl = impl,
+                RenderSvg = (_, _) => { }
+            },
+            scopeAppId: "demo");
+
+        var def = registry.GetDef("app:demo:InvoiceCard");
+
+        def.Should().NotBeNull();
+        def!.PackId.Should().Be("pack-1");
+        def.NativeType.Should().Be("NativeCard");
+        def.Impl.Should().BeSameAs(impl);
+    }
+
+    [Fact]
+    public void GetAll_WithTargetPacks_HidesUndeclaredAppDefinitions()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var appB = Guid.NewGuid().ToString("D");
+        var registry = new WireframeComponentRegistry();
+        registry.RegisterDefinition(MakeDef("TmButton", "Buttons", isBuiltIn: true));
+        registry.RegisterDefinition(MakeDef("InvoiceCard", displayName: "A Invoice"), scopeAppId: appA);
+        registry.RegisterDefinition(MakeDef("InvoiceCard", displayName: "B Invoice"), scopeAppId: appB);
+        var scope = WireframeComponentScope.ForApp(appA);
+
+        registry.GetAll(scope, ["tempo"])
+            .Select(d => d.Type)
+            .Should().BeEquivalentTo(["TmButton"]);
+        registry.GetDef("InvoiceCard", scope, ["tempo"]).Should().BeNull();
+
+        registry.GetAll(scope, ["tempo", $"app:{appA}"])
+            .Select(d => d.Type)
+            .Should().BeEquivalentTo(["TmButton", $"app:{appA}:InvoiceCard"]);
+        registry.GetDef("InvoiceCard", scope, ["tempo", $"app:{appA}"])
+            .Should().NotBeNull();
     }
 
     // ── Test helper ───────────────────────────────────────────────────────────

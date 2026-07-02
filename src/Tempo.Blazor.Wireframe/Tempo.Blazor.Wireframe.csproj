@@ -25,6 +25,7 @@
     <Content Remove="wwwroot\js\**\*.test.mjs" />
     <Content Remove="wwwroot\js\**\__tests__\**" />
     <Content Remove="wwwroot\js\**\*.md" />
+    <EmbeddedResource Include="StencilPacks\tempo.stencil.json" />
     <None Include="wwwroot\js\**\*.test.mjs" Pack="false" Visible="false" />
     <None Include="wwwroot\js\**\__tests__\**" Pack="false" Visible="false" />
     <None Include="wwwroot\js\**\*.md" Pack="false" Visible="false" />
@@ -49,6 +50,9 @@
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Tempo.Blazor.Tests</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Tempo.Blazor.E2E</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
 

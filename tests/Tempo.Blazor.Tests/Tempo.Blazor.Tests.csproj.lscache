@@ -479,7 +479,6 @@ Toolbar/
  TmToolbarButtonTests.cs
  TmToolbarTests.cs
 Wireframe/
- BuiltInWireframeComponentProviderTests.cs
  JsonWireframeComponentProviderTests.cs
  TmWireframeDesignerCanvasTests.cs
  TmWireframeToolboxTests.cs

@@ -83,6 +83,21 @@ public sealed class WireframeComponentRegistry
         return baselineDef?.IsBuiltIn == true ? baselineDef : null;
     }
 
+    /// <summary>
+    /// Returns the definition for <paramref name="type"/> when visible for the supplied target packs.
+    /// </summary>
+    public WireframeComponentDef? GetDef(
+        string type,
+        WireframeComponentScope? scope,
+        IReadOnlyList<string>? targetPackIds)
+    {
+        var def = GetDef(type, scope);
+        return def is not null
+               && WireframeComponentScope.IsVisibleInTargetPacks(def.ScopeAppId, def.IsBuiltIn, targetPackIds)
+            ? def
+            : null;
+    }
+
     /// <summary>Returns all registered definitions ordered by Category then DisplayName.</summary>
     public IEnumerable<WireframeComponentDef> GetAll()
         => VisibleDefinitions(scope: null)
@@ -95,6 +110,18 @@ public sealed class WireframeComponentRegistry
     /// </summary>
     public IEnumerable<WireframeComponentDef> GetAll(WireframeComponentScope? scope)
         => VisibleDefinitions(scope)
+                .OrderBy(d => d.Category)
+                .ThenBy(d => d.DisplayName);
+
+    /// <summary>
+    /// Returns definitions visible in <paramref name="scope"/> and allowed by document target packs.
+    /// Null or empty target lists preserve legacy visibility.
+    /// </summary>
+    public IEnumerable<WireframeComponentDef> GetAll(
+        WireframeComponentScope? scope,
+        IReadOnlyList<string>? targetPackIds)
+        => VisibleDefinitions(scope)
+                .Where(d => WireframeComponentScope.IsVisibleInTargetPacks(d.ScopeAppId, d.IsBuiltIn, targetPackIds))
                 .OrderBy(d => d.Category)
                 .ThenBy(d => d.DisplayName);
 
@@ -162,6 +189,9 @@ public sealed class WireframeComponentRegistry
             Props = def.Props,
             RenderSvg = def.RenderSvg,
             IsBuiltIn = def.IsBuiltIn,
+            PackId = def.PackId,
+            NativeType = def.NativeType,
+            Impl = def.Impl,
             SizePresets = def.SizePresets,
         };
     }

@@ -48,11 +48,20 @@ public sealed class ServiceCollectionExtensionsPhase1Tests
         var schemaRegistry = provider.GetRequiredService<WireframeSchemaRegistry>();
 
         provider.GetServices<IWireframeComponentProvider>()
-            .Should().ContainSingle(provider => provider is BuiltInWireframeComponentProvider);
+            .Should()
+            .ContainSingle(provider => provider is BuiltInStencilPackProvider);
         registry.GetDef("TmButton").Should().NotBeNull();
         schemaRegistry.GetSchema("TmButton").Should().NotBeNull();
         registry.GetDef("TmButton", WireframeComponentScope.ForApp(Guid.NewGuid())).Should().NotBeNull();
         schemaRegistry.GetSchema("TmButton", WireframeComponentScope.ForApp(Guid.NewGuid())).Should().NotBeNull();
+
+        foreach (var schema in new BuiltInComponentSchemas().GetSchemas())
+        {
+            var def = registry.GetDef(schema.Type);
+            def.Should().NotBeNull($"{schema.Type} should resolve from the built-in stencil pack");
+            def!.DefaultWidth.Should().BePositive($"{schema.Type} should preserve schema width");
+            def.DefaultHeight.Should().BePositive($"{schema.Type} should preserve schema height");
+        }
     }
 
     [Fact]

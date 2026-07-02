@@ -521,7 +521,6 @@ Components/
    XlsxExporter.cs
    XlsxImporter.cs
  Wireframe/
-  BuiltInWireframeComponentProvider.cs
   Commands/
    AddConnectorCommand.cs
    AddElementCommand.cs
@@ -2166,7 +2165,6 @@ Components/
    XlsxExporter.cs
    XlsxImporter.cs
  Wireframe/
-  BuiltInWireframeComponentProvider.cs
   Commands/
    AddConnectorCommand.cs
    AddElementCommand.cs
@@ -3803,7 +3801,6 @@ Components/
    XlsxExporter.cs
    XlsxImporter.cs
  Wireframe/
-  BuiltInWireframeComponentProvider.cs
   Commands/
    AddConnectorCommand.cs
    AddElementCommand.cs

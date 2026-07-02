@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Tempo.Blazor.Components.Wireframe.Models;
 
 /// <summary>
@@ -35,6 +37,13 @@ public sealed class WireframePage
 
     /// <summary>UTC timestamp of last modification.</summary>
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>Optional page-level target pack override. When null, the page inherits the document target packs.</summary>
+    [JsonPropertyName("targetPacks")]
+    public List<string>? TargetPackIds { get; set; }
+
+    /// <summary>Optional page-level target theme override. When null, the page inherits the document target theme.</summary>
+    public string? TargetTheme { get; set; }
 
     /// <summary>Ensures the page has at least a default layer.</summary>
     public void EnsureDefaultLayer()

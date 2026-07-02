@@ -7,7 +7,7 @@ namespace Tempo.Blazor.Components.Wireframe;
 /// components. This is the single source of truth for component metadata (types, categories,
 /// default dimensions, and property definitions).
 /// <para>
-/// In the main <c>Tempo.Blazor</c> package, <c>BuiltInWireframeComponentProvider</c> reads
+/// In the main <c>Tempo.Blazor</c> package, the built-in stencil pack provider reads
 /// props directly from this class so the two never diverge.
 /// </para>
 /// <para>

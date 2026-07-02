@@ -34,6 +34,16 @@
       "type": "string",
       "format": "date-time"
     },
+    "targetPacks": {
+      "type": "array",
+      "description": "Stencil pack ids this document targets. Tempo built-ins remain available; app components require their app:{id} pack.",
+      "items": { "type": "string" },
+      "default": ["tempo"]
+    },
+    "targetTheme": {
+      "type": "string",
+      "description": "Optional theme name selecting a token override set within the target packs."
+    },
     "elements": {
       "type": "array",
       "description": "UI elements placed on the canvas.",

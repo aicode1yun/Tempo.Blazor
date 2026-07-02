@@ -127,6 +127,32 @@ public class WireframeCatalogToolsTests
         component.GetProperty("scopeAppId").GetString().Should().Be(appA);
     }
 
+    [Fact]
+    public void ListComponentsScoped_WithTargetPacks_HidesUndeclaredScopedComponents()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var appB = Guid.NewGuid().ToString("D");
+        var registry = ScopedRegistry(appA, appB);
+
+        var tempoOnly = Parse(WireframeComponentCatalogTools.ListComponentsScoped(
+            registry,
+            compact: true,
+            scopeAppId: appA,
+            targetPackIds: ["tempo"]));
+        var withApp = Parse(WireframeComponentCatalogTools.ListComponentsScoped(
+            registry,
+            compact: true,
+            scopeAppId: appA,
+            targetPackIds: ["tempo", $"app:{appA}"]));
+
+        tempoOnly.GetProperty("items").EnumerateArray()
+            .Select(i => i.GetProperty("type").GetString())
+            .Should().BeEquivalentTo(["TmButton"]);
+        withApp.GetProperty("items").EnumerateArray()
+            .Select(i => i.GetProperty("type").GetString())
+            .Should().BeEquivalentTo(["TmButton", $"app:{appA}:InvoiceCard"]);
+    }
+
     private static WireframeSchemaRegistry ScopedRegistry(string appA, string appB)
         => new(
         [
