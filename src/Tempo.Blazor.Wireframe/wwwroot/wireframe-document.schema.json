@@ -2,29 +2,30 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "wireframe-document.schema.json",
   "title": "WireframeDocument",
-  "description": "Tempo.Blazor wireframe document – AI-friendly JSON format.",
+  "description": "Tempo.Blazor wireframe document v2 - AI-friendly paged JSON format.",
   "type": "object",
-  "required": ["version", "title", "elements"],
+  "required": ["version", "title", "pages"],
+  "additionalProperties": true,
   "properties": {
     "version": {
       "type": "string",
-      "description": "Schema version. Current: 1.0.",
-      "example": "1.0"
+      "description": "Schema version. Current: 2.0.",
+      "example": "2.0"
     },
     "title": {
       "type": "string",
       "description": "Human-readable wireframe title.",
       "example": "Login page"
     },
-    "width": {
-      "type": "number",
-      "description": "Canvas width in pixels.",
-      "default": 1280
+    "pages": {
+      "type": "array",
+      "description": "Ordered pages in the wireframe document.",
+      "items": { "$ref": "#/$defs/WireframePage" },
+      "default": []
     },
-    "height": {
-      "type": "number",
-      "description": "Canvas height in pixels.",
-      "default": 800
+    "activePageId": {
+      "type": "string",
+      "description": "Optional id of the active page. When omitted, consumers use the first page."
     },
     "createdAt": {
       "type": "string",
@@ -35,60 +36,131 @@
       "format": "date-time"
     },
     "targetPacks": {
-      "type": "array",
-      "description": "Stencil pack ids this document targets. Tempo built-ins remain available; app components require their app:{id} pack.",
-      "items": { "type": "string" },
-      "default": ["tempo"]
+      "$ref": "#/$defs/TargetPacks"
     },
     "targetTheme": {
       "type": "string",
       "description": "Optional theme name selecting a token override set within the target packs."
-    },
-    "elements": {
-      "type": "array",
-      "description": "UI elements placed on the canvas.",
-      "items": { "$ref": "#/$defs/WireframeElement" }
-    },
-    "connectors": {
-      "type": "array",
-      "description": "Directed arrows between elements.",
-      "items": { "$ref": "#/$defs/WireframeConnector" }
     }
   },
   "$defs": {
-    "WireframeElement": {
+    "TargetPacks": {
+      "type": "array",
+      "description": "Stencil pack ids this document or page targets. Tempo built-ins remain available; app components require their app:{id} pack.",
+      "items": { "type": "string", "minLength": 1 },
+      "default": ["tempo"]
+    },
+    "WireframePage": {
       "type": "object",
-      "required": ["id", "type", "x", "y", "w", "h"],
+      "required": ["name", "elements"],
+      "additionalProperties": true,
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique element identifier (short Guid).",
+          "description": "Unique page identifier. When omitted, the model creates one."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable page name.",
+          "default": "Page 1"
+        },
+        "width": {
+          "type": "number",
+          "description": "Canvas width in pixels.",
+          "default": 1280
+        },
+        "height": {
+          "type": "number",
+          "description": "Canvas height in pixels.",
+          "default": 800
+        },
+        "elements": {
+          "type": "array",
+          "description": "UI elements placed on this page.",
+          "items": { "$ref": "#/$defs/WireframeElement" },
+          "default": []
+        },
+        "connectors": {
+          "type": "array",
+          "description": "Directed connectors between elements on this page.",
+          "items": { "$ref": "#/$defs/WireframeConnector" },
+          "default": []
+        },
+        "layers": {
+          "type": "array",
+          "description": "Optional layer definitions used by the editor.",
+          "items": { "$ref": "#/$defs/WireframeLayer" },
+          "default": []
+        },
+        "activeLayerId": {
+          "type": "string",
+          "description": "Optional id of the layer where new elements are inserted."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modifiedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "targetPacks": {
+          "$ref": "#/$defs/TargetPacks"
+        },
+        "targetTheme": {
+          "type": "string",
+          "description": "Optional page-level theme override. When omitted, the page inherits the document theme."
+        }
+      }
+    },
+    "WireframeElement": {
+      "type": "object",
+      "required": ["id", "type", "x", "y", "w", "h"],
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique element identifier.",
           "example": "a3f8c21b"
         },
         "type": {
           "type": "string",
-          "description": "Registered component type, e.g. 'TmButton', 'TmDataTable', or a custom type.",
+          "description": "Registered component type, e.g. TmButton or app:{id}:Card.",
           "example": "TmButton"
         },
         "x": {
           "type": "number",
-          "description": "X position of top-left corner in pixels."
+          "description": "X position of the top-left corner in pixels.",
+          "default": 0
         },
         "y": {
           "type": "number",
-          "description": "Y position of top-left corner in pixels."
+          "description": "Y position of the top-left corner in pixels.",
+          "default": 0
         },
         "w": {
           "type": "number",
-          "description": "Width in pixels."
+          "description": "Width in pixels.",
+          "default": 120
         },
         "h": {
           "type": "number",
-          "description": "Height in pixels."
+          "description": "Height in pixels.",
+          "default": 36
+        },
+        "props": {
+          "type": "object",
+          "description": "Component-specific properties keyed by camelCase prop name.",
+          "additionalProperties": true,
+          "default": {},
+          "examples": [
+            { "label": "Submit", "variant": "primary", "disabled": false },
+            { "title": "Users", "columns": ["Name", "Email"], "showPagination": true }
+          ]
         },
         "zIndex": {
           "type": "integer",
-          "description": "Stacking order. Higher = on top.",
+          "description": "Stacking order. Higher values render on top.",
           "default": 0
         },
         "groupId": {
@@ -102,31 +174,23 @@
         },
         "rotation": {
           "type": "number",
-          "description": "Rotation angle in degrees. 0 = no rotation.",
+          "description": "Rotation angle in degrees. 0 means no rotation.",
           "default": 0
         },
         "layerId": {
           "type": "string",
-          "description": "Optional layer identifier. When null, belongs to the default layer."
+          "description": "Optional layer identifier. When null, the element belongs to the default layer."
         },
         "lockedBy": {
           "type": "string",
           "description": "Reserved for collaborative editing."
-        },
-        "props": {
-          "type": "object",
-          "description": "Component-specific properties. Keys are camelCase prop names; values are any JSON type.",
-          "additionalProperties": true,
-          "examples": [
-            { "label": "Submit", "variant": "primary", "disabled": false },
-            { "title": "Users", "columns": ["Name", "Email"], "showPagination": true }
-          ]
         }
       }
     },
     "WireframeConnector": {
       "type": "object",
       "required": ["id", "fromId", "toId"],
+      "additionalProperties": true,
       "properties": {
         "id": {
           "type": "string",
@@ -143,8 +207,88 @@
         "label": {
           "type": "string",
           "description": "Optional label shown on the connector."
+        },
+        "routing": {
+          "type": "string",
+          "enum": ["straight", "orthogonal", "curved"],
+          "default": "straight"
+        },
+        "waypoints": {
+          "type": "array",
+          "description": "Intermediate points for manually routed connectors.",
+          "items": { "$ref": "#/$defs/DiagramPoint" },
+          "default": []
+        },
+        "startArrow": {
+          "$ref": "#/$defs/ArrowStyle"
+        },
+        "endArrow": {
+          "$ref": "#/$defs/ArrowStyle"
+        },
+        "stroke": {
+          "type": "string",
+          "description": "Stroke color, usually a hex color.",
+          "default": "#94a3b8"
+        },
+        "strokeWidth": {
+          "type": "number",
+          "description": "Stroke width in pixels.",
+          "default": 2
+        },
+        "strokeDasharray": {
+          "type": "string",
+          "description": "Optional SVG stroke-dasharray value."
+        },
+        "zIndex": {
+          "type": "integer",
+          "description": "Stacking order. Higher values render on top.",
+          "default": 0
         }
       }
+    },
+    "WireframeLayer": {
+      "type": "object",
+      "required": ["id", "name"],
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique layer identifier."
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name shown in the Layers panel."
+        },
+        "order": {
+          "type": "integer",
+          "description": "Layer order. Lower values render first.",
+          "default": 0
+        },
+        "isVisible": {
+          "type": "boolean",
+          "description": "When false, elements on this layer are hidden.",
+          "default": true
+        },
+        "isLocked": {
+          "type": "boolean",
+          "description": "When true, elements on this layer cannot be edited.",
+          "default": false
+        }
+      }
+    },
+    "DiagramPoint": {
+      "type": "object",
+      "required": ["x", "y"],
+      "additionalProperties": true,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+    "ArrowStyle": {
+      "type": "string",
+      "enum": ["none", "classic", "block", "open", "oval", "diamond"],
+      "default": "none"
     }
   }
 }
