@@ -207,4 +207,35 @@ public class TmSchedulerTests : LocalizationTestBase
         cut.FindAll(".tm-scheduler-timeline").Count.Should().Be(1);
         cut.FindAll(".tm-scheduler-month").Count.Should().Be(0);
     }
+
+    [Fact]
+    public void Month_View_Uses_EventTemplate_When_Provided()
+    {
+        var events = new List<TmScheduleEvent>
+        {
+            new()
+            {
+                Title = "Custom Month",
+                Start = new DateTime(2025, 6, 10, 9, 0, 0),
+                End = new DateTime(2025, 6, 10, 10, 0, 0),
+                Color = "#16a34a"
+            }
+        };
+
+        var cut = RenderComponent<TmScheduler>(p => p
+            .Add(c => c.View, TmScheduleViewType.Month)
+            .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
+            .Add(c => c.Events, events)
+            .Add(c => c.EventTemplate, (RenderFragment<TmScheduleEvent>)(e => builder =>
+            {
+                builder.OpenElement(0, "span");
+                builder.AddAttribute(1, "class", "scheduler-month-template");
+                builder.AddContent(2, e.Title);
+                builder.CloseElement();
+            })));
+
+        var eventEl = cut.Find(".tm-scheduler-month-event");
+        eventEl.GetAttribute("style").Should().Contain("--event-color: #16a34a");
+        cut.Find(".scheduler-month-template").TextContent.Should().Contain("Custom Month");
+    }
 }

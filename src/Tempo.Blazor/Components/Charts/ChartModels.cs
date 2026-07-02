@@ -39,6 +39,12 @@ public sealed record ChartDataset
 
     /// <summary>Fill color (defaults to Color with opacity).</summary>
     public string? BackgroundColor { get; init; }
+
+    /// <summary>
+    /// Optional per-value fill colors. When provided and contains a value for the index,
+    /// overrides BackgroundColor/Color for individual bars or pie/donut slices.
+    /// </summary>
+    public IReadOnlyList<string>? BackgroundColors { get; init; }
 }
 
 /// <summary>Identifies a clicked segment.</summary>

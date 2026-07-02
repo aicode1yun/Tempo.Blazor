@@ -1614,9 +1614,10 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         cut.Find("[data-testid='document-side-panel-tab-versions']").Click();
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-version-create-open']").Should().NotBeNull());
-        cut.Find("[data-testid='document-version-create-open']").Click();
+        await cut.Find("[data-testid='document-version-create-open']").ClickAsync(new MouseEventArgs());
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-version-dialog']").Should().NotBeNull());
-        cut.Find("[data-testid='document-version-create-submit']").Click();
+        await NotifyCanvasChangedAsync(cut);
+        await cut.Find("[data-testid='document-version-create-submit']").ClickAsync(new MouseEventArgs());
 
         cut.WaitForAssertion(() => capturedSave.Should().NotBeNull());
         GetParagraphText(capturedSave!.Document!).Should().StartWith("Runtime version text");

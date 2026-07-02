@@ -182,4 +182,29 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
         var eventEl = cut.Find(".tm-scheduler-month-event");
         eventEl.GetAttribute("style").Should().Contain("--event-color: #ff5722");
     }
+
+    [Fact]
+    public void Uses_EventTemplate_When_Provided()
+    {
+        var events = new List<TmScheduleEvent>
+        {
+            Evt("Maintenance", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0), color: "#dc2626")
+        };
+
+        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+            .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
+            .Add(c => c.Events, events)
+            .Add(c => c.EventTemplate, (RenderFragment<TmScheduleEvent>)(e => builder =>
+            {
+                builder.OpenElement(0, "div");
+                builder.AddAttribute(1, "class", "custom-month-event");
+                builder.AddContent(2, $"CUSTOM: {e.Title}");
+                builder.CloseElement();
+            })));
+
+        var eventEl = cut.Find(".tm-scheduler-month-event");
+        eventEl.GetAttribute("style").Should().Contain("--event-color: #dc2626");
+        cut.Find(".custom-month-event").TextContent.Should().Contain("CUSTOM: Maintenance");
+        cut.FindAll(".tm-scheduler-month-event-title").Should().BeEmpty();
+    }
 }

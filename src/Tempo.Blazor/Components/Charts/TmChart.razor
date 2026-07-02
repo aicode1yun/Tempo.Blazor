@@ -22,11 +22,11 @@
         @if (ShowLegend && Data.Datasets.Length > 0)
         {
             <div class="tm-chart__legend">
-                @foreach (var ds in Data.Datasets)
+                @foreach (var item in LegendItems)
                 {
                     <div class="tm-chart__legend-item">
-                        <span class="tm-chart__legend-color" style="background-color: @ds.Color;"></span>
-                        <span class="tm-chart__legend-label">@ds.Label</span>
+                        <span class="tm-chart__legend-color" style="background-color: @item.Color;"></span>
+                        <span class="tm-chart__legend-label">@item.Label</span>
                     </div>
                 }
             </div>
@@ -56,6 +56,7 @@
     [Parameter] public string? Class { get; set; }
 
     private string ChartAriaLabel => $"{Type} chart";
+    private record LegendItem(string Label, string Color);
 
     private double MaxVal
     {
@@ -75,6 +76,29 @@
     private static readonly string[] Palette =
         ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6",
          "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1"];
+
+    private IEnumerable<LegendItem> LegendItems
+    {
+        get
+        {
+            if (UsesPerValueLegend())
+            {
+                var dataset = Data.Datasets[0];
+                var count = Math.Min(Data.Labels.Length, dataset.Values.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    yield return new LegendItem(Data.Labels[i], ResolveLegendFillColor(dataset, i));
+                }
+
+                yield break;
+            }
+
+            foreach (var dataset in Data.Datasets)
+            {
+                yield return new LegendItem(dataset.Label, dataset.Color);
+            }
+        }
+    }
 
     private async Task HandleClick(int di, int idx)
     {
@@ -152,7 +176,8 @@
                 var bh = (val / max) * CH;
                 var x = PL + i * gw + gp + di * bw;
                 var y = PT + CH - bh;
-                SvgRect(b, x, y, bw, bh, ds.BackgroundColor ?? ds.Color, ds.Color, di, i);
+                var fill = ResolveFillColor(ds, i, ds.BackgroundColor ?? ds.Color);
+                SvgRect(b, x, y, bw, bh, fill, ds.Color, di, i);
                 if (ShowValues)
                     SvgText(b, "tm-chart__value", x + bw / 2, y - 4, F(val), "middle");
             }
@@ -181,7 +206,8 @@
                 var val = ds.Values[i];
                 var bw = (val / max) * CW;
                 var y = PT + i * gh + gp + di * bh;
-                SvgRect(b, PL, y, bw, bh, ds.BackgroundColor ?? ds.Color, ds.Color, di, i);
+                var fill = ResolveFillColor(ds, i, ds.BackgroundColor ?? ds.Color);
+                SvgRect(b, PL, y, bw, bh, fill, ds.Color, di, i);
                 if (ShowValues)
                     SvgText(b, "tm-chart__value", PL + bw + 6, y + bh / 2 + 4, F(val), "start");
             }
@@ -304,7 +330,7 @@
             b.OpenElement(0, "path");
             b.AddAttribute(1, "class", "tm-chart__slice");
             b.AddAttribute(2, "d", path);
-            b.AddAttribute(3, "fill", Palette[i % Palette.Length]);
+            b.AddAttribute(3, "fill", ResolveFillColor(ds, i, Palette[i % Palette.Length]));
             b.AddAttribute(4, "stroke", "white");
             b.AddAttribute(5, "stroke-width", "2");
             b.AddAttribute(6, "onclick",
@@ -317,6 +343,30 @@
     }
 
     // ── SVG element helpers ──
+
+    private bool UsesPerValueLegend()
+    {
+        if (Data.Datasets.Length != 1 || Data.Datasets[0].BackgroundColors is null)
+        {
+            return false;
+        }
+
+        return Type is ChartType.Bar or ChartType.HorizontalBar or ChartType.Pie or ChartType.Donut;
+    }
+
+    private string ResolveLegendFillColor(ChartDataset dataset, int index)
+    {
+        return Type is ChartType.Pie or ChartType.Donut
+            ? ResolveFillColor(dataset, index, Palette[index % Palette.Length])
+            : ResolveFillColor(dataset, index, dataset.BackgroundColor ?? dataset.Color);
+    }
+
+    private static string ResolveFillColor(ChartDataset dataset, int index, string fallback)
+    {
+        return dataset.BackgroundColors?.Count > index
+            ? dataset.BackgroundColors[index]
+            : fallback;
+    }
 
     private void SvgLine(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b,
         string cls, double x1, double y1, double x2, double y2)

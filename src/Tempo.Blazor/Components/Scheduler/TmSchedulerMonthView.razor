@@ -43,11 +43,18 @@
                              @onclick:stopPropagation="true"
                              @oncontextmenu="@(e => HandleEventContextMenu(e, evt))"
                              @oncontextmenu:stopPropagation="true">
-                            @if (!e.AllDay)
+                            @if (EventTemplate is not null)
                             {
-                                <span class="tm-scheduler-month-event-time">@e.Start.ToString("HH:mm")</span>
+                                @EventTemplate(e)
                             }
-                            <span class="tm-scheduler-month-event-title">@e.Title</span>
+                            else
+                            {
+                                @if (!e.AllDay)
+                                {
+                                    <span class="tm-scheduler-month-event-time">@e.Start.ToString("HH:mm")</span>
+                                }
+                                <span class="tm-scheduler-month-event-title">@e.Title</span>
+                            }
                         </div>
                     }
 
@@ -96,6 +103,9 @@
 
     /// <summary>Fires when right-clicking on an event.</summary>
     [Parameter] public EventCallback<SchedulerEventContext> OnEventContextMenu { get; set; }
+
+    /// <summary>Optional custom event renderer used inside each month event wrapper.</summary>
+    [Parameter] public RenderFragment<TmScheduleEvent>? EventTemplate { get; set; }
 
     protected override void OnParametersSet()
     {

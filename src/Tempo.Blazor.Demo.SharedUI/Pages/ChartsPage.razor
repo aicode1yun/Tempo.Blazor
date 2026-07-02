@@ -10,6 +10,48 @@
     <p class="text-slate-600 dark:text-slate-400">Pure SVG charts with no JavaScript dependencies. Bar, Line, Pie, Donut and Horizontal Bar types.</p>
 </div>
 
+<!-- Per-value color charts -->
+<section class="demo-section mb-8">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200">Per-value Colors</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">BackgroundColors</span>
+    </div>
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card" data-testid="chart-donut-custom">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Donut - custom colors</h3>
+            <TmChart Type="ChartType.Donut"
+                     Data="_donutCustomColorsData"
+                     Height="260px"
+                     ShowValues="true"
+                     Animated="false" />
+        </div>
+        <div class="showcase-card" data-testid="chart-horizontal-bar-custom">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">HorizontalBar - custom colors</h3>
+            <TmChart Type="ChartType.HorizontalBar"
+                     Data="_horizontalBarCustomColorsData"
+                     Height="260px"
+                     ShowValues="true"
+                     Animated="false" />
+        </div>
+        <div class="showcase-card" data-testid="chart-bar-custom">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Bar - custom colors</h3>
+            <TmChart Type="ChartType.Bar"
+                     Data="_barCustomColorsData"
+                     Height="260px"
+                     ShowValues="true"
+                     Animated="false" />
+        </div>
+        <div class="showcase-card" data-testid="chart-donut-default">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Donut - default palette</h3>
+            <TmChart Type="ChartType.Donut"
+                     Data="_donutDefaultPaletteData"
+                     Height="260px"
+                     ShowValues="true"
+                     Animated="false" />
+        </div>
+    </div>
+</section>
+
 <!-- Bar Chart -->
 <section class="demo-section mb-8">
     <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Bar Chart</h2>
@@ -164,6 +206,65 @@
     {
         _clickedSegment = segment;
     }
+
+    private static readonly ChartData _donutCustomColorsData = new()
+    {
+        Labels = ["Critical", "High", "Medium", "Low", "Info"],
+        Datasets =
+        [
+            new ChartDataset
+            {
+                Label = "Outages",
+                Values = [5, 12, 25, 18, 7],
+                Color = "#3b82f6",
+                BackgroundColors = ["#dc2626", "#ea580c", "#2563eb", "#16a34a", "#64748b"]
+            }
+        ]
+    };
+
+    private static readonly ChartData _horizontalBarCustomColorsData = new()
+    {
+        Labels = ["Maintenance", "Repair", "Inspection", "Upgrade", "Emergency"],
+        Datasets =
+        [
+            new ChartDataset
+            {
+                Label = "Outages",
+                Values = [18, 11, 9, 14, 6],
+                Color = "#2563eb",
+                BackgroundColors = ["#2563eb", "#0d9488", "#7c3aed", "#ea580c", "#be123c"]
+            }
+        ]
+    };
+
+    private static readonly ChartData _barCustomColorsData = new()
+    {
+        Labels = ["North", "South", "East", "West", "Central"],
+        Datasets =
+        [
+            new ChartDataset
+            {
+                Label = "Tickets",
+                Values = [32, 24, 28, 17, 21],
+                Color = "#2563eb",
+                BackgroundColors = ["#2563eb", "#0d9488", "#7c3aed", "#ea580c", "#65a30d"]
+            }
+        ]
+    };
+
+    private static readonly ChartData _donutDefaultPaletteData = new()
+    {
+        Labels = ["Planned", "Unplanned", "Supplier", "Internal", "Other"],
+        Datasets =
+        [
+            new ChartDataset
+            {
+                Label = "Outages",
+                Values = [28, 16, 11, 9, 4],
+                Color = "#3b82f6"
+            }
+        ]
+    };
 
     private static readonly ChartData _barData = new()
     {

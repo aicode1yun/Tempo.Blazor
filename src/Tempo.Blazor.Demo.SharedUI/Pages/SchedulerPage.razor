@@ -33,6 +33,35 @@
     </div>
 </section>
 
+<!-- Month Event Template -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Month Event Template</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Custom month view event content with status badges</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Template</span>
+    </div>
+
+    <div class="showcase-card" data-testid="scheduler-month-template" style="min-height: 500px; position: relative; overflow: hidden;">
+        <TmScheduler View="TmScheduleViewType.Month"
+                     CurrentDate="_templateDate"
+                     Events="_templateEvents"
+                     ReadOnly="true"
+                     OnEventClick="HandleEventClick">
+            <EventTemplate Context="evt">
+                <div class="tm-demo-month-event-template" data-testid="scheduler-month-template-event"
+                     style="display: grid; gap: 2px; min-width: 0; margin: -2px; border-radius: 6px; padding: 4px 6px; background: @evt.Color; color: white; box-shadow: 0 1px 2px rgba(15,23,42,.18);">
+                    <strong style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@evt.Title</strong>
+                    <span style="display: inline-flex; align-items: center; width: max-content; max-width: 100%; border-radius: 999px; padding: 1px 6px; background: rgba(255,255,255,.88); color: #334155; font-size: 10px; font-weight: 700; line-height: 1.35;">
+                        @evt.Description
+                    </span>
+                </div>
+            </EventTemplate>
+        </TmScheduler>
+    </div>
+</section>
+
 <!-- Week View -->
 <section class="demo-section">
     <div class="flex items-center justify-between mb-4">
@@ -193,6 +222,7 @@
     private TmScheduleViewType _monthView = TmScheduleViewType.Month;
     private TmScheduleViewType _interactiveView = TmScheduleViewType.Month;
     private DateTime _currentDate = DateTime.Today;
+    private DateTime _templateDate = new(2026, 7, 2);
     private DateTime _weekDate = DateTime.Today;
     private DateTime _dayDate = DateTime.Today;
     private DateTime _agendaDate = DateTime.Today;
@@ -224,6 +254,13 @@
         new() { Id = "4", Title = "Code Review", Start = DateTime.Today.AddHours(14), End = DateTime.Today.AddHours(15), Color = "#8b5cf6" },
         new() { Id = "5", Title = "Sprint Planning", Start = DateTime.Today.AddDays(2).AddHours(9), End = DateTime.Today.AddDays(2).AddHours(11), Color = "#ef4444" },
         new() { Id = "6", Title = "Design Workshop", Start = DateTime.Today.AddDays(3).AddHours(13), End = DateTime.Today.AddDays(3).AddHours(16), Color = "#ec4899" },
+    };
+
+    private List<TmScheduleEvent> _templateEvents = new()
+    {
+        new() { Id = "mt1", Title = "HV-1023 Supplier outage", Description = "Critical", Start = new DateTime(2026, 7, 1, 8, 0, 0), End = new DateTime(2026, 7, 1, 10, 0, 0), Color = "#dc2626", CssClass = "tm-demo-month-event--critical" },
+        new() { Id = "mt2", Title = "HV-1044 Planned maintenance", Description = "Running", Start = new DateTime(2026, 7, 2, 9, 0, 0), End = new DateTime(2026, 7, 2, 12, 0, 0), Color = "#ea580c", CssClass = "tm-demo-month-event--running" },
+        new() { Id = "mt3", Title = "HV-1060 Recovery confirmed", Description = "Resolved", Start = new DateTime(2026, 7, 4, 13, 0, 0), End = new DateTime(2026, 7, 4, 15, 0, 0), Color = "#16a34a", CssClass = "tm-demo-month-event--resolved" },
     };
 
     private List<TmScheduleEvent> _weekEvents = new()

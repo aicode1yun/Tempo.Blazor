@@ -131,7 +131,7 @@
       "name": "EventTemplate",
       "type": "RenderFragment<TmScheduleEvent>?",
       "isRequired": false,
-      "description": "Custom event template."
+      "description": "Custom event template used by the month view event renderer."
     },
     {
       "name": "Class",
@@ -175,6 +175,10 @@
     {
       "title": "Read-only agenda view",
       "code": "<TmScheduler Events=\"@_events\" View=\"TmScheduleViewType.Agenda\" ReadOnly=\"true\" />"
+    },
+    {
+      "title": "Month view with custom event template",
+      "code": "<TmScheduler Events=\"@_events\" View=\"TmScheduleViewType.Month\" CurrentDate=\"DateTime.Today\" ReadOnly=\"true\">\n    <EventTemplate Context=\"evt\">\n        <div class=\"custom-month-event\">\n            <strong>@evt.Title</strong>\n            <span>@evt.Description</span>\n        </div>\n    </EventTemplate>\n</TmScheduler>"
     }
   ]
 }

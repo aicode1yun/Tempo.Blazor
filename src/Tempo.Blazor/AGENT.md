@@ -497,6 +497,23 @@ Toast.Show("Saved!", ToastSeverity.Success);
 ```
 - `Type`: Bar | Line | Pie | Donut | HorizontalBar
 - `Data`: `ChartData { Labels, Datasets }` — see `ChartModels.cs`
+- `ChartDataset` supports `BackgroundColors` — an optional list of per-value fill colors. When provided, it overrides the single `Color`/`BackgroundColor` for individual bars or pie/donut slices. This is useful for severity dashboards, status charts, or any chart where color carries categorical meaning.
+
+```razor
+<TmChart Type="ChartType.Donut"
+         Data="@(new ChartData {
+             Labels = new[] { "Critical", "High", "Medium", "Low", "Info" },
+             Datasets = new[] {
+                 new ChartDataset {
+                     Label = "Outages",
+                     Values = new[] { 5.0, 12.0, 25.0, 18.0, 7.0 },
+                     Color = "#3b82f6",
+                     BackgroundColors = new[] { "#dc2626", "#ea580c", "#2563eb", "#16a34a", "#64748b" }
+                 }
+             }
+         })"
+         ShowValues="true" />
+```
 
 ---
 

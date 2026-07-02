@@ -86,6 +86,10 @@
       "code": "<TmChart Type=\"ChartType.Donut\"\n         Data=\"@chartData\"\n         ShowValues=\"true\"\n         OnSegmentClick=\"HandleSegmentClick\" />"
     },
     {
+      "title": "Per-value colors",
+      "code": "<TmChart Type=\"ChartType.Donut\"\n         Data=\"@(new ChartData {\n             Labels = new[] { \"Critical\", \"High\", \"Medium\", \"Low\", \"Info\" },\n             Datasets = new[] {\n                 new ChartDataset {\n                     Label = \"Outages\",\n                     Values = new[] { 5.0, 12.0, 25.0, 18.0, 7.0 },\n                     Color = \"#3b82f6\",\n                     BackgroundColors = new[] { \"#dc2626\", \"#ea580c\", \"#2563eb\", \"#16a34a\", \"#64748b\" }\n                 }\n             }\n         })\"\n         Height=\"260px\"\n         ShowValues=\"true\" />"
+    },
+    {
       "title": "Line chart without animation",
       "code": "<TmChart Type=\"ChartType.Line\"\n         Data=\"@lineData\"\n         Animated=\"false\"\n         Width=\"100%\"\n         Height=\"400px\" />"
     }
