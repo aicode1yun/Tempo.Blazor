@@ -11,13 +11,18 @@ public sealed class BuiltInStencilPackProvider : IWireframeComponentProvider
 
     private static readonly Lazy<string> PackJson = new(ReadEmbeddedPackJson);
     private static readonly Lazy<StencilPack> Pack = new(LoadAndValidatePack);
-    private static readonly Lazy<IReadOnlyList<WireframeComponentDef>> Definitions = new(CompileDefinitions);
+    private static readonly Lazy<BuiltInStencilPackCompilation> Compilation = new(CompilePack);
+    private static readonly Lazy<IReadOnlyList<WireframeComponentDef>> Definitions =
+        new(() => Compilation.Value.Definitions);
 
     /// <inheritdoc/>
     public string ProviderId => "TempoBuiltInPack";
 
     /// <inheritdoc/>
     public int Priority => 0;
+
+    /// <summary>Non-fatal validation warnings emitted while loading the built-in pack.</summary>
+    public IReadOnlyList<StencilPackValidationWarning> ValidationWarnings => Compilation.Value.Warnings;
 
     /// <inheritdoc/>
     public IEnumerable<WireframeComponentDef> GetDefinitions() => Definitions.Value;
@@ -26,18 +31,21 @@ public sealed class BuiltInStencilPackProvider : IWireframeComponentProvider
 
     internal static StencilPack LoadPack() => Pack.Value;
 
-    private static IReadOnlyList<WireframeComponentDef> CompileDefinitions()
+    private static BuiltInStencilPackCompilation CompilePack()
     {
         var schemaByType = new BuiltInComponentSchemas()
             .GetSchemas()
             .ToDictionary(schema => schema.Type, StringComparer.Ordinal);
 
-        return new StencilPackCompiler(NativeRendererRegistry.TempoBuiltIn)
-            .Compile(LoadPack())
+        var compiled = new StencilPackCompiler(NativeRendererRegistry.TempoBuiltIn)
+            .CompileWithDiagnostics(LoadPack());
+        var definitions = compiled.Definitions
             .Select(def => schemaByType.TryGetValue(def.Type, out var schema)
                 ? WithSchemaMetadata(def, schema)
                 : def)
             .ToArray();
+
+        return new BuiltInStencilPackCompilation(definitions, compiled.Warnings);
     }
 
     private static StencilPack LoadAndValidatePack()
@@ -117,4 +125,8 @@ public sealed class BuiltInStencilPackProvider : IWireframeComponentProvider
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }
+
+    private sealed record BuiltInStencilPackCompilation(
+        IReadOnlyList<WireframeComponentDef> Definitions,
+        IReadOnlyList<StencilPackValidationWarning> Warnings);
 }

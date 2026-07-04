@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Components.Wireframe.Models;
 using Tempo.Blazor.Components.Wireframe.Stencil;
 
@@ -42,6 +43,21 @@ public class StencilPackSerializerTests
         restored!.Text.Should().BeEmpty();
         restored.Value.Should().BeEmpty();
         restored.When.Should().BeNull();
+    }
+
+    [Fact]
+    public void ValidateRoles_UnknownRole_ReturnsWarningNotError()
+    {
+        var pack = CreateGoodPack();
+        var vocabulary = new UiRoleVocabulary([new BuiltInUiRoleVocabularySource()]);
+
+        var act = () => StencilPackValidator.ValidateRoles(pack, vocabulary);
+
+        var warnings = act.Should().NotThrow().Which;
+        warnings.Should().ContainSingle(warning =>
+            warning.Code == "unknown-role"
+            && warning.ComponentType == "tempo:TmButton"
+            && warning.Role == "primary-action");
     }
 
     internal static StencilPack CreateGoodPack()

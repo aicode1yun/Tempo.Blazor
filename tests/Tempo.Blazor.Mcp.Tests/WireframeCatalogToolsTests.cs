@@ -88,6 +88,52 @@ public class WireframeCatalogToolsTests
     }
 
     [Fact]
+    public void SuggestType_UsesRoleSynonymsBeforeNameDistance()
+    {
+        var registry = Registry();
+        var vocabulary = new UiRoleVocabulary([new BuiltInUiRoleVocabularySource()]);
+
+        var suggestion = WireframeCatalog.SuggestType(
+            registry,
+            vocabulary,
+            "TmOtpInput",
+            scope: null,
+            targetPackIds: null);
+
+        suggestion.Should().Be("TmMaskedTextBox");
+    }
+
+    [Fact]
+    public void SuggestType_RoleSynonymHonorsAppPackPriority()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var registry = new WireframeSchemaRegistry(
+        [
+            new TestSchemaSource("BuiltIn", 0, Schema(
+                "TmSearchInput",
+                "Inputs",
+                "Search Input",
+                isBuiltIn: true,
+                roles: ["search-input"])),
+            new ScopedSchemaSource("A", 10, appA, Schema(
+                "SearchBox",
+                "Custom",
+                "App Search",
+                roles: ["search-input"]))
+        ]);
+        var vocabulary = new UiRoleVocabulary([new BuiltInUiRoleVocabularySource()]);
+
+        var suggestion = WireframeCatalog.SuggestType(
+            registry,
+            vocabulary,
+            "TmSearchBox",
+            WireframeComponentScope.ForApp(appA),
+            ["tempo", $"app:{appA}"]);
+
+        suggestion.Should().Be($"app:{appA}:SearchBox");
+    }
+
+    [Fact]
     public void ListComponents_WithScope_ReturnsBaselineAndMatchingScopedCustomsOnly()
     {
         var appA = Guid.NewGuid().ToString("D");
@@ -166,13 +212,15 @@ public class WireframeCatalogToolsTests
         string type,
         string category,
         string displayName,
-        bool isBuiltIn = false)
+        bool isBuiltIn = false,
+        IReadOnlyList<string>? roles = null)
         => new()
         {
             Type = type,
             Category = category,
             DisplayName = displayName,
             IsBuiltIn = isBuiltIn,
+            Roles = roles,
             Props = []
         };
 

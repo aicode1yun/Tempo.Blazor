@@ -9,6 +9,9 @@ namespace Tempo.Blazor.Mcp.Wireframe;
 /// </summary>
 public static class WireframeCatalog
 {
+    private static readonly Lazy<UiRoleVocabulary> BuiltInVocabulary =
+        new(() => new UiRoleVocabulary([new BuiltInUiRoleVocabularySource()]));
+
     /// <summary>Compact projection: just enough to pick a component.</summary>
     public static object Compact(WireframeComponentSchema s) => new
     {
@@ -53,7 +56,33 @@ public static class WireframeCatalog
         string unknown,
         WireframeComponentScope? scope,
         IReadOnlyList<string>? targetPackIds)
+        => SuggestType(registry, BuiltInVocabulary.Value, unknown, scope, targetPackIds);
+
+    /// <summary>
+    /// Returns a registered type by resolving known role synonyms first, then falling back
+    /// to nearest type-name matching.
+    /// </summary>
+    public static string? SuggestType(
+        WireframeSchemaRegistry registry,
+        UiRoleVocabulary vocabulary,
+        string unknown,
+        WireframeComponentScope? scope,
+        IReadOnlyList<string>? targetPackIds)
     {
+        ArgumentNullException.ThrowIfNull(registry);
+        ArgumentNullException.ThrowIfNull(vocabulary);
+
+        if (string.IsNullOrWhiteSpace(unknown))
+            return null;
+
+        var role = vocabulary.Find(unknown);
+        if (role is not null)
+        {
+            return registry.ResolveByRole(role.Slug, scope, targetPackIds)
+                .FirstOrDefault()
+                ?.Type;
+        }
+
         string? best = null;
         var bestDistance = int.MaxValue;
         foreach (var schema in registry.GetAll(scope, targetPackIds))

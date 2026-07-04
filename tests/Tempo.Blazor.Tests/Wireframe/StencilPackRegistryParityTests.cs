@@ -99,6 +99,23 @@ public class StencilPackRegistryParityTests
         def!.Roles.Should().Contain("search-input");
     }
 
+    [Fact]
+    public void BuiltInSchemas_RolesMatchBuiltInPackRoles()
+    {
+        var pack = StencilPackSerializer.Deserialize(BuiltInStencilPackProvider.ReadPackJson());
+        var schemas = new BuiltInComponentSchemas()
+            .GetSchemas()
+            .ToDictionary(schema => schema.Type, StringComparer.Ordinal);
+
+        foreach (var component in pack.Components)
+        {
+            schemas.TryGetValue(component.Type, out var schema)
+                .Should()
+                .BeTrue($"built-in schema '{component.Type}' should exist");
+            schema!.Roles.Should().Equal(component.Roles ?? []);
+        }
+    }
+
     [Theory]
     [MemberData(nameof(GoldenDeclarativeTypeData))]
     public async Task DeclarativeGoldenTypes_RenderSafeSvg(string type)

@@ -48,6 +48,18 @@ public class WireframeValidationEngineTests
     }
 
     [Fact]
+    public void UnknownType_UsesRoleSynonymSuggestion()
+    {
+        var doc = DocWith(new WireframeElement { Type = "TmOtpInput", W = 100, H = 40 });
+
+        var result = WireframeValidationEngine.Validate(doc, Registry());
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().ContainSingle()
+            .Which.Should().Contain("TmMaskedTextBox");
+    }
+
+    [Fact]
     public void NonPositiveSize_IsReported()
     {
         var doc = DocWith(new WireframeElement { Type = KnownType(), W = 0, H = -5 });

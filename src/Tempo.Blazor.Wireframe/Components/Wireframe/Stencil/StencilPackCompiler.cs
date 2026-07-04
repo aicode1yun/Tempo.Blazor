@@ -4,9 +4,17 @@ using Tempo.Blazor.Components.Wireframe.Models;
 
 namespace Tempo.Blazor.Components.Wireframe.Stencil;
 
+/// <summary>Compiled stencil pack definitions plus non-fatal validation diagnostics.</summary>
+public sealed record StencilPackCompilationResult(
+    IReadOnlyList<WireframeComponentDef> Definitions,
+    IReadOnlyList<StencilPackValidationWarning> Warnings);
+
 /// <summary>Compiles declarative stencil pack components into wireframe component definitions.</summary>
 public sealed class StencilPackCompiler
 {
+    private static readonly Lazy<UiRoleVocabulary> BuiltInVocabulary =
+        new(() => new UiRoleVocabulary([new BuiltInUiRoleVocabularySource()]));
+
     private readonly NativeRendererRegistry _nativeRenderers;
 
     public StencilPackCompiler()
@@ -20,7 +28,23 @@ public sealed class StencilPackCompiler
         _nativeRenderers = nativeRenderers;
     }
 
+    public StencilPackCompilationResult CompileWithDiagnostics(
+        StencilPack pack,
+        UiRoleVocabulary? vocabulary = null)
+    {
+        ArgumentNullException.ThrowIfNull(pack);
+
+        var effectiveVocabulary = vocabulary ?? BuiltInVocabulary.Value;
+        var warnings = StencilPackValidator.ValidateRoles(pack, effectiveVocabulary);
+        return new StencilPackCompilationResult(
+            CompileDefinitions(pack).ToArray(),
+            warnings);
+    }
+
     public IEnumerable<WireframeComponentDef> Compile(StencilPack pack)
+        => CompileWithDiagnostics(pack).Definitions;
+
+    private IEnumerable<WireframeComponentDef> CompileDefinitions(StencilPack pack)
     {
         ArgumentNullException.ThrowIfNull(pack);
         var tokens = StencilTokenScope.FromPack(pack);
