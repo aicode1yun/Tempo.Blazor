@@ -158,6 +158,74 @@ public class WireframeOperationToolsTests
     }
 
     [Fact]
+    public void Engine_AddElement_WithRole_ResolvesTypeAndStoresRole()
+    {
+        var doc = new WireframeDocument();
+        doc.EnsureActivePage();
+
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            """[{"op":"addElement","role":"otp-input","x":10,"y":12}]""",
+            Registry());
+
+        result.Success.Should().BeTrue();
+        result.Warnings.Should().BeEmpty();
+        var element = doc.Elements.Should().ContainSingle().Which;
+        element.Type.Should().Be("TmMaskedTextBox");
+        element.Role.Should().Be("otp-input");
+        element.X.Should().Be(10);
+        element.Y.Should().Be(12);
+        element.W.Should().Be(180);
+        element.H.Should().Be(36);
+    }
+
+    [Fact]
+    public void Engine_AddElement_WithAmbiguousRole_WarnsAndUsesPrimaryCandidate()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var registry = new WireframeSchemaRegistry(
+        [
+            new BuiltInComponentSchemas(),
+            new ScopedSchemaSource("A", 10, appA, Schema("SearchBox", ["search-input"]))
+        ]);
+        var doc = new WireframeDocument { TargetPackIds = ["tempo", $"app:{appA}"] };
+        doc.EnsureActivePage();
+
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            """[{"op":"addElement","role":"search-input"}]""",
+            registry,
+            WireframeComponentScope.ForApp(appA));
+
+        result.Success.Should().BeTrue();
+        var element = doc.Elements.Should().ContainSingle().Which;
+        element.Type.Should().Be($"app:{appA}:SearchBox");
+        element.Role.Should().Be("search-input");
+        result.Warnings.Should().ContainSingle(warning =>
+            warning.ElementId == element.Id
+            && warning.Code == "role-ambiguous"
+            && warning.Hint.Contains("search-input", StringComparison.Ordinal)
+            && warning.Hint.Contains(element.Type, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Engine_AddElement_WithUnmappedRole_ReturnsGapError()
+    {
+        var doc = new WireframeDocument();
+        doc.EnsureActivePage();
+
+        var result = WireframeOperationEngine.Apply(
+            doc,
+            """[{"op":"addElement","role":"future-control"}]""",
+            Registry());
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().ContainSingle()
+            .Which.Should().Contain("role 'future-control'").And.Contain("gap");
+        doc.Elements.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Engine_ScaffoldLanding_SeedsNavbarHeroGridFooter()
     {
         var registry = Registry();
@@ -578,12 +646,13 @@ public class WireframeOperationToolsTests
         (await backend.GetWireframeDocumentAsync(id))!.Title.Should().Be("Design"); // unchanged
     }
 
-    private static WireframeComponentSchema Schema(string type)
+    private static WireframeComponentSchema Schema(string type, IReadOnlyList<string>? roles = null)
         => new()
         {
             Type = type,
             Category = "Custom",
             DisplayName = type,
+            Roles = roles,
             Props = []
         };
 

@@ -29,7 +29,7 @@ public static class WireframeOperationEngine
     private static readonly HashSet<string> LayoutParams = new(StringComparer.Ordinal)
     {
         "op", "pageId", "children", "ids", "gap", "padding", "columns",
-        "direction", "align", "wrap", "margin", "x", "y", "w", "h", "type"
+        "direction", "align", "wrap", "margin", "x", "y", "w", "h", "type", "role"
     };
 
     public static WireframeOperationResult Apply(
@@ -212,7 +212,7 @@ public static class WireframeOperationEngine
             warnings,
             out var el);
         if (errorMessage is not null) return errorMessage;
-        if (el is null) return "addElement requires 'type'.";
+        if (el is null) return "addElement requires 'type' or 'role'.";
 
         errorMessage = ApplyRelativeAnchor(page, el, op);
         if (errorMessage is not null) return errorMessage;
@@ -545,8 +545,30 @@ public static class WireframeOperationEngine
             ? node.GetValue<string>()
             : null;
 
+    private static string? NormalizeOptional(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
     private static bool IsTrue(JsonObject op, string key)
         => op[key] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
+
+    private static WireframeLintWarning CreateAmbiguousRoleWarning(
+        string elementId,
+        string role,
+        IReadOnlyList<WireframeComponentSchema> candidates)
+    {
+        var selected = candidates[0].Type;
+        var alternatives = string.Join(", ", candidates.Skip(1).Select(candidate => candidate.Type).Take(5));
+        var suffix = candidates.Count > 6 ? ", ..." : string.Empty;
+        return new WireframeLintWarning(
+            elementId,
+            "role-ambiguous",
+            $"role '{role}' resolved to '{selected}' but also matched: {alternatives}{suffix}.");
+    }
+
+    private static string DescribeTargetPacks(IReadOnlyList<string>? targetPackIds)
+        => targetPackIds is null || targetPackIds.Count == 0
+            ? "all visible packs"
+            : string.Join(", ", targetPackIds);
 
     private static string? CreateElement(
         WireframeDocument document,
@@ -561,17 +583,51 @@ public static class WireframeOperationEngine
         out WireframeElement? element)
     {
         element = null;
-        var type = TryString(op, "type");
-        if (string.IsNullOrWhiteSpace(type)) return $"{operationName} requires 'type'.";
+        var targetPackIds = EffectiveTargetPackIds(document, page);
+        var type = NormalizeOptional(TryString(op, "type"));
+        var role = NormalizeOptional(TryString(op, "role"));
+        WireframeComponentSchema? schema;
+        IReadOnlyList<WireframeComponentSchema> roleCandidates = [];
 
-        var schema = registry?.GetSchema(type, scope, EffectiveTargetPackIds(document, page));
-        if (registry is not null && schema is null)
+        if (!string.IsNullOrWhiteSpace(role))
         {
-            return $"component type '{type}' is not available in target packs.";
+            if (registry is null)
+            {
+                return $"{operationName} requires a schema registry to resolve role '{role}'.";
+            }
+
+            roleCandidates = registry.ResolveByRole(role, scope, targetPackIds);
+            if (roleCandidates.Count == 0)
+            {
+                return $"no component maps role '{role}' in target packs ({DescribeTargetPacks(targetPackIds)}); add a schema role mapping to close this gap.";
+            }
+
+            schema = roleCandidates[0];
+            type = schema.Type;
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(type)) return $"{operationName} requires 'type' or 'role'.";
+
+            schema = registry?.GetSchema(type, scope, targetPackIds);
+            if (registry is not null && schema is null)
+            {
+                return $"component type '{type}' is not available in target packs.";
+            }
         }
 
-        var el = new WireframeElement { Type = type };
+        if (string.IsNullOrWhiteSpace(type))
+        {
+            return $"{operationName} resolved an empty component type.";
+        }
+
+        var el = new WireframeElement { Type = type, Role = role };
         if (TryString(op, "id") is { Length: > 0 } id) el.Id = id;
+        if (roleCandidates.Count > 1)
+        {
+            warnings.Add(CreateAmbiguousRoleWarning(el.Id, role!, roleCandidates));
+        }
+
         if (TryDouble(op, "x", out var x)) el.X = x;
         if (TryDouble(op, "y", out var y)) el.Y = y;
         ApplyProps(el, op["props"]);
@@ -747,7 +803,7 @@ public static class WireframeOperationEngine
                 warnings,
                 out var element);
             if (error is not null) return error;
-            if (element is null) return $"{kind}: children[{i}] must define a type.";
+            if (element is null) return $"{kind}: children[{i}] must define a type or role.";
 
             items.Add(element);
             newElements.Add(element);

@@ -58,6 +58,32 @@ public class WireframeImplementationBriefTests
     }
 
     [Fact]
+    public void Build_ReportsRoleBesideConcreteType()
+    {
+        var doc = new WireframeDocument { Title = "Login" };
+        doc.EnsureActivePage();
+        var page = doc.ActivePage!;
+        page.Elements.Add(new WireframeElement
+        {
+            Id = "otp",
+            Type = "TmMaskedTextBox",
+            Role = "otp-input",
+            X = 24,
+            Y = 120,
+            W = 180,
+            H = 36
+        });
+
+        var brief = WireframeImplementationBrief.Build(doc);
+
+        var element = brief.Pages[0].Regions.Single().Elements.Single();
+        element.Type.Should().Be("TmMaskedTextBox");
+        element.Role.Should().Be("otp-input");
+        brief.Pages[0].Components.Single().Role.Should().Be("otp-input");
+        brief.ComponentsUsed.Single().Role.Should().Be("otp-input");
+    }
+
+    [Fact]
     public async Task BriefTool_ReturnsBriefForStoredDocument()
     {
         var backend = new FakeWireframeBackend();

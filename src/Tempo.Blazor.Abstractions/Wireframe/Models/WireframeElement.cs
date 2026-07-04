@@ -18,6 +18,12 @@ public sealed class WireframeElement
     /// </summary>
     public string Type { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Optional library-agnostic UI role requested during authoring, such as
+    /// <c>search-input</c> or <c>otp-input</c>.
+    /// </summary>
+    public string? Role { get; set; }
+
     /// <summary>X position of the element's top-left corner in pixels.</summary>
     public double X { get; set; }
 

@@ -16,7 +16,7 @@ public class WireframeDocumentTests
     {
         var doc = new WireframeDocument();
 
-        doc.Version.Should().Be("2.0");
+        doc.Version.Should().Be("2.1");
         doc.Title.Should().Be("Untitled wireframe");
         doc.Width.Should().Be(1280);
         doc.Height.Should().Be(800);

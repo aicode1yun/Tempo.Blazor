@@ -106,6 +106,22 @@ public class WireframeSchemaTests
     }
 
     [Fact]
+    public void SerializedElement_RoleRoundTrips()
+    {
+        var wf = new WireframeDocument();
+        wf.Elements.Add(new WireframeElement { Type = "TmMaskedTextBox", Role = "otp-input" });
+
+        var json = WireframeSerializer.Serialize(wf);
+        using var doc = JsonDocument.Parse(json);
+
+        var el = doc.RootElement.GetProperty("pages")[0].GetProperty("elements")[0];
+        el.GetProperty("role").GetString().Should().Be("otp-input");
+
+        var restored = WireframeSerializer.Deserialize(json);
+        restored.Elements[0].Role.Should().Be("otp-input");
+    }
+
+    [Fact]
     public void SerializedElement_CoordinatesAreNumbers()
     {
         var wf = new WireframeDocument();
