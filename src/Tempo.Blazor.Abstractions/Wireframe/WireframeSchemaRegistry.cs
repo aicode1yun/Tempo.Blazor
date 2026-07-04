@@ -183,6 +183,7 @@ public sealed class WireframeSchemaRegistry
             LocalType = localType,
             Category = schema.Category,
             DisplayName = schema.DisplayName,
+            Roles = schema.Roles,
             IsBuiltIn = isBuiltIn,
             DefaultWidth = schema.DefaultWidth,
             DefaultHeight = schema.DefaultHeight,

@@ -11,6 +11,8 @@ public sealed class StencilComponent
 
     public required string Category { get; init; }
 
+    public IReadOnlyList<string>? Roles { get; init; }
+
     public string? Icon { get; init; }
 
     public required StencilSize DefaultSize { get; init; }

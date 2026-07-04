@@ -323,4 +323,23 @@ public class WireframeSchemaTests
         restored.Width.Should().Be(1920);
         restored.Height.Should().Be(1080);
     }
+
+    [Fact]
+    public void ComponentSchema_RolesSerializeAsCamelCaseAndRoundTrip()
+    {
+        var schema = new WireframeComponentSchema
+        {
+            Type = "TmSearchInput",
+            Category = "Inputs",
+            DisplayName = "Search input",
+            Roles = ["search-input", "text-input"]
+        };
+
+        var json = JsonSerializer.Serialize(schema, WireframeJsonOptions.Default);
+        var restored = JsonSerializer.Deserialize<WireframeComponentSchema>(json, WireframeJsonOptions.Default);
+
+        json.Should().Contain("\"roles\"");
+        json.Should().NotContain("\"Roles\"");
+        restored!.Roles.Should().Equal("search-input", "text-input");
+    }
 }

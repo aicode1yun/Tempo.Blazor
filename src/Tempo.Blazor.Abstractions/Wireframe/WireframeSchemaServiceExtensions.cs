@@ -14,13 +14,16 @@ public static class WireframeSchemaServiceExtensions
 {
     /// <summary>
     /// Registers <see cref="BuiltInComponentSchemas"/> and <see cref="WireframeSchemaRegistry"/>
-    /// so that <see cref="WireframeSchemaRegistry"/> can be injected anywhere.
+    /// plus the built-in UI role vocabulary so both registries can be injected anywhere.
     /// </summary>
     public static IServiceCollection AddWireframeSchemas(this IServiceCollection services)
     {
         services.TryAddSingleton<IWireframeSchemaSource, BuiltInComponentSchemas>();
         services.TryAddSingleton<WireframeSchemaRegistry>(sp =>
             new WireframeSchemaRegistry(sp.GetServices<IWireframeSchemaSource>()));
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IUiRoleVocabularySource, BuiltInUiRoleVocabularySource>());
+        services.TryAddSingleton<UiRoleVocabulary>(sp =>
+            new UiRoleVocabulary(sp.GetServices<IUiRoleVocabularySource>()));
         return services;
     }
 
@@ -33,6 +36,19 @@ public static class WireframeSchemaServiceExtensions
         where T : class, IWireframeSchemaSource
     {
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IWireframeSchemaSource, T>());
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a custom <see cref="IUiRoleVocabularySource"/> so its roles
+    /// and synonyms are merged into <see cref="UiRoleVocabulary"/>.
+    /// Higher <see cref="IUiRoleVocabularySource.Priority"/> wins for duplicate
+    /// role display metadata while synonyms are unioned.
+    /// </summary>
+    public static IServiceCollection AddUiRoleVocabularySource<T>(this IServiceCollection services)
+        where T : class, IUiRoleVocabularySource
+    {
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IUiRoleVocabularySource, T>());
         return services;
     }
 }

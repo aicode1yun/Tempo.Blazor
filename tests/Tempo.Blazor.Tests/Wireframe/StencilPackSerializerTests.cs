@@ -97,6 +97,7 @@ public class StencilPackSerializerTests
                     Type = "tempo:TmButton",
                     DisplayName = "Button",
                     Category = "Inputs",
+                    Roles = ["button", "primary-action"],
                     Icon = "check",
                     DefaultSize = new StencilSize(128, 40),
                     MinSize = new StencilSize(88, 32),
