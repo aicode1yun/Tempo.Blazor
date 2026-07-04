@@ -184,6 +184,7 @@ public sealed class WireframeComponentRegistry
             Category = def.Category,
             DisplayName = def.DisplayName,
             Roles = def.Roles,
+            IsContainer = def.IsContainer,
             Icon = def.Icon,
             DefaultWidth = def.DefaultWidth,
             DefaultHeight = def.DefaultHeight,

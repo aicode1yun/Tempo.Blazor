@@ -60,6 +60,46 @@ public class StencilPackSerializerTests
             && warning.Role == "primary-action");
     }
 
+    [Fact]
+    public void StencilComponent_IsContainerRoundTrips()
+    {
+        var pack = new StencilPack
+        {
+            Format = "tempo-stencil",
+            FormatVersion = 1,
+            Id = "tempo",
+            Namespace = "tempo",
+            Components =
+            [
+                new StencilComponent
+                {
+                    Type = "tempo:TmPanel",
+                    DisplayName = "Panel",
+                    Category = "Layout",
+                    Roles = ["section"],
+                    IsContainer = true,
+                    DefaultSize = new StencilSize(240, 160),
+                    Render = new RenderNode
+                    {
+                        Kind = RenderNodeKind.Rect,
+                        Attributes = new Dictionary<string, object?>
+                        {
+                            ["w"] = "size.w",
+                            ["h"] = "size.h"
+                        }
+                    }
+                }
+            ]
+        };
+
+        var json = StencilPackSerializer.Serialize(pack);
+        var restored = StencilPackSerializer.Deserialize(json);
+
+        json.Should().Contain("\"isContainer\": true");
+        restored.Components.Should().ContainSingle()
+            .Which.IsContainer.Should().BeTrue();
+    }
+
     internal static StencilPack CreateGoodPack()
     {
         return new StencilPack

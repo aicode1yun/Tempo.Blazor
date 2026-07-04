@@ -213,6 +213,7 @@ public sealed class WireframeSchemaRegistry
             DisplayName = schema.DisplayName,
             Roles = schema.Roles,
             IsBuiltIn = isBuiltIn,
+            IsContainer = schema.IsContainer,
             DefaultWidth = schema.DefaultWidth,
             DefaultHeight = schema.DefaultHeight,
             Props = schema.Props,

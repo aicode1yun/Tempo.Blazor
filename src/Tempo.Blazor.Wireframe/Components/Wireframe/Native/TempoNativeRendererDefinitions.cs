@@ -43,6 +43,7 @@ internal static class TempoNativeRendererDefinitions
             DefaultHeight = schema.DefaultHeight,
             Props = [.. schema.Props],
             IsBuiltIn = true,
+            IsContainer = schema.IsContainer,
             RenderSvg = render,
             SizePresets = schema.SizePresets
         };

@@ -1,5 +1,6 @@
 namespace Tempo.Blazor.Components.Wireframe.Stencil;
 
+using System.Text.Json.Serialization;
 using Tempo.Blazor.Components.Wireframe.Models;
 
 /// <summary>Describes one component or primitive that can be placed on a wireframe canvas.</summary>
@@ -12,6 +13,9 @@ public sealed class StencilComponent
     public required string Category { get; init; }
 
     public IReadOnlyList<string>? Roles { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool IsContainer { get; init; }
 
     public string? Icon { get; init; }
 

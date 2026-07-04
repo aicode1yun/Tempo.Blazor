@@ -358,4 +358,23 @@ public class WireframeSchemaTests
         json.Should().NotContain("\"Roles\"");
         restored!.Roles.Should().Equal("search-input", "text-input");
     }
+
+    [Fact]
+    public void ComponentSchema_IsContainerSerializeAsCamelCaseAndRoundTrip()
+    {
+        var schema = new WireframeComponentSchema
+        {
+            Type = "TmCard",
+            Category = "Data Display",
+            DisplayName = "Card",
+            IsContainer = true
+        };
+
+        var json = JsonSerializer.Serialize(schema, WireframeJsonOptions.Default);
+        var restored = JsonSerializer.Deserialize<WireframeComponentSchema>(json, WireframeJsonOptions.Default);
+
+        json.Should().Contain("\"isContainer\"");
+        json.Should().NotContain("\"IsContainer\"");
+        restored!.IsContainer.Should().BeTrue();
+    }
 }

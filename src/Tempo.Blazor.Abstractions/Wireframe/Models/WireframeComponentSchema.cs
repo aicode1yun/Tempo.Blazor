@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Tempo.Blazor.Components.Wireframe.Models;
 
 /// <summary>
@@ -42,6 +44,13 @@ public sealed class WireframeComponentSchema
 
     /// <summary>True for built-in Tempo.Blazor components; false for app/custom schemas.</summary>
     public bool IsBuiltIn { get; init; }
+
+    /// <summary>
+    /// True when the component is intended to visually contain other placed elements.
+    /// Used by authoring/lint tools to distinguish parent-like containment from sibling overlap.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool IsContainer { get; init; }
 
     /// <summary>Default element width when dropped onto the canvas.</summary>
     public double DefaultWidth { get; init; } = 120;

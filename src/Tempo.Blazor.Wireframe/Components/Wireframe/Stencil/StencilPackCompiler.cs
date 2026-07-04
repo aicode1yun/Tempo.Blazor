@@ -75,6 +75,7 @@ public sealed class StencilPackCompiler
                 Category = component.Category,
                 DisplayName = component.DisplayName,
                 Roles = component.Roles,
+                IsContainer = component.IsContainer,
                 Icon = component.Icon,
                 DefaultWidth = component.DefaultSize.Width,
                 DefaultHeight = component.DefaultSize.Height,

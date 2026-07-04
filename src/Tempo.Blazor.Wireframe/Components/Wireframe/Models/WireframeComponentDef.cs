@@ -37,6 +37,11 @@ public sealed class WireframeComponentDef
     /// <summary>Library-agnostic UI roles this definition can satisfy.</summary>
     public IReadOnlyList<string>? Roles { get; init; }
 
+    /// <summary>
+    /// True when the component is intended to visually contain other placed elements.
+    /// </summary>
+    public bool IsContainer { get; init; }
+
     /// <summary>TmIcon name used in the Toolbox list item.</summary>
     public string? Icon { get; init; }
 

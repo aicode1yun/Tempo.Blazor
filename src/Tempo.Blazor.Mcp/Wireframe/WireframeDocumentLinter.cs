@@ -8,9 +8,6 @@ public static class WireframeDocumentLinter
 {
     private const double ApproximateTextWidth = 7;
 
-    private static readonly HashSet<string> DefaultSizeContainers =
-        new(StringComparer.Ordinal) { "TmCard", "TmSection", "TmStackLayout" };
-
     private static readonly HashSet<string> TextProps =
         new(StringComparer.Ordinal) { "text", "title", "label" };
 
@@ -37,7 +34,7 @@ public static class WireframeDocumentLinter
                 AddEmptyRequiredContentWarnings(element, schema, warnings);
             }
 
-            AddOverlapWarnings(page, warnings);
+            AddOverlapWarnings(page, warnings, registry, scope, targetPackIds);
         }
 
         return warnings;
@@ -51,7 +48,7 @@ public static class WireframeDocumentLinter
         WireframeComponentSchema schema,
         List<WireframeLintWarning> warnings)
     {
-        if (!DefaultSizeContainers.Contains(element.Type)
+        if (!schema.IsContainer
             || element.W != schema.DefaultWidth
             || element.H != schema.DefaultHeight)
         {
@@ -138,7 +135,12 @@ public static class WireframeDocumentLinter
             _ => false
         };
 
-    private static void AddOverlapWarnings(WireframePage page, List<WireframeLintWarning> warnings)
+    private static void AddOverlapWarnings(
+        WireframePage page,
+        List<WireframeLintWarning> warnings,
+        WireframeSchemaRegistry registry,
+        WireframeComponentScope? scope,
+        IReadOnlyList<string>? targetPackIds)
     {
         for (var i = 0; i < page.Elements.Count; i++)
         {
@@ -147,6 +149,12 @@ public static class WireframeDocumentLinter
                 var first = page.Elements[i];
                 var second = page.Elements[j];
                 if (!Overlaps(first, second))
+                {
+                    continue;
+                }
+
+                if (IsContainedInContainer(first, second, registry, scope, targetPackIds)
+                    || IsContainedInContainer(second, first, registry, scope, targetPackIds))
                 {
                     continue;
                 }
@@ -168,4 +176,21 @@ public static class WireframeDocumentLinter
             && first.X + first.W > second.X
             && first.Y < second.Y + second.H
             && first.Y + first.H > second.Y;
+
+    private static bool IsContainedInContainer(
+        WireframeElement outer,
+        WireframeElement inner,
+        WireframeSchemaRegistry registry,
+        WireframeComponentScope? scope,
+        IReadOnlyList<string>? targetPackIds)
+    {
+        var schema = registry.GetSchema(outer.Type, scope, targetPackIds);
+        return schema?.IsContainer == true && FullyContains(outer, inner);
+    }
+
+    private static bool FullyContains(WireframeElement outer, WireframeElement inner)
+        => outer.X <= inner.X
+            && outer.Y <= inner.Y
+            && outer.X + outer.W >= inner.X + inner.W
+            && outer.Y + outer.H >= inner.Y + inner.H;
 }

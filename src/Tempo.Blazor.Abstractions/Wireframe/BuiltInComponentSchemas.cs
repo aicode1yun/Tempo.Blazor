@@ -233,9 +233,25 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmDropdownItem"] = ["dropdown"],
         };
 
-    private static WireframeComponentSchema WithBuiltInRoles(WireframeComponentSchema schema)
+    private static readonly HashSet<string> BuiltInContainers =
+        new(StringComparer.Ordinal)
+        {
+            "__group__",
+            "TmCard",
+            "TmDrawer",
+            "TmSection",
+            "TmStackLayout",
+            "TmModal",
+            "TmDialog",
+            "TmFormSection",
+            "TmFormRow"
+        };
+
+    private static WireframeComponentSchema WithBuiltInMetadata(WireframeComponentSchema schema)
     {
-        if (!BuiltInRoles.TryGetValue(schema.Type, out var roles))
+        var hasRoles = BuiltInRoles.TryGetValue(schema.Type, out var roles);
+        var isContainer = schema.IsContainer || BuiltInContainers.Contains(schema.Type);
+        if (!hasRoles && isContainer == schema.IsContainer)
             return schema;
 
         return new WireframeComponentSchema
@@ -245,8 +261,9 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             LocalType = schema.LocalType,
             Category = schema.Category,
             DisplayName = schema.DisplayName,
-            Roles = schema.Roles ?? roles,
+            Roles = hasRoles ? schema.Roles ?? roles : schema.Roles,
             IsBuiltIn = schema.IsBuiltIn,
+            IsContainer = isContainer,
             DefaultWidth = schema.DefaultWidth,
             DefaultHeight = schema.DefaultHeight,
             Props = schema.Props,
@@ -259,27 +276,27 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
     /// <inheritdoc/>
     public IEnumerable<WireframeComponentSchema> GetSchemas()
     {
-        foreach (var s in Buttons())       yield return WithBuiltInRoles(s);
-        foreach (var s in Avatars())       yield return WithBuiltInRoles(s);
-        foreach (var s in Icons())         yield return WithBuiltInRoles(s);
-        foreach (var s in Inputs())        yield return WithBuiltInRoles(s);
-        foreach (var s in Tags())          yield return WithBuiltInRoles(s);
-        foreach (var s in Pickers())       yield return WithBuiltInRoles(s);
-        foreach (var s in Dropdowns())     yield return WithBuiltInRoles(s);
-        foreach (var s in DataDisplay())   yield return WithBuiltInRoles(s);
-        foreach (var s in DataTable())     yield return WithBuiltInRoles(s);
-        foreach (var s in Feedback())      yield return WithBuiltInRoles(s);
-        foreach (var s in Notifications()) yield return WithBuiltInRoles(s);
-        foreach (var s in Navigation())    yield return WithBuiltInRoles(s);
-        foreach (var s in Layout())        yield return WithBuiltInRoles(s);
-        foreach (var s in Toolbar())       yield return WithBuiltInRoles(s);
-        foreach (var s in Forms())         yield return WithBuiltInRoles(s);
-        foreach (var s in Files())         yield return WithBuiltInRoles(s);
-        foreach (var s in Charts())        yield return WithBuiltInRoles(s);
-        foreach (var s in Workflow())      yield return WithBuiltInRoles(s);
-        foreach (var s in Complex())       yield return WithBuiltInRoles(s);
-        foreach (var s in Color())         yield return WithBuiltInRoles(s);
-        foreach (var s in EditorsAndApps()) yield return WithBuiltInRoles(s);
+        foreach (var s in Buttons())       yield return WithBuiltInMetadata(s);
+        foreach (var s in Avatars())       yield return WithBuiltInMetadata(s);
+        foreach (var s in Icons())         yield return WithBuiltInMetadata(s);
+        foreach (var s in Inputs())        yield return WithBuiltInMetadata(s);
+        foreach (var s in Tags())          yield return WithBuiltInMetadata(s);
+        foreach (var s in Pickers())       yield return WithBuiltInMetadata(s);
+        foreach (var s in Dropdowns())     yield return WithBuiltInMetadata(s);
+        foreach (var s in DataDisplay())   yield return WithBuiltInMetadata(s);
+        foreach (var s in DataTable())     yield return WithBuiltInMetadata(s);
+        foreach (var s in Feedback())      yield return WithBuiltInMetadata(s);
+        foreach (var s in Notifications()) yield return WithBuiltInMetadata(s);
+        foreach (var s in Navigation())    yield return WithBuiltInMetadata(s);
+        foreach (var s in Layout())        yield return WithBuiltInMetadata(s);
+        foreach (var s in Toolbar())       yield return WithBuiltInMetadata(s);
+        foreach (var s in Forms())         yield return WithBuiltInMetadata(s);
+        foreach (var s in Files())         yield return WithBuiltInMetadata(s);
+        foreach (var s in Charts())        yield return WithBuiltInMetadata(s);
+        foreach (var s in Workflow())      yield return WithBuiltInMetadata(s);
+        foreach (var s in Complex())       yield return WithBuiltInMetadata(s);
+        foreach (var s in Color())         yield return WithBuiltInMetadata(s);
+        foreach (var s in EditorsAndApps()) yield return WithBuiltInMetadata(s);
     }
 
     // ── BUTTONS ───────────────────────────────────────────────────────────────

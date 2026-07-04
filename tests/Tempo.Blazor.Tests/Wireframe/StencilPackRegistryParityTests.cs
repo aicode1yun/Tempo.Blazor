@@ -100,6 +100,17 @@ public class StencilPackRegistryParityTests
     }
 
     [Fact]
+    public void Registry_PropagatesBuiltInPackContainerFlagToDefinitions()
+    {
+        var registry = Registry();
+
+        var def = registry.GetDef("TmCard");
+
+        def.Should().NotBeNull();
+        def!.IsContainer.Should().BeTrue();
+    }
+
+    [Fact]
     public void BuiltInSchemas_RolesMatchBuiltInPackRoles()
     {
         var pack = StencilPackSerializer.Deserialize(BuiltInStencilPackProvider.ReadPackJson());
@@ -115,6 +126,35 @@ public class StencilPackRegistryParityTests
             schema!.Roles.Should().Equal(component.Roles ?? []);
         }
     }
+
+    [Fact]
+    public void BuiltInSchemas_ContainerFlagsMatchBuiltInPack()
+    {
+        var pack = StencilPackSerializer.Deserialize(BuiltInStencilPackProvider.ReadPackJson());
+        var schemas = new BuiltInComponentSchemas()
+            .GetSchemas()
+            .ToDictionary(schema => schema.Type, StringComparer.Ordinal);
+
+        foreach (var component in pack.Components)
+        {
+            schemas.TryGetValue(component.Type, out var schema)
+                .Should()
+                .BeTrue($"built-in schema '{component.Type}' should exist");
+            schema!.IsContainer.Should().Be(component.IsContainer);
+        }
+    }
+
+    [Fact]
+    public void BuiltInPack_MarksKnownLayoutContainers()
+    {
+        var pack = StencilPackSerializer.Deserialize(BuiltInStencilPackProvider.ReadPackJson());
+
+        pack.Components
+            .Where(component => component.IsContainer)
+            .Select(component => component.Type)
+            .Should().Contain(["TmCard", "TmSection", "TmModal", "TmDialog", "TmDrawer", "TmFormSection"]);
+    }
+
 
     [Theory]
     [MemberData(nameof(GoldenDeclarativeTypeData))]

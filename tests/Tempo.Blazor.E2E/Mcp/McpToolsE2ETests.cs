@@ -29,6 +29,16 @@ public class McpToolsE2ETests
         return list.GetProperty("items").EnumerateArray().First().GetProperty("type").GetString()!;
     }
 
+    private static bool HasWarning(JsonElement result, string code, string? elementId = null)
+        => result.TryGetProperty("warnings", out var warnings)
+           && warnings.ValueKind == JsonValueKind.Array
+           && warnings.EnumerateArray().Any(w =>
+               w.TryGetProperty("code", out var warningCode)
+               && warningCode.GetString() == code
+               && (elementId is null
+                   || (w.TryGetProperty("elementId", out var warningElementId)
+                       && warningElementId.GetString() == elementId)));
+
     [TestMethod]
     public async Task Mcp1_Initialize_And_ListTools_ExposesAllWireframeTools()
     {
@@ -139,6 +149,69 @@ public class McpToolsE2ETests
         var totalElements = page.GetProperty("regions").EnumerateArray()
             .Sum(r => r.GetProperty("elements").GetArrayLength());
         Assert.IsTrue(totalElements >= 10, $"expected >=10 elements, got {totalElements}");
+    }
+
+    [TestMethod]
+    public async Task Mcp6_OverlapLint_SuppressesContainedElementOnlyForContainer()
+    {
+        var client = await ConnectAsync();
+
+        var containedId = (await client.CallToolAsync(
+                "wireframe_create_document",
+                new { title = "Contained overlap lint" }))
+            .GetProperty("id").GetGuid();
+        var containedOps = JsonSerializer.Serialize(new object[]
+        {
+            new { op = "setCanvasSize", width = 500, height = 400 },
+            new { op = "addElement", id = "card", type = "TmCard", x = 20, y = 20, w = 240, h = 160 },
+            new
+            {
+                op = "addElement",
+                id = "button",
+                type = "TmButton",
+                x = 48,
+                y = 76,
+                w = 120,
+                h = 36,
+                props = new { label = "Save" }
+            }
+        });
+
+        var contained = await client.CallToolAsync(
+            "wireframe_apply_operations",
+            new { documentId = containedId, operationsJson = containedOps });
+
+        Assert.IsTrue(contained.GetProperty("success").GetBoolean(), contained.GetRawText());
+        Assert.IsFalse(HasWarning(contained, "overlap"), contained.GetRawText());
+
+        var partialId = (await client.CallToolAsync(
+                "wireframe_create_document",
+                new { title = "Partial overlap lint" }))
+            .GetProperty("id").GetGuid();
+        var partialOps = JsonSerializer.Serialize(new object[]
+        {
+            new { op = "setCanvasSize", width = 500, height = 400 },
+            new { op = "addElement", id = "card", type = "TmCard", x = 20, y = 20, w = 160, h = 100 },
+            new
+            {
+                op = "addElement",
+                id = "button",
+                type = "TmButton",
+                x = 150,
+                y = 80,
+                w = 120,
+                h = 36,
+                props = new { label = "Save" }
+            }
+        });
+
+        var partial = await client.CallToolAsync(
+            "wireframe_apply_operations",
+            new { documentId = partialId, operationsJson = partialOps });
+
+        Assert.IsTrue(partial.GetProperty("success").GetBoolean(), partial.GetRawText());
+        Assert.IsTrue(HasWarning(partial, "overlap", "card"), partial.GetRawText());
+        Assert.IsTrue(HasWarning(partial, "overlap", "button"), partial.GetRawText());
     }
 
     [TestMethod]
