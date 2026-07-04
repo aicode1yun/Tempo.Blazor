@@ -17,7 +17,8 @@ public static class WireframeCatalog
     {
         type = s.Type,
         category = s.Category,
-        displayName = s.DisplayName
+        displayName = s.DisplayName,
+        roles = s.Roles
     };
 
     /// <summary>Full projection: dimensions and the property contract.</summary>
@@ -31,6 +32,7 @@ public static class WireframeCatalog
         localType = s.LocalType ?? WireframeComponentScope.GetLocalType(s.Type),
         scopeAppId = s.ScopeAppId,
         isBuiltIn = s.IsBuiltIn,
+        roles = s.Roles,
         props = s.Props.Select(p => new
         {
             name = p.Name,
