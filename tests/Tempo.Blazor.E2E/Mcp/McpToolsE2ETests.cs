@@ -93,6 +93,64 @@ public class McpToolsE2ETests
         Assert.IsTrue(brief.GetProperty("componentsUsed").GetArrayLength() > 0);
     }
 
+    [TestMethod]
+    public async Task Mcp8_WriteOperations_UpdatesDocumentLibraryThumbnailPreview()
+    {
+        var client = await ConnectAsync();
+        var type = await FirstComponentTypeAsync(client);
+        var title = "Thumbnail <script>alert(1)</script><foreignObject>bad</foreignObject> javascript:alert(2) "
+                    + Guid.NewGuid().ToString("N")[..6];
+
+        var created = await client.CallToolAsync("wireframe_create_document", new { title });
+        Assert.IsTrue(created.GetProperty("success").GetBoolean(), created.GetRawText());
+        var id = created.GetProperty("id").GetGuid();
+
+        var operations = new List<object>
+        {
+            new { op = "setCanvasSize", width = 960, height = 720 }
+        };
+        for (var i = 0; i < 12; i++)
+        {
+            operations.Add(new
+            {
+                op = "addElement",
+                id = "thumb-" + i,
+                type,
+                x = 24 + (i % 4) * 180,
+                y = 24 + (i / 4) * 120,
+                w = 140,
+                h = 80
+            });
+        }
+
+        var applied = await client.CallToolAsync("wireframe_apply_operations", new
+        {
+            documentId = id,
+            operationsJson = JsonSerializer.Serialize(operations)
+        });
+        Assert.IsTrue(applied.GetProperty("success").GetBoolean(), applied.GetRawText());
+
+        using var http = new HttpClient(new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+        });
+        using var response = await http.GetAsync($"https://localhost:5100/api/document-library/wireframe/documents/{id}");
+        response.EnsureSuccessStatusCode();
+        using var metadata = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var svg = metadata.RootElement.GetProperty("previewSvg").GetString();
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(svg), "expected a cached thumbnail preview");
+        StringAssert.StartsWith(svg!, "<svg");
+        StringAssert.Contains(svg!, "viewBox=\"0 0 160 120\"");
+        StringAssert.Contains(svg!, "width=\"160\"");
+        StringAssert.Contains(svg!, "height=\"120\"");
+        StringAssert.Contains(svg!, "data-elements=\"12\"");
+        Assert.AreEqual(12, svg!.Split("<rect x=\"", StringSplitOptions.None).Length - 1);
+        Assert.IsFalse(svg.Contains("script", StringComparison.OrdinalIgnoreCase), svg);
+        Assert.IsFalse(svg.Contains("foreignObject", StringComparison.OrdinalIgnoreCase), svg);
+        Assert.IsFalse(svg.Contains("javascript:", StringComparison.OrdinalIgnoreCase), svg);
+    }
+
     private static string FixturePath(string name)
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
