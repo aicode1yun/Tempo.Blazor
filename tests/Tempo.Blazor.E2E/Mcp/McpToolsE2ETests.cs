@@ -52,7 +52,7 @@ public class McpToolsE2ETests
             "wireframe_list_components", "wireframe_get_component_schema",
             "wireframe_list_documents", "wireframe_get_document", "wireframe_create_document",
             "wireframe_validate_document", "wireframe_apply_operations",
-            "wireframe_replace_document", "wireframe_get_implementation_brief"
+            "wireframe_author_document", "wireframe_replace_document", "wireframe_get_implementation_brief"
         }, names.ToList());
         Assert.IsTrue(tools.All(t => !string.IsNullOrWhiteSpace(t.Description)), "every tool has a description");
     }

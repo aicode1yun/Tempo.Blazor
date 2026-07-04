@@ -91,12 +91,12 @@ over its own persistence (database, file store, in-memory, …):
 | `IWireframeDocumentProvider` | Load and save the wireframe **payload** by id. Loading returns the document JSON; saving persists a built/validated design. |
 
 **Optimistic concurrency contract.** `wireframe_get_document` returns `modifiedAt`, an opaque
-write token. The write tools (`wireframe_apply_operations`, `wireframe_replace_document`) accept an
-optional `expectedModifiedAt`. A concurrency-aware store should compare it against the current
-`ModifiedAt` (with ~1 ms tolerance for round-trip precision) and throw
-`TempoDocumentConflictException` on mismatch — the filter above turns that into a `conflict`
-result so the LLM can re-read and retry. Omitting `expectedModifiedAt` performs a last-writer-wins
-save.
+write token. The write tools (`wireframe_apply_operations`, `wireframe_author_document`,
+`wireframe_replace_document`) accept an optional `expectedModifiedAt`. A concurrency-aware store
+should compare it against the current `ModifiedAt` (with ~1 ms tolerance for round-trip precision)
+and throw `TempoDocumentConflictException` on mismatch — the filter above turns that into a
+`conflict` result so the LLM can re-read and retry. Omitting `expectedModifiedAt` performs a
+last-writer-wins save.
 
 **Change notification (optional).** If the host also wires `Tempo.Blazor.Collaboration`, the
 *store* (not the MCP tools) publishes an `ITempoDocumentChangePublisher` change after a successful
@@ -117,7 +117,8 @@ alongside `"success": true`; failures use the [result contract](#result-contract
 | `wireframe_create_document` | Create a new empty wireframe with a title; returns its id and `modifiedAt`. |
 | `wireframe_validate_document` | Validate document JSON against the schema; returns `valid` + precise `validationErrors`. |
 | `wireframe_apply_operations` | Apply an ordered batch of edit ops and save. Validated before persistence — nothing is saved if invalid. |
-| `wireframe_replace_document` | Replace the whole document with provided JSON and save (also validated first). |
+| `wireframe_author_document` | Author a full document in one call: resolves roles, normalizes enum casing, clamps off-canvas elements, validates, saves, and returns warnings. |
+| `wireframe_replace_document` | Replace the whole document with provided JSON and save (validated first; returns advisory warnings and supports `strict`). |
 | `wireframe_get_implementation_brief` | Deterministic brief: each page's regions (header/sidebar/content/footer inferred from geometry), components used with counts, and navigation flows from connectors. |
 
 ### Reporting tools
@@ -157,8 +158,9 @@ A typical design session:
 1. **Discover** — `wireframe_list_components` (compact) to see what is placeable, then
    `wireframe_get_component_schema` for the exact props of the types you'll use.
 2. **Create** — `wireframe_create_document` → keep the returned `id`.
-3. **Build** — `wireframe_apply_operations` with `setCanvasSize` + `addElement`/`addConnector`
-   ops. The response reports how many ops `applied`.
+3. **Build** — either `wireframe_apply_operations` with `setCanvasSize` + `addElement`/
+   `addConnector` ops, or `wireframe_author_document` for a single-shot whole-document draft with
+   role resolution, enum normalization, clamping and warnings.
 4. **Verify** — `wireframe_get_document` → `wireframe_validate_document` to confirm `valid: true`.
 5. **Hand off** — `wireframe_get_implementation_brief` to turn the design into a structured brief
    (regions, components, flows) for building the real page.

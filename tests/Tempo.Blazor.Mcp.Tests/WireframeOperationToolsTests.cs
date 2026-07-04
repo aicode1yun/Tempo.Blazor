@@ -13,6 +13,14 @@ public class WireframeOperationToolsTests
     private static WireframeSchemaRegistry Registry() => new([new BuiltInComponentSchemas()]);
     private static string KnownType() => Registry().GetAll().First().Type;
     private static JsonElement Parse(string json) => JsonDocument.Parse(json).RootElement;
+    private static JsonElement Json(object value) => JsonSerializer.SerializeToElement(value);
+
+    private static bool HasWarning(JsonElement root, string code)
+        => root.TryGetProperty("warnings", out var warnings)
+           && warnings.ValueKind == JsonValueKind.Array
+           && warnings.EnumerateArray().Any(w =>
+               w.TryGetProperty("code", out var warningCode)
+               && warningCode.GetString() == code);
 
     // ── Engine ───────────────────────────────────────────────────────────────────
 
@@ -610,6 +618,187 @@ public class WireframeOperationToolsTests
             .Should().Contain($"app:{appId}:InvoiceCard");
     }
 
+    // ── author_document tool ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AuthorDocument_ValidDocument_PersistsAndReturnsAdvisoryWarnings()
+    {
+        var backend = new FakeWireframeBackend();
+        var id = backend.Add("Design", "/");
+        var doc = new WireframeDocument { Title = "Authored" };
+        doc.EnsureActivePage();
+        doc.Elements.Add(new WireframeElement
+        {
+            Id = "card",
+            Type = "TmCard",
+            X = 20,
+            Y = 20,
+            W = 280,
+            H = 180
+        });
+
+        var root = Parse(await WireframeOperationTools.AuthorDocument(
+            backend,
+            backend,
+            Registry(),
+            id,
+            WireframeSerializer.Serialize(doc)));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue(root.GetRawText());
+        HasWarning(root, "default-size").Should().BeTrue(root.GetRawText());
+        (await backend.GetWireframeDocumentAsync(id))!.Title.Should().Be("Authored");
+    }
+
+    [Fact]
+    public async Task AuthorDocument_NormalizesEnumCasingBeforeSave()
+    {
+        var backend = new FakeWireframeBackend();
+        var id = backend.Add("Design", "/");
+        var doc = new WireframeDocument { Title = "Enum" };
+        doc.EnsureActivePage();
+        var element = new WireframeElement { Id = "button", Type = "TmButton", W = 120, H = 36 };
+        element.Props["label"] = Json("Save");
+        element.Props["size"] = Json("LG");
+        doc.Elements.Add(element);
+
+        var root = Parse(await WireframeOperationTools.AuthorDocument(
+            backend,
+            backend,
+            Registry(),
+            id,
+            WireframeSerializer.Serialize(doc)));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue(root.GetRawText());
+        HasWarning(root, "enum-normalized").Should().BeTrue(root.GetRawText());
+        var saved = (await backend.GetWireframeDocumentAsync(id))!.Elements.Single();
+        saved.Props["size"].GetString().Should().Be("lg");
+    }
+
+    [Fact]
+    public async Task AuthorDocument_ClampsOffCanvasElementsBeforeSave()
+    {
+        var backend = new FakeWireframeBackend();
+        var id = backend.Add("Design", "/");
+        var doc = new WireframeDocument { Title = "Clamp" };
+        doc.EnsureActivePage();
+        doc.Width = 500;
+        doc.Height = 400;
+        var element = new WireframeElement
+        {
+            Id = "button",
+            Type = "TmButton",
+            X = 490,
+            Y = 390,
+            W = 120,
+            H = 36
+        };
+        element.Props["label"] = Json("Save");
+        doc.Elements.Add(element);
+
+        var root = Parse(await WireframeOperationTools.AuthorDocument(
+            backend,
+            backend,
+            Registry(),
+            id,
+            WireframeSerializer.Serialize(doc)));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue(root.GetRawText());
+        HasWarning(root, "clamped-to-canvas").Should().BeTrue(root.GetRawText());
+        var saved = (await backend.GetWireframeDocumentAsync(id))!.Elements.Single();
+        saved.X.Should().Be(380);
+        saved.Y.Should().Be(364);
+    }
+
+    [Fact]
+    public async Task AuthorDocument_StructuralError_ReturnsValidationFailedAndSavesNothing()
+    {
+        var backend = new FakeWireframeBackend();
+        var id = backend.Add("Design", "/");
+        var doc = new WireframeDocument { Title = "Bad" };
+        doc.EnsureActivePage();
+        doc.Elements.Add(new WireframeElement { Type = "NopeType", W = 120, H = 40 });
+
+        var root = Parse(await WireframeOperationTools.AuthorDocument(
+            backend,
+            backend,
+            Registry(),
+            id,
+            WireframeSerializer.Serialize(doc)));
+
+        root.GetProperty("success").GetBoolean().Should().BeFalse();
+        root.GetProperty("error").GetString().Should().Be("validation_failed");
+        root.GetProperty("validationErrors").GetArrayLength().Should().BeGreaterThan(0);
+        (await backend.GetWireframeDocumentAsync(id))!.Title.Should().Be("Design");
+    }
+
+    [Fact]
+    public async Task AuthorDocument_StrictWarning_ReturnsValidationFailedAndSavesNothing()
+    {
+        var backend = new FakeWireframeBackend();
+        var id = backend.Add("Design", "/");
+        var doc = new WireframeDocument { Title = "Strict" };
+        doc.EnsureActivePage();
+        var element = new WireframeElement { Type = "TmButton", W = 120, H = 36 };
+        element.Props["label"] = Json("Save");
+        element.Props["lable"] = Json("Typo");
+        doc.Elements.Add(element);
+
+        var root = Parse(await WireframeOperationTools.AuthorDocument(
+            backend,
+            backend,
+            Registry(),
+            id,
+            WireframeSerializer.Serialize(doc),
+            strict: true));
+
+        root.GetProperty("success").GetBoolean().Should().BeFalse();
+        root.GetProperty("error").GetString().Should().Be("validation_failed");
+        HasWarning(root, "unknown-prop").Should().BeTrue(root.GetRawText());
+        (await backend.GetWireframeDocumentAsync(id))!.Title.Should().Be("Design");
+    }
+
+    [Fact]
+    public async Task AuthorDocument_StaleExpectedModifiedAt_ReturnsConflict()
+    {
+        var backend = new FakeWireframeBackend();
+        var id = backend.Add("Design", "/");
+        var doc = new WireframeDocument { Title = "Conflict" };
+        doc.EnsureActivePage();
+
+        var root = Parse(await WireframeOperationTools.AuthorDocument(
+            backend,
+            backend,
+            Registry(),
+            id,
+            WireframeSerializer.Serialize(doc),
+            expectedModifiedAt: DateTime.UtcNow.AddMinutes(-10)));
+
+        root.GetProperty("success").GetBoolean().Should().BeFalse();
+        root.GetProperty("error").GetString().Should().Be("conflict");
+    }
+
+    [Fact]
+    public async Task AuthorDocument_ElementWithRole_ResolvesConcreteTypeBeforeSave()
+    {
+        var backend = new FakeWireframeBackend();
+        var id = backend.Add("Design", "/");
+        var doc = new WireframeDocument { Title = "Role" };
+        doc.EnsureActivePage();
+        doc.Elements.Add(new WireframeElement { Id = "otp", Role = "otp-input", W = 180, H = 36 });
+
+        var root = Parse(await WireframeOperationTools.AuthorDocument(
+            backend,
+            backend,
+            Registry(),
+            id,
+            WireframeSerializer.Serialize(doc)));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue(root.GetRawText());
+        var saved = (await backend.GetWireframeDocumentAsync(id))!.Elements.Single();
+        saved.Type.Should().Be("TmMaskedTextBox");
+        saved.Role.Should().Be("otp-input");
+    }
+
     // ── replace_document tool ──────────────────────────────────────────────────────
 
     [Fact]
@@ -644,6 +833,53 @@ public class WireframeOperationToolsTests
 
         root.GetProperty("error").GetString().Should().Be("validation_failed");
         (await backend.GetWireframeDocumentAsync(id))!.Title.Should().Be("Design"); // unchanged
+    }
+
+    [Fact]
+    public async Task ReplaceDocument_ReturnsAdvisoryWarnings()
+    {
+        var backend = new FakeWireframeBackend();
+        var id = backend.Add("Design", "/");
+        var doc = new WireframeDocument { Title = "Warn" };
+        doc.EnsureActivePage();
+        doc.Elements.Add(new WireframeElement { Type = "TmCard", W = 280, H = 180 });
+
+        var root = Parse(await WireframeOperationTools.ReplaceDocument(
+            backend,
+            backend,
+            Registry(),
+            id,
+            WireframeSerializer.Serialize(doc)));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue(root.GetRawText());
+        HasWarning(root, "default-size").Should().BeTrue(root.GetRawText());
+        (await backend.GetWireframeDocumentAsync(id))!.Title.Should().Be("Warn");
+    }
+
+    [Fact]
+    public async Task ReplaceDocument_StrictWarning_ReturnsValidationFailedAndSavesNothing()
+    {
+        var backend = new FakeWireframeBackend();
+        var id = backend.Add("Design", "/");
+        var doc = new WireframeDocument { Title = "Strict replace" };
+        doc.EnsureActivePage();
+        var element = new WireframeElement { Type = "TmButton", W = 120, H = 36 };
+        element.Props["label"] = Json("Save");
+        element.Props["lable"] = Json("Typo");
+        doc.Elements.Add(element);
+
+        var root = Parse(await WireframeOperationTools.ReplaceDocument(
+            backend,
+            backend,
+            Registry(),
+            id,
+            WireframeSerializer.Serialize(doc),
+            strict: true));
+
+        root.GetProperty("success").GetBoolean().Should().BeFalse();
+        root.GetProperty("error").GetString().Should().Be("validation_failed");
+        HasWarning(root, "unknown-prop").Should().BeTrue(root.GetRawText());
+        (await backend.GetWireframeDocumentAsync(id))!.Title.Should().Be("Design");
     }
 
     private static WireframeComponentSchema Schema(string type, IReadOnlyList<string>? roles = null)
