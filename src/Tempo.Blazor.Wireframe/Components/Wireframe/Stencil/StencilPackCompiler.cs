@@ -50,6 +50,7 @@ public sealed class StencilPackCompiler
                 LocalType = WireframeComponentScope.GetLocalType(component.Type),
                 Category = component.Category,
                 DisplayName = component.DisplayName,
+                Roles = component.Roles,
                 Icon = component.Icon,
                 DefaultWidth = component.DefaultSize.Width,
                 DefaultHeight = component.DefaultSize.Height,

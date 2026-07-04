@@ -34,6 +34,9 @@ public sealed class WireframeComponentDef
     /// <summary>Human-readable name shown in the Toolbox and Properties Panel header.</summary>
     public required string DisplayName { get; init; }
 
+    /// <summary>Library-agnostic UI roles this definition can satisfy.</summary>
+    public IReadOnlyList<string>? Roles { get; init; }
+
     /// <summary>TmIcon name used in the Toolbox list item.</summary>
     public string? Icon { get; init; }
 

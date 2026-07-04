@@ -86,6 +86,7 @@ public sealed class BuiltInStencilPackProvider : IWireframeComponentProvider
             LocalType = def.LocalType,
             Category = schema.Category,
             DisplayName = schema.DisplayName,
+            Roles = schema.Roles ?? def.Roles,
             Icon = def.Icon,
             DefaultWidth = schema.DefaultWidth,
             DefaultHeight = schema.DefaultHeight,

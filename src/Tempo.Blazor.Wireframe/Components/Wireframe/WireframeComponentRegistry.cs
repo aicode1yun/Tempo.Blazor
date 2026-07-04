@@ -183,6 +183,7 @@ public sealed class WireframeComponentRegistry
             LocalType = localType,
             Category = def.Category,
             DisplayName = def.DisplayName,
+            Roles = def.Roles,
             Icon = def.Icon,
             DefaultWidth = def.DefaultWidth,
             DefaultHeight = def.DefaultHeight,
