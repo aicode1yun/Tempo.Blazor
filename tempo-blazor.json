@@ -2718,6 +2718,10 @@
           "code": "<TmChart Type=\"ChartType.Donut\"\n         Data=\"@chartData\"\n         ShowValues=\"true\"\n         OnSegmentClick=\"HandleSegmentClick\" />"
         },
         {
+          "title": "Per-value colors",
+          "code": "<TmChart Type=\"ChartType.Donut\"\n         Data=\"@(new ChartData {\n             Labels = new[] { \"Critical\", \"High\", \"Medium\", \"Low\", \"Info\" },\n             Datasets = new[] {\n                 new ChartDataset {\n                     Label = \"Outages\",\n                     Values = new[] { 5.0, 12.0, 25.0, 18.0, 7.0 },\n                     Color = \"#3b82f6\",\n                     BackgroundColors = new[] { \"#dc2626\", \"#ea580c\", \"#2563eb\", \"#16a34a\", \"#64748b\" }\n                 }\n             }\n         })\"\n         Height=\"260px\"\n         ShowValues=\"true\" />"
+        },
+        {
           "title": "Line chart without animation",
           "code": "<TmChart Type=\"ChartType.Line\"\n         Data=\"@lineData\"\n         Animated=\"false\"\n         Width=\"100%\"\n         Height=\"400px\" />"
         }
@@ -3078,7 +3082,15 @@
       "description": "A single dataset within chart data.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
-      "documentationStatus": "merged"
+      "documentationStatus": "merged",
+      "parameters": [
+        {
+          "name": "BackgroundColors",
+          "type": "IReadOnlyList<string>?",
+          "isRequired": false,
+          "description": "Optional per-value fill colors. When provided and contains a value for the index, overrides BackgroundColor/Color for individual bars or pie/donut slices."
+        }
+      ]
     },
     {
       "itemName": "ChartSegment",
@@ -16750,7 +16762,7 @@
           "name": "EventTemplate",
           "type": "RenderFragment<TmScheduleEvent>?",
           "isRequired": false,
-          "description": "Custom event template."
+          "description": "Custom event template used by the month view event renderer."
         },
         {
           "name": "FirstDayOfWeek",
@@ -16908,6 +16920,10 @@
         {
           "title": "Read-only agenda view",
           "code": "<TmScheduler Events=\"@_events\" View=\"TmScheduleViewType.Agenda\" ReadOnly=\"true\" />"
+        },
+        {
+          "title": "Month view with custom event template",
+          "code": "<TmScheduler Events=\"@_events\" View=\"TmScheduleViewType.Month\" CurrentDate=\"DateTime.Today\" ReadOnly=\"true\">\n    <EventTemplate Context=\"evt\">\n        <div class=\"custom-month-event\">\n            <strong>@evt.Title</strong>\n            <span>@evt.Description</span>\n        </div>\n    </EventTemplate>\n</TmScheduler>"
         }
       ]
     },
@@ -17133,6 +17149,12 @@
           "description": "Events to display."
         },
         {
+          "name": "EventTemplate",
+          "type": "RenderFragment<TmScheduleEvent>?",
+          "isRequired": false,
+          "description": "Optional custom event renderer used inside each month event wrapper."
+        },
+        {
           "name": "MaxVisibleEvents",
           "type": "int",
           "isRequired": false,
@@ -17208,6 +17230,10 @@
         {
           "title": "Month view with events",
           "code": "<TmSchedulerMonthView CurrentDate=\"DateTime.Today\" Events=\"@_events\" MaxVisibleEvents=\"3\" OnSlotClick=\"@HandleSlotClick\" OnEventClick=\"@HandleEventClick\" OnEventChanged=\"@HandleEventDrop\" />"
+        },
+        {
+          "title": "Month view with custom event template",
+          "code": "<TmSchedulerMonthView CurrentDate=\"DateTime.Today\" Events=\"@_events\">\n    <EventTemplate Context=\"evt\">\n        <div class=\"custom-month-event\">\n            <strong>@evt.Title</strong>\n            <span>@evt.Description</span>\n        </div>\n    </EventTemplate>\n</TmSchedulerMonthView>"
         }
       ]
     },

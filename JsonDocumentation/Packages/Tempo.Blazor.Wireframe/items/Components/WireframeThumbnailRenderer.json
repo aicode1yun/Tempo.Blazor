@@ -1,0 +1,68 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Renders deterministic low-fidelity SVG thumbnails for wireframe documents. The renderer scales the active page into a small SVG, draws each element as a simple rectangle, escapes user-supplied title text, and is suitable for document-library previews outside a Blazor renderer.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeThumbnailRenderer.cs",
+  "documentationStatus": "reviewed",
+  "members": [
+    {
+      "name": "DefaultWidth",
+      "kind": "Constant",
+      "type": "double",
+      "description": "Default thumbnail width in pixels."
+    },
+    {
+      "name": "DefaultHeight",
+      "kind": "Constant",
+      "type": "double",
+      "description": "Default thumbnail height in pixels."
+    },
+    {
+      "name": "Render",
+      "kind": "Method",
+      "type": "string",
+      "description": "Renders the active page of a WireframeDocument as a thumbnail SVG.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "WireframeDocument"
+        },
+        {
+          "name": "width",
+          "type": "double"
+        },
+        {
+          "name": "height",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "Render",
+      "kind": "Method",
+      "type": "string",
+      "description": "Renders a single WireframePage as a thumbnail SVG with an optional title.",
+      "parameters": [
+        {
+          "name": "page",
+          "type": "WireframePage?"
+        },
+        {
+          "name": "title",
+          "type": "string?"
+        },
+        {
+          "name": "width",
+          "type": "double"
+        },
+        {
+          "name": "height",
+          "type": "double"
+        }
+      ]
+    }
+  ],
+  "itemName": "WireframeThumbnailRenderer"
+}

@@ -10,6 +10,16 @@
       "description": "Unique type identifier. Matches WireframeElement.Type in document JSON. E.g. 'TmButton', 'TmDataTable'."
     },
     {
+      "name": "ScopeAppId",
+      "type": "string?",
+      "description": "Application id for an app-scoped custom component. When present, registries normalize Type to 'app:{ScopeAppId}:{LocalType}'."
+    },
+    {
+      "name": "LocalType",
+      "type": "string?",
+      "description": "Component type name without the app scope prefix. Defaults to Type for unscoped components and to the suffix of app-scoped component types."
+    },
+    {
       "name": "Category",
       "type": "string",
       "description": "Toolbox grouping category. E.g. 'Buttons', 'Inputs', 'Layout'."
@@ -18,6 +28,21 @@
       "name": "DisplayName",
       "type": "string",
       "description": "Human-readable component name shown in toolboxes and palettes."
+    },
+    {
+      "name": "Roles",
+      "type": "IReadOnlyList<string>?",
+      "description": "Library-agnostic UI roles this component can satisfy, such as 'search-input' or 'data-table'. Used by MCP authoring tools to resolve intent before selecting a concrete component."
+    },
+    {
+      "name": "IsBuiltIn",
+      "type": "bool",
+      "description": "True for built-in Tempo.Blazor components; false for app/custom schemas."
+    },
+    {
+      "name": "IsContainer",
+      "type": "bool",
+      "description": "True when the component is intended to visually contain other placed elements. Authoring and lint tools use this to distinguish expected containment from sibling overlap."
     },
     {
       "name": "DefaultWidth",

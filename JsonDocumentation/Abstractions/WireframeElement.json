@@ -4,7 +4,7 @@
   "category": "Wireframe",
   "namespace": "Tempo.Blazor.Components.Wireframe.Models",
   "assembly": "Tempo.Blazor.Abstractions",
-  "description": "A single component instance placed on the wireframe canvas. Stores position, size, component type, and a property bag (Props) that maps to the component's PropDef definitions. Props is a Dictionary<string, JsonElement> allowing any value type. Helper extension methods (GetString, GetInt, GetBool, etc.) on WirframeElementExtensions simplify prop access.",
+  "description": "A single component instance placed on the wireframe canvas. Stores position, size, component type, an optional authoring role, and a property bag (Props) that maps to the component's PropDef definitions. Props is a Dictionary<string, JsonElement> allowing any value type. Helper extension methods (GetString, GetInt, GetBool, etc.) on WireframeElementExtensions simplify prop access.",
   "properties": [
     {
       "name": "Id",
@@ -15,6 +15,11 @@
       "name": "Type",
       "type": "string",
       "description": "Component type identifier matching a WireframeComponentDef.Type (e.g. 'TmButton', 'TmDataTable')."
+    },
+    {
+      "name": "Role",
+      "type": "string?",
+      "description": "Optional library-agnostic UI role requested during authoring, such as 'search-input' or 'otp-input'. Serialized as 'role' when present."
     },
     {
       "name": "X",
@@ -55,6 +60,23 @@
       "name": "GroupId",
       "type": "string?",
       "description": "Optional group identifier. Null = not grouped. Omitted from JSON when null."
+    },
+    {
+      "name": "IsLocked",
+      "type": "bool",
+      "defaultValue": "false",
+      "description": "When true, the element cannot be moved, resized, or deleted."
+    },
+    {
+      "name": "Rotation",
+      "type": "double",
+      "defaultValue": "0",
+      "description": "Rotation angle in degrees. 0 means no rotation."
+    },
+    {
+      "name": "LayerId",
+      "type": "string?",
+      "description": "Optional layer identifier. Null = the default layer. Omitted from JSON when null."
     },
     {
       "name": "LockedBy",
