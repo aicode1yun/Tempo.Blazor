@@ -2,7 +2,7 @@
   "type": "WireframeSchemaRegistry",
   "namespace": "Tempo.Blazor.Components.Wireframe",
   "assembly": "Tempo.Blazor.Abstractions",
-  "description": "Merges WireframeComponentSchema entries from all registered IWireframeSchemaSource implementations. When two sources register the same Type, the one with the higher Priority wins. Registered as a singleton via AddTempoBlazor() or AddWireframeSchemas(). Useful for MCP tools and AI-assisted wireframe generation — exposes a complete catalog of all available components and their property definitions without any Blazor rendering dependency.",
+  "description": "Merges WireframeComponentSchema entries from all registered IWireframeSchemaSource implementations. When two sources register the same Type, the one with the higher Priority wins. Registered as a singleton via AddTempoBlazor() or AddWireframeSchemas(). Useful for MCP tools and AI-assisted wireframe generation: exposes a complete catalog of available components, app-scoped target packs, role mappings, and property definitions without any Blazor rendering dependency.",
   "constructor": {
     "parameters": [
       {
@@ -27,6 +27,11 @@
       "name": "GetByCategory(string category)",
       "returnType": "IEnumerable<WireframeComponentSchema>",
       "description": "Returns all schemas in the given category (case-insensitive)."
+    },
+    {
+      "name": "ResolveByRole(string role, WireframeComponentScope? scope = null, IReadOnlyList<string>? targetPackIds = null)",
+      "returnType": "IReadOnlyList<WireframeComponentSchema>",
+      "description": "Returns visible schemas that declare the requested UI role, ordered so app/custom scoped components win before built-in fallbacks."
     },
     {
       "name": "GetCategories()",

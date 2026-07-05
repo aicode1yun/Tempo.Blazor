@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
 using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Components.Wireframe.Models;
+using Tempo.Blazor.Components.Wireframe.Stencil;
 using Xunit;
 
 namespace Tempo.Blazor.Tests.Wireframe;
@@ -60,6 +61,100 @@ public class StencilPackRegistryParityTests
         foreach (var type in canonicalTypes)
             registry.GetDef(type).Should().NotBeNull($"{type} must resolve through the Tempo stencil pack");
     }
+
+    [Fact]
+    public void BuiltInPack_EveryComponentDeclaresAtLeastOneRole()
+    {
+        var pack = StencilPackSerializer.Deserialize(BuiltInStencilPackProvider.ReadPackJson());
+
+        pack.Components
+            .Where(component => component.Roles is null || component.Roles.Count == 0)
+            .Select(component => component.Type)
+            .Should()
+            .BeEmpty("every built-in component must declare at least one UI role");
+    }
+
+    [Fact]
+    public void BuiltInPack_AllReferencedRolesExistInBaselineVocabulary()
+    {
+        var pack = StencilPackSerializer.Deserialize(BuiltInStencilPackProvider.ReadPackJson());
+        var vocabulary = new UiRoleVocabulary([new BuiltInUiRoleVocabularySource()]);
+
+        pack.Components
+            .SelectMany(component => component.Roles ?? [])
+            .Distinct(StringComparer.Ordinal)
+            .Where(role => vocabulary.Find(role) is null)
+            .Should()
+            .BeEmpty("built-in pack roles must point to the baseline UI role vocabulary");
+    }
+
+    [Fact]
+    public void Registry_PropagatesBuiltInPackRolesToDefinitions()
+    {
+        var registry = Registry();
+
+        var def = registry.GetDef("TmSearchInput");
+
+        def.Should().NotBeNull();
+        def!.Roles.Should().Contain("search-input");
+    }
+
+    [Fact]
+    public void Registry_PropagatesBuiltInPackContainerFlagToDefinitions()
+    {
+        var registry = Registry();
+
+        var def = registry.GetDef("TmCard");
+
+        def.Should().NotBeNull();
+        def!.IsContainer.Should().BeTrue();
+    }
+
+    [Fact]
+    public void BuiltInSchemas_RolesMatchBuiltInPackRoles()
+    {
+        var pack = StencilPackSerializer.Deserialize(BuiltInStencilPackProvider.ReadPackJson());
+        var schemas = new BuiltInComponentSchemas()
+            .GetSchemas()
+            .ToDictionary(schema => schema.Type, StringComparer.Ordinal);
+
+        foreach (var component in pack.Components)
+        {
+            schemas.TryGetValue(component.Type, out var schema)
+                .Should()
+                .BeTrue($"built-in schema '{component.Type}' should exist");
+            schema!.Roles.Should().Equal(component.Roles ?? []);
+        }
+    }
+
+    [Fact]
+    public void BuiltInSchemas_ContainerFlagsMatchBuiltInPack()
+    {
+        var pack = StencilPackSerializer.Deserialize(BuiltInStencilPackProvider.ReadPackJson());
+        var schemas = new BuiltInComponentSchemas()
+            .GetSchemas()
+            .ToDictionary(schema => schema.Type, StringComparer.Ordinal);
+
+        foreach (var component in pack.Components)
+        {
+            schemas.TryGetValue(component.Type, out var schema)
+                .Should()
+                .BeTrue($"built-in schema '{component.Type}' should exist");
+            schema!.IsContainer.Should().Be(component.IsContainer);
+        }
+    }
+
+    [Fact]
+    public void BuiltInPack_MarksKnownLayoutContainers()
+    {
+        var pack = StencilPackSerializer.Deserialize(BuiltInStencilPackProvider.ReadPackJson());
+
+        pack.Components
+            .Where(component => component.IsContainer)
+            .Select(component => component.Type)
+            .Should().Contain(["TmCard", "TmSection", "TmModal", "TmDialog", "TmDrawer", "TmFormSection"]);
+    }
+
 
     [Theory]
     [MemberData(nameof(GoldenDeclarativeTypeData))]

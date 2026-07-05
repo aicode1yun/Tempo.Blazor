@@ -9,6 +9,8 @@ namespace Tempo.Blazor.Mcp.Tests;
 public class WireframeDocumentLinterTests
 {
     private static WireframeSchemaRegistry Registry() => new([new BuiltInComponentSchemas()]);
+    private static WireframeSchemaRegistry Registry(params WireframeComponentSchema[] schemas)
+        => new([new BuiltInComponentSchemas(), new TestSchemaSource("Test", 10, schemas)]);
 
     private static JsonElement Json(object value)
         => JsonSerializer.SerializeToElement(value);
@@ -50,6 +52,22 @@ public class WireframeDocumentLinterTests
 
         return element;
     }
+
+    private static WireframeElement Card(
+        string id,
+        double x = 0,
+        double y = 0,
+        double w = 280,
+        double h = 180)
+        => new()
+        {
+            Id = id,
+            Type = "TmCard",
+            X = x,
+            Y = y,
+            W = w,
+            H = h
+        };
 
     [Fact]
     public void Lint_OffCanvasElement_ReturnsOffCanvasCode()
@@ -98,6 +116,45 @@ public class WireframeDocumentLinterTests
 
         warnings.Should().Contain(w => w.ElementId == "a" && w.Code == "overlap");
         warnings.Should().Contain(w => w.ElementId == "b" && w.Code == "overlap");
+    }
+
+    [Fact]
+    public void Lint_ElementFullyInsideContainer_DoesNotReturnOverlapCode()
+    {
+        var warnings = WireframeDocumentLinter.Lint(Doc(
+            Card("card", x: 20, y: 20, w: 240, h: 160),
+            Button("button", x: 48, y: 76, w: 120, h: 36)), Registry());
+
+        warnings.Should().NotContain(w => w.Code == "overlap");
+    }
+
+    [Fact]
+    public void Lint_PartialOverlapWithContainer_ReturnsOverlapCode()
+    {
+        var warnings = WireframeDocumentLinter.Lint(Doc(
+            Card("card", x: 20, y: 20, w: 160, h: 100),
+            Button("button", x: 150, y: 80, w: 120, h: 36)), Registry());
+
+        warnings.Should().Contain(w => w.ElementId == "card" && w.Code == "overlap");
+        warnings.Should().Contain(w => w.ElementId == "button" && w.Code == "overlap");
+    }
+
+    [Fact]
+    public void Lint_CustomSchemaContainerSuppressesContainedOverlap()
+    {
+        var registry = Registry(new WireframeComponentSchema
+        {
+            Type = "AppPanel",
+            Category = "Custom",
+            DisplayName = "App Panel",
+            IsContainer = true
+        });
+
+        var warnings = WireframeDocumentLinter.Lint(Doc(
+            new WireframeElement { Id = "panel", Type = "AppPanel", X = 20, Y = 20, W = 240, H = 160 },
+            Button("button", x: 48, y: 76, w: 120, h: 36)), registry);
+
+        warnings.Should().NotContain(w => w.Code == "overlap");
     }
 
     [Fact]
@@ -182,5 +239,13 @@ public class WireframeDocumentLinterTests
         root.GetProperty("validationErrors").GetArrayLength().Should().Be(0);
         root.GetProperty("warnings").EnumerateArray()
             .Should().Contain(w => w.GetProperty("code").GetString() == "off-canvas");
+    }
+
+    private sealed class TestSchemaSource(string id, int priority, params WireframeComponentSchema[] schemas)
+        : IWireframeSchemaSource
+    {
+        public string SourceId => id;
+        public int Priority => priority;
+        public IEnumerable<WireframeComponentSchema> GetSchemas() => schemas;
     }
 }

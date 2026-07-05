@@ -3,16 +3,23 @@ using Tempo.Blazor.Components.Wireframe.Models;
 namespace Tempo.Blazor.Mcp.Wireframe;
 
 /// <summary>One placed component in an implementation-brief region.</summary>
-public sealed record BriefElement(string Id, string Type, double X, double Y, double W, double H);
+public sealed record BriefElement(string Id, string Type, string? Role, double X, double Y, double W, double H);
 
 /// <summary>A layout region (header / sidebar / content / footer) derived from element geometry.</summary>
 public sealed record BriefRegion(string Kind, IReadOnlyList<BriefElement> Elements);
 
 /// <summary>A component type and how many times it is used.</summary>
-public sealed record BriefComponent(string Type, int Count);
+public sealed record BriefComponent(string Type, string? Role, int Count);
 
 /// <summary>A navigation flow between two elements, derived from a connector.</summary>
-public sealed record BriefFlow(string FromId, string? FromType, string ToId, string? ToType, string? Label);
+public sealed record BriefFlow(
+    string FromId,
+    string? FromType,
+    string? FromRole,
+    string ToId,
+    string? ToType,
+    string? ToRole,
+    string? Label);
 
 /// <summary>One page rendered as an implementation section.</summary>
 public sealed record BriefPage(
@@ -40,10 +47,11 @@ public static class WireframeImplementationBrief
 
         var componentsUsed = document.Pages
             .SelectMany(p => p.Elements)
-            .GroupBy(e => e.Type, StringComparer.Ordinal)
+            .GroupBy(e => (e.Type, e.Role), BriefComponentKeyComparer.Instance)
             .OrderByDescending(g => g.Count())
-            .ThenBy(g => g.Key, StringComparer.Ordinal)
-            .Select(g => new BriefComponent(g.Key, g.Count()))
+            .ThenBy(g => g.Key.Type, StringComparer.Ordinal)
+            .ThenBy(g => g.Key.Role, StringComparer.Ordinal)
+            .Select(g => new BriefComponent(g.Key.Type, g.Key.Role, g.Count()))
             .ToList();
 
         return new WireframeBrief(document.Title, pages, componentsUsed);
@@ -61,19 +69,20 @@ public static class WireframeImplementationBrief
             .Where(x => x.els is not null)
             .Select(x => new BriefRegion(x.kind,
                 x.els!.OrderBy(e => e.Y).ThenBy(e => e.X)
-                    .Select(e => new BriefElement(e.Id, e.Type, e.X, e.Y, e.W, e.H)).ToList()))
+                    .Select(e => new BriefElement(e.Id, e.Type, e.Role, e.X, e.Y, e.W, e.H)).ToList()))
             .ToList();
 
         var components = page.Elements
-            .GroupBy(e => e.Type, StringComparer.Ordinal)
-            .OrderBy(g => g.Key, StringComparer.Ordinal)
-            .Select(g => new BriefComponent(g.Key, g.Count()))
+            .GroupBy(e => (e.Type, e.Role), BriefComponentKeyComparer.Instance)
+            .OrderBy(g => g.Key.Type, StringComparer.Ordinal)
+            .ThenBy(g => g.Key.Role, StringComparer.Ordinal)
+            .Select(g => new BriefComponent(g.Key.Type, g.Key.Role, g.Count()))
             .ToList();
 
-        var typeById = page.Elements.ToDictionary(e => e.Id, e => e.Type, StringComparer.Ordinal);
+        var elementById = page.Elements.ToDictionary(e => e.Id, StringComparer.Ordinal);
         var flows = page.Connectors.Select(c => new BriefFlow(
-            c.FromId, typeById.GetValueOrDefault(c.FromId),
-            c.ToId, typeById.GetValueOrDefault(c.ToId),
+            c.FromId, elementById.GetValueOrDefault(c.FromId)?.Type, elementById.GetValueOrDefault(c.FromId)?.Role,
+            c.ToId, elementById.GetValueOrDefault(c.ToId)?.Type, elementById.GetValueOrDefault(c.ToId)?.Role,
             c.Label)).ToList();
 
         return new BriefPage(page.Name, page.Width, page.Height, regions, components, flows);
@@ -95,5 +104,19 @@ public static class WireframeImplementationBrief
             return "sidebar";
         }
         return "content";
+    }
+
+    private sealed class BriefComponentKeyComparer : IEqualityComparer<(string Type, string? Role)>
+    {
+        public static BriefComponentKeyComparer Instance { get; } = new();
+
+        public bool Equals((string Type, string? Role) x, (string Type, string? Role) y)
+            => string.Equals(x.Type, y.Type, StringComparison.Ordinal)
+               && string.Equals(x.Role, y.Role, StringComparison.Ordinal);
+
+        public int GetHashCode((string Type, string? Role) obj)
+            => HashCode.Combine(
+                StringComparer.Ordinal.GetHashCode(obj.Type),
+                obj.Role is null ? 0 : StringComparer.Ordinal.GetHashCode(obj.Role));
     }
 }

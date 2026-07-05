@@ -155,16 +155,17 @@ public static class WireframeOperationTools
             scopeAppId: null,
             strict);
 
-    [McpServerTool(Name = "wireframe_replace_document")]
-    [Description("Replace a wireframe's entire content with the provided document JSON and save it. The document is validated against the schema before saving — nothing is persisted if validation fails. Pass expectedModifiedAt (from wireframe_get_document) for optimistic concurrency.")]
-    public static async Task<string> ReplaceDocumentScoped(
+    [McpServerTool(Name = "wireframe_author_document")]
+    [Description("Author a complete wireframe document in one call. The payload is parsed, role-based elements are resolved to concrete component types, enum props are normalized, off-canvas elements are clamped into their page, the result is validated and then saved. Returns warnings for every advisory normalization or lint issue. Set strict=true to reject prop/enum warnings before saving. Pass expectedModifiedAt (from wireframe_get_document) to avoid overwriting concurrent edits.")]
+    public static async Task<string> AuthorDocumentScoped(
         ITempoDocumentLibraryProvider library,
         IWireframeDocumentProvider documents,
         WireframeSchemaRegistry registry,
         [Description("Wireframe document id (GUID).")] Guid documentId,
-        [Description("The full replacement wireframe document JSON.")] string documentJson,
+        [Description("The full wireframe document JSON to normalize, validate and save.")] string documentJson,
         [Description("Optional optimistic-concurrency token from wireframe_get_document.")] DateTime? expectedModifiedAt = null,
-        [Description("Optional app id used to resolve local custom type names and scoped app component types during validation.")] string? scopeAppId = null)
+        [Description("Optional app id used to resolve local custom type names and scoped app component roles during validation.")] string? scopeAppId = null,
+        [Description("When true, prop/enum warnings cause validation_failed and nothing is saved. Default false saves valid documents and returns warnings.")] bool strict = false)
     {
         var entry = await library.GetEntryAsync(TempoDocumentKind.Wireframe, documentId);
         if (entry is null)
@@ -181,16 +182,107 @@ public static class WireframeOperationTools
             return McpToolResults.Failure(McpToolResults.ValidationFailed, "The document JSON could not be parsed.");
         }
 
-        var validation = WireframeValidationEngine.Validate(document, registry, WireframeComponentScope.FromAppId(scopeAppId));
-        if (!validation.IsValid)
+        var scope = WireframeComponentScope.FromAppId(scopeAppId);
+        var result = WireframeDocumentAuthoringEngine.NormalizeAndValidate(document, registry, scope);
+        if (strict && result.Warnings.Any(IsStrictWarning))
         {
-            return McpToolResults.Failure(McpToolResults.ValidationFailed, "The document is invalid; nothing was saved.", validation.Errors);
+            return FailureWithWarnings(
+                "One or more strict warnings were produced; nothing was saved.",
+                result.Warnings);
+        }
+
+        if (!result.IsValid)
+        {
+            return FailureWithWarnings(
+                "The resulting document is invalid; nothing was saved.",
+                result.Warnings,
+                result.Errors);
         }
 
         await documents.SaveWireframeDocumentAsync(documentId, document);
         var saved = await library.GetEntryAsync(TempoDocumentKind.Wireframe, documentId);
 
-        return McpToolResults.Success(new { id = documentId, modifiedAt = saved?.ModifiedAt });
+        return McpToolResults.Success(new
+        {
+            id = documentId,
+            warnings = result.Warnings,
+            modifiedAt = saved?.ModifiedAt
+        });
+    }
+
+    public static Task<string> AuthorDocument(
+        ITempoDocumentLibraryProvider library,
+        IWireframeDocumentProvider documents,
+        WireframeSchemaRegistry registry,
+        Guid documentId,
+        string documentJson,
+        DateTime? expectedModifiedAt = null,
+        bool strict = false)
+        => AuthorDocumentScoped(
+            library,
+            documents,
+            registry,
+            documentId,
+            documentJson,
+            expectedModifiedAt,
+            scopeAppId: null,
+            strict);
+
+    [McpServerTool(Name = "wireframe_replace_document")]
+    [Description("Replace a wireframe's entire content with the provided document JSON and save it. The document is validated against the schema before saving and warnings[] reports advisory issues; nothing is persisted if validation fails. Set strict=true to reject prop/enum warnings before saving. Pass expectedModifiedAt (from wireframe_get_document) for optimistic concurrency.")]
+    public static async Task<string> ReplaceDocumentScoped(
+        ITempoDocumentLibraryProvider library,
+        IWireframeDocumentProvider documents,
+        WireframeSchemaRegistry registry,
+        [Description("Wireframe document id (GUID).")] Guid documentId,
+        [Description("The full replacement wireframe document JSON.")] string documentJson,
+        [Description("Optional optimistic-concurrency token from wireframe_get_document.")] DateTime? expectedModifiedAt = null,
+        [Description("Optional app id used to resolve local custom type names and scoped app component types during validation.")] string? scopeAppId = null,
+        [Description("When true, prop/enum warnings cause validation_failed and nothing is saved. Default false preserves replace behavior and returns warnings.")] bool strict = false)
+    {
+        var entry = await library.GetEntryAsync(TempoDocumentKind.Wireframe, documentId);
+        if (entry is null)
+        {
+            return McpToolResults.Failure(McpToolResults.NotFound, $"Wireframe {documentId} not found.");
+        }
+        if (McpConcurrency.DateTimeConflict(expectedModifiedAt, entry.ModifiedAt, "wireframe_get_document") is { } conflict)
+        {
+            return McpToolResults.Failure(McpToolResults.Conflict, conflict);
+        }
+
+        if (!WireframeSerializer.TryDeserialize(documentJson, out var document) || document is null)
+        {
+            return McpToolResults.Failure(McpToolResults.ValidationFailed, "The document JSON could not be parsed.");
+        }
+
+        var result = WireframeDocumentAuthoringEngine.ValidateReplacement(
+            document,
+            registry,
+            WireframeComponentScope.FromAppId(scopeAppId));
+        if (strict && result.Warnings.Any(IsStrictWarning))
+        {
+            return FailureWithWarnings(
+                "One or more strict warnings were produced; nothing was saved.",
+                result.Warnings);
+        }
+
+        if (!result.IsValid)
+        {
+            return FailureWithWarnings(
+                "The document is invalid; nothing was saved.",
+                result.Warnings,
+                result.Errors);
+        }
+
+        await documents.SaveWireframeDocumentAsync(documentId, document);
+        var saved = await library.GetEntryAsync(TempoDocumentKind.Wireframe, documentId);
+
+        return McpToolResults.Success(new
+        {
+            id = documentId,
+            warnings = result.Warnings,
+            modifiedAt = saved?.ModifiedAt
+        });
     }
 
     public static Task<string> ReplaceDocument(
@@ -199,8 +291,17 @@ public static class WireframeOperationTools
         WireframeSchemaRegistry registry,
         Guid documentId,
         string documentJson,
-        DateTime? expectedModifiedAt = null)
-        => ReplaceDocumentScoped(library, documents, registry, documentId, documentJson, expectedModifiedAt, scopeAppId: null);
+        DateTime? expectedModifiedAt = null,
+        bool strict = false)
+        => ReplaceDocumentScoped(
+            library,
+            documents,
+            registry,
+            documentId,
+            documentJson,
+            expectedModifiedAt,
+            scopeAppId: null,
+            strict);
 
     private static IReadOnlyList<WireframeLintWarning> DistinctWarnings(
         params IReadOnlyList<WireframeLintWarning>[] sources)

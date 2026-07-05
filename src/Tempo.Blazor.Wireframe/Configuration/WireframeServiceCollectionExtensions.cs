@@ -40,9 +40,7 @@ public static class WireframeServiceCollectionExtensions
         services.TryAddSingleton<NativeRendererRegistry>();
         services.TryAddSingleton<StencilPackCompiler>();
 
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IWireframeSchemaSource, BuiltInComponentSchemas>());
-        services.TryAddSingleton<WireframeSchemaRegistry>(sp =>
-            new WireframeSchemaRegistry(sp.GetServices<IWireframeSchemaSource>()));
+        services.AddWireframeSchemas();
 
         return services;
     }

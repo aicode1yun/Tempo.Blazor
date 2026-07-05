@@ -2,15 +2,15 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "wireframe-document.schema.json",
   "title": "WireframeDocument",
-  "description": "Tempo.Blazor wireframe document v2 - AI-friendly paged JSON format.",
+  "description": "Tempo.Blazor wireframe document v2.1 - AI-friendly paged JSON format.",
   "type": "object",
   "required": ["version", "title", "pages"],
   "additionalProperties": true,
   "properties": {
     "version": {
       "type": "string",
-      "description": "Schema version. Current: 2.0.",
-      "example": "2.0"
+      "description": "Schema version. Current: 2.1.",
+      "example": "2.1"
     },
     "title": {
       "type": "string",
@@ -127,6 +127,10 @@
           "type": "string",
           "description": "Registered component type, e.g. TmButton or app:{id}:Card.",
           "example": "TmButton"
+        },
+        "role": {
+          "type": "string",
+          "description": "Optional library-agnostic UI role requested during authoring, e.g. search-input, data-table, or otp-input."
         },
         "x": {
           "type": "number",

@@ -92,6 +92,18 @@
           "type": "string",
           "minLength": 1
         },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "description": "Library-agnostic UI roles this component can satisfy."
+        },
+        "isContainer": {
+          "type": "boolean",
+          "description": "True when the component is intended to visually contain other placed elements."
+        },
         "icon": {
           "type": "string"
         },

@@ -29,6 +29,16 @@ public class McpToolsE2ETests
         return list.GetProperty("items").EnumerateArray().First().GetProperty("type").GetString()!;
     }
 
+    private static bool HasWarning(JsonElement result, string code, string? elementId = null)
+        => result.TryGetProperty("warnings", out var warnings)
+           && warnings.ValueKind == JsonValueKind.Array
+           && warnings.EnumerateArray().Any(w =>
+               w.TryGetProperty("code", out var warningCode)
+               && warningCode.GetString() == code
+               && (elementId is null
+                   || (w.TryGetProperty("elementId", out var warningElementId)
+                       && warningElementId.GetString() == elementId)));
+
     [TestMethod]
     public async Task Mcp1_Initialize_And_ListTools_ExposesAllWireframeTools()
     {
@@ -42,7 +52,7 @@ public class McpToolsE2ETests
             "wireframe_list_components", "wireframe_get_component_schema",
             "wireframe_list_documents", "wireframe_get_document", "wireframe_create_document",
             "wireframe_validate_document", "wireframe_apply_operations",
-            "wireframe_replace_document", "wireframe_get_implementation_brief"
+            "wireframe_author_document", "wireframe_replace_document", "wireframe_get_implementation_brief"
         }, names.ToList());
         Assert.IsTrue(tools.All(t => !string.IsNullOrWhiteSpace(t.Description)), "every tool has a description");
     }
@@ -81,6 +91,64 @@ public class McpToolsE2ETests
         Assert.IsTrue(brief.GetProperty("success").GetBoolean());
         Assert.IsTrue(brief.GetProperty("pages").GetArrayLength() > 0);
         Assert.IsTrue(brief.GetProperty("componentsUsed").GetArrayLength() > 0);
+    }
+
+    [TestMethod]
+    public async Task Mcp8_WriteOperations_UpdatesDocumentLibraryThumbnailPreview()
+    {
+        var client = await ConnectAsync();
+        var type = await FirstComponentTypeAsync(client);
+        var title = "Thumbnail <script>alert(1)</script><foreignObject>bad</foreignObject> javascript:alert(2) "
+                    + Guid.NewGuid().ToString("N")[..6];
+
+        var created = await client.CallToolAsync("wireframe_create_document", new { title });
+        Assert.IsTrue(created.GetProperty("success").GetBoolean(), created.GetRawText());
+        var id = created.GetProperty("id").GetGuid();
+
+        var operations = new List<object>
+        {
+            new { op = "setCanvasSize", width = 960, height = 720 }
+        };
+        for (var i = 0; i < 12; i++)
+        {
+            operations.Add(new
+            {
+                op = "addElement",
+                id = "thumb-" + i,
+                type,
+                x = 24 + (i % 4) * 180,
+                y = 24 + (i / 4) * 120,
+                w = 140,
+                h = 80
+            });
+        }
+
+        var applied = await client.CallToolAsync("wireframe_apply_operations", new
+        {
+            documentId = id,
+            operationsJson = JsonSerializer.Serialize(operations)
+        });
+        Assert.IsTrue(applied.GetProperty("success").GetBoolean(), applied.GetRawText());
+
+        using var http = new HttpClient(new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+        });
+        using var response = await http.GetAsync($"https://localhost:5100/api/document-library/wireframe/documents/{id}");
+        response.EnsureSuccessStatusCode();
+        using var metadata = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var svg = metadata.RootElement.GetProperty("previewSvg").GetString();
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(svg), "expected a cached thumbnail preview");
+        StringAssert.StartsWith(svg!, "<svg");
+        StringAssert.Contains(svg!, "viewBox=\"0 0 160 120\"");
+        StringAssert.Contains(svg!, "width=\"160\"");
+        StringAssert.Contains(svg!, "height=\"120\"");
+        StringAssert.Contains(svg!, "data-elements=\"12\"");
+        Assert.AreEqual(12, svg!.Split("<rect x=\"", StringSplitOptions.None).Length - 1);
+        Assert.IsFalse(svg.Contains("script", StringComparison.OrdinalIgnoreCase), svg);
+        Assert.IsFalse(svg.Contains("foreignObject", StringComparison.OrdinalIgnoreCase), svg);
+        Assert.IsFalse(svg.Contains("javascript:", StringComparison.OrdinalIgnoreCase), svg);
     }
 
     private static string FixturePath(string name)
@@ -139,6 +207,69 @@ public class McpToolsE2ETests
         var totalElements = page.GetProperty("regions").EnumerateArray()
             .Sum(r => r.GetProperty("elements").GetArrayLength());
         Assert.IsTrue(totalElements >= 10, $"expected >=10 elements, got {totalElements}");
+    }
+
+    [TestMethod]
+    public async Task Mcp6_OverlapLint_SuppressesContainedElementOnlyForContainer()
+    {
+        var client = await ConnectAsync();
+
+        var containedId = (await client.CallToolAsync(
+                "wireframe_create_document",
+                new { title = "Contained overlap lint" }))
+            .GetProperty("id").GetGuid();
+        var containedOps = JsonSerializer.Serialize(new object[]
+        {
+            new { op = "setCanvasSize", width = 500, height = 400 },
+            new { op = "addElement", id = "card", type = "TmCard", x = 20, y = 20, w = 240, h = 160 },
+            new
+            {
+                op = "addElement",
+                id = "button",
+                type = "TmButton",
+                x = 48,
+                y = 76,
+                w = 120,
+                h = 36,
+                props = new { label = "Save" }
+            }
+        });
+
+        var contained = await client.CallToolAsync(
+            "wireframe_apply_operations",
+            new { documentId = containedId, operationsJson = containedOps });
+
+        Assert.IsTrue(contained.GetProperty("success").GetBoolean(), contained.GetRawText());
+        Assert.IsFalse(HasWarning(contained, "overlap"), contained.GetRawText());
+
+        var partialId = (await client.CallToolAsync(
+                "wireframe_create_document",
+                new { title = "Partial overlap lint" }))
+            .GetProperty("id").GetGuid();
+        var partialOps = JsonSerializer.Serialize(new object[]
+        {
+            new { op = "setCanvasSize", width = 500, height = 400 },
+            new { op = "addElement", id = "card", type = "TmCard", x = 20, y = 20, w = 160, h = 100 },
+            new
+            {
+                op = "addElement",
+                id = "button",
+                type = "TmButton",
+                x = 150,
+                y = 80,
+                w = 120,
+                h = 36,
+                props = new { label = "Save" }
+            }
+        });
+
+        var partial = await client.CallToolAsync(
+            "wireframe_apply_operations",
+            new { documentId = partialId, operationsJson = partialOps });
+
+        Assert.IsTrue(partial.GetProperty("success").GetBoolean(), partial.GetRawText());
+        Assert.IsTrue(HasWarning(partial, "overlap", "card"), partial.GetRawText());
+        Assert.IsTrue(HasWarning(partial, "overlap", "button"), partial.GetRawText());
     }
 
     [TestMethod]

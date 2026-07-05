@@ -38,6 +38,7 @@
       "Tempo.Blazor.Components.Wireframe",
       "Tempo.Blazor.Components.Wireframe.Commands",
       "Tempo.Blazor.Components.Wireframe.Models",
+      "Tempo.Blazor.Components.Wireframe.Stencil",
       "Tempo.Blazor.Configuration"
     ]
   },
@@ -202,14 +203,13 @@
       "itemName": "BringToFrontCommand"
     },
     {
-      "itemName": "BuiltInWireframeComponentProvider",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe",
-      "description": "Registers wireframe definitions for all built-in Tempo.Blazor components. Priority 0 – custom providers with higher priority can override individual types.",
+      "description": "Provides built-in Tempo stencil-pack definitions backed by trusted native renderers.",
       "packageId": "Tempo.Blazor.Wireframe",
-      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/BuiltInWireframeComponentProvider.cs",
-      "documentationStatus": "merged",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/BuiltInStencilPackProvider.cs",
+      "documentationStatus": "generated",
       "members": [
         {
           "name": "Priority",
@@ -222,11 +222,35 @@
           "type": "string"
         },
         {
+          "name": "ValidationWarnings",
+          "kind": "Field",
+          "type": "IReadOnlyList<StencilPackValidationWarning>",
+          "description": "Non-fatal validation warnings emitted while loading the built-in pack."
+        },
+        {
           "name": "GetDefinitions",
           "kind": "Method",
           "type": "IEnumerable<WireframeComponentDef>"
         }
-      ]
+      ],
+      "itemName": "BuiltInStencilPackProvider"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Registers wireframe definitions for all built-in Tempo.Blazor components. Priority 0 – custom providers with higher priority can override individual types.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/BuiltInWireframeComponentProvider.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "GetDefinitions",
+          "kind": "Method",
+          "type": "IEnumerable<WireframeComponentDef>"
+        }
+      ],
+      "itemName": "BuiltInWireframeComponentProvider"
     },
     {
       "itemName": "BulkRotateCommand",
@@ -543,6 +567,40 @@
     {
       "kind": "Class",
       "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+      "description": "Maps trusted native stencil renderer ids to C# wireframe SVG render actions.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/NativeRendererRegistry.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Register",
+          "kind": "Method",
+          "type": "void",
+          "description": "Registers or replaces a native renderer for .",
+          "parameters": [
+            {
+              "name": "nativeType",
+              "type": "string"
+            },
+            {
+              "name": "renderer",
+              "type": "RenderTreeBuilder>"
+            }
+          ]
+        },
+        {
+          "name": "TempoBuiltIn",
+          "kind": "Property",
+          "type": "static NativeRendererRegistry",
+          "description": "Trusted native renderers backed by the built-in Tempo wireframe provider."
+        }
+      ],
+      "itemName": "NativeRendererRegistry"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
       "description": "Applies the copied width/height from to selected elements (undoable).",
       "packageId": "Tempo.Blazor.Wireframe",
@@ -826,6 +884,428 @@
         }
       ],
       "itemName": "SendToBackCommand"
+    },
+    {
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+      "description": "Immutable data available to stencil expression evaluation.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilEvalContext.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "WithRepeatIndex",
+          "kind": "Method",
+          "type": "StencilEvalContext",
+          "description": "Returns a copy with a different repeat index; never throws.",
+          "parameters": [
+            {
+              "name": "repeatIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "Empty",
+          "kind": "Property",
+          "type": "static StencilEvalContext"
+        }
+      ],
+      "itemName": "StencilEvalContext"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+      "description": "Evaluates safe stencil expressions. Public evaluation APIs never throw.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilEvaluator.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Evaluate",
+          "kind": "Method",
+          "type": "StencilValue",
+          "description": "Parses and evaluates ; malformed input returns the raw string and never throws.",
+          "parameters": [
+            {
+              "name": "expression",
+              "type": "string?"
+            },
+            {
+              "name": "context",
+              "type": "StencilEvalContext?",
+              "default": "null"
+            }
+          ]
+        }
+      ],
+      "itemName": "StencilEvaluator"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+      "description": "A parsed safe binding expression. Public parsing APIs never throw on malformed input: they return a literal-mode instance with set to true. The only permitted function call is token(key); any other call becomes a parse error and is handled by the same literal fallback.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Literal",
+          "kind": "Method",
+          "type": "StencilExpressionNode",
+          "parameters": [
+            {
+              "name": "value",
+              "type": "object?"
+            }
+          ]
+        },
+        {
+          "name": "Null",
+          "kind": "Method",
+          "type": "StencilExpressionNode"
+        },
+        {
+          "name": "Parse",
+          "kind": "Method",
+          "type": "StencilExpression",
+          "description": "Parses ; on failure returns a literal fallback and never throws.",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string?"
+            }
+          ]
+        },
+        {
+          "name": "Property",
+          "kind": "Method",
+          "type": "StencilExpressionNode",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Simple",
+          "kind": "Method",
+          "type": "StencilExpressionNode",
+          "parameters": [
+            {
+              "name": "kind",
+              "type": "StencilExpressionNodeKind"
+            }
+          ]
+        },
+        {
+          "name": "Token",
+          "kind": "Method",
+          "type": "StencilExpressionNode",
+          "parameters": [
+            {
+              "name": "key",
+              "type": "string"
+            },
+            {
+              "name": "fallback",
+              "type": "StencilExpressionNode?"
+            }
+          ]
+        },
+        {
+          "name": "Tokenize",
+          "kind": "Method",
+          "type": "IReadOnlyList<Token>",
+          "parameters": [
+            {
+              "name": "source",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "TryParse",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Parses and reports diagnostics without throwing.",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string?"
+            },
+            {
+              "name": "expression",
+              "type": "out StencilExpression"
+            },
+            {
+              "name": "error",
+              "type": "out string?"
+            }
+          ]
+        },
+        {
+          "name": "Unary",
+          "kind": "Method",
+          "type": "StencilExpressionNode",
+          "parameters": [
+            {
+              "name": "op",
+              "type": "StencilExpressionOperator"
+            },
+            {
+              "name": "operand",
+              "type": "StencilExpressionNode"
+            }
+          ]
+        },
+        {
+          "name": "Condition",
+          "kind": "Property",
+          "type": "StencilExpressionNode?"
+        },
+        {
+          "name": "Default",
+          "kind": "Property",
+          "type": "StencilExpressionNode?"
+        },
+        {
+          "name": "Error",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "IsMalformed",
+          "kind": "Property",
+          "type": "bool"
+        },
+        {
+          "name": "Kind",
+          "kind": "Property",
+          "type": "StencilExpressionNodeKind"
+        },
+        {
+          "name": "Left",
+          "kind": "Property",
+          "type": "StencilExpressionNode?"
+        },
+        {
+          "name": "MapEntries",
+          "kind": "Property",
+          "type": "IReadOnlyDictionary<string, StencilExpressionNode>"
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "Operand",
+          "kind": "Property",
+          "type": "StencilExpressionNode?"
+        },
+        {
+          "name": "Operator",
+          "kind": "Property",
+          "type": "StencilExpressionOperator?"
+        },
+        {
+          "name": "Raw",
+          "kind": "Property",
+          "type": "string"
+        },
+        {
+          "name": "Right",
+          "kind": "Property",
+          "type": "StencilExpressionNode?"
+        },
+        {
+          "name": "Root",
+          "kind": "Property",
+          "type": "StencilExpressionNode"
+        },
+        {
+          "name": "Source",
+          "kind": "Property",
+          "type": "StencilExpressionNode?"
+        },
+        {
+          "name": "Value",
+          "kind": "Property",
+          "type": "object?"
+        },
+        {
+          "name": "WhenFalse",
+          "kind": "Property",
+          "type": "StencilExpressionNode?"
+        },
+        {
+          "name": "WhenTrue",
+          "kind": "Property",
+          "type": "StencilExpressionNode?"
+        }
+      ],
+      "itemName": "StencilExpression"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+      "description": "Public class defined by Tempo.Blazor.Wireframe.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
+      "documentationStatus": "generated",
+      "itemName": "StencilExpression.StencilExpressionNode"
+    },
+    {
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+      "description": "Public enum defined by Tempo.Blazor.Wireframe.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
+      "documentationStatus": "generated",
+      "itemName": "StencilExpression.StencilExpressionNodeKind"
+    },
+    {
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+      "description": "Public enum defined by Tempo.Blazor.Wireframe.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
+      "documentationStatus": "generated",
+      "itemName": "StencilExpression.StencilExpressionOperator"
+    },
+    {
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+      "description": "Compiled stencil pack definitions plus non-fatal validation diagnostics.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilPackCompiler.cs",
+      "documentationStatus": "generated",
+      "itemName": "StencilPackCompilationResult"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+      "description": "Compiles declarative stencil pack components into wireframe component definitions.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilPackCompiler.cs",
+      "documentationStatus": "generated",
+      "itemName": "StencilPackCompiler"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+      "description": "Exposes compiled stencil pack components to the wireframe component registry.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilPackComponentProvider.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "ProviderId",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "ValidationWarnings",
+          "kind": "Field",
+          "type": "IReadOnlyList<StencilPackValidationWarning>"
+        },
+        {
+          "name": "GetDefinitions",
+          "kind": "Method",
+          "type": "IEnumerable<WireframeComponentDef>"
+        },
+        {
+          "name": "Priority",
+          "kind": "Property",
+          "type": "int"
+        },
+        {
+          "name": "ScopeAppId",
+          "kind": "Property",
+          "type": "string"
+        }
+      ],
+      "itemName": "StencilPackComponentProvider"
+    },
+    {
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+      "description": "Resolves a token key through element override, document theme, pack theme, pack defaults, and finally a literal fallback. Keys are matched with .",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilTokenResolver.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "Resolve",
+          "kind": "Method",
+          "type": "string",
+          "description": "First matching layer wins; returns or empty string if none; never throws.",
+          "parameters": [
+            {
+              "name": "key",
+              "type": "string"
+            },
+            {
+              "name": "literalFallback",
+              "type": "string?",
+              "default": "null"
+            }
+          ]
+        }
+      ],
+      "itemName": "StencilTokenResolver"
+    },
+    {
+      "kind": "RecordStruct",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+      "description": "Safe value wrapper used by the stencil expression evaluator.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilValue.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "IsNull",
+          "kind": "Field",
+          "type": "bool"
+        },
+        {
+          "name": "AsBool",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Coerces the value to a boolean; null-like values return false and never throw."
+        },
+        {
+          "name": "AsDouble",
+          "kind": "Method",
+          "type": "double",
+          "description": "Coerces the value to a number; invalid values return 0 and never throw."
+        },
+        {
+          "name": "AsString",
+          "kind": "Method",
+          "type": "string",
+          "description": "Coerces the value to a string; null-like values return an empty string and never throw."
+        },
+        {
+          "name": "Null",
+          "kind": "Property",
+          "type": "static StencilValue"
+        }
+      ],
+      "itemName": "StencilValue"
     },
     {
       "kind": "Class",
@@ -1470,16 +1950,40 @@
           "description": "TmIcon name used in the Toolbox list item."
         },
         {
+          "name": "Impl",
+          "kind": "Property",
+          "type": "StencilImpl?",
+          "description": "Runtime implementation metadata for stencil components that map to Blazor components."
+        },
+        {
           "name": "IsBuiltIn",
           "kind": "Property",
           "type": "bool",
           "description": "True for built-in Tempo.Blazor components; false for custom/JSON-defined ones."
         },
         {
+          "name": "IsContainer",
+          "kind": "Property",
+          "type": "bool",
+          "description": "True when the component is intended to visually contain other placed elements."
+        },
+        {
           "name": "LocalType",
           "kind": "Property",
           "type": "string?",
           "description": "Component type name without the app scope prefix. Defaults to for unscoped components and to the suffix of app:{id}:{name} for scoped components."
+        },
+        {
+          "name": "NativeType",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Native renderer id for stencil components backed by registered C# renderers."
+        },
+        {
+          "name": "PackId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Identifier of the stencil pack that produced this definition, when applicable."
         },
         {
           "name": "Props",
@@ -1492,6 +1996,12 @@
           "kind": "Property",
           "type": "required Action<WireframeElement, RenderTreeBuilder>",
           "description": "Renders the wireframe SVG shape into . Coordinates inside the render are relative to the element's top-left (0, 0). The outer <g> transform is applied by the canvas."
+        },
+        {
+          "name": "Roles",
+          "kind": "Property",
+          "type": "IReadOnlyList<string>?",
+          "description": "Library-agnostic UI roles this definition can satisfy."
         },
         {
           "name": "ScopeAppId",
@@ -1783,6 +2293,28 @@
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeSvgRenderer.cs",
       "documentationStatus": "generated",
       "itemName": "WireframeSvgRenderer"
+    },
+    {
+      "itemName": "WireframeThumbnailRenderer",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "description": "Renders deterministic low-fidelity SVG thumbnails for wireframe documents. The renderer scales the active page into a small SVG, draws each element as a simple rectangle, escapes user-supplied title text, and is suitable for document-library previews outside a Blazor renderer.",
+      "packageId": "Tempo.Blazor.Wireframe",
+      "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeThumbnailRenderer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "DefaultHeight",
+          "kind": "Field",
+          "type": "double"
+        },
+        {
+          "name": "DefaultWidth",
+          "kind": "Field",
+          "type": "double"
+        }
+      ]
     },
     {
       "itemName": "ZIndexCommand",
@@ -2587,16 +3119,20 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.Wireframe/wwwroot/tempo-stencil.schema.json",
+      "kind": "Json"
+    },
+    {
       "path": "src/Tempo.Blazor.Wireframe/wwwroot/wireframe-document.schema.json",
       "kind": "Json"
     }
   ],
   "summary": {
-    "itemCount": 76,
-    "manualItemCount": 58,
-    "generatedItemCount": 65,
-    "generatedOnlyItemCount": 18,
+    "itemCount": 90,
+    "manualItemCount": 59,
+    "generatedItemCount": 78,
+    "generatedOnlyItemCount": 31,
     "componentCount": 9,
-    "publicApiTypeCount": 56
+    "publicApiTypeCount": 69
   }
 }

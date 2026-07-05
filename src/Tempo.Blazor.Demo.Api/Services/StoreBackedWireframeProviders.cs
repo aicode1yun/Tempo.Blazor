@@ -24,7 +24,7 @@ public sealed class StoreWireframeDocumentProvider : IWireframeDocumentProvider
         doc.EnsureActivePage();
         var stored = _store.CreateDocument(
             TempoDocumentKind.Wireframe, doc.Title, "/",
-            WireframeSerializer.Serialize(doc), ServerWireframePreview.Render(doc));
+            WireframeSerializer.Serialize(doc), WireframeThumbnailRenderer.Render(doc));
         return Task.FromResult((stored.Id, doc));
     }
 
@@ -39,7 +39,7 @@ public sealed class StoreWireframeDocumentProvider : IWireframeDocumentProvider
         _store.SaveDocument(
             TempoDocumentKind.Wireframe, documentId,
             WireframeSerializer.Serialize(document),
-            ServerWireframePreview.Render(document),
+            WireframeThumbnailRenderer.Render(document),
             name: document.Title);
         return Task.FromResult(document);
     }

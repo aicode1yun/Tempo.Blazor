@@ -2720,6 +2720,10 @@
               "code": "<TmChart Type=\"ChartType.Donut\"\n         Data=\"@chartData\"\n         ShowValues=\"true\"\n         OnSegmentClick=\"HandleSegmentClick\" />"
             },
             {
+              "title": "Per-value colors",
+              "code": "<TmChart Type=\"ChartType.Donut\"\n         Data=\"@(new ChartData {\n             Labels = new[] { \"Critical\", \"High\", \"Medium\", \"Low\", \"Info\" },\n             Datasets = new[] {\n                 new ChartDataset {\n                     Label = \"Outages\",\n                     Values = new[] { 5.0, 12.0, 25.0, 18.0, 7.0 },\n                     Color = \"#3b82f6\",\n                     BackgroundColors = new[] { \"#dc2626\", \"#ea580c\", \"#2563eb\", \"#16a34a\", \"#64748b\" }\n                 }\n             }\n         })\"\n         Height=\"260px\"\n         ShowValues=\"true\" />"
+            },
+            {
               "title": "Line chart without animation",
               "code": "<TmChart Type=\"ChartType.Line\"\n         Data=\"@lineData\"\n         Animated=\"false\"\n         Width=\"100%\"\n         Height=\"400px\" />"
             }
@@ -3080,7 +3084,15 @@
           "description": "A single dataset within chart data.",
           "packageId": "Tempo.Blazor",
           "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
-          "documentationStatus": "merged"
+          "documentationStatus": "merged",
+          "parameters": [
+            {
+              "name": "BackgroundColors",
+              "type": "IReadOnlyList<string>?",
+              "isRequired": false,
+              "description": "Optional per-value fill colors. When provided and contains a value for the index, overrides BackgroundColor/Color for individual bars or pie/donut slices."
+            }
+          ]
         },
         {
           "itemName": "ChartSegment",
@@ -16752,7 +16764,7 @@
               "name": "EventTemplate",
               "type": "RenderFragment<TmScheduleEvent>?",
               "isRequired": false,
-              "description": "Custom event template."
+              "description": "Custom event template used by the month view event renderer."
             },
             {
               "name": "FirstDayOfWeek",
@@ -16910,6 +16922,10 @@
             {
               "title": "Read-only agenda view",
               "code": "<TmScheduler Events=\"@_events\" View=\"TmScheduleViewType.Agenda\" ReadOnly=\"true\" />"
+            },
+            {
+              "title": "Month view with custom event template",
+              "code": "<TmScheduler Events=\"@_events\" View=\"TmScheduleViewType.Month\" CurrentDate=\"DateTime.Today\" ReadOnly=\"true\">\n    <EventTemplate Context=\"evt\">\n        <div class=\"custom-month-event\">\n            <strong>@evt.Title</strong>\n            <span>@evt.Description</span>\n        </div>\n    </EventTemplate>\n</TmScheduler>"
             }
           ]
         },
@@ -17135,6 +17151,12 @@
               "description": "Events to display."
             },
             {
+              "name": "EventTemplate",
+              "type": "RenderFragment<TmScheduleEvent>?",
+              "isRequired": false,
+              "description": "Optional custom event renderer used inside each month event wrapper."
+            },
+            {
               "name": "MaxVisibleEvents",
               "type": "int",
               "isRequired": false,
@@ -17210,6 +17232,10 @@
             {
               "title": "Month view with events",
               "code": "<TmSchedulerMonthView CurrentDate=\"DateTime.Today\" Events=\"@_events\" MaxVisibleEvents=\"3\" OnSlotClick=\"@HandleSlotClick\" OnEventClick=\"@HandleEventClick\" OnEventChanged=\"@HandleEventDrop\" />"
+            },
+            {
+              "title": "Month view with custom event template",
+              "code": "<TmSchedulerMonthView CurrentDate=\"DateTime.Today\" Events=\"@_events\">\n    <EventTemplate Context=\"evt\">\n        <div class=\"custom-month-event\">\n            <strong>@evt.Title</strong>\n            <span>@evt.Description</span>\n        </div>\n    </EventTemplate>\n</TmSchedulerMonthView>"
             }
           ]
         },
@@ -25234,6 +25260,7 @@
           "Tempo.Blazor.Components.Wireframe",
           "Tempo.Blazor.Components.Wireframe.Commands",
           "Tempo.Blazor.Components.Wireframe.Models",
+          "Tempo.Blazor.Components.Wireframe.Stencil",
           "Tempo.Blazor.Configuration"
         ]
       },
@@ -25398,14 +25425,13 @@
           "itemName": "BringToFrontCommand"
         },
         {
-          "itemName": "BuiltInWireframeComponentProvider",
           "kind": "Class",
           "category": "Components",
           "namespace": "Tempo.Blazor.Components.Wireframe",
-          "description": "Registers wireframe definitions for all built-in Tempo.Blazor components. Priority 0 – custom providers with higher priority can override individual types.",
+          "description": "Provides built-in Tempo stencil-pack definitions backed by trusted native renderers.",
           "packageId": "Tempo.Blazor.Wireframe",
-          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/BuiltInWireframeComponentProvider.cs",
-          "documentationStatus": "merged",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/BuiltInStencilPackProvider.cs",
+          "documentationStatus": "generated",
           "members": [
             {
               "name": "Priority",
@@ -25418,11 +25444,35 @@
               "type": "string"
             },
             {
+              "name": "ValidationWarnings",
+              "kind": "Field",
+              "type": "IReadOnlyList<StencilPackValidationWarning>",
+              "description": "Non-fatal validation warnings emitted while loading the built-in pack."
+            },
+            {
               "name": "GetDefinitions",
               "kind": "Method",
               "type": "IEnumerable<WireframeComponentDef>"
             }
-          ]
+          ],
+          "itemName": "BuiltInStencilPackProvider"
+        },
+        {
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Registers wireframe definitions for all built-in Tempo.Blazor components. Priority 0 – custom providers with higher priority can override individual types.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/BuiltInWireframeComponentProvider.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "GetDefinitions",
+              "kind": "Method",
+              "type": "IEnumerable<WireframeComponentDef>"
+            }
+          ],
+          "itemName": "BuiltInWireframeComponentProvider"
         },
         {
           "itemName": "BulkRotateCommand",
@@ -25739,6 +25789,40 @@
         {
           "kind": "Class",
           "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Maps trusted native stencil renderer ids to C# wireframe SVG render actions.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/NativeRendererRegistry.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Register",
+              "kind": "Method",
+              "type": "void",
+              "description": "Registers or replaces a native renderer for .",
+              "parameters": [
+                {
+                  "name": "nativeType",
+                  "type": "string"
+                },
+                {
+                  "name": "renderer",
+                  "type": "RenderTreeBuilder>"
+                }
+              ]
+            },
+            {
+              "name": "TempoBuiltIn",
+              "kind": "Property",
+              "type": "static NativeRendererRegistry",
+              "description": "Trusted native renderers backed by the built-in Tempo wireframe provider."
+            }
+          ],
+          "itemName": "NativeRendererRegistry"
+        },
+        {
+          "kind": "Class",
+          "category": "Components",
           "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
           "description": "Applies the copied width/height from to selected elements (undoable).",
           "packageId": "Tempo.Blazor.Wireframe",
@@ -26022,6 +26106,428 @@
             }
           ],
           "itemName": "SendToBackCommand"
+        },
+        {
+          "kind": "Record",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Immutable data available to stencil expression evaluation.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilEvalContext.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "WithRepeatIndex",
+              "kind": "Method",
+              "type": "StencilEvalContext",
+              "description": "Returns a copy with a different repeat index; never throws.",
+              "parameters": [
+                {
+                  "name": "repeatIndex",
+                  "type": "int"
+                }
+              ]
+            },
+            {
+              "name": "Empty",
+              "kind": "Property",
+              "type": "static StencilEvalContext"
+            }
+          ],
+          "itemName": "StencilEvalContext"
+        },
+        {
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Evaluates safe stencil expressions. Public evaluation APIs never throw.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilEvaluator.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Evaluate",
+              "kind": "Method",
+              "type": "StencilValue",
+              "description": "Parses and evaluates ; malformed input returns the raw string and never throws.",
+              "parameters": [
+                {
+                  "name": "expression",
+                  "type": "string?"
+                },
+                {
+                  "name": "context",
+                  "type": "StencilEvalContext?",
+                  "default": "null"
+                }
+              ]
+            }
+          ],
+          "itemName": "StencilEvaluator"
+        },
+        {
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "A parsed safe binding expression. Public parsing APIs never throw on malformed input: they return a literal-mode instance with set to true. The only permitted function call is token(key); any other call becomes a parse error and is handled by the same literal fallback.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Literal",
+              "kind": "Method",
+              "type": "StencilExpressionNode",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "object?"
+                }
+              ]
+            },
+            {
+              "name": "Null",
+              "kind": "Method",
+              "type": "StencilExpressionNode"
+            },
+            {
+              "name": "Parse",
+              "kind": "Method",
+              "type": "StencilExpression",
+              "description": "Parses ; on failure returns a literal fallback and never throws.",
+              "parameters": [
+                {
+                  "name": "text",
+                  "type": "string?"
+                }
+              ]
+            },
+            {
+              "name": "Property",
+              "kind": "Method",
+              "type": "StencilExpressionNode",
+              "parameters": [
+                {
+                  "name": "name",
+                  "type": "string"
+                }
+              ]
+            },
+            {
+              "name": "Simple",
+              "kind": "Method",
+              "type": "StencilExpressionNode",
+              "parameters": [
+                {
+                  "name": "kind",
+                  "type": "StencilExpressionNodeKind"
+                }
+              ]
+            },
+            {
+              "name": "Token",
+              "kind": "Method",
+              "type": "StencilExpressionNode",
+              "parameters": [
+                {
+                  "name": "key",
+                  "type": "string"
+                },
+                {
+                  "name": "fallback",
+                  "type": "StencilExpressionNode?"
+                }
+              ]
+            },
+            {
+              "name": "Tokenize",
+              "kind": "Method",
+              "type": "IReadOnlyList<Token>",
+              "parameters": [
+                {
+                  "name": "source",
+                  "type": "string"
+                }
+              ]
+            },
+            {
+              "name": "TryParse",
+              "kind": "Method",
+              "type": "bool",
+              "description": "Parses and reports diagnostics without throwing.",
+              "parameters": [
+                {
+                  "name": "text",
+                  "type": "string?"
+                },
+                {
+                  "name": "expression",
+                  "type": "out StencilExpression"
+                },
+                {
+                  "name": "error",
+                  "type": "out string?"
+                }
+              ]
+            },
+            {
+              "name": "Unary",
+              "kind": "Method",
+              "type": "StencilExpressionNode",
+              "parameters": [
+                {
+                  "name": "op",
+                  "type": "StencilExpressionOperator"
+                },
+                {
+                  "name": "operand",
+                  "type": "StencilExpressionNode"
+                }
+              ]
+            },
+            {
+              "name": "Condition",
+              "kind": "Property",
+              "type": "StencilExpressionNode?"
+            },
+            {
+              "name": "Default",
+              "kind": "Property",
+              "type": "StencilExpressionNode?"
+            },
+            {
+              "name": "Error",
+              "kind": "Property",
+              "type": "string?"
+            },
+            {
+              "name": "IsMalformed",
+              "kind": "Property",
+              "type": "bool"
+            },
+            {
+              "name": "Kind",
+              "kind": "Property",
+              "type": "StencilExpressionNodeKind"
+            },
+            {
+              "name": "Left",
+              "kind": "Property",
+              "type": "StencilExpressionNode?"
+            },
+            {
+              "name": "MapEntries",
+              "kind": "Property",
+              "type": "IReadOnlyDictionary<string, StencilExpressionNode>"
+            },
+            {
+              "name": "Name",
+              "kind": "Property",
+              "type": "string?"
+            },
+            {
+              "name": "Operand",
+              "kind": "Property",
+              "type": "StencilExpressionNode?"
+            },
+            {
+              "name": "Operator",
+              "kind": "Property",
+              "type": "StencilExpressionOperator?"
+            },
+            {
+              "name": "Raw",
+              "kind": "Property",
+              "type": "string"
+            },
+            {
+              "name": "Right",
+              "kind": "Property",
+              "type": "StencilExpressionNode?"
+            },
+            {
+              "name": "Root",
+              "kind": "Property",
+              "type": "StencilExpressionNode"
+            },
+            {
+              "name": "Source",
+              "kind": "Property",
+              "type": "StencilExpressionNode?"
+            },
+            {
+              "name": "Value",
+              "kind": "Property",
+              "type": "object?"
+            },
+            {
+              "name": "WhenFalse",
+              "kind": "Property",
+              "type": "StencilExpressionNode?"
+            },
+            {
+              "name": "WhenTrue",
+              "kind": "Property",
+              "type": "StencilExpressionNode?"
+            }
+          ],
+          "itemName": "StencilExpression"
+        },
+        {
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Public class defined by Tempo.Blazor.Wireframe.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
+          "documentationStatus": "generated",
+          "itemName": "StencilExpression.StencilExpressionNode"
+        },
+        {
+          "kind": "Enum",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Public enum defined by Tempo.Blazor.Wireframe.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
+          "documentationStatus": "generated",
+          "itemName": "StencilExpression.StencilExpressionNodeKind"
+        },
+        {
+          "kind": "Enum",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Public enum defined by Tempo.Blazor.Wireframe.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
+          "documentationStatus": "generated",
+          "itemName": "StencilExpression.StencilExpressionOperator"
+        },
+        {
+          "kind": "Record",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Compiled stencil pack definitions plus non-fatal validation diagnostics.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilPackCompiler.cs",
+          "documentationStatus": "generated",
+          "itemName": "StencilPackCompilationResult"
+        },
+        {
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Compiles declarative stencil pack components into wireframe component definitions.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilPackCompiler.cs",
+          "documentationStatus": "generated",
+          "itemName": "StencilPackCompiler"
+        },
+        {
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Exposes compiled stencil pack components to the wireframe component registry.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilPackComponentProvider.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "ProviderId",
+              "kind": "Field",
+              "type": "string"
+            },
+            {
+              "name": "ValidationWarnings",
+              "kind": "Field",
+              "type": "IReadOnlyList<StencilPackValidationWarning>"
+            },
+            {
+              "name": "GetDefinitions",
+              "kind": "Method",
+              "type": "IEnumerable<WireframeComponentDef>"
+            },
+            {
+              "name": "Priority",
+              "kind": "Property",
+              "type": "int"
+            },
+            {
+              "name": "ScopeAppId",
+              "kind": "Property",
+              "type": "string"
+            }
+          ],
+          "itemName": "StencilPackComponentProvider"
+        },
+        {
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Resolves a token key through element override, document theme, pack theme, pack defaults, and finally a literal fallback. Keys are matched with .",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilTokenResolver.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Resolve",
+              "kind": "Method",
+              "type": "string",
+              "description": "First matching layer wins; returns or empty string if none; never throws.",
+              "parameters": [
+                {
+                  "name": "key",
+                  "type": "string"
+                },
+                {
+                  "name": "literalFallback",
+                  "type": "string?",
+                  "default": "null"
+                }
+              ]
+            }
+          ],
+          "itemName": "StencilTokenResolver"
+        },
+        {
+          "kind": "RecordStruct",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Safe value wrapper used by the stencil expression evaluator.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilValue.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "IsNull",
+              "kind": "Field",
+              "type": "bool"
+            },
+            {
+              "name": "AsBool",
+              "kind": "Method",
+              "type": "bool",
+              "description": "Coerces the value to a boolean; null-like values return false and never throw."
+            },
+            {
+              "name": "AsDouble",
+              "kind": "Method",
+              "type": "double",
+              "description": "Coerces the value to a number; invalid values return 0 and never throw."
+            },
+            {
+              "name": "AsString",
+              "kind": "Method",
+              "type": "string",
+              "description": "Coerces the value to a string; null-like values return an empty string and never throw."
+            },
+            {
+              "name": "Null",
+              "kind": "Property",
+              "type": "static StencilValue"
+            }
+          ],
+          "itemName": "StencilValue"
         },
         {
           "kind": "Class",
@@ -26666,16 +27172,40 @@
               "description": "TmIcon name used in the Toolbox list item."
             },
             {
+              "name": "Impl",
+              "kind": "Property",
+              "type": "StencilImpl?",
+              "description": "Runtime implementation metadata for stencil components that map to Blazor components."
+            },
+            {
               "name": "IsBuiltIn",
               "kind": "Property",
               "type": "bool",
               "description": "True for built-in Tempo.Blazor components; false for custom/JSON-defined ones."
             },
             {
+              "name": "IsContainer",
+              "kind": "Property",
+              "type": "bool",
+              "description": "True when the component is intended to visually contain other placed elements."
+            },
+            {
               "name": "LocalType",
               "kind": "Property",
               "type": "string?",
               "description": "Component type name without the app scope prefix. Defaults to for unscoped components and to the suffix of app:{id}:{name} for scoped components."
+            },
+            {
+              "name": "NativeType",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Native renderer id for stencil components backed by registered C# renderers."
+            },
+            {
+              "name": "PackId",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Identifier of the stencil pack that produced this definition, when applicable."
             },
             {
               "name": "Props",
@@ -26688,6 +27218,12 @@
               "kind": "Property",
               "type": "required Action<WireframeElement, RenderTreeBuilder>",
               "description": "Renders the wireframe SVG shape into . Coordinates inside the render are relative to the element's top-left (0, 0). The outer <g> transform is applied by the canvas."
+            },
+            {
+              "name": "Roles",
+              "kind": "Property",
+              "type": "IReadOnlyList<string>?",
+              "description": "Library-agnostic UI roles this definition can satisfy."
             },
             {
               "name": "ScopeAppId",
@@ -26979,6 +27515,28 @@
           "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeSvgRenderer.cs",
           "documentationStatus": "generated",
           "itemName": "WireframeSvgRenderer"
+        },
+        {
+          "itemName": "WireframeThumbnailRenderer",
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Renders deterministic low-fidelity SVG thumbnails for wireframe documents. The renderer scales the active page into a small SVG, draws each element as a simple rectangle, escapes user-supplied title text, and is suitable for document-library previews outside a Blazor renderer.",
+          "packageId": "Tempo.Blazor.Wireframe",
+          "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeThumbnailRenderer.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "DefaultHeight",
+              "kind": "Field",
+              "type": "double"
+            },
+            {
+              "name": "DefaultWidth",
+              "kind": "Field",
+              "type": "double"
+            }
+          ]
         },
         {
           "itemName": "ZIndexCommand",
@@ -27783,17 +28341,21 @@
           "kind": "JavaScript"
         },
         {
+          "path": "src/Tempo.Blazor.Wireframe/wwwroot/tempo-stencil.schema.json",
+          "kind": "Json"
+        },
+        {
           "path": "src/Tempo.Blazor.Wireframe/wwwroot/wireframe-document.schema.json",
           "kind": "Json"
         }
       ],
       "summary": {
-        "itemCount": 76,
-        "manualItemCount": 58,
-        "generatedItemCount": 65,
-        "generatedOnlyItemCount": 18,
+        "itemCount": 90,
+        "manualItemCount": 59,
+        "generatedItemCount": 78,
+        "generatedOnlyItemCount": 31,
         "componentCount": 9,
-        "publicApiTypeCount": 56
+        "publicApiTypeCount": 69
       }
     },
     {
@@ -50160,6 +50722,7 @@
           "Tempo.Blazor.Components.Spreadsheet.Models",
           "Tempo.Blazor.Components.Wireframe",
           "Tempo.Blazor.Components.Wireframe.Models",
+          "Tempo.Blazor.Components.Wireframe.Stencil",
           "Tempo.Blazor.DocumentEditor.Interfaces",
           "Tempo.Blazor.DocumentEditor.Models",
           "Tempo.Blazor.DocumentEditor.Performance",
@@ -79202,6 +79765,43 @@
           ]
         },
         {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Built-in Tempo UI role vocabulary used as the global baseline.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/BuiltInUiRoleVocabularySource.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Priority",
+              "kind": "Field",
+              "type": "int"
+            },
+            {
+              "name": "SourceId",
+              "kind": "Field",
+              "type": "string"
+            },
+            {
+              "name": "GetRoles",
+              "kind": "Method",
+              "type": "IEnumerable<UiRoleDefinition>"
+            }
+          ],
+          "itemName": "BuiltInUiRoleVocabularySource"
+        },
+        {
+          "kind": "Interface",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Supplies UI role definitions to . Implement this interface to extend the built-in role vocabulary with product-specific concepts or synonyms.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/IUiRoleVocabularySource.cs",
+          "documentationStatus": "generated",
+          "itemName": "IUiRoleVocabularySource"
+        },
+        {
           "itemName": "IWireframeComponentProvider",
           "kind": "Interface",
           "category": "Wireframe",
@@ -79346,6 +79946,540 @@
           "documentationStatus": "merged"
         },
         {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "JSON render tree node used by stencil components.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/RenderNode.cs",
+          "documentationStatus": "generated",
+          "itemName": "RenderNode"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Public class defined by Tempo.Blazor.Abstractions.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/RenderNodeConverter.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Read",
+              "kind": "Method",
+              "type": "RenderNode",
+              "parameters": [
+                {
+                  "name": "reader",
+                  "type": "ref Utf8JsonReader"
+                },
+                {
+                  "name": "typeToConvert",
+                  "type": "Type"
+                },
+                {
+                  "name": "options",
+                  "type": "JsonSerializerOptions"
+                }
+              ]
+            },
+            {
+              "name": "Write",
+              "kind": "Method",
+              "type": "void",
+              "parameters": [
+                {
+                  "name": "writer",
+                  "type": "Utf8JsonWriter"
+                },
+                {
+                  "name": "value",
+                  "type": "RenderNode"
+                },
+                {
+                  "name": "options",
+                  "type": "JsonSerializerOptions"
+                }
+              ]
+            }
+          ],
+          "itemName": "RenderNodeConverter"
+        },
+        {
+          "kind": "Enum",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/RenderNode.cs",
+          "documentationStatus": "generated",
+          "itemName": "RenderNodeKind"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Describes one component or primitive that can be placed on a wireframe canvas.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilComponent.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Category",
+              "kind": "Property",
+              "type": "required string"
+            },
+            {
+              "name": "ContentSlots",
+              "kind": "Property",
+              "type": "IReadOnlyList<string>"
+            },
+            {
+              "name": "DefaultSize",
+              "kind": "Property",
+              "type": "required StencilSize"
+            },
+            {
+              "name": "DisplayName",
+              "kind": "Property",
+              "type": "required string"
+            },
+            {
+              "name": "Icon",
+              "kind": "Property",
+              "type": "string?"
+            },
+            {
+              "name": "Impl",
+              "kind": "Property",
+              "type": "StencilImpl?"
+            },
+            {
+              "name": "IsContainer",
+              "kind": "Property",
+              "type": "bool"
+            },
+            {
+              "name": "MaxSize",
+              "kind": "Property",
+              "type": "StencilSize?"
+            },
+            {
+              "name": "MinSize",
+              "kind": "Property",
+              "type": "StencilSize?"
+            },
+            {
+              "name": "Native",
+              "kind": "Property",
+              "type": "StencilNative?"
+            },
+            {
+              "name": "Props",
+              "kind": "Property",
+              "type": "IReadOnlyList<PropDef>"
+            },
+            {
+              "name": "Render",
+              "kind": "Property",
+              "type": "RenderNode?"
+            },
+            {
+              "name": "Resize",
+              "kind": "Property",
+              "type": "StencilResize"
+            },
+            {
+              "name": "Roles",
+              "kind": "Property",
+              "type": "IReadOnlyList<string>?"
+            },
+            {
+              "name": "SizePresets",
+              "kind": "Property",
+              "type": "IReadOnlyDictionary<string, StencilSize>"
+            },
+            {
+              "name": "Slice",
+              "kind": "Property",
+              "type": "StencilSlice?"
+            },
+            {
+              "name": "Type",
+              "kind": "Property",
+              "type": "required string"
+            }
+          ],
+          "itemName": "StencilComponent"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Runtime component implementation and default parameter bindings.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilImpl.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Component",
+              "kind": "Property",
+              "type": "required string"
+            },
+            {
+              "name": "Parameters",
+              "kind": "Property",
+              "type": "IReadOnlyDictionary<string, object?>"
+            }
+          ],
+          "itemName": "StencilImpl"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Shared for stencil pack serialization.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilJsonOptions.cs",
+          "documentationStatus": "generated",
+          "itemName": "StencilJsonOptions"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Native DOM fallback for stencils that do not need a render tree.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilNative.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "NativeType",
+              "kind": "Property",
+              "type": "required string"
+            },
+            {
+              "name": "Parameters",
+              "kind": "Property",
+              "type": "IReadOnlyDictionary<string, object?>"
+            }
+          ],
+          "itemName": "StencilNative"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Root document for a reusable wireframe stencil pack.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilPack.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Components",
+              "kind": "Property",
+              "type": "IReadOnlyList<StencilComponent>"
+            },
+            {
+              "name": "Format",
+              "kind": "Property",
+              "type": "required string"
+            },
+            {
+              "name": "FormatVersion",
+              "kind": "Property",
+              "type": "required int"
+            },
+            {
+              "name": "Icons",
+              "kind": "Property",
+              "type": "IReadOnlyDictionary<string, string>"
+            },
+            {
+              "name": "Id",
+              "kind": "Property",
+              "type": "required string"
+            },
+            {
+              "name": "IsBuiltIn",
+              "kind": "Property",
+              "type": "bool"
+            },
+            {
+              "name": "Namespace",
+              "kind": "Property",
+              "type": "required string"
+            },
+            {
+              "name": "Parts",
+              "kind": "Property",
+              "type": "IReadOnlyDictionary<string, RenderNode>"
+            },
+            {
+              "name": "Target",
+              "kind": "Property",
+              "type": "StencilTarget?"
+            },
+            {
+              "name": "Themes",
+              "kind": "Property",
+              "type": "IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>"
+            },
+            {
+              "name": "Tokens",
+              "kind": "Property",
+              "type": "IReadOnlyDictionary<string, string>"
+            }
+          ],
+          "itemName": "StencilPack"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Serializes and deserializes stencil packs to the canonical JSON contract.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilPackSerializer.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Deserialize",
+              "kind": "Method",
+              "type": "StencilPack",
+              "parameters": [
+                {
+                  "name": "json",
+                  "type": "string"
+                }
+              ]
+            },
+            {
+              "name": "Serialize",
+              "kind": "Method",
+              "type": "string",
+              "parameters": [
+                {
+                  "name": "pack",
+                  "type": "StencilPack"
+                }
+              ]
+            },
+            {
+              "name": "TryDeserialize",
+              "kind": "Method",
+              "type": "bool",
+              "parameters": [
+                {
+                  "name": "json",
+                  "type": "string"
+                },
+                {
+                  "name": "pack",
+                  "type": "out StencilPack?"
+                }
+              ]
+            }
+          ],
+          "itemName": "StencilPackSerializer"
+        },
+        {
+          "kind": "Record",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Non-fatal validation warning produced while inspecting a stencil pack.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilPackValidator.cs",
+          "documentationStatus": "generated",
+          "itemName": "StencilPackValidationWarning"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Validation helpers for stencil pack metadata that should not block loading.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilPackValidator.cs",
+          "documentationStatus": "generated",
+          "itemName": "StencilPackValidator"
+        },
+        {
+          "kind": "Enum",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilResize.cs",
+          "documentationStatus": "generated",
+          "itemName": "StencilResize"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Public class defined by Tempo.Blazor.Abstractions.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilSize.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Height",
+              "kind": "Property",
+              "type": "double"
+            },
+            {
+              "name": "Width",
+              "kind": "Property",
+              "type": "double"
+            }
+          ],
+          "itemName": "StencilSize"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "A named component variant with property overrides.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilSlice.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Bottom",
+              "kind": "Property",
+              "type": "double"
+            },
+            {
+              "name": "Left",
+              "kind": "Property",
+              "type": "double"
+            },
+            {
+              "name": "Right",
+              "kind": "Property",
+              "type": "double"
+            },
+            {
+              "name": "Top",
+              "kind": "Property",
+              "type": "double"
+            }
+          ],
+          "itemName": "StencilSlice"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+          "description": "Maps a stencil component to its runtime implementation.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilTarget.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Framework",
+              "kind": "Property",
+              "type": "string?"
+            },
+            {
+              "name": "Library",
+              "kind": "Property",
+              "type": "string?"
+            },
+            {
+              "name": "Version",
+              "kind": "Property",
+              "type": "string?"
+            }
+          ],
+          "itemName": "StencilTarget"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Library-agnostic UI role that describes a component concept such as search-input, data-table, or signature-pad.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/UiRoleDefinition.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Definition",
+              "kind": "Property",
+              "type": "string",
+              "description": "Short role definition used by authoring and validation tools."
+            },
+            {
+              "name": "DisplayName",
+              "kind": "Property",
+              "type": "string",
+              "description": "Human-readable role name."
+            },
+            {
+              "name": "Slug",
+              "kind": "Property",
+              "type": "string",
+              "description": "Stable kebab-case role identifier."
+            },
+            {
+              "name": "Synonyms",
+              "kind": "Property",
+              "type": "IReadOnlyList<string>",
+              "description": "Known English, Czech, legacy, and historically incorrect names for the role."
+            }
+          ],
+          "itemName": "UiRoleDefinition"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Components.Wireframe",
+          "description": "Merged, searchable UI role vocabulary backed by registered implementations.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/UiRoleVocabulary.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "Find",
+              "kind": "Method",
+              "type": "UiRoleDefinition?",
+              "description": "Finds a role by slug or synonym using case-insensitive matching.",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "string"
+                }
+              ]
+            },
+            {
+              "name": "GetAll",
+              "kind": "Method",
+              "type": "IReadOnlyList<UiRoleDefinition>",
+              "description": "Returns all roles ordered by slug."
+            },
+            {
+              "name": "Merge",
+              "kind": "Method",
+              "type": "void",
+              "parameters": [
+                {
+                  "name": "role",
+                  "type": "UiRoleDefinition"
+                },
+                {
+                  "name": "priority",
+                  "type": "int"
+                }
+              ]
+            },
+            {
+              "name": "ToDefinition",
+              "kind": "Method",
+              "type": "UiRoleDefinition"
+            }
+          ],
+          "itemName": "UiRoleVocabulary"
+        },
+        {
           "itemName": "WireframeAlignment",
           "kind": "Enum",
           "category": "Wireframe",
@@ -79468,6 +80602,11 @@
               "description": "True for built-in Tempo.Blazor components; false for app/custom schemas."
             },
             {
+              "name": "IsContainer",
+              "kind": "Property",
+              "type": "bool"
+            },
+            {
               "name": "LocalType",
               "kind": "Property",
               "type": "string?",
@@ -79478,6 +80617,12 @@
               "kind": "Property",
               "type": "IReadOnlyList<PropDef>",
               "description": "Property definitions that drive the Properties Panel UI and document serialisation. Each entry describes one key in WireframeElement.Props."
+            },
+            {
+              "name": "Roles",
+              "kind": "Property",
+              "type": "IReadOnlyList<string>?",
+              "description": "Library-agnostic UI roles that this component can satisfy, such as search-input or data-table."
             },
             {
               "name": "ScopeAppId",
@@ -79507,6 +80652,16 @@
               "description": "Unique type identifier. Matches WireframeElement.Type in document JSON. E.g. 'TmButton', 'TmDataTable'."
             },
             {
+              "name": "ScopeAppId",
+              "type": "string?",
+              "description": "Application id for an app-scoped custom component. When present, registries normalize Type to 'app:{ScopeAppId}:{LocalType}'."
+            },
+            {
+              "name": "LocalType",
+              "type": "string?",
+              "description": "Component type name without the app scope prefix. Defaults to Type for unscoped components and to the suffix of app-scoped component types."
+            },
+            {
               "name": "Category",
               "type": "string",
               "description": "Toolbox grouping category. E.g. 'Buttons', 'Inputs', 'Layout'."
@@ -79515,6 +80670,21 @@
               "name": "DisplayName",
               "type": "string",
               "description": "Human-readable component name shown in toolboxes and palettes."
+            },
+            {
+              "name": "Roles",
+              "type": "IReadOnlyList<string>?",
+              "description": "Library-agnostic UI roles this component can satisfy, such as 'search-input' or 'data-table'. Used by MCP authoring tools to resolve intent before selecting a concrete component."
+            },
+            {
+              "name": "IsBuiltIn",
+              "type": "bool",
+              "description": "True for built-in Tempo.Blazor components; false for app/custom schemas."
+            },
+            {
+              "name": "IsContainer",
+              "type": "bool",
+              "description": "True when the component is intended to visually contain other placed elements. Authoring and lint tools use this to distinguish expected containment from sibling overlap."
             },
             {
               "name": "DefaultWidth",
@@ -79552,6 +80722,18 @@
               "kind": "Field",
               "type": "string",
               "description": "Type prefix used for custom components in this scope."
+            },
+            {
+              "name": "AppPackId",
+              "kind": "Method",
+              "type": "string",
+              "description": "Returns the target pack id for an app-scoped pack.",
+              "parameters": [
+                {
+                  "name": "appId",
+                  "type": "string"
+                }
+              ]
             },
             {
               "name": "ContainsType",
@@ -79818,6 +81000,17 @@
               "description": "All pages in this document."
             },
             {
+              "name": "TargetPackIds",
+              "kind": "Property",
+              "type": "List<string>"
+            },
+            {
+              "name": "TargetTheme",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional theme name selecting a token override set within the target packs."
+            },
+            {
               "name": "Title",
               "kind": "Property",
               "type": "string",
@@ -80059,7 +81252,7 @@
           "kind": "Class",
           "category": "Wireframe",
           "namespace": "Tempo.Blazor.Components.Wireframe.Models",
-          "description": "A single component instance placed on the wireframe canvas. Stores position, size, component type, and a property bag (Props) that maps to the component's PropDef definitions. Props is a Dictionary<string, JsonElement> allowing any value type. Helper extension methods (GetString, GetInt, GetBool, etc.) on WirframeElementExtensions simplify prop access.",
+          "description": "A single component instance placed on the wireframe canvas. Stores position, size, component type, an optional authoring role, and a property bag (Props) that maps to the component's PropDef definitions. Props is a Dictionary<string, JsonElement> allowing any value type. Helper extension methods (GetString, GetInt, GetBool, etc.) on WireframeElementExtensions simplify prop access.",
           "packageId": "Tempo.Blazor.Abstractions",
           "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Models/WireframeElement.cs",
           "documentationStatus": "merged",
@@ -80105,6 +81298,12 @@
               "kind": "Property",
               "type": "Dictionary<string, JsonElement>",
               "description": "Component properties keyed by camelCase prop name. Values are stored as to support any JSON type (string, number, bool, array, object)."
+            },
+            {
+              "name": "Role",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional library-agnostic UI role requested during authoring, such as search-input or otp-input."
             },
             {
               "name": "Rotation",
@@ -80156,6 +81355,11 @@
               "description": "Component type identifier matching a WireframeComponentDef.Type (e.g. 'TmButton', 'TmDataTable')."
             },
             {
+              "name": "Role",
+              "type": "string?",
+              "description": "Optional library-agnostic UI role requested during authoring, such as 'search-input' or 'otp-input'. Serialized as 'role' when present."
+            },
+            {
               "name": "X",
               "type": "double",
               "defaultValue": "0",
@@ -80194,6 +81398,23 @@
               "name": "GroupId",
               "type": "string?",
               "description": "Optional group identifier. Null = not grouped. Omitted from JSON when null."
+            },
+            {
+              "name": "IsLocked",
+              "type": "bool",
+              "defaultValue": "false",
+              "description": "When true, the element cannot be moved, resized, or deleted."
+            },
+            {
+              "name": "Rotation",
+              "type": "double",
+              "defaultValue": "0",
+              "description": "Rotation angle in degrees. 0 means no rotation."
+            },
+            {
+              "name": "LayerId",
+              "type": "string?",
+              "description": "Optional layer identifier. Null = the default layer. Omitted from JSON when null."
             },
             {
               "name": "LockedBy",
@@ -80401,6 +81622,17 @@
               "description": "Human-readable page name shown in the page tab."
             },
             {
+              "name": "TargetPackIds",
+              "kind": "Property",
+              "type": "List<string>?"
+            },
+            {
+              "name": "TargetTheme",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional page-level target theme override. When null, the page inherits the document target theme."
+            },
+            {
               "name": "Width",
               "kind": "Property",
               "type": "double",
@@ -80413,7 +81645,7 @@
           "kind": "Class",
           "category": "Wireframe",
           "namespace": "Tempo.Blazor.Components.Wireframe",
-          "description": "Merges WireframeComponentSchema entries from all registered IWireframeSchemaSource implementations. When two sources register the same Type, the one with the higher Priority wins. Registered as a singleton via AddTempoBlazor() or AddWireframeSchemas(). Useful for MCP tools and AI-assisted wireframe generation — exposes a complete catalog of all available components and their property definitions without any Blazor rendering dependency.",
+          "description": "Merges WireframeComponentSchema entries from all registered IWireframeSchemaSource implementations. When two sources register the same Type, the one with the higher Priority wins. Registered as a singleton via AddTempoBlazor() or AddWireframeSchemas(). Useful for MCP tools and AI-assisted wireframe generation: exposes a complete catalog of available components, app-scoped target packs, role mappings, and property definitions without any Blazor rendering dependency.",
           "packageId": "Tempo.Blazor.Abstractions",
           "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/WireframeSchemaRegistry.cs",
           "documentationStatus": "merged",
@@ -80483,6 +81715,11 @@
               "description": "Returns all schemas in the given category (case-insensitive)."
             },
             {
+              "name": "ResolveByRole(string role, WireframeComponentScope? scope = null, IReadOnlyList<string>? targetPackIds = null)",
+              "returnType": "IReadOnlyList<WireframeComponentSchema>",
+              "description": "Returns visible schemas that declare the requested UI role, ordered so app/custom scoped components win before built-in fallbacks."
+            },
+            {
               "name": "GetCategories()",
               "returnType": "IEnumerable<string>",
               "description": "Returns all distinct category names in alphabetical order."
@@ -80504,7 +81741,7 @@
               "name": "AddWireframeSchemas",
               "kind": "Method",
               "type": "IServiceCollection",
-              "description": "Registers and so that can be injected anywhere.",
+              "description": "Registers and plus the built-in UI role vocabulary so both registries can be injected anywhere.",
               "parameters": [
                 {
                   "name": "services",
@@ -81500,12 +82737,12 @@
       ],
       "libraryExamples": [],
       "summary": {
-        "itemCount": 1254,
+        "itemCount": 1273,
         "manualItemCount": 1215,
-        "generatedItemCount": 1237,
-        "generatedOnlyItemCount": 39,
+        "generatedItemCount": 1256,
+        "generatedOnlyItemCount": 58,
         "componentCount": 0,
-        "publicApiTypeCount": 1237
+        "publicApiTypeCount": 1256
       }
     },
     {
@@ -88093,6 +89330,125 @@
           "documentationStatus": "merged"
         },
         {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Mcp.Wireframe",
+          "description": "Canonical wireframe scaffold archetypes. Slot dimensions are intentionally absent here; the operation engine resolves W/H from the active WireframeSchemaRegistry.",
+          "packageId": "Tempo.Blazor.Mcp",
+          "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeArchetypes.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "DesktopHeight",
+              "kind": "Field",
+              "type": "double"
+            },
+            {
+              "name": "DesktopWidth",
+              "kind": "Field",
+              "type": "double"
+            },
+            {
+              "name": "MobileHeight",
+              "kind": "Field",
+              "type": "double"
+            },
+            {
+              "name": "MobileWidth",
+              "kind": "Field",
+              "type": "double"
+            },
+            {
+              "name": "NavbarHeight",
+              "kind": "Field",
+              "type": "double"
+            },
+            {
+              "name": "SectionSpacing",
+              "kind": "Field",
+              "type": "double"
+            },
+            {
+              "name": "Slots",
+              "kind": "Method",
+              "type": "IReadOnlyList<SlotSpec>",
+              "parameters": [
+                {
+                  "name": "archetype",
+                  "type": "string"
+                }
+              ]
+            },
+            {
+              "name": "SlotSpec",
+              "kind": "Method",
+              "type": "record",
+              "parameters": [
+                {
+                  "name": "Region",
+                  "type": "string"
+                },
+                {
+                  "name": "Type",
+                  "type": "string"
+                },
+                {
+                  "name": "X",
+                  "type": "double"
+                },
+                {
+                  "name": "Y",
+                  "type": "double"
+                },
+                {
+                  "name": "WSpan",
+                  "type": "int?",
+                  "default": "null"
+                }
+              ]
+            },
+            {
+              "name": "Names",
+              "kind": "Property",
+              "type": "static IReadOnlyList<string>"
+            }
+          ],
+          "itemName": "WireframeArchetypes"
+        },
+        {
+          "kind": "Record",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Mcp.Wireframe",
+          "description": "Public record defined by Tempo.Blazor.Mcp.",
+          "packageId": "Tempo.Blazor.Mcp",
+          "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeArchetypes.cs",
+          "documentationStatus": "generated",
+          "itemName": "WireframeArchetypes.SlotSpec"
+        },
+        {
+          "itemName": "WireframeAuthoringGuideTools",
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Mcp.Wireframe",
+          "description": "MCP authoring guide tool for LLM wireframe generation. It returns canvas conventions, sizing guidance, supported layout operations, role vocabulary, and either compact component entries or full prop vocabulary.",
+          "packageId": "Tempo.Blazor.Mcp",
+          "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeAuthoringGuideTools.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "GetAuthoringGuide",
+              "kind": "Method",
+              "type": "string",
+              "parameters": [
+                {
+                  "name": "registry",
+                  "type": "WireframeSchemaRegistry"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "itemName": "WireframeBrief",
           "kind": "Record",
           "category": "Wireframe",
@@ -88169,7 +89525,7 @@
           "kind": "Class",
           "category": "Wireframe",
           "namespace": "Tempo.Blazor.Mcp.Wireframe",
-          "description": "Public class defined by Tempo.Blazor.Mcp.",
+          "description": "MCP catalog tools that let an LLM discover placeable wireframe components and fetch exact component schemas. Catalog lookup supports compact responses, category filtering, app scopes, target pack visibility, role metadata, and typo suggestions.",
           "packageId": "Tempo.Blazor.Mcp",
           "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeComponentCatalogTools.cs",
           "documentationStatus": "merged",
@@ -88192,6 +89548,36 @@
           ]
         },
         {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Mcp.Wireframe",
+          "description": "Normalizes whole-document authoring payloads before they are validated and saved by MCP tools.",
+          "packageId": "Tempo.Blazor.Mcp",
+          "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeDocumentAuthoringEngine.cs",
+          "documentationStatus": "generated",
+          "itemName": "WireframeDocumentAuthoringEngine"
+        },
+        {
+          "kind": "Record",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Mcp.Wireframe",
+          "description": "Result of preparing a whole wireframe document for persistence.",
+          "packageId": "Tempo.Blazor.Mcp",
+          "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeDocumentAuthoringEngine.cs",
+          "documentationStatus": "generated",
+          "itemName": "WireframeDocumentAuthoringResult"
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Mcp.Wireframe",
+          "description": "Public class defined by Tempo.Blazor.Mcp.",
+          "packageId": "Tempo.Blazor.Mcp",
+          "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeDocumentLinter.cs",
+          "documentationStatus": "generated",
+          "itemName": "WireframeDocumentLinter"
+        },
+        {
           "itemName": "WireframeDocumentTools",
           "kind": "Class",
           "category": "Wireframe",
@@ -88210,6 +89596,16 @@
           "packageId": "Tempo.Blazor.Mcp",
           "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeImplementationBrief.cs",
           "documentationStatus": "merged"
+        },
+        {
+          "kind": "Record",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Mcp.Wireframe",
+          "description": "Public record defined by Tempo.Blazor.Mcp.",
+          "packageId": "Tempo.Blazor.Mcp",
+          "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeLintWarning.cs",
+          "documentationStatus": "generated",
+          "itemName": "WireframeLintWarning"
         },
         {
           "itemName": "WireframeOperationEngine",
@@ -88236,10 +89632,59 @@
           "kind": "Class",
           "category": "Wireframe",
           "namespace": "Tempo.Blazor.Mcp.Wireframe",
-          "description": "Public class defined by Tempo.Blazor.Mcp.",
+          "description": "MCP write tools for building wireframes with granular operations, scaffold helpers, full-document authoring, and whole-document replacement. Writes validate before saving, support expectedModifiedAt optimistic concurrency tokens, return advisory warnings, and can use strict=true to reject prop and enum warnings.",
           "packageId": "Tempo.Blazor.Mcp",
           "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeOperationTools.cs",
-          "documentationStatus": "merged"
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "wireframe_apply_operations",
+              "kind": "McpTool",
+              "description": "Applies an ordered operation batch. addElement and layout children can use either concrete type ids or role slugs; roles resolve through the active scope and target packs."
+            },
+            {
+              "name": "wireframe_scaffold",
+              "kind": "McpTool",
+              "description": "Creates a starter design for landing, list, detail, form, dashboard, or auth archetypes and validates before saving."
+            },
+            {
+              "name": "wireframe_author_document",
+              "kind": "McpTool",
+              "description": "Authors a complete wireframe document in one call: resolves element role values to concrete component types, normalizes enum casing, clamps off-canvas elements, validates, saves, and returns warnings."
+            },
+            {
+              "name": "wireframe_replace_document",
+              "kind": "McpTool",
+              "description": "Replaces the whole document with validated JSON, returns advisory warnings, and supports strict=true for prop/enum warning rejection."
+            }
+          ]
+        },
+        {
+          "kind": "Class",
+          "category": "Wireframe",
+          "namespace": "Tempo.Blazor.Mcp.Wireframe",
+          "description": "Public class defined by Tempo.Blazor.Mcp.",
+          "packageId": "Tempo.Blazor.Mcp",
+          "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframePropLinter.cs",
+          "documentationStatus": "generated",
+          "members": [
+            {
+              "name": "SuggestNearest",
+              "kind": "Method",
+              "type": "string?",
+              "parameters": [
+                {
+                  "name": "key",
+                  "type": "string"
+                },
+                {
+                  "name": "schema",
+                  "type": "WireframeComponentSchema"
+                }
+              ]
+            }
+          ],
+          "itemName": "WireframePropLinter"
         },
         {
           "itemName": "WireframeValidationEngine",
@@ -88297,12 +89742,12 @@
         }
       ],
       "summary": {
-        "itemCount": 68,
-        "manualItemCount": 20,
-        "generatedItemCount": 68,
-        "generatedOnlyItemCount": 48,
+        "itemCount": 76,
+        "manualItemCount": 21,
+        "generatedItemCount": 76,
+        "generatedOnlyItemCount": 55,
         "componentCount": 0,
-        "publicApiTypeCount": 68
+        "publicApiTypeCount": 76
       }
     },
     {
@@ -93116,10 +94561,10 @@
   ],
   "summary": {
     "packageCount": 22,
-    "itemCount": 2728,
-    "manualItemCount": 2597,
-    "generatedOnlyItemCount": 131,
+    "itemCount": 2769,
+    "manualItemCount": 2599,
+    "generatedOnlyItemCount": 170,
     "componentCount": 440,
-    "publicApiTypeCount": 2235
+    "publicApiTypeCount": 2275
   }
 }

@@ -91,17 +91,91 @@ public class WireframeSchemaRegistryScopeTests
             .Should().NotBeNull();
     }
 
+    [Fact]
+    public void ResolveByRole_WithScopeAndTargetPacks_PrioritizesAppPackBeforeBuiltIn()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var registry = new WireframeSchemaRegistry(
+        [
+            new TestSchemaSource("BuiltIn", 0, Schema(
+                "TmSearchInput",
+                "Inputs",
+                "Search Input",
+                isBuiltIn: true,
+                roles: ["search-input"])),
+            new ScopedSchemaSource("A", 10, appA, Schema(
+                "SearchBox",
+                "Custom",
+                "App Search",
+                roles: ["search-input"]))
+        ]);
+        var scope = WireframeComponentScope.ForApp(appA);
+
+        var candidates = registry.ResolveByRole("search-input", scope, ["tempo", $"app:{appA}"]);
+
+        candidates.Select(schema => schema.Type)
+            .Should()
+            .Equal($"app:{appA}:SearchBox", "TmSearchInput");
+    }
+
+    [Fact]
+    public void ResolveByRole_WithoutMatchingTargetPack_FallsBackToBuiltInBaseline()
+    {
+        var appA = Guid.NewGuid().ToString("D");
+        var registry = new WireframeSchemaRegistry(
+        [
+            new TestSchemaSource("BuiltIn", 0, Schema(
+                "TmSearchInput",
+                "Inputs",
+                "Search Input",
+                isBuiltIn: true,
+                roles: ["search-input"])),
+            new ScopedSchemaSource("A", 10, appA, Schema(
+                "SearchBox",
+                "Custom",
+                "App Search",
+                roles: ["search-input"]))
+        ]);
+
+        var candidates = registry.ResolveByRole(
+            "search-input",
+            WireframeComponentScope.ForApp(appA),
+            ["tempo"]);
+
+        candidates.Select(schema => schema.Type).Should().Equal("TmSearchInput");
+    }
+
+    [Fact]
+    public void ResolveByRole_WhenNoSchemaDeclaresRole_ReturnsEmptyGap()
+    {
+        var registry = new WireframeSchemaRegistry(
+        [
+            new TestSchemaSource("BuiltIn", 0, Schema(
+                "TmButton",
+                "Buttons",
+                "Button",
+                isBuiltIn: true,
+                roles: ["button"]))
+        ]);
+
+        registry.ResolveByRole("otp-input", scope: null, targetPackIds: null)
+            .Should()
+            .BeEmpty();
+    }
+
     private static WireframeComponentSchema Schema(
         string type,
         string category = "Custom",
         string? displayName = null,
-        bool isBuiltIn = false)
+        bool isBuiltIn = false,
+        IReadOnlyList<string>? roles = null)
         => new()
         {
             Type = type,
             Category = category,
             DisplayName = displayName ?? type,
             IsBuiltIn = isBuiltIn,
+            Roles = roles,
             Props = []
         };
 

@@ -2,9 +2,21 @@
   "kind": "Class",
   "category": "Wireframe",
   "namespace": "Tempo.Blazor.Mcp.Wireframe",
-  "description": "Public class defined by Tempo.Blazor.Mcp.",
+  "description": "MCP catalog tools that let an LLM discover placeable wireframe components and fetch exact component schemas. Catalog lookup supports compact responses, category filtering, app scopes, target pack visibility, role metadata, and typo suggestions.",
   "packageId": "Tempo.Blazor.Mcp",
   "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeComponentCatalogTools.cs",
-  "documentationStatus": "generated",
+  "documentationStatus": "reviewed",
+  "members": [
+    {
+      "name": "wireframe_list_components",
+      "kind": "McpTool",
+      "description": "Lists available components. Start with compact=true; optionally filter by category, scopeAppId, targetPackIds, skip, and take."
+    },
+    {
+      "name": "wireframe_get_component_schema",
+      "kind": "McpTool",
+      "description": "Returns the full property contract for a component type, including default size, props, roles, and container metadata. Unknown types return a suggestion when possible."
+    }
+  ],
   "itemName": "WireframeComponentCatalogTools"
 }

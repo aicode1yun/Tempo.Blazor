@@ -104,6 +104,7 @@ public sealed class JsonWireframeComponentProvider : IWireframeComponentProvider
         var icon = el.TryGetProperty("icon", out var ic) ? ic.GetString() : null;
         var w = el.TryGetProperty("defaultWidth", out var dw) ? dw.GetDouble() : 160.0;
         var h = el.TryGetProperty("defaultHeight", out var dh) ? dh.GetDouble() : 40.0;
+        var isContainer = el.TryGetProperty("isContainer", out var containerProp) && containerProp.GetBoolean();
         var svgTemplate = el.TryGetProperty("svgTemplate", out var tpl) ? tpl.GetString() ?? "" : "";
 
         var props = new List<PropDef>();
@@ -125,6 +126,7 @@ public sealed class JsonWireframeComponentProvider : IWireframeComponentProvider
             DefaultHeight = h,
             Props = props,
             IsBuiltIn = false,
+            IsContainer = isContainer,
             RenderSvg = (element, builder) =>
             {
                 var markup = ResolvePlaceholders(svgTemplate, element);

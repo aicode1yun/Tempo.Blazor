@@ -106,6 +106,22 @@ public class WireframeSchemaTests
     }
 
     [Fact]
+    public void SerializedElement_RoleRoundTrips()
+    {
+        var wf = new WireframeDocument();
+        wf.Elements.Add(new WireframeElement { Type = "TmMaskedTextBox", Role = "otp-input" });
+
+        var json = WireframeSerializer.Serialize(wf);
+        using var doc = JsonDocument.Parse(json);
+
+        var el = doc.RootElement.GetProperty("pages")[0].GetProperty("elements")[0];
+        el.GetProperty("role").GetString().Should().Be("otp-input");
+
+        var restored = WireframeSerializer.Deserialize(json);
+        restored.Elements[0].Role.Should().Be("otp-input");
+    }
+
+    [Fact]
     public void SerializedElement_CoordinatesAreNumbers()
     {
         var wf = new WireframeDocument();
@@ -322,5 +338,43 @@ public class WireframeSchemaTests
 
         restored.Width.Should().Be(1920);
         restored.Height.Should().Be(1080);
+    }
+
+    [Fact]
+    public void ComponentSchema_RolesSerializeAsCamelCaseAndRoundTrip()
+    {
+        var schema = new WireframeComponentSchema
+        {
+            Type = "TmSearchInput",
+            Category = "Inputs",
+            DisplayName = "Search input",
+            Roles = ["search-input", "text-input"]
+        };
+
+        var json = JsonSerializer.Serialize(schema, WireframeJsonOptions.Default);
+        var restored = JsonSerializer.Deserialize<WireframeComponentSchema>(json, WireframeJsonOptions.Default);
+
+        json.Should().Contain("\"roles\"");
+        json.Should().NotContain("\"Roles\"");
+        restored!.Roles.Should().Equal("search-input", "text-input");
+    }
+
+    [Fact]
+    public void ComponentSchema_IsContainerSerializeAsCamelCaseAndRoundTrip()
+    {
+        var schema = new WireframeComponentSchema
+        {
+            Type = "TmCard",
+            Category = "Data Display",
+            DisplayName = "Card",
+            IsContainer = true
+        };
+
+        var json = JsonSerializer.Serialize(schema, WireframeJsonOptions.Default);
+        var restored = JsonSerializer.Deserialize<WireframeComponentSchema>(json, WireframeJsonOptions.Default);
+
+        json.Should().Contain("\"isContainer\"");
+        json.Should().NotContain("\"IsContainer\"");
+        restored!.IsContainer.Should().BeTrue();
     }
 }

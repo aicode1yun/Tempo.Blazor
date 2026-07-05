@@ -53,6 +53,7 @@ public class TempoWireframeMcpRegistrationTests
         names.Should().BeEquivalentTo(new[]
         {
             "wireframe_apply_operations",
+            "wireframe_author_document",
             "wireframe_create_document",
             "wireframe_get_authoring_guide",
             "wireframe_get_component_schema",
@@ -127,6 +128,7 @@ public class TempoWireframeMcpRegistrationTests
             "update_report_elements",
             "validate_report",
             "wireframe_apply_operations",
+            "wireframe_author_document",
             "wireframe_create_document",
             "wireframe_get_authoring_guide",
             "wireframe_get_component_schema",

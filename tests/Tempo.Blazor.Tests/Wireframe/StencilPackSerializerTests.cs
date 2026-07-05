@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Components.Wireframe.Models;
 using Tempo.Blazor.Components.Wireframe.Stencil;
 
@@ -42,6 +43,61 @@ public class StencilPackSerializerTests
         restored!.Text.Should().BeEmpty();
         restored.Value.Should().BeEmpty();
         restored.When.Should().BeNull();
+    }
+
+    [Fact]
+    public void ValidateRoles_UnknownRole_ReturnsWarningNotError()
+    {
+        var pack = CreateGoodPack();
+        var vocabulary = new UiRoleVocabulary([new BuiltInUiRoleVocabularySource()]);
+
+        var act = () => StencilPackValidator.ValidateRoles(pack, vocabulary);
+
+        var warnings = act.Should().NotThrow().Which;
+        warnings.Should().ContainSingle(warning =>
+            warning.Code == "unknown-role"
+            && warning.ComponentType == "tempo:TmButton"
+            && warning.Role == "primary-action");
+    }
+
+    [Fact]
+    public void StencilComponent_IsContainerRoundTrips()
+    {
+        var pack = new StencilPack
+        {
+            Format = "tempo-stencil",
+            FormatVersion = 1,
+            Id = "tempo",
+            Namespace = "tempo",
+            Components =
+            [
+                new StencilComponent
+                {
+                    Type = "tempo:TmPanel",
+                    DisplayName = "Panel",
+                    Category = "Layout",
+                    Roles = ["section"],
+                    IsContainer = true,
+                    DefaultSize = new StencilSize(240, 160),
+                    Render = new RenderNode
+                    {
+                        Kind = RenderNodeKind.Rect,
+                        Attributes = new Dictionary<string, object?>
+                        {
+                            ["w"] = "size.w",
+                            ["h"] = "size.h"
+                        }
+                    }
+                }
+            ]
+        };
+
+        var json = StencilPackSerializer.Serialize(pack);
+        var restored = StencilPackSerializer.Deserialize(json);
+
+        json.Should().Contain("\"isContainer\": true");
+        restored.Components.Should().ContainSingle()
+            .Which.IsContainer.Should().BeTrue();
     }
 
     internal static StencilPack CreateGoodPack()
@@ -97,6 +153,7 @@ public class StencilPackSerializerTests
                     Type = "tempo:TmButton",
                     DisplayName = "Button",
                     Category = "Inputs",
+                    Roles = ["button", "primary-action"],
                     Icon = "check",
                     DefaultSize = new StencilSize(128, 40),
                     MinSize = new StencilSize(88, 32),

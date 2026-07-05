@@ -37,6 +37,21 @@ public class StencilPackComponentProviderTests
         registry.GetDef("Card", WireframeComponentScope.ForApp("two"))!.DisplayName.Should().Be("Two Card");
     }
 
+    [Fact]
+    public void Provider_ExposesUnknownRoleWarningFromPackCompilePath()
+    {
+        var pack = Pack("app:demo", "app:demo", Component("Card", roles: ["future-role"]));
+        var provider = new StencilPackComponentProvider(pack, "app:demo", priority: 50);
+
+        var definitions = provider.GetDefinitions().ToList();
+
+        definitions.Should().ContainSingle(def => def.Type == "app:demo:Card");
+        provider.ValidationWarnings.Should().ContainSingle(warning =>
+            warning.Code == StencilPackValidator.UnknownRole
+            && warning.ComponentType == "Card"
+            && warning.Role == "future-role");
+    }
+
     private static StencilPack Pack(string id, string ns, params StencilComponent[] components)
         => new()
         {
@@ -47,12 +62,16 @@ public class StencilPackComponentProviderTests
             Components = components
         };
 
-    private static StencilComponent Component(string type, string? displayName = null)
+    private static StencilComponent Component(
+        string type,
+        string? displayName = null,
+        IReadOnlyList<string>? roles = null)
         => new()
         {
             Type = type,
             DisplayName = displayName ?? type,
             Category = "Tests",
+            Roles = roles,
             DefaultSize = new StencilSize(160, 80),
             Render = new RenderNode
             {

@@ -1,0 +1,17 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "MCP authoring guide tool for LLM wireframe generation. It returns canvas conventions, sizing guidance, supported layout operations, role vocabulary, and either compact component entries or full prop vocabulary.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeAuthoringGuideTools.cs",
+  "documentationStatus": "reviewed",
+  "members": [
+    {
+      "name": "wireframe_get_authoring_guide",
+      "kind": "McpTool",
+      "description": "Returns the authoring guide. Use compact=true plus category, types, roles, scopeAppId, targetPackIds, skip, and take to keep responses small and focused."
+    }
+  ],
+  "itemName": "WireframeAuthoringGuideTools"
+}

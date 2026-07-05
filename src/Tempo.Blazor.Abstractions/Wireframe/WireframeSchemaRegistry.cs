@@ -16,6 +16,7 @@ namespace Tempo.Blazor.Components.Wireframe;
 public sealed class WireframeSchemaRegistry
 {
     private readonly IReadOnlyDictionary<string, WireframeComponentSchema> _index;
+    private readonly IReadOnlyDictionary<string, int> _priorities;
 
     /// <summary>
     /// Builds the registry from the supplied sources, resolving priority conflicts.
@@ -46,6 +47,10 @@ public sealed class WireframeSchemaRegistry
         _index = map.ToDictionary(
             kvp => kvp.Key,
             kvp => kvp.Value.Schema,
+            StringComparer.OrdinalIgnoreCase);
+        _priorities = map.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.Priority,
             StringComparer.OrdinalIgnoreCase);
     }
 
@@ -118,6 +123,29 @@ public sealed class WireframeSchemaRegistry
             : null;
     }
 
+    /// <summary>
+    /// Returns visible schemas that declare <paramref name="role"/>, ordered so app/custom
+    /// pack candidates are considered before the built-in Tempo baseline.
+    /// </summary>
+    public IReadOnlyList<WireframeComponentSchema> ResolveByRole(
+        string role,
+        WireframeComponentScope? scope,
+        IReadOnlyList<string>? targetPackIds)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+            return [];
+
+        var normalizedRole = role.Trim();
+        return GetAll(scope, targetPackIds)
+            .Where(schema => DeclaresRole(schema, normalizedRole))
+            .OrderBy(schema => CandidatePackRank(schema, targetPackIds))
+            .ThenByDescending(schema => _priorities.TryGetValue(schema.Type, out var priority) ? priority : 0)
+            .ThenBy(schema => schema.Category, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(schema => schema.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(schema => schema.Type, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
     /// <summary>Returns all schemas in a given category.</summary>
     public IEnumerable<WireframeComponentSchema> GetByCategory(string category)
         => GetByCategory(category, scope: null);
@@ -183,7 +211,9 @@ public sealed class WireframeSchemaRegistry
             LocalType = localType,
             Category = schema.Category,
             DisplayName = schema.DisplayName,
+            Roles = schema.Roles,
             IsBuiltIn = isBuiltIn,
+            IsContainer = schema.IsContainer,
             DefaultWidth = schema.DefaultWidth,
             DefaultHeight = schema.DefaultHeight,
             Props = schema.Props,
@@ -201,5 +231,33 @@ public sealed class WireframeSchemaRegistry
         return WireframeComponentScope.TryGetAppId(type, out var parsedAppId)
             ? parsedAppId
             : null;
+    }
+
+    private static bool DeclaresRole(WireframeComponentSchema schema, string role)
+        => schema.Roles?.Any(candidate =>
+            string.Equals(candidate?.Trim(), role, StringComparison.OrdinalIgnoreCase)) == true;
+
+    private static int CandidatePackRank(
+        WireframeComponentSchema schema,
+        IReadOnlyList<string>? targetPackIds)
+    {
+        if (schema.IsBuiltIn)
+            return int.MaxValue / 2;
+
+        if (string.IsNullOrWhiteSpace(schema.ScopeAppId) || targetPackIds is null || targetPackIds.Count == 0)
+            return 0;
+
+        var normalizedScope = WireframeComponentScope.AppPackId(schema.ScopeAppId);
+        for (var i = 0; i < targetPackIds.Count; i++)
+        {
+            var target = targetPackIds[i]?.Trim();
+            if (string.Equals(target, schema.ScopeAppId, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(target, normalizedScope, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        return int.MaxValue / 4;
     }
 }

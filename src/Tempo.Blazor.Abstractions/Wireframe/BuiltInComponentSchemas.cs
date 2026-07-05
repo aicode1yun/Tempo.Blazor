@@ -67,32 +67,236 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
         => new() { Name = name, DisplayName = display, Type = type,
                    Default = def, Options = opts, Category = cat, IsRequired = req };
 
+    private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> BuiltInRoles =
+        new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+        {
+            ["TmChart"] = ["chart"],
+            ["TmSparkline"] = ["sparkline"],
+            ["TmGauge"] = ["gauge"],
+            ["TmStockChart"] = ["chart"],
+            ["TmKanbanBoard"] = ["kanban-board"],
+            ["TmPivotTable"] = ["data-table", "chart"],
+            ["TmGantt"] = ["scheduler", "timeline"],
+            ["TmWorkflowDesignerCanvas"] = ["diagram-editor"],
+            ["TmDiagramEditor"] = ["diagram-editor"],
+            ["TmSpreadsheet"] = ["spreadsheet"],
+            ["TmDocumentEditor"] = ["rich-text-editor"],
+            ["TmNotionEditor"] = ["rich-text-editor"],
+            ["TmChat"] = ["text-input", "list-view"],
+            ["TmWorkflowToolbox"] = ["toolbar"],
+            ["TmWorkflowPropertiesPanel"] = ["form-field"],
+            ["TmWorkflowMinimap"] = ["diagram-editor"],
+            ["TmTimeline"] = ["timeline"],
+            ["TmStepper"] = ["stepper"],
+            ["TmScheduler"] = ["scheduler"],
+            ["TmDashboard"] = ["dashboard"],
+            ["TmMarkdownEditor"] = ["markdown-editor"],
+            ["TmRichEditorFull"] = ["rich-text-editor"],
+            ["TmRichEditorSimple"] = ["rich-text-editor"],
+            ["TmImageGallery"] = ["image-gallery"],
+            ["TmImportWizard"] = ["stepper", "file-drop"],
+            ["TmFilterBuilder"] = ["filter-builder"],
+            ["TmActivityLog"] = ["timeline", "list-view"],
+            ["TmActivityComments"] = ["list-view", "text-area"],
+            ["TmActivityAttachments"] = ["attachment-manager"],
+            ["TmActivityTimeline"] = ["timeline"],
+            ["TmLightbox"] = ["image-gallery"],
+            ["TmExportOptions"] = ["form-field", "button"],
+            ["TmImportPreview"] = ["data-table"],
+            ["TmTreeView"] = ["list-view"],
+            ["TmPdfViewer"] = ["pdf-viewer"],
+            ["TmCommentComposer"] = ["text-area", "avatar"],
+            ["TmCommentReactions"] = ["chip"],
+            ["TmReactionPicker"] = ["chip", "popover"],
+            ["TmShareLinkPanel"] = ["copy-button", "link"],
+            ["TmSubmissionStatusTimeline"] = ["timeline", "stepper"],
+            ["TmAuditTrailViewer"] = ["timeline", "list-view"],
+            ["TmAIPrompt"] = ["text-area", "button"],
+            ["TmWidgetSelector"] = ["dashboard", "card"],
+            ["__group__"] = ["section"],
+            ["TmGanttPortfolio"] = ["scheduler", "dashboard"],
+            ["TmTreeList"] = ["list-view", "data-table"],
+            ["TmNotionPage"] = ["rich-text-editor"],
+            ["TmModelingEditor"] = ["diagram-editor"],
+            ["TmFileManager"] = ["attachment-manager", "file-drop"],
+            ["TmDocumentManager"] = ["attachment-manager", "list-view"],
+            ["TmDivider"] = ["section"],
+            ["TmText"] = ["text"],
+            ["TmCard"] = ["card"],
+            ["TmStatCard"] = ["stat-card"],
+            ["TmBadge"] = ["badge"],
+            ["TmChip"] = ["chip"],
+            ["TmChipGroup"] = ["chip"],
+            ["TmFilterChip"] = ["chip", "filter-builder"],
+            ["TmAccordion"] = ["accordion"],
+            ["TmAccordionItem"] = ["accordion"],
+            ["TmEmptyState"] = ["empty-state"],
+            ["TmQRCode"] = ["icon"],
+            ["TmBarcode"] = ["icon"],
+            ["TmChangeDiff"] = ["diff-view"],
+            ["TmMultiViewList"] = ["list-view"],
+            ["TmDataTable"] = ["data-table"],
+            ["TmPagination"] = ["pagination"],
+            ["TmBulkActionBar"] = ["bulk-action-bar"],
+            ["TmColumnFilter"] = ["column-filter"],
+            ["TmColumnPicker"] = ["column-picker"],
+            ["TmViewManager"] = ["view-manager"],
+            ["TmTabs"] = ["tabs"],
+            ["TmBreadcrumbs"] = ["breadcrumbs"],
+            ["TmTabPanel"] = ["tabs"],
+            ["TmContextMenu"] = ["context-menu"],
+            ["TmContextMenuItem"] = ["context-menu"],
+            ["TmBottomNavigation"] = ["bottom-navigation"],
+            ["TmMenu"] = ["menu"],
+            ["TmTopBar"] = ["navigation-bar"],
+            ["TmSidebar"] = ["sidebar"],
+            ["TmDrawer"] = ["drawer"],
+            ["TmSection"] = ["section"],
+            ["TmCommandPalette"] = ["command-palette", "search-input"],
+            ["TmKeyboardShortcutsHelp"] = ["keyboard-shortcuts"],
+            ["TmStackLayout"] = ["section"],
+            ["TmSplitter"] = ["section"],
+            ["TmDockManager"] = ["dashboard", "section"],
+            ["TmToolbar"] = ["toolbar"],
+            ["TmToolbarButton"] = ["toolbar", "button"],
+            ["TmToolbarDivider"] = ["toolbar"],
+            ["TmAlert"] = ["alert"],
+            ["TmModal"] = ["modal"],
+            ["TmDialog"] = ["dialog"],
+            ["TmTooltip"] = ["tooltip"],
+            ["TmPopover"] = ["popover"],
+            ["TmProgressBar"] = ["progress-bar"],
+            ["TmSpinner"] = ["spinner"],
+            ["TmSkeleton"] = ["skeleton"],
+            ["TmToastContainer"] = ["toast-container"],
+            ["TmAutoSaveIndicator"] = ["badge"],
+            ["TmNotificationBell"] = ["notification-bell"],
+            ["TmFormSection"] = ["form-section"],
+            ["TmFormRow"] = ["form-section", "form-field"],
+            ["TmFormField"] = ["form-field"],
+            ["TmInlineEdit"] = ["inline-edit"],
+            ["TmValidatedField"] = ["form-field"],
+            ["TmFormValidationMessage"] = ["validation-message"],
+            ["TmValidationSummary"] = ["validation-summary"],
+            ["TmDynamicFormRenderer"] = ["dynamic-form"],
+            ["TmConditionBuilder"] = ["filter-builder"],
+            ["TmFormulaBuilder"] = ["expression-editor"],
+            ["TmFileDropZone"] = ["file-drop"],
+            ["TmAttachmentManager"] = ["attachment-manager"],
+            ["TmAvatar"] = ["avatar"],
+            ["TmAvatarGroup"] = ["avatar-group"],
+            ["TmIcon"] = ["icon"],
+            ["TmColorPicker"] = ["select"],
+            ["TmFlatColorPicker"] = ["select"],
+            ["TmColorPalette"] = ["select"],
+            ["TmColorGradient"] = ["select"],
+            ["TmButton"] = ["button"],
+            ["TmSplitButton"] = ["split-button"],
+            ["TmCopyButton"] = ["copy-button"],
+            ["TmFloatingActionButton"] = ["floating-action-button"],
+            ["TmTextInput"] = ["text-input"],
+            ["TmTextArea"] = ["text-area"],
+            ["TmNumberInput"] = ["number-input"],
+            ["TmSearchInput"] = ["search-input"],
+            ["TmCurrencyInput"] = ["currency-input"],
+            ["TmCheckbox"] = ["checkbox"],
+            ["TmRadio"] = ["radio"],
+            ["TmRadioGroup"] = ["radio-group"],
+            ["TmToggle"] = ["toggle"],
+            ["TmToggleSection"] = ["toggle", "section"],
+            ["TmSelect"] = ["select"],
+            ["TmMultiSelect"] = ["multi-select"],
+            ["TmCascadingSelect"] = ["cascading-select"],
+            ["TmFilterableDropdown"] = ["dropdown", "search-input"],
+            ["TmEntityPicker"] = ["entity-picker"],
+            ["TmExpressionEditor"] = ["expression-editor"],
+            ["TmPasswordStrengthIndicator"] = ["password-strength"],
+            ["TmSlider"] = ["slider"],
+            ["TmRangeSlider"] = ["range-slider"],
+            ["TmRating"] = ["rating"],
+            ["TmMaskedTextBox"] = ["masked-input", "otp-input"],
+            ["TmMultiColumnComboBox"] = ["combo-box", "data-table"],
+            ["TmSignature"] = ["signature-pad"],
+            ["TmSignatureCapture"] = ["signature-pad"],
+            ["TmTagPicker"] = ["tag-picker"],
+            ["TmDatePicker"] = ["date-picker"],
+            ["TmDateTimePicker"] = ["datetime-picker"],
+            ["TmTimePicker"] = ["time-picker"],
+            ["TmDateRangePicker"] = ["date-range-picker"],
+            ["TmTimeRangePicker"] = ["date-range-picker", "time-picker"],
+            ["TmDateTimeRangePicker"] = ["date-range-picker", "datetime-picker"],
+            ["TmTimeInput"] = ["time-picker"],
+            ["TmCalendarView"] = ["calendar-view"],
+            ["TmCalendarGrid"] = ["calendar-view"],
+            ["TmRecurrenceEditor"] = ["recurrence-editor"],
+            ["TmDropdown"] = ["dropdown"],
+            ["TmDropdownItem"] = ["dropdown"],
+        };
+
+    private static readonly HashSet<string> BuiltInContainers =
+        new(StringComparer.Ordinal)
+        {
+            "__group__",
+            "TmCard",
+            "TmDrawer",
+            "TmSection",
+            "TmStackLayout",
+            "TmModal",
+            "TmDialog",
+            "TmFormSection",
+            "TmFormRow"
+        };
+
+    private static WireframeComponentSchema WithBuiltInMetadata(WireframeComponentSchema schema)
+    {
+        var hasRoles = BuiltInRoles.TryGetValue(schema.Type, out var roles);
+        var isContainer = schema.IsContainer || BuiltInContainers.Contains(schema.Type);
+        if (!hasRoles && isContainer == schema.IsContainer)
+            return schema;
+
+        return new WireframeComponentSchema
+        {
+            Type = schema.Type,
+            ScopeAppId = schema.ScopeAppId,
+            LocalType = schema.LocalType,
+            Category = schema.Category,
+            DisplayName = schema.DisplayName,
+            Roles = hasRoles ? schema.Roles ?? roles : schema.Roles,
+            IsBuiltIn = schema.IsBuiltIn,
+            IsContainer = isContainer,
+            DefaultWidth = schema.DefaultWidth,
+            DefaultHeight = schema.DefaultHeight,
+            Props = schema.Props,
+            SizePresets = schema.SizePresets,
+        };
+    }
+
     // ── Schema definitions ────────────────────────────────────────────────────
 
     /// <inheritdoc/>
     public IEnumerable<WireframeComponentSchema> GetSchemas()
     {
-        foreach (var s in Buttons())       yield return s;
-        foreach (var s in Avatars())       yield return s;
-        foreach (var s in Icons())         yield return s;
-        foreach (var s in Inputs())        yield return s;
-        foreach (var s in Tags())          yield return s;
-        foreach (var s in Pickers())       yield return s;
-        foreach (var s in Dropdowns())     yield return s;
-        foreach (var s in DataDisplay())   yield return s;
-        foreach (var s in DataTable())     yield return s;
-        foreach (var s in Feedback())      yield return s;
-        foreach (var s in Notifications()) yield return s;
-        foreach (var s in Navigation())    yield return s;
-        foreach (var s in Layout())        yield return s;
-        foreach (var s in Toolbar())       yield return s;
-        foreach (var s in Forms())         yield return s;
-        foreach (var s in Files())         yield return s;
-        foreach (var s in Charts())        yield return s;
-        foreach (var s in Workflow())      yield return s;
-        foreach (var s in Complex())       yield return s;
-        foreach (var s in Color())         yield return s;
-        foreach (var s in EditorsAndApps()) yield return s;
+        foreach (var s in Buttons())       yield return WithBuiltInMetadata(s);
+        foreach (var s in Avatars())       yield return WithBuiltInMetadata(s);
+        foreach (var s in Icons())         yield return WithBuiltInMetadata(s);
+        foreach (var s in Inputs())        yield return WithBuiltInMetadata(s);
+        foreach (var s in Tags())          yield return WithBuiltInMetadata(s);
+        foreach (var s in Pickers())       yield return WithBuiltInMetadata(s);
+        foreach (var s in Dropdowns())     yield return WithBuiltInMetadata(s);
+        foreach (var s in DataDisplay())   yield return WithBuiltInMetadata(s);
+        foreach (var s in DataTable())     yield return WithBuiltInMetadata(s);
+        foreach (var s in Feedback())      yield return WithBuiltInMetadata(s);
+        foreach (var s in Notifications()) yield return WithBuiltInMetadata(s);
+        foreach (var s in Navigation())    yield return WithBuiltInMetadata(s);
+        foreach (var s in Layout())        yield return WithBuiltInMetadata(s);
+        foreach (var s in Toolbar())       yield return WithBuiltInMetadata(s);
+        foreach (var s in Forms())         yield return WithBuiltInMetadata(s);
+        foreach (var s in Files())         yield return WithBuiltInMetadata(s);
+        foreach (var s in Charts())        yield return WithBuiltInMetadata(s);
+        foreach (var s in Workflow())      yield return WithBuiltInMetadata(s);
+        foreach (var s in Complex())       yield return WithBuiltInMetadata(s);
+        foreach (var s in Color())         yield return WithBuiltInMetadata(s);
+        foreach (var s in EditorsAndApps()) yield return WithBuiltInMetadata(s);
     }
 
     // ── BUTTONS ───────────────────────────────────────────────────────────────

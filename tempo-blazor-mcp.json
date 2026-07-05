@@ -792,6 +792,125 @@
       "documentationStatus": "merged"
     },
     {
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Canonical wireframe scaffold archetypes. Slot dimensions are intentionally absent here; the operation engine resolves W/H from the active WireframeSchemaRegistry.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeArchetypes.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "DesktopHeight",
+          "kind": "Field",
+          "type": "double"
+        },
+        {
+          "name": "DesktopWidth",
+          "kind": "Field",
+          "type": "double"
+        },
+        {
+          "name": "MobileHeight",
+          "kind": "Field",
+          "type": "double"
+        },
+        {
+          "name": "MobileWidth",
+          "kind": "Field",
+          "type": "double"
+        },
+        {
+          "name": "NavbarHeight",
+          "kind": "Field",
+          "type": "double"
+        },
+        {
+          "name": "SectionSpacing",
+          "kind": "Field",
+          "type": "double"
+        },
+        {
+          "name": "Slots",
+          "kind": "Method",
+          "type": "IReadOnlyList<SlotSpec>",
+          "parameters": [
+            {
+              "name": "archetype",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "SlotSpec",
+          "kind": "Method",
+          "type": "record",
+          "parameters": [
+            {
+              "name": "Region",
+              "type": "string"
+            },
+            {
+              "name": "Type",
+              "type": "string"
+            },
+            {
+              "name": "X",
+              "type": "double"
+            },
+            {
+              "name": "Y",
+              "type": "double"
+            },
+            {
+              "name": "WSpan",
+              "type": "int?",
+              "default": "null"
+            }
+          ]
+        },
+        {
+          "name": "Names",
+          "kind": "Property",
+          "type": "static IReadOnlyList<string>"
+        }
+      ],
+      "itemName": "WireframeArchetypes"
+    },
+    {
+      "kind": "Record",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Public record defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeArchetypes.cs",
+      "documentationStatus": "generated",
+      "itemName": "WireframeArchetypes.SlotSpec"
+    },
+    {
+      "itemName": "WireframeAuthoringGuideTools",
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "MCP authoring guide tool for LLM wireframe generation. It returns canvas conventions, sizing guidance, supported layout operations, role vocabulary, and either compact component entries or full prop vocabulary.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeAuthoringGuideTools.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetAuthoringGuide",
+          "kind": "Method",
+          "type": "string",
+          "parameters": [
+            {
+              "name": "registry",
+              "type": "WireframeSchemaRegistry"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "itemName": "WireframeBrief",
       "kind": "Record",
       "category": "Wireframe",
@@ -868,7 +987,7 @@
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Mcp.Wireframe",
-      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "description": "MCP catalog tools that let an LLM discover placeable wireframe components and fetch exact component schemas. Catalog lookup supports compact responses, category filtering, app scopes, target pack visibility, role metadata, and typo suggestions.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeComponentCatalogTools.cs",
       "documentationStatus": "merged",
@@ -891,6 +1010,36 @@
       ]
     },
     {
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Normalizes whole-document authoring payloads before they are validated and saved by MCP tools.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeDocumentAuthoringEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "WireframeDocumentAuthoringEngine"
+    },
+    {
+      "kind": "Record",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Result of preparing a whole wireframe document for persistence.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeDocumentAuthoringEngine.cs",
+      "documentationStatus": "generated",
+      "itemName": "WireframeDocumentAuthoringResult"
+    },
+    {
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeDocumentLinter.cs",
+      "documentationStatus": "generated",
+      "itemName": "WireframeDocumentLinter"
+    },
+    {
       "itemName": "WireframeDocumentTools",
       "kind": "Class",
       "category": "Wireframe",
@@ -909,6 +1058,16 @@
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeImplementationBrief.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "kind": "Record",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Public record defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeLintWarning.cs",
+      "documentationStatus": "generated",
+      "itemName": "WireframeLintWarning"
     },
     {
       "itemName": "WireframeOperationEngine",
@@ -935,10 +1094,59 @@
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Mcp.Wireframe",
-      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "description": "MCP write tools for building wireframes with granular operations, scaffold helpers, full-document authoring, and whole-document replacement. Writes validate before saving, support expectedModifiedAt optimistic concurrency tokens, return advisory warnings, and can use strict=true to reject prop and enum warnings.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeOperationTools.cs",
-      "documentationStatus": "merged"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "wireframe_apply_operations",
+          "kind": "McpTool",
+          "description": "Applies an ordered operation batch. addElement and layout children can use either concrete type ids or role slugs; roles resolve through the active scope and target packs."
+        },
+        {
+          "name": "wireframe_scaffold",
+          "kind": "McpTool",
+          "description": "Creates a starter design for landing, list, detail, form, dashboard, or auth archetypes and validates before saving."
+        },
+        {
+          "name": "wireframe_author_document",
+          "kind": "McpTool",
+          "description": "Authors a complete wireframe document in one call: resolves element role values to concrete component types, normalizes enum casing, clamps off-canvas elements, validates, saves, and returns warnings."
+        },
+        {
+          "name": "wireframe_replace_document",
+          "kind": "McpTool",
+          "description": "Replaces the whole document with validated JSON, returns advisory warnings, and supports strict=true for prop/enum warning rejection."
+        }
+      ]
+    },
+    {
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframePropLinter.cs",
+      "documentationStatus": "generated",
+      "members": [
+        {
+          "name": "SuggestNearest",
+          "kind": "Method",
+          "type": "string?",
+          "parameters": [
+            {
+              "name": "key",
+              "type": "string"
+            },
+            {
+              "name": "schema",
+              "type": "WireframeComponentSchema"
+            }
+          ]
+        }
+      ],
+      "itemName": "WireframePropLinter"
     },
     {
       "itemName": "WireframeValidationEngine",
@@ -996,11 +1204,11 @@
     }
   ],
   "summary": {
-    "itemCount": 68,
-    "manualItemCount": 20,
-    "generatedItemCount": 68,
-    "generatedOnlyItemCount": 48,
+    "itemCount": 76,
+    "manualItemCount": 21,
+    "generatedItemCount": 76,
+    "generatedOnlyItemCount": 55,
     "componentCount": 0,
-    "publicApiTypeCount": 68
+    "publicApiTypeCount": 76
   }
 }

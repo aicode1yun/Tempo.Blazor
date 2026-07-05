@@ -6,7 +6,7 @@ namespace Tempo.Blazor.Components.Wireframe.Models;
 public sealed class WireframeDocument
 {
     /// <summary>Schema version. Bumped on breaking changes to enable migration.</summary>
-    public string Version { get; set; } = "2.0";
+    public string Version { get; set; } = "2.1";
 
     /// <summary>Human-readable title shown in the editor toolbar.</summary>
     public string Title { get; set; } = "Untitled wireframe";

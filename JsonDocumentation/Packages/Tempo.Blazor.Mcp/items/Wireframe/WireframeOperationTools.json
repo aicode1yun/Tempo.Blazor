@@ -2,9 +2,31 @@
   "kind": "Class",
   "category": "Wireframe",
   "namespace": "Tempo.Blazor.Mcp.Wireframe",
-  "description": "Public class defined by Tempo.Blazor.Mcp.",
+  "description": "MCP write tools for building wireframes with granular operations, scaffold helpers, full-document authoring, and whole-document replacement. Writes validate before saving, support expectedModifiedAt optimistic concurrency tokens, return advisory warnings, and can use strict=true to reject prop and enum warnings.",
   "packageId": "Tempo.Blazor.Mcp",
   "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeOperationTools.cs",
-  "documentationStatus": "generated",
+  "documentationStatus": "reviewed",
+  "members": [
+    {
+      "name": "wireframe_apply_operations",
+      "kind": "McpTool",
+      "description": "Applies an ordered operation batch. addElement and layout children can use either concrete type ids or role slugs; roles resolve through the active scope and target packs."
+    },
+    {
+      "name": "wireframe_scaffold",
+      "kind": "McpTool",
+      "description": "Creates a starter design for landing, list, detail, form, dashboard, or auth archetypes and validates before saving."
+    },
+    {
+      "name": "wireframe_author_document",
+      "kind": "McpTool",
+      "description": "Authors a complete wireframe document in one call: resolves element role values to concrete component types, normalizes enum casing, clamps off-canvas elements, validates, saves, and returns warnings."
+    },
+    {
+      "name": "wireframe_replace_document",
+      "kind": "McpTool",
+      "description": "Replaces the whole document with validated JSON, returns advisory warnings, and supports strict=true for prop/enum warning rejection."
+    }
+  ],
   "itemName": "WireframeOperationTools"
 }
