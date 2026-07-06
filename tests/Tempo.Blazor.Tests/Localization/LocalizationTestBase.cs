@@ -692,6 +692,10 @@ public abstract class LocalizationTestBase : TestContext
         ["TmFilter_In"]            = "in",
         ["TmFilter_NotIn"]         = "not in",
 
+        // TmFilterBuilder chrome
+        ["TmFilterBuilder_AddFilter"] = "Add filter",
+        ["TmFilterBuilder_ClearAll"]  = "Clear all filters",
+
         // TmMultiViewList
         ["TmMvl_TableView"]   = "Table view",
         ["TmMvl_CardView"]    = "Card view",
@@ -3644,6 +3648,10 @@ public abstract class LocalizationTestBase : TestContext
         ["TmFilter_IsNotEmpty"]    = "není prázdné",
         ["TmFilter_In"]            = "v",
         ["TmFilter_NotIn"]         = "není v",
+
+        // TmFilterBuilder chrome
+        ["TmFilterBuilder_AddFilter"] = "Přidat filtr",
+        ["TmFilterBuilder_ClearAll"]  = "Vymazat všechny filtry",
 
         // TmMultiViewList
         ["TmMvl_TableView"]   = "Tabulka",

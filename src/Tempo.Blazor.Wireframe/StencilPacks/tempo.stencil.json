@@ -7,7 +7,7 @@
   "target": {
     "framework": "blazor",
     "library": "Tempo.Blazor",
-    "version": "2.1.0"
+    "version": "2.2.0"
   },
   "tokens": {
     "color.primary": "#3b82f6",

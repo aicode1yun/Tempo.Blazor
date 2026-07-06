@@ -2,7 +2,7 @@
   "itemName": "TmFilterBuilder",
   "kind": "Component",
   "category": "Filters",
-  "description": "Interactive filter builder UI that lets users add, edit, and remove filters using field definitions. Renders active filters as TmFilterChip components with a field picker, operator selector, and value input. Supports text, number, date, boolean, select, and multi-select field types.",
+  "description": "Interactive filter builder UI that lets users add, edit, and remove filters using field definitions. Renders active filters as TmFilterChip components with a field picker, operator selector, and value input. Supports text, number, date, boolean, select, and multi-select field types. The add button and clear-all labels are localized via TmFilterBuilder_AddFilter and TmFilterBuilder_ClearAll keys; both buttons keep their text on a single line with white-space: nowrap.",
   "requiredImports": [
     "@using Tempo.Blazor.Components.Filters"
   ],

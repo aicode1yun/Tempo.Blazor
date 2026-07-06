@@ -950,6 +950,15 @@ internal static class SourceDocParser
                 continue;
             }
 
+            // If the property declaration is on the same line as the last attribute, scan from there
+            // so the declaration is not skipped (e.g. `[Parameter] public string Name { get; set; }`).
+            var lastAttrLine = lines[j - 1].Trim();
+            if (lastAttrLine.Contains("{ get;", StringComparison.Ordinal)
+                && lastAttrLine.Contains("set;", StringComparison.Ordinal))
+            {
+                j = j - 1;
+            }
+
             var declaration = "";
             for (var k = j; k < Math.Min(lines.Length, j + 8); k++)
             {

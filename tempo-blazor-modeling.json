@@ -220,6 +220,12 @@
           "description": "Raised when a relationship edge is selected in the generated preview."
         },
         {
+          "name": "Document",
+          "type": "DiagramDocument?",
+          "isRequired": false,
+          "description": "Generated diagram document to show in the preview. Null renders the pre-generation empty state."
+        },
+        {
           "name": "DocumentChanged",
           "type": "EventCallback<DiagramDocument>",
           "isRequired": false,
@@ -326,6 +332,12 @@
           "description": "Callback raised when the editor notation selection changes."
         },
         {
+          "name": "ProviderKey",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Provider key used to select the semantic model provider. Null or empty values render the empty state."
+        },
+        {
           "name": "ViewpointKey",
           "type": "string?",
           "isRequired": false,
@@ -351,6 +363,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Elements used to resolve relationship source and target display names."
+        },
+        {
+          "name": "Element",
+          "type": "ModelingElementDto?",
+          "isRequired": false,
+          "description": "Selected modeling element. Takes precedence when both element and relationship are supplied."
         },
         {
           "name": "Elements",
@@ -387,6 +405,13 @@
           "description": "Raised when the user selects an issue that points to a model element or relationship."
         },
         {
+          "name": "Issues",
+          "type": "IReadOnlyList<ModelingIssueDto>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Issues to render in severity-coded order."
+        },
+        {
           "name": "OnIssueSelected",
           "type": "EventCallback<ModelingIssueDto>",
           "isRequired": false,
@@ -412,6 +437,13 @@
           "type": "string?",
           "isRequired": false,
           "description": "Raised when the user ends a drag operation from a tree node."
+        },
+        {
+          "name": "Elements",
+          "type": "IReadOnlyList<ModelingElementDto>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Elements rendered by the tree. They are grouped by ."
         },
         {
           "name": "OnElementDragEnded",
@@ -471,6 +503,12 @@
           "description": "Metadata describing the currently loaded modeling source."
         },
         {
+          "name": "Metadata",
+          "type": "ModelingMetadataDto?",
+          "isRequired": false,
+          "description": "Metadata describing the currently loaded modeling source."
+        },
+        {
           "name": "OnLoadRequested",
           "type": "EventCallback",
           "isRequired": false,
@@ -496,6 +534,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Raised when the viewpoint changes."
+        },
+        {
+          "name": "NotationKey",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Selected notation key."
         },
         {
           "name": "OnNotationChanged",

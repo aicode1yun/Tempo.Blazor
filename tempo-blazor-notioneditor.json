@@ -1412,7 +1412,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "MentionProvider",
+          "type": "ITmPeopleProvider?",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmCommentReactions",
@@ -1427,7 +1433,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnChanged",
+          "type": "EventCallback",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmNotionAiMenu",
@@ -1509,6 +1521,12 @@
           "type": "double",
           "isRequired": false,
           "description": "Controls whether the AI menu is rendered."
+        },
+        {
+          "name": "Visible",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Controls whether the AI menu is rendered."
         }
       ]
     },
@@ -1527,6 +1545,13 @@
       ],
       "parameters": [
         {
+          "name": "AnalyticsProvider",
+          "type": "INotionAnalyticsProvider",
+          "isRequired": true,
+          "description": "Analytics provider used to query page views and top pages.",
+          "editorRequired": true
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
@@ -1535,7 +1560,7 @@
         {
           "name": "CurrentPageId",
           "type": "Guid?",
-          "isRequired": true,
+          "isRequired": false,
           "description": "Space whose top pages should be displayed.",
           "editorRequired": true
         },
@@ -1577,6 +1602,16 @@
       ],
       "parameters": [
         {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
           "name": "OnMediaSet",
           "type": "EventCallback<(string? FileId, string? Url)>",
           "isRequired": false
@@ -1598,11 +1633,17 @@
       ],
       "parameters": [
         {
+          "name": "ActivityProvider",
+          "type": "ITmActivityProvider",
+          "isRequired": true,
+          "description": "Provider used to query audit entries.",
+          "editorRequired": true
+        },
+        {
           "name": "Class",
           "type": "string?",
-          "isRequired": true,
-          "description": "Additional CSS class.",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Additional CSS class."
         },
         {
           "name": "OnClosed",
@@ -1616,13 +1657,6 @@
           "isRequired": false,
           "default": "DefaultPageSize",
           "description": "Raised when the close button is clicked."
-        },
-        {
-          "name": "ActivityProvider",
-          "type": "ITmActivityProvider",
-          "isRequired": true,
-          "description": "Provider used to query audit entries.",
-          "editorRequired": true
         }
       ]
     },
@@ -1654,7 +1688,8 @@
         {
           "name": "BlockCommentCounts",
           "type": "IReadOnlyDictionary<string, TmNotionPage.BlockCommentInfo>",
-          "isRequired": true
+          "isRequired": true,
+          "description": "Per-block comment summary for margin-thread indicators and hover tooltip."
         },
         {
           "name": "BlockHasUnreadActivity",
@@ -1668,10 +1703,9 @@
           "isRequired": false
         },
         {
-          "name": "BlockLastAuthorName",
-          "type": "string?",
-          "isRequired": false,
-          "description": "Total number of comment threads on this block."
+          "name": "BlockLastEntryTime",
+          "type": "DateTime?",
+          "isRequired": false
         },
         {
           "name": "BlockResolvedUnreadCount",
@@ -1695,7 +1729,8 @@
         {
           "name": "BlockUnresolvedCount",
           "type": "int",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Number of unresolved block comment threads for this block."
         },
         {
           "name": "IsFocused",
@@ -1710,7 +1745,8 @@
         {
           "name": "NumberedListNumber",
           "type": "int",
-          "isRequired": false
+          "isRequired": false,
+          "description": "1-based ordinal for NumberedList blocks, pre-computed by TmNotionBlockList."
         },
         {
           "name": "OnAddAfter",
@@ -1728,6 +1764,11 @@
           "type": "EventCallback",
           "isRequired": false,
           "description": "Fired when a new block should be inserted after the given block (afterBlockId, type, initialHtml)."
+        },
+        {
+          "name": "OnBackgroundChange",
+          "type": "EventCallback<string?>",
+          "isRequired": false
         },
         {
           "name": "OnBlockDeleted",
@@ -1843,7 +1884,8 @@
         {
           "name": "OnSlashMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Raised when a '/' typed in this block opens the slash menu. Args are viewport coords."
         },
         {
           "name": "OnTokenMenu",
@@ -1857,6 +1899,12 @@
           "isRequired": false
         },
         {
+          "name": "PageId",
+          "type": "Guid?",
+          "isRequired": false,
+          "description": "Page ID owned by this rendered list."
+        },
+        {
           "name": "ParentBlockId",
           "type": "Guid?",
           "isRequired": false,
@@ -1867,6 +1915,12 @@
           "type": "bool",
           "isRequired": false,
           "description": "Parent block ID for nested lists. Null means the top-level page list."
+        },
+        {
+          "name": "BlockLastAuthorName",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Total number of comment threads on this block."
         }
       ]
     },
@@ -1884,6 +1938,16 @@
         "@using Tempo.Blazor.Components.NotionEditor.UI"
       ],
       "parameters": [
+        {
+          "name": "OnMentionClicked",
+          "type": "EventCallback<string>",
+          "isRequired": false
+        },
+        {
+          "name": "StartInNewThreadMode",
+          "type": "bool",
+          "isRequired": false
+        },
         {
           "name": "OnClosed",
           "type": "EventCallback",
@@ -1910,6 +1974,11 @@
           "type": "IPageBlock",
           "isRequired": true,
           "editorRequired": true
+        },
+        {
+          "name": "OnBackgroundChange",
+          "type": "EventCallback<string?>",
+          "isRequired": false
         }
       ]
     },
@@ -1932,6 +2001,11 @@
           "type": "IPageBlock",
           "isRequired": true,
           "editorRequired": true
+        },
+        {
+          "name": "OnBackgroundChange",
+          "type": "EventCallback<string?>",
+          "isRequired": false
         }
       ]
     },
@@ -1957,7 +2031,8 @@
         {
           "name": "BlockCommentCounts",
           "type": "IReadOnlyDictionary<string, TmNotionPage.BlockCommentInfo>",
-          "isRequired": true
+          "isRequired": true,
+          "description": "Per-block comment summary for margin-thread indicators and hover tooltip."
         },
         {
           "name": "Blocks",
@@ -2075,6 +2150,12 @@
           "description": "Fired when '[[' page-link syntax is typed in a block (blockId, top, left)."
         },
         {
+          "name": "PageId",
+          "type": "Guid?",
+          "isRequired": false,
+          "description": "Page ID owned by this rendered list."
+        },
+        {
           "name": "ParentBlockId",
           "type": "Guid?",
           "isRequired": false,
@@ -2103,6 +2184,16 @@
       ],
       "parameters": [
         {
+          "name": "CurrentType",
+          "type": "BlockType",
+          "isRequired": true
+        },
+        {
+          "name": "OnClosed",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
           "name": "OnTypeChanged",
           "type": "EventCallback<BlockType>",
           "isRequired": false
@@ -2124,6 +2215,13 @@
       ],
       "parameters": [
         {
+          "name": "BlogProvider",
+          "type": "INotionBlogProvider",
+          "isRequired": true,
+          "description": "Blog provider used to query and mutate posts.",
+          "editorRequired": true
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
@@ -2132,7 +2230,7 @@
         {
           "name": "CurrentUserId",
           "type": "string?",
-          "isRequired": true,
+          "isRequired": false,
           "description": "Space whose blog posts are shown.",
           "editorRequired": true
         },
@@ -2182,7 +2280,7 @@
         {
           "name": "IsPublishing",
           "type": "bool",
-          "isRequired": true,
+          "isRequired": false,
           "description": "Blog post to render.",
           "editorRequired": true
         },
@@ -2191,6 +2289,13 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Additional CSS class."
+        },
+        {
+          "name": "Post",
+          "type": "NotionBlogPostDto",
+          "isRequired": true,
+          "description": "Blog post to render.",
+          "editorRequired": true
         }
       ]
     },
@@ -2208,6 +2313,16 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Embed"
       ],
       "parameters": [
+        {
+          "name": "BookmarkProvider",
+          "type": "INotionBookmarkProvider?",
+          "isRequired": false
+        },
+        {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false
+        },
         {
           "name": "OnResolved",
           "type": "EventCallback<BookmarkBlockContent>",
@@ -2239,6 +2354,11 @@
           "name": "Content",
           "type": "IBreadcrumbBlockContent?",
           "isRequired": false
+        },
+        {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false
         }
       ]
     },
@@ -2259,7 +2379,8 @@
         {
           "name": "OnContentSaved",
           "type": "EventCallback<string>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired on blur when HTML has changed. Arg = new HTML."
         },
         {
           "name": "OnDeleteRequested",
@@ -2314,6 +2435,11 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Fired when Tab / Shift+Tab. Bool = shiftKey (true = outdent)."
+        },
+        {
+          "name": "Placeholder",
+          "type": "string?",
+          "isRequired": false
         }
       ]
     },
@@ -2334,7 +2460,8 @@
         {
           "name": "OnContentSaved",
           "type": "EventCallback<string>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired on blur when the HTML has changed. Arg = new HTML."
         },
         {
           "name": "OnDeleteRequested",
@@ -2395,6 +2522,11 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent)."
+        },
+        {
+          "name": "Placeholder",
+          "type": "string?",
+          "isRequired": false
         }
       ]
     },
@@ -2411,7 +2543,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Page"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmNotionChildrenDisplayBlock",
@@ -2427,6 +2565,12 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
       ],
       "parameters": [
+        {
+          "name": "Block",
+          "type": "IPageBlock",
+          "isRequired": true,
+          "description": "Owning page block used to resolve the current page when no root page is configured."
+        },
         {
           "name": "Content",
           "type": "IChildrenDisplayBlockContent?",
@@ -2468,6 +2612,11 @@
       ],
       "parameters": [
         {
+          "name": "IsFocused",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
           "name": "OnCaptionSaved",
           "type": "EventCallback<string?>",
           "isRequired": false,
@@ -2476,7 +2625,8 @@
         {
           "name": "OnCodeSaved",
           "type": "EventCallback<string>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired on blur when the code text has changed. Arg = new code string."
         },
         {
           "name": "OnDeleteRequested",
@@ -2528,8 +2678,19 @@
       ],
       "parameters": [
         {
+          "name": "Left",
+          "type": "double",
+          "isRequired": false
+        },
+        {
           "name": "OnClosed",
           "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when a color is chosen. Exactly one element of the tuple is non-null: (hex, null) → text color selected; (null, hex) → background color selected. (null, null) → default (remove color) selected for either section."
+        },
+        {
+          "name": "OnColorSelected",
+          "type": "EventCallback<(string? TextColor, string? BgColor)>",
           "isRequired": false,
           "description": "Raised when a color is chosen. Exactly one element of the tuple is non-null: (hex, null) → text color selected; (null, hex) → background color selected. (null, null) → default (remove color) selected for either section."
         },
@@ -2542,7 +2703,8 @@
         {
           "name": "SelectedTextColor",
           "type": "string?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Currently active text-color hex, or null for default."
         }
       ]
     },
@@ -2565,6 +2727,16 @@
           "type": "IPageBlock",
           "isRequired": true,
           "editorRequired": true
+        },
+        {
+          "name": "OnTokenMenu",
+          "type": "EventCallback<(string BlockId, double Top, double Left)>",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
         },
         {
           "name": "OnFocused",
@@ -2594,6 +2766,16 @@
           "editorRequired": true
         },
         {
+          "name": "OnTokenMenu",
+          "type": "EventCallback<(string BlockId, double Top, double Left)>",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
           "name": "OnUpdated",
           "type": "EventCallback<IPageBlock>",
           "isRequired": false
@@ -2614,6 +2796,12 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
       ],
       "parameters": [
+        {
+          "name": "Content",
+          "type": "IContentByLabelBlockContent?",
+          "isRequired": false,
+          "description": "Saved Content-by-Label block configuration."
+        },
         {
           "name": "OnContentChanged",
           "type": "EventCallback<ContentByLabelBlockContent>",
@@ -2647,7 +2835,14 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnOpenAsPage",
+          "type": "EventCallback",
+          "isRequired": true,
+          "editorRequired": true
+        }
+      ]
     },
     {
       "itemName": "TmNotionDbBoardView",
@@ -2663,6 +2858,17 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
       ],
       "parameters": [
+        {
+          "name": "OnNewRecord",
+          "type": "EventCallback<string?>",
+          "isRequired": false
+        },
+        {
+          "name": "PreviewFieldIds",
+          "type": "IReadOnlyList<Guid>?",
+          "isRequired": true,
+          "editorRequired": true
+        },
         {
           "name": "OnRecordUpdated",
           "type": "EventCallback<IDatabaseRecord>",
@@ -2686,6 +2892,17 @@
       ],
       "parameters": [
         {
+          "name": "OnNewRecord",
+          "type": "EventCallback<DateTime>",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
           "name": "OnRecordUpdated",
           "type": "EventCallback<IDatabaseRecord>",
           "isRequired": true,
@@ -2707,6 +2924,17 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells"
       ],
       "parameters": [
+        {
+          "name": "IsEditing",
+          "type": "bool",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
+          "name": "OnEditRequested",
+          "type": "EventCallback",
+          "isRequired": false
+        },
         {
           "name": "OnCommit",
           "type": "EventCallback<object?>",
@@ -3015,6 +3243,17 @@
       ],
       "parameters": [
         {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
           "name": "OnFieldChanged",
           "type": "EventCallback<IDatabaseField>",
           "isRequired": true,
@@ -3036,6 +3275,17 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
       ],
       "parameters": [
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": true,
+          "editorRequired": true
+        },
         {
           "name": "OnFilterChanged",
           "type": "EventCallback<INotionDatabaseFilter?>",
@@ -3059,6 +3309,17 @@
       ],
       "parameters": [
         {
+          "name": "OnNewRecord",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "PreviewFieldIds",
+          "type": "IReadOnlyList<Guid>?",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
           "name": "OnRecordClicked",
           "type": "EventCallback<IDatabaseRecord>",
           "isRequired": true,
@@ -3081,6 +3342,17 @@
       ],
       "parameters": [
         {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
           "name": "OnGroupingChanged",
           "type": "EventCallback<NotionDatabaseGrouping?>",
           "isRequired": true,
@@ -3101,7 +3373,14 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": true,
+          "editorRequired": true
+        }
+      ]
     },
     {
       "itemName": "TmNotionDbListView",
@@ -3117,6 +3396,17 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
       ],
       "parameters": [
+        {
+          "name": "OnNewRecord",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": true,
+          "editorRequired": true
+        },
         {
           "name": "OnRecordClicked",
           "type": "EventCallback<IDatabaseRecord>",
@@ -3140,6 +3430,17 @@
       ],
       "parameters": [
         {
+          "name": "OnOpenAsPage",
+          "type": "EventCallback<IDatabaseRecord>",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
           "name": "OnClose",
           "type": "EventCallback",
           "isRequired": true,
@@ -3161,6 +3462,17 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
       ],
       "parameters": [
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": true,
+          "editorRequired": true
+        },
         {
           "name": "OnSortsChanged",
           "type": "EventCallback<IReadOnlyList<NotionDatabaseSort>>",
@@ -3184,6 +3496,17 @@
       ],
       "parameters": [
         {
+          "name": "OnExpandRecord",
+          "type": "EventCallback<IDatabaseRecord>",
+          "isRequired": false
+        },
+        {
+          "name": "WrapCells",
+          "type": "bool",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
           "name": "OnRecordUpdated",
           "type": "EventCallback<IDatabaseRecord>",
           "isRequired": true,
@@ -3205,6 +3528,17 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
       ],
       "parameters": [
+        {
+          "name": "OnTemplateSaved",
+          "type": "EventCallback<IDatabaseRecordTemplate>",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": true,
+          "editorRequired": true
+        },
         {
           "name": "OnClose",
           "type": "EventCallback",
@@ -3228,6 +3562,17 @@
       ],
       "parameters": [
         {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
           "name": "OnRecordCreated",
           "type": "EventCallback<IDatabaseRecord>",
           "isRequired": true,
@@ -3250,6 +3595,17 @@
       ],
       "parameters": [
         {
+          "name": "OnNewRecord",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
           "name": "OnRecordUpdated",
           "type": "EventCallback<IDatabaseRecord>",
           "isRequired": true,
@@ -3271,6 +3627,16 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks"
       ],
       "parameters": [
+        {
+          "name": "OnRemoveRequested",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
+        },
         {
           "name": "OnContentSaved",
           "type": "EventCallback<DiagramBlockContent>",
@@ -3304,6 +3670,11 @@
           "isRequired": false
         },
         {
+          "name": "OnDiscarded",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
           "name": "Provider",
           "type": "IDiagramDocumentProvider?",
           "isRequired": false
@@ -3323,7 +3694,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor.UI"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "Loading",
+          "type": "bool",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmNotionDividerBlock",
@@ -3359,6 +3736,12 @@
         {
           "name": "OnFocused",
           "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fired when the block receives focus (click or Tab)."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
           "isRequired": false
         }
       ]
@@ -3400,14 +3783,14 @@
           "type": "IReadOnlyList<string>",
           "isRequired": false,
           "default": "[]",
-          "description": "Explicit current user identifier for collaboration, reactions, and user-scoped actions. When blank, the editor resolves from DI and falls back to demo."
+          "description": "Group identifiers used for permission checks for the current user."
         },
         {
           "name": "CurrentUserId",
           "type": "string",
           "isRequired": false,
           "default": "\"\"",
-          "description": "Prevents all editing interactions."
+          "description": "Explicit current user identifier for collaboration, reactions, and user-scoped actions. When blank, the editor resolves from DI and falls back to demo."
         },
         {
           "name": "DataProvider",
@@ -3426,7 +3809,7 @@
           "name": "OnCreateTokenRequested",
           "type": "Func<string, Task<(string Key, string DisplayName, string? ColorClass)?>?>?",
           "isRequired": false,
-          "description": "Raised when the user requests to open the trash panel from the sidebar."
+          "description": "Called when the user clicks \"Create token\" in the token dropdown. Arg = current search query (may be empty). Return the newly created token (Key, DisplayName, ColorClass) so the editor can insert it automatically, or null if the user cancelled."
         },
         {
           "name": "OnPageChanged",
@@ -3452,6 +3835,12 @@
           "isRequired": false,
           "default": "true",
           "description": "Show the left navigation sidebar."
+        },
+        {
+          "name": "TokenProvider",
+          "type": "ITokenDataProvider?",
+          "isRequired": false,
+          "description": "Enables {{ token autocomplete. Type {{ in any text block to open the token dropdown and insert a variable chip."
         },
         {
           "name": "SearchProvider",
@@ -3512,12 +3901,6 @@
           "type": "INotionMediaLibraryProvider?",
           "isRequired": false,
           "description": "Enables a media library tab in the upload dialog — browse and select previously uploaded files."
-        },
-        {
-          "name": "TokenProvider",
-          "type": "ITokenDataProvider?",
-          "isRequired": false,
-          "description": "Enables {{ token autocomplete. Type {{ in any text block to open the token dropdown and insert a variable chip."
         },
         {
           "name": "ImportExportProvider",
@@ -3640,6 +4023,16 @@
       ],
       "parameters": [
         {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
           "name": "OnUrlSet",
           "type": "EventCallback<EmbedBlockContent>",
           "isRequired": false
@@ -3673,6 +4066,12 @@
           "description": "Fired when the user clicks an emoji. Arg = the emoji character string."
         },
         {
+          "name": "OnSelected",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Fired when the user clicks an emoji. Arg = the emoji character string."
+        },
+        {
           "name": "ShowRemoveButton",
           "type": "bool",
           "isRequired": false,
@@ -3695,6 +4094,16 @@
       ],
       "parameters": [
         {
+          "name": "IsFocused",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
           "name": "OnExpressionSaved",
           "type": "EventCallback<string>",
           "isRequired": false
@@ -3715,6 +4124,12 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
       ],
       "parameters": [
+        {
+          "name": "Block",
+          "type": "IPageBlock",
+          "isRequired": true,
+          "description": "Owning page block for persistence context."
+        },
         {
           "name": "Content",
           "type": "IExcerptBlockContent?",
@@ -3756,6 +4171,12 @@
       ],
       "parameters": [
         {
+          "name": "Block",
+          "type": "IPageBlock",
+          "isRequired": true,
+          "description": "Owning page block used for persistence and focus context."
+        },
+        {
           "name": "Content",
           "type": "IExcerptIncludeBlockContent?",
           "isRequired": false,
@@ -3796,6 +4217,16 @@
       ],
       "parameters": [
         {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
           "name": "OnMediaSet",
           "type": "EventCallback<(string? FileId, string? Url)>",
           "isRequired": false
@@ -3817,9 +4248,15 @@
       ],
       "parameters": [
         {
+          "name": "IsFocused",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
           "name": "OnContentSaved",
           "type": "EventCallback<string>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired on blur when HTML content changed. Arg = new HTML."
         },
         {
           "name": "OnDeleteRequested",
@@ -3924,13 +4361,19 @@
         {
           "name": "OnMediaSet",
           "type": "EventCallback<(string? FileId, string? Url)>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Raised when the user sets a new image (URL or uploaded file)."
         },
         {
           "name": "OnWidthChanged",
           "type": "EventCallback<int>",
           "isRequired": false,
           "description": "Raised when the user sets a new image (URL or uploaded file)."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
         }
       ]
     },
@@ -3991,6 +4434,16 @@
       ],
       "parameters": [
         {
+          "name": "CurrentAlign",
+          "type": "TextAlignment",
+          "isRequired": true
+        },
+        {
+          "name": "DotNetRef",
+          "type": "object?",
+          "isRequired": false
+        },
+        {
           "name": "OnTurnInto",
           "type": "EventCallback<BlockType>",
           "isRequired": false
@@ -4025,6 +4478,12 @@
           "description": "Whether editing controls are hidden."
         },
         {
+          "name": "PageId",
+          "type": "Guid",
+          "isRequired": false,
+          "description": "Identifier of the page whose labels are edited."
+        },
+        {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
@@ -4045,7 +4504,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Page"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmNotionMediaUploadDialog",
@@ -4062,10 +4527,21 @@
       ],
       "parameters": [
         {
+          "name": "IsOpen",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
           "name": "MediaType",
           "type": "string",
           "isRequired": false,
-          "default": "\"file\""
+          "default": "\"file\"",
+          "description": "\"image\" | \"video\" | \"audio\" | \"pdf\" | \"file\""
+        },
+        {
+          "name": "OnCancelled",
+          "type": "EventCallback",
+          "isRequired": false
         },
         {
           "name": "OnConfirmed",
@@ -4090,6 +4566,11 @@
       ],
       "parameters": [
         {
+          "name": "Left",
+          "type": "double",
+          "isRequired": false
+        },
+        {
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
@@ -4104,7 +4585,8 @@
         {
           "name": "PagesOnly",
           "type": "bool",
-          "isRequired": false
+          "isRequired": false,
+          "description": "When true only the Pages tab is shown (triggered by '[[')."
         }
       ]
     },
@@ -4131,7 +4613,7 @@
         {
           "name": "CurrentUserId",
           "type": "string?",
-          "isRequired": true,
+          "isRequired": false,
           "description": "Task provider used to query and update tasks.",
           "editorRequired": true
         },
@@ -4146,6 +4628,13 @@
           "type": "EventCallback<(string PageId, string BlockId)>",
           "isRequired": false,
           "description": "Raised when the panel close button is clicked."
+        },
+        {
+          "name": "WorkItemSource",
+          "type": "ITmWorkItemProvider",
+          "isRequired": true,
+          "description": "Unified work-item source used to query and update tasks.",
+          "editorRequired": true
         }
       ]
     },
@@ -4163,6 +4652,12 @@
         "@using Tempo.Blazor.Components.NotionEditor"
       ],
       "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class on the notification center root."
+        },
         {
           "name": "CurrentUserId",
           "type": "string",
@@ -4202,7 +4697,8 @@
         {
           "name": "OnContentSaved",
           "type": "EventCallback<string>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired on blur when HTML has changed. Arg = new HTML."
         },
         {
           "name": "OnDeleteRequested",
@@ -4257,6 +4753,11 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Fired when Tab / Shift+Tab. Bool = shiftKey (true = outdent)."
+        },
+        {
+          "name": "Placeholder",
+          "type": "string?",
+          "isRequired": false
         }
       ]
     },
@@ -4374,7 +4875,8 @@
         {
           "name": "OnTitleEnterPressed",
           "type": "EventCallback",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired when Enter is pressed in the title, signalling to add a new block."
         },
         {
           "name": "Page",
@@ -4399,7 +4901,8 @@
         {
           "name": "ShowRestrictedIndicator",
           "type": "bool",
-          "isRequired": false
+          "isRequired": false,
+          "description": "When true, displays a visible page-level restricted access indicator in the header."
         },
         {
           "name": "UnresolvedCommentCount",
@@ -4435,6 +4938,11 @@
         "@using Tempo.Blazor.Components.NotionEditor.UI"
       ],
       "parameters": [
+        {
+          "name": "Expanded",
+          "type": "bool",
+          "isRequired": false
+        },
         {
           "name": "OnCountChanged",
           "type": "EventCallback",
@@ -4489,6 +4997,13 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Raised after the comment count may have changed."
+        },
+        {
+          "name": "PageId",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Page identifier whose page-level comment threads are displayed."
         }
       ]
     },
@@ -4521,7 +5036,8 @@
         {
           "name": "OnTitleEnterPressed",
           "type": "EventCallback",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired when Enter is pressed in the title, signalling to add a new block."
         },
         {
           "name": "Page",
@@ -4530,9 +5046,15 @@
           "editorRequired": true
         },
         {
-          "name": "ShowRestrictedIndicator",
+          "name": "ReadOnly",
           "type": "bool",
           "isRequired": false
+        },
+        {
+          "name": "ShowRestrictedIndicator",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, displays a visible page-level restricted access indicator in the header."
         },
         {
           "name": "UnresolvedCommentCount",
@@ -4556,6 +5078,17 @@
         "@using Tempo.Blazor.Components.NotionEditor.UI"
       ],
       "parameters": [
+        {
+          "name": "OnRestored",
+          "type": "EventCallback<string>",
+          "isRequired": false
+        },
+        {
+          "name": "PageId",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\""
+        },
         {
           "name": "OnClosed",
           "type": "EventCallback",
@@ -4619,6 +5152,12 @@
       ],
       "parameters": [
         {
+          "name": "Block",
+          "type": "IPageBlock",
+          "isRequired": true,
+          "description": "Owning page block for persistence context."
+        },
+        {
           "name": "Content",
           "type": "IPagePropertiesBlockContent?",
           "isRequired": false,
@@ -4658,6 +5197,12 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
       ],
       "parameters": [
+        {
+          "name": "Block",
+          "type": "IPageBlock",
+          "isRequired": true,
+          "description": "Owning page block for focus context."
+        },
         {
           "name": "Content",
           "type": "IPagePropertiesReportBlockContent?",
@@ -4782,7 +5327,8 @@
         {
           "name": "OnPageUpdated",
           "type": "EventCallback<INotionPage>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Raised when page metadata (IsFullWidth, IsSmallText, IsLocked, IsFavorite) changes."
         },
         {
           "name": "OnRestrictionsRequested",
@@ -4797,9 +5343,15 @@
           "description": "Raised when user picks \"Page info\"."
         },
         {
+          "name": "Page",
+          "type": "INotionPage",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
           "name": "ReadOnly",
           "type": "bool",
-          "isRequired": true,
+          "isRequired": false,
           "editorRequired": true
         }
       ]
@@ -4817,7 +5369,20 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor.Sidebar"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "ActivePageId",
+          "type": "string?",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
+          "name": "OnTreeChanged",
+          "type": "EventCallback",
+          "isRequired": true,
+          "editorRequired": true
+        }
+      ]
     },
     {
       "itemName": "TmNotionPageTreeItem",
@@ -4832,7 +5397,14 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor.Sidebar"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "ActivePageId",
+          "type": "string?",
+          "isRequired": true,
+          "editorRequired": true
+        }
+      ]
     },
     {
       "itemName": "TmNotionPdfBlock",
@@ -4848,6 +5420,16 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Media"
       ],
       "parameters": [
+        {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
+        },
         {
           "name": "OnMediaSet",
           "type": "EventCallback<(string? FileId, string? Url)>",
@@ -4878,14 +5460,14 @@
         },
         {
           "name": "Class",
-          "type": "page shell.</summary> [Parameter] public string?",
+          "type": "string?",
           "isRequired": false,
           "description": "Optional comments provider enabled only when the public share allows comments."
         },
         {
           "name": "CommentProvider",
-          "type": "share allows comments.</summary> [Parameter] public ITmCommentProvider?",
-          "isRequired": true,
+          "type": "ITmCommentProvider?",
+          "isRequired": false,
           "description": "Provider used to load blocks for the shared Notion page.",
           "editorRequired": true
         },
@@ -4898,8 +5480,15 @@
         },
         {
           "name": "PublicShareProvider",
-          "type": "share tokens.</summary> [Parameter, EditorRequired] public INotionPublicShareProvider",
+          "type": "INotionPublicShareProvider",
           "isRequired": true,
+          "description": "Public share token from the route.",
+          "editorRequired": true
+        },
+        {
+          "name": "Token",
+          "type": "string?",
+          "isRequired": false,
           "description": "Public share token from the route."
         }
       ]
@@ -4921,7 +5510,8 @@
         {
           "name": "OnContentSaved",
           "type": "EventCallback<string>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired on blur when the HTML has changed. Arg = new HTML."
         },
         {
           "name": "OnDeleteRequested",
@@ -4976,6 +5566,11 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent)."
+        },
+        {
+          "name": "Placeholder",
+          "type": "string?",
+          "isRequired": false
         }
       ]
     },
@@ -5008,15 +5603,22 @@
         {
           "name": "PageId",
           "type": "Guid",
-          "isRequired": false,
-          "description": "Raised when dialog visibility changes."
+          "isRequired": true,
+          "description": "Raised when dialog visibility changes.",
+          "editorRequired": true
         },
         {
           "name": "Provider",
           "type": "INotionPermissionProvider?",
-          "isRequired": true,
+          "isRequired": false,
           "description": "Page identifier whose restrictions are edited.",
           "editorRequired": true
+        },
+        {
+          "name": "Visible",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Controls whether the dialog is visible."
         },
         {
           "name": "VisibleChanged",
@@ -5042,16 +5644,23 @@
       "parameters": [
         {
           "name": "PageId",
-          "type": "share is managed.</summary> [Parameter, EditorRequired] public Guid",
+          "type": "Guid",
           "isRequired": true,
-          "description": "Raised when dialog visibility changes."
+          "description": "Raised when dialog visibility changes.",
+          "editorRequired": true
         },
         {
           "name": "Provider",
-          "type": "shares.</summary> [Parameter] public INotionPublicShareProvider?",
-          "isRequired": true,
+          "type": "INotionPublicShareProvider?",
+          "isRequired": false,
           "description": "Page identifier whose public share is managed.",
           "editorRequired": true
+        },
+        {
+          "name": "Visible",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Controls whether the dialog is visible."
         },
         {
           "name": "VisibleChanged",
@@ -5111,6 +5720,23 @@
       ],
       "parameters": [
         {
+          "name": "ActivePageId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "ID of the currently active (open) page — highlights it in the tree."
+        },
+        {
+          "name": "OnChanged",
+          "type": "EventCallback",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
+          "name": "OnClosed",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
           "name": "OnTrashRequested",
           "type": "EventCallback",
           "isRequired": false,
@@ -5131,7 +5757,14 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor.Sidebar"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnChanged",
+          "type": "EventCallback",
+          "isRequired": true,
+          "editorRequired": true
+        }
+      ]
     },
     {
       "itemName": "TmNotionSidebarRecent",
@@ -5146,7 +5779,14 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor.Sidebar"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "ActivePageId",
+          "type": "string?",
+          "isRequired": true,
+          "editorRequired": true
+        }
+      ]
     },
     {
       "itemName": "TmNotionSidebarTrash",
@@ -5161,7 +5801,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor.Sidebar"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnClosed",
+          "type": "EventCallback",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmNotionSlashMenu",
@@ -5178,6 +5824,11 @@
       ],
       "parameters": [
         {
+          "name": "Left",
+          "type": "double",
+          "isRequired": false
+        },
+        {
           "name": "OnAISelected",
           "type": "EventCallback",
           "isRequired": false,
@@ -5192,7 +5843,8 @@
         {
           "name": "OnItemSelected",
           "type": "EventCallback<BlockType>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Raised when the user selects a block type."
         },
         {
           "name": "OnSlashItemSelected",
@@ -5239,6 +5891,12 @@
           "type": "EventCallback<string?>",
           "isRequired": false,
           "description": "Currently selected space id. Null means the provider default or implicit space."
+        },
+        {
+          "name": "SpaceProvider",
+          "type": "INotionSpaceProvider?",
+          "isRequired": false,
+          "description": "Optional provider that supplies spaces and cross-space page moves."
         }
       ]
     },
@@ -5256,6 +5914,16 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks"
       ],
       "parameters": [
+        {
+          "name": "OnRemoveRequested",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
+        },
         {
           "name": "OnContentSaved",
           "type": "EventCallback<SpreadsheetBlockContent>",
@@ -5277,6 +5945,11 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks"
       ],
       "parameters": [
+        {
+          "name": "OnDiscarded",
+          "type": "EventCallback",
+          "isRequired": false
+        },
         {
           "name": "Provider",
           "type": "ISpreadsheetDocumentProvider?",
@@ -5340,6 +6013,12 @@
           "type": "double",
           "isRequired": false,
           "description": "Shows or hides the picker."
+        },
+        {
+          "name": "Visible",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Shows or hides the picker."
         }
       ]
     },
@@ -5362,6 +6041,11 @@
           "type": "IPageBlock",
           "isRequired": true,
           "editorRequired": true
+        },
+        {
+          "name": "Content",
+          "type": "ISyncedBlockOriginContent?",
+          "isRequired": false
         },
         {
           "name": "IsFocused",
@@ -5406,6 +6090,11 @@
           "editorRequired": true
         },
         {
+          "name": "Content",
+          "type": "ISyncedBlockRefContent?",
+          "isRequired": false
+        },
+        {
           "name": "IsFocused",
           "type": "bool",
           "isRequired": false
@@ -5418,7 +6107,8 @@
         {
           "name": "OnUnsync",
           "type": "EventCallback<IPageBlock>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Raised with the new independent block after unsync completes."
         },
         {
           "name": "ReadOnly",
@@ -5448,6 +6138,16 @@
           "editorRequired": true
         },
         {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
           "name": "OnUpdated",
           "type": "EventCallback<IPageBlock>",
           "isRequired": false
@@ -5467,7 +6167,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmNotionTableRowBlock",
@@ -5484,8 +6190,13 @@
       ],
       "parameters": [
         {
-          "name": "OnCellsChanged",
-          "type": "EventCallback<IReadOnlyList<NotionTableCell>>",
+          "name": "CanDelete",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
+          "name": "IsCellSelected",
+          "type": "Func<int, int, bool>?",
           "isRequired": false
         },
         {
@@ -5493,6 +6204,11 @@
           "type": "IPageBlock",
           "isRequired": true,
           "editorRequired": true
+        },
+        {
+          "name": "OnCellsChanged",
+          "type": "EventCallback<IReadOnlyList<NotionTableCell>>",
+          "isRequired": false
         }
       ]
     },
@@ -5510,6 +6226,11 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
       ],
       "parameters": [
+        {
+          "name": "Content",
+          "type": "ITemplateButtonBlockContent?",
+          "isRequired": false
+        },
         {
           "name": "IsFocused",
           "type": "bool",
@@ -5568,6 +6289,12 @@
           "type": "INotionTemplateProvider?",
           "isRequired": false,
           "description": "Controls whether the template gallery dialog is rendered."
+        },
+        {
+          "name": "Visible",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Controls whether the template gallery dialog is rendered."
         }
       ]
     },
@@ -5588,7 +6315,8 @@
         {
           "name": "OnContentSaved",
           "type": "EventCallback<string>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired on blur when the HTML has changed. Arg = new HTML."
         },
         {
           "name": "OnDeleteRequested",
@@ -5655,6 +6383,11 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent)."
+        },
+        {
+          "name": "Placeholder",
+          "type": "string?",
+          "isRequired": false
         }
       ]
     },
@@ -5672,6 +6405,16 @@
         "@using Tempo.Blazor.Components.NotionEditor.UI"
       ],
       "parameters": [
+        {
+          "name": "Left",
+          "type": "double",
+          "isRequired": false
+        },
+        {
+          "name": "OnMentionClicked",
+          "type": "EventCallback<string>",
+          "isRequired": false
+        },
         {
           "name": "OnClosed",
           "type": "EventCallback",
@@ -5702,7 +6445,8 @@
         {
           "name": "OnCheckedChanged",
           "type": "EventCallback<bool>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired when the checkbox is toggled. Arg = new checked state."
         },
         {
           "name": "OnContentSaved",
@@ -5763,6 +6507,11 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Fired when Backspace is pressed on an empty item."
+        },
+        {
+          "name": "Placeholder",
+          "type": "string?",
+          "isRequired": false
         }
       ]
     },
@@ -5789,7 +6538,8 @@
         {
           "name": "OnContentSaved",
           "type": "EventCallback<string>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired on blur when header HTML has changed. Arg = new HTML."
         },
         {
           "name": "OnDeleteRequested",
@@ -5844,6 +6594,11 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Fired when Backspace is pressed on an empty header."
+        },
+        {
+          "name": "Placeholder",
+          "type": "string?",
+          "isRequired": false
         }
       ]
     },
@@ -5868,6 +6623,11 @@
           "description": "Raised when the user clicks \"Create token\" (optional). Arg = current search query."
         },
         {
+          "name": "Left",
+          "type": "double",
+          "isRequired": false
+        },
+        {
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
@@ -5882,7 +6642,8 @@
         {
           "name": "OnItemSelected",
           "type": "EventCallback<(string Key, string DisplayName, string? ColorClass)>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Raised when the user selects a token. Args = (Key, DisplayName, ColorClass)."
         }
       ]
     },
@@ -5900,6 +6661,16 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Media"
       ],
       "parameters": [
+        {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
+        },
         {
           "name": "OnMediaSet",
           "type": "EventCallback<(string? FileId, string? Url)>",
@@ -5935,6 +6706,12 @@
           "description": "Watch provider used to persist page subscriptions."
         },
         {
+          "name": "Provider",
+          "type": "INotionWatchProvider?",
+          "isRequired": false,
+          "description": "Watch provider used to persist page subscriptions."
+        },
+        {
           "name": "UserId",
           "type": "string",
           "isRequired": false,
@@ -5958,6 +6735,16 @@
       ],
       "parameters": [
         {
+          "name": "OnRemoveRequested",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
           "name": "OnContentSaved",
           "type": "EventCallback<WireframeBlockContent>",
           "isRequired": false
@@ -5978,6 +6765,11 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks"
       ],
       "parameters": [
+        {
+          "name": "OnDiscarded",
+          "type": "EventCallback",
+          "isRequired": false
+        },
         {
           "name": "Provider",
           "type": "IWireframeDocumentProvider?",
@@ -6005,6 +6797,12 @@
         "@using Tempo.Blazor.Components.NotionEditor.Blocks.Embed"
       ],
       "parameters": [
+        {
+          "name": "Content",
+          "type": "IWorkItemBlockContent?",
+          "isRequired": false,
+          "description": "Work-item block content."
+        },
         {
           "name": "OnContentChanged",
           "type": "EventCallback<WorkItemBlockContent>",

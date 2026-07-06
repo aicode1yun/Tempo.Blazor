@@ -299,6 +299,12 @@
           "type": "SigningSubmissionLocalizationSnapshot?",
           "isRequired": false,
           "description": "Audit trail payload to render."
+        },
+        {
+          "name": "Trail",
+          "type": "SigningAuditTrail?",
+          "isRequired": false,
+          "description": "Audit trail payload to render."
         }
       ]
     },
@@ -397,6 +403,13 @@
           "description": "Accessible label for the textarea."
         },
         {
+          "name": "Value",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Current text value."
+        },
+        {
           "name": "ValueChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
@@ -453,6 +466,13 @@
           "type": "EventCallback<bool>",
           "isRequired": false,
           "description": "Available picker reaction values."
+        },
+        {
+          "name": "Reactions",
+          "type": "IReadOnlyList<DocumentCommentReaction>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Existing grouped reactions."
         }
       ]
     },
@@ -511,6 +531,13 @@
           "type": "string?",
           "isRequired": false,
           "description": "Culture used to resolve localized field and option labels."
+        },
+        {
+          "name": "Fields",
+          "type": "IReadOnlyList<SigningField>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "All fields in the current signing template."
         }
       ]
     },
@@ -537,7 +564,7 @@
         {
           "name": "CurrentUserId",
           "type": "string?",
-          "isRequired": true,
+          "isRequired": false,
           "description": "Comment to render.",
           "editorRequired": true
         },
@@ -576,6 +603,14 @@
           "type": "EventCallback<bool>",
           "isRequired": false,
           "description": "Whether this comment's reaction picker is open."
+        },
+        {
+          "name": "ThreadId",
+          "type": "string",
+          "isRequired": true,
+          "default": "\"\"",
+          "description": "Parent thread id.",
+          "editorRequired": true
         }
       ]
     },
@@ -623,9 +658,16 @@
           "description": "One-based visual thread number."
         },
         {
+          "name": "Thread",
+          "type": "DocumentCommentThread",
+          "isRequired": true,
+          "description": "Thread rendered by the marker.",
+          "editorRequired": true
+        },
+        {
           "name": "ThreadNumber",
           "type": "int",
-          "isRequired": true,
+          "isRequired": false,
           "default": "1",
           "description": "Thread rendered by the marker.",
           "editorRequired": true
@@ -693,6 +735,13 @@
           "type": "bool",
           "isRequired": false,
           "description": "Current user id for mention indicators."
+        },
+        {
+          "name": "Threads",
+          "type": "IReadOnlyList<DocumentCommentThread>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Threads available to render."
         }
       ]
     },
@@ -739,6 +788,13 @@
           "type": "string?",
           "isRequired": false,
           "description": "All threads used for stable numbering."
+        },
+        {
+          "name": "Threads",
+          "type": "IReadOnlyList<DocumentCommentThread>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Filtered threads to render."
         }
       ]
     },
@@ -839,6 +895,13 @@
           "type": "EventCallback<string?>",
           "isRequired": false,
           "description": "Selected thread id."
+        },
+        {
+          "name": "Threads",
+          "type": "IReadOnlyList<DocumentCommentThread>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Comment threads to render."
         }
       ]
     },
@@ -941,6 +1004,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Whether to show the loading skeleton instead of the page."
+        },
+        {
+          "name": "Id",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional id assigned to the rendered page element."
         },
         {
           "name": "IsLoading",
@@ -1225,6 +1294,13 @@
           "description": "Callback invoked after a valid formula is saved. The supplied value is normalized to UUID tokens."
         },
         {
+          "name": "Fields",
+          "type": "IReadOnlyList<SigningField>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "All fields in the current signing template."
+        },
+        {
           "name": "Saved",
           "type": "EventCallback<string>",
           "isRequired": false,
@@ -1267,6 +1343,12 @@
           "name": "OnVerifyRequested",
           "type": "EventCallback",
           "isRequired": false,
+          "description": "Verification result to render."
+        },
+        {
+          "name": "Result",
+          "type": "SigningPdfVerificationResult",
+          "isRequired": true,
           "description": "Verification result to render."
         }
       ]
@@ -1313,6 +1395,13 @@
           "type": "bool",
           "isRequired": false,
           "description": "Field types visible in the palette. Defaults to common signing field types."
+        },
+        {
+          "name": "Documents",
+          "type": "IReadOnlyList<SigningDocumentPage>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Document pages available for template design."
         },
         {
           "name": "FallbackCulture",
@@ -1448,6 +1537,13 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Whether picker interaction is disabled."
+        },
+        {
+          "name": "Reactions",
+          "type": "IReadOnlyList<string>",
+          "isRequired": false,
+          "default": "[\"\uD83D\uDC4D\", \"✅\", \"\uD83D\uDC40\", \"❤️\", \"\uD83C\uDF89\"]",
+          "description": "Available reaction values."
         }
       ]
     },
@@ -1488,6 +1584,13 @@
           "type": "TmRecipientRoleEditorMode",
           "isRequired": true,
           "description": "Callback invoked whenever roles change."
+        },
+        {
+          "name": "Roles",
+          "type": "IReadOnlyList<SigningSubmitterRole>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Roles or submission recipients currently edited."
         },
         {
           "name": "RolesChanged",
@@ -1540,6 +1643,13 @@
           "type": "DateTimeOffset?",
           "isRequired": false,
           "description": "Callback invoked when sharing is enabled or disabled."
+        },
+        {
+          "name": "Link",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Public signing link."
         },
         {
           "name": "ShowQrCode",
@@ -1619,6 +1729,12 @@
           "description": "Culture used to resolve localized field text."
         },
         {
+          "name": "Field",
+          "type": "SigningField",
+          "isRequired": true,
+          "description": "Signing field represented by this step."
+        },
+        {
           "name": "StampValue",
           "type": "string?",
           "isRequired": false,
@@ -1674,6 +1790,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Culture used to resolve localized field and option text."
+        },
+        {
+          "name": "Field",
+          "type": "SigningField",
+          "isRequired": true,
+          "description": "Primary signing field represented by this step."
         },
         {
           "name": "Fields",
@@ -1769,6 +1891,12 @@
           "isRequired": false,
           "default": "true",
           "description": "Optional completed document download URL."
+        },
+        {
+          "name": "Title",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional completed title override."
         }
       ]
     },
@@ -1814,6 +1942,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Culture used to resolve localized field text."
+        },
+        {
+          "name": "Field",
+          "type": "SigningField",
+          "isRequired": true,
+          "description": "Signing field represented by this step."
         },
         {
           "name": "ShowTodayButton",
@@ -1898,6 +2032,12 @@
           "description": "Culture used to resolve localized field text."
         },
         {
+          "name": "Field",
+          "type": "SigningField",
+          "isRequired": true,
+          "description": "Signing field represented by this step."
+        },
+        {
           "name": "IsLoading",
           "type": "bool",
           "isRequired": false,
@@ -1960,6 +2100,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Culture used to preview localized field labels in nested editors."
+        },
+        {
+          "name": "Field",
+          "type": "SigningField?",
+          "isRequired": false,
+          "description": "Selected signing field edited by the panel."
         },
         {
           "name": "FieldChanged",
@@ -2068,6 +2214,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Culture used to resolve localized field and option text."
+        },
+        {
+          "name": "Field",
+          "type": "SigningField?",
+          "isRequired": false,
+          "description": "Signing field definition to render."
         },
         {
           "name": "Focused",
@@ -2239,6 +2391,13 @@
           "description": "Optional signer role filter."
         },
         {
+          "name": "Pages",
+          "type": "IReadOnlyList<SigningDocumentPage>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Document pages shown during signing."
+        },
+        {
           "name": "ShowLanguageSelector",
           "type": "bool",
           "isRequired": false,
@@ -2313,6 +2472,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Culture used to resolve localized field text."
+        },
+        {
+          "name": "Field",
+          "type": "SigningField",
+          "isRequired": true,
+          "description": "Signing field represented by this step."
         },
         {
           "name": "Value",
@@ -2396,6 +2561,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Culture used to resolve localized field text."
+        },
+        {
+          "name": "Field",
+          "type": "SigningField",
+          "isRequired": true,
+          "description": "Signing field represented by this step."
         },
         {
           "name": "OnSendCode",
@@ -2498,6 +2669,12 @@
           "description": "Culture used to resolve field labels and descriptions."
         },
         {
+          "name": "Field",
+          "type": "SigningField?",
+          "isRequired": false,
+          "description": "Signing field represented by this step."
+        },
+        {
           "name": "Label",
           "type": "string?",
           "isRequired": false,
@@ -2573,6 +2750,12 @@
           "description": "Culture used to resolve localized field text."
         },
         {
+          "name": "Field",
+          "type": "SigningField",
+          "isRequired": true,
+          "description": "Signing field represented by this step."
+        },
+        {
           "name": "Value",
           "type": "string?",
           "isRequired": false,
@@ -2603,6 +2786,13 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
+          "description": "Submission events to display."
+        },
+        {
+          "name": "Events",
+          "type": "IReadOnlyList<SigningSubmissionStatusEvent>",
+          "isRequired": false,
+          "default": "[]",
           "description": "Submission events to display."
         }
       ]

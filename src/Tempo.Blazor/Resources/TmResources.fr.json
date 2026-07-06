@@ -1261,6 +1261,8 @@
   "TmFilter_SelectField": "Sélectionner un champ",
   "TmFilter_SelectOperator": "Sélectionner un opérateur",
   "TmFilter_StartsWith": "commence par",
+  "TmFilterBuilder_AddFilter": "Ajouter un filtre",
+  "TmFilterBuilder_ClearAll": "Effacer tous les filtres",
   "TmFilterableDropdown_ClearSelection": "Effacer la sélection",
   "TmFilterableDropdown_CreateNew": "Créer « {0} »",
   "TmFilterableDropdown_Error": "Impossible de charger les options",

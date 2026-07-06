@@ -2,7 +2,7 @@
   "itemName": "TmViewManager",
   "kind": "Component",
   "category": "Data Table",
-  "description": "Saved view management panel for TmDataTable and TmMultiViewList, supporting personal and tenant-scoped views with create, edit, delete, and apply operations. Includes a modal for configuring view name, scope, visible columns, grouping, and filters via IDataTableViewProvider.",
+  "description": "Saved view management panel for TmDataTable and TmMultiViewList, supporting personal and tenant-scoped views with create, edit, delete, and apply operations. Includes a modal for configuring view name, scope, visible columns, grouping, and filters via IDataTableViewProvider. This component is normally rendered by TmDataTable/TmMultiViewList when a ViewProvider is set and ShowViewManager/ToolbarMode allows it; direct standalone usage is supported but uncommon.",
   "requiredImports": [
     "@using Tempo.Blazor.Components.DataTable"
   ],

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataTable",
+  "description": "High-level preset that controls which chrome elements are rendered by data components such as TmDataTable and TmMultiViewList.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataTable/DataTableEnums.cs",
+  "documentationStatus": "generated",
+  "itemName": "DataToolbarMode"
+}

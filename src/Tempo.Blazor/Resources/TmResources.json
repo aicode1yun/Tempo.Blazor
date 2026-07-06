@@ -2104,6 +2104,8 @@
   "TmFilter_SelectField": "Select field",
   "TmFilter_SelectOperator": "Select operator",
   "TmFilter_StartsWith": "starts with",
+  "TmFilterBuilder_AddFilter": "Add filter",
+  "TmFilterBuilder_ClearAll": "Clear all filters",
   "TmFilterableDropdown_ClearSelection": "Clear selection",
   "TmFilterableDropdown_CreateNew": "Create \"{0}\"",
   "TmFilterableDropdown_Error": "Failed to load options",

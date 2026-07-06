@@ -85,9 +85,16 @@
       ],
       "parameters": [
         {
+          "name": "Attributes",
+          "type": "MjAttributes",
+          "isRequired": true,
+          "description": "The head attributes containing the named-class definitions (mj-class).",
+          "editorRequired": true
+        },
+        {
           "name": "OnChanged",
           "type": "EventCallback",
-          "isRequired": true,
+          "isRequired": false,
           "description": "The head attributes containing the named-class definitions (mj-class).",
           "editorRequired": true
         }
@@ -110,14 +117,21 @@
           "name": "Document",
           "type": "EmailTemplateDocument",
           "isRequired": true,
-          "description": "Whether the dialog is shown."
+          "description": "Whether the dialog is shown.",
+          "editorRequired": true
         },
         {
           "name": "OnClose",
           "type": "EventCallback",
-          "isRequired": true,
+          "isRequired": false,
           "description": "The document to export.",
           "editorRequired": true
+        },
+        {
+          "name": "Show",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the dialog is shown."
         }
       ]
     },
@@ -137,6 +151,13 @@
         {
           "name": "OnChanged",
           "type": "EventCallback",
+          "isRequired": false,
+          "description": "The mj-html-attributes selectors (round-trip only; not rendered by Mjml.Net).",
+          "editorRequired": true
+        },
+        {
+          "name": "Selectors",
+          "type": "IList<MjHtmlSelector>",
           "isRequired": true,
           "description": "The mj-html-attributes selectors (round-trip only; not rendered by Mjml.Net).",
           "editorRequired": true
@@ -167,6 +188,12 @@
           "type": "EventCallback<EmailTemplateDocument>",
           "isRequired": false,
           "description": "Whether the dialog is shown."
+        },
+        {
+          "name": "Show",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the dialog is shown."
         }
       ]
     },
@@ -184,9 +211,16 @@
       ],
       "parameters": [
         {
+          "name": "Items",
+          "type": "IDictionary<string, string>",
+          "isRequired": true,
+          "description": "The dictionary being edited (rebuilt in place on every change).",
+          "editorRequired": true
+        },
+        {
           "name": "OnChanged",
           "type": "EventCallback",
-          "isRequired": true,
+          "isRequired": false,
           "description": "The dictionary being edited (rebuilt in place on every change).",
           "editorRequired": true
         }
@@ -214,8 +248,15 @@
         {
           "name": "ItemPrimary",
           "type": "IReadOnlyList<string>",
-          "isRequired": true,
+          "isRequired": false,
           "default": "Array.Empty<string>()",
+          "description": "The list of sub-elements being edited (mutated in place).",
+          "editorRequired": true
+        },
+        {
+          "name": "Items",
+          "type": "IList<TItem>",
+          "isRequired": true,
           "description": "The list of sub-elements being edited (mutated in place).",
           "editorRequired": true
         },
@@ -256,8 +297,15 @@
         {
           "name": "Primary",
           "type": "IReadOnlyList<string>",
-          "isRequired": true,
+          "isRequired": false,
           "default": "Array.Empty<string>()",
+          "description": "The model object whose scalar properties are edited.",
+          "editorRequired": true
+        },
+        {
+          "name": "Target",
+          "type": "object",
+          "isRequired": true,
           "description": "The model object whose scalar properties are edited.",
           "editorRequired": true
         }
@@ -277,6 +325,13 @@
       ],
       "parameters": [
         {
+          "name": "Document",
+          "type": "EmailTemplateDocument",
+          "isRequired": true,
+          "description": "The document being edited.",
+          "editorRequired": true
+        },
+        {
           "name": "OnChanged",
           "type": "EventCallback",
           "isRequired": false,
@@ -291,7 +346,7 @@
         {
           "name": "SelectedId",
           "type": "Guid?",
-          "isRequired": true,
+          "isRequired": false,
           "description": "The document being edited.",
           "editorRequired": true
         },
@@ -318,9 +373,16 @@
       ],
       "parameters": [
         {
+          "name": "Block",
+          "type": "EmailTableBlock",
+          "isRequired": true,
+          "description": "The table block being edited (mutated in place).",
+          "editorRequired": true
+        },
+        {
           "name": "OnChanged",
           "type": "EventCallback",
-          "isRequired": true,
+          "isRequired": false,
           "description": "The table block being edited (mutated in place).",
           "editorRequired": true
         }
@@ -339,6 +401,13 @@
         "@using Tempo.Blazor.EmailTemplates.Components"
       ],
       "parameters": [
+        {
+          "name": "Document",
+          "type": "EmailTemplateDocument",
+          "isRequired": true,
+          "description": "The document being displayed.",
+          "editorRequired": true
+        },
         {
           "name": "DragActive",
           "type": "bool",
@@ -366,7 +435,7 @@
         {
           "name": "SelectedId",
           "type": "Guid?",
-          "isRequired": true,
+          "isRequired": false,
           "description": "The document being displayed.",
           "editorRequired": true
         },
@@ -396,6 +465,12 @@
           "type": "AutoSaveOptions?",
           "isRequired": false,
           "description": "Raised when the user requests a save."
+        },
+        {
+          "name": "Document",
+          "type": "EmailTemplateDocument?",
+          "isRequired": false,
+          "description": "Gets or sets the edited document. Two-way bindable via ."
         },
         {
           "name": "DocumentChanged",
@@ -451,6 +526,13 @@
       ],
       "parameters": [
         {
+          "name": "Document",
+          "type": "EmailTemplateDocument",
+          "isRequired": true,
+          "description": "The document to preview.",
+          "editorRequired": true
+        },
+        {
           "name": "TimeProvider",
           "type": "TimeProvider",
           "isRequired": false,
@@ -460,7 +542,7 @@
         {
           "name": "VariablesJson",
           "type": "string?",
-          "isRequired": true,
+          "isRequired": false,
           "description": "The document to preview.",
           "editorRequired": true
         }
@@ -479,6 +561,12 @@
         "@using Tempo.Blazor.EmailTemplates.Components"
       ],
       "parameters": [
+        {
+          "name": "OnAddBlock",
+          "type": "EventCallback<BlockDescriptor>",
+          "isRequired": false,
+          "description": "Raised when a block is chosen (clicked) to be added."
+        },
         {
           "name": "OnAddSection",
           "type": "EventCallback<LayoutPreset>",
@@ -507,9 +595,16 @@
       ],
       "parameters": [
         {
+          "name": "Document",
+          "type": "EmailTemplateDocument",
+          "isRequired": true,
+          "description": "The document to validate.",
+          "editorRequired": true
+        },
+        {
           "name": "OnNavigate",
           "type": "EventCallback<Guid?>",
-          "isRequired": true,
+          "isRequired": false,
           "description": "The document to validate.",
           "editorRequired": true
         }
@@ -532,6 +627,13 @@
           "name": "OnInsert",
           "type": "EventCallback<string>",
           "isRequired": false,
+          "description": "The variables available to insert (extracted from the document plus host-provided)."
+        },
+        {
+          "name": "Variables",
+          "type": "IReadOnlyList<TemplateVariableInfo>",
+          "isRequired": false,
+          "default": "Array.Empty<TemplateVariableInfo>()",
           "description": "The variables available to insert (extracted from the document plus host-provided)."
         }
       ]

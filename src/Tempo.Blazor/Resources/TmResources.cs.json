@@ -2109,6 +2109,8 @@
   "TmFilter_SelectField": "Vyberte pole",
   "TmFilter_SelectOperator": "Vyberte operátor",
   "TmFilter_StartsWith": "začíná na",
+  "TmFilterBuilder_AddFilter": "Přidat filtr",
+  "TmFilterBuilder_ClearAll": "Vymazat všechny filtry",
   "TmFilterableDropdown_ClearSelection": "Zrušit výběr",
   "TmFilterableDropdown_CreateNew": "Vytvořit „{0}\"",
   "TmFilterableDropdown_Error": "Nepodařilo se načíst možnosti",

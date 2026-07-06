@@ -16,44 +16,47 @@
 <div class="tm-data-table-wrapper @Class" @attributes="AdditionalAttributes">
 
     @* ── Toolbar ─────────────────────────────────────────────── *@
-    <div class="tm-data-table-toolbar">
-        @* Left: Search (main action) *@
-        @if (ShowSearch)
-        {
-            <div class="tm-data-table-toolbar-left">
-                <TmSearchInput Value="@_searchText"
-                               ValueChanged="OnSearchChangedAsync"
-                               Placeholder="@Loc["TmDataTable_SearchPlaceholder"]" />
-            </div>
-        }
+    @if (ShowToolbar && HasVisibleToolbarControls())
+    {
+        <div class="tm-data-table-toolbar">
+            @* Left: Search (main action) *@
+            @if (ShouldRenderSearch())
+            {
+                <div class="tm-data-table-toolbar-left">
+                    <TmSearchInput Value="@_searchText"
+                                   ValueChanged="OnSearchChangedAsync"
+                                   Placeholder="@Loc["TmDataTable_SearchPlaceholder"]" />
+                </div>
+            }
 
-        @* Right: Actions (column picker, view manager) *@
-        <div class="tm-data-table-toolbar-right">
-            @if (ShowColumnPicker && _columns.Any(c => c.Hideable))
-            {
-                <TmColumnPicker Columns="@GetColumnVisibilityItems()"
-                                OnToggleColumn="OnToggleColumnAsync"
-                                OnReset="OnResetColumnsAsync" />
-            }
-            @if (ViewProvider is not null)
-            {
-                <TmViewManager Provider="ViewProvider"
-                               ViewContext="@ViewContext"
-                               OnViewApplied="ApplyViewAsync"
-                               GetCurrentView="GetCurrentView"
-                               GetCurrentFilters="() => _externalFilters"
-                               AvailableColumns="GetAvailableColumns()"
-                               FilterDefinitions="ViewFilterDefinitions"
-                               DisplayResolver="DisplayResolver"
-                               CanCreateTenantViews="ViewCanCreateTenantViews"
-                               CurrentUserId="CurrentUserId"
-                               CurrentTenantId="CurrentTenantId" />
-            }
+            @* Right: Actions (column picker, view manager) *@
+            <div class="tm-data-table-toolbar-right">
+                @if (ShouldRenderColumnPicker())
+                {
+                    <TmColumnPicker Columns="@GetColumnVisibilityItems()"
+                                    OnToggleColumn="OnToggleColumnAsync"
+                                    OnReset="OnResetColumnsAsync" />
+                }
+                @if (ShouldRenderViewManager())
+                {
+                    <TmViewManager Provider="ViewProvider"
+                                   ViewContext="@ViewContext"
+                                   OnViewApplied="ApplyViewAsync"
+                                   GetCurrentView="GetCurrentView"
+                                   GetCurrentFilters="() => _externalFilters"
+                                   AvailableColumns="GetAvailableColumns()"
+                                   FilterDefinitions="ViewFilterDefinitions"
+                                   DisplayResolver="DisplayResolver"
+                                   CanCreateTenantViews="ViewCanCreateTenantViews"
+                                   CurrentUserId="CurrentUserId"
+                                   CurrentTenantId="CurrentTenantId" />
+                }
+            </div>
         </div>
-    </div>
+    }
 
     @* ── External Filter Builder (when table has views) ────── *@
-    @if (ShowExternalFilterBuilder && ViewProvider is not null && ExternalFilterDefinitions?.Any() == true)
+    @if (ShouldRenderExternalFilterBuilder())
     {
         <div class="tm-data-table-external-filters" @key="_activeViewId">
             <TmFilterBuilder FilterDefinitions="ExternalFilterDefinitions"

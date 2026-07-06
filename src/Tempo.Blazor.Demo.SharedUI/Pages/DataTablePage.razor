@@ -94,6 +94,110 @@
     }
 </section>
 
+<!-- Toolbar Mode Presets -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Toolbar Mode Presets</h2>
+            <span class="px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">Chrome</span>
+        </div>
+        <TmSelect TValue="DataToolbarMode"
+                  Options="_toolbarModeOptions"
+                  @bind-Value="_dataTableToolbarMode"
+                  Placeholder="Select toolbar mode" />
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmDataTable TItem="Employee"
+                     ViewContext="demo-toolbar-mode"
+                     Items="_employees"
+                     ToolbarMode="_dataTableToolbarMode">
+            <TmDataTableColumn TItem="Employee" Title="Name" Field="e => e.Name" />
+            <TmDataTableColumn TItem="Employee" Title="Role" Field="e => e.Role" />
+            <TmDataTableColumn TItem="Employee" Title="Dept" Field="e => e.Dept" />
+            <TmDataTableColumn TItem="Employee" Title="Score" Align="ColumnAlign.Right" Field="e => e.Score" />
+        </TmDataTable>
+    </div>
+</section>
+
+<!-- Page-Owned Filters + Content-Only Table -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Page-Owned Filters + Content-Only Table</h2>
+            <span class="px-2 py-0.5 text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full">Composition</span>
+        </div>
+    </div>
+
+    <div class="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl mb-4">
+        <p class="text-sm text-orange-800 dark:text-orange-200">
+            The page owns the filter UI; the table renders only the data surface via <code>ToolbarMode="ContentOnly"</code>.
+            This avoids duplicate filtering UI when the surrounding page already provides filters.
+        </p>
+    </div>
+
+    <div class="flex flex-wrap gap-3 mb-4">
+        <TmSelect TValue="string"
+                  Options="_deptOptions"
+                  @bind-Value="_pageOwnedDeptFilter"
+                  Placeholder="Filter by department" />
+        <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="ClearPageOwnedFilter">
+            Clear
+        </TmButton>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmDataTable TItem="Employee"
+                     ViewContext="demo-page-owned"
+                     Items="_pageOwnedFilteredEmployees"
+                     ToolbarMode="DataToolbarMode.ContentOnly"
+                     EmptyTitle="No employees match the filter"
+                     DefaultPageSize="5">
+            <TmDataTableColumn TItem="Employee" Title="Name" PropertyName="Name" Sortable="true" Field="e => e.Name" />
+            <TmDataTableColumn TItem="Employee" Title="Role" PropertyName="Role" Sortable="true" Field="e => e.Role" />
+            <TmDataTableColumn TItem="Employee" Title="Dept" PropertyName="Dept" Sortable="true" Field="e => e.Dept" />
+            <TmDataTableColumn TItem="Employee" Title="Score" PropertyName="Score" Sortable="true" Align="ColumnAlign.Right" Field="e => e.Score" />
+        </TmDataTable>
+    </div>
+</section>
+
+<!-- Saved Views Without External Filter Builder -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Saved Views Without External Filter Builder</h2>
+            <span class="px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">Views Only</span>
+        </div>
+    </div>
+
+    <div class="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl mb-4">
+        <p class="text-sm text-purple-800 dark:text-purple-200">
+            Saved views are available through the ViewManager, but the inline external filter builder is hidden.
+            Use <code>ShowExternalFilterBuilder="false"</code> to avoid duplicate filter UI.
+        </p>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmDataTable TItem="Employee"
+                     ViewContext="demo-views-only"
+                     Items="_employees"
+                     ViewProvider="_viewProvider"
+                     ViewFilterDefinitions="_employeeViewFilterDefs"
+                     ShowExternalFilterBuilder="false"
+                     ShowSearch="false"
+                     ViewCanCreateTenantViews="true"
+                     CurrentUserId="@CurrentUserId"
+                     CurrentTenantId="@CurrentTenantId"
+                     DisplayResolver="ResolveDisplay"
+                     DefaultPageSize="5">
+            <TmDataTableColumn TItem="Employee" Title="Name" PropertyName="Name" Sortable="true" Field="e => e.Name" />
+            <TmDataTableColumn TItem="Employee" Title="Role" PropertyName="Role" Sortable="true" Field="e => e.Role" />
+            <TmDataTableColumn TItem="Employee" Title="Dept" PropertyName="Dept" Sortable="true" Field="e => e.Dept" />
+            <TmDataTableColumn TItem="Employee" Title="Score" PropertyName="Score" Sortable="true" Align="ColumnAlign.Right" Field="e => e.Score" />
+        </TmDataTable>
+    </div>
+</section>
+
 <!-- Table with External Filter Builder -->
 <section class="demo-section">
     <div class="flex items-center justify-between mb-4">
@@ -451,6 +555,11 @@
         _activeEmployeeFilters = [];
     }
 
+    private void ClearPageOwnedFilter()
+    {
+        _pageOwnedDeptFilter = string.Empty;
+    }
+
     private static IEnumerable<Employee> ApplyEmployeeFilters(IEnumerable<Employee> employees, IReadOnlyList<ActiveFilter> filters)
     {
         if (filters.Count == 0) return employees;
@@ -614,6 +723,24 @@
             _ => null
         };
     }
+
+    // Toolbar mode demo
+    private DataToolbarMode _dataTableToolbarMode = DataToolbarMode.Full;
+    private readonly IReadOnlyList<SelectOption<DataToolbarMode>> _toolbarModeOptions =
+    [
+        new() { Value = DataToolbarMode.Full, Label = "Full" },
+        new() { Value = DataToolbarMode.SearchOnly, Label = "Search only" },
+        new() { Value = DataToolbarMode.ActionsOnly, Label = "Actions only" },
+        new() { Value = DataToolbarMode.ContentOnly, Label = "Content only" }
+    ];
+
+    // Page-owned filter state for content-only table demo
+    private string _pageOwnedDeptFilter = string.Empty;
+
+    private IEnumerable<Employee> _pageOwnedFilteredEmployees =>
+        string.IsNullOrEmpty(_pageOwnedDeptFilter)
+            ? _employees
+            : _employees.Where(e => e.Dept == _pageOwnedDeptFilter);
 
     // Pagination
     private int _currentPage = 1;

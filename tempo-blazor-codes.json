@@ -164,18 +164,18 @@
           "description": "The height in pixels."
         },
         {
+          "name": "Value",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "The value to encode."
+        },
+        {
           "name": "Width",
           "type": "int",
           "isRequired": false,
           "default": "200",
           "description": "The width in pixels."
-        },
-        {
-          "name": "Value",
-          "type": "string",
-          "isRequired": false,
-          "default": "Empty",
-          "description": "The value to encode."
         }
       ],
       "cssClasses": [
@@ -244,7 +244,7 @@
           "name": "Value",
           "type": "string",
           "isRequired": false,
-          "default": "Empty",
+          "default": "\"\"",
           "description": "The text or URL to encode."
         }
       ],

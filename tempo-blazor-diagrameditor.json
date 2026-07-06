@@ -3647,7 +3647,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Diagram"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmDiagramCanvas",
@@ -3665,13 +3671,20 @@
         {
           "name": "ActiveGroupId",
           "type": "string?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Active group identifier. Only nodes with matching ParentGroupId are rendered."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
           "description": "Prevent all editing interactions."
+        },
+        {
+          "name": "Document",
+          "type": "DiagramDocument?",
+          "isRequired": false,
+          "description": "Document to display and edit."
         },
         {
           "name": "DocumentChanged",
@@ -3703,6 +3716,12 @@
           "type": "EventCallback",
           "isRequired": false,
           "description": "Raised when the empty canvas is right-clicked to open a context menu."
+        },
+        {
+          "name": "OnConnectArrowClicked",
+          "type": "EventCallback<(string NodeId, string Direction)>",
+          "isRequired": false,
+          "description": "Raised when a connect arrow is clicked."
         },
         {
           "name": "OnEdgeContextMenu",
@@ -3762,6 +3781,11 @@
           "type": "EventCallback<(string NodeId, string PortId)>",
           "isRequired": false,
           "description": "Raised when the ruler cursor moves."
+        },
+        {
+          "name": "OnPortMouseDownEvent",
+          "type": "EventCallback<(string NodeId, string PortId)>",
+          "isRequired": false
         },
         {
           "name": "OnQuickInsert",
@@ -3836,6 +3860,11 @@
           "description": "Raised when the user presses Ctrl+I to toggle italic on selected nodes."
         },
         {
+          "name": "OnToolboxDrop",
+          "type": "EventCallback<(string StencilId, double X, double Y)>",
+          "isRequired": false
+        },
+        {
           "name": "OnToolModeChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
@@ -3866,6 +3895,13 @@
           "isRequired": false,
           "default": "true",
           "description": "Raised after every mutation."
+        },
+        {
+          "name": "ShowPageView",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Show page view with shadow and boundaries."
         },
         {
           "name": "ViewportChanged",
@@ -3900,7 +3936,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Diagram"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnImport",
+          "type": "EventCallback<CsvImportResult>",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmDiagramEditor",
@@ -3920,6 +3962,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Optional named HttpClient to use for SVG/PNG/PDF export calls."
+        },
+        {
+          "name": "Document",
+          "type": "DiagramDocument?",
+          "isRequired": false,
+          "description": "Document being edited. Bind with @bind-Document."
         },
         {
           "name": "DocumentChanged",
@@ -4016,7 +4064,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Diagram"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "DocumentChanged",
+          "type": "EventCallback<DiagramDocument>",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmDiagramMinimap",
@@ -4036,6 +4090,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Raised when the user clicks or drags the minimap to navigate. Arguments are the document-space centre point."
+        },
+        {
+          "name": "Document",
+          "type": "DiagramDocument?",
+          "isRequired": false,
+          "description": "Document to render."
         },
         {
           "name": "NavigateRequested",
@@ -4079,6 +4139,11 @@
       ],
       "parameters": [
         {
+          "name": "OnEdgeRoutingChanged",
+          "type": "EventCallback<(string EdgeId, string OldRouting, string NewRouting)>",
+          "isRequired": false
+        },
+        {
           "name": "OnEdgeManualRoutingChanged",
           "type": "EventCallback<(string EdgeId, bool Value)>",
           "isRequired": false
@@ -4097,7 +4162,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Diagram"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnClick",
+          "type": "EventCallback",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmDiagramRuler",
@@ -4123,6 +4194,13 @@
           "type": "double",
           "isRequired": false,
           "description": "Cursor position for crosshair."
+        },
+        {
+          "name": "Orientation",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"horizontal\"",
+          "description": "Either horizontal or vertical."
         },
         {
           "name": "Scale",
@@ -4215,6 +4293,13 @@
           "description": "Fires when the user clicks the Replace button."
         },
         {
+          "name": "Query",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Current search query."
+        },
+        {
           "name": "QueryChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
@@ -4283,7 +4368,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Diagram"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnImport",
+          "type": "EventCallback<SqlImportResult>",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmDiagramStencilShape",
@@ -4297,7 +4388,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Diagram"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmDiagramTableInserter",
@@ -4311,7 +4408,14 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Diagram"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnInsert",
+          "type": "EventCallback<(int Rows, int Columns)>",
+          "isRequired": false,
+          "description": "Fires when user clicks a cell, passing selected rows and columns (1-based)."
+        }
+      ]
     },
     {
       "itemName": "TmDiagramTemplateCard",
@@ -4326,7 +4430,14 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Diagram"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "BaseUri",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\""
+        }
+      ]
     },
     {
       "itemName": "TmDiagramTemplateGallery",
@@ -4341,7 +4452,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Diagram"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnSelect",
+          "type": "EventCallback<DiagramTemplate>",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmDiagramToolbox",
@@ -4356,6 +4473,12 @@
         "@using Tempo.Blazor.Components.Diagram"
       ],
       "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class."
+        },
         {
           "name": "StencilDragStart",
           "type": "EventCallback<string>",

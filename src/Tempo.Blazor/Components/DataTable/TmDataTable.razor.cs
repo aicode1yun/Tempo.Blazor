@@ -38,6 +38,7 @@ public partial class TmDataTable<TItem>
     // ── Filtering / Search ───────────────────────────────────────
     private readonly Dictionary<string, DataTableFilter> _activeFilters = new();
     private string _searchText = string.Empty;
+    private string? _lastSearchTextParam;
     private List<ActiveFilter> _externalFilters = [];
     private string? _activeViewId;
 
@@ -75,11 +76,42 @@ public partial class TmDataTable<TItem>
     /// <summary>When true, shows the global search input. Default: true.</summary>
     [Parameter] public bool ShowSearch { get; set; } = true;
 
+    /// <summary>Controlled search text. When set, the component uses this value instead of its internal state.</summary>
+    [Parameter] public string? SearchText { get; set; }
+
+    /// <summary>Fires when the search text changes.</summary>
+    [Parameter] public EventCallback<string> SearchTextChanged { get; set; }
+
     /// <summary>When true, shows the column visibility picker. Default: true.</summary>
     [Parameter] public bool ShowColumnPicker { get; set; } = true;
 
     /// <summary>When true, shows the TmPagination bar when more than one page exists. Default: true.</summary>
     [Parameter] public bool ShowPagination { get; set; } = true;
+
+    /// <summary>
+    /// When true, renders the toolbar container with search, column picker, and view manager. Default: true.
+    /// The toolbar is not rendered when no visible control would be shown (see <see cref="ToolbarMode"/>).
+    /// For a page-owned filter surface, set <see cref="ToolbarMode"/> to <see cref="DataToolbarMode.ContentOnly"/>
+    /// and supply filtered data via <see cref="Items"/> or <see cref="DataProvider"/>.
+    /// </summary>
+    [Parameter] public bool ShowToolbar { get; set; } = true;
+
+    /// <summary>
+    /// High-level preset that controls which toolbar chrome elements are rendered.
+    /// <list type="bullet">
+    ///   <item><see cref="DataToolbarMode.Full"/> — respects the individual <c>Show*</c> booleans.</item>
+    ///   <item><see cref="DataToolbarMode.SearchOnly"/> — renders only the global search input.</item>
+    ///   <item><see cref="DataToolbarMode.ActionsOnly"/> — renders only the column picker and view manager.</item>
+    ///   <item><see cref="DataToolbarMode.ContentOnly"/> — hides all toolbar chrome and the external filter builder; use when the owning page provides its own filters.</item>
+    /// </list>
+    /// Default is <see cref="DataToolbarMode.Full"/>. Modes other than Full override the <c>Show*</c> booleans for the elements they affect.
+    /// </summary>
+    [Parameter] public DataToolbarMode ToolbarMode { get; set; } = DataToolbarMode.Full;
+
+    /// <summary>
+    /// When true and a <see cref="ViewProvider"/> is set, renders the TmViewManager. Default: true.
+    /// </summary>
+    [Parameter] public bool ShowViewManager { get; set; } = true;
 
     /// <summary>Initial page size. Default: 25.</summary>
     [Parameter] public int DefaultPageSize { get; set; } = 25;
@@ -87,16 +119,27 @@ public partial class TmDataTable<TItem>
     /// <summary>Page size options shown in the pagination dropdown.</summary>
     [Parameter] public IReadOnlyList<int> PageSizeOptions { get; set; } = [5, 10, 25, 50, 100];
 
-    /// <summary>Optional view persistence provider. When set, shows TmViewManager.</summary>
+    /// <summary>
+    /// Optional view persistence provider. When set, enables saved views and (by default) the external filter builder.
+    /// Use <see cref="ShowExternalFilterBuilder"/> = false to keep saved views without rendering the inline filter builder,
+    /// or <see cref="ToolbarMode"/> = <see cref="DataToolbarMode.ContentOnly"/> when the page owns the filtering UI.
+    /// </summary>
     [Parameter] public IDataTableViewProvider? ViewProvider { get; set; }
 
-    /// <summary>Filter definitions for the view manager filter builder.</summary>
+    /// <summary>Filter definitions used by the view manager filter builder when creating or editing saved views.</summary>
     [Parameter] public List<FilterDefinition> ViewFilterDefinitions { get; set; } = [];
 
-    /// <summary>When true, shows FilterBuilder for external filtering (visible when ViewProvider is set).</summary>
+    /// <summary>
+    /// When true and a <see cref="ViewProvider"/> is set, shows the inline FilterBuilder for external filtering. Default: true.
+    /// Set to false when the surrounding page owns the filtering UI to avoid duplicate filters.
+    /// </summary>
     [Parameter] public bool ShowExternalFilterBuilder { get; set; } = true;
 
-    /// <summary>Filter definitions for the external filter builder (shown above table when ViewProvider is set).</summary>
+    /// <summary>
+    /// Filter definitions for the inline external filter builder (shown above the table when <see cref="ViewProvider"/> is set).
+    /// When the page owns filtering, leave this empty and set <see cref="ShowExternalFilterBuilder"/> to false
+    /// or use <see cref="ToolbarMode"/> = <see cref="DataToolbarMode.ContentOnly"/>.
+    /// </summary>
     [Parameter] public List<FilterDefinition> ExternalFilterDefinitions { get; set; } = [];
 
     /// <summary>
@@ -175,16 +218,54 @@ public partial class TmDataTable<TItem>
     private bool IsSelected(TItem item) => _selectedItems.Contains(item);
     private int ColSpan => Math.Max(1, (Selectable ? 1 : 0) + _visibleColumns.Count);
 
+    /// <summary>Determines whether any toolbar control should be rendered.</summary>
+    private bool HasVisibleToolbarControls() =>
+        ShouldRenderSearch() ||
+        ShouldRenderColumnPicker() ||
+        ShouldRenderViewManager();
+
+    private bool IsFullToolbarMode => ToolbarMode == DataToolbarMode.Full;
+    private bool IsSearchToolbarMode => ToolbarMode == DataToolbarMode.SearchOnly;
+    private bool IsActionsToolbarMode => ToolbarMode == DataToolbarMode.ActionsOnly;
+    private bool IsContentToolbarMode => ToolbarMode == DataToolbarMode.ContentOnly;
+
+    /// <summary>True when the global search input should be rendered.</summary>
+    private bool ShouldRenderSearch() =>
+        !IsContentToolbarMode && (IsSearchToolbarMode || (IsFullToolbarMode && ShowSearch));
+
+    /// <summary>True when the column visibility picker should be rendered.</summary>
+    private bool ShouldRenderColumnPicker() =>
+        !IsContentToolbarMode &&
+        !IsSearchToolbarMode &&
+        _columns.Any(c => c.Hideable) &&
+        (IsActionsToolbarMode || (IsFullToolbarMode && ShowColumnPicker));
+
+    /// <summary>True when the view manager should be rendered.</summary>
+    private bool ShouldRenderViewManager() =>
+        !IsContentToolbarMode &&
+        !IsSearchToolbarMode &&
+        ViewProvider is not null &&
+        (IsActionsToolbarMode || (IsFullToolbarMode && ShowViewManager));
+
+    /// <summary>True when the external filter builder should be rendered.</summary>
+    private bool ShouldRenderExternalFilterBuilder() =>
+        IsFullToolbarMode &&
+        ShowExternalFilterBuilder &&
+        ViewProvider is not null &&
+        ExternalFilterDefinitions?.Any() == true;
+
     // ── Lifecycle ─────────────────────────────────────────────────
 
     private bool _dataLoaded;
 
-    /// <summary>Initializes the table with default page size and loads initial data.</summary>
+    /// <summary>Initializes the table with default page size, controlled search text, and loads initial data.</summary>
     protected override async Task OnInitializedAsync()
     {
         if (_dataLoaded) return;
 
         _pageSize = DefaultPageSize;
+        _searchText = SearchText ?? string.Empty;
+        _lastSearchTextParam = SearchText;
 
         if (DataProvider is not null)
             await LoadFromProviderAsync();
@@ -194,13 +275,31 @@ public partial class TmDataTable<TItem>
         _dataLoaded = true;
     }
 
-    /// <summary>Re-applies filters when Items collection reference changes in client-side mode.</summary>
-    protected override Task OnParametersSetAsync()
+    /// <summary>Re-applies filters when Items collection reference changes in client-side mode and syncs controlled search text.</summary>
+    protected override async Task OnParametersSetAsync()
     {
+        // Sync externally supplied SearchText into internal state.
+        // When SearchText is null the component is uncontrolled; internal state is preserved.
+        if (SearchText != _lastSearchTextParam && SearchText is not null)
+        {
+            _lastSearchTextParam = SearchText;
+            _searchText = SearchText;
+            _currentPage = 1;
+            _groupPageRequests.Clear();
+            if (DataProvider is not null)
+                await LoadFromProviderAsync();
+            else
+                RefreshClientItems();
+            return;
+        }
+
+        // Track transition from controlled back to uncontrolled without overwriting internal state.
+        if (SearchText is null && _lastSearchTextParam is not null)
+            _lastSearchTextParam = null;
+
         // Re-apply when Items collection reference changes in client-side mode
         if (DataProvider is null)
             RefreshClientItems();
-        return Task.CompletedTask;
     }
 
     // ── Column registration ───────────────────────────────────────
@@ -455,10 +554,17 @@ public partial class TmDataTable<TItem>
         _searchText = value ?? string.Empty;
         _currentPage = 1;
         _groupPageRequests.Clear();
+
+        // In controlled mode, advance the last-seen parameter so the upcoming
+        // parent rerender from @bind-SearchText does not trigger a duplicate reload.
+        if (SearchText is not null)
+            _lastSearchTextParam = _searchText;
+
         if (DataProvider is not null)
             await LoadFromProviderAsync();
         else
             RefreshClientItems();
+        await SearchTextChanged.InvokeAsync(_searchText);
     }
 
     private async Task RemoveColumnFilterAsync(string columnKey)

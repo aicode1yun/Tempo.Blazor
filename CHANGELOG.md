@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.2.0 - 2026-07-06
+
+### Data component chrome and filtering (TmDataTable / TmMultiViewList)
+
+- Added `ShowToolbar` parameter to `TmDataTable` and `TmMultiViewList` to explicitly suppress the built-in toolbar.
+- Added `ShowViewManager` parameter to `TmDataTable` and `TmMultiViewList` to control rendering of the saved-views picker independently.
+- Added `SearchText` / `SearchTextChanged` two-way binding so the surrounding page can own the search state.
+- Added `ToolbarMode` (`DataToolbarMode.Full`, `SearchOnly`, `ActionsOnly`, `ContentOnly`) as a higher-level API for common toolbar presets.
+  - `Full` keeps the existing behavior (respects individual `Show*` flags).
+  - `SearchOnly` renders only the global search input.
+  - `ActionsOnly` renders only chrome actions (column picker / view switcher / view manager).
+  - `ContentOnly` hides all toolbar chrome and the external filter builder, leaving a clean data surface for page-owned filtering.
+- `ToolbarMode=ContentOnly` and `ShowExternalFilterBuilder=false` prevent duplicate filtering UI when the owning page already provides filters or saved views.
+- Empty toolbars are no longer rendered when no control would be visible.
+
+### Migration notes
+
+- Existing code continues to compile and run unchanged; all new parameters have backward-compatible defaults.
+- If your page already has its own filter toolbar, switch the data component to `ToolbarMode="DataToolbarMode.ContentOnly"` and bind `Items` to your pre-filtered collection.
+- If you want saved views without the inline filter builder, keep `ToolbarMode="DataToolbarMode.Full"` and set `ShowExternalFilterBuilder="false"`.
+- See `docs/data-component-chrome-migration.md` for a full migration guide and PromptHelper-specific replacement instructions.
+
 ## 2.1.0 - 2026-07-04
 
 - Added the UI role vocabulary model for wireframe authoring, including built-in role synonyms and app-scoped role resolution.

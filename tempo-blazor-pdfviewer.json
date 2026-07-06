@@ -194,6 +194,12 @@
           "description": "Whether to show a search input. Default is false."
         },
         {
+          "name": "Url",
+          "type": "string?",
+          "isRequired": false,
+          "description": "URL of the PDF document to display."
+        },
+        {
           "name": "ViewMode",
           "type": "PdfViewMode",
           "isRequired": false,

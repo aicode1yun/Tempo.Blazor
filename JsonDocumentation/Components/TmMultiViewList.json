@@ -2,7 +2,8 @@
   "itemName": "TmMultiViewList",
   "kind": "Component",
   "category": "Data Display",
-  "description": "Generic multi-view list supporting Table, Card, and List display modes with a built-in view switcher, search, client-side and server-side grouping with per-group mini-pager, pagination, virtualization, external filter builder, and optional view persistence via IDataTableViewProvider.",
+  "description": "Generic multi-view list supporting Table, Card, and List display modes with a built-in view switcher, search, client-side and server-side grouping with per-group mini-pager, pagination, virtualization, external filter builder, and optional view persistence via IDataTableViewProvider.\\n\\nComposition rule: either the owning page filters the data and the list renders a content-only surface (set ToolbarMode=ContentOnly and supply pre-filtered Items/DataProvider), or the list owns filtering via its own toolbar and external filter builder. Avoid enabling both filter surfaces at the same time unless they are explicitly integrated.",
+  "compositionGuidance": "Either the page filters the data, or the list filters the data. When the page owns the filters, use ToolbarMode=ContentOnly and do not set ViewProvider/ExternalFilterDefinitions. When the list owns the filters, use the default Full toolbar mode and optionally a ViewProvider.",
   "requiredImports": [
     "@using Tempo.Blazor.Components.DataDisplay"
   ],
@@ -25,6 +26,27 @@
       "isRequired": false,
       "default": "true",
       "description": "When true, shows pagination bar when more than one page. Default: true."
+    },
+    {
+      "name": "ShowToolbar",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When true, renders the toolbar container with search, view switcher, group picker, and view manager. Default: true."
+    },
+    {
+      "name": "ToolbarMode",
+      "type": "DataToolbarMode",
+      "isRequired": false,
+      "default": "DataToolbarMode.Full",
+      "description": "High-level preset that controls which toolbar chrome elements are rendered. Full respects the individual Show* booleans; other modes override them."
+    },
+    {
+      "name": "ShowViewManager",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When true and a ViewProvider is set, renders the TmViewManager. Default: true."
     },
     {
       "name": "DefaultPageSize",
@@ -180,6 +202,18 @@
       "description": "When true, shows the global search input."
     },
     {
+      "name": "SearchText",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Controlled search text. When set, the component uses this value instead of its internal state."
+    },
+    {
+      "name": "SearchTextChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fires when the search text changes."
+    },
+    {
       "name": "EmptyTitle",
       "type": "string?",
       "isRequired": false,
@@ -231,28 +265,28 @@
       "name": "ViewProvider",
       "type": "IDataTableViewProvider?",
       "isRequired": false,
-      "description": "Optional view persistence provider. When set, shows TmViewManager."
+      "description": "Optional view persistence provider. When set, enables saved views and (by default) the external filter builder. Use ShowExternalFilterBuilder=false to keep saved views without the inline filter builder, or ToolbarMode=ContentOnly when the page owns the filtering UI."
     },
     {
       "name": "ViewFilterDefinitions",
       "type": "List<FilterDefinition>",
       "isRequired": false,
       "default": "[]",
-      "description": "Filter definitions for the view manager filter builder."
+      "description": "Filter definitions used by the view manager filter builder when creating or editing saved views."
     },
     {
       "name": "ShowExternalFilterBuilder",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "When true, shows FilterBuilder for external filtering."
+      "description": "When true and a ViewProvider is set, shows the inline FilterBuilder for external filtering. Set to false when the surrounding page owns the filtering UI to avoid duplicate filters."
     },
     {
       "name": "ExternalFilterDefinitions",
       "type": "List<FilterDefinition>",
       "isRequired": false,
       "default": "[]",
-      "description": "Filter definitions for the external filter builder."
+      "description": "Filter definitions for the inline external filter builder (shown above the list when ViewProvider is set). When the page owns filtering, leave this empty and set ShowExternalFilterBuilder to false or use ToolbarMode=ContentOnly."
     },
     {
       "name": "DisplayResolver",
@@ -276,6 +310,13 @@
       "type": "string?",
       "isRequired": false,
       "description": "Current tenant ID for tenant view scoping."
+    },
+    {
+      "name": "ViewContext",
+      "type": "string",
+      "isRequired": true,
+      "editorRequired": true,
+      "description": "Unique identifier for this list instance. Used to scope saved views to specific lists (e.g. \"projects\", \"team-members\")."
     }
   ],
   "cssClasses": [
@@ -321,6 +362,14 @@
     {
       "title": "Multi-view list with custom templates and server-side data",
       "code": "<TmMultiViewList TItem=\"UserDto\"\n                 DataProvider=\"@userDataProvider\"\n                 ViewContext=\"users\"\n                 ViewProvider=\"@viewProvider\"\n                 ShowExternalFilterBuilder=\"true\">\n    <CardTemplate Context=\"user\">\n        <div class=\"custom-user-card\">\n            <img src=\"@user.AvatarUrl\" />\n            <span>@user.FullName</span>\n        </div>\n    </CardTemplate>\n</TmMultiViewList>"
+    },
+    {
+      "title": "Page-owned filters + content-only list",
+      "code": "@using Tempo.Blazor.Components.DataDisplay\n@using Tempo.Blazor.Components.DataTable\n\n@* The owning page provides its own filter UI; the list renders only the data surface. *@\n<TmMultiViewList TItem=\"ProjectDto\"\n                 Items=\"@_filteredProjects\"\n                 ViewContext=\"page-owned-projects\"\n                 TitleField=\"p => p.Name\"\n                 SubTitleField=\"p => p.Description\"\n                 StatusLabelField=\"p => p.Status\"\n                 StatusColorField=\"p => p.StatusColor\"\n                 ToolbarMode=\"DataToolbarMode.ContentOnly\"\n                 ViewMode=\"ListViewMode.Card\" />\n\n@code {\n    private IEnumerable<ProjectDto> _filteredProjects = default!;\n\n    // Apply filters from the page-level UI before passing data to the list.\n    private void ApplyPageFilters(string status)\n    {\n        _filteredProjects = _allProjects\n            .Where(p => string.IsNullOrEmpty(status) || p.Status == status);\n    }\n}"
+    },
+    {
+      "title": "Saved views without external filter builder",
+      "code": "@using Tempo.Blazor.Components.DataDisplay\n@using Tempo.Blazor.Interfaces\n@using Tempo.Blazor.Models\n\n@* Use the view manager for saved views, but keep the inline filter builder hidden. *@\n<TmMultiViewList TItem=\"UserDto\"\n                 DataProvider=\"@_dataProvider\"\n                 ViewContext=\"users-saved-views\"\n                 ViewProvider=\"@_viewProvider\"\n                 ViewFilterDefinitions=\"@_filterDefs\"\n                 ShowExternalFilterBuilder=\"false\"\n                 ShowSearch=\"false\"\n                 TitleField=\"u => u.FullName\"\n                 SubTitleField=\"u => u.Role\" />"
     },
     {
       "title": "Full-featured list with server-side DataProvider, ViewManager, filters, and DisplayResolver",

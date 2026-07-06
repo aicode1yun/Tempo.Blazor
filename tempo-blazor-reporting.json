@@ -191,19 +191,25 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Raised when users save a draft or publish a revision."
+          "description": "Additional CSS classes."
+        },
+        {
+          "name": "Definition",
+          "type": "ReportDefinition?",
+          "isRequired": false,
+          "description": "Report definition edited by the designer."
         },
         {
           "name": "DefinitionChanged",
           "type": "EventCallback<ReportDefinition>",
           "isRequired": false,
-          "description": "Report definition edited by the designer."
+          "description": "Raised when the edited definition changes."
         },
         {
           "name": "Saved",
           "type": "EventCallback<ReportDesignerSaveEventArgs>",
           "isRequired": false,
-          "description": "Raised when the edited definition changes."
+          "description": "Raised when users save a draft or publish a revision."
         }
       ],
       "relatedTypes": [
@@ -231,50 +237,56 @@
           "name": "AllowFolderManagement",
           "type": "bool",
           "isRequired": false,
-          "description": "Raised when the explorer view mode changes."
+          "description": "Whether folder creation and move controls are available."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Raised when a report should be moved."
+          "description": "Additional CSS classes."
         },
         {
           "name": "CreateFolderRequested",
           "type": "EventCallback<ReportExplorerCreateFolderRequest>",
           "isRequired": false,
-          "description": "Raised when a report should be opened."
+          "description": "Raised when a folder should be created."
         },
         {
           "name": "CurrentFolderPath",
           "type": "string",
           "isRequired": false,
           "default": "\"/\"",
-          "description": "Reports in the current scope."
+          "description": "Current folder path."
         },
         {
           "name": "CurrentFolderPathChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Current folder path."
+          "description": "Raised when the current folder path changes."
         },
         {
           "name": "ReportMoveRequested",
           "type": "EventCallback<ReportExplorerMoveReportRequest>",
           "isRequired": false,
-          "description": "Raised when a folder should be created."
+          "description": "Raised when a report should be moved."
         },
         {
           "name": "ReportOpened",
           "type": "EventCallback<ReportExplorerReportItem>",
           "isRequired": false,
-          "description": "Whether folder creation and move controls are available."
+          "description": "Raised when a report should be opened."
         },
         {
           "name": "Reports",
           "type": "IReadOnlyList<ReportExplorerReportItem>",
           "isRequired": false,
           "default": "[]",
+          "description": "Reports in the current scope."
+        },
+        {
+          "name": "RootFolder",
+          "type": "ReportExplorerFolder?",
+          "isRequired": false,
           "description": "Root folder for the folder tree."
         },
         {
@@ -282,26 +294,26 @@
           "type": "string",
           "isRequired": false,
           "default": "\"\"",
-          "description": "Raised when the current folder path changes."
+          "description": "Current search text."
         },
         {
           "name": "SearchTextChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Current search text."
+          "description": "Raised when search text changes."
         },
         {
           "name": "ViewMode",
           "type": "ReportExplorerViewMode",
           "isRequired": false,
           "default": "ReportExplorerViewMode.Grid",
-          "description": "Raised when search text changes."
+          "description": "Current explorer view mode."
         },
         {
           "name": "ViewModeChanged",
           "type": "EventCallback<ReportExplorerViewMode>",
           "isRequired": false,
-          "description": "Current explorer view mode."
+          "description": "Raised when the explorer view mode changes."
         }
       ],
       "relatedTypes": [
@@ -331,31 +343,38 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Disables parameter controls."
+          "description": "Additional CSS classes."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Fired when the user submits parameters."
+          "description": "Disables parameter controls."
         },
         {
           "name": "OnParameterChanged",
           "type": "EventCallback<ReportParameterChangedEventArgs>",
           "isRequired": false,
-          "description": "Current parameter values."
+          "description": "Fired when a parameter value changes."
         },
         {
           "name": "OnSubmit",
           "type": "EventCallback<ReportParameterSubmitEventArgs>",
           "isRequired": false,
-          "description": "Fired when a parameter value changes."
+          "description": "Fired when the user submits parameters."
+        },
+        {
+          "name": "Parameters",
+          "type": "IReadOnlyList<ReportViewerParameterMetadata>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Parameter metadata to render."
         },
         {
           "name": "Values",
           "type": "IReadOnlyDictionary<string, ReportParameterValue>?",
           "isRequired": false,
-          "description": "Parameter metadata to render."
+          "description": "Current parameter values."
         }
       ],
       "relatedTypes": [
@@ -386,85 +405,91 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Initial parameter values."
+          "description": "Whether the viewer renders immediately after metadata is loaded."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "User identifier passed to report sources."
+          "description": "Additional CSS classes."
         },
         {
           "name": "CsvExported",
           "type": "EventCallback<ReportViewerExportResult>",
           "isRequired": false,
-          "description": "Fired after a PDF export is produced."
+          "description": "Fired after a CSV export is produced."
         },
         {
           "name": "CultureName",
           "type": "string",
           "isRequired": false,
           "default": "\"en-US\"",
-          "description": "Viewer height CSS value."
+          "description": "Culture used for rendering."
         },
         {
           "name": "Height",
           "type": "string?",
           "isRequired": false,
           "default": "\"720px\"",
-          "description": "Whether users can toggle the parameter panel from the toolbar."
+          "description": "Viewer height CSS value."
         },
         {
           "name": "ParameterValues",
           "type": "IReadOnlyDictionary<string, ReportParameterValue>?",
           "isRequired": false,
-          "description": "Report source to render."
+          "description": "Initial parameter values."
         },
         {
           "name": "PdfExported",
           "type": "EventCallback<ReportViewerExportResult>",
           "isRequired": false,
-          "description": "Fired after a snapshot is rendered."
+          "description": "Fired after a PDF export is produced."
+        },
+        {
+          "name": "ReportSource",
+          "type": "IReportSource?",
+          "isRequired": false,
+          "description": "Report source to render."
         },
         {
           "name": "ShowParameterPanel",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether the viewer renders immediately after metadata is loaded."
+          "description": "Whether the parameter panel starts visible."
         },
         {
           "name": "ShowParameterPanelToggle",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether the parameter panel starts visible."
+          "description": "Whether users can toggle the parameter panel from the toolbar."
         },
         {
           "name": "SnapshotChanged",
           "type": "EventCallback<ReportSnapshot>",
           "isRequired": false,
-          "description": "Additional CSS classes."
+          "description": "Fired after a snapshot is rendered."
         },
         {
           "name": "TenantId",
           "type": "string",
           "isRequired": false,
           "default": "\"\"",
-          "description": "Culture used for rendering."
+          "description": "Tenant identifier passed to report sources."
         },
         {
           "name": "UserId",
           "type": "string",
           "isRequired": false,
           "default": "\"\"",
-          "description": "Tenant identifier passed to report sources."
+          "description": "User identifier passed to report sources."
         },
         {
           "name": "XlsxExported",
           "type": "EventCallback<ReportViewerExportResult>",
           "isRequired": false,
-          "description": "Fired after a CSV export is produced."
+          "description": "Fired after an XLSX export is produced."
         }
       ],
       "examples": [

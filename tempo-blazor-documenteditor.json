@@ -3210,6 +3210,12 @@
           "description": "Highlighted item index."
         },
         {
+          "name": "IsVisible",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the autocomplete menu is visible."
+        },
+        {
           "name": "Items",
           "type": "IReadOnlyList<DocumentAutocompleteItem>",
           "isRequired": false,
@@ -3275,6 +3281,13 @@
           "description": "Document id used by provider-backed image resolution."
         },
         {
+          "name": "DocumentId",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Document id used by provider-backed image resolution."
+        },
+        {
           "name": "ImageUrlResolver",
           "type": "IDocumentImageUrlResolver?",
           "isRequired": false,
@@ -3325,6 +3338,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Validation policy for provider-backed canvas image uploads."
+        },
+        {
+          "name": "Document",
+          "type": "DocumentEditorDocument?",
+          "isRequired": false,
+          "description": "The document accepted by the canvas engine host."
         },
         {
           "name": "ImageProvider",
@@ -3458,6 +3477,12 @@
       ],
       "parameters": [
         {
+          "name": "Cell",
+          "type": "TableCellContent?",
+          "isRequired": false,
+          "description": "Current cell content."
+        },
+        {
           "name": "CellChanged",
           "type": "EventCallback<TableCellContent>",
           "isRequired": false,
@@ -3488,6 +3513,12 @@
         {
           "name": "Html",
           "type": "string?",
+          "isRequired": false,
+          "description": "Whether the modal is open."
+        },
+        {
+          "name": "IsOpen",
+          "type": "bool",
           "isRequired": false,
           "description": "Whether the modal is open."
         },
@@ -3529,7 +3560,15 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.DocumentEditor"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "Cursors",
+          "type": "IReadOnlyList<DocumentCollaborationCursor>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Remote collaboration cursors."
+        }
+      ]
     },
     {
       "itemName": "TmDocumentCommandPalette",
@@ -3549,6 +3588,12 @@
           "type": "IReadOnlyDictionary<string, DocumentEditorCommandState>?",
           "isRequired": false,
           "description": "Raised when the command palette should close."
+        },
+        {
+          "name": "IsOpen",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the command palette is visible."
         },
         {
           "name": "OnClose",
@@ -3583,6 +3628,13 @@
           "isRequired": false,
           "default": "\"document-comment-cancel\"",
           "description": "Submit test id."
+        },
+        {
+          "name": "CanComment",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the current user may submit comments."
         },
         {
           "name": "InitialText",
@@ -3688,6 +3740,13 @@
           "isRequired": false,
           "default": "true",
           "description": "Current author identifier used for ownership checks."
+        },
+        {
+          "name": "Comments",
+          "type": "IReadOnlyList<DocumentComment>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Comment threads to display."
         },
         {
           "name": "ComposerOpen",
@@ -3860,6 +3919,12 @@
           "description": "Whether a comment operation is currently running."
         },
         {
+          "name": "Comment",
+          "type": "DocumentComment?",
+          "isRequired": false,
+          "description": "Comment thread to render."
+        },
+        {
           "name": "CurrentAuthorId",
           "type": "string?",
           "isRequired": false,
@@ -3945,6 +4010,12 @@
           "type": "IDocumentComparisonProvider?",
           "isRequired": false,
           "description": "Optional external format provider used for DOCX upload comparison sources."
+        },
+        {
+          "name": "CurrentDocument",
+          "type": "DocumentEditorDocument?",
+          "isRequired": false,
+          "description": "Current editor document snapshot."
         },
         {
           "name": "DocumentProvider",
@@ -4082,6 +4153,12 @@
           "description": "Optional title for the old side."
         },
         {
+          "name": "OldDocument",
+          "type": "DocumentEditorDocument?",
+          "isRequired": false,
+          "description": "Old document snapshot."
+        },
+        {
           "name": "OldTitle",
           "type": "string?",
           "isRequired": false,
@@ -4198,6 +4275,14 @@
           "description": "Whether debug tools (View JSON etc.) are shown in the toolbar. Intended for development only."
         },
         {
+          "name": "DocumentId",
+          "type": "string",
+          "isRequired": true,
+          "default": "\"\"",
+          "description": "Stable document id to load from the provider.",
+          "editorRequired": true
+        },
+        {
           "name": "FontProvider",
           "type": "IDocumentFontProvider?",
           "isRequired": false,
@@ -4257,7 +4342,8 @@
         {
           "name": "OfflineStore",
           "type": "IDocumentOfflineStore?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Optional offline draft store used when is enabled."
         },
         {
           "name": "OnDocumentCompared",
@@ -4322,7 +4408,7 @@
         {
           "name": "Provider",
           "type": "IDocumentEditorProvider?",
-          "isRequired": true,
+          "isRequired": false,
           "description": "Stable document id to load from the provider.",
           "editorRequired": true
         },
@@ -4336,8 +4422,7 @@
           "name": "RenderEngine",
           "type": "DocumentEditorRenderEngine",
           "isRequired": false,
-          "default": "DocumentEditorRenderEngine.CanvasEnginePreview",
-          "description": "Offline draft behavior for the editor. Defaults to disabled."
+          "default": "DocumentEditorRenderEngine.CanvasEnginePreview"
         },
         {
           "name": "RequireMajorVersionDescription",
@@ -4376,6 +4461,13 @@
           "name": "SigningFieldsChanged",
           "type": "EventCallback<IReadOnlyList<Tempo.Blazor.Abstractions.Models.SigningField>>",
           "isRequired": false,
+          "description": "Signer roles used to colour inline signing fields and to attribute placed fields (plan S2)."
+        },
+        {
+          "name": "SigningRoles",
+          "type": "IReadOnlyList<Tempo.Blazor.Abstractions.Models.SigningSubmitterRole>",
+          "isRequired": false,
+          "default": "[]",
           "description": "Signer roles used to colour inline signing fields and to attribute placed fields (plan S2)."
         },
         {
@@ -4449,6 +4541,12 @@
           "isRequired": false,
           "default": "\"polite\"",
           "description": "Message announced to assistive technologies."
+        },
+        {
+          "name": "Message",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Message announced to assistive technologies."
         }
       ]
     },
@@ -4477,6 +4575,12 @@
           "type": "bool",
           "isRequired": false,
           "description": "Optional save status message."
+        },
+        {
+          "name": "IsDirty",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the document has local unsaved changes."
         },
         {
           "name": "LastSavedAt",
@@ -4655,6 +4759,12 @@
           "description": "Raised when the image insert flow should open."
         },
         {
+          "name": "CommandRegistry",
+          "type": "DocumentEditorCommandRegistry?",
+          "isRequired": false,
+          "description": "Whether toolbar commands should be disabled for read-only mode."
+        },
+        {
           "name": "CurrentBlockStyle",
           "type": "string?",
           "isRequired": false,
@@ -4803,7 +4913,8 @@
         {
           "name": "IsSaving",
           "type": "bool",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Whether the editor is currently saving."
         },
         {
           "name": "ItalicState",
@@ -5053,6 +5164,12 @@
         },
         {
           "name": "OnInsertImageUpload",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when URL image insertion is requested from the split menu."
+        },
+        {
+          "name": "OnInsertImageUrl",
           "type": "EventCallback",
           "isRequired": false,
           "description": "Raised when URL image insertion is requested from the split menu."
@@ -5612,9 +5729,15 @@
           "description": "R.4.8 — raised when the query/options change, so a host (e.g. the core engine) can run its own search + highlight. Carries the current query."
         },
         {
+          "name": "OnReplaceAllRequested",
+          "type": "EventCallback<DocumentFindReplaceRequest>",
+          "isRequired": false
+        },
+        {
           "name": "OnSearchRequested",
           "type": "EventCallback<DocumentSearchQuery>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "R.4.8 — raised when the query/options change, so a host (e.g. the core engine) can run its own search + highlight. Carries the current query."
         }
       ]
     },
@@ -5660,6 +5783,12 @@
           "type": "EventCallback<bool>",
           "isRequired": false,
           "description": "Raised when alternative text changes."
+        },
+        {
+          "name": "Image",
+          "type": "ImageBlockContent?",
+          "isRequired": false,
+          "description": "Image content displayed by the inspector."
         },
         {
           "name": "LockAnchorChanged",
@@ -5722,6 +5851,13 @@
           "name": "CurrentHorizontalPosition",
           "type": "DocumentImageHorizontalPosition?",
           "isRequired": false,
+          "description": "Current text wrapping mode for the selected image."
+        },
+        {
+          "name": "CurrentWrapMode",
+          "type": "DocumentWrapMode",
+          "isRequired": false,
+          "default": "DocumentWrapMode.Inline",
           "description": "Current text wrapping mode for the selected image."
         },
         {
@@ -5855,6 +5991,12 @@
           "description": "Document id used by provider-backed image resolution."
         },
         {
+          "name": "Inline",
+          "type": "InlineContent?",
+          "isRequired": false,
+          "description": "Inline content to render."
+        },
+        {
           "name": "OnCommentSelected",
           "type": "EventCallback<string>",
           "isRequired": false,
@@ -5880,6 +6022,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Optional JSON with the current runtime debug state."
+        },
+        {
+          "name": "IsOpen",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the modal is open."
         },
         {
           "name": "Json",
@@ -5937,6 +6085,12 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Currently active heading block id reported by the WYSIWYG runtime."
+        },
+        {
+          "name": "Outline",
+          "type": "IReadOnlyList<DocumentOutlineItem>?",
+          "isRequired": false,
+          "description": "Document heading outline to display."
         }
       ]
     },
@@ -5956,6 +6110,12 @@
         {
           "name": "ActivePageIndex",
           "type": "int",
+          "isRequired": false,
+          "description": "Runtime page metrics reported by the WYSIWYG editor."
+        },
+        {
+          "name": "Metrics",
+          "type": "WysiwygPageMetrics?",
           "isRequired": false,
           "description": "Runtime page metrics reported by the WYSIWYG editor."
         },
@@ -5984,6 +6144,13 @@
           "name": "OnClose",
           "type": "EventCallback",
           "isRequired": false,
+          "description": "Warnings to display after a paste operation."
+        },
+        {
+          "name": "Warnings",
+          "type": "IReadOnlyList<DocumentClipboardWarning>",
+          "isRequired": false,
+          "default": "[]",
           "description": "Warnings to display after a paste operation."
         }
       ]
@@ -6018,6 +6185,12 @@
           "type": "EventCallback",
           "isRequired": false,
           "description": "Raised when the comments panel should open."
+        },
+        {
+          "name": "PendingRevisionCount",
+          "type": "int",
+          "isRequired": false,
+          "description": "Number of pending tracked changes."
         }
       ]
     },
@@ -6083,6 +6256,13 @@
           "description": "Currently selected revision id."
         },
         {
+          "name": "Revisions",
+          "type": "IReadOnlyList<DocumentRevision>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Document revisions to display."
+        },
+        {
           "name": "SelectedRevisionId",
           "type": "string?",
           "isRequired": false,
@@ -6133,6 +6313,13 @@
           "type": "int",
           "isRequired": false,
           "description": "Whether to show the right-edge reopen button when closed."
+        },
+        {
+          "name": "IsOpen",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the side panel shell is open."
         },
         {
           "name": "OnClose",
@@ -6292,6 +6479,13 @@
           "type": "string?",
           "isRequired": false,
           "description": "Whether the current user can accept or reject suggestions."
+        },
+        {
+          "name": "Suggestions",
+          "type": "IReadOnlyList<DocumentSuggestion>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Suggestions to display."
         }
       ]
     },
@@ -6313,6 +6507,12 @@
           "type": "EventCallback",
           "isRequired": false,
           "description": "Raised when the user chooses a table size."
+        },
+        {
+          "name": "OnInsert",
+          "type": "EventCallback<(int Rows, int Columns)>",
+          "isRequired": false,
+          "description": "Raised when the user chooses a table size."
         }
       ]
     },
@@ -6329,6 +6529,12 @@
         "@using Tempo.Blazor.Components.DocumentEditor"
       ],
       "parameters": [
+        {
+          "name": "Layout",
+          "type": "TableLayoutContent?",
+          "isRequired": false,
+          "description": "Current table layout."
+        },
         {
           "name": "LayoutChanged",
           "type": "EventCallback<TableLayoutContent>",
@@ -6394,6 +6600,12 @@
           "description": "Raised when a row should be inserted before the current row."
         },
         {
+          "name": "InsertRowBefore",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when a row should be inserted before the current row."
+        },
+        {
           "name": "MergeCells",
           "type": "EventCallback",
           "isRequired": false,
@@ -6437,6 +6649,12 @@
           "type": "bool",
           "isRequired": false,
           "description": "Currently highlighted item index."
+        },
+        {
+          "name": "IsVisible",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the token menu is visible."
         },
         {
           "name": "OnHighlightedIndexChanged",
@@ -6488,6 +6706,12 @@
         },
         {
           "name": "IsOpen",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the toolbar currently has overflowed commands."
+        },
+        {
+          "name": "IsOverflowing",
           "type": "bool",
           "isRequired": false,
           "description": "Whether the toolbar currently has overflowed commands."
@@ -6570,6 +6794,12 @@
         "@using Tempo.Blazor.Components.DocumentEditor"
       ],
       "parameters": [
+        {
+          "name": "IsBusy",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether create action is currently running."
+        },
         {
           "name": "OnCancel",
           "type": "EventCallback",
@@ -6656,6 +6886,13 @@
           "type": "string?",
           "isRequired": false,
           "description": "Whether create actions should be disabled."
+        },
+        {
+          "name": "Versions",
+          "type": "IReadOnlyList<DocumentVersion>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Versions to render."
         }
       ]
     },

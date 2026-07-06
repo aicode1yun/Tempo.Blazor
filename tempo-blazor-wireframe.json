@@ -2381,6 +2381,26 @@
       ],
       "parameters": [
         {
+          "name": "MenuType",
+          "type": "WireframeContextMenuType",
+          "isRequired": true
+        },
+        {
+          "name": "OnFitToView",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
+          "name": "OnSetConnectorRouting",
+          "type": "EventCallback<string>",
+          "isRequired": false
+        },
+        {
+          "name": "SnapToObjects",
+          "type": "bool",
+          "isRequired": false
+        },
+        {
           "name": "CanUndo",
           "type": "bool",
           "isRequired": false
@@ -2420,7 +2440,13 @@
           "name": "ComponentScope",
           "type": "WireframeComponentScope?",
           "isRequired": false,
-          "description": "Additional CSS class applied to the canvas wrapper."
+          "description": "Optional application scope used to resolve custom wireframe components."
+        },
+        {
+          "name": "Document",
+          "type": "WireframeDocument?",
+          "isRequired": false,
+          "description": "Document to display and edit."
         },
         {
           "name": "DocumentChanged",
@@ -2440,85 +2466,85 @@
           "name": "OnCanvasContextMenuRequested",
           "type": "EventCallback<(double SvgX, double SvgY, double ScreenX, double ScreenY)>",
           "isRequired": false,
-          "description": "Raised when user opens context menu on a connector (right-click)."
+          "description": "Raised when user opens context menu on empty canvas (right-click)."
         },
         {
           "name": "OnCanvasMouseMoved",
           "type": "EventCallback<(double SvgX, double SvgY)>",
           "isRequired": false,
-          "description": "Raised when the viewBox changes (pan/zoom)."
+          "description": "Raised when mouse moves over the canvas (SVG coordinates)."
         },
         {
           "name": "OnCloseContextMenu",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when user opens context menu on empty canvas (right-click)."
+          "description": "Raised when context menu should close (click outside / Escape)."
         },
         {
           "name": "OnConnectorContextMenuRequested",
           "type": "EventCallback<(string Id, double ScreenX, double ScreenY)>",
           "isRequired": false,
-          "description": "Raised when user opens context menu on an element (right-click)."
+          "description": "Raised when user opens context menu on a connector (right-click)."
         },
         {
           "name": "OnConnectorCreated",
           "type": "EventCallback<(string FromId, string ToId)>",
           "isRequired": false,
-          "description": "Raised when the user changes the connector selection."
+          "description": "Raised when the user creates a connector by dragging from one element to another."
         },
         {
           "name": "OnConnectorDragged",
           "type": "EventCallback<(string ConnectorId, double Dx, double Dy)>",
           "isRequired": false,
-          "description": "Raised when user double-clicks a connector path to add a new waypoint."
+          "description": "Raised when user drags a selected connector to move all its waypoints."
         },
         {
           "name": "OnConnectorSelectionChanged",
           "type": "EventCallback<string[]>",
           "isRequired": false,
-          "description": "Raised when the user changes the selection (single or multi)."
+          "description": "Raised when the user changes the connector selection."
         },
         {
           "name": "OnConnectorWaypointAdded",
           "type": "EventCallback<(string ConnectorId, double X, double Y)>",
           "isRequired": false,
-          "description": "Raised when user drags a connector waypoint to a new position."
+          "description": "Raised when user double-clicks a connector path to add a new waypoint."
         },
         {
           "name": "OnConnectorWaypointDragged",
           "type": "EventCallback<(string ConnectorId, int WaypointIndex, double X, double Y)>",
           "isRequired": false,
-          "description": "Raised when user requests deletion of selected connectors."
+          "description": "Raised when user drags a connector waypoint to a new position."
         },
         {
           "name": "OnCopyStyleRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user switches tool mode via H/V keyboard shortcut."
+          "description": "Raised when user requests copy style (Ctrl+Shift+C)."
         },
         {
           "name": "OnDeleteConnectors",
           "type": "EventCallback<string[]>",
           "isRequired": false,
-          "description": "Raised when the user creates a connector by dragging from one element to another."
+          "description": "Raised when user requests deletion of selected connectors."
         },
         {
           "name": "OnElementContextMenuRequested",
           "type": "EventCallback<(string Id, double ScreenX, double ScreenY)>",
           "isRequired": false,
-          "description": "Raised when user requests paste size (Ctrl+Shift+S)."
+          "description": "Raised when user opens context menu on an element (right-click)."
         },
         {
           "name": "OnPasteSizeRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when user requests paste style (Ctrl+Shift+V)."
+          "description": "Raised when user requests paste size (Ctrl+Shift+S)."
         },
         {
           "name": "OnPasteStyleRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when user requests copy style (Ctrl+Shift+C)."
+          "description": "Raised when user requests paste style (Ctrl+Shift+V)."
         },
         {
           "name": "OnRedo",
@@ -2548,7 +2574,7 @@
           "name": "OnViewBoxChangedEvent",
           "type": "EventCallback<(double X, double Y, double W, double H)>",
           "isRequired": false,
-          "description": "Raised when context menu should close (click outside / Escape)."
+          "description": "Raised when the viewBox changes (pan/zoom)."
         },
         {
           "name": "ReadOnly",
@@ -2569,13 +2595,7 @@
           "name": "SnapToObjects",
           "type": "bool",
           "isRequired": false,
-          "description": "Snap-to-grid cell size in SVG units (pixels). 0 = disabled."
-        },
-        {
-          "name": "Document",
-          "type": "WireframeDocument?",
-          "isRequired": false,
-          "description": "Document to display and edit."
+          "description": "When true, dragged elements snap to edges/centers of other elements."
         }
       ],
       "publicMethods": [
@@ -2634,7 +2654,13 @@
           "name": "ComponentScope",
           "type": "WireframeComponentScope?",
           "isRequired": false,
-          "description": "Show rulers around the canvas."
+          "description": "Optional application scope used to resolve custom wireframe components."
+        },
+        {
+          "name": "Document",
+          "type": "WireframeDocument?",
+          "isRequired": false,
+          "description": "Document being edited. Bind with @bind-Document. When null an empty document is created automatically."
         },
         {
           "name": "DocumentChanged",
@@ -2678,7 +2704,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Additional CSS class on the editor root."
+          "description": "Always show page tabs even when there is only one page."
         },
         {
           "name": "ShowPropertiesPanel",
@@ -2692,7 +2718,7 @@
           "name": "ShowRulers",
           "type": "bool",
           "isRequired": false,
-          "description": "Always show page tabs even when there is only one page."
+          "description": "Show rulers around the canvas."
         },
         {
           "name": "ShowToolbar",
@@ -2709,12 +2735,6 @@
           "default": "true",
           "description": "Show the component toolbox panel on the left.",
           "defaultValue": "true"
-        },
-        {
-          "name": "Document",
-          "type": "WireframeDocument?",
-          "isRequired": false,
-          "description": "Document being edited. Bind with @bind-Document. When null an empty document is created automatically."
         }
       ],
       "keyboardShortcuts": [
@@ -2801,7 +2821,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Wireframe"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "DefaultFileName",
+          "type": "string?",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmWireframeLayersPanel",
@@ -2815,7 +2841,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Wireframe"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "DocumentChanged",
+          "type": "EventCallback<WireframeDocument>",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmWireframeMinimap",
@@ -2835,6 +2867,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Additional CSS class applied to the minimap wrapper."
+        },
+        {
+          "name": "Document",
+          "type": "WireframeDocument?",
+          "isRequired": false,
+          "description": "Document whose elements are rendered in the minimap."
         },
         {
           "name": "NavigateRequested",
@@ -2863,12 +2901,6 @@
           "default": "200",
           "description": "Width of the minimap in pixels.",
           "defaultValue": "200"
-        },
-        {
-          "name": "Document",
-          "type": "WireframeDocument?",
-          "isRequired": false,
-          "description": "Document whose elements are rendered in the minimap."
         }
       ],
       "relatedTypes": [
@@ -2916,7 +2948,13 @@
           "name": "ComponentScope",
           "type": "WireframeComponentScope?",
           "isRequired": false,
-          "description": "Additional CSS class on the panel wrapper."
+          "description": "Optional application scope used to resolve custom wireframe components."
+        },
+        {
+          "name": "Document",
+          "type": "WireframeDocument?",
+          "isRequired": false,
+          "description": "Document being edited."
         },
         {
           "name": "DocumentChanged",
@@ -2928,32 +2966,32 @@
           "name": "OnCopyStyle",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Currently selected connector ids."
+          "description": "Raised when the user requests copy style from the selected element."
         },
         {
           "name": "OnPasteSize",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user requests paste style to the selected elements."
+          "description": "Raised when the user requests paste size to the selected elements."
         },
         {
           "name": "OnPasteStyle",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user requests copy style from the selected element."
+          "description": "Raised when the user requests paste style to the selected elements."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Raised when the user requests paste size to the selected elements."
+          "description": "Prevent all editing interactions."
         },
         {
           "name": "SelectedConnectorIds",
           "type": "string[]",
           "isRequired": false,
           "default": "[]",
-          "description": "Currently selected element ids."
+          "description": "Currently selected connector ids."
         },
         {
           "name": "SelectedIds",
@@ -2962,12 +3000,6 @@
           "default": "[]",
           "description": "IDs of the currently selected elements. Empty = no selection shown.",
           "defaultValue": "[]"
-        },
-        {
-          "name": "Document",
-          "type": "WireframeDocument?",
-          "isRequired": false,
-          "description": "Document being edited."
         },
         {
           "name": "CommandStack",
@@ -3015,6 +3047,13 @@
           "type": "double?",
           "isRequired": false,
           "description": "Current zoom scale."
+        },
+        {
+          "name": "Orientation",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"Horizontal\"",
+          "description": "\"Horizontal\" or \"Vertical\"."
         },
         {
           "name": "Scale",
@@ -3072,22 +3111,22 @@
       ],
       "parameters": [
         {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the toolbox wrapper."
+        },
+        {
           "name": "ComponentScope",
           "type": "WireframeComponentScope?",
           "isRequired": false,
-          "description": "Raised when the user activates an item via keyboard (Enter/Space). Carries the component type string so the parent can add it at a default position."
+          "description": "Optional application scope used to resolve custom wireframe components."
         },
         {
           "name": "OnComponentActivated",
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Raised when the user activates a component via keyboard (Enter/Space). Payload is the component type string (e.g. 'TmButton')."
-        },
-        {
-          "name": "Class",
-          "type": "string?",
-          "isRequired": false,
-          "description": "Additional CSS class applied to the toolbox wrapper."
         }
       ],
       "cssClasses": [

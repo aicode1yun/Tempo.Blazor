@@ -11,83 +11,86 @@
 <div class="tm-multi-view-list @Class" @attributes="AdditionalAttributes">
 
     @* ── Toolbar ─────────────────────────────────────────────── *@
-    <div class="tm-mvl-toolbar">
-        @* Left: Search *@
-        @if (ShowSearch)
-        {
-            <div class="tm-mvl-toolbar-left">
-                <TmSearchInput Value="@_searchText"
-                               ValueChanged="OnSearchChangedAsync"
-                               Placeholder="@Loc["TmDataTable_SearchPlaceholder"]" />
-            </div>
-        }
+    @if (ShowToolbar && HasVisibleToolbarControls())
+    {
+        <div class="tm-mvl-toolbar">
+            @* Left: Search *@
+            @if (ShouldRenderSearch())
+            {
+                <div class="tm-mvl-toolbar-left">
+                    <TmSearchInput Value="@_searchText"
+                                   ValueChanged="OnSearchChangedAsync"
+                                   Placeholder="@Loc["TmDataTable_SearchPlaceholder"]" />
+                </div>
+            }
 
-        @* Right: Group picker, View switcher, View manager *@
-        <div class="tm-mvl-toolbar-right">
-            @if (GroupableFields is not null && GroupableFields.Count > 0)
-            {
-                <div class="tm-mvl-group-picker">
-                    <button type="button" class="tm-mvl-group-btn" @onclick="ToggleGroupPicker">
-                        @Loc["TmMvl_GroupBy"]
-                    </button>
-                    @if (_groupPickerOpen)
-                    {
-                        <div class="tm-mvl-group-dropdown">
-                            @foreach (var field in GroupableFields)
-                            {
-                                <label class="tm-mvl-group-option">
-                                    <input type="checkbox"
-                                           checked="@_activeGroupFields.Contains(field.FieldName)"
-                                           @onchange="e => ToggleGroupField(field.FieldName, (bool)e.Value!)" />
-                                    @field.Label
-                                </label>
-                            }
-                        </div>
-                    }
-                </div>
-            }
-            @if (ShowViewSwitcher)
-            {
-                <div class="tm-mvl-switcher">
-                    <button type="button"
-                            class="tm-mvl-switch-table @(_viewMode == ListViewMode.Table ? "tm-mvl-switch--active" : "")"
-                            aria-label="@Loc["TmMvl_TableView"]"
-                            @onclick="() => SwitchView(ListViewMode.Table)">
-                        <span>&#9783;</span>
-                    </button>
-                    <button type="button"
-                            class="tm-mvl-switch-card @(_viewMode == ListViewMode.Card ? "tm-mvl-switch--active" : "")"
-                            aria-label="@Loc["TmMvl_CardView"]"
-                            @onclick="() => SwitchView(ListViewMode.Card)">
-                        <span>&#9645;</span>
-                    </button>
-                    <button type="button"
-                            class="tm-mvl-switch-list @(_viewMode == ListViewMode.List ? "tm-mvl-switch--active" : "")"
-                            aria-label="@Loc["TmMvl_ListView"]"
-                            @onclick="() => SwitchView(ListViewMode.List)">
-                        <span>&#9776;</span>
-                    </button>
-                </div>
-            }
-            @if (ViewProvider is not null)
-            {
-                <TmViewManager Provider="ViewProvider"
-                               ViewContext="@ViewContext"
-                               OnViewApplied="ApplyViewAsync"
-                               GetCurrentView="GetCurrentView"
-                               GetCurrentFilters="() => _externalFilters"
-                               AvailableColumns="GetAvailableColumns()"
-                               FilterDefinitions="ViewFilterDefinitions"
-                               DisplayResolver="DisplayResolver"
-                               CanCreateTenantViews="ViewCanCreateTenantViews"
-                               CurrentUserId="CurrentUserId"
-                               CurrentTenantId="CurrentTenantId" />
-            }
+            @* Right: Group picker, View switcher, View manager *@
+            <div class="tm-mvl-toolbar-right">
+                @if (ShouldRenderGroupPicker())
+                {
+                    <div class="tm-mvl-group-picker">
+                        <button type="button" class="tm-mvl-group-btn" @onclick="ToggleGroupPicker">
+                            @Loc["TmMvl_GroupBy"]
+                        </button>
+                        @if (_groupPickerOpen)
+                        {
+                            <div class="tm-mvl-group-dropdown">
+                                @foreach (var field in GroupableFields)
+                                {
+                                    <label class="tm-mvl-group-option">
+                                        <input type="checkbox"
+                                               checked="@_activeGroupFields.Contains(field.FieldName)"
+                                               @onchange="e => ToggleGroupField(field.FieldName, (bool)e.Value!)" />
+                                        @field.Label
+                                    </label>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                @if (ShouldRenderViewSwitcher())
+                {
+                    <div class="tm-mvl-switcher">
+                        <button type="button"
+                                class="tm-mvl-switch-table @(_viewMode == ListViewMode.Table ? "tm-mvl-switch--active" : "")"
+                                aria-label="@Loc["TmMvl_TableView"]"
+                                @onclick="() => SwitchView(ListViewMode.Table)">
+                            <span>&#9783;</span>
+                        </button>
+                        <button type="button"
+                                class="tm-mvl-switch-card @(_viewMode == ListViewMode.Card ? "tm-mvl-switch--active" : "")"
+                                aria-label="@Loc["TmMvl_CardView"]"
+                                @onclick="() => SwitchView(ListViewMode.Card)">
+                            <span>&#9645;</span>
+                        </button>
+                        <button type="button"
+                                class="tm-mvl-switch-list @(_viewMode == ListViewMode.List ? "tm-mvl-switch--active" : "")"
+                                aria-label="@Loc["TmMvl_ListView"]"
+                                @onclick="() => SwitchView(ListViewMode.List)">
+                            <span>&#9776;</span>
+                        </button>
+                    </div>
+                }
+                @if (ShouldRenderViewManager())
+                {
+                    <TmViewManager Provider="ViewProvider"
+                                   ViewContext="@ViewContext"
+                                   OnViewApplied="ApplyViewAsync"
+                                   GetCurrentView="GetCurrentView"
+                                   GetCurrentFilters="() => _externalFilters"
+                                   AvailableColumns="GetAvailableColumns()"
+                                   FilterDefinitions="ViewFilterDefinitions"
+                                   DisplayResolver="DisplayResolver"
+                                   CanCreateTenantViews="ViewCanCreateTenantViews"
+                                   CurrentUserId="CurrentUserId"
+                                   CurrentTenantId="CurrentTenantId" />
+                }
+            </div>
         </div>
-    </div>
+    }
 
     @* ── External Filter Builder ────────────────────────────── *@
-    @if (ShowExternalFilterBuilder && ViewProvider is not null && ExternalFilterDefinitions?.Any() == true)
+    @if (ShouldRenderExternalFilterBuilder())
     {
         <div class="tm-mvl-external-filters" @key="_activeViewId">
             <TmFilterBuilder FilterDefinitions="ExternalFilterDefinitions"
@@ -317,6 +320,37 @@
     /// <summary>When true, shows the global search input.</summary>
     [Parameter] public bool ShowSearch { get; set; } = true;
 
+    /// <summary>Controlled search text. When set, the component uses this value instead of its internal state.</summary>
+    [Parameter] public string? SearchText { get; set; }
+
+    /// <summary>Fires when the search text changes.</summary>
+    [Parameter] public EventCallback<string> SearchTextChanged { get; set; }
+
+    /// <summary>
+    /// When true, renders the toolbar container with search, view switcher, group picker, and view manager. Default: true.
+    /// The toolbar is not rendered when no visible control would be shown (see <see cref="ToolbarMode"/>).
+    /// For a page-owned filter surface, set <see cref="ToolbarMode"/> to <see cref="DataToolbarMode.ContentOnly"/>
+    /// and supply filtered data via <see cref="Items"/> or <see cref="DataProvider"/>.
+    /// </summary>
+    [Parameter] public bool ShowToolbar { get; set; } = true;
+
+    /// <summary>
+    /// High-level preset that controls which toolbar chrome elements are rendered.
+    /// <list type="bullet">
+    ///   <item><see cref="DataToolbarMode.Full"/> — respects the individual <c>Show*</c> booleans.</item>
+    ///   <item><see cref="DataToolbarMode.SearchOnly"/> — renders only the global search input.</item>
+    ///   <item><see cref="DataToolbarMode.ActionsOnly"/> — renders only the view switcher, group picker, and view manager.</item>
+    ///   <item><see cref="DataToolbarMode.ContentOnly"/> — hides all toolbar chrome and the external filter builder; use when the owning page provides its own filters.</item>
+    /// </list>
+    /// Default is <see cref="DataToolbarMode.Full"/>. Modes other than Full override the <c>Show*</c> booleans for the elements they affect.
+    /// </summary>
+    [Parameter] public DataToolbarMode ToolbarMode { get; set; } = DataToolbarMode.Full;
+
+    /// <summary>
+    /// When true and a <see cref="ViewProvider"/> is set, renders the TmViewManager. Default: true.
+    /// </summary>
+    [Parameter] public bool ShowViewManager { get; set; } = true;
+
     /// <summary>Title for the empty state when Items is empty.</summary>
     [Parameter] public string? EmptyTitle { get; set; }
 
@@ -363,16 +397,27 @@
     /// </summary>
     [Parameter, EditorRequired] public string ViewContext { get; set; } = default!;
 
-    /// <summary>Optional view persistence provider. When set, shows TmViewManager.</summary>
+    /// <summary>
+    /// Optional view persistence provider. When set, enables saved views and (by default) the external filter builder.
+    /// Use <see cref="ShowExternalFilterBuilder"/> = false to keep saved views without rendering the inline filter builder,
+    /// or <see cref="ToolbarMode"/> = <see cref="DataToolbarMode.ContentOnly"/> when the page owns the filtering UI.
+    /// </summary>
     [Parameter] public IDataTableViewProvider? ViewProvider { get; set; }
 
-    /// <summary>Filter definitions for the view manager filter builder.</summary>
+    /// <summary>Filter definitions used by the view manager filter builder when creating or editing saved views.</summary>
     [Parameter] public List<FilterDefinition> ViewFilterDefinitions { get; set; } = [];
 
-    /// <summary>When true, shows FilterBuilder for external filtering.</summary>
+    /// <summary>
+    /// When true and a <see cref="ViewProvider"/> is set, shows the inline FilterBuilder for external filtering. Default: true.
+    /// Set to false when the surrounding page owns the filtering UI to avoid duplicate filters.
+    /// </summary>
     [Parameter] public bool ShowExternalFilterBuilder { get; set; } = true;
 
-    /// <summary>Filter definitions for the external filter builder.</summary>
+    /// <summary>
+    /// Filter definitions for the inline external filter builder (shown above the list when <see cref="ViewProvider"/> is set).
+    /// When the page owns filtering, leave this empty and set <see cref="ShowExternalFilterBuilder"/> to false
+    /// or use <see cref="ToolbarMode"/> = <see cref="DataToolbarMode.ContentOnly"/>.
+    /// </summary>
     [Parameter] public List<FilterDefinition> ExternalFilterDefinitions { get; set; } = [];
 
     /// <summary>
@@ -408,6 +453,7 @@
     // ── State ─────────────────────────────────────────────────────
     private ListViewMode _viewMode = ListViewMode.Table;
     private string _searchText = string.Empty;
+    private string? _lastSearchTextParam;
     private HashSet<string> _selectedIds = [];
     private List<ActiveFilter> _externalFilters = [];
     private string? _activeViewId;
@@ -668,6 +714,8 @@
         if (_dataLoaded) return;
 
         _pageSize = DefaultPageSize;
+        _searchText = SearchText ?? string.Empty;
+        _lastSearchTextParam = SearchText;
 
         if (DataProvider is not null)
             await LoadFromProviderAsync();
@@ -677,7 +725,7 @@
 
     private ListViewMode _lastViewModeParam = ListViewMode.Table;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         // Only sync _viewMode from the parameter when the parameter actually changes.
         // Without this guard, every StateHasChanged() call (e.g. checkbox toggle) would
@@ -687,6 +735,24 @@
             _viewMode = ViewMode;
             _lastViewModeParam = ViewMode;
         }
+
+        // Sync externally supplied SearchText into internal state.
+        // When SearchText is null the component is uncontrolled; internal state is preserved.
+        if (SearchText != _lastSearchTextParam && SearchText is not null)
+        {
+            _lastSearchTextParam = SearchText;
+            _searchText = SearchText;
+            _currentPage = 1;
+            _groupPageRequests.Clear();
+            if (DataProvider is not null)
+                await LoadFromProviderAsync();
+            else
+                RefreshGroupedData();
+        }
+
+        // Track transition from controlled back to uncontrolled without overwriting internal state.
+        if (SearchText is null && _lastSearchTextParam is not null)
+            _lastSearchTextParam = null;
 
         // Sync externally supplied SelectedIds into internal state
         if (SelectedIds is not null)
@@ -779,11 +845,18 @@
     {
         _searchText = value ?? string.Empty;
         _groupPageRequests.Clear();
+
+        // In controlled mode, advance the last-seen parameter so the upcoming
+        // parent rerender from @bind-SearchText does not trigger a duplicate reload.
+        if (SearchText is not null)
+            _lastSearchTextParam = _searchText;
+
         if (DataProvider is not null)
         {
             _currentPage = 1;
             await LoadFromProviderAsync();
         }
+        await SearchTextChanged.InvokeAsync(_searchText);
     }
 
     private async Task OnExternalFiltersChanged(IEnumerable<ActiveFilter> filters)
@@ -1232,4 +1305,48 @@
             }
         </li>
     };
+
+    private bool IsFullToolbarMode => ToolbarMode == DataToolbarMode.Full;
+    private bool IsSearchToolbarMode => ToolbarMode == DataToolbarMode.SearchOnly;
+    private bool IsActionsToolbarMode => ToolbarMode == DataToolbarMode.ActionsOnly;
+    private bool IsContentToolbarMode => ToolbarMode == DataToolbarMode.ContentOnly;
+
+    /// <summary>True when the global search input should be rendered.</summary>
+    private bool ShouldRenderSearch() =>
+        !IsContentToolbarMode && (IsSearchToolbarMode || (IsFullToolbarMode && ShowSearch));
+
+    /// <summary>True when the view-mode switcher should be rendered.</summary>
+    private bool ShouldRenderViewSwitcher() =>
+        !IsContentToolbarMode &&
+        !IsSearchToolbarMode &&
+        (IsActionsToolbarMode || (IsFullToolbarMode && ShowViewSwitcher));
+
+    /// <summary>True when the view manager should be rendered.</summary>
+    private bool ShouldRenderViewManager() =>
+        !IsContentToolbarMode &&
+        !IsSearchToolbarMode &&
+        ViewProvider is not null &&
+        (IsActionsToolbarMode || (IsFullToolbarMode && ShowViewManager));
+
+    /// <summary>True when the group picker should be rendered.</summary>
+    private bool ShouldRenderGroupPicker() =>
+        !IsContentToolbarMode &&
+        !IsSearchToolbarMode &&
+        GroupableFields is not null &&
+        GroupableFields.Count > 0 &&
+        (IsActionsToolbarMode || IsFullToolbarMode);
+
+    /// <summary>True when the external filter builder should be rendered.</summary>
+    private bool ShouldRenderExternalFilterBuilder() =>
+        IsFullToolbarMode &&
+        ShowExternalFilterBuilder &&
+        ViewProvider is not null &&
+        ExternalFilterDefinitions?.Any() == true;
+
+    /// <summary>Determines whether any toolbar control should be rendered.</summary>
+    private bool HasVisibleToolbarControls() =>
+        ShouldRenderSearch() ||
+        ShouldRenderGroupPicker() ||
+        ShouldRenderViewSwitcher() ||
+        ShouldRenderViewManager();
 }

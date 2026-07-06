@@ -560,43 +560,44 @@
           "name": "ActiveFormats",
           "type": "List<string>",
           "isRequired": true,
-          "description": "Callback when an emoji is selected."
+          "description": "List of currently active formats."
         },
         {
           "name": "IsDisabled",
           "type": "bool",
           "isRequired": false,
+          "description": "Whether the toolbar is disabled."
+        },
+        {
+          "name": "Mode",
+          "type": "ToolbarMode",
+          "isRequired": false,
+          "default": "ToolbarMode.Simple",
           "description": "The mode of the toolbar (Simple or Full)."
         },
         {
           "name": "OnEmojiSelected",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Callback when a format command is triggered."
+          "description": "Callback when an emoji is selected."
         },
         {
           "name": "OnFormat",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Whether the toolbar is disabled."
+          "description": "Callback when a format command is triggered."
         },
         {
           "name": "OnTokenButtonClicked",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Whether token/variable insertion is supported."
+          "description": "Callback when the token button is clicked."
         },
         {
           "name": "SupportsTokens",
           "type": "bool",
           "isRequired": false,
-          "description": "List of currently active formats."
-        },
-        {
-          "name": "Mode",
-          "type": "ToolbarMode",
-          "isRequired": false,
-          "default": "Simple"
+          "description": "Whether token/variable insertion is supported."
         }
       ],
       "cssClasses": [
@@ -643,36 +644,37 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
+          "description": "Whether to close on backdrop click."
+        },
+        {
+          "name": "IsVisible",
+          "type": "bool",
+          "isRequired": false,
           "description": "Whether the dialog is visible."
         },
         {
           "name": "OnCancel",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Callback when replace all is triggered."
+          "description": "Callback when dialog is cancelled."
         },
         {
           "name": "OnFind",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Whether to close on backdrop click."
+          "description": "Callback when find is triggered."
         },
         {
           "name": "OnReplace",
           "type": "EventCallback<(string Find, string Replace)>",
           "isRequired": false,
-          "description": "Callback when find is triggered."
+          "description": "Callback when replace is triggered."
         },
         {
           "name": "OnReplaceAll",
           "type": "EventCallback<(string Find, string Replace)>",
           "isRequired": false,
-          "description": "Callback when replace is triggered."
-        },
-        {
-          "name": "IsVisible",
-          "type": "bool",
-          "isRequired": false
+          "description": "Callback when replace all is triggered."
         }
       ],
       "cssClasses": [
@@ -714,24 +716,25 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
+          "description": "Whether to close on backdrop click."
+        },
+        {
+          "name": "IsVisible",
+          "type": "bool",
+          "isRequired": false,
           "description": "Whether the dialog is visible."
         },
         {
           "name": "OnCancel",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Callback when image is confirmed."
+          "description": "Callback when dialog is cancelled."
         },
         {
           "name": "OnConfirm",
           "type": "EventCallback<(string Url, string Alt)>",
           "isRequired": false,
-          "description": "Whether to close on backdrop click."
-        },
-        {
-          "name": "IsVisible",
-          "type": "bool",
-          "isRequired": false
+          "description": "Callback when image is confirmed."
         }
       ],
       "cssClasses": [
@@ -772,30 +775,31 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Preselected text for the link."
+          "description": "Whether to close on backdrop click."
+        },
+        {
+          "name": "IsVisible",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the dialog is visible."
         },
         {
           "name": "OnCancel",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Callback when link is confirmed."
+          "description": "Callback when dialog is cancelled."
         },
         {
           "name": "OnConfirm",
           "type": "EventCallback<(string Url, string Text)>",
           "isRequired": false,
-          "description": "Whether to close on backdrop click."
+          "description": "Callback when link is confirmed."
         },
         {
           "name": "PreselectedText",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the dialog is visible."
-        },
-        {
-          "name": "IsVisible",
-          "type": "bool",
-          "isRequired": false
+          "description": "Preselected text for the link."
         }
       ],
       "cssClasses": [
@@ -840,6 +844,12 @@
           "description": "Whether the toolbar is disabled."
         },
         {
+          "name": "IsDisabled",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the toolbar is disabled."
+        },
+        {
           "name": "OnFormat",
           "type": "EventCallback<string>",
           "isRequired": false,
@@ -864,38 +874,39 @@
           "name": "HighlightedIndex",
           "type": "int",
           "isRequired": false,
-          "description": "The search query to filter users."
+          "description": "The currently highlighted index."
+        },
+        {
+          "name": "IsVisible",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the autocomplete dropdown is visible."
         },
         {
           "name": "OnHighlightedIndexChanged",
           "type": "EventCallback<int>",
           "isRequired": false,
-          "description": "Callback when a user is selected."
+          "description": "Callback when the highlighted index changes."
         },
         {
           "name": "OnUserSelected",
           "type": "EventCallback<MentionUser>",
           "isRequired": false,
-          "description": "The currently highlighted index."
+          "description": "Callback when a user is selected."
         },
         {
           "name": "Query",
           "type": "string",
           "isRequired": false,
           "default": "\"\"",
-          "description": "The list of users to display."
+          "description": "The search query to filter users."
         },
         {
           "name": "Users",
           "type": "IEnumerable<MentionUser>",
           "isRequired": false,
           "default": "Array.Empty<MentionUser>()",
-          "description": "Whether the autocomplete dropdown is visible."
-        },
-        {
-          "name": "IsVisible",
-          "type": "bool",
-          "isRequired": false
+          "description": "The list of users to display."
         }
       ],
       "cssClasses": [
@@ -934,24 +945,25 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
+          "description": "Whether to close on backdrop click."
+        },
+        {
+          "name": "IsVisible",
+          "type": "bool",
+          "isRequired": false,
           "description": "Whether the dialog is visible."
         },
         {
           "name": "OnCancel",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Callback when table is confirmed."
+          "description": "Callback when dialog is cancelled."
         },
         {
           "name": "OnConfirm",
           "type": "EventCallback<(int Rows, int Cols)>",
           "isRequired": false,
-          "description": "Whether to close on backdrop click."
-        },
-        {
-          "name": "IsVisible",
-          "type": "bool",
-          "isRequired": false
+          "description": "Callback when table is confirmed."
         }
       ],
       "cssClasses": [
@@ -997,30 +1009,36 @@
           "name": "AcceptedFileTypes",
           "type": "string?",
           "isRequired": false,
-          "description": "Maximum allowed browser upload size in bytes."
+          "description": "Accepted file types passed to the browser file picker."
         },
         {
           "name": "AllowUpload",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Attachments supplied directly by the parent component."
+          "description": "Whether users may upload new files."
         },
         {
           "name": "AttachmentProvider",
           "type": "ITmAttachmentProvider?",
           "isRequired": false,
-          "description": "Entity type used with . Defaults to activity-entity."
+          "description": "Provider for loading and linking attachments to the entity."
         },
         {
           "name": "Attachments",
           "type": "IReadOnlyList<TmAttachment>?",
           "isRequired": false,
-          "description": "Provider for uploading files and resolving asset URLs."
+          "description": "Attachments supplied directly by the parent component."
         },
         {
           "name": "EntityId",
           "type": "string?",
+          "isRequired": false,
+          "description": "Entity ID convenience parameter used when is not supplied."
+        },
+        {
+          "name": "EntityRef",
+          "type": "TmEntityRef?",
           "isRequired": false,
           "description": "Entity reference used to load and upload attachments."
         },
@@ -1029,25 +1047,20 @@
           "type": "string",
           "isRequired": false,
           "default": "\"activity-entity\"",
-          "description": "Entity ID convenience parameter used when is not supplied."
+          "description": "Entity type used with . Defaults to activity-entity."
         },
         {
           "name": "FileProvider",
           "type": "ITmFileProvider?",
           "isRequired": false,
-          "description": "Provider for loading and linking attachments to the entity."
+          "description": "Provider for uploading files and resolving asset URLs."
         },
         {
           "name": "MaxFileSizeBytes",
           "type": "long",
           "isRequired": false,
           "default": "100L * 1024 * 1024",
-          "description": "Whether users may upload new files."
-        },
-        {
-          "name": "EntityRef",
-          "type": "TmEntityRef?",
-          "isRequired": false
+          "description": "Maximum allowed browser upload size in bytes."
         }
       ],
       "cssClasses": [
@@ -1102,6 +1115,12 @@
       ],
       "parameters": [
         {
+          "name": "ShowAddButton",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true"
+        },
+        {
           "name": "Comments",
           "type": "IReadOnlyList<ICommentEntry>",
           "isRequired": false,
@@ -1121,12 +1140,6 @@
           "name": "OnCommentEdited",
           "type": "EventCallback<(string Id, string Html)>",
           "isRequired": false
-        },
-        {
-          "name": "ShowAddButton",
-          "type": "bool",
-          "isRequired": false,
-          "default": "true"
         }
       ],
       "cssClasses": [
@@ -1166,6 +1179,11 @@
         "@using Tempo.Blazor.Components.Activity"
       ],
       "parameters": [
+        {
+          "name": "OnCommentDeleted",
+          "type": "EventCallback<string>",
+          "isRequired": false
+        },
         {
           "name": "EntityId",
           "type": "string?",
@@ -1221,11 +1239,6 @@
           "name": "OnCommentAdded",
           "type": "EventCallback<string>",
           "isRequired": false
-        },
-        {
-          "name": "OnCommentDeleted",
-          "type": "EventCallback<string>",
-          "isRequired": false
         }
       ],
       "cssClasses": [
@@ -1261,17 +1274,17 @@
       ],
       "parameters": [
         {
-          "name": "IsLoading",
-          "type": "bool",
-          "isRequired": false,
-          "description": "Whether the timeline is loading data."
-        },
-        {
           "name": "Entries",
           "type": "IEnumerable<ITimelineEntry>",
           "isRequired": false,
           "default": "[]",
           "description": "Timeline entries to display. Sorted newest-first."
+        },
+        {
+          "name": "IsLoading",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the timeline is loading data."
         }
       ],
       "cssClasses": [
@@ -1348,17 +1361,17 @@
           "description": "Placeholder text displayed when the editor is empty."
         },
         {
+          "name": "Value",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "The markdown content of the editor. Bind this to get/set raw markdown — no HTML."
+        },
+        {
           "name": "ValueChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Callback fired whenever the markdown content changes."
-        },
-        {
-          "name": "Value",
-          "type": "string",
-          "isRequired": false,
-          "default": "Empty",
-          "description": "The markdown content of the editor. Bind this to get/set raw markdown — no HTML."
         },
         {
           "name": "AdditionalAttributes",
@@ -1500,133 +1513,134 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the editor is disabled."
+          "description": "Additional CSS class for the container."
         },
         {
           "name": "Height",
           "type": "string?",
           "isRequired": false,
-          "description": "Placeholder text when empty."
+          "description": "Height of the editor (e.g., \"400px\")."
         },
         {
           "name": "IsDisabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Callback when the user moves the cursor away from a token chip. Use this to hide the tooltip shown in response to ."
+          "description": "Whether the editor is disabled."
         },
         {
           "name": "MaxLength",
           "type": "int",
           "isRequired": false,
-          "description": "Height of the editor (e.g., \"400px\")."
+          "description": "Maximum length of content."
         },
         {
           "name": "MentionProvider",
           "type": "ITmPeopleProvider?",
           "isRequired": false,
-          "description": "Whether mentions are supported."
+          "description": "Data provider for mentions."
         },
         {
           "name": "OnTokenCreateRequested",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Trigger string that activates the token dropdown (default: \"{{\")."
+          "description": "Callback when the user requests to create a new token. Parameter is the pre-filled name from query."
         },
         {
           "name": "OnTokenHover",
           "type": "EventCallback<TokenHoverArgs>",
           "isRequired": false,
-          "description": "Callback when a token is inserted into the editor."
+          "description": "Callback when the user hovers over a token chip in the editor. Receives with full token metadata and the chip's bounding rect in client (viewport) coordinates, so the application can position its own tooltip. Only fires when is set."
         },
         {
           "name": "OnTokenHoverEnd",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Callback when the user hovers over a token chip in the editor. Receives with full token metadata and the chip's bounding rect in client (viewport) coordinates, so the application can position its own tooltip. Only fires when is set."
+          "description": "Callback when the user moves the cursor away from a token chip. Use this to hide the tooltip shown in response to ."
         },
         {
           "name": "OnTokenInserted",
           "type": "EventCallback<IToken>",
           "isRequired": false,
-          "description": "Callback when the user requests to create a new token. Parameter is the pre-filled name from query."
+          "description": "Callback when a token is inserted into the editor."
         },
         {
           "name": "Placeholder",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback when the value changes."
+          "description": "Placeholder text when empty."
         },
         {
           "name": "ShowWordCount",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Maximum length of content."
+          "description": "Whether to show word count."
         },
         {
           "name": "SupportsBlockquotes",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether code blocks are supported."
+          "description": "Whether blockquotes are supported."
         },
         {
           "name": "SupportsCodeBlocks",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether tables are supported."
+          "description": "Whether code blocks are supported."
         },
         {
           "name": "SupportsImages",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Data provider for mentions."
+          "description": "Whether images are supported."
         },
         {
           "name": "SupportsMentions",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether to show word count."
+          "description": "Whether mentions are supported."
         },
         {
           "name": "SupportsTables",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether images are supported."
+          "description": "Whether tables are supported."
         },
         {
           "name": "SupportsTokens",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether blockquotes are supported."
+          "description": "Whether tokens/variables are supported."
         },
         {
           "name": "TokenProvider",
           "type": "ITokenDataProvider?",
           "isRequired": false,
-          "description": "Whether tokens/variables are supported."
+          "description": "Data provider for token search."
         },
         {
           "name": "TokenTrigger",
           "type": "string",
           "isRequired": false,
           "default": "\"{{\"",
-          "description": "Data provider for token search."
-        },
-        {
-          "name": "ValueChanged",
-          "type": "EventCallback<string>",
-          "isRequired": false,
-          "description": "The HTML content of the editor."
+          "description": "Trigger string that activates the token dropdown (default: \"{{\")."
         },
         {
           "name": "Value",
           "type": "string",
           "isRequired": false,
-          "default": "Empty"
+          "default": "\"\"",
+          "description": "The HTML content of the editor."
+        },
+        {
+          "name": "ValueChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Callback when the value changes."
         }
       ],
       "cssClasses": [
@@ -1744,98 +1758,99 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback when content is submitted (Ctrl+Enter)."
+          "description": "Additional CSS class for the container."
         },
         {
           "name": "IsDisabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Callback when the user moves the cursor away from a token chip. Use this to hide the tooltip shown in response to ."
+          "description": "Whether the editor is disabled."
         },
         {
           "name": "MaxLength",
           "type": "int",
           "isRequired": false,
-          "description": "Placeholder text when empty."
+          "description": "Maximum length of content."
         },
         {
           "name": "MentionProvider",
           "type": "ITmPeopleProvider?",
           "isRequired": false,
-          "description": "Whether mentions are supported."
+          "description": "Data provider for mentions."
         },
         {
           "name": "OnSubmit",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Whether the editor is disabled."
+          "description": "Callback when content is submitted (Ctrl+Enter)."
         },
         {
           "name": "OnTokenCreateRequested",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Trigger string that activates the token dropdown (default: \"{{\")."
+          "description": "Callback when the user requests to create a new token."
         },
         {
           "name": "OnTokenHover",
           "type": "EventCallback<TokenHoverArgs>",
           "isRequired": false,
-          "description": "Callback when a token is inserted into the editor."
+          "description": "Callback when the user hovers over a token chip in the editor. Receives with full token metadata and the chip's bounding rect in client (viewport) coordinates, so the application can position its own tooltip. Only fires when is set."
         },
         {
           "name": "OnTokenHoverEnd",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Callback when the user hovers over a token chip in the editor. Receives with full token metadata and the chip's bounding rect in client (viewport) coordinates, so the application can position its own tooltip. Only fires when is set."
+          "description": "Callback when the user moves the cursor away from a token chip. Use this to hide the tooltip shown in response to ."
         },
         {
           "name": "OnTokenInserted",
           "type": "EventCallback<IToken>",
           "isRequired": false,
-          "description": "Callback when the user requests to create a new token."
+          "description": "Callback when a token is inserted into the editor."
         },
         {
           "name": "Placeholder",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback when the value changes."
+          "description": "Placeholder text when empty."
         },
         {
           "name": "SupportsMentions",
           "type": "bool",
           "isRequired": false,
-          "description": "Maximum length of content."
+          "description": "Whether mentions are supported."
         },
         {
           "name": "SupportsTokens",
           "type": "bool",
           "isRequired": false,
-          "description": "Data provider for mentions."
+          "description": "Whether tokens/variables are supported."
         },
         {
           "name": "TokenProvider",
           "type": "ITokenDataProvider?",
           "isRequired": false,
-          "description": "Whether tokens/variables are supported."
+          "description": "Data provider for token search."
         },
         {
           "name": "TokenTrigger",
           "type": "string",
           "isRequired": false,
           "default": "\"{{\"",
-          "description": "Data provider for token search."
-        },
-        {
-          "name": "ValueChanged",
-          "type": "EventCallback<string>",
-          "isRequired": false,
-          "description": "The HTML content of the editor."
+          "description": "Trigger string that activates the token dropdown (default: \"{{\")."
         },
         {
           "name": "Value",
           "type": "string",
           "isRequired": false,
-          "default": "Empty"
+          "default": "\"\"",
+          "description": "The HTML content of the editor."
+        },
+        {
+          "name": "ValueChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Callback when the value changes."
         }
       ],
       "cssClasses": [
@@ -1944,56 +1959,57 @@
           "name": "HighlightedIndex",
           "type": "int",
           "isRequired": false,
-          "description": "The search query to filter tokens."
+          "description": "The currently highlighted index."
         },
         {
           "name": "IsLoading",
           "type": "bool",
           "isRequired": false,
-          "description": "Callback when \"Create new\" is requested. Parameter is the current query text."
+          "description": "Whether tokens are currently being loaded."
+        },
+        {
+          "name": "IsVisible",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the autocomplete dropdown is visible."
         },
         {
           "name": "OnCreateRequested",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Callback when a token is selected."
+          "description": "Callback when \"Create new\" is requested. Parameter is the current query text."
         },
         {
           "name": "OnHighlightedIndexChanged",
           "type": "EventCallback<int>",
           "isRequired": false,
-          "description": "Whether the provider supports creating new tokens."
+          "description": "Callback when the highlighted index changes."
         },
         {
           "name": "OnTokenSelected",
           "type": "EventCallback<TokenItem>",
           "isRequired": false,
-          "description": "The currently highlighted index."
+          "description": "Callback when a token is selected."
         },
         {
           "name": "Query",
           "type": "string",
           "isRequired": false,
           "default": "\"\"",
-          "description": "The list of tokens to display."
+          "description": "The search query to filter tokens."
         },
         {
           "name": "SupportsCreation",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether tokens are currently being loaded."
+          "description": "Whether the provider supports creating new tokens."
         },
         {
           "name": "Tokens",
           "type": "IEnumerable<TokenItem>",
           "isRequired": false,
           "default": "Array.Empty<TokenItem>()",
-          "description": "Whether the autocomplete dropdown is visible."
-        },
-        {
-          "name": "IsVisible",
-          "type": "bool",
-          "isRequired": false
+          "description": "The list of tokens to display."
         }
       ],
       "cssClasses": [
@@ -2035,24 +2051,25 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
+          "description": "Whether to close on backdrop click."
+        },
+        {
+          "name": "IsVisible",
+          "type": "bool",
+          "isRequired": false,
           "description": "Whether the dialog is visible."
         },
         {
           "name": "OnCancel",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Callback when video is confirmed."
+          "description": "Callback when dialog is cancelled."
         },
         {
           "name": "OnConfirm",
           "type": "EventCallback<(string Url, string Title)>",
           "isRequired": false,
-          "description": "Whether to close on backdrop click."
-        },
-        {
-          "name": "IsVisible",
-          "type": "bool",
-          "isRequired": false
+          "description": "Callback when video is confirmed."
         }
       ],
       "cssClasses": [
@@ -2096,6 +2113,13 @@
           "description": "Whether the input is disabled."
         },
         {
+          "name": "Commands",
+          "type": "IReadOnlyList<AIPromptCommand>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Available quick-action commands displayed above the input."
+        },
+        {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
@@ -2118,6 +2142,12 @@
           "type": "EventCallback<(AIPromptOutput Output, bool? Rating)>",
           "isRequired": false,
           "description": "Fired when the copy button is clicked."
+        },
+        {
+          "name": "OnPromptSubmit",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Fired when the user submits a prompt."
         },
         {
           "name": "Output",
@@ -2231,7 +2261,13 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Size applied to overflow avatar bubble and group spacing. Defaults to Md."
+          "description": "Avatar elements to render."
+        },
+        {
+          "name": "Max",
+          "type": "int?",
+          "isRequired": false,
+          "description": "Maximum number of avatars to show before showing overflow count."
         },
         {
           "name": "Size",
@@ -2245,12 +2281,6 @@
           "type": "int",
           "isRequired": false,
           "description": "Total number of items in the full collection (used to calculate overflow)."
-        },
-        {
-          "name": "Max",
-          "type": "int?",
-          "isRequired": false,
-          "description": "Maximum number of avatars to show before showing overflow count."
         }
       ],
       "cssClasses": [
@@ -2299,7 +2329,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Fired when the button is clicked (and not disabled/loading)."
+          "description": "Button content."
         },
         {
           "name": "Class",
@@ -2358,18 +2388,18 @@
           "description": "Tab order index. Defaults to 0."
         },
         {
+          "name": "Type",
+          "type": "ButtonType",
+          "isRequired": false,
+          "default": "ButtonType.Button",
+          "description": "HTML button type attribute. Defaults to Button."
+        },
+        {
           "name": "Variant",
           "type": "ButtonVariant",
           "isRequired": false,
           "default": "ButtonVariant.Primary",
           "description": "Visual style variant. Defaults to Primary."
-        },
-        {
-          "name": "Type",
-          "type": "ButtonType",
-          "isRequired": false,
-          "default": "Button",
-          "description": "HTML button type attribute. Defaults to Button."
         }
       ],
       "cssClasses": [
@@ -2430,15 +2460,21 @@
         {
           "name": "Class",
           "type": "string?",
-          "isRequired": true,
-          "description": "Additional CSS class.",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Additional CSS class."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
           "description": "Disables the button."
+        },
+        {
+          "name": "Text",
+          "type": "string",
+          "isRequired": true,
+          "description": "Text to copy to clipboard.",
+          "editorRequired": true
         }
       ],
       "cssClasses": [
@@ -2482,6 +2518,12 @@
           "description": "Whether the button is disabled."
         },
         {
+          "name": "Icon",
+          "type": "string?",
+          "isRequired": false,
+          "description": "The icon displayed on the main button. Defaults to a plus icon."
+        },
+        {
           "name": "Items",
           "type": "IReadOnlyList<FabItem>?",
           "isRequired": false,
@@ -2505,12 +2547,6 @@
           "isRequired": false,
           "default": "FabPosition.BottomRight",
           "description": "The position of the button on the screen."
-        },
-        {
-          "name": "Icon",
-          "type": "string?",
-          "isRequired": false,
-          "description": "The icon displayed on the main button. Defaults to a plus icon."
         }
       ],
       "cssClasses": [
@@ -2559,7 +2595,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Shows a loading spinner on the primary button."
+          "description": "Dropdown menu items (e.g. TmDropdownItem or TmContextMenuItem)."
         },
         {
           "name": "Class",
@@ -2582,15 +2618,21 @@
         {
           "name": "OnClick",
           "type": "EventCallback",
-          "isRequired": true,
-          "description": "Fires when the primary button is clicked.",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Fires when the primary button is clicked."
         },
         {
           "name": "Size",
           "type": "ButtonSize?",
           "isRequired": false,
           "description": "Button size."
+        },
+        {
+          "name": "Text",
+          "type": "string",
+          "isRequired": true,
+          "description": "Text label on the primary button.",
+          "editorRequired": true
         },
         {
           "name": "Variant",
@@ -2640,6 +2682,12 @@
       ],
       "parameters": [
         {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
           "name": "Width",
           "type": "string",
           "isRequired": false,
@@ -2683,11 +2731,6 @@
         {
           "name": "OnSegmentClick",
           "type": "EventCallback<ChartSegment>",
-          "isRequired": false
-        },
-        {
-          "name": "Class",
-          "type": "string?",
           "isRequired": false
         }
       ],
@@ -2739,7 +2782,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Charts"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmSparkline",
@@ -2753,7 +2802,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Charts"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmStockChart",
@@ -2767,7 +2822,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Charts"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmChat",
@@ -2789,6 +2850,12 @@
           "description": "Whether the input is disabled."
         },
         {
+          "name": "CurrentUser",
+          "type": "ChatUser",
+          "isRequired": true,
+          "description": "The currently authenticated user."
+        },
+        {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
@@ -2804,6 +2871,12 @@
         {
           "name": "OnAttachmentClick",
           "type": "EventCallback<ChatAttachment>",
+          "isRequired": false,
+          "description": "Fired when the user sends a message."
+        },
+        {
+          "name": "OnSendMessage",
+          "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Fired when the user sends a message."
         },
@@ -3158,6 +3231,16 @@
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.DataTable",
       "description": "Scroll/pagination mode for data components.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/DataTable/DataTableEnums.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DataToolbarMode",
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DataTable",
+      "description": "High-level preset that controls which chrome elements are rendered by data components such as TmDataTable and TmMultiViewList.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/DataTable/DataTableEnums.cs",
       "documentationStatus": "merged"
@@ -4735,8 +4818,8 @@
       ],
       "parameters": [
         {
-          "name": "DashboardProvider",
-          "type": "IDashboardProvider?",
+          "name": "WidgetTemplate",
+          "type": "RenderFragment<WidgetInstance>?",
           "isRequired": false
         },
         {
@@ -4769,11 +4852,6 @@
         {
           "name": "OnDashboardChanged",
           "type": "EventCallback<DashboardConfig>",
-          "isRequired": false
-        },
-        {
-          "name": "WidgetTemplate",
-          "type": "RenderFragment<WidgetInstance>?",
           "isRequired": false
         }
       ],
@@ -4843,6 +4921,11 @@
       ],
       "parameters": [
         {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false
+        },
+        {
           "name": "WidgetRegistry",
           "type": "IWidgetRegistry?",
           "isRequired": false
@@ -4856,11 +4939,6 @@
         {
           "name": "OnSelect",
           "type": "EventCallback<WidgetDefinition>",
-          "isRequired": false
-        },
-        {
-          "name": "OnClose",
-          "type": "EventCallback",
           "isRequired": false
         }
       ],
@@ -4912,7 +4990,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Allow multiple items open at once."
+          "description": "Accordion items."
         },
         {
           "name": "Class",
@@ -4951,6 +5029,12 @@
       ],
       "parameters": [
         {
+          "name": "ChildContent",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Item body content."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
@@ -4977,8 +5061,14 @@
         {
           "name": "Subtitle",
           "type": "string?",
+          "isRequired": false,
+          "description": "Optional subtitle below the title."
+        },
+        {
+          "name": "Title",
+          "type": "string",
           "isRequired": true,
-          "description": "Optional subtitle below the title.",
+          "description": "Header title.",
           "editorRequired": true
         }
       ],
@@ -5023,9 +5113,9 @@
         },
         {
           "name": "ChildContent",
-          "type": "bool HasDot { get => Dot; set => Dot = value; } /// <summary>Badge content.</summary> [Parameter] public RenderFragment?",
+          "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Renders a small status dot before the content."
+          "description": "Alias for Dot."
         },
         {
           "name": "Class",
@@ -5035,13 +5125,13 @@
         },
         {
           "name": "Dot",
-          "type": "bool IsPill { get => Pill; set => Pill = value; } /// <summary>Renders a small status dot before the content.</summary> [Parameter] public bool",
+          "type": "bool",
           "isRequired": false,
           "description": "Renders a small status dot before the content."
         },
         {
           "name": "Icon",
-          "type": "BadgeStyle Style { get => BadgeStyle; set => BadgeStyle = value; } /// <summary>Optional icon name shown before child content.</summary> [Parameter] public string?",
+          "type": "string?",
           "isRequired": false,
           "description": "Optional icon name shown before child content."
         },
@@ -5062,7 +5152,7 @@
           "name": "Variant",
           "type": "BadgeVariant",
           "isRequired": false,
-          "default": "Default",
+          "default": "BadgeVariant.Default",
           "description": "Color variant. Defaults to Default."
         }
       ],
@@ -5114,7 +5204,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Optional icon shown in the header."
+          "description": "Card body content."
         },
         {
           "name": "Class",
@@ -5150,7 +5240,7 @@
           "name": "Variant",
           "type": "CardVariant",
           "isRequired": false,
-          "default": "Default",
+          "default": "CardVariant.Default",
           "description": "Visual style variant. Defaults to Default."
         }
       ],
@@ -5190,16 +5280,16 @@
       ],
       "parameters": [
         {
-          "name": "Class",
-          "type": "string?",
-          "isRequired": false,
-          "description": "Additional CSS class(es)."
-        },
-        {
           "name": "Changes",
           "type": "IEnumerable<TmChangeInfo>?",
           "isRequired": false,
           "description": "List of property changes to display."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class(es)."
         }
       ],
       "cssClasses": [
@@ -5246,9 +5336,8 @@
         {
           "name": "Color",
           "type": "string?",
-          "isRequired": true,
-          "description": "Custom CSS color.",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Custom CSS color."
         },
         {
           "name": "Disabled",
@@ -5261,6 +5350,13 @@
           "type": "string?",
           "isRequired": false,
           "description": "Optional icon name."
+        },
+        {
+          "name": "Label",
+          "type": "string",
+          "isRequired": true,
+          "description": "Chip label text.",
+          "editorRequired": true
         },
         {
           "name": "OnClick",
@@ -5339,6 +5435,12 @@
       ],
       "parameters": [
         {
+          "name": "ChildContent",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Chip children."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
@@ -5403,7 +5505,7 @@
           "name": "Title",
           "type": "string",
           "isRequired": false,
-          "default": "Empty",
+          "default": "\"\"",
           "description": "Heading shown in the empty state."
         }
       ],
@@ -5447,7 +5549,7 @@
           "name": "CardTemplate",
           "type": "RenderFragment<TItem>?",
           "isRequired": true,
-          "description": "Function to determine which column an item belongs to.",
+          "description": "Template for rendering a card.",
           "editorRequired": true
         },
         {
@@ -5463,10 +5565,17 @@
           "description": "Custom column header template."
         },
         {
+          "name": "Columns",
+          "type": "IReadOnlyList<KanbanColumn>?",
+          "isRequired": true,
+          "description": "Column definitions.",
+          "editorRequired": true
+        },
+        {
           "name": "ColumnSelector",
           "type": "Func<TItem, string>?",
           "isRequired": true,
-          "description": "All items on the board.",
+          "description": "Function to determine which column an item belongs to.",
           "editorRequired": true
         },
         {
@@ -5485,7 +5594,7 @@
           "name": "Items",
           "type": "IReadOnlyList<TItem>?",
           "isRequired": true,
-          "description": "Column definitions.",
+          "description": "All items on the board.",
           "editorRequired": true
         },
         {
@@ -5497,9 +5606,8 @@
         {
           "name": "OnItemMoved",
           "type": "EventCallback<KanbanMoveEvent<TItem>>",
-          "isRequired": true,
-          "description": "Fires when a card is dragged to a different column.",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Fires when a card is dragged to a different column."
         }
       ],
       "cssClasses": [
@@ -5528,7 +5636,7 @@
       "kind": "Component",
       "category": "Data Display",
       "namespace": "Tempo.Blazor.Components.DataDisplay",
-      "description": "Generic multi-view list supporting Table, Card, and List display modes with a built-in view switcher, search, client-side and server-side grouping with per-group mini-pager, pagination, virtualization, external filter builder, and optional view persistence via IDataTableViewProvider.",
+      "description": "Generic multi-view list supporting Table, Card, and List display modes with a built-in view switcher, search, client-side and server-side grouping with per-group mini-pager, pagination, virtualization, external filter builder, and optional view persistence via IDataTableViewProvider.\\n\\nComposition rule: either the owning page filters the data and the list renders a content-only surface (set ToolbarMode=ContentOnly and supply pre-filtered Items/DataProvider), or the list owns filtering via its own toolbar and external filter builder. Avoid enabling both filter surfaces at the same time unless they are explicitly integrated.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/TmMultiViewList.razor",
       "documentationStatus": "merged",
@@ -5542,6 +5650,18 @@
         }
       ],
       "parameters": [
+        {
+          "name": "AllowDrag",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, selected items can be dragged (e.g. onto a TmTreeView with AllowDrop=true)."
+        },
+        {
+          "name": "AllowSelection",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, shows checkboxes and enables multi-select mode."
+        },
         {
           "name": "AvatarUrlField",
           "type": "Func<TItem, string?>?",
@@ -5592,6 +5712,12 @@
           "description": "Default page size for pagination. Default: 25."
         },
         {
+          "name": "DisplayResolver",
+          "type": "Func<string, string?, string?>?",
+          "isRequired": false,
+          "description": "Universal display resolver for field labels and filter values. DisplayResolver(fieldName, null) → localized field/column label (e.g., \"Status\" → \"Stav\") DisplayResolver(fieldName, rawValue) → localized value (e.g., (\"Status\",\"Active\") → \"Aktivní\") Return null to use defaults (FilterDefinition.FieldLabel, column Title, or raw value). Set once on the component — flows to ViewManager, FilterBuilder, and ColumnPicker."
+        },
+        {
           "name": "EmptyTitle",
           "type": "string?",
           "isRequired": false,
@@ -5602,7 +5728,7 @@
           "type": "List<FilterDefinition>",
           "isRequired": false,
           "default": "[]",
-          "description": "Filter definitions for the external filter builder."
+          "description": "Filter definitions for the inline external filter builder (shown above the list when ViewProvider is set). When the page owns filtering, leave this empty and set ShowExternalFilterBuilder to false or use ToolbarMode=ContentOnly."
         },
         {
           "name": "GroupableFields",
@@ -5622,6 +5748,12 @@
           "type": "Func<TItem, string>?",
           "isRequired": false,
           "description": "Maps an item to its unique identifier."
+        },
+        {
+          "name": "Items",
+          "type": "IReadOnlyList<TItem>?",
+          "isRequired": false,
+          "description": "Items to display in the list (client-side mode)."
         },
         {
           "name": "ListItemTemplate",
@@ -5655,6 +5787,18 @@
           "description": "Scroll mode: Pagination (default) or Virtualized."
         },
         {
+          "name": "SearchText",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Controlled search text. When set, the component uses this value instead of its internal state."
+        },
+        {
+          "name": "SearchTextChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Fires when the search text changes."
+        },
+        {
           "name": "SelectedIds",
           "type": "HashSet<string>?",
           "isRequired": false,
@@ -5677,7 +5821,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true, shows FilterBuilder for external filtering."
+          "description": "When true and a ViewProvider is set, shows the inline FilterBuilder for external filtering. Set to false when the surrounding page owns the filtering UI to avoid duplicate filters."
         },
         {
           "name": "ShowPagination",
@@ -5692,6 +5836,20 @@
           "isRequired": false,
           "default": "true",
           "description": "When true, shows the global search input."
+        },
+        {
+          "name": "ShowToolbar",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true, renders the toolbar container with search, view switcher, group picker, and view manager. Default: true."
+        },
+        {
+          "name": "ShowViewManager",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true and a ViewProvider is set, renders the TmViewManager. Default: true."
         },
         {
           "name": "ShowViewSwitcher",
@@ -5731,6 +5889,13 @@
           "description": "Maps an item to its display title."
         },
         {
+          "name": "ToolbarMode",
+          "type": "DataToolbarMode",
+          "isRequired": false,
+          "default": "DataToolbarMode.Full",
+          "description": "High-level preset that controls which toolbar chrome elements are rendered. Full respects the individual Show* booleans; other modes override them."
+        },
+        {
           "name": "ViewCanCreateTenantViews",
           "type": "bool",
           "isRequired": false,
@@ -5740,14 +5905,15 @@
           "name": "ViewContext",
           "type": "string",
           "isRequired": true,
-          "description": "Fires when a drag operation starts. Receives the items being dragged."
+          "description": "Unique identifier for this list instance. Used to scope saved views to specific lists (e.g. \"projects\", \"team-members\").",
+          "editorRequired": true
         },
         {
           "name": "ViewFilterDefinitions",
           "type": "List<FilterDefinition>",
           "isRequired": false,
           "default": "[]",
-          "description": "Filter definitions for the view manager filter builder."
+          "description": "Filter definitions used by the view manager filter builder when creating or editing saved views."
         },
         {
           "name": "ViewMode",
@@ -5765,9 +5931,8 @@
         {
           "name": "ViewProvider",
           "type": "IDataTableViewProvider?",
-          "isRequired": true,
-          "description": "Optional view persistence provider. When set, shows TmViewManager.",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Optional view persistence provider. When set, enables saved views and (by default) the external filter builder. Use ShowExternalFilterBuilder=false to keep saved views without the inline filter builder, or ToolbarMode=ContentOnly when the page owns the filtering UI."
         },
         {
           "name": "VirtualCardHeight",
@@ -5795,31 +5960,9 @@
           "type": "string?",
           "isRequired": false,
           "description": "Height of the virtual scroll container. Default: \"600px\"."
-        },
-        {
-          "name": "Items",
-          "type": "IReadOnlyList<TItem>?",
-          "isRequired": false,
-          "description": "Items to display in the list (client-side mode)."
-        },
-        {
-          "name": "AllowSelection",
-          "type": "bool",
-          "isRequired": false,
-          "description": "When true, shows checkboxes and enables multi-select mode."
-        },
-        {
-          "name": "AllowDrag",
-          "type": "bool",
-          "isRequired": false,
-          "description": "When true, selected items can be dragged (e.g. onto a TmTreeView with AllowDrop=true)."
-        },
-        {
-          "name": "DisplayResolver",
-          "type": "Func<string, string?, string?>?",
-          "isRequired": false
         }
       ],
+      "compositionGuidance": "Either the page filters the data, or the list filters the data. When the page owns the filters, use ToolbarMode=ContentOnly and do not set ViewProvider/ExternalFilterDefinitions. When the list owns the filters, use the default Full toolbar mode and optionally a ViewProvider.",
       "cssClasses": [
         "tm-multi-view-list",
         "tm-mvl-toolbar",
@@ -5865,6 +6008,14 @@
           "code": "<TmMultiViewList TItem=\"UserDto\"\n                 DataProvider=\"@userDataProvider\"\n                 ViewContext=\"users\"\n                 ViewProvider=\"@viewProvider\"\n                 ShowExternalFilterBuilder=\"true\">\n    <CardTemplate Context=\"user\">\n        <div class=\"custom-user-card\">\n            <img src=\"@user.AvatarUrl\" />\n            <span>@user.FullName</span>\n        </div>\n    </CardTemplate>\n</TmMultiViewList>"
         },
         {
+          "title": "Page-owned filters + content-only list",
+          "code": "@using Tempo.Blazor.Components.DataDisplay\n@using Tempo.Blazor.Components.DataTable\n\n@* The owning page provides its own filter UI; the list renders only the data surface. *@\n<TmMultiViewList TItem=\"ProjectDto\"\n                 Items=\"@_filteredProjects\"\n                 ViewContext=\"page-owned-projects\"\n                 TitleField=\"p => p.Name\"\n                 SubTitleField=\"p => p.Description\"\n                 StatusLabelField=\"p => p.Status\"\n                 StatusColorField=\"p => p.StatusColor\"\n                 ToolbarMode=\"DataToolbarMode.ContentOnly\"\n                 ViewMode=\"ListViewMode.Card\" />\n\n@code {\n    private IEnumerable<ProjectDto> _filteredProjects = default!;\n\n    // Apply filters from the page-level UI before passing data to the list.\n    private void ApplyPageFilters(string status)\n    {\n        _filteredProjects = _allProjects\n            .Where(p => string.IsNullOrEmpty(status) || p.Status == status);\n    }\n}"
+        },
+        {
+          "title": "Saved views without external filter builder",
+          "code": "@using Tempo.Blazor.Components.DataDisplay\n@using Tempo.Blazor.Interfaces\n@using Tempo.Blazor.Models\n\n@* Use the view manager for saved views, but keep the inline filter builder hidden. *@\n<TmMultiViewList TItem=\"UserDto\"\n                 DataProvider=\"@_dataProvider\"\n                 ViewContext=\"users-saved-views\"\n                 ViewProvider=\"@_viewProvider\"\n                 ViewFilterDefinitions=\"@_filterDefs\"\n                 ShowExternalFilterBuilder=\"false\"\n                 ShowSearch=\"false\"\n                 TitleField=\"u => u.FullName\"\n                 SubTitleField=\"u => u.Role\" />"
+        },
+        {
           "title": "Full-featured list with server-side DataProvider, ViewManager, filters, and DisplayResolver",
           "code": "@using Tempo.Blazor.Components.DataDisplay\n@using Tempo.Blazor.Interfaces\n@using Tempo.Blazor.Models\n\n<TmMultiViewList TItem=\"TicketDto\"\n                 DataProvider=\"@_dataProvider\"\n                 ViewContext=\"tickets\"\n                 ViewProvider=\"@_viewProvider\"\n                 ViewFilterDefinitions=\"@_filterDefs\"\n                 ExternalFilterDefinitions=\"@_filterDefs\"\n                 ShowExternalFilterBuilder=\"true\"\n                 DisplayResolver=\"ResolveDisplay\"\n                 ViewCanCreateTenantViews=\"true\"\n                 CurrentUserId=\"@_userId\"\n                 CurrentTenantId=\"@_tenantId\"\n                 TitleField=\"t => t.Title\"\n                 SubTitleField=\"t => t.AssigneeName\"\n                 StatusLabelField=\"t => t.Status\"\n                 StatusColorField=\"t => GetStatusColor(t.Status)\"\n                 DateField=\"t => t.CreatedAt\"\n                 IdField=\"t => t.Id\"\n                 ShowSearch=\"true\"\n                 ShowViewSwitcher=\"true\"\n                 ViewMode=\"ListViewMode.Table\"\n                 DefaultPageSize=\"25\"\n                 OnItemClick=\"HandleTicketClick\">\n    <CardTemplate Context=\"ticket\">\n        <div class=\"ticket-card\">\n            <h3>@ticket.Title</h3>\n            <span class=\"badge\" style=\"background: @GetStatusColor(ticket.Status)\">@ticket.Status</span>\n            <p>@ticket.AssigneeName — @ticket.Priority</p>\n        </div>\n    </CardTemplate>\n</TmMultiViewList>\n\n@code {\n    [Inject] private IDataTableDataProvider<TicketDto> DataProvider { get; set; } = default!;\n    [Inject] private IDataTableViewProvider ViewProvider { get; set; } = default!;\n\n    private IDataTableDataProvider<TicketDto> _dataProvider = default!;\n    private IDataTableViewProvider _viewProvider = default!;\n    private string _userId = \"user-123\";\n    private string _tenantId = \"tenant-abc\";\n\n    private List<FilterDefinition> _filterDefs =\n    [\n        new() { FieldName = \"Title\", FieldLabel = \"Title\", FieldType = FilterFieldType.Text },\n        new() { FieldName = \"Status\", FieldLabel = \"Status\", FieldType = FilterFieldType.Select,\n            Options = [\n                new SelectOption<string>(\"Open\", \"Open\"),\n                new SelectOption<string>(\"InProgress\", \"In Progress\"),\n                new SelectOption<string>(\"Resolved\", \"Resolved\"),\n                new SelectOption<string>(\"Closed\", \"Closed\")\n            ] },\n        new() { FieldName = \"Priority\", FieldLabel = \"Priority\", FieldType = FilterFieldType.Select,\n            Options = [\n                new SelectOption<string>(\"Low\", \"Low\"),\n                new SelectOption<string>(\"Medium\", \"Medium\"),\n                new SelectOption<string>(\"High\", \"High\"),\n                new SelectOption<string>(\"Critical\", \"Critical\")\n            ] },\n        new() { FieldName = \"CreatedAt\", FieldLabel = \"Created\", FieldType = FilterFieldType.Date }\n    ];\n\n    protected override void OnInitialized()\n    {\n        _dataProvider = DataProvider;\n        _viewProvider = ViewProvider;\n    }\n\n    /// <summary>\n    /// DisplayResolver: localizes field labels and enum filter values.\n    /// Set once on TmMultiViewList — flows to ViewManager, FilterBuilder, and filter chips.\n    /// </summary>\n    private string? ResolveDisplay(string fieldName, string? rawValue)\n    {\n        if (rawValue is null)\n        {\n            return fieldName switch\n            {\n                \"Title\" => \"Ticket Title\",\n                \"Status\" => \"Status\",\n                \"Priority\" => \"Priority\",\n                \"CreatedAt\" => \"Created Date\",\n                _ => null\n            };\n        }\n        return (fieldName, rawValue) switch\n        {\n            (\"Status\", \"Open\") => \"Open\",\n            (\"Status\", \"InProgress\") => \"In Progress\",\n            (\"Status\", \"Resolved\") => \"Resolved\",\n            (\"Status\", \"Closed\") => \"Closed\",\n            (\"Priority\", \"Low\") => \"Low\",\n            (\"Priority\", \"Medium\") => \"Medium\",\n            (\"Priority\", \"High\") => \"High\",\n            (\"Priority\", \"Critical\") => \"Critical\",\n            _ => null\n        };\n    }\n\n    private static string GetStatusColor(string? status) => status switch\n    {\n        \"Open\" => \"#3b82f6\",\n        \"InProgress\" => \"#f59e0b\",\n        \"Resolved\" => \"#22c55e\",\n        \"Closed\" => \"#6b7280\",\n        _ => \"#94a3b8\"\n    };\n\n    private void HandleTicketClick(TicketDto ticket) { /* navigate to detail */ }\n}"
         },
@@ -5908,17 +6059,17 @@
           "description": "CSS classes for the SubValue color (e.g. \"text-green-600\")."
         },
         {
-          "name": "Value",
-          "type": "string Label { get => Title; set => Title = value; } /// <summary>Primary metric value (e.g. \"1,234\" or \"$5,000\").</summary> [Parameter] public string?",
-          "isRequired": false,
-          "description": "Primary metric value (e.g. \"1,234\" or \"$5,000\")."
-        },
-        {
           "name": "Title",
           "type": "string",
           "isRequired": false,
-          "default": "Empty",
+          "default": "\"\"",
           "description": "Card label / metric name."
+        },
+        {
+          "name": "Value",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Primary metric value (e.g. \"1,234\" or \"$5,000\")."
         }
       ],
       "cssClasses": [
@@ -5955,7 +6106,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Fires when the clear selection button is clicked."
+          "description": "Action buttons slot."
         },
         {
           "name": "Class",
@@ -6012,6 +6163,11 @@
       ],
       "parameters": [
         {
+          "name": "OnFilterChange",
+          "type": "EventCallback<DataTableFilter?>",
+          "isRequired": false
+        },
+        {
           "name": "ColumnKey",
           "type": "string",
           "isRequired": false,
@@ -6026,11 +6182,6 @@
         {
           "name": "FilterOptions",
           "type": "IReadOnlyList<SelectOption<string>>?",
-          "isRequired": false
-        },
-        {
-          "name": "OnFilterChange",
-          "type": "EventCallback<DataTableFilter?>",
           "isRequired": false
         }
       ],
@@ -6114,7 +6265,7 @@
       "kind": "Component",
       "category": "Data Table",
       "namespace": "Tempo.Blazor.Components.DataTable",
-      "description": "Full-featured data grid with declarative column definitions, client-side and server-side data modes, sorting, inline column filters, global search, row selection with bulk actions, column visibility picker, drag-to-group with multi-level grouping, pagination with per-group mini-pager for server-side grouping, virtualized scrolling, external filter builder, and saved view management.",
+      "description": "Full-featured data grid with declarative column definitions, client-side and server-side data modes, sorting, inline column filters, global search, row selection with bulk actions, column visibility picker, drag-to-group with multi-level grouping, pagination with per-group mini-pager for server-side grouping, virtualized scrolling, external filter builder, and saved view management.\\n\\nComposition rule: either the owning page filters the data and the table renders a content-only surface (set ToolbarMode=ContentOnly and supply pre-filtered Items/DataProvider), or the table owns filtering via its own toolbar and external filter builder. Avoid enabling both filter surfaces at the same time unless they are explicitly integrated (e.g. the page reads the table's ActiveFilters).",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/DataTable/TmDataTable.razor",
       "documentationStatus": "merged",
@@ -6132,7 +6283,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Server-side data provider. When set, overrides Items and calls GetDataAsync on query changes."
+          "description": "Column definitions (TmDataTableColumn children)."
         },
         {
           "name": "Class",
@@ -6166,6 +6317,12 @@
           "description": "Initial page size. Default: 25."
         },
         {
+          "name": "DisplayResolver",
+          "type": "Func<string, string?, string?>?",
+          "isRequired": false,
+          "description": "Universal display resolver for field labels and filter values. DisplayResolver(fieldName, null) → localized field/column label (e.g., \"Status\" → \"Stav\") DisplayResolver(fieldName, rawValue) → localized value (e.g., (\"Status\",\"Active\") → \"Aktivní\") Return null to use defaults (FilterDefinition.FieldLabel, column Title, or raw value). Set once on the component — flows to ViewManager, FilterBuilder, and ColumnPicker."
+        },
+        {
           "name": "EmptyTitle",
           "type": "string?",
           "isRequired": false,
@@ -6176,7 +6333,7 @@
           "type": "List<FilterDefinition>",
           "isRequired": false,
           "default": "[]",
-          "description": "Filter definitions for the external filter builder (shown above table when ViewProvider is set)."
+          "description": "Filter definitions for the inline external filter builder (shown above the table when ViewProvider is set). When the page owns filtering, leave this empty and set ShowExternalFilterBuilder to false or use ToolbarMode=ContentOnly."
         },
         {
           "name": "GroupsCollapsedByDefault",
@@ -6190,6 +6347,12 @@
           "type": "bool",
           "isRequired": false,
           "description": "When true, shows a loading spinner instead of rows. Useful for manual loading control."
+        },
+        {
+          "name": "Items",
+          "type": "IEnumerable<TItem>?",
+          "isRequired": false,
+          "description": "In-memory items. When set without DataProvider, client-side sort/filter/pagination applies."
         },
         {
           "name": "OnGroupingChanged",
@@ -6219,10 +6382,21 @@
         {
           "name": "ScrollMode",
           "type": "DataTableScrollMode",
-          "isRequired": true,
+          "isRequired": false,
           "default": "DataTableScrollMode.Pagination",
-          "description": "Scroll/pagination mode. Default: Pagination.",
-          "editorRequired": true
+          "description": "Scroll/pagination mode. Default: Pagination."
+        },
+        {
+          "name": "SearchText",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Controlled search text. When set, the component uses this value instead of its internal state."
+        },
+        {
+          "name": "SearchTextChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Fires when the search text changes."
         },
         {
           "name": "Selectable",
@@ -6248,7 +6422,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true, shows FilterBuilder for external filtering (visible when ViewProvider is set)."
+          "description": "When true and a ViewProvider is set, shows the inline FilterBuilder for external filtering. Set to false when the surrounding page owns the filtering UI to avoid duplicate filters."
         },
         {
           "name": "ShowGrouping",
@@ -6271,6 +6445,27 @@
           "description": "When true, shows the global search input. Default: true."
         },
         {
+          "name": "ShowToolbar",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true, renders the toolbar container with search, column picker, and view manager. Default: true."
+        },
+        {
+          "name": "ShowViewManager",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true and a ViewProvider is set, renders the TmViewManager. Default: true."
+        },
+        {
+          "name": "ToolbarMode",
+          "type": "DataToolbarMode",
+          "isRequired": false,
+          "default": "DataToolbarMode.Full",
+          "description": "High-level preset that controls which toolbar chrome elements are rendered. Full respects the individual Show* booleans; other modes override them."
+        },
+        {
           "name": "ViewCanCreateTenantViews",
           "type": "bool",
           "isRequired": false,
@@ -6280,20 +6475,21 @@
           "name": "ViewContext",
           "type": "string",
           "isRequired": true,
-          "description": "Current tenant ID for tenant view scoping."
+          "description": "Unique identifier for this table instance. Used to scope saved views to specific tables (e.g. \"employees\", \"projects\").",
+          "editorRequired": true
         },
         {
           "name": "ViewFilterDefinitions",
           "type": "List<FilterDefinition>",
           "isRequired": false,
           "default": "[]",
-          "description": "Filter definitions for the view manager filter builder."
+          "description": "Filter definitions used by the view manager filter builder when creating or editing saved views."
         },
         {
           "name": "ViewProvider",
           "type": "IDataTableViewProvider?",
           "isRequired": false,
-          "description": "Optional view persistence provider. When set, shows TmViewManager."
+          "description": "Optional view persistence provider. When set, enables saved views and (by default) the external filter builder. Use ShowExternalFilterBuilder=false to keep saved views without the inline filter builder, or ToolbarMode=ContentOnly when the page owns the filtering UI."
         },
         {
           "name": "VirtualItemSize",
@@ -6314,19 +6510,9 @@
           "type": "string?",
           "isRequired": false,
           "description": "Fixed height for the virtualized scroll container (e.g. \"600px\", \"80vh\")."
-        },
-        {
-          "name": "Items",
-          "type": "IEnumerable<TItem>?",
-          "isRequired": false,
-          "description": "In-memory items. When set without DataProvider, client-side sort/filter/pagination applies."
-        },
-        {
-          "name": "DisplayResolver",
-          "type": "Func<string, string?, string?>?",
-          "isRequired": false
         }
       ],
+      "compositionGuidance": "Either the page filters the data, or the table filters the data. When the page owns the filters, use ToolbarMode=ContentOnly and do not set ViewProvider/ExternalFilterDefinitions. When the table owns the filters, use the default Full toolbar mode and optionally a ViewProvider.",
       "cssClasses": [
         "tm-data-table-wrapper",
         "tm-data-table-toolbar",
@@ -6395,6 +6581,14 @@
         {
           "title": "Server-side data table with selection and views",
           "code": "<TmDataTable TItem=\"OrderDto\"\n             DataProvider=\"@orderProvider\"\n             ViewContext=\"orders\"\n             ViewProvider=\"@viewProvider\"\n             Selectable=\"true\"\n             ShowGrouping=\"true\"\n             OnRowClick=\"HandleRowClick\"\n             OnSelectionChanged=\"HandleSelectionChanged\">\n    <SelectionActions>\n        <TmButton OnClick=\"DeleteSelected\">Delete</TmButton>\n    </SelectionActions>\n    <TmDataTableColumn Title=\"Order #\" Field=\"o => o.OrderNumber\" Sortable=\"true\" />\n    <TmDataTableColumn Title=\"Status\" Field=\"o => o.Status\" Filterable=\"true\" FilterType=\"FilterType.Select\" FilterOptions=\"@statusOptions\" />\n</TmDataTable>"
+        },
+        {
+          "title": "Page-owned filters + content-only table",
+          "code": "@using Tempo.Blazor.Components.DataTable\n\n@* The owning page provides its own filter UI; the table renders only the data surface. *@\n<TmDataTable TItem=\"EmployeeDto\"\n             Items=\"@_filteredEmployees\"\n             ViewContext=\"page-owned-employees\"\n             ToolbarMode=\"DataToolbarMode.ContentOnly\">\n    <TmDataTableColumn TItem=\"EmployeeDto\" Title=\"Name\" Field=\"e => e.Name\" Sortable=\"true\" />\n    <TmDataTableColumn TItem=\"EmployeeDto\" Title=\"Department\" Field=\"e => e.Department\" Sortable=\"true\" />\n    <TmDataTableColumn TItem=\"EmployeeDto\" Title=\"Salary\" Field=\"e => e.Salary\" Align=\"ColumnAlign.Right\" />\n</TmDataTable>\n\n@code {\n    private IEnumerable<EmployeeDto> _filteredEmployees = default!;\n\n    // Apply filters from the page-level UI before passing data to the table.\n    private void ApplyPageFilters(string department, decimal minSalary)\n    {\n        _filteredEmployees = _allEmployees\n            .Where(e => department == null || e.Department == department)\n            .Where(e => e.Salary >= minSalary);\n    }\n}"
+        },
+        {
+          "title": "Saved views without external filter builder",
+          "code": "@using Tempo.Blazor.Components.DataTable\n@using Tempo.Blazor.Interfaces\n@using Tempo.Blazor.Models\n\n@* Use the view manager for saved views, but keep the inline filter builder hidden. *@\n<TmDataTable TItem=\"EmployeeDto\"\n             DataProvider=\"@_dataProvider\"\n             ViewContext=\"employees-saved-views\"\n             ViewProvider=\"@_viewProvider\"\n             ViewFilterDefinitions=\"@_viewFilterDefs\"\n             ShowExternalFilterBuilder=\"false\"\n             ShowSearch=\"false\">\n    <TmDataTableColumn TItem=\"EmployeeDto\" Title=\"Name\" PropertyName=\"Name\" Sortable=\"true\" Field=\"e => e.Name\" />\n    <TmDataTableColumn TItem=\"EmployeeDto\" Title=\"Role\" PropertyName=\"Role\" Sortable=\"true\" Field=\"e => e.Role\" />\n</TmDataTable>"
         },
         {
           "title": "Full-featured table with server-side DataProvider, ViewManager, external filters, and DisplayResolver",
@@ -6540,17 +6734,17 @@
           "description": "Whether this column can be sorted by clicking its header."
         },
         {
+          "name": "Title",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Column header text."
+        },
+        {
           "name": "Width",
           "type": "string?",
           "isRequired": false,
           "description": "Column width CSS value (e.g. \"200px\", \"20%\")."
-        },
-        {
-          "name": "Title",
-          "type": "string",
-          "isRequired": false,
-          "default": "Empty",
-          "description": "Column header text."
         }
       ],
       "cssClasses": [],
@@ -6591,6 +6785,11 @@
           "description": "Whether the pagination is disabled."
         },
         {
+          "name": "OnPageSizeChange",
+          "type": "EventCallback<int>",
+          "isRequired": false
+        },
+        {
           "name": "CurrentPage",
           "type": "int",
           "isRequired": false,
@@ -6619,11 +6818,6 @@
         },
         {
           "name": "OnPageChange",
-          "type": "EventCallback<int>",
-          "isRequired": false
-        },
-        {
-          "name": "OnPageSizeChange",
           "type": "EventCallback<int>",
           "isRequired": false
         }
@@ -6726,6 +6920,12 @@
           "description": "Enables inline row editing via double-click."
         },
         {
+          "name": "Items",
+          "type": "IEnumerable<TItem>?",
+          "isRequired": false,
+          "description": "Flat list of items. Each item must expose an id and a parent id."
+        },
+        {
           "name": "MultiSelect",
           "type": "bool",
           "isRequired": false,
@@ -6744,10 +6944,21 @@
           "description": "Fires when the selection changes (multi-select mode)."
         },
         {
+          "name": "OnPageSizeChange",
+          "type": "EventCallback<int>",
+          "isRequired": false
+        },
+        {
           "name": "OnRowEdit",
           "type": "EventCallback<TItem>",
           "isRequired": false,
           "description": "Fires when an item is collapsed."
+        },
+        {
+          "name": "OnRowSelect",
+          "type": "EventCallback<TItem>",
+          "isRequired": false,
+          "description": "Fires when a row is clicked (only when is true)."
         },
         {
           "name": "OnSelectionChange",
@@ -6862,6 +7073,13 @@
           "description": "Additional CSS class applied to each data cell in this column."
         },
         {
+          "name": "Title",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Column header text."
+        },
+        {
           "name": "Width",
           "type": "string?",
           "isRequired": false,
@@ -6874,7 +7092,7 @@
       "kind": "Component",
       "category": "Data Table",
       "namespace": "Tempo.Blazor.Components.DataTable",
-      "description": "Saved view management panel for TmDataTable and TmMultiViewList, supporting personal and tenant-scoped views with create, edit, delete, and apply operations. Includes a modal for configuring view name, scope, visible columns, grouping, and filters via IDataTableViewProvider.",
+      "description": "Saved view management panel for TmDataTable and TmMultiViewList, supporting personal and tenant-scoped views with create, edit, delete, and apply operations. Includes a modal for configuring view name, scope, visible columns, grouping, and filters via IDataTableViewProvider. This component is normally rendered by TmDataTable/TmMultiViewList when a ViewProvider is set and ShowViewManager/ToolbarMode allows it; direct standalone usage is supported but uncommon.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/DataTable/TmViewManager.razor",
       "documentationStatus": "merged",
@@ -6919,7 +7137,7 @@
           "name": "DisplayResolver",
           "type": "Func<string, string?, string?>?",
           "isRequired": false,
-          "description": "Available columns for grouping selection in the view modal."
+          "description": "Universal display resolver for field labels and filter values. Passed from parent TmDataTable/TmMultiViewList — flows to FilterBuilder."
         },
         {
           "name": "FilterDefinitions",
@@ -6949,15 +7167,21 @@
         {
           "name": "OnViewApplied",
           "type": "EventCallback<DataTableView>",
+          "isRequired": false,
+          "description": "Callback when a view is applied."
+        },
+        {
+          "name": "Provider",
+          "type": "IDataTableViewProvider",
           "isRequired": true,
-          "description": "Callback when a view is applied.",
+          "description": "Data provider for views.",
           "editorRequired": true
         },
         {
           "name": "ViewContext",
           "type": "string",
           "isRequired": true,
-          "description": "Data provider for views.",
+          "description": "Unique identifier for this table instance. Used to scope saved views to specific tables (e.g., \"employees\", \"projects\").",
           "editorRequired": true
         }
       ],
@@ -7014,7 +7238,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Fires when a dropdown item is selected (value = item key)."
+          "description": "Menu content — typically TmDropdownItem elements."
         },
         {
           "name": "Class",
@@ -7044,7 +7268,7 @@
           "name": "Text",
           "type": "string",
           "isRequired": false,
-          "default": "Empty",
+          "default": "\"\"",
           "description": "Trigger button label."
         }
       ],
@@ -7082,7 +7306,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Optional leading icon."
+          "description": "Item content."
         },
         {
           "name": "Class",
@@ -7106,7 +7330,7 @@
           "name": "Value",
           "type": "string",
           "isRequired": false,
-          "default": "Empty",
+          "default": "\"\"",
           "description": "Value passed to TmDropdown.OnSelect when clicked."
         }
       ],
@@ -7198,6 +7422,13 @@
           "description": "Field selector for item key (used for @key)."
         },
         {
+          "name": "Items",
+          "type": "IEnumerable<TItem>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Items to display (client-side filtering)."
+        },
+        {
           "name": "ItemTemplate",
           "type": "RenderFragment<TItem>?",
           "isRequired": false,
@@ -7232,13 +7463,6 @@
           "type": "EventCallback<TItem?>",
           "isRequired": false,
           "description": "Fires when the selected item changes."
-        },
-        {
-          "name": "Items",
-          "type": "IEnumerable<TItem>",
-          "isRequired": false,
-          "default": "[]",
-          "description": "Items to display (client-side filtering)."
         }
       ],
       "cssClasses": [
@@ -7308,7 +7532,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Optional title displayed above the description."
+          "description": "Description content."
         },
         {
           "name": "Class",
@@ -7335,6 +7559,13 @@
           "description": "Fires when the dismiss button is clicked."
         },
         {
+          "name": "Severity",
+          "type": "AlertSeverity",
+          "isRequired": false,
+          "default": "AlertSeverity.Info",
+          "description": "Severity level controlling color and default icon."
+        },
+        {
           "name": "Title",
           "type": "string?",
           "isRequired": false,
@@ -7346,13 +7577,6 @@
           "isRequired": false,
           "default": "AlertVariant.Soft",
           "description": "Visual variant: Soft, Filled, or Outlined."
-        },
-        {
-          "name": "Severity",
-          "type": "AlertSeverity",
-          "isRequired": false,
-          "default": "Info",
-          "description": "Severity level controlling color and default icon."
         }
       ],
       "cssClasses": [
@@ -7413,17 +7637,17 @@
           "description": "Additional CSS class."
         },
         {
-          "name": "OnSave",
-          "type": "EventCallback",
-          "isRequired": false,
-          "description": "Callback invoked when the auto-save timer fires and there are unsaved changes."
-        },
-        {
           "name": "IsEnabled",
           "type": "bool",
           "isRequired": false,
           "default": "true",
           "description": "Whether the auto-save timer is active. When set to false the timer is stopped."
+        },
+        {
+          "name": "OnSave",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Callback invoked when the auto-save timer fires and there are unsaved changes."
         }
       ],
       "publicMethods": [
@@ -7473,24 +7697,25 @@
       ],
       "parameters": [
         {
-          "name": "ChildContent",
+          "name": "CancelButtonText",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"Cancel\""
+        },
+        {
+          "name": "FooterContent",
           "type": "RenderFragment?",
           "isRequired": false
         },
         {
-          "name": "Class",
-          "type": "string?",
-          "isRequired": false
-        },
-        {
-          "name": "OkButtonText",
-          "type": "string",
+          "name": "IsDangerous",
+          "type": "bool",
           "isRequired": false,
-          "default": "\"OK\""
+          "default": "false"
         },
         {
-          "name": "OnResult",
-          "type": "EventCallback<bool?>",
+          "name": "OnPromptResult",
+          "type": "EventCallback<string?>",
           "isRequired": false
         },
         {
@@ -7534,25 +7759,19 @@
           "default": "\"Enter value...\""
         },
         {
-          "name": "IsDangerous",
-          "type": "bool",
-          "isRequired": false,
-          "default": "false"
-        },
-        {
-          "name": "CancelButtonText",
+          "name": "OkButtonText",
           "type": "string",
           "isRequired": false,
-          "default": "\"Cancel\""
+          "default": "\"OK\""
         },
         {
-          "name": "FooterContent",
-          "type": "RenderFragment?",
+          "name": "OnResult",
+          "type": "EventCallback<bool?>",
           "isRequired": false
         },
         {
-          "name": "OnPromptResult",
-          "type": "EventCallback<string?>",
+          "name": "Class",
+          "type": "string?",
           "isRequired": false
         }
       ],
@@ -7606,32 +7825,32 @@
       ],
       "parameters": [
         {
-          "name": "Class",
-          "type": "string?",
-          "isRequired": false
-        },
-        {
-          "name": "CloseOnOverlayClick",
+          "name": "Animated",
           "type": "bool",
           "isRequired": false,
           "default": "true"
         },
         {
-          "name": "OnClose",
+          "name": "CloseOnEscape",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true"
+        },
+        {
+          "name": "Footer",
+          "type": "RenderFragment?",
+          "isRequired": false
+        },
+        {
+          "name": "OkButtonDisabled",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false"
+        },
+        {
+          "name": "OnOpen",
           "type": "EventCallback",
           "isRequired": false
-        },
-        {
-          "name": "ShowCloseButton",
-          "type": "bool",
-          "isRequired": false,
-          "default": "true"
-        },
-        {
-          "name": "Size",
-          "type": "ModalSize",
-          "isRequired": false,
-          "default": "ModalSize.Medium"
         },
         {
           "name": "Show",
@@ -7655,9 +7874,10 @@
           "isRequired": false
         },
         {
-          "name": "Footer",
-          "type": "RenderFragment?",
-          "isRequired": false
+          "name": "Size",
+          "type": "ModalSize",
+          "isRequired": false,
+          "default": "Medium"
         },
         {
           "name": "Position",
@@ -7666,7 +7886,7 @@
           "default": "Center"
         },
         {
-          "name": "Animated",
+          "name": "ShowCloseButton",
           "type": "bool",
           "isRequired": false,
           "default": "true"
@@ -7714,16 +7934,15 @@
           "default": "Primary"
         },
         {
-          "name": "OkButtonDisabled",
-          "type": "bool",
-          "isRequired": false,
-          "default": "false"
-        },
-        {
-          "name": "CloseOnEscape",
+          "name": "CloseOnOverlayClick",
           "type": "bool",
           "isRequired": false,
           "default": "true"
+        },
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false
         },
         {
           "name": "OnOk",
@@ -7731,8 +7950,8 @@
           "isRequired": false
         },
         {
-          "name": "OnOpen",
-          "type": "EventCallback",
+          "name": "Class",
+          "type": "string?",
           "isRequired": false
         }
       ],
@@ -7792,9 +8011,8 @@
         {
           "name": "ChildContent",
           "type": "RenderFragment?",
-          "isRequired": true,
-          "description": "Trigger content.",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Popover body content."
         },
         {
           "name": "Class",
@@ -7834,6 +8052,13 @@
           "isRequired": false,
           "default": "true",
           "description": "Show arrow pointing to trigger."
+        },
+        {
+          "name": "TriggerContent",
+          "type": "RenderFragment",
+          "isRequired": true,
+          "description": "Trigger content.",
+          "editorRequired": true
         }
       ],
       "cssClasses": [
@@ -7934,17 +8159,17 @@
           "description": "Show diagonal stripe pattern."
         },
         {
+          "name": "Value",
+          "type": "double",
+          "isRequired": false,
+          "description": "Current value (0 to Max)."
+        },
+        {
           "name": "Variant",
           "type": "ProgressBarVariant",
           "isRequired": false,
           "default": "ProgressBarVariant.Default",
           "description": "Color variant preset."
-        },
-        {
-          "name": "Value",
-          "type": "double",
-          "isRequired": false,
-          "description": "Current value (0 to Max)."
         }
       ],
       "cssClasses": [
@@ -8010,17 +8235,17 @@
           "description": "Optional CSS height (e.g. \"40px\", \"1rem\")."
         },
         {
+          "name": "Variant",
+          "type": "SkeletonVariant",
+          "isRequired": false,
+          "default": "SkeletonVariant.Text",
+          "description": "Shape variant. Defaults to Text."
+        },
+        {
           "name": "Width",
           "type": "string?",
           "isRequired": false,
           "description": "Optional CSS width (e.g. \"200px\", \"100%\")."
-        },
-        {
-          "name": "Variant",
-          "type": "SkeletonVariant",
-          "isRequired": false,
-          "default": "Text",
-          "description": "Shape variant. Defaults to Text."
         }
       ],
       "cssClasses": [
@@ -8074,7 +8299,7 @@
           "name": "Size",
           "type": "SpinnerSize",
           "isRequired": false,
-          "default": "Sm",
+          "default": "SpinnerSize.Sm",
           "description": "Display size of the spinner. Defaults to Sm."
         }
       ],
@@ -8123,7 +8348,7 @@
           "name": "Position",
           "type": "ToastPosition",
           "isRequired": false,
-          "default": "TopRight",
+          "default": "ToastPosition.TopRight",
           "description": "Position of the toast container on screen."
         }
       ],
@@ -8175,7 +8400,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Maximum width of the tooltip."
+          "description": "Trigger element."
         },
         {
           "name": "Class",
@@ -8200,9 +8425,15 @@
         {
           "name": "Position",
           "type": "TooltipPosition",
-          "isRequired": true,
+          "isRequired": false,
           "default": "TooltipPosition.Top",
-          "description": "Position relative to trigger (default Top).",
+          "description": "Position relative to trigger (default Top)."
+        },
+        {
+          "name": "Text",
+          "type": "string",
+          "isRequired": true,
+          "description": "Tooltip text to display.",
           "editorRequired": true
         }
       ],
@@ -8240,6 +8471,12 @@
       ],
       "parameters": [
         {
+          "name": "AttachmentProvider",
+          "type": "ITmAttachmentProvider?",
+          "isRequired": false,
+          "description": "Provider for loading and linking attachments to an entity."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
@@ -8275,12 +8512,6 @@
           "type": "ITmFileProvider?",
           "isRequired": false,
           "description": "Provider for uploading files and resolving asset URLs."
-        },
-        {
-          "name": "AttachmentProvider",
-          "type": "ITmAttachmentProvider?",
-          "isRequired": false,
-          "description": "Provider for loading and linking attachments to an entity."
         },
         {
           "name": "OnDeleted",
@@ -8378,6 +8609,12 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Current folder path. Two-way bindable."
+        },
+        {
+          "name": "DataProvider",
+          "type": "IDocumentManagerDataProvider<TMetadata>?",
+          "isRequired": false,
+          "description": "Data provider for document operations."
         },
         {
           "name": "DeleteForm",
@@ -8595,6 +8832,13 @@
           "description": "Raised when the user cancels."
         },
         {
+          "name": "Provider",
+          "type": "ITempoDocumentLibraryProvider",
+          "isRequired": true,
+          "description": "The library to browse. Required.",
+          "editorRequired": true
+        },
+        {
           "name": "SearchDebounceMs",
           "type": "int",
           "isRequired": false,
@@ -8633,7 +8877,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "When true, the drop zone is disabled and no files can be selected."
+          "description": "Optional custom content to display inside the drop zone."
         },
         {
           "name": "Class",
@@ -8651,13 +8895,13 @@
           "name": "InputAriaLabel",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional test id passed to the internal file input."
+          "description": "Optional aria-label passed to the internal file input."
         },
         {
           "name": "InputTestId",
           "type": "string?",
           "isRequired": false,
-          "description": "Maximum number of files to accept from a single selection. Default 10."
+          "description": "Optional test id passed to the internal file input."
         },
         {
           "name": "MaxFileCount",
@@ -8746,6 +8990,12 @@
           "description": "Current folder path. Two-way bindable."
         },
         {
+          "name": "DataProvider",
+          "type": "IFileManagerDataProvider?",
+          "isRequired": false,
+          "description": "Data provider for file system operations."
+        },
+        {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
@@ -8818,7 +9068,7 @@
       "kind": "Component",
       "category": "Filters",
       "namespace": "Tempo.Blazor.Components.Filters",
-      "description": "Interactive filter builder UI that lets users add, edit, and remove filters using field definitions. Renders active filters as TmFilterChip components with a field picker, operator selector, and value input. Supports text, number, date, boolean, select, and multi-select field types.",
+      "description": "Interactive filter builder UI that lets users add, edit, and remove filters using field definitions. Renders active filters as TmFilterChip components with a field picker, operator selector, and value input. Supports text, number, date, boolean, select, and multi-select field types. The add button and clear-all labels are localized via TmFilterBuilder_AddFilter and TmFilterBuilder_ClearAll keys; both buttons keep their text on a single line with white-space: nowrap.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Filters/TmFilterBuilder.razor",
       "documentationStatus": "merged",
@@ -8843,7 +9093,14 @@
           "name": "DisplayResolver",
           "type": "Func<string, string?, string?>?",
           "isRequired": false,
-          "description": "Show the \"Clear all\" button when filters are active."
+          "description": "Universal display resolver for field labels and filter values. Passed from parent component."
+        },
+        {
+          "name": "FilterDefinitions",
+          "type": "IReadOnlyList<FilterDefinition>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Definitions of filterable fields."
         },
         {
           "name": "OnFiltersChanged",
@@ -8857,13 +9114,6 @@
           "isRequired": false,
           "default": "true",
           "description": "Show the \"Clear all\" button when filters are active."
-        },
-        {
-          "name": "FilterDefinitions",
-          "type": "IReadOnlyList<FilterDefinition>",
-          "isRequired": false,
-          "default": "[]",
-          "description": "Definitions of filterable fields."
         }
       ],
       "cssClasses": [
@@ -8906,6 +9156,13 @@
       ],
       "parameters": [
         {
+          "name": "Filter",
+          "type": "ActiveFilter",
+          "isRequired": true,
+          "description": "The active filter to display.",
+          "editorRequired": true
+        },
+        {
           "name": "OnEdit",
           "type": "EventCallback<ActiveFilter>",
           "isRequired": false,
@@ -8914,9 +9171,8 @@
         {
           "name": "OnRemove",
           "type": "EventCallback<ActiveFilter>",
-          "isRequired": true,
-          "description": "Fires when the remove button is clicked.",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Fires when the remove button is clicked."
         }
       ],
       "cssClasses": [
@@ -8954,6 +9210,14 @@
           "description": "Number of columns (1–3, default 1)."
         },
         {
+          "name": "Fields",
+          "type": "IReadOnlyList<DynamicFieldDefinition>",
+          "isRequired": true,
+          "default": "[]",
+          "description": "Field definitions.",
+          "editorRequired": true
+        },
+        {
           "name": "OnFieldChanged",
           "type": "EventCallback<(string FieldName, object? Value)>",
           "isRequired": false,
@@ -8969,8 +9233,7 @@
           "name": "Values",
           "type": "Dictionary<string, object?>",
           "isRequired": true,
-          "description": "Current field values keyed by field name.",
-          "editorRequired": true
+          "description": "Current field values keyed by field name."
         },
         {
           "name": "ValuesChanged",
@@ -9032,7 +9295,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Expression identifying the model field to track for EditContext validation errors."
+          "description": "Input(s) wrapped by this field."
         },
         {
           "name": "Class",
@@ -9065,6 +9328,12 @@
           "description": "Helper text shown below the field when there is no error."
         },
         {
+          "name": "Label",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Label text displayed above the field."
+        },
+        {
           "name": "Required",
           "type": "bool",
           "isRequired": false,
@@ -9075,12 +9344,6 @@
           "type": "Expression<Func<object>>?",
           "isRequired": false,
           "description": "Expression identifying the model field to track for EditContext validation errors."
-        },
-        {
-          "name": "Label",
-          "type": "string?",
-          "isRequired": false,
-          "description": "Label text displayed above the field."
         }
       ],
       "cascadingParameters": [
@@ -9138,6 +9401,12 @@
       ],
       "parameters": [
         {
+          "name": "ChildContent",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Content items rendered as columns."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
@@ -9186,7 +9455,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Optional description text below the heading."
+          "description": "Content rendered inside the section body."
         },
         {
           "name": "Class",
@@ -9255,8 +9524,14 @@
         {
           "name": "Class",
           "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class(es)."
+        },
+        {
+          "name": "For",
+          "type": "Expression<Func<object>>?",
           "isRequired": true,
-          "description": "Additional CSS class(es).",
+          "description": "Expression identifying the field to display validation messages for.",
           "editorRequired": true
         }
       ],
@@ -9358,10 +9633,14 @@
       ],
       "parameters": [
         {
-          "name": "Value",
-          "type": "string",
-          "isRequired": false,
-          "default": "\"\""
+          "name": "OnBlur",
+          "type": "EventCallback<FocusEventArgs>",
+          "isRequired": false
+        },
+        {
+          "name": "ValueChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false
         },
         {
           "name": "ValueExpression",
@@ -9461,14 +9740,10 @@
           "isRequired": false
         },
         {
-          "name": "OnBlur",
-          "type": "EventCallback<FocusEventArgs>",
-          "isRequired": false
-        },
-        {
-          "name": "ValueChanged",
-          "type": "EventCallback<string>",
-          "isRequired": false
+          "name": "Value",
+          "type": "string",
+          "isRequired": false,
+          "default": "Empty"
         }
       ],
       "cssClasses": [
@@ -9584,6 +9859,12 @@
           "description": "Heading for the empty state when Images is empty."
         },
         {
+          "name": "Images",
+          "type": "IEnumerable<IGalleryImage>?",
+          "isRequired": false,
+          "description": "Images to display in the gallery grid."
+        },
+        {
           "name": "IsLoading",
           "type": "bool",
           "isRequired": false,
@@ -9600,12 +9881,6 @@
           "type": "IImageUrlResolver?",
           "isRequired": false,
           "description": "Optional URL resolver for full-size images (ticket-based APIs, legacy)."
-        },
-        {
-          "name": "Images",
-          "type": "IEnumerable<IGalleryImage>?",
-          "isRequired": false,
-          "description": "Images to display in the gallery grid."
         }
       ],
       "cssClasses": [
@@ -9688,6 +9963,12 @@
           "description": "True when the current image is the last in the sequence."
         },
         {
+          "name": "IsOpen",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Controls lightbox visibility."
+        },
+        {
           "name": "OnClose",
           "type": "EventCallback",
           "isRequired": false,
@@ -9716,12 +9997,6 @@
           "type": "int",
           "isRequired": false,
           "description": "Total number of images in the gallery."
-        },
-        {
-          "name": "IsOpen",
-          "type": "bool",
-          "isRequired": false,
-          "description": "Controls lightbox visibility."
         }
       ],
       "cssClasses": [
@@ -9770,12 +10045,19 @@
           "description": "Color variant of the icon. Default inherits from parent (currentColor)."
         },
         {
+          "name": "Name",
+          "type": "string",
+          "isRequired": true,
+          "default": "\"\"",
+          "description": "Icon name — use IconNames constants (e.g. IconNames.Check).",
+          "editorRequired": true
+        },
+        {
           "name": "Size",
           "type": "IconSize",
-          "isRequired": true,
+          "isRequired": false,
           "default": "IconSize.Md",
-          "description": "Display size of the icon.",
-          "editorRequired": true
+          "description": "Display size of the icon."
         },
         {
           "name": "StrokeWidth",
@@ -10048,6 +10330,12 @@
           "description": "Available entity types for export."
         },
         {
+          "name": "Formats",
+          "type": "IEnumerable<TmExportFormat>?",
+          "isRequired": false,
+          "description": "Available export formats."
+        },
+        {
           "name": "OnExport",
           "type": "EventCallback<TmExportRequest>",
           "isRequired": false,
@@ -10058,12 +10346,6 @@
           "type": "string?",
           "isRequired": false,
           "description": "Optional title. Falls back to localized default."
-        },
-        {
-          "name": "Formats",
-          "type": "IEnumerable<TmExportFormat>?",
-          "isRequired": false,
-          "description": "Available export formats."
         }
       ],
       "cssClasses": [
@@ -10104,7 +10386,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Description displayed below the title."
+          "description": "Content to preview (e.g. a data table)."
         },
         {
           "name": "Class",
@@ -10206,6 +10488,12 @@
           "description": "Custom text for Cancel button."
         },
         {
+          "name": "ChildContent",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Wizard step components."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
@@ -10274,20 +10562,26 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Optional icon name."
+          "description": "Step body content."
         },
         {
           "name": "Description",
           "type": "string?",
-          "isRequired": true,
-          "description": "Optional description for the step indicator.",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Optional description for the step indicator."
         },
         {
           "name": "Icon",
           "type": "string?",
           "isRequired": false,
           "description": "Optional icon name."
+        },
+        {
+          "name": "Title",
+          "type": "string",
+          "isRequired": true,
+          "description": "Step title displayed in the step indicator.",
+          "editorRequired": true
         }
       ],
       "cssClasses": [],
@@ -10329,6 +10623,12 @@
           "description": "Validation error for the child select."
         },
         {
+          "name": "ChildLabel",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Label for the child select."
+        },
+        {
           "name": "ChildPlaceholder",
           "type": "string?",
           "isRequired": false,
@@ -10362,7 +10662,8 @@
           "name": "LoadChildOptionsAsync",
           "type": "Func<TParent?, Task<IReadOnlyList<SelectOption<TChild>>>>",
           "isRequired": true,
-          "description": "Fires when the child selection changes."
+          "description": "Async callback that loads child options based on the selected parent. Receives the current ParentValue (may be null when parent is cleared).",
+          "editorRequired": true
         },
         {
           "name": "ParentError",
@@ -10389,22 +10690,16 @@
           "description": "Placeholder for the parent select."
         },
         {
-          "name": "ParentValueChanged",
-          "type": "EventCallback<TParent?>",
-          "isRequired": false,
-          "description": "Fires when the parent selection changes."
-        },
-        {
           "name": "ParentValue",
           "type": "TParent?",
           "isRequired": false,
           "description": "Currently selected parent value."
         },
         {
-          "name": "ChildLabel",
-          "type": "string?",
+          "name": "ParentValueChanged",
+          "type": "EventCallback<TParent?>",
           "isRequired": false,
-          "description": "Label for the child select."
+          "description": "Fires when the parent selection changes."
         }
       ],
       "cssClasses": [
@@ -10457,16 +10752,16 @@
           "description": "Help text shown below the checkbox."
         },
         {
+          "name": "Indeterminate",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Shows an indeterminate (dash) state when true and Value is false."
+        },
+        {
           "name": "Label",
           "type": "string?",
           "isRequired": false,
           "description": "Label text rendered next to the checkbox."
-        },
-        {
-          "name": "ValueChanged",
-          "type": "EventCallback<bool>",
-          "isRequired": false,
-          "description": "Fires when checked state changes."
         },
         {
           "name": "Value",
@@ -10475,10 +10770,10 @@
           "description": "Checked state."
         },
         {
-          "name": "Indeterminate",
-          "type": "bool",
+          "name": "ValueChanged",
+          "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Shows an indeterminate (dash) state when true and Value is false."
+          "description": "Fires when checked state changes."
         }
       ],
       "cssClasses": [
@@ -10537,6 +10832,12 @@
           "description": "Output format. Default is ."
         },
         {
+          "name": "Value",
+          "type": "string?",
+          "isRequired": false,
+          "description": "The current color value (hex, rgb, or rgba)."
+        },
+        {
           "name": "ValueChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
@@ -10582,6 +10883,12 @@
           "isRequired": false,
           "default": "true",
           "description": "Number of columns in the grid. Default 8."
+        },
+        {
+          "name": "Value",
+          "type": "string?",
+          "isRequired": false,
+          "description": "The currently selected color value."
         },
         {
           "name": "ValueChanged",
@@ -10708,6 +11015,12 @@
           "description": "Shows the hex color input."
         },
         {
+          "name": "Value",
+          "type": "string?",
+          "isRequired": false,
+          "description": "The current color value."
+        },
+        {
           "name": "ValueChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
@@ -10730,6 +11043,12 @@
       ],
       "parameters": [
         {
+          "name": "Amount",
+          "type": "decimal?",
+          "isRequired": false,
+          "description": "The entered amount."
+        },
+        {
           "name": "AmountChanged",
           "type": "EventCallback<decimal?>",
           "isRequired": false,
@@ -10746,6 +11065,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Additional CSS class."
+        },
+        {
+          "name": "ConvertAsync",
+          "type": "Func<decimal, string, Task<decimal?>>?",
+          "isRequired": false,
+          "description": "Optional async callback for converting Amount to another currency. Receives (amount, currencyCode) and returns the converted value. When null, the converted amount column is hidden entirely."
         },
         {
           "name": "ConvertedAmount",
@@ -10818,17 +11143,6 @@
           "type": "bool",
           "isRequired": false,
           "description": "Show the manual exchange rate input. Only meaningful when ConvertAsync is provided."
-        },
-        {
-          "name": "Amount",
-          "type": "decimal?",
-          "isRequired": false,
-          "description": "The entered amount."
-        },
-        {
-          "name": "ConvertAsync",
-          "type": "Func<decimal, string, Task<decimal?>>?",
-          "isRequired": false
         }
       ],
       "cssClasses": [
@@ -10905,7 +11219,7 @@
           "name": "DisplaySelector",
           "type": "Func<TItem, string>",
           "isRequired": true,
-          "description": "Extracts the value from an item.",
+          "description": "Extracts the display text from an item.",
           "editorRequired": true
         },
         {
@@ -10917,9 +11231,8 @@
         {
           "name": "Label",
           "type": "string?",
-          "isRequired": true,
-          "description": "Field label.",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Field label."
         },
         {
           "name": "MinSearchLength",
@@ -10938,7 +11251,14 @@
           "name": "SearchProvider",
           "type": "Func<string, Task<IEnumerable<TItem>>>",
           "isRequired": true,
-          "description": "Fires when value changes."
+          "description": "Search provider function.",
+          "editorRequired": true
+        },
+        {
+          "name": "Value",
+          "type": "TValue?",
+          "isRequired": false,
+          "description": "Current selected value."
         },
         {
           "name": "ValueChanged",
@@ -10950,14 +11270,8 @@
           "name": "ValueSelector",
           "type": "Func<TItem, TValue>",
           "isRequired": true,
-          "description": "Search provider function.",
+          "description": "Extracts the value from an item.",
           "editorRequired": true
-        },
-        {
-          "name": "Value",
-          "type": "TValue?",
-          "isRequired": false,
-          "description": "Current selected value."
         }
       ],
       "cssClasses": [
@@ -11026,6 +11340,13 @@
           "description": "Input placeholder text."
         },
         {
+          "name": "Value",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Current expression text."
+        },
+        {
           "name": "ValueChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
@@ -11036,13 +11357,6 @@
           "type": "IReadOnlyList<ExpressionVariable>?",
           "isRequired": false,
           "description": "Available variables for insertion."
-        },
-        {
-          "name": "Value",
-          "type": "string",
-          "isRequired": false,
-          "default": "\"\"",
-          "description": "Current expression text."
         }
       ],
       "cssClasses": [
@@ -11152,6 +11466,12 @@
           "description": "Number of columns in the palette grid. Default 8."
         },
         {
+          "name": "Value",
+          "type": "string?",
+          "isRequired": false,
+          "description": "The current color value."
+        },
+        {
           "name": "ValueChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
@@ -11199,9 +11519,16 @@
         },
         {
           "name": "Label",
-          "type": "string UnmaskedValue => MaskHelper.RemoveMask(_value, Mask, PromptChar, IncludeLiterals); /// <summary>Label shown above the input.</summary> [Parameter] public string?",
+          "type": "string?",
           "isRequired": false,
           "description": "Label shown above the input."
+        },
+        {
+          "name": "Mask",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "The mask pattern. Use '0' for digits, 'L' for letters, 'A' for alphanumeric, '&' for any char. Other characters are treated as literals."
         },
         {
           "name": "Placeholder",
@@ -11223,11 +11550,10 @@
           "description": "Whether the input is read-only."
         },
         {
-          "name": "Mask",
-          "type": "string",
+          "name": "ValueChanged",
+          "type": "EventCallback<string>",
           "isRequired": false,
-          "default": "Empty",
-          "description": "The mask pattern. Use '0' for digits, 'L' for letters, 'A' for alphanumeric, '&' for any char. Other characters are treated as literals."
+          "description": "Event fired when the value changes."
         },
         {
           "name": "Value",
@@ -11235,12 +11561,6 @@
           "isRequired": false,
           "default": "Empty",
           "description": "The current value. When IncludeLiterals is true, this includes mask literals. When false, only user-typed characters are stored."
-        },
-        {
-          "name": "ValueChanged",
-          "type": "EventCallback<string>",
-          "isRequired": false,
-          "description": "Event fired when the value changes."
         }
       ],
       "cssClasses": [
@@ -11293,6 +11613,13 @@
           "description": "Disables the component."
         },
         {
+          "name": "Columns",
+          "type": "IReadOnlyList<MultiColumnComboBoxColumn<TItem>>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Column definitions for the dropdown grid."
+        },
+        {
           "name": "Data",
           "type": "IReadOnlyList<TItem>",
           "isRequired": false,
@@ -11336,6 +11663,12 @@
           "type": "Func<TItem, string>",
           "isRequired": true,
           "description": "Expression that returns the value for a given item. Required for selection matching."
+        },
+        {
+          "name": "Value",
+          "type": "TValue?",
+          "isRequired": false,
+          "description": "Selected value."
         },
         {
           "name": "ValueChanged",
@@ -11418,7 +11751,8 @@
           "name": "DisplayField",
           "type": "Func<TItem, string>",
           "isRequired": true,
-          "description": "Server-side data provider. When set, Items is ignored."
+          "description": "Extracts display text from an item.",
+          "editorRequired": true
         },
         {
           "name": "EmptyMessage",
@@ -11484,9 +11818,8 @@
         {
           "name": "IdField",
           "type": "Func<TItem, string>?",
-          "isRequired": true,
-          "description": "Extracts a string key for @key and ExcludedIds. Defaults to ValueField.ToString().",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Extracts a string key for @key and ExcludedIds. Defaults to ValueField.ToString()."
         },
         {
           "name": "Items",
@@ -11557,6 +11890,12 @@
           "description": "Placeholder text when no items are selected."
         },
         {
+          "name": "Required",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Marks the field as required."
+        },
+        {
           "name": "ShowCheckBox",
           "type": "bool",
           "isRequired": false,
@@ -11585,8 +11924,15 @@
           "name": "ValueField",
           "type": "Func<TItem, TValue>",
           "isRequired": true,
-          "description": "Extracts display text from an item.",
+          "description": "Extracts the value from an item.",
           "editorRequired": true
+        },
+        {
+          "name": "Values",
+          "type": "IReadOnlyList<TValue>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Currently selected values."
         },
         {
           "name": "ValuesChanged",
@@ -11599,19 +11945,6 @@
           "type": "RenderFragment<TItem>?",
           "isRequired": false,
           "description": "Custom template for each selected value chip."
-        },
-        {
-          "name": "Values",
-          "type": "IReadOnlyList<TValue>",
-          "isRequired": false,
-          "default": "[]",
-          "description": "Currently selected values."
-        },
-        {
-          "name": "Required",
-          "type": "bool",
-          "isRequired": false,
-          "description": "Marks the field as required."
         }
       ],
       "cssClasses": [
@@ -11779,16 +12112,16 @@
           "description": "Suffix text (e.g. \"days\")."
         },
         {
-          "name": "ValueChanged",
-          "type": "EventCallback<int?>",
-          "isRequired": false,
-          "description": "Fires when value changes."
-        },
-        {
           "name": "Value",
           "type": "int?",
           "isRequired": false,
           "description": "Current numeric value."
+        },
+        {
+          "name": "ValueChanged",
+          "type": "EventCallback<int?>",
+          "isRequired": false,
+          "description": "Fires when value changes."
         }
       ],
       "cssClasses": [
@@ -11912,16 +12245,16 @@
           "description": "Radio group name."
         },
         {
-          "name": "Value",
-          "type": "object?",
-          "isRequired": false,
-          "description": "The value this radio represents — used by TmRadioGroup."
-        },
-        {
           "name": "OnSelect",
           "type": "EventCallback",
           "isRequired": false,
           "description": "Fires when this radio is selected."
+        },
+        {
+          "name": "Value",
+          "type": "object?",
+          "isRequired": false,
+          "description": "The value this radio represents — used by TmRadioGroup."
         }
       ],
       "cssClasses": [
@@ -11996,6 +12329,13 @@
           "description": "Layout direction. Defaults to Vertical."
         },
         {
+          "name": "Name",
+          "type": "string",
+          "isRequired": false,
+          "default": "Guid.NewGuid().ToString(\"n\")[..8]",
+          "description": "Radio group name attribute (shared by all radio inputs)."
+        },
+        {
           "name": "Options",
           "type": "List<RadioOption<T>>",
           "isRequired": false,
@@ -12013,13 +12353,6 @@
           "type": "EventCallback<T?>",
           "isRequired": false,
           "description": "Fires when the selection changes."
-        },
-        {
-          "name": "Name",
-          "type": "string",
-          "isRequired": false,
-          "default": "Guid.NewGuid().ToString(\"n\")[..8]",
-          "description": "Radio group name attribute (shared by all radio inputs)."
         }
       ],
       "cssClasses": [
@@ -12093,6 +12426,13 @@
           "description": "The maximum value of the slider."
         },
         {
+          "name": "Min",
+          "type": "int",
+          "isRequired": false,
+          "description": "The minimum value of the slider.",
+          "default": "0"
+        },
+        {
           "name": "ShowValue",
           "type": "bool",
           "isRequired": false,
@@ -12116,13 +12456,6 @@
           "isRequired": false,
           "default": "1",
           "description": "The step increment."
-        },
-        {
-          "name": "Min",
-          "type": "int",
-          "isRequired": false,
-          "default": "0",
-          "description": "The minimum value of the slider."
         }
       ],
       "cssClasses": [
@@ -12160,6 +12493,12 @@
       ],
       "parameters": [
         {
+          "name": "AdditionalCssClass",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes."
+        },
+        {
           "name": "Max",
           "type": "int",
           "isRequired": false,
@@ -12173,28 +12512,22 @@
           "description": "Whether the rating is read-only."
         },
         {
-          "name": "ValueChanged",
-          "type": "EventCallback<int?>",
-          "isRequired": false,
-          "description": "Event fired when the rating changes."
-        },
-        {
           "name": "Value",
           "type": "int?",
           "isRequired": false,
           "description": "The current rating value. Null means no rating."
         },
         {
+          "name": "ValueChanged",
+          "type": "EventCallback<int?>",
+          "isRequired": false,
+          "description": "Event fired when the rating changes."
+        },
+        {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
           "description": "Whether the rating is disabled."
-        },
-        {
-          "name": "AdditionalCssClass",
-          "type": "string?",
-          "isRequired": false,
-          "description": "Additional CSS classes."
         }
       ],
       "cssClasses": [
@@ -12266,17 +12599,17 @@
           "description": "Placeholder text. When null, falls back to the localized default."
         },
         {
+          "name": "Value",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Current search text."
+        },
+        {
           "name": "ValueChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Fires when the search value changes."
-        },
-        {
-          "name": "Value",
-          "type": "string",
-          "isRequired": false,
-          "default": "Empty",
-          "description": "Current search text."
         }
       ],
       "cssClasses": [
@@ -12325,7 +12658,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Typed option list. When provided, <option> elements are generated automatically."
+          "description": "<option> elements for the select."
         },
         {
           "name": "Class",
@@ -12365,16 +12698,16 @@
           "description": "Label shown above the select."
         },
         {
+          "name": "Options",
+          "type": "IReadOnlyList<SelectOption<TValue>>?",
+          "isRequired": false,
+          "description": "Typed option list. When provided, &lt;option&gt; elements are generated automatically."
+        },
+        {
           "name": "Placeholder",
           "type": "string?",
           "isRequired": false,
           "description": "Placeholder option shown when no value is selected."
-        },
-        {
-          "name": "ValueChanged",
-          "type": "EventCallback<TValue?>",
-          "isRequired": false,
-          "description": "Fires when the selection changes."
         },
         {
           "name": "Value",
@@ -12383,10 +12716,10 @@
           "description": "Selected value."
         },
         {
-          "name": "Options",
-          "type": "IReadOnlyList<SelectOption<TValue>>?",
+          "name": "ValueChanged",
+          "type": "EventCallback<TValue?>",
           "isRequired": false,
-          "description": "Typed option list. When provided, &lt;option&gt; elements are generated automatically."
+          "description": "Fires when the selection changes."
         }
       ],
       "cssClasses": [
@@ -12606,6 +12939,12 @@
           "description": "Whether typed mode should collect initials instead of a full signature."
         },
         {
+          "name": "Value",
+          "type": "string?",
+          "isRequired": false,
+          "description": "The current signature value as an SVG data URL or raw SVG markup."
+        },
+        {
           "name": "ValueChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
@@ -12772,6 +13111,12 @@
           "description": "Whether typed mode should collect initials instead of a full signature."
         },
         {
+          "name": "Value",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Captured signature value."
+        },
+        {
           "name": "ValueChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
@@ -12825,6 +13170,13 @@
           "description": "The maximum value of the slider."
         },
         {
+          "name": "Min",
+          "type": "int",
+          "isRequired": false,
+          "description": "The minimum value of the slider.",
+          "default": "0"
+        },
+        {
           "name": "Orientation",
           "type": "SliderOrientation",
           "isRequired": false,
@@ -12874,13 +13226,6 @@
           "type": "EventCallback<int?>",
           "isRequired": false,
           "description": "Event fired when the value changes."
-        },
-        {
-          "name": "Min",
-          "type": "int",
-          "isRequired": false,
-          "default": "0",
-          "description": "The minimum value of the slider."
         }
       ],
       "cssClasses": [
@@ -12990,17 +13335,17 @@
           "description": "Tab index."
         },
         {
+          "name": "Value",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Current text value."
+        },
+        {
           "name": "ValueChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Fires when the value changes."
-        },
-        {
-          "name": "Value",
-          "type": "string",
-          "isRequired": false,
-          "default": "Empty",
-          "description": "Current text value."
         }
       ],
       "cssClasses": [
@@ -13110,6 +13455,12 @@
           "description": "Fires when the input receives focus."
         },
         {
+          "name": "OnKeyDown",
+          "type": "EventCallback<KeyboardEventArgs>",
+          "isRequired": false,
+          "description": "Fires when a key is pressed down."
+        },
+        {
           "name": "OnKeyPress",
           "type": "EventCallback<KeyboardEventArgs>",
           "isRequired": false,
@@ -13166,23 +13517,17 @@
           "description": "HTML input type. Defaults to \"text\"."
         },
         {
+          "name": "Value",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Current text value."
+        },
+        {
           "name": "ValueChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Fires when the value changes."
-        },
-        {
-          "name": "Value",
-          "type": "string",
-          "isRequired": false,
-          "default": "Empty",
-          "description": "Current text value."
-        },
-        {
-          "name": "OnKeyDown",
-          "type": "EventCallback<KeyboardEventArgs>",
-          "isRequired": false,
-          "description": "Fires when a key is pressed down."
         }
       ],
       "cssClasses": [
@@ -13251,16 +13596,16 @@
           "description": "Label text shown beside the toggle."
         },
         {
-          "name": "ValueChanged",
-          "type": "EventCallback<bool>",
-          "isRequired": false,
-          "description": "Fires when the toggle state changes."
-        },
-        {
           "name": "Value",
           "type": "bool",
           "isRequired": false,
           "description": "Toggle state (on/off)."
+        },
+        {
+          "name": "ValueChanged",
+          "type": "EventCallback<bool>",
+          "isRequired": false,
+          "description": "Fires when the toggle state changes."
         }
       ],
       "cssClasses": [
@@ -13301,7 +13646,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "When true, the radio buttons are disabled."
+          "description": "Content rendered below the toggle when Value is true."
         },
         {
           "name": "Class",
@@ -13334,16 +13679,16 @@
           "description": "Override label for the True (Yes) option."
         },
         {
-          "name": "ValueChanged",
-          "type": "EventCallback<bool?>",
-          "isRequired": false,
-          "description": "Fires when the value changes."
-        },
-        {
           "name": "Value",
           "type": "bool?",
           "isRequired": false,
           "description": "Current value. True = Yes, False = No, null = unset."
+        },
+        {
+          "name": "ValueChanged",
+          "type": "EventCallback<bool?>",
+          "isRequired": false,
+          "description": "Fires when the value changes."
         }
       ],
       "cssClasses": [
@@ -13396,6 +13741,12 @@
           "description": "Additional CSS class for the root element."
         },
         {
+          "name": "Items",
+          "type": "IReadOnlyList<IBreadcrumbItem>?",
+          "isRequired": false,
+          "description": "Breadcrumb items to render. Accepts any IBreadcrumbItem implementation."
+        },
+        {
           "name": "OnItemClick",
           "type": "EventCallback<IBreadcrumbItem>",
           "isRequired": false,
@@ -13407,12 +13758,6 @@
           "isRequired": false,
           "default": "\"/\"",
           "description": "Separator character between items. Defaults to \"/\"."
-        },
-        {
-          "name": "Items",
-          "type": "IReadOnlyList<IBreadcrumbItem>?",
-          "isRequired": false,
-          "description": "Breadcrumb items to render. Accepts any IBreadcrumbItem implementation."
         }
       ],
       "cssClasses": [
@@ -13469,16 +13814,16 @@
           "description": "Additional CSS class for the root element."
         },
         {
-          "name": "IsOpenChanged",
-          "type": "EventCallback<bool>",
-          "isRequired": false,
-          "description": "Fires when IsOpen should change (two-way binding)."
-        },
-        {
           "name": "IsOpen",
           "type": "bool",
           "isRequired": false,
           "description": "Whether the command palette is visible."
+        },
+        {
+          "name": "IsOpenChanged",
+          "type": "EventCallback<bool>",
+          "isRequired": false,
+          "description": "Fires when IsOpen should change (two-way binding)."
         }
       ],
       "cssClasses": [
@@ -13513,6 +13858,12 @@
         "@using Tempo.Blazor.Components.Layout"
       ],
       "parameters": [
+        {
+          "name": "ChildContent",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Child definitions."
+        },
         {
           "name": "Class",
           "type": "string?",
@@ -13617,6 +13968,13 @@
           "description": "Display title."
         },
         {
+          "name": "Id",
+          "type": "string",
+          "isRequired": false,
+          "default": "Guid.NewGuid().ToString()",
+          "description": "Unique identifier."
+        },
+        {
           "name": "IsActive",
           "type": "bool",
           "isRequired": false,
@@ -13674,7 +14032,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Custom header content (replaces Title)."
+          "description": "Main body content."
         },
         {
           "name": "Class",
@@ -13707,6 +14065,12 @@
           "type": "RenderFragment?",
           "isRequired": false,
           "description": "Custom header content (replaces Title)."
+        },
+        {
+          "name": "IsOpen",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the drawer is open."
         },
         {
           "name": "IsOpenChanged",
@@ -13747,12 +14111,6 @@
           "isRequired": false,
           "default": "\"400px\"",
           "description": "Width of the drawer panel."
-        },
-        {
-          "name": "IsOpen",
-          "type": "bool",
-          "isRequired": false,
-          "description": "Whether the drawer is open."
         }
       ],
       "cssClasses": [
@@ -13793,6 +14151,12 @@
       ],
       "parameters": [
         {
+          "name": "Categories",
+          "type": "IEnumerable<TmShortcutCategory>?",
+          "isRequired": false,
+          "description": "Shortcut categories to display."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
@@ -13815,12 +14179,6 @@
           "type": "string?",
           "isRequired": false,
           "description": "Optional title. Falls back to localized default."
-        },
-        {
-          "name": "Categories",
-          "type": "IEnumerable<TmShortcutCategory>?",
-          "isRequired": false,
-          "description": "Shortcut categories to display."
         }
       ],
       "cssClasses": [
@@ -13861,7 +14219,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Optional icon name displayed before the title."
+          "description": "Section body content."
         },
         {
           "name": "Class",
@@ -13967,17 +14325,17 @@
           "description": "Optional header content (e.g. logo)."
         },
         {
-          "name": "OnToggle",
-          "type": "EventCallback",
-          "isRequired": false,
-          "description": "Fires when the toggle button is clicked."
-        },
-        {
           "name": "Items",
           "type": "IReadOnlyList<ISidebarNavItem>",
           "isRequired": false,
           "default": "[]",
           "description": "Navigation items to display."
+        },
+        {
+          "name": "OnToggle",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fires when the toggle button is clicked."
         }
       ],
       "cssClasses": [
@@ -14031,34 +14389,40 @@
           "description": "Additional CSS classes."
         },
         {
+          "name": "ChildContent",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "The child content (TmSplitterPane elements)."
+        },
+        {
           "name": "Collapsed",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the pane can be collapsed."
+          "description": "Whether the pane is collapsed."
         },
         {
           "name": "CollapsedChanged",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Whether the pane is collapsed."
+          "description": "Event fired when collapsed state changes."
         },
         {
           "name": "Collapsible",
           "type": "bool",
           "isRequired": false,
-          "description": "The maximum size of the pane."
+          "description": "Whether the pane can be collapsed."
         },
         {
           "name": "MaxSize",
           "type": "string?",
           "isRequired": false,
-          "description": "The minimum size of the pane."
+          "description": "The maximum size of the pane."
         },
         {
           "name": "MinSize",
           "type": "string?",
           "isRequired": false,
-          "description": "The initial size of the pane (in pixels or percentage)."
+          "description": "The minimum size of the pane."
         },
         {
           "name": "Orientation",
@@ -14068,22 +14432,10 @@
           "description": "Splitter orientation. Defaults to Horizontal."
         },
         {
-          "name": "Parent",
-          "type": "TmSplitter?",
-          "isRequired": false,
-          "description": "Additional CSS classes."
-        },
-        {
           "name": "Size",
           "type": "string?",
           "isRequired": false,
-          "description": "The content to render inside the pane."
-        },
-        {
-          "name": "ChildContent",
-          "type": "RenderFragment?",
-          "isRequired": false,
-          "description": "The child content (TmSplitterPane elements)."
+          "description": "The initial size of the pane (in pixels or percentage)."
         }
       ],
       "cssClasses": [
@@ -14128,6 +14480,12 @@
           "description": "Event fired when collapsed state changes."
         },
         {
+          "name": "ChildContent",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "The content to render inside the pane."
+        },
+        {
           "name": "Collapsed",
           "type": "bool",
           "isRequired": false,
@@ -14158,16 +14516,16 @@
           "description": "The initial size of the pane (in pixels or percentage)."
         },
         {
-          "name": "Parent",
-          "type": "TmSplitter?",
-          "isRequired": false,
-          "description": "Additional CSS classes."
-        },
-        {
           "name": "Size",
           "type": "string?",
           "isRequired": false,
           "description": "The content to render inside the pane."
+        },
+        {
+          "name": "Parent",
+          "type": "TmSplitter?",
+          "isRequired": false,
+          "description": "Additional CSS classes."
         }
       ]
     },
@@ -14207,7 +14565,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Additional CSS classes."
+          "description": "CSS class attribute (alternative to AdditionalCssClass)."
         },
         {
           "name": "JustifyContent",
@@ -14215,6 +14573,13 @@
           "isRequired": false,
           "default": "JustifyContent.Start",
           "description": "How items are distributed along the main axis."
+        },
+        {
+          "name": "Orientation",
+          "type": "StackOrientation",
+          "isRequired": false,
+          "default": "StackOrientation.Vertical",
+          "description": "The orientation of the stack. Defaults to Vertical."
         },
         {
           "name": "Spacing",
@@ -14228,13 +14593,6 @@
           "type": "bool",
           "isRequired": false,
           "description": "Whether items should wrap to the next line when they overflow."
-        },
-        {
-          "name": "Orientation",
-          "type": "StackOrientation",
-          "isRequired": false,
-          "default": "Vertical",
-          "description": "The orientation of the stack. Defaults to Vertical."
         }
       ],
       "cssClasses": [
@@ -14280,6 +14638,12 @@
           "description": "Custom brand content (logo, etc.)."
         },
         {
+          "name": "BrandTitle",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Brand title text (simple string)."
+        },
+        {
           "name": "CenterContent",
           "type": "RenderFragment?",
           "isRequired": false,
@@ -14308,12 +14672,6 @@
           "type": "IUserInfo?",
           "isRequired": false,
           "description": "Currently logged-in user. When set, renders user avatar and menu."
-        },
-        {
-          "name": "BrandTitle",
-          "type": "string?",
-          "isRequired": false,
-          "description": "Brand title text (simple string)."
         }
       ],
       "cssClasses": [
@@ -14363,6 +14721,13 @@
           "description": "Additional CSS classes."
         },
         {
+          "name": "Items",
+          "type": "IReadOnlyList<BottomNavItem>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "The navigation items to display."
+        },
+        {
           "name": "OnItemClick",
           "type": "EventCallback<BottomNavItem>",
           "isRequired": false,
@@ -14373,13 +14738,6 @@
           "type": "BottomNavItem?",
           "isRequired": false,
           "description": "The currently selected item."
-        },
-        {
-          "name": "Items",
-          "type": "IReadOnlyList<BottomNavItem>",
-          "isRequired": false,
-          "default": "Empty list",
-          "description": "The navigation items to display."
         }
       ],
       "cssClasses": [
@@ -14420,7 +14778,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "The trigger element that opens the menu."
+          "description": "Menu item children (TmContextMenuItem)."
         },
         {
           "name": "Class",
@@ -14491,17 +14849,17 @@
           "description": "Renders as a horizontal divider line instead of a clickable item."
         },
         {
+          "name": "Label",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Menu item text."
+        },
+        {
           "name": "OnClick",
           "type": "EventCallback",
           "isRequired": false,
           "description": "Fires when the item is clicked."
-        },
-        {
-          "name": "Label",
-          "type": "string",
-          "isRequired": false,
-          "default": "Empty",
-          "description": "Menu item text."
         }
       ],
       "cssClasses": [
@@ -14543,6 +14901,13 @@
           "description": "Additional CSS classes."
         },
         {
+          "name": "Items",
+          "type": "IReadOnlyList<MenuItem>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "The menu items to display."
+        },
+        {
           "name": "OnItemClick",
           "type": "EventCallback<MenuItem>",
           "isRequired": false,
@@ -14554,13 +14919,6 @@
           "isRequired": false,
           "default": "MenuOrientation.Horizontal",
           "description": "The orientation of the menu. Defaults to Horizontal."
-        },
-        {
-          "name": "Items",
-          "type": "IReadOnlyList<MenuItem>",
-          "isRequired": false,
-          "default": "Empty list",
-          "description": "The menu items to display."
         }
       ],
       "cssClasses": [
@@ -14607,7 +14965,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "When true, the tab cannot be selected."
+          "description": "Content rendered when this tab is active."
         },
         {
           "name": "Class",
@@ -14624,15 +14982,21 @@
         {
           "name": "Icon",
           "type": "string?",
+          "isRequired": false,
+          "description": "Optional icon name shown before the title."
+        },
+        {
+          "name": "Id",
+          "type": "string",
           "isRequired": true,
-          "description": "Optional icon name shown before the title.",
+          "description": "Unique ID for this tab panel (required).",
           "editorRequired": true
         },
         {
           "name": "Title",
           "type": "string",
           "isRequired": true,
-          "description": "Unique ID for this tab panel (required).",
+          "description": "Tab header title.",
           "editorRequired": true
         }
       ],
@@ -14658,6 +15022,13 @@
       ],
       "parameters": [
         {
+          "name": "ActiveTabId",
+          "type": "string",
+          "isRequired": true,
+          "description": "ID of the currently active tab.",
+          "default": "default!"
+        },
+        {
           "name": "ActiveTabIdChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
@@ -14667,7 +15038,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "When true, the tab strip wraps onto multiple rows to fit the available width instead of scrolling horizontally. Use when many tabs would otherwise overflow/truncate in a narrow container."
+          "description": "Tab panel children."
         },
         {
           "name": "Class",
@@ -14686,14 +15057,7 @@
           "name": "Wrap",
           "type": "bool",
           "isRequired": false,
-          "description": "Visual variant of the tab strip."
-        },
-        {
-          "name": "ActiveTabId",
-          "type": "string",
-          "isRequired": false,
-          "default": "default!",
-          "description": "ID of the currently active tab."
+          "description": "When true, the tab strip wraps onto multiple rows to fit the available width instead of scrolling horizontally. Use when many tabs would otherwise overflow/truncate in a narrow container."
         }
       ],
       "cssClasses": [
@@ -14809,7 +15173,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Notifications"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "IsPanelOpen",
+          "type": "bool",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmCalendarGrid",
@@ -14824,6 +15194,11 @@
         "@using Tempo.Blazor.Components.Pickers"
       ],
       "parameters": [
+        {
+          "name": "OnNavigate",
+          "type": "EventCallback<(int Year, int Month)>",
+          "isRequired": false
+        },
         {
           "name": "DisplayYear",
           "type": "int",
@@ -14874,11 +15249,6 @@
         {
           "name": "OnDateHovered",
           "type": "EventCallback<DateOnly>",
-          "isRequired": false
-        },
-        {
-          "name": "OnNavigate",
-          "type": "EventCallback<(int Year, int Month)>",
           "isRequired": false
         }
       ],
@@ -15390,6 +15760,12 @@
           "description": "Fires when the rule changes."
         },
         {
+          "name": "Value",
+          "type": "string?",
+          "isRequired": false,
+          "description": "The recurrence rule value (iCal RRULE string)."
+        },
+        {
           "name": "ValueChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
@@ -15410,6 +15786,11 @@
         "@using Tempo.Blazor.Components.Pickers"
       ],
       "parameters": [
+        {
+          "name": "MaxTime",
+          "type": "TimeOnly?",
+          "isRequired": false
+        },
         {
           "name": "Value",
           "type": "TimeOnly?",
@@ -15432,11 +15813,6 @@
         },
         {
           "name": "MinTime",
-          "type": "TimeOnly?",
-          "isRequired": false
-        },
-        {
-          "name": "MaxTime",
           "type": "TimeOnly?",
           "isRequired": false
         }
@@ -15657,6 +16033,12 @@
           "description": "The field this chip represents."
         },
         {
+          "name": "Field",
+          "type": "PivotField<TItem>",
+          "isRequired": true,
+          "description": "The field this chip represents."
+        },
+        {
           "name": "OnDragEnd",
           "type": "EventCallback",
           "isRequired": false,
@@ -15759,6 +16141,13 @@
           "description": "Keys of fields currently in the row area."
         },
         {
+          "name": "Fields",
+          "type": "List<PivotField<TItem>>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "All available field definitions."
+        },
+        {
           "name": "FilterFields",
           "type": "Dictionary<string, List<object?>>",
           "isRequired": false,
@@ -15837,6 +16226,13 @@
           "isRequired": false,
           "default": "[]",
           "description": "Keys of fields currently in the column area."
+        },
+        {
+          "name": "Fields",
+          "type": "List<PivotField<TItem>>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "All available field definitions."
         },
         {
           "name": "FilterFields",
@@ -15967,6 +16363,12 @@
           "type": "bool",
           "isRequired": false,
           "description": "When true, enables drag-and-drop in the configuration panel. Default: true."
+        },
+        {
+          "name": "Items",
+          "type": "IEnumerable<TItem>?",
+          "isRequired": false,
+          "description": "Source data items for in-memory pivot transformation."
         },
         {
           "name": "OnConfigurationChanged",
@@ -16108,12 +16510,6 @@
           "description": "When true, highlights critical-path tasks with a distinct bar color."
         },
         {
-          "name": "Class",
-          "type": "string?",
-          "isRequired": false,
-          "description": "Fires when the user clicks \"Run\" on a report."
-        },
-        {
           "name": "Columns",
           "type": "IReadOnlyList<GanttColumnDefinition>",
           "isRequired": false,
@@ -16139,7 +16535,13 @@
           "type": "IReadOnlyList<GanttDependency>",
           "isRequired": false,
           "default": "[]",
-          "description": "In-memory work items. Used when is null."
+          "description": "In-memory dependencies. Used when is null."
+        },
+        {
+          "name": "DisplayMode",
+          "type": "WorkloadDisplayMode",
+          "isRequired": false,
+          "default": "WorkloadDisplayMode.Hours"
         },
         {
           "name": "Filters",
@@ -16160,6 +16562,13 @@
           "type": "bool",
           "isRequired": false,
           "description": "Audit history entries to display."
+        },
+        {
+          "name": "Items",
+          "type": "IReadOnlyList<TmWorkItem>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "In-memory work items. Used when is null."
         },
         {
           "name": "NotificationSettings",
@@ -16312,6 +16721,11 @@
           "description": "Notification preferences for the current user."
         },
         {
+          "name": "OnTaskReordered",
+          "type": "EventCallback<GanttTaskReorderedArgs>",
+          "isRequired": false
+        },
+        {
           "name": "OnTaskUpdated",
           "type": "EventCallback<TmWorkItem>",
           "isRequired": false,
@@ -16346,6 +16760,12 @@
           "type": "EventCallback<TmWorkItemAssignee>",
           "isRequired": false,
           "description": "Fires when a resource calendar entry changes."
+        },
+        {
+          "name": "Projects",
+          "type": "IReadOnlyList<GanttPortfolioProject>",
+          "isRequired": false,
+          "default": "[]"
         },
         {
           "name": "RealtimeConnection",
@@ -16393,9 +16813,23 @@
           "description": "Fires when the user requests rollback to the state before a history entry."
         },
         {
+          "name": "SourceColumns",
+          "type": "IEnumerable<string>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Source column names from the imported file."
+        },
+        {
+          "name": "Task",
+          "type": "TmWorkItem?",
+          "isRequired": false,
+          "description": "The task being edited."
+        },
+        {
           "name": "ViewSettings",
           "type": "GanttViewSettings",
-          "isRequired": true
+          "isRequired": true,
+          "description": "View display settings (today marker, days off, density, theme…)."
         },
         {
           "name": "WorkingSchedule",
@@ -16407,7 +16841,7 @@
           "name": "WorkItemSource",
           "type": "ITmWorkItemProvider?",
           "isRequired": false,
-          "description": "In-memory dependencies. Used when is null."
+          "description": "Unified work-item source shared with other components. When set, the chart loads its items and dependencies from this provider instead of /, and routes task mutations back through it (when the provider declares the matching capability)."
         },
         {
           "name": "WorkloadDisplayMode",
@@ -16422,6 +16856,12 @@
           "isRequired": false,
           "default": "GanttZoomPreset.Weeks",
           "description": "When true, overdue tasks (End in past, not done) are highlighted."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Fires when the user clicks \"Run\" on a report."
         }
       ]
     },
@@ -16438,6 +16878,12 @@
         "@using Tempo.Blazor.Components.Scheduler"
       ],
       "parameters": [
+        {
+          "name": "IsOpen",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the dialog is visible."
+        },
         {
           "name": "OnClose",
           "type": "EventCallback",
@@ -16464,7 +16910,13 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Scheduler"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false
+        }
+      ]
     },
     {
       "itemName": "TmGanttHistoryDrawer",
@@ -16479,6 +16931,12 @@
         "@using Tempo.Blazor.Components.Scheduler"
       ],
       "parameters": [
+        {
+          "name": "History",
+          "type": "IReadOnlyList<TmActivityEntry>?",
+          "isRequired": false,
+          "description": "Activity history entries to display."
+        },
         {
           "name": "IsOpen",
           "type": "bool",
@@ -16502,12 +16960,6 @@
           "type": "EventCallback<DateTime>",
           "isRequired": false,
           "description": "Whether the drawer is visible."
-        },
-        {
-          "name": "History",
-          "type": "IReadOnlyList<TmActivityEntry>?",
-          "isRequired": false,
-          "description": "Activity history entries to display."
         }
       ]
     },
@@ -16524,6 +16976,12 @@
         "@using Tempo.Blazor.Components.Scheduler"
       ],
       "parameters": [
+        {
+          "name": "IsOpen",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the dialog is visible."
+        },
         {
           "name": "OnClose",
           "type": "EventCallback",
@@ -16574,6 +17032,13 @@
           "type": "EventCallback<IReadOnlyList<GanttColumnMapping>>",
           "isRequired": false,
           "description": "Whether the dialog is visible."
+        },
+        {
+          "name": "SourceColumns",
+          "type": "IEnumerable<string>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Source column names from the imported file."
         }
       ]
     },
@@ -16589,7 +17054,14 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Scheduler"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "Projects",
+          "type": "IReadOnlyList<GanttPortfolioProject>",
+          "isRequired": false,
+          "default": "[]"
+        }
+      ]
     },
     {
       "itemName": "TmGanttReportsPanel",
@@ -16608,6 +17080,12 @@
           "name": "OnReportRun",
           "type": "EventCallback<GanttReport>",
           "isRequired": false
+        },
+        {
+          "name": "Reports",
+          "type": "IReadOnlyList<GanttReport>",
+          "isRequired": false,
+          "default": "[]"
         }
       ]
     },
@@ -16703,6 +17181,12 @@
           "type": "EventCallback<(string TaskId, GanttTimeLogEntry Entry)>",
           "isRequired": false,
           "description": "Fires when the user starts the timer for this task (arg = taskId)."
+        },
+        {
+          "name": "Task",
+          "type": "TmWorkItem?",
+          "isRequired": false,
+          "description": "The task being edited."
         }
       ]
     },
@@ -16718,7 +17202,14 @@
       "requiredImports": [
         "@using Tempo.Blazor.Components.Scheduler"
       ],
-      "parameters": []
+      "parameters": [
+        {
+          "name": "DisplayMode",
+          "type": "WorkloadDisplayMode",
+          "isRequired": false,
+          "default": "WorkloadDisplayMode.Hours"
+        }
+      ]
     },
     {
       "itemName": "TmScheduler",
@@ -16759,6 +17250,12 @@
           "description": "Server-side data provider. Takes priority over Events if both are set."
         },
         {
+          "name": "Events",
+          "type": "IReadOnlyList<TmScheduleEvent>?",
+          "isRequired": false,
+          "description": "Client-side event list. Alternative to DataProvider."
+        },
+        {
           "name": "EventTemplate",
           "type": "RenderFragment<TmScheduleEvent>?",
           "isRequired": false,
@@ -16775,7 +17272,7 @@
           "name": "HideTimeGrid",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether events are read-only (no drag/resize)."
+          "description": "When true, hides the hourly time grid body in Day and Week views (only column headers and all-day row are shown)."
         },
         {
           "name": "OnEventChanged",
@@ -16836,7 +17333,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true, hides the hourly time grid body in Day and Week views (only column headers and all-day row are shown)."
+          "description": "When true, events are rendered in adjacent-month day cells visible in the month grid. Default: true."
         },
         {
           "name": "SlotDuration",
@@ -16876,13 +17373,7 @@
           "name": "WorkItemSource",
           "type": "ITmWorkItemProvider?",
           "isRequired": false,
-          "description": "Server-side calendar-event provider. Takes priority over Events if both are set."
-        },
-        {
-          "name": "Events",
-          "type": "IReadOnlyList<TmScheduleEvent>?",
-          "isRequired": false,
-          "description": "Client-side event list. Alternative to DataProvider."
+          "description": "Unified work-item source shared with other components (Gantt, Notion). When set (and no is given), scheduled work items overlapping the visible range are loaded and shown as calendar events, and drag/resize changes are persisted back through it (when the provider declares the Update capability)."
         }
       ],
       "cssClasses": [
@@ -16948,6 +17439,12 @@
           "description": "Number of days to show in agenda."
         },
         {
+          "name": "CurrentDate",
+          "type": "DateTime",
+          "isRequired": false,
+          "description": "Currently displayed start date."
+        },
+        {
           "name": "Events",
           "type": "IReadOnlyList<TmScheduleEvent>?",
           "isRequired": false,
@@ -16958,12 +17455,6 @@
           "type": "EventCallback<TmScheduleEvent>",
           "isRequired": false,
           "description": "Fires when an event is clicked."
-        },
-        {
-          "name": "CurrentDate",
-          "type": "DateTime",
-          "isRequired": true,
-          "description": "Currently displayed start date."
         }
       ],
       "cssClasses": [
@@ -17002,6 +17493,12 @@
       ],
       "parameters": [
         {
+          "name": "CurrentDate",
+          "type": "DateTime",
+          "isRequired": false,
+          "description": "Currently displayed date."
+        },
+        {
           "name": "Events",
           "type": "IReadOnlyList<TmScheduleEvent>?",
           "isRequired": false,
@@ -17017,7 +17514,7 @@
           "name": "HideTimeGrid",
           "type": "bool",
           "isRequired": false,
-          "description": "Optional custom event template."
+          "description": "When true, hides the hourly time grid body."
         },
         {
           "name": "OnEventChanged",
@@ -17067,12 +17564,6 @@
           "isRequired": false,
           "default": "30",
           "description": "Duration of each time slot in minutes."
-        },
-        {
-          "name": "CurrentDate",
-          "type": "DateTime",
-          "isRequired": true,
-          "description": "Currently displayed date."
         }
       ],
       "cssClasses": [
@@ -17099,6 +17590,13 @@
       ],
       "parameters": [
         {
+          "name": "Event",
+          "type": "TmScheduleEvent",
+          "isRequired": true,
+          "description": "The event to render.",
+          "editorRequired": true
+        },
+        {
           "name": "EventTemplate",
           "type": "RenderFragment<TmScheduleEvent>?",
           "isRequired": false,
@@ -17107,9 +17605,8 @@
         {
           "name": "OnClick",
           "type": "EventCallback<TmScheduleEvent>",
-          "isRequired": true,
-          "description": "Fires when the event is clicked.",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Fires when the event is clicked."
         }
       ],
       "cssClasses": [
@@ -17142,6 +17639,12 @@
         "@using Tempo.Blazor.Components.Scheduler"
       ],
       "parameters": [
+        {
+          "name": "CurrentDate",
+          "type": "DateTime",
+          "isRequired": false,
+          "description": "Currently displayed date (determines which month to show)."
+        },
         {
           "name": "Events",
           "type": "IReadOnlyList<TmScheduleEvent>?",
@@ -17202,13 +17705,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Max events visible per day cell before showing \"+N more\"."
-        },
-        {
-          "name": "CurrentDate",
-          "type": "DateTime",
-          "isRequired": true,
-          "description": "Currently displayed date (determines which month to show)."
+          "description": "When true, events are also rendered in adjacent-month day cells visible in the grid."
         }
       ],
       "cssClasses": [
@@ -17251,11 +17748,18 @@
       ],
       "parameters": [
         {
+          "name": "Dates",
+          "type": "IReadOnlyList<DateOnly>",
+          "isRequired": true,
+          "default": "[]",
+          "description": "Dates to display as columns.",
+          "editorRequired": true
+        },
+        {
           "name": "Events",
           "type": "IReadOnlyList<TmScheduleEvent>?",
-          "isRequired": true,
-          "description": "Events to display.",
-          "editorRequired": true
+          "isRequired": false,
+          "description": "Events to display."
         },
         {
           "name": "EventTemplate",
@@ -17267,7 +17771,7 @@
           "name": "HideTimeGrid",
           "type": "bool",
           "isRequired": false,
-          "description": "Optional custom event template."
+          "description": "When true, hides the hourly time grid body (only header and all-day row are shown)."
         },
         {
           "name": "OnEventChanged",
@@ -17367,6 +17871,12 @@
       ],
       "parameters": [
         {
+          "name": "CurrentDate",
+          "type": "DateTime",
+          "isRequired": false,
+          "description": "Currently displayed date."
+        },
+        {
           "name": "Events",
           "type": "IReadOnlyList<TmScheduleEvent>?",
           "isRequired": false,
@@ -17420,12 +17930,6 @@
           "isRequired": false,
           "default": "30",
           "description": "Duration of each time slot in minutes."
-        },
-        {
-          "name": "CurrentDate",
-          "type": "DateTime",
-          "isRequired": true,
-          "description": "Currently displayed date."
         }
       ],
       "cssClasses": [
@@ -17531,6 +18035,12 @@
       ],
       "parameters": [
         {
+          "name": "CurrentDate",
+          "type": "DateTime",
+          "isRequired": false,
+          "description": "Currently displayed date (any day in the target week)."
+        },
+        {
           "name": "Events",
           "type": "IReadOnlyList<TmScheduleEvent>?",
           "isRequired": false,
@@ -17553,7 +18063,7 @@
           "name": "HideTimeGrid",
           "type": "bool",
           "isRequired": false,
-          "description": "Optional custom event template."
+          "description": "When true, hides the hourly time grid body."
         },
         {
           "name": "OnEventChanged",
@@ -17603,12 +18113,6 @@
           "isRequired": false,
           "default": "30",
           "description": "Duration of each time slot in minutes."
-        },
-        {
-          "name": "CurrentDate",
-          "type": "DateTime",
-          "isRequired": true,
-          "description": "Currently displayed date (any day in the target week)."
         }
       ],
       "cssClasses": [
@@ -18677,6 +19181,12 @@
           "description": "When true, shows an option to create a new tag inline."
         },
         {
+          "name": "AllTags",
+          "type": "IEnumerable<ITag>?",
+          "isRequired": false,
+          "description": "All tags available for selection."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
@@ -18705,12 +19215,6 @@
           "type": "IEnumerable<ITag>?",
           "isRequired": false,
           "description": "Currently selected tags."
-        },
-        {
-          "name": "AllTags",
-          "type": "IEnumerable<ITag>?",
-          "isRequired": false,
-          "description": "All tags available for selection."
         }
       ],
       "interfaces": [
@@ -18779,16 +19283,16 @@
       ],
       "parameters": [
         {
-          "name": "ShowInternal",
-          "type": "bool",
-          "isRequired": false,
-          "description": "When true, internal entries are shown; otherwise they are hidden."
-        },
-        {
           "name": "Entries",
           "type": "IEnumerable<ITimelineEntry>?",
           "isRequired": false,
           "description": "Timeline entries to display."
+        },
+        {
+          "name": "ShowInternal",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, internal entries are shown; otherwise they are hidden."
         }
       ],
       "cssClasses": [
@@ -18836,7 +19340,7 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Optional title displayed at the start of the toolbar."
+          "description": "Content for the left/start section of the toolbar."
         },
         {
           "name": "Class",
@@ -18913,6 +19417,12 @@
           "description": "Fires when the button is clicked."
         },
         {
+          "name": "Text",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Button label text. Omit for icon-only buttons."
+        },
+        {
           "name": "Tooltip",
           "type": "string?",
           "isRequired": false,
@@ -18924,12 +19434,6 @@
           "isRequired": false,
           "default": "ButtonVariant.Ghost",
           "description": "Visual style variant."
-        },
-        {
-          "name": "Text",
-          "type": "string?",
-          "isRequired": false,
-          "description": "Button label text. Omit for icon-only buttons."
         }
       ],
       "cssClasses": [
@@ -19009,6 +19513,12 @@
           "description": "When true, tree nodes themselves can be dragged to reparent them within the tree."
         },
         {
+          "name": "Nodes",
+          "type": "IEnumerable<ITreeNode<TKey>>?",
+          "isRequired": false,
+          "description": "Root nodes of the tree."
+        },
+        {
           "name": "OnItemsDrop",
           "type": "EventCallback<TreeDropEventArgs<TKey>>",
           "isRequired": false,
@@ -19031,12 +19541,6 @@
           "type": "EventCallback<ITreeNode<TKey>>",
           "isRequired": false,
           "description": "Fires when a tree node label is clicked."
-        },
-        {
-          "name": "Nodes",
-          "type": "IEnumerable<ITreeNode<TKey>>?",
-          "isRequired": false,
-          "description": "Root nodes of the tree."
         }
       ],
       "cssClasses": [
@@ -19206,10 +19710,15 @@
       ],
       "parameters": [
         {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": true,
+          "editorRequired": true
+        },
+        {
           "name": "OnZoomLevelChanged",
           "type": "EventCallback<double>",
-          "isRequired": true,
-          "editorRequired": true,
+          "isRequired": false,
           "description": "Fires when zoom level changes (from mouse wheel or JS)."
         },
         {
@@ -19256,11 +19765,6 @@
         },
         {
           "name": "SelectedTransitionId",
-          "type": "string?",
-          "isRequired": false
-        },
-        {
-          "name": "Class",
           "type": "string?",
           "isRequired": false
         }
@@ -19310,6 +19814,12 @@
       ],
       "parameters": [
         {
+          "name": "Definition",
+          "type": "WorkflowCanvasDefinition?",
+          "isRequired": false,
+          "description": "The workflow definition to display in the minimap."
+        },
+        {
           "name": "OnNavigate",
           "type": "EventCallback",
           "isRequired": false,
@@ -19340,12 +19850,6 @@
           "type": "double",
           "isRequired": false,
           "description": "Current viewport Y offset."
-        },
-        {
-          "name": "Definition",
-          "type": "WorkflowCanvasDefinition?",
-          "isRequired": false,
-          "description": "The workflow definition to display in the minimap."
         }
       ],
       "cssClasses": [
@@ -19393,6 +19897,12 @@
           "description": "Whether the panel is read-only (inputs disabled, no save button)."
         },
         {
+          "name": "SelectedState",
+          "type": "CanvasState?",
+          "isRequired": false,
+          "description": "The currently selected state to edit (null if none)."
+        },
+        {
           "name": "SelectedTransition",
           "type": "CanvasTransition?",
           "isRequired": false,
@@ -19403,12 +19913,6 @@
           "type": "IReadOnlyList<CanvasState>?",
           "isRequired": false,
           "description": "All states, used for displaying From/To names on transitions."
-        },
-        {
-          "name": "SelectedState",
-          "type": "CanvasState?",
-          "isRequired": false,
-          "description": "The currently selected state to edit (null if none)."
         }
       ],
       "cssClasses": [
@@ -19459,6 +19963,12 @@
           "description": "Whether a state or transition is currently selected."
         },
         {
+          "name": "OnAddState",
+          "type": "EventCallback<CanvasStateType>",
+          "isRequired": false,
+          "description": "Fires when user clicks add state button with the state type."
+        },
+        {
           "name": "OnDeleteSelected",
           "type": "EventCallback",
           "isRequired": false,
@@ -19482,12 +19992,6 @@
           "isRequired": false,
           "default": "1.0",
           "description": "Current zoom level (1.0 = 100%)."
-        },
-        {
-          "name": "OnAddState",
-          "type": "EventCallback<CanvasStateType>",
-          "isRequired": false,
-          "description": "Fires when user clicks add state button with the state type."
         }
       ],
       "cssClasses": [
@@ -20243,11 +20747,11 @@
     }
   ],
   "summary": {
-    "itemCount": 287,
-    "manualItemCount": 287,
-    "generatedItemCount": 279,
+    "itemCount": 288,
+    "manualItemCount": 288,
+    "generatedItemCount": 280,
     "generatedOnlyItemCount": 0,
     "componentCount": 176,
-    "publicApiTypeCount": 103
+    "publicApiTypeCount": 104
   }
 }

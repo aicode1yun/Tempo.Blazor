@@ -2,7 +2,8 @@
   "itemName": "TmDataTable",
   "kind": "Component",
   "category": "Data Table",
-  "description": "Full-featured data grid with declarative column definitions, client-side and server-side data modes, sorting, inline column filters, global search, row selection with bulk actions, column visibility picker, drag-to-group with multi-level grouping, pagination with per-group mini-pager for server-side grouping, virtualized scrolling, external filter builder, and saved view management.",
+  "description": "Full-featured data grid with declarative column definitions, client-side and server-side data modes, sorting, inline column filters, global search, row selection with bulk actions, column visibility picker, drag-to-group with multi-level grouping, pagination with per-group mini-pager for server-side grouping, virtualized scrolling, external filter builder, and saved view management.\\n\\nComposition rule: either the owning page filters the data and the table renders a content-only surface (set ToolbarMode=ContentOnly and supply pre-filtered Items/DataProvider), or the table owns filtering via its own toolbar and external filter builder. Avoid enabling both filter surfaces at the same time unless they are explicitly integrated (e.g. the page reads the table's ActiveFilters).",
+  "compositionGuidance": "Either the page filters the data, or the table filters the data. When the page owns the filters, use ToolbarMode=ContentOnly and do not set ViewProvider/ExternalFilterDefinitions. When the table owns the filters, use the default Full toolbar mode and optionally a ViewProvider.",
   "requiredImports": [
     "@using Tempo.Blazor.Components.DataTable"
   ],
@@ -45,6 +46,18 @@
       "description": "When true, shows the global search input. Default: true."
     },
     {
+      "name": "SearchText",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Controlled search text. When set, the component uses this value instead of its internal state."
+    },
+    {
+      "name": "SearchTextChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fires when the search text changes."
+    },
+    {
       "name": "ShowColumnPicker",
       "type": "bool",
       "isRequired": false,
@@ -57,6 +70,27 @@
       "isRequired": false,
       "default": "true",
       "description": "When true, shows the TmPagination bar when more than one page exists. Default: true."
+    },
+    {
+      "name": "ShowToolbar",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When true, renders the toolbar container with search, column picker, and view manager. Default: true."
+    },
+    {
+      "name": "ToolbarMode",
+      "type": "DataToolbarMode",
+      "isRequired": false,
+      "default": "DataToolbarMode.Full",
+      "description": "High-level preset that controls which toolbar chrome elements are rendered. Full respects the individual Show* booleans; other modes override them."
+    },
+    {
+      "name": "ShowViewManager",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When true and a ViewProvider is set, renders the TmViewManager. Default: true."
     },
     {
       "name": "DefaultPageSize",
@@ -76,28 +110,28 @@
       "name": "ViewProvider",
       "type": "IDataTableViewProvider?",
       "isRequired": false,
-      "description": "Optional view persistence provider. When set, shows TmViewManager."
+      "description": "Optional view persistence provider. When set, enables saved views and (by default) the external filter builder. Use ShowExternalFilterBuilder=false to keep saved views without the inline filter builder, or ToolbarMode=ContentOnly when the page owns the filtering UI."
     },
     {
       "name": "ViewFilterDefinitions",
       "type": "List<FilterDefinition>",
       "isRequired": false,
       "default": "[]",
-      "description": "Filter definitions for the view manager filter builder."
+      "description": "Filter definitions used by the view manager filter builder when creating or editing saved views."
     },
     {
       "name": "ShowExternalFilterBuilder",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "When true, shows FilterBuilder for external filtering (visible when ViewProvider is set)."
+      "description": "When true and a ViewProvider is set, shows the inline FilterBuilder for external filtering. Set to false when the surrounding page owns the filtering UI to avoid duplicate filters."
     },
     {
       "name": "ExternalFilterDefinitions",
       "type": "List<FilterDefinition>",
       "isRequired": false,
       "default": "[]",
-      "description": "Filter definitions for the external filter builder (shown above table when ViewProvider is set)."
+      "description": "Filter definitions for the inline external filter builder (shown above the table when ViewProvider is set). When the page owns filtering, leave this empty and set ShowExternalFilterBuilder to false or use ToolbarMode=ContentOnly."
     },
     {
       "name": "DisplayResolver",
@@ -121,6 +155,13 @@
       "type": "string?",
       "isRequired": false,
       "description": "Current tenant ID for tenant view scoping."
+    },
+    {
+      "name": "ViewContext",
+      "type": "string",
+      "isRequired": true,
+      "editorRequired": true,
+      "description": "Unique identifier for this table instance. Used to scope saved views to specific tables (e.g. \"employees\", \"projects\")."
     },
     {
       "name": "ScrollMode",
@@ -261,6 +302,14 @@
     {
       "title": "Server-side data table with selection and views",
       "code": "<TmDataTable TItem=\"OrderDto\"\n             DataProvider=\"@orderProvider\"\n             ViewContext=\"orders\"\n             ViewProvider=\"@viewProvider\"\n             Selectable=\"true\"\n             ShowGrouping=\"true\"\n             OnRowClick=\"HandleRowClick\"\n             OnSelectionChanged=\"HandleSelectionChanged\">\n    <SelectionActions>\n        <TmButton OnClick=\"DeleteSelected\">Delete</TmButton>\n    </SelectionActions>\n    <TmDataTableColumn Title=\"Order #\" Field=\"o => o.OrderNumber\" Sortable=\"true\" />\n    <TmDataTableColumn Title=\"Status\" Field=\"o => o.Status\" Filterable=\"true\" FilterType=\"FilterType.Select\" FilterOptions=\"@statusOptions\" />\n</TmDataTable>"
+    },
+    {
+      "title": "Page-owned filters + content-only table",
+      "code": "@using Tempo.Blazor.Components.DataTable\n\n@* The owning page provides its own filter UI; the table renders only the data surface. *@\n<TmDataTable TItem=\"EmployeeDto\"\n             Items=\"@_filteredEmployees\"\n             ViewContext=\"page-owned-employees\"\n             ToolbarMode=\"DataToolbarMode.ContentOnly\">\n    <TmDataTableColumn TItem=\"EmployeeDto\" Title=\"Name\" Field=\"e => e.Name\" Sortable=\"true\" />\n    <TmDataTableColumn TItem=\"EmployeeDto\" Title=\"Department\" Field=\"e => e.Department\" Sortable=\"true\" />\n    <TmDataTableColumn TItem=\"EmployeeDto\" Title=\"Salary\" Field=\"e => e.Salary\" Align=\"ColumnAlign.Right\" />\n</TmDataTable>\n\n@code {\n    private IEnumerable<EmployeeDto> _filteredEmployees = default!;\n\n    // Apply filters from the page-level UI before passing data to the table.\n    private void ApplyPageFilters(string department, decimal minSalary)\n    {\n        _filteredEmployees = _allEmployees\n            .Where(e => department == null || e.Department == department)\n            .Where(e => e.Salary >= minSalary);\n    }\n}"
+    },
+    {
+      "title": "Saved views without external filter builder",
+      "code": "@using Tempo.Blazor.Components.DataTable\n@using Tempo.Blazor.Interfaces\n@using Tempo.Blazor.Models\n\n@* Use the view manager for saved views, but keep the inline filter builder hidden. *@\n<TmDataTable TItem=\"EmployeeDto\"\n             DataProvider=\"@_dataProvider\"\n             ViewContext=\"employees-saved-views\"\n             ViewProvider=\"@_viewProvider\"\n             ViewFilterDefinitions=\"@_viewFilterDefs\"\n             ShowExternalFilterBuilder=\"false\"\n             ShowSearch=\"false\">\n    <TmDataTableColumn TItem=\"EmployeeDto\" Title=\"Name\" PropertyName=\"Name\" Sortable=\"true\" Field=\"e => e.Name\" />\n    <TmDataTableColumn TItem=\"EmployeeDto\" Title=\"Role\" PropertyName=\"Role\" Sortable=\"true\" Field=\"e => e.Role\" />\n</TmDataTable>"
     },
     {
       "title": "Full-featured table with server-side DataProvider, ViewManager, external filters, and DisplayResolver",

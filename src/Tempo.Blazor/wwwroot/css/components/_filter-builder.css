@@ -5,6 +5,7 @@
   border: 1px dashed var(--tm-border-color); border-radius: var(--tm-radius-full);
   background: none; cursor: pointer; font-size: var(--tm-font-size-xs);
   color: var(--tm-text-secondary);
+  white-space: nowrap;
   transition: border-color var(--tm-transition-fast), color var(--tm-transition-fast);
 }
 .tm-filter-builder-add:hover { border-color: var(--tm-color-primary); color: var(--tm-color-primary); }
@@ -42,5 +43,6 @@
 .tm-filter-clear-all {
   padding: var(--tm-space-1) var(--tm-space-2); background: none; border: none;
   cursor: pointer; font-size: var(--tm-font-size-xs); color: var(--tm-text-tertiary); text-decoration: underline;
+  white-space: nowrap;
 }
 .tm-filter-clear-all:hover { color: var(--tm-color-danger); }

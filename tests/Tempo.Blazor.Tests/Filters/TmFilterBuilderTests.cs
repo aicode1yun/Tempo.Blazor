@@ -23,6 +23,33 @@ public class TmFilterBuilderTests : LocalizationTestBase
         Options    = [new SelectOption<string>("active", "Active"), new SelectOption<string>("inactive", "Inactive")],
     };
 
+    /// <summary>Add filter button shows explicit label.</summary>
+    [Fact]
+    public void FilterBuilder_AddFilterButton_UsesExplicitLabel()
+    {
+        var cut = RenderComponent<TmFilterBuilder>(p => p
+            .Add(c => c.FilterDefinitions, new[] { TextFilter }));
+
+        var addButton = cut.Find(".tm-filter-builder-add");
+        addButton.TextContent.Should().Contain("Add filter");
+    }
+
+    /// <summary>Clear-all button shows explicit label.</summary>
+    [Fact]
+    public void FilterBuilder_ClearAllButton_UsesExplicitLabel()
+    {
+        var existing = new[]
+        {
+            new ActiveFilter("name", "Name", FilterOperator.Contains, "John", "John"),
+        };
+        var cut = RenderComponent<TmFilterBuilder>(p => p
+            .Add(c => c.FilterDefinitions, new[] { TextFilter })
+            .Add(c => c.ActiveFilters, existing));
+
+        var clearButton = cut.Find(".tm-filter-clear-all");
+        clearButton.TextContent.Should().Contain("Clear all");
+    }
+
     [Fact]
     public void FilterBuilder_AddFilter_ShowsFieldDropdown()
     {
