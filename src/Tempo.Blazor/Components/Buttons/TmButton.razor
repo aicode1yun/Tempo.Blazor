@@ -98,13 +98,16 @@
         {
             var variantClass = Variant switch
             {
-                ButtonVariant.Secondary => "tm-btn-secondary",
-                ButtonVariant.Ghost     => "tm-btn-ghost",
-                ButtonVariant.Danger    => "tm-btn-danger",
-                ButtonVariant.Outline   => "tm-btn-outline",
-                ButtonVariant.Link      => "tm-btn-link",
-                ButtonVariant.Default   => "tm-btn-default",
-                _                       => "tm-btn-primary"
+                ButtonVariant.Secondary        => "tm-btn-secondary",
+                ButtonVariant.Ghost            => "tm-btn-ghost",
+                ButtonVariant.Danger           => "tm-btn-danger",
+                ButtonVariant.Outline          => "tm-btn-outline",
+                ButtonVariant.Link             => "tm-btn-link",
+                ButtonVariant.Default          => "tm-btn-default",
+                ButtonVariant.OutlineSecondary => "tm-btn-outline-secondary",
+                ButtonVariant.Warning          => "tm-btn-warning",
+                ButtonVariant.OutlineWarning   => "tm-btn-outline-warning",
+                _                              => "tm-btn-primary"
             };
             var sizeClass = Size switch
             {

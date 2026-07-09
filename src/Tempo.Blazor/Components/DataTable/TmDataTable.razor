@@ -226,7 +226,8 @@
                         <tr class="@GetRowClass(rowItem)"
                             tabindex="0"
                             @onclick="() => HandleRowClickAsync(rowItem)"
-                            @onkeydown="e => HandleRowKeyDownAsync(e, rowItem)">
+                            @onkeydown="e => HandleRowKeyDownAsync(e, rowItem)"
+                            @attributes="GetRowAttributes(rowItem)">
                             @if (Selectable)
                             {
                                 <td class="tm-col-check">
@@ -260,7 +261,8 @@
                         <tr class="@GetRowClass(rowItem)"
                             tabindex="0"
                             @onclick="() => HandleRowClickAsync(rowItem)"
-                            @onkeydown="e => HandleRowKeyDownAsync(e, rowItem)">
+                            @onkeydown="e => HandleRowKeyDownAsync(e, rowItem)"
+                            @attributes="GetRowAttributes(rowItem)">
                             @if (Selectable)
                             {
                                 <td class="tm-col-check">

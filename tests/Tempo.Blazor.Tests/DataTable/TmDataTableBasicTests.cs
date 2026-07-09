@@ -95,4 +95,27 @@ public class TmDataTableBasicTests : LocalizationTestBase
         clicked.Should().NotBeNull();
         clicked!.Name.Should().Be("Alice");
     }
+
+    [Fact]
+    public void TmDataTable_RowAttributes_Applies_CustomAttributes_ToRows()
+    {
+        var cut = RenderComponent<TmDataTable<BasicPerson>>(p => p
+            .Add(c => c.Items, People)
+            .Add(c => c.RowAttributes, row => new Dictionary<string, object>
+            {
+                ["data-testid"] = $"person-{row.Name.ToLowerInvariant()}",
+                ["data-role"] = row.Role
+            })
+            .AddChildContent(b =>
+            {
+                b.OpenComponent<TmDataTableColumn<BasicPerson>>(0);
+                b.AddAttribute(1, "Title", "Name");
+                b.AddAttribute(2, "Field", (Func<BasicPerson, object>)(x => x.Name));
+                b.CloseComponent();
+            }));
+
+        var row = cut.Find("[data-testid='person-alice']");
+        row.GetAttribute("data-role").Should().Be("Admin");
+        row.TextContent.Should().Contain("Alice");
+    }
 }

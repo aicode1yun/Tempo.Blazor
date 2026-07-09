@@ -16,5 +16,11 @@ public enum ButtonVariant
     /// <summary>Link.</summary>
     Link,
     /// <summary>Default.</summary>
-    Default
+    Default,
+    /// <summary>Neutral outline.</summary>
+    OutlineSecondary,
+    /// <summary>Warning.</summary>
+    Warning,
+    /// <summary>Warning outline.</summary>
+    OutlineWarning
 }

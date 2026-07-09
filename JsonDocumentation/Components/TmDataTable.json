@@ -222,6 +222,12 @@
       "description": "Fires when grouping configuration changes."
     },
     {
+      "name": "RowAttributes",
+      "type": "Func<TItem, IReadOnlyDictionary<string, object>?>?",
+      "isRequired": false,
+      "description": "Optional row-level HTML attributes applied to every data row, including non-virtualized, virtualized, and grouped leaf rows."
+    },
+    {
       "name": "SelectionActions",
       "type": "RenderFragment?",
       "isRequired": false,
@@ -302,6 +308,10 @@
     {
       "title": "Server-side data table with selection and views",
       "code": "<TmDataTable TItem=\"OrderDto\"\n             DataProvider=\"@orderProvider\"\n             ViewContext=\"orders\"\n             ViewProvider=\"@viewProvider\"\n             Selectable=\"true\"\n             ShowGrouping=\"true\"\n             OnRowClick=\"HandleRowClick\"\n             OnSelectionChanged=\"HandleSelectionChanged\">\n    <SelectionActions>\n        <TmButton OnClick=\"DeleteSelected\">Delete</TmButton>\n    </SelectionActions>\n    <TmDataTableColumn Title=\"Order #\" Field=\"o => o.OrderNumber\" Sortable=\"true\" />\n    <TmDataTableColumn Title=\"Status\" Field=\"o => o.Status\" Filterable=\"true\" FilterType=\"FilterType.Select\" FilterOptions=\"@statusOptions\" />\n</TmDataTable>"
+    },
+    {
+      "title": "Row-level attributes for test ids and data hooks",
+      "code": "<TmDataTable TItem=\"OrderDto\"\n             Items=\"@orders\"\n             ViewContext=\"orders\"\n             RowAttributes=\"@(row => new Dictionary<string, object>\n             {\n                 [\"data-testid\"] = $\"order-{row.Id}\",\n                 [\"data-status\"] = row.Status\n             })\">\n    <TmDataTableColumn Title=\"Order #\" Field=\"o => o.OrderNumber\" />\n    <TmDataTableColumn Title=\"Status\" Field=\"o => o.Status\" />\n</TmDataTable>"
     },
     {
       "title": "Page-owned filters + content-only table",

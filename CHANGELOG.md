@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.0-preview.1 - Unreleased
+
+- Added `ButtonVariant.OutlineSecondary`, `ButtonVariant.Warning`, and `ButtonVariant.OutlineWarning` to `TmButton`.
+- Added `RowAttributes` to `TmDataTable` for applying row-level HTML attributes consistently across non-virtualized, virtualized, and grouped data rows.
+
 ## 2.2.0 - 2026-07-06
 
 ### Data component chrome and filtering (TmDataTable / TmMultiViewList)
