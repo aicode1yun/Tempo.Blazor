@@ -220,7 +220,49 @@ public partial class TmDataTable<TItem>
     private bool IsAllSelected => _displayedItems.Count > 0 && _displayedItems.All(IsSelected);
     private bool IsSelected(TItem item) => _selectedItems.Contains(item);
     private int ColSpan => Math.Max(1, (Selectable ? 1 : 0) + _visibleColumns.Count);
-    private IReadOnlyDictionary<string, object>? GetRowAttributes(TItem item) => RowAttributes?.Invoke(item);
+    /// <summary>
+    /// Attribute names the table manages itself on each &lt;tr&gt;. A consumer <see cref="RowAttributes"/>
+    /// dictionary must not override these, or it would clobber row styling, selection clicks, keyboard
+    /// handling, or focus order. They are dropped before the consumer attributes are splatted.
+    /// </summary>
+    private static readonly HashSet<string> ReservedRowAttributeNames =
+        new(StringComparer.OrdinalIgnoreCase) { "class", "onclick", "onkeydown", "tabindex" };
+
+    private IReadOnlyDictionary<string, object>? GetRowAttributes(TItem item)
+    {
+        var attributes = RowAttributes?.Invoke(item);
+        if (attributes is null || attributes.Count == 0)
+        {
+            return attributes;
+        }
+
+        // Fast path: no reserved names present → return the consumer dictionary untouched (no allocation).
+        var hasReserved = false;
+        foreach (var key in attributes.Keys)
+        {
+            if (ReservedRowAttributeNames.Contains(key))
+            {
+                hasReserved = true;
+                break;
+            }
+        }
+
+        if (!hasReserved)
+        {
+            return attributes;
+        }
+
+        var filtered = new Dictionary<string, object>(attributes.Count, StringComparer.Ordinal);
+        foreach (var pair in attributes)
+        {
+            if (!ReservedRowAttributeNames.Contains(pair.Key))
+            {
+                filtered[pair.Key] = pair.Value;
+            }
+        }
+
+        return filtered;
+    }
 
     /// <summary>Determines whether any toolbar control should be rendered.</summary>
     private bool HasVisibleToolbarControls() =>

@@ -118,4 +118,28 @@ public class TmDataTableBasicTests : LocalizationTestBase
         row.GetAttribute("data-role").Should().Be("Admin");
         row.TextContent.Should().Contain("Alice");
     }
+
+    [Fact]
+    public void TmDataTable_RowAttributes_Drops_ReservedNames_ToRows()
+    {
+        var cut = RenderComponent<TmDataTable<BasicPerson>>(p => p
+            .Add(c => c.Items, People)
+            .Add(c => c.RowAttributes, row => new Dictionary<string, object>
+            {
+                ["data-testid"] = $"person-{row.Name.ToLowerInvariant()}",
+                ["class"] = "evil-injected",
+                ["tabindex"] = "-99"
+            })
+            .AddChildContent(b =>
+            {
+                b.OpenComponent<TmDataTableColumn<BasicPerson>>(0);
+                b.AddAttribute(1, "Title", "Name");
+                b.AddAttribute(2, "Field", (Func<BasicPerson, object>)(x => x.Name));
+                b.CloseComponent();
+            }));
+
+        var row = cut.Find("[data-testid='person-alice']"); // non-reserved attribute still applied
+        row.ClassList.Should().NotContain("evil-injected"); // reserved class dropped, table class not clobbered
+        row.GetAttribute("tabindex").Should().NotBe("-99"); // reserved tabindex dropped, focus order not hijacked
+    }
 }

@@ -134,6 +134,34 @@ public class TmDataTableVirtualizationTests : LocalizationTestBase
     }
 
     [Fact]
+    public void DataTable_Virtualized_RowAttributes_Drops_ReservedNames_ToRows()
+    {
+        var cut = RenderComponent<TmDataTable<VirtualPerson>>(p =>
+        {
+            p.Add(c => c.Items, MakePeople(5));
+            p.Add(c => c.ScrollMode, DataTableScrollMode.Virtualized);
+            p.Add(c => c.VirtualScrollHeight, "300px");
+            p.Add(c => c.RowAttributes, row => new Dictionary<string, object>
+            {
+                ["data-testid"] = $"virtual-person-{row.Index}",
+                ["class"] = "evil-injected",
+                ["tabindex"] = "-99"
+            });
+            p.AddChildContent(b =>
+            {
+                b.OpenComponent<TmDataTableColumn<VirtualPerson>>(0);
+                b.AddAttribute(1, "Title", "Name");
+                b.AddAttribute(2, "Field", (Func<VirtualPerson, object?>)(x => x.Name));
+                b.CloseComponent();
+            });
+        });
+
+        var row = cut.Find("[data-testid='virtual-person-3']"); // non-reserved attribute still applied
+        row.ClassList.Should().NotContain("evil-injected"); // reserved class dropped
+        row.GetAttribute("tabindex").Should().NotBe("-99"); // reserved tabindex dropped
+    }
+
+    [Fact]
     public void DataTable_Virtualized_ClientSide_NoPaginationApplied()
     {
         // With 100 items and pageSize 25, pagination mode would show 25
