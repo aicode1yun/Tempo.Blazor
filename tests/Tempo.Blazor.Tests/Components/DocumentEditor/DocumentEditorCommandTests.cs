@@ -424,6 +424,27 @@ public class DocumentEditorCommandTests
     }
 
     [Fact]
+    public async Task SnapshotCommand_TakesOwnershipOfSnapshots_WithoutDefensiveCloning()
+    {
+        // Perf plan N3.1: every call-site already hands the command dedicated clones, so the
+        // constructor must NOT deep-clone again. Ownership contract: a post-construction mutation
+        // of the passed snapshot is visible to the command.
+        var target = CreateDocument(Paragraph("Before"));
+        var before = Clone(target);
+        var after = Clone(target);
+        var command = new DocumentEditorSnapshotCommand(target, before, after, "Ownership");
+
+        after.Theme.BodyFontFamily = "Mutated After Construction";
+        before.Theme.BodyFontFamily = "Mutated Before Construction";
+
+        await command.ExecuteAsync();
+        target.Theme.BodyFontFamily.Should().Be("Mutated After Construction");
+
+        await command.UndoAsync();
+        target.Theme.BodyFontFamily.Should().Be("Mutated Before Construction");
+    }
+
+    [Fact]
     public async Task CommandStack_DescriptionsTrackUndoRedoCommands()
     {
         var document = CreateDocument(Paragraph("Start"));

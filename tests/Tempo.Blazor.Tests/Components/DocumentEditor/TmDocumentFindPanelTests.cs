@@ -107,8 +107,80 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
 
         cut.Find("[data-testid='document-find-input']").Input("hello");
 
-        var count = cut.Find("[data-testid='document-find-count']");
-        count.TextContent.Should().Contain("2");
+        // N3.4: the search is debounced, so the count updates shortly after typing settles.
+        cut.WaitForAssertion(
+            () => cut.Find("[data-testid='document-find-count']").TextContent.Should().Contain("2"),
+            TimeSpan.FromSeconds(3));
+    }
+
+    // ─── Debounce (perf plan N3.4) ────────────────────────────────────────────
+
+    [Fact]
+    public void Panel_SearchInput_IsDebounced_RapidTypingRunsSingleSearch()
+    {
+        var doc = new DocumentEditorDocument
+        {
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = "b1",
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines = [new TextRun { Text = "hello helper hell" }]
+                    }
+                }
+            ]
+        };
+        var searches = new List<string>();
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, doc)
+            .Add(x => x.OnSearchRequested, Microsoft.AspNetCore.Components.EventCallback.Factory.Create<DocumentSearchQuery>(
+                this, query => searches.Add(query.Text))));
+
+        var input = cut.Find("[data-testid='document-find-input']");
+        input.Input("h");
+        input.Input("he");
+        input.Input("hel");
+
+        // The full-document search must NOT run synchronously per keystroke...
+        searches.Should().BeEmpty("the find fulltext is debounced, not per-keystroke");
+
+        // ...and after the debounce settles, only the LAST query ran.
+        cut.WaitForAssertion(
+            () => searches.Should().Equal("hel"),
+            TimeSpan.FromSeconds(3));
+    }
+
+    [Fact]
+    public void Panel_EnterFlushesPendingDebouncedSearchAndNavigates()
+    {
+        var doc = new DocumentEditorDocument
+        {
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = "b1",
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines = [new TextRun { Text = "cat and cat" }]
+                    }
+                }
+            ]
+        };
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, doc));
+
+        cut.Find("[data-testid='document-find-input']").Input("cat");
+        // Enter right after typing: the pending debounced search must flush immediately so
+        // navigation works without waiting — active result advances to 2 of 2.
+        cut.Find("[data-testid='document-find-panel']")
+            .KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+        cut.WaitForAssertion(
+            () => cut.Find("[data-testid='document-find-count']").TextContent.Should().Contain("2 of 2"),
+            TimeSpan.FromSeconds(3));
     }
 
     // ─── Close callback ───────────────────────────────────────────────────────
@@ -245,7 +317,10 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
             .Add(x => x.OnActiveResultChanged, EventCallback.Factory.Create<DocumentSearchResult>(this, r => active = r)));
 
         cut.Find("[data-testid='document-find-input']").Input("cat");
-        cut.FindAll("[data-testid='document-find-result']").Should().HaveCount(2);
+        // N3.4: the search is debounced, so the result list appears shortly after typing settles.
+        cut.WaitForAssertion(
+            () => cut.FindAll("[data-testid='document-find-result']").Should().HaveCount(2),
+            TimeSpan.FromSeconds(3));
         cut.FindAll("[data-testid='document-find-result']")[1].Click();
 
         active.Should().NotBeNull();

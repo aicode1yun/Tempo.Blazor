@@ -396,6 +396,125 @@ test('autocorrect side effects keep raw typed text as the undo snapshot', async 
     assert.equal(textFromModel(transaction.after.model), 'Dash: —');
 });
 
+test('annotation overlays skip the per-render rebuild while the document has no annotations (N6.2)', () => {
+    const doc = createFakeDocument();
+    const host = doc.createElement('div');
+    const engine = createCanvasDocumentEngine({ host, document: doc, model: createTextModel('No annotations here', 0) });
+
+    let commentUpdates = 0;
+    let revisionUpdates = 0;
+    const commentUpdate = engine.commentOverlay.update.bind(engine.commentOverlay);
+    const revisionUpdate = engine.revisionOverlay.update.bind(engine.revisionOverlay);
+    engine.commentOverlay.update = (...args) => { commentUpdates += 1; return commentUpdate(...args); };
+    engine.revisionOverlay.update = (...args) => { revisionUpdates += 1; return revisionUpdate(...args); };
+
+    engine.render();
+    assert.equal(commentUpdates, 1, 'the first render establishes the (empty) overlay state');
+    engine.render();
+    engine.render();
+    assert.equal(commentUpdates, 1, 'renders with no comments must not rebuild the overlay');
+    assert.equal(revisionUpdates, 1, 'renders with no revisions must not rebuild the overlay');
+
+    // A model WITH comments must update on every render (marker geometry follows the layout).
+    const withComment = createTextModel('No annotations here', 1);
+    withComment.comments = [{ id: 'c1', text: 'note', anchor: { blockId: 'p1', startOffset: 0, endOffset: 2 } }];
+    engine.setModel(withComment);
+    const updatesAfterSet = commentUpdates;
+    engine.render();
+    assert.ok(commentUpdates > updatesAfterSet, 'a present comment keeps the per-render update');
+});
+
+test('print preview snapshot is skipped on deferred renders and rebuilt on demand (N6.3)', () => {
+    const doc = createFakeDocument();
+    const host = doc.createElement('div');
+    const engine = createCanvasDocumentEngine({ host, document: doc, model: createTextModel('Preview me', 0) });
+
+    engine.render();
+    const settled = engine.getPrintPreviewSnapshot();
+    assert.ok(settled, 'a settled render computes the snapshot');
+
+    engine.render({ deferPaintDiagnostics: true });
+    assert.equal(engine.printPreviewStale, true, 'a deferred render marks the snapshot stale');
+    const rebuilt = engine.getPrintPreviewSnapshot();
+    assert.ok(rebuilt, 'on-demand access rebuilds the snapshot');
+    assert.equal(engine.printPreviewStale, false, 'the rebuild clears the stale flag');
+    assert.strictEqual(engine.getPrintPreviewSnapshot(), rebuilt, 'repeated access reuses the rebuilt snapshot');
+});
+
+test('progressive first layout budgets the mount render and completes on idle continuations (N11)', () => {
+    const bigModel = () => ({
+        documentId: 'n11-progressive-entry',
+        body: {
+            blocks: Array.from({ length: 80 }, (_, index) => ({
+                id: `p${index}`,
+                type: 'paragraph',
+                order: index + 1,
+                paragraphProperties: {},
+                content: {
+                    type: 'paragraph',
+                    runs: [{ id: `p${index}-run`, type: 'text', text: `Paragraph ${index + 1} ${'progressive layout filler text '.repeat(8)}`, marks: [] }],
+                },
+            })),
+        },
+    });
+
+    // N11.7 rollback flag: progressiveFirstLayout:false keeps the old single-pass behaviour.
+    const baselineDoc = createFakeDocument();
+    const baselineHost = baselineDoc.createElement('div');
+    const baseline = createCanvasDocumentEngine({
+        host: baselineHost,
+        document: baselineDoc,
+        model: bigModel(),
+        progressiveFirstLayout: false,
+    });
+    baseline.render();
+    const baselineRoot = findOne(baselineHost, node => node.getAttribute('data-testid') === 'document-canvas-engine-root');
+    const fullPageCount = Number(baselineRoot.getAttribute('data-canvas-page-count'));
+    assert.ok(fullPageCount > 3, `fixture must span several pages (got ${fullPageCount})`);
+    assert.equal(baselineRoot.getAttribute('data-canvas-layout-complete'), 'true',
+        'a non-progressive render must report a complete layout');
+
+    // Default (flag on): the mount render lays out only the first pages within the budget...
+    const idleCallbacks = [];
+    const doc = createFakeDocument();
+    const host = doc.createElement('div');
+    const engine = createCanvasDocumentEngine({
+        host,
+        document: doc,
+        model: bigModel(),
+        scheduleProgressiveIdle: callback => idleCallbacks.push(callback),
+    });
+    engine.render();
+    const root = findOne(host, node => node.getAttribute('data-testid') === 'document-canvas-engine-root');
+    assert.equal(root.getAttribute('data-canvas-layout-complete'), 'false', 'the mount render must be partial');
+    const firstPageCount = Number(root.getAttribute('data-canvas-page-count'));
+    assert.ok(firstPageCount < fullPageCount, 'the budgeted mount must not lay out every page');
+    assert.ok(Number(root.getAttribute('data-canvas-estimated-page-count')) > firstPageCount,
+        'the estimated total page count must extend beyond the laid pages');
+    assert.ok(idleCallbacks.length > 0, 'a continuation must be scheduled');
+
+    // N11.3: the bottom spacer estimates the unlaid tail so the scrollbar approximates the document.
+    const bottomSpacer = findOne(host, node => node.getAttribute('data-testid') === 'document-canvas-virtual-bottom-spacer');
+    assert.ok(Number(bottomSpacer.getAttribute('data-canvas-spacer-height')) > 0,
+        'the bottom spacer must reserve estimated height for the unlaid tail');
+
+    // ...and idle continuations finish the layout with the same page count as the baseline.
+    let guard = 0;
+    while (idleCallbacks.length > 0 && guard < 100) {
+        idleCallbacks.shift()();
+        guard += 1;
+    }
+    assert.equal(root.getAttribute('data-canvas-layout-complete'), 'true', 'continuations must complete the layout');
+    assert.equal(Number(root.getAttribute('data-canvas-page-count')), fullPageCount,
+        'the progressive result must reach the full page count');
+
+    // Tile-cache-skipped repaints during the continuations must not zero the painted-command
+    // diagnostics of the already-painted first page (E2E contract: "page is not blank").
+    const firstPage = findOne(host, node => node.getAttribute('data-testid') === 'document-canvas-page');
+    assert.ok(Number(firstPage.getAttribute('data-canvas-painted-command-count')) > 0,
+        'the first page must keep its painted-command count across skipped repaints');
+});
+
 function createFakeDocument() {
     return {
         createElement(tagName) {

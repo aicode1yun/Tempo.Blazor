@@ -39,4 +39,9 @@ public sealed class WysiwygPageMetrics
 
     /// <summary>Page metrics in document order.</summary>
     public IReadOnlyList<WysiwygPageMetric> Pages { get; set; } = [];
+
+    /// <summary>Whether the engine has finished laying out the whole document (perf plan N11.5).
+    /// While the progressive first layout is running, <see cref="TotalPages"/> only covers the
+    /// laid-out prefix. Defaults to <c>true</c> for engines without progressive layout.</summary>
+    public bool LayoutComplete { get; set; } = true;
 }

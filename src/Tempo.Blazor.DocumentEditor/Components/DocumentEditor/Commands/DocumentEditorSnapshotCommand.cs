@@ -9,7 +9,11 @@ public sealed class DocumentEditorSnapshotCommand : IDocumentEditorCommand
     private readonly DocumentEditorDocument _before;
     private readonly DocumentEditorDocument _after;
 
-    /// <summary>Creates a snapshot command.</summary>
+    /// <summary>
+    /// Creates a snapshot command. The command takes OWNERSHIP of <paramref name="before"/> and
+    /// <paramref name="after"/> — callers must pass dedicated clones (every call-site already does),
+    /// so re-cloning both whole-document snapshots here would only double the O(document) cost (N3.1).
+    /// </summary>
     public DocumentEditorSnapshotCommand(
         DocumentEditorDocument target,
         DocumentEditorDocument before,
@@ -17,8 +21,8 @@ public sealed class DocumentEditorSnapshotCommand : IDocumentEditorCommand
         string? description = null)
     {
         _target = target;
-        _before = DocumentEditorCommandCloner.Clone(before);
-        _after = DocumentEditorCommandCloner.Clone(after);
+        _before = before;
+        _after = after;
         Description = string.IsNullOrWhiteSpace(description) ? "Update document" : description;
     }
 

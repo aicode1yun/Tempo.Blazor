@@ -380,11 +380,25 @@ public class DocumentRenditionResult
 /// <summary>Shared JSON options for document editor snapshots.</summary>
 public static class DocumentEditorJson
 {
-    /// <summary>Default serializer options for document editor snapshots.</summary>
+    /// <summary>Default serializer options for document editor snapshots. Resolves type metadata
+    /// through the source-generated <see cref="DocumentEditorJsonContext"/> first (perf plan N10) and
+    /// falls back to reflection for payloads not rooted in the context; the wire format is identical
+    /// to the reflection serializer.</summary>
     public static JsonSerializerOptions Options { get; } = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        WriteIndented = false
+        WriteIndented = false,
+        TypeInfoResolver = System.Text.Json.Serialization.Metadata.JsonTypeInfoResolver.Combine(
+            DocumentEditorJsonContext.Default,
+            new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver())
+    };
+
+    /// <summary>Indented variant of <see cref="Options"/> for debug/diagnostic output.
+    /// Shared instance -- building fresh <see cref="JsonSerializerOptions"/> per call discards the
+    /// serializer's cached type metadata (perf plan N8.4).</summary>
+    public static JsonSerializerOptions IndentedOptions { get; } = new(Options)
+    {
+        WriteIndented = true
     };
 
     /// <summary>Serializes a document to normalized JSON.</summary>

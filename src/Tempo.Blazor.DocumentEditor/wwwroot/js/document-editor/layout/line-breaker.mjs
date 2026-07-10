@@ -125,6 +125,13 @@ export function createLineBreakerModule(options) {
                 const baseX = segment.rect.x;
                 const totalW = segment.rect.width;
                 const canMeasure = text.length === length && service && typeof service.measureText === 'function';
+                // Perf plan N4: pull the whole prefix-advance array from the measurement service's
+                // dedicated cache (one lookup per segment) instead of measuring every prefix here —
+                // the ad-hoc loop was O(n²) per segment on every keystroke. Values are identical
+                // (the service's default 'exact' mode measures the same shaped prefixes).
+                const advances = canMeasure && typeof service.getCaretAdvances === 'function'
+                    ? service.getCaretAdvances(text, style)
+                    : null;
                 for (let i = segment.start; i <= segment.end; i++) {
                     const k = i - segment.start;
                     let x;
@@ -132,6 +139,8 @@ export function createLineBreakerModule(options) {
                         x = baseX;
                     } else if (k >= length) {
                         x = baseX + totalW;
+                    } else if (advances) {
+                        x = baseX + Math.min(totalW, advances[k]);
                     } else if (canMeasure) {
                         x = baseX + Math.min(totalW, service.measureText(text.slice(0, k), style).width);
                     } else {

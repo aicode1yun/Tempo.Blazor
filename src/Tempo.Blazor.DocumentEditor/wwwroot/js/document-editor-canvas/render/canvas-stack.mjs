@@ -8,6 +8,7 @@ import { normalizeMarkType } from '../layout/canvas-text-style.mjs';
 import { createCanvasViewState, viewPresentation } from '../view/view-modes.mjs';
 import { createPageVirtualizer } from '../perf/page-virtualizer.mjs';
 import { createTileCache } from '../perf/tile-cache.mjs';
+import { createFontMetricsService } from '../../document-editor/layout/font-metrics.mjs';
 
 export { CANVAS_LAYER_KINDS };
 
@@ -55,6 +56,13 @@ export function createCanvasStack(options = {}) {
     // Per-fragment display-command cache (Phase 4): keyed by the (cached) fragment object, so an edit
     // re-assembles display commands only for the changed block and reuses the rest.
     const commandDisplayCache = new WeakMap();
+    // Persistent font-metrics service (Phase N1): measureText results only depend on the style
+    // fingerprint (which includes zoom), so the LRU cache must survive across layout passes —
+    // a keystroke then re-measures only genuinely new runs instead of the whole edited paragraph
+    // plus headers/footers/notes. Cap raised from the 4096 default: one cache now serves the whole
+    // document lifetime. Cleared defensively on a devicePixelRatio change (the key has no DPR part).
+    const fontMetricsService = createFontMetricsService({ cacheLimit: 8192 });
+    let fontMetricsPixelRatio = null;
 
     // Page offset/scale snapshot shared by the DOM overlays (comments/revisions/presence). Reading
     // offsetLeft/offsetTop forces a synchronous reflow, and each overlay used to read them PER MARKER while
@@ -124,6 +132,11 @@ export function createCanvasStack(options = {}) {
     // Builds the (expensive) render plan: runs the document layout and the display list. Called only
     // on a real recalc (mount/edit/command), never on scroll.
     function buildRenderPlan(layout, model = {}, options = {}) {
+        const pixelRatio = Math.max(1, Number(pixelRatioProvider()) || 1);
+        if (fontMetricsPixelRatio !== null && pixelRatio !== fontMetricsPixelRatio) {
+            fontMetricsService.clearCache();
+        }
+        fontMetricsPixelRatio = pixelRatio;
         const viewState = createCanvasViewState(options.viewState || {});
         const presentation = viewPresentation(viewState);
         const zoomScale = Math.max(0.01, Number(viewState.zoom?.scale || 1) || 1);
@@ -135,11 +148,27 @@ export function createCanvasStack(options = {}) {
             signingRoles: Array.isArray(options.signingRoles) ? options.signingRoles : [],
             layoutCache: layoutBlockCache,
             commandCache: commandDisplayCache,
+            fontMetrics: fontMetricsService,
+            // Perf plan N11.2: progressive first layout budget + the resume token continuing it.
+            layoutBudget: options.layoutBudget || null,
+            layoutResume: options.layoutResume || null,
         });
         const allRenderPages = Array.isArray(displayList.pages) && displayList.pages.length > 0
             ? displayList.pages
             : (Array.isArray(layout?.pages) ? layout.pages : []);
-        return { layout, model, viewState, presentation, zoomScale, contentControlRenderMode, displayList, allRenderPages };
+        return {
+            layout,
+            model,
+            viewState,
+            presentation,
+            zoomScale,
+            contentControlRenderMode,
+            displayList,
+            allRenderPages,
+            layoutComplete: displayList.layoutComplete !== false,
+            layoutResume: displayList.layoutResume || null,
+            layoutProgress: displayList.layoutProgress || null,
+        };
     }
 
     // Full recalc + paint. Use for mount/edit/command (anything that changes the model or layout).
@@ -197,11 +226,17 @@ export function createCanvasStack(options = {}) {
             }
         }
 
+        // Perf plan N6.1: the command-filter diagnostics (each an O(all commands) scan, testing
+        // contract only) are skipped on the per-keystroke input render; the debounced idle
+        // reconciliation render publishes the settled values, so E2E reads after a pause see them.
+        const deferPaintDiagnostics = options.deferPaintDiagnostics === true;
         root.setAttribute('data-canvas-page-count', String(allRenderPages.length));
         root.setAttribute('data-canvas-layout-has-landscape-page', String(allRenderPages.some(page => (Number(page?.width || 0) || 0) > (Number(page?.height || 0) || 0))));
         root.setAttribute('data-canvas-layout-section-ids', allRenderPages.map(page => String(page?.sectionId || '')).filter(Boolean).join(','));
-        root.setAttribute('data-canvas-column-separator-count', String(displayList.commands.filter(command => command.type === 'columnSeparator').length));
-        root.setAttribute('data-canvas-line-number-count', String(displayList.commands.filter(command => command.type === 'lineNumber').length));
+        if (!deferPaintDiagnostics) {
+            root.setAttribute('data-canvas-column-separator-count', String(displayList.commands.filter(command => command.type === 'columnSeparator').length));
+            root.setAttribute('data-canvas-line-number-count', String(displayList.commands.filter(command => command.type === 'lineNumber').length));
+        }
         root.setAttribute('data-canvas-mounted-page-count', String(renderPages.length));
         root.setAttribute('data-canvas-virtualization-enabled', String(virtualization.enabled === true));
         root.setAttribute('data-canvas-virtualization-progressive', String(virtualization.progressive === true));
@@ -210,8 +245,10 @@ export function createCanvasStack(options = {}) {
         root.setAttribute('data-canvas-layout-cache-miss-count', String(displayList.layoutCacheStats?.misses || 0));
         root.setAttribute('data-canvas-command-cache-hit-count', String(displayList.commandCacheStats?.hits || 0));
         root.setAttribute('data-canvas-command-cache-miss-count', String(displayList.commandCacheStats?.misses || 0));
-        root.setAttribute('data-canvas-tab-leader-count', String(displayList.commands.filter(command => command.type === 'tabLeader').length));
-        root.setAttribute('data-canvas-dotted-tab-leader-count', String(displayList.commands.filter(command => command.type === 'tabLeader' && command.leader === 'dots').length));
+        if (!deferPaintDiagnostics) {
+            root.setAttribute('data-canvas-tab-leader-count', String(displayList.commands.filter(command => command.type === 'tabLeader').length));
+            root.setAttribute('data-canvas-dotted-tab-leader-count', String(displayList.commands.filter(command => command.type === 'tabLeader' && command.leader === 'dots').length));
+        }
         root.setAttribute('data-canvas-view-mode', presentation.mode);
         root.setAttribute('data-canvas-view-toolbar-hidden', String(presentation.toolbarHidden === true));
         root.setAttribute('data-canvas-zoom-percent', String(viewState.zoom.percent));
@@ -219,14 +256,34 @@ export function createCanvasStack(options = {}) {
         root.setAttribute('data-canvas-print-preview-active', String(viewState.printPreview.active === true));
         root.style.gap = `${presentation.rootGap}px`;
         root.style.padding = `${presentation.rootPadding}px`;
+        // Perf plan N11.3: while the progressive first layout is incomplete, the bottom spacer adds
+        // an ESTIMATE of the unlaid tail (remaining blocks ÷ laid blocks-per-page × average page
+        // stride) so the scrollbar length approximates the final document immediately; each idle
+        // chunk recomputes the estimate until real pages replace it.
+        const layoutComplete = plan.layoutComplete !== false;
+        let estimatedRemainingHeight = 0;
+        let estimatedTotalPages = allRenderPages.length;
+        if (!layoutComplete && plan.layoutProgress) {
+            const laidBlocks = Math.max(1, Number(plan.layoutProgress.laidBlockCount) || 1);
+            const totalBlocks = Math.max(laidBlocks, Number(plan.layoutProgress.totalBlockCount) || laidBlocks);
+            const laidPages = Math.max(1, allRenderPages.length);
+            const blocksPerPage = laidBlocks / laidPages;
+            const remainingPages = Math.ceil((totalBlocks - laidBlocks) / Math.max(0.001, blocksPerPage));
+            const averagePageHeight = allRenderPages.reduce((sum, page) => sum + (Number(page.height) || 0), 0) / laidPages;
+            estimatedRemainingHeight = Math.max(0, remainingPages * ((averagePageHeight * zoomScale) + presentation.rootGap));
+            estimatedTotalPages = allRenderPages.length + remainingPages;
+        }
+        root.setAttribute('data-canvas-layout-complete', String(layoutComplete));
+        root.setAttribute('data-canvas-estimated-page-count', String(estimatedTotalPages));
         topSpacer.style.height = `${Math.max(0, virtualization.topSpacerHeight)}px`;
-        bottomSpacer.style.height = `${Math.max(0, virtualization.bottomSpacerHeight)}px`;
+        bottomSpacer.style.height = `${Math.max(0, virtualization.bottomSpacerHeight + estimatedRemainingHeight)}px`;
         topSpacer.setAttribute('data-canvas-spacer-height', String(Math.round(Math.max(0, virtualization.topSpacerHeight))));
-        bottomSpacer.setAttribute('data-canvas-spacer-height', String(Math.round(Math.max(0, virtualization.bottomSpacerHeight))));
+        bottomSpacer.setAttribute('data-canvas-spacer-height', String(Math.round(Math.max(0, virtualization.bottomSpacerHeight + estimatedRemainingHeight))));
         const incremental = createIncrementalPlan(displayList, options);
         // Model-wide diagnostic counters are identical for every page and each one scans the whole
         // model, so compute them ONCE per paint instead of O(visible pages) times (Phase 5.3).
-        const modelDiagnostics = computeModelDiagnostics(model);
+        // N6.1: skipped entirely on the deferred input render — the idle render publishes them.
+        const modelDiagnostics = deferPaintDiagnostics ? null : computeModelDiagnostics(model);
 
         for (const pageLayout of renderPages) {
             const page = ensurePage(pageLayout);
@@ -297,6 +354,21 @@ export function createCanvasStack(options = {}) {
                 });
                 page.needsFirstPaint = false;
             }
+            // Perf plan N6.1: ~35 diagnostic attributes, most an O(page commands) filter — testing
+            // contract only. Deferred on the input render; the first non-deferred render (idle
+            // reconciliation) catches up with the page's REAL commands even when the tile cache
+            // skips the repaint, so post-pause reads see the typed content.
+            if (deferPaintDiagnostics) {
+                page.paintDiagnosticsStale = true;
+            } else if (repaintPage || page.paintDiagnosticsStale === true) {
+            // Skipped-and-not-stale pages keep their previous attribute values: the page content did
+            // not change, and recomputing from the (empty) skipped-paint command list zeroed every
+            // per-page count — surfaced by the N11 progressive continuations, which re-run the paint
+            // plan several times right after load while the first pages are unchanged.
+            const diagnosticsDisplayList = repaintPage
+                ? pageDisplayList
+                : { ...displayList, commands: displayList.commands.filter(command => Number(command.pageIndex || 0) === Number(pageLayout.index || 0)) };
+            page.paintDiagnosticsStale = false;
             page.pageElement.setAttribute('data-canvas-model-document-id', modelDiagnostics.documentId);
             page.pageElement.setAttribute('data-canvas-model-block-count', modelDiagnostics.blockCount);
             page.pageElement.setAttribute('data-canvas-model-section-count', modelDiagnostics.sectionCount);
@@ -318,35 +390,42 @@ export function createCanvasStack(options = {}) {
             page.pageElement.setAttribute('data-canvas-cross-reference-text', modelDiagnostics.crossReferenceText);
             page.pageElement.setAttribute('data-canvas-style-count', modelDiagnostics.styleCount);
             page.pageElement.setAttribute('data-canvas-style-heading1-font-size', modelDiagnostics.heading1FontSize);
-            page.pageElement.setAttribute('data-canvas-render-command-count', String(pageDisplayList.commands.length));
-            page.pageElement.setAttribute('data-canvas-painted-command-count', String(paintSummary.paintedCommandCount));
-            page.pageElement.setAttribute('data-canvas-text-run-count', String(pageDisplayList.commands.filter(command => command.type === 'textRun' || command.type === 'listLabel').length));
-            page.pageElement.setAttribute('data-canvas-tab-leader-count', String(pageDisplayList.commands.filter(command => command.type === 'tabLeader').length));
-            page.pageElement.setAttribute('data-canvas-dotted-tab-leader-count', String(pageDisplayList.commands.filter(command => command.type === 'tabLeader' && command.leader === 'dots').length));
-            page.pageElement.setAttribute('data-canvas-hyphenated-text-run-count', String(pageDisplayList.commands.filter(command => command.type === 'textRun' && command.hyphenated === true).length));
-            page.pageElement.setAttribute('data-canvas-watermark-count', String(pageDisplayList.commands.filter(command => command.type === 'watermarkText' || command.type === 'watermarkImage').length));
-            page.pageElement.setAttribute('data-canvas-page-fill', String(pageDisplayList.commands.find(command => command.type === 'pageFill')?.fill || ''));
-            page.pageElement.setAttribute('data-canvas-page-border-count', String(pageDisplayList.commands.filter(command => command.type === 'pageBorder').length));
+            page.pageElement.setAttribute('data-canvas-render-command-count', String(diagnosticsDisplayList.commands.length));
+            // Only a REAL repaint updates the painted-command diagnostic: a tile-cache-skipped
+            // paint painted 0 commands by design, and overwriting the attribute with that 0 made an
+            // already-painted page look blank to the E2E probes (surfaced by the N11 progressive
+            // continuations, which re-run paintRenderPlan while earlier pages are unchanged).
+            if (repaintPage || !page.pageElement.hasAttribute?.('data-canvas-painted-command-count')) {
+                page.pageElement.setAttribute('data-canvas-painted-command-count', String(paintSummary.paintedCommandCount));
+            }
+            page.pageElement.setAttribute('data-canvas-text-run-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'textRun' || command.type === 'listLabel').length));
+            page.pageElement.setAttribute('data-canvas-tab-leader-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'tabLeader').length));
+            page.pageElement.setAttribute('data-canvas-dotted-tab-leader-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'tabLeader' && command.leader === 'dots').length));
+            page.pageElement.setAttribute('data-canvas-hyphenated-text-run-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'textRun' && command.hyphenated === true).length));
+            page.pageElement.setAttribute('data-canvas-watermark-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'watermarkText' || command.type === 'watermarkImage').length));
+            page.pageElement.setAttribute('data-canvas-page-fill', String(diagnosticsDisplayList.commands.find(command => command.type === 'pageFill')?.fill || ''));
+            page.pageElement.setAttribute('data-canvas-page-border-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'pageBorder').length));
             const balancedColumnLineCounts = pageBalancedColumnLineCounts(pageLayout, displayList);
             page.pageElement.setAttribute('data-canvas-column-count', String(Array.isArray(pageLayout.columns) ? pageLayout.columns.length : 1));
             page.pageElement.setAttribute('data-canvas-column-balanced', String(pageLayout.columnBalanced === true));
             page.pageElement.setAttribute('data-canvas-balanced-column-line-counts', balancedColumnLineCounts.join(','));
             page.pageElement.setAttribute('data-canvas-balanced-column-line-spread', String(columnLineSpread(balancedColumnLineCounts)));
-            page.pageElement.setAttribute('data-canvas-column-separator-count', String(pageDisplayList.commands.filter(command => command.type === 'columnSeparator').length));
-            page.pageElement.setAttribute('data-canvas-line-number-count', String(pageDisplayList.commands.filter(command => command.type === 'lineNumber').length));
-            page.pageElement.setAttribute('data-canvas-header-footer-count', String(pageDisplayList.commands.filter(command => command.type === 'headerFooterFrame').length));
-            page.pageElement.setAttribute('data-canvas-field-count', String(pageDisplayList.commands.filter(command => command.type === 'field').length));
-            page.pageElement.setAttribute('data-canvas-math-count', String(pageDisplayList.commands.filter(command => command.type === 'mathEquation').length));
-            page.pageElement.setAttribute('data-canvas-content-control-count', String(pageDisplayList.commands.filter(command => command.type === 'formControl').length));
-            page.pageElement.setAttribute('data-canvas-note-count', String(pageDisplayList.commands.filter(command => command.type === 'noteMarker').length));
-            page.pageElement.setAttribute('data-canvas-table-count', String(pageDisplayList.commands.filter(command => command.type === 'tableBox').length));
-            page.pageElement.setAttribute('data-canvas-table-cell-count', String(pageDisplayList.commands.filter(command => command.type === 'tableCell').length));
-            page.pageElement.setAttribute('data-canvas-object-count', String(pageDisplayList.commands.filter(isCanvasObjectCommand).length));
-            page.pageElement.setAttribute('data-canvas-image-count', String(pageDisplayList.commands.filter(command => command.type === 'imageObject' || command.type === 'imageBox' || command.type === 'drawingRun').length));
-            page.pageElement.setAttribute('data-canvas-drawing-count', String(pageDisplayList.commands.filter(command => command.type === 'drawingShape' || command.type === 'drawingLine' || command.type === 'drawingChart').length));
-            page.pageElement.setAttribute('data-canvas-comment-anchor-count', String(pageDisplayList.commands.filter(command => command.type === 'commentAnchor').length));
-            page.pageElement.setAttribute('data-canvas-revision-anchor-count', String(pageDisplayList.commands.filter(command => command.type === 'revisionAnchor').length));
-            page.pageElement.setAttribute('data-canvas-diagnostic-count', String(pageDisplayList.commands.filter(command => command.layer === 'diagnostics').length));
+            page.pageElement.setAttribute('data-canvas-column-separator-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'columnSeparator').length));
+            page.pageElement.setAttribute('data-canvas-line-number-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'lineNumber').length));
+            page.pageElement.setAttribute('data-canvas-header-footer-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'headerFooterFrame').length));
+            page.pageElement.setAttribute('data-canvas-field-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'field').length));
+            page.pageElement.setAttribute('data-canvas-math-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'mathEquation').length));
+            page.pageElement.setAttribute('data-canvas-content-control-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'formControl').length));
+            page.pageElement.setAttribute('data-canvas-note-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'noteMarker').length));
+            page.pageElement.setAttribute('data-canvas-table-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'tableBox').length));
+            page.pageElement.setAttribute('data-canvas-table-cell-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'tableCell').length));
+            page.pageElement.setAttribute('data-canvas-object-count', String(diagnosticsDisplayList.commands.filter(isCanvasObjectCommand).length));
+            page.pageElement.setAttribute('data-canvas-image-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'imageObject' || command.type === 'imageBox' || command.type === 'drawingRun').length));
+            page.pageElement.setAttribute('data-canvas-drawing-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'drawingShape' || command.type === 'drawingLine' || command.type === 'drawingChart').length));
+            page.pageElement.setAttribute('data-canvas-comment-anchor-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'commentAnchor').length));
+            page.pageElement.setAttribute('data-canvas-revision-anchor-count', String(diagnosticsDisplayList.commands.filter(command => command.type === 'revisionAnchor').length));
+            page.pageElement.setAttribute('data-canvas-diagnostic-count', String(diagnosticsDisplayList.commands.filter(command => command.layer === 'diagnostics').length));
+            }
             if (repaintPage) {
                 // The text-rect layer is test/diagnostic metadata (hundreds of DOM nodes on a full
                 // page) with no runtime consumer. The per-keystroke input render defers it; the
@@ -401,6 +480,10 @@ export function createCanvasStack(options = {}) {
             },
             virtualization,
             tileCache: tileCacheSnapshot,
+            // Perf plan N11: progressive first-layout state (resume token intentionally NOT included
+            // here — it holds live loop state and is read via getLayoutState()).
+            layoutComplete,
+            layoutProgress: plan.layoutProgress || null,
         };
     }
 
@@ -426,11 +509,25 @@ export function createCanvasStack(options = {}) {
         pages.clear();
         tileCache.invalidate();
         layoutBlockCache.clear();
+        fontMetricsService.clearCache();
+        fontMetricsPixelRatio = null;
         lastPlan = null;
         pagePlacementsCache = null;
         pagePlacementsSignature = null;
         placementResizeObserver?.disconnect?.();
         placementResizeObserver = null;
+    }
+
+    // Perf plan N11: progressive first-layout state of the last built plan. The resume token holds
+    // live layout loop state (model + accumulator references) and is only ever consumed by the next
+    // layout continuation — never serialized.
+    function getLayoutState() {
+        return {
+            complete: lastPlan ? lastPlan.layoutComplete !== false : true,
+            resume: lastPlan?.layoutResume || null,
+            progress: lastPlan?.layoutProgress || null,
+            laidPages: Array.isArray(lastPlan?.allRenderPages) ? lastPlan.allRenderPages.length : 0,
+        };
     }
 
     return {
@@ -439,6 +536,7 @@ export function createCanvasStack(options = {}) {
         render,
         repaint,
         destroy,
+        getLayoutState,
         pages,
         getPagePlacements,
     };

@@ -110,6 +110,14 @@ public sealed class DocumentEditorCanvasPerformanceE2ETests : WasmTestBase
             """,
             null,
             new PageWaitForFunctionOptions { Timeout = 30_000 });
+        // Perf plan N11: the first render is budgeted (progressive layout); this test asserts
+        // document-final page counts, so wait for the idle continuations to finish the layout.
+        await page.WaitForFunctionAsync(
+            """
+            () => document.querySelector('[data-testid="document-canvas-engine-root"]')?.getAttribute('data-canvas-layout-complete') === 'true'
+            """,
+            null,
+            new PageWaitForFunctionOptions { Timeout = 30_000 });
     }
 
     private static Task ScrollCanvasSurfaceAsync(IPage page, int scrollTop)

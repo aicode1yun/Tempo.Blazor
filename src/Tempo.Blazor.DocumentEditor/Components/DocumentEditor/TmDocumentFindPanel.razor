@@ -157,14 +157,35 @@
         }
     }
 
+    // N3.4: the fulltext walks the whole document, so it must not run per keystroke. Debounced via
+    // the seq + Task.Delay pattern (System.Threading.Timer does not cancel reliably on WASM — same
+    // rationale as ScheduleCanvasToolbarSync in TmDocumentEditor). Enter/Next flushes immediately.
+    private const int SearchDebounceMs = 200;
+    private int _searchSeq;
+    private bool _searchPending;
+
     private async Task HandleSearchInput(ChangeEventArgs e)
     {
         _query = e.Value as string ?? string.Empty;
+        var seq = ++_searchSeq;
+        _searchPending = true;
+        await Task.Delay(SearchDebounceMs);
+        if (seq != _searchSeq)
+            return;
+
         await RunSearchAsync();
+    }
+
+    private async Task FlushPendingSearchAsync()
+    {
+        if (_searchPending)
+            await RunSearchAsync();
     }
 
     private async Task RunSearchAsync()
     {
+        _searchSeq++;
+        _searchPending = false;
         var query = CurrentQuery();
         if (Document is null || string.IsNullOrEmpty(_query))
         {
@@ -185,6 +206,7 @@
 
     private async Task GoToNextAsync()
     {
+        await FlushPendingSearchAsync();
         if (_results.Count == 0) return;
         _activeIndex = (_activeIndex + 1) % _results.Count;
         await OnNavigateRequested.InvokeAsync(1);
@@ -193,6 +215,7 @@
 
     private async Task GoToPreviousAsync()
     {
+        await FlushPendingSearchAsync();
         if (_results.Count == 0) return;
         _activeIndex = (_activeIndex - 1 + _results.Count) % _results.Count;
         await OnNavigateRequested.InvokeAsync(-1);
@@ -208,6 +231,7 @@
 
     private async Task ReplaceOneAsync()
     {
+        await FlushPendingSearchAsync();
         if (Document is null || _results.Count == 0) return;
         await OnReplaceOneRequested.InvokeAsync(new DocumentFindReplaceRequest
         {
@@ -220,6 +244,7 @@
 
     private async Task ReplaceAllAsync()
     {
+        await FlushPendingSearchAsync();
         if (Document is null || _results.Count == 0) return;
         await OnReplaceAllRequested.InvokeAsync(new DocumentFindReplaceRequest
         {

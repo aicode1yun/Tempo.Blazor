@@ -32,24 +32,42 @@ const DEFAULT_LIST_INDENT_STEP = 24;
 
 export function layoutCanvasDocument(model, options = {}) {
     const sourceModel = model || {};
-    const pageSettings = normalizePageSettings(sourceModel.pageSettings || options.pageSettings || DEFAULT_PAGE_SETUP);
+    // Perf plan N11.1: a resume token from a previous partial (budgeted) layout of the SAME model
+    // continues the layout loop exactly where it stopped. The token carries every piece of loop
+    // state — including the derived structures (flows/orderedBlocks/numbering) and the accumulator
+    // arrays by reference — so continuation is literally re-entering the same loop and the chunked
+    // concatenation is byte-identical to a single full layout. A token from a different model
+    // reference is ignored (any edit produces a new model, invalidating the resume).
+    const resume = options.resume && options.resume.schema === LAYOUT_RESUME_SCHEMA && options.resume.model === sourceModel
+        ? options.resume
+        : null;
+    const pageSettings = resume ? resume.pageSettings : normalizePageSettings(sourceModel.pageSettings || options.pageSettings || DEFAULT_PAGE_SETUP);
     const metrics = ensureMeasurementService(options.fontMetrics || createFontMetricsService(options.fontMetricsOptions));
     const layoutEngine = createCanvasLayoutEngine(sourceModel, metrics, options);
-    const flows = buildSectionFlows(sourceModel, pageSettings);
-    const orderedBlocks = flows.orderedBlocks();
-    const numberingState = resolveNumberingState(sourceModel, orderedBlocks.map(entry => entry.block));
-    let currentSection = flows.first;
-    const pages = [createCanvasPageLayout(0, currentSection?.pageSettings || pageSettings, currentSection)];
-    const blockLayouts = [];
-    const objectLayouts = [];
-    const textRects = [];
-    const listLabels = [];
-    const lineNumbers = [];
-    const lineNumberingState = createLineNumberingState();
-    let currentPageIndex = 0;
-    let currentColumnIndex = 0;
-    let cursorY = columnFrame(pages[0], currentColumnIndex).y;
-    let sequence = 0;
+    const flows = resume ? resume.flows : buildSectionFlows(sourceModel, pageSettings);
+    const orderedBlocks = resume ? resume.orderedBlocks : flows.orderedBlocks();
+    const numberingState = resume ? resume.numberingState : resolveNumberingState(sourceModel, orderedBlocks.map(entry => entry.block));
+    let currentSection = resume ? resume.currentSection : flows.first;
+    const pages = resume ? resume.pages : [createCanvasPageLayout(0, currentSection?.pageSettings || pageSettings, currentSection)];
+    const blockLayouts = resume ? resume.blockLayouts : [];
+    const objectLayouts = resume ? resume.objectLayouts : [];
+    const textRects = resume ? resume.textRects : [];
+    const listLabels = resume ? resume.listLabels : [];
+    const lineNumbers = resume ? resume.lineNumbers : [];
+    const lineNumberingState = resume ? resume.lineNumberingState : createLineNumberingState();
+    let currentPageIndex = resume ? resume.currentPageIndex : 0;
+    let currentColumnIndex = resume ? resume.currentColumnIndex : 0;
+    let cursorY = resume ? resume.cursorY : columnFrame(pages[0], currentColumnIndex).y;
+    let sequence = resume ? resume.sequence : 0;
+    const startBlockIndex = resume ? resume.blockIndex : 0;
+
+    // Perf plan N11.1: optional layout budget. maxPages stops once the flow cursor moves past the
+    // budgeted page count; deadlineMs stops once this call has spent its time allowance. The budget
+    // is only evaluated BETWEEN blocks (a paragraph/table is always laid out atomically) and never
+    // before the first block of a call, so every call makes progress and terminates.
+    const budget = options.budget || null;
+    const budgetMaxPages = Number.isFinite(budget?.maxPages) ? Math.max(1, Math.floor(budget.maxPages)) : null;
+    const budgetDeadline = Number.isFinite(budget?.deadlineMs) ? layoutNow() + Math.max(0, Number(budget.deadlineMs)) : null;
 
     // Incremental layout cache (Phase 3): memoizes the expensive per-paragraph layout keyed by
     // block id. A reuse is valid only when both the block content AND its incoming flow state
@@ -57,8 +75,9 @@ export function layoutCanvasDocument(model, options = {}) {
     // edit recomputes from the first changed block onward (its end cursorY shifts, invalidating the
     // next block's state signature), exactly like OnlyOffice's StartIndex recalc.
     const layoutCache = options.layoutCache instanceof Map ? options.layoutCache : null;
-    const cacheStats = { hits: 0, misses: 0, reusedBlockIds: [] };
-    const seenBlockIds = new Set();
+    const strictSignatures = options.strictSignatures === true;
+    const cacheStats = resume ? resume.cacheStats : { hits: 0, misses: 0, reusedBlockIds: [] };
+    const seenBlockIds = resume ? resume.seenBlockIds : new Set();
 
     const ensurePage = (index, section = currentSection) => {
         while (pages.length <= index) {
@@ -93,7 +112,16 @@ export function layoutCanvasDocument(model, options = {}) {
         moveToNextPage(section);
     };
 
-    for (const entry of orderedBlocks) {
+    let nextBlockIndex = orderedBlocks.length;
+    for (let blockIndex = startBlockIndex; blockIndex < orderedBlocks.length; blockIndex += 1) {
+        if (blockIndex > startBlockIndex
+            && ((budgetMaxPages !== null && currentPageIndex + 1 > budgetMaxPages)
+                || (budgetDeadline !== null && layoutNow() > budgetDeadline))) {
+            nextBlockIndex = blockIndex;
+            break;
+        }
+
+        const entry = orderedBlocks[blockIndex];
         const block = entry.block;
         const entrySection = entry.section || flows.sectionForBlock(block, currentSection);
         if (entrySection && currentSection && entrySection.id !== currentSection.id) {
@@ -158,7 +186,7 @@ export function layoutCanvasDocument(model, options = {}) {
             if (tableCacheable) {
                 seenBlockIds.add(tableKey);
                 const frame = columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex);
-                tableContentSig = textBlockContentSignature(block);
+                tableContentSig = textBlockContentSignature(block, strictSignatures);
                 tableStateSig = textBlockStateSignature({
                     cursorY: Math.round(cursorY * 100),
                     currentPageIndex,
@@ -332,7 +360,7 @@ export function layoutCanvasDocument(model, options = {}) {
         if (cacheable) {
             seenBlockIds.add(blockKey);
             const frame = columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex);
-            contentSig = textBlockContentSignature(block);
+            contentSig = textBlockContentSignature(block, strictSignatures);
             stateSig = textBlockStateSignature({
                 cursorY: Math.round(cursorY * 100),
                 currentPageIndex,
@@ -403,8 +431,12 @@ export function layoutCanvasDocument(model, options = {}) {
         moveToNextPage(currentSection);
     }
 
+    const partial = nextBlockIndex < orderedBlocks.length;
+
     // Drop cache entries for blocks that no longer exist so the cache stays bounded by the document.
-    if (layoutCache !== null) {
+    // Pruning must only run when the layout COMPLETED — a partial pass has not seen the tail blocks
+    // yet, and pruning them would throw away perfectly valid cache entries (perf plan N11.4).
+    if (layoutCache !== null && !partial) {
         for (const key of layoutCache.keys()) {
             if (!seenBlockIds.has(key)) {
                 layoutCache.delete(key);
@@ -424,7 +456,43 @@ export function layoutCanvasDocument(model, options = {}) {
         lineNumbers,
         measurementStats: typeof metrics.getStats === 'function' ? metrics.getStats() : null,
         cacheStats,
+        partial,
+        layoutComplete: !partial,
+        progress: { laidBlockCount: nextBlockIndex, totalBlockCount: orderedBlocks.length },
+        resume: partial
+            ? {
+                schema: LAYOUT_RESUME_SCHEMA,
+                model: sourceModel,
+                pageSettings,
+                flows,
+                orderedBlocks,
+                numberingState,
+                lineNumberingState,
+                currentSection,
+                pages,
+                blockLayouts,
+                objectLayouts,
+                textRects,
+                listLabels,
+                lineNumbers,
+                currentPageIndex,
+                currentColumnIndex,
+                cursorY,
+                sequence,
+                cacheStats,
+                seenBlockIds,
+                blockIndex: nextBlockIndex,
+            }
+            : null,
     };
+}
+
+// Resume tokens are structural (loop state by reference); the schema tag guards against a stale
+// token shape after future refactors.
+const LAYOUT_RESUME_SCHEMA = 'canvas-layout-resume-v1';
+
+function layoutNow() {
+    return typeof globalThis.performance?.now === 'function' ? globalThis.performance.now() : Date.now();
 }
 
 // A text block is safe to memoize when its layout depends only on its own content and incoming flow
@@ -445,13 +513,39 @@ function hashLayoutString(input) {
     return hash;
 }
 
-function textBlockContentSignature(block) {
-    return hashLayoutString(JSON.stringify({
+// Perf plan N4.4: the content hash is memoized by block object reference. The model is
+// immutable-by-convention (mutators clone touched blocks), so an unchanged reference implies
+// unchanged content — stringifying every block on every layout pass was O(document text) even at
+// 100% cache hits. `strict` (options.strictSignatures) bypasses the memo for debugging sessions
+// that suspect an in-place mutation.
+//
+// TABLE blocks are deliberately NOT memoized: the interactive table flow mutates cell structure
+// in place somewhere (proven by the Phase14 tables E2E — click-to-caret broke with memoized table
+// signatures, bisected 2026-07-10), so tables always re-hash. Paragraph/heading/quote blocks are
+// covered by the copy-on-write contract tests and the full canvas E2E suite.
+const blockContentSignatureCache = new WeakMap();
+
+function textBlockContentSignature(block, strict = false) {
+    const memoizable = !strict && block !== null && typeof block === 'object'
+        && canvasBlockType(block) !== 'table';
+    if (memoizable) {
+        const cached = blockContentSignatureCache.get(block);
+        if (cached !== undefined) {
+            return cached;
+        }
+    }
+
+    const signature = hashLayoutString(JSON.stringify({
         t: canvasBlockType(block),
         s: block?.styleId ?? block?.StyleId ?? null,
         p: block?.paragraphProperties ?? block?.ParagraphProperties ?? null,
         c: block?.content ?? block?.Content ?? null,
     }));
+    if (memoizable) {
+        blockContentSignatureCache.set(block, signature);
+    }
+
+    return signature;
 }
 
 function textBlockStateSignature(parts) {
@@ -502,10 +596,13 @@ function objectLayoutsSignature(objectLayouts) {
 
 export function createCanvasLayoutEngine(model, metrics, options = {}) {
     const measurementService = ensureMeasurementService(metrics || createFontMetricsService(options.fontMetricsOptions));
-    const blocksById = new Map(orderedCanvasBlocks(model).map(block => [String(block.id || ''), normalizeTextBlock(model, block, measurementService)]));
+    // Perf plan N4.5: blocks are normalized LAZILY on lookup (normalizeTextBlock memoizes per block
+    // reference) — eagerly normalizing the whole document here ran on every layout pass.
+    const rawBlocksById = new Map(orderedCanvasBlocks(model).map(block => [String(block.id || ''), block]));
     const factory = createParagraphLayoutEngineFactory({
         findBlock(_, blockId) {
-            return blocksById.get(String(blockId || '')) || null;
+            const raw = rawBlocksById.get(String(blockId || ''));
+            return raw ? normalizeTextBlock(model, raw, measurementService) : null;
         },
     });
     const layoutOptions = {
@@ -515,14 +612,60 @@ export function createCanvasLayoutEngine(model, metrics, options = {}) {
     return factory(measurementService, layoutOptions);
 }
 
+// Perf plan N4.5: the joined document text only feeds soft-hyphen detection; memoize it per model
+// object (a new model reference is created for every edit, so this only skips repeated layouts of
+// the SAME model — idle reconcile, repaint-driven relayouts, header/footer passes).
+const orderedBlocksTextCache = new WeakMap();
+
 function orderedBlocksText(model) {
-    return orderedCanvasBlocks(model)
+    if (model === null || typeof model !== 'object') {
+        return '';
+    }
+
+    const cached = orderedBlocksTextCache.get(model);
+    if (cached !== undefined) {
+        return cached;
+    }
+
+    const text = orderedCanvasBlocks(model)
         .flatMap(block => Array.isArray(block?.content?.runs) ? block.content.runs : [])
         .map(run => String(run?.text ?? run?.Text ?? ''))
         .join('\n');
+    orderedBlocksTextCache.set(model, text);
+    return text;
 }
 
+// Perf plan N4.5: normalization is memoized by block reference and revalidated against the model
+// parts it actually reads (theme + styles govern run styling; metrics feed math measurement).
+// Every layout pass used to re-normalize EVERY block up front in createCanvasLayoutEngine.
+const normalizedTextBlockCache = new WeakMap();
+
 export function normalizeTextBlock(model, block, metrics = null) {
+    if (block === null || typeof block !== 'object') {
+        return buildNormalizedTextBlock(model, block, metrics);
+    }
+
+    const cached = normalizedTextBlockCache.get(block);
+    if (cached
+        && cached.theme === (model?.theme ?? model?.Theme ?? null)
+        && cached.styles === (model?.styles ?? model?.Styles ?? null)
+        && cached.metrics === metrics) {
+        return cached.value;
+    }
+
+    const value = buildNormalizedTextBlock(model, block, metrics);
+    // Capture the validation tuple AFTER the build: resolving styles can lazily attach a normalized
+    // style store to the model, and the memo must key on the post-resolution references.
+    normalizedTextBlockCache.set(block, {
+        theme: model?.theme ?? model?.Theme ?? null,
+        styles: model?.styles ?? model?.Styles ?? null,
+        metrics,
+        value,
+    });
+    return value;
+}
+
+function buildNormalizedTextBlock(model, block, metrics = null) {
     const type = canvasBlockType(block);
     const content = block?.content || {};
     const paragraphProperties = block?.paragraphProperties || {};

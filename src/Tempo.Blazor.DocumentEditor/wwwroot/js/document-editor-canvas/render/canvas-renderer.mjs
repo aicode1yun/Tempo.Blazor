@@ -4,6 +4,10 @@ import { buildDrawingChartLayout } from '../objects/chart-layout.mjs';
 import { CANVAS_RENDER_LAYERS } from './layers.mjs';
 import { paintSigningField } from './signing-field-render.mjs';
 
+// LRU image cache (Phase N3.5): capped so long editing sessions with many distinct image URLs
+// cannot grow the cache without bound. Map iteration order is insertion order — a hit re-inserts
+// the entry (MRU) and an insert past the cap evicts the first (least recently used) key.
+export const IMAGE_CACHE_LIMIT = 128;
 const imageCache = new Map();
 
 export function paintDisplayList(layers, displayList, options = {}) {
@@ -653,9 +657,12 @@ function colorWithOpacity(color, opacity) {
     return value;
 }
 
-function resolveCachedImage(context, url) {
+export function resolveCachedImage(context, url) {
     if (imageCache.has(url)) {
-        return imageCache.get(url);
+        const cached = imageCache.get(url);
+        imageCache.delete(url);
+        imageCache.set(url, cached);
+        return cached;
     }
 
     const canvas = context?.canvas || null;
@@ -674,6 +681,10 @@ function resolveCachedImage(context, url) {
     };
     image.src = url;
     imageCache.set(url, image);
+    if (imageCache.size > IMAGE_CACHE_LIMIT) {
+        imageCache.delete(imageCache.keys().next().value);
+    }
+
     return image;
 }
 

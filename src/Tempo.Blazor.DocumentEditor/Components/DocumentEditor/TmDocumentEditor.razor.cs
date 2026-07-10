@@ -366,6 +366,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private string? _activeHeadingBlockId;
     private readonly DocumentOutlineService _outlineService = new();
     private bool _jsonDebugModalOpen;
+    // N3.2: snapshots for the debug JSON modal, computed once on open (never per render).
+    private string _jsonDebugDocumentJson = string.Empty;
+    private string? _jsonDebugDocxDrawingMetadataJson;
     private bool _clipboardHtmlModalOpen;
     private string? _clipboardHtmlSnapshot;
     private string? _runtimeDebugJson;
@@ -1207,7 +1210,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             if (UsingCanvasEngine)
             {
                 var canvasDoc = await _canvasHost!.RequestDocumentAsync();
-                documentToSave = CreateProviderBoundarySnapshot(canvasDoc ?? documentToSave, preserveImageBlocks: true);
+                documentToSave = canvasDoc is not null
+                    ? CreateCanvasProviderBoundarySnapshot(canvasDoc, preserveImageBlocks: true)
+                    : CreateProviderBoundarySnapshot(documentToSave, preserveImageBlocks: true);
                 _document = documentToSave;
                 _currentDocument = documentToSave;
             }
@@ -1613,7 +1618,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         if (UsingCanvasEngine && _canvasHost is not null)
         {
             var canvasDoc = await _canvasHost.RequestDocumentAsync();
-            documentToExport = CreateProviderBoundarySnapshot(canvasDoc ?? documentToExport, preserveImageBlocks: true);
+            documentToExport = canvasDoc is not null
+                ? CreateCanvasProviderBoundarySnapshot(canvasDoc, preserveImageBlocks: true)
+                : CreateProviderBoundarySnapshot(documentToExport, preserveImageBlocks: true);
             documentToExport = await EnrichProviderBoundarySnapshotAsync(documentToExport);
             _document = documentToExport;
             _currentDocument = documentToExport;
@@ -1649,11 +1656,22 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         return snapshot;
     }
 
-    private static DocumentEditorDocument CreateProviderBoundarySnapshot(
+    // Internal for tests (perf plan N8.1).
+    internal static DocumentEditorDocument CreateProviderBoundarySnapshot(
         DocumentEditorDocument currentDocument,
         DocumentEditorDocument? wysiwygSnapshot = null,
-        bool preserveImageBlocks = false)
+        bool preserveImageBlocks = false,
+        bool assumeOwnership = false)
     {
+        // Perf plan N8.1: a freshly OWNED document (RequestDocumentAsync deserializes a brand-new
+        // object graph via FromCanvasModel, which clones every part) needs no defensive clone —
+        // the boundary fix-ups run in place. Shared documents keep the historical clone-first path.
+        if (assumeOwnership && wysiwygSnapshot is null)
+        {
+            ApplyProviderBoundaryFixups(currentDocument, preserveImageBlocks);
+            return currentDocument;
+        }
+
         var snapshot = wysiwygSnapshot is null
             ? CloneForEditor(currentDocument)
             : CloneForEditor(wysiwygSnapshot);
@@ -1683,6 +1701,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             snapshot.Revisions = CloneForEditor(currentDocument.Revisions);
         }
 
+        ApplyProviderBoundaryFixups(snapshot, preserveImageBlocks);
+        return snapshot;
+    }
+
+    private static void ApplyProviderBoundaryFixups(DocumentEditorDocument snapshot, bool preserveImageBlocks)
+    {
         DocumentHeaderFooterResolver.EnsurePrimaryHeadersFooters(snapshot);
         new DocumentEditorPostFixer().Fix(snapshot);
         if (preserveImageBlocks)
@@ -1695,13 +1719,24 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
 
         RemoveTransientDisplayData(snapshot);
-        return snapshot;
     }
 
     private static void RemoveTransientDisplayData(DocumentEditorDocument document)
     {
         DocumentImagePersistence.Sanitize(document);
     }
+
+    /// <summary>
+    /// Boundary snapshot for a document pulled from the canvas engine (perf plan N8.1).
+    /// RequestDocumentAsync normally returns a freshly deserialized graph we own outright — fixed up
+    /// in place with no clone. Its fallback can hand back the SHARED mounted Document parameter
+    /// (interop unavailable), which keeps the defensive clone.
+    /// </summary>
+    private DocumentEditorDocument CreateCanvasProviderBoundarySnapshot(DocumentEditorDocument canvasDocument, bool preserveImageBlocks)
+        => CreateProviderBoundarySnapshot(
+            canvasDocument,
+            preserveImageBlocks: preserveImageBlocks,
+            assumeOwnership: _canvasHost is null || !ReferenceEquals(canvasDocument, _canvasHost.Document));
 
     private Task DownloadFormatExportAsync(DocumentFormatExportProviderResult result)
         => DownloadFileAsync(result.FileName, result.ContentType, result.Content);
@@ -2753,7 +2788,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                 var canvasDocument = await _canvasHost.RequestDocumentAsync();
                 if (canvasDocument is not null)
                 {
-                    _document = CreateProviderBoundarySnapshot(canvasDocument, preserveImageBlocks: true);
+                    _document = CreateCanvasProviderBoundarySnapshot(canvasDocument, preserveImageBlocks: true);
                     _currentDocument = _document;
                 }
 
@@ -4711,6 +4746,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     {
         if (!ShowDebugTools) return;
         await RefreshDocumentDebugSnapshotAsync();
+        // N3.2: compute the (O(document)) serialized snapshots ONCE when the modal opens. Binding
+        // these as method calls in the razor markup re-serialized the whole document on EVERY editor
+        // render while ShowDebugTools was on — including each settled-typing chrome render.
+        _jsonDebugDocumentJson = GetDocumentJson();
+        _jsonDebugDocxDrawingMetadataJson = GetDocxDrawingMetadataDebugJson();
         _jsonDebugModalOpen = true;
         await InvokeAsync(StateHasChanged);
     }
@@ -4718,6 +4758,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private Task CloseJsonDebugModalAsync()
     {
         _jsonDebugModalOpen = false;
+        _jsonDebugDocumentJson = string.Empty;
+        _jsonDebugDocxDrawingMetadataJson = null;
         return InvokeAsync(StateHasChanged);
     }
 
@@ -4729,10 +4771,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                 : new DocumentClipboardDebugSnapshot();
         _clipboardDebugRawHtml = debugSnapshot.RawHtml;
         _clipboardDebugNormalizedJson = debugSnapshot.NormalizedJson;
-        _clipboardDebugWarningsJson = JsonSerializer.Serialize(debugSnapshot.Warnings, new JsonSerializerOptions(DocumentEditorJson.Options)
-        {
-            WriteIndented = true
-        });
+        _clipboardDebugWarningsJson = JsonSerializer.Serialize(debugSnapshot.Warnings, DocumentEditorJson.IndentedOptions);
         _clipboardHtmlSnapshot = debugSnapshot.RawHtml;
         _clipboardHtmlModalOpen = true;
         await InvokeAsync(StateHasChanged);
@@ -4747,10 +4786,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private string GetDocumentJson()
     {
         if (_document is null) return string.Empty;
-        return JsonSerializer.Serialize(_document, new JsonSerializerOptions(DocumentEditorJson.Options)
-        {
-            WriteIndented = true
-        });
+        return JsonSerializer.Serialize(_document, DocumentEditorJson.IndentedOptions);
     }
 
     private async Task CopyDocumentDebugJsonAsync()
@@ -4787,10 +4823,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             runtimeDebug,
             docxDrawingMetadata = BuildDocxDrawingMetadataDebug(),
             runtimeRecovery = _lastRuntimeRecoveryDetail
-        }, new JsonSerializerOptions(DocumentEditorJson.Options)
-        {
-            WriteIndented = true
-        });
+        }, DocumentEditorJson.IndentedOptions);
     }
 
     private string? GetDocxDrawingMetadataDebugJson()
@@ -4801,10 +4834,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return null;
         }
 
-        return JsonSerializer.Serialize(metadata, new JsonSerializerOptions(DocumentEditorJson.Options)
-        {
-            WriteIndented = true
-        });
+        return JsonSerializer.Serialize(metadata, DocumentEditorJson.IndentedOptions);
     }
 
     private List<object> BuildDocxDrawingMetadataDebug()
@@ -5150,7 +5180,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             var canvasDocument = await _canvasHost.RequestDocumentAsync();
             if (canvasDocument is not null)
             {
-                documentToDraft = CreateProviderBoundarySnapshot(canvasDocument, preserveImageBlocks: true);
+                documentToDraft = CreateCanvasProviderBoundarySnapshot(canvasDocument, preserveImageBlocks: true);
                 _document = documentToDraft;
                 _currentDocument = documentToDraft;
             }
@@ -6976,6 +7006,21 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }, focus: true);
     }
 
+    // N9.1: named toolbar callbacks (were inline lambdas in the razor markup -- a fresh delegate
+    // per parent render). Behavior identical; named methods keep the markup stable and readable.
+    private Task ToggleBoldFromToolbarAsync() => ToggleInlineMarkAsync(InlineMarkType.Bold);
+    private Task ToggleItalicFromToolbarAsync() => ToggleInlineMarkAsync(InlineMarkType.Italic);
+    private Task ToggleUnderlineFromToolbarAsync() => ToggleInlineMarkAsync(InlineMarkType.Underline);
+    private Task ToggleStrikethroughFromToolbarAsync() => ToggleInlineMarkAsync(InlineMarkType.Strikethrough);
+    private Task ToggleSuperscriptFromToolbarAsync() => ToggleInlineMarkAsync(InlineMarkType.Superscript);
+    private Task ToggleSubscriptFromToolbarAsync() => ToggleInlineMarkAsync(InlineMarkType.Subscript);
+    private Task ToggleSmallCapsFromToolbarAsync() => ToggleInlineMarkAsync(InlineMarkType.SmallCaps);
+    private Task ToggleAllCapsFromToolbarAsync() => ToggleInlineMarkAsync(InlineMarkType.AllCaps);
+    private Task ToggleDoubleStrikethroughFromToolbarAsync() => ToggleInlineMarkAsync(InlineMarkType.DoubleStrikethrough);
+    private Task InsertDefaultTableFromToolbarAsync() => InsertTableAsync();
+    private Task InsertTableWithDimensionsFromToolbarAsync((int Rows, int Columns) dimensions)
+        => InsertTableAsync(dimensions.Rows, dimensions.Columns, appendToBodyEnd: true);
+
     private async Task SyncCanvasEngineStateAsync()
     {
         if (_canvasHost is null)
@@ -7216,8 +7261,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
         _activeCanvasSigningField = selection.SigningFieldSelected ? selection.SigningField : null;
 
-        var runtimeDocument = await _canvasHost.RequestDocumentAsync();
-        _activeCanvasContentControl = FindCanvasContentControlAtSelection(runtimeDocument, selection);
+        // Perf plan N2: the engine locates the control over the focused block only and ships it with
+        // the selection state — no more RequestDocumentAsync (full marshal) per settled edit.
+        _activeCanvasContentControl = selection.ContentControlSelected
+            ? CanvasContentControlPopoverState.From(selection.ContentControl)
+            : null;
     }
 
     private TmDocumentCanvasEngineHost.CanvasEngineSigningFieldSelection? _activeCanvasSigningField;
@@ -7311,117 +7359,6 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         await RouteToCanvasEngineAsync(command, payload, focus: true);
     }
 
-    private static CanvasContentControlPopoverState? FindCanvasContentControlAtSelection(
-        DocumentEditorDocument? document,
-        TmDocumentCanvasEngineHost.CanvasEngineSelectionState selection)
-    {
-        if (document is null || string.IsNullOrWhiteSpace(selection.FocusBlockId))
-        {
-            return null;
-        }
-
-        foreach (var block in EnumerateBlocks(document.Blocks))
-        {
-            if (!string.Equals(block.Id, selection.FocusBlockId, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            var offset = 0;
-            foreach (var inline in GetInlineContent(block.Content))
-            {
-                var length = InlineDisplayLength(inline);
-                var start = offset;
-                var end = offset + length;
-                if (inline is DocumentContentControlRun controlRun
-                    && selection.FocusOffset >= start
-                    && (selection.FocusOffset < end || start == end)
-                    && IsPopoverContentControlKind(controlRun.Control.Kind))
-                {
-                    return CanvasContentControlPopoverState.From(controlRun.Control);
-                }
-
-                offset = end;
-            }
-        }
-
-        return null;
-    }
-
-    private static IEnumerable<DocumentBlock> EnumerateBlocks(IEnumerable<DocumentBlock> blocks)
-    {
-        var stack = new Stack<DocumentBlock>(blocks.Reverse());
-        while (stack.Count > 0)
-        {
-            var block = stack.Pop();
-            yield return block;
-
-            if (block.Content is TableBlockContent table)
-            {
-                for (var rowIndex = table.Rows.Count - 1; rowIndex >= 0; rowIndex--)
-                {
-                    var row = table.Rows[rowIndex];
-                    for (var cellIndex = row.Cells.Count - 1; cellIndex >= 0; cellIndex--)
-                    {
-                        var cell = row.Cells[cellIndex];
-                        for (var nestedIndex = cell.Blocks.Count - 1; nestedIndex >= 0; nestedIndex--)
-                        {
-                            stack.Push(cell.Blocks[nestedIndex]);
-                        }
-                    }
-                }
-            }
-
-            if (block.Content is ContentControlBlockContent contentControl)
-            {
-                for (var nestedIndex = contentControl.Blocks.Count - 1; nestedIndex >= 0; nestedIndex--)
-                {
-                    stack.Push(contentControl.Blocks[nestedIndex]);
-                }
-            }
-        }
-    }
-
-    private static IReadOnlyList<InlineContent> GetInlineContent(DocumentBlockContent content)
-        => content switch
-        {
-            ParagraphBlockContent paragraph => paragraph.Inlines,
-            HeadingBlockContent heading => heading.Inlines,
-            ListBlockContent list => list.Inlines,
-            QuoteBlockContent quote => quote.Inlines,
-            _ => []
-        };
-
-    private static int InlineDisplayLength(InlineContent inline)
-        => Math.Max(0, inline switch
-        {
-            TextRun text => text.Text.Length,
-            TokenRun token => FirstNonEmpty(token.DisplayName, token.FallbackText, token.Key).Length,
-            DocumentFieldRun field => FirstNonEmpty(field.DisplayText, field.CachedResult, field.FallbackText, field.InstrText).Length,
-            DocumentNoteReferenceRun note => FirstNonEmpty(note.DisplayMarker, note.NoteId, "1").Length,
-            DocumentDrawingRun => 1,
-            DocumentMathRun math => FirstNonEmpty(math.AltText, math.MathId).Length,
-            DocumentContentControlRun control => ContentControlDisplayText(control.Control).Length,
-            _ => 0
-        });
-
-    private static string ContentControlDisplayText(DocumentContentControl control)
-    {
-        var value = control.Value;
-        return control.Kind switch
-        {
-            DocumentContentControlKind.Checkbox => value.Checked == true ? "☑" : "☐",
-            DocumentContentControlKind.DropDown or DocumentContentControlKind.ComboBox =>
-                FirstNonEmpty(
-                    control.Items.FirstOrDefault(item => string.Equals(item.Value, value.SelectedValue, StringComparison.Ordinal))?.DisplayText,
-                    value.Text,
-                    control.PlaceholderText),
-            DocumentContentControlKind.Date => FirstNonEmpty(value.DateIso, value.Text, control.PlaceholderText),
-            DocumentContentControlKind.Picture => FirstNonEmpty(value.AssetId, control.PlaceholderText),
-            _ => FirstNonEmpty(value.Text, control.PlaceholderText)
-        };
-    }
-
     private static bool IsPopoverContentControlKind(DocumentContentControlKind kind)
         => kind is DocumentContentControlKind.Date
             or DocumentContentControlKind.ComboBox
@@ -7500,26 +7437,34 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
         public IReadOnlyList<DocumentContentControlItem> Items { get; init; } = [];
 
-        public static CanvasContentControlPopoverState From(DocumentContentControl control)
-            => new()
+        /// <summary>
+        /// Maps the engine-computed selection payload (perf plan N2). Returns null for kinds that do
+        /// not open the popover (or unknown kinds from a newer engine), mirroring the old document walk.
+        /// </summary>
+        public static CanvasContentControlPopoverState? From(
+            TmDocumentCanvasEngineHost.CanvasEngineContentControlState? state)
+        {
+            if (state is null
+                || !Enum.TryParse<DocumentContentControlKind>(state.Kind, ignoreCase: true, out var kind)
+                || !IsPopoverContentControlKind(kind))
             {
-                ControlId = control.ControlId,
-                Kind = control.Kind,
-                Title = FirstNonEmpty(control.Alias, control.Tag, control.ControlId),
-                IsRequired = control.IsRequired,
-                LockContent = control.LockContent,
-                Text = control.Value.Text ?? string.Empty,
-                SelectedValue = control.Value.SelectedValue ?? string.Empty,
-                DateIso = control.Value.DateIso ?? control.Value.Text ?? string.Empty,
-                AssetId = control.Value.AssetId ?? string.Empty,
-                Items = control.Items
-                    .Select(item => new DocumentContentControlItem
-                    {
-                        Value = item.Value,
-                        DisplayText = item.DisplayText
-                    })
-                    .ToList()
+                return null;
+            }
+
+            return new CanvasContentControlPopoverState
+            {
+                ControlId = state.ControlId,
+                Kind = kind,
+                Title = FirstNonEmpty(state.Title, state.ControlId),
+                IsRequired = state.IsRequired,
+                LockContent = state.LockContent,
+                Text = state.Text,
+                SelectedValue = state.SelectedValue,
+                DateIso = FirstNonEmpty(state.DateIso, state.Text),
+                AssetId = state.AssetId,
+                Items = state.Items
             };
+        }
     }
 
     private Task HandleCanvasEngineReadyAsync(TmDocumentCanvasEngineHost _)
@@ -7683,7 +7628,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return false;
         }
 
-        var synchronizedDocument = CreateProviderBoundarySnapshot(canvasDocument, preserveImageBlocks: true);
+        var synchronizedDocument = CreateCanvasProviderBoundarySnapshot(canvasDocument, preserveImageBlocks: true);
         _document = synchronizedDocument;
         _currentDocument = synchronizedDocument;
         // The engine already holds this exact model (we just pulled it). Tell the host so the upcoming
@@ -9764,10 +9709,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             && left.Link?.Title == right.Link?.Title
             && left.CommentAnchor?.CommentId == right.CommentAnchor?.CommentId;
 
-    private static string ComputeSnapshotHash(DocumentEditorDocument document)
+    // Internal for tests (perf plan N8.2): serialize into a pooled UTF-8 buffer and hash the span --
+    // no document-sized string/byte[] allocations. Byte-compatible with the old string-based hash.
+    internal static string ComputeSnapshotHash(DocumentEditorDocument document)
     {
-        var json = System.Text.Json.JsonSerializer.Serialize(document, DocumentEditorJson.Options);
-        var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(json));
+        using var buffer = Performance.PooledSnapshotSerializer.SerializeUtf8(document, DocumentEditorJson.Options);
+        var bytes = System.Security.Cryptography.SHA256.HashData(buffer.WrittenSpan);
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
@@ -10296,17 +10243,24 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
     }
 
-    private static bool DocumentsEqual(DocumentEditorDocument? left, DocumentEditorDocument? right)
+    // Internal for tests (perf plan N8.2): compare pooled UTF-8 spans instead of allocating two
+    // document-sized JSON strings on every collaboration poll tick.
+    internal static bool DocumentsEqual(DocumentEditorDocument? left, DocumentEditorDocument? right)
     {
         if (left is null || right is null)
         {
             return left is null && right is null;
         }
 
-        return string.Equals(
-            System.Text.Json.JsonSerializer.Serialize(left, DocumentEditorJson.Options),
-            System.Text.Json.JsonSerializer.Serialize(right, DocumentEditorJson.Options),
-            StringComparison.Ordinal);
+        if (ReferenceEquals(left, right))
+        {
+            return true;
+        }
+
+        using var leftBuffer = Performance.PooledSnapshotSerializer.SerializeUtf8(left, DocumentEditorJson.Options);
+        using var rightBuffer = Performance.PooledSnapshotSerializer.SerializeUtf8(right, DocumentEditorJson.Options);
+        return leftBuffer.Length == rightBuffer.Length
+            && leftBuffer.WrittenSpan.SequenceEqual(rightBuffer.WrittenSpan);
     }
 
     private void OpenVersionDialog()

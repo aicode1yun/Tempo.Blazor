@@ -645,8 +645,43 @@ public partial class TmDocumentEditor
             IsInEditableRegion = _isCaretInEditableRegion
         };
 
-    private Task RefreshCommandRegistryAsync() =>
-        _commandRegistry.RefreshAllAsync(BuildCommandContext());
+    private Task RefreshCommandRegistryAsync()
+    {
+        var context = BuildCommandContext();
+        return _commandRegistry.RefreshAllAsync(context, BuildCommandContextSignature(context));
+    }
+
+    /// <summary>
+    /// Fingerprint of EVERY input the ~70 command lambdas read (perf plan N7.3) — the context fields
+    /// plus the live editor state referenced directly from the lambdas (audited 2026-07-10:
+    /// HasActiveImage/HasActiveTable read <c>_selection</c>, view toggles, revision review state,
+    /// feature gating, UsingCanvasEngine). An unchanged signature lets the registry skip rebuilding
+    /// all command states. When adding a registration that reads NEW live state, extend this too.
+    /// </summary>
+    private string BuildCommandContextSignature(DocumentEditorCommandContext context)
+    {
+        var formatting = context.FormattingState;
+        var undo = context.UndoState;
+        var selection = context.SelectionSnapshot;
+        return string.Join('',
+            context.HasDocument, context.IsReadOnly, context.IsProtected, context.IsInEditableRegion,
+            context.IsSaving, context.ActiveRegion,
+            context.CanExportPdf, context.CanImportDocx, context.CanExportDocx,
+            context.CanTrackChanges, context.CanAddComment, context.CanCompareDocuments,
+            undo.CanUndo, undo.CanRedo, undo.NextUndoDescription, undo.NextRedoDescription,
+            formatting.Bold, formatting.Italic, formatting.Underline, formatting.Strikethrough,
+            formatting.FontFamily, formatting.FontFamilyMixed, formatting.FontSize, formatting.FontSizeMixed,
+            formatting.ParagraphAlignment, formatting.ParagraphAlignmentMixed,
+            formatting.TextColor, formatting.TextColorMixed,
+            formatting.HighlightColor, formatting.HighlightColorMixed,
+            formatting.LineSpacing, formatting.LineSpacingMixed,
+            selection?.ActiveTableCellId, selection?.ActiveObjectId, selection?.ObjectSelection?.ObjectId,
+            _selection.ActiveTableCellId, _selection.ActiveObjectId, _selection.ObjectSelection?.ObjectId,
+            CanReviewRevisions, HasPendingRevisions,
+            _showBlocks, _showNonPrintingCharacters, _isFullscreen, _canvasPrintPreviewActive,
+            UsingCanvasEngine,
+            EffectiveDisabledFeatures is null ? string.Empty : string.Join(',', EffectiveDisabledFeatures));
+    }
 
     private bool HasActiveImage(DocumentEditorCommandContext context) =>
         !string.IsNullOrWhiteSpace(context.SelectionSnapshot?.ObjectSelection?.ObjectId)

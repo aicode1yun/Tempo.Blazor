@@ -36,6 +36,9 @@ export function createCanvasHistoryController(options = {}) {
             return snapshot();
         }
 
+        // Perf plan N5: the input path guarantees immutable snapshots (the model is copy-on-write,
+        // the pre-edit model object is never mutated again), so the defensive deep clone — TWO full
+        // model copies per settled typing burst — is skipped, same as the command pipeline (2.3).
         const nextTransaction = normalizeTransaction({
             id: `canvas-text-${(change.input?.revision || 0)}-${Date.now()}`,
             kind: 'text-input',
@@ -48,11 +51,11 @@ export function createCanvasHistoryController(options = {}) {
                 before,
                 after,
             }),
-        });
+        }, false);
 
         const previous = undoStack.at(-1);
         if (typingCoalescer.canCoalesce(previous, nextTransaction)) {
-            const merged = Object.freeze(normalizeTransaction(typingCoalescer.merge(previous, nextTransaction)));
+            const merged = Object.freeze(normalizeTransaction(typingCoalescer.merge(previous, nextTransaction), false));
             undoStack[undoStack.length - 1] = merged;
             redoStack.length = 0;
             revision += 1;
@@ -60,7 +63,7 @@ export function createCanvasHistoryController(options = {}) {
             return snapshot();
         }
 
-        return push(nextTransaction);
+        return push(nextTransaction, { cloneSnapshots: false });
     }
 
     function undo() {

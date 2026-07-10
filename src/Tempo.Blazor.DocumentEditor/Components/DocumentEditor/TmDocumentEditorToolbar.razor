@@ -2336,7 +2336,99 @@
         _overflowSearchQuery = null;
     }
 
+    // Perf plan N9.2: the toolbar is ~4 500 lines of markup rebuilt on every parent render even
+    // when nothing visible changed. ShouldRender fingerprints EVERY display-bearing input: all value
+    // parameters, reference parameters by identity (the parent hands stable references),
+    // CommandRegistry.Version (N7 -- bumps only on a real command-state refresh) and all internal UI
+    // state fields. EventCallback parameters are deliberately excluded (delegate identity changes per
+    // parent render but behavior does not). When adding a parameter or UI state field that affects
+    // markup, extend ComputeRenderSignature.
+    private int? _lastToolbarRenderSignature;
+
+    protected override bool ShouldRender()
+    {
+        var signature = ComputeRenderSignature();
+        if (_lastToolbarRenderSignature == signature)
+        {
+            return false;
+        }
+
+        _lastToolbarRenderSignature = signature;
+        return true;
+    }
+
+    private int ComputeRenderSignature()
+    {
+        var hash = new HashCode();
+        // Value parameters.
+        hash.Add((int)ToolbarMode); hash.Add(ReadOnly); hash.Add(IsSaving); hash.Add(IsDirty);
+        hash.Add(SaveMessage); hash.Add(LastSavedAt); hash.Add(CanUndo); hash.Add(CanRedo);
+        hash.Add(NextUndoDescription); hash.Add(NextRedoDescription); hash.Add(TrackChangesEnabled);
+        hash.Add(CanTrackChanges); hash.Add(IsDocumentProtected); hash.Add(ShowBlocks);
+        hash.Add(ShowNonPrintingCharacters); hash.Add(IsFullscreen); hash.Add(ShowDebugTools);
+        hash.Add((int)BoldState); hash.Add((int)ItalicState); hash.Add((int)UnderlineState);
+        hash.Add((int)StrikethroughState); hash.Add((int)SuperscriptState); hash.Add((int)SubscriptState);
+        hash.Add((int)SmallCapsState); hash.Add((int)AllCapsState); hash.Add((int)DoubleStrikethroughState);
+        hash.Add((int)ParagraphAlignment); hash.Add(ParagraphAlignmentMixed);
+        hash.Add(CurrentFontFamily); hash.Add(FontFamilyMixed); hash.Add(CurrentFontSize); hash.Add(FontSizeMixed);
+        hash.Add(CurrentTextColor); hash.Add(TextColorMixed); hash.Add(CurrentHighlightColor); hash.Add(HighlightColorMixed);
+        hash.Add(CurrentLineSpacing); hash.Add(LineSpacingMixed); hash.Add(CurrentSpacingBefore); hash.Add(SpacingBeforeMixed);
+        hash.Add(CurrentSpacingAfter); hash.Add(SpacingAfterMixed); hash.Add(BulletListActive);
+        hash.Add(NumberedListActive); hash.Add(ListMixed); hash.Add((int)ReviewDisplayMode); hash.Add(CanComment);
+        hash.Add(TemplatePreviewEnabled); hash.Add(CanPreviewTemplate); hash.Add(CanExportPdf); hash.Add(IsExportingPdf);
+        hash.Add(CanImportDocx); hash.Add(CanExportDocx); hash.Add(IsImportingDocx); hash.Add(IsExportingDocx);
+        hash.Add(ShowPrintPreviewTools); hash.Add(PrintPreviewActive); hash.Add(TemplatePreviewMessage);
+        hash.Add(CanCompareDocuments); hash.Add(ShowAdvancedFields); hash.Add(ActiveRegion);
+        hash.Add(ActiveHeaderFooterScopeLabel); hash.Add(DifferentFirstPage); hash.Add(DifferentOddAndEvenPages);
+        hash.Add(ShowRuler); hash.Add(ZoomPercent); hash.Add(ZoomPageWidth); hash.Add(CanUploadImages);
+        hash.Add(CanBrowseImageAssets); hash.Add(ShowEquationTools); hash.Add(ShowSymbolTools); hash.Add(ShowBlockStyle);
+        hash.Add(CurrentBlockStyle); hash.Add(ShowStyleManagement); hash.Add(ShowAdvancedCharacterFormatting);
+        // Reference parameters by identity (parent hands stable references) + registry version.
+        hash.Add(CommandRegistry?.Version ?? -1);
+        hash.Add(ReferenceHash(FontFamilies)); hash.Add(ReferenceHash(DisabledFeatures));
+        hash.Add(ReferenceHash(PageSettings)); hash.Add(ReferenceHash(SectionColumns)); hash.Add(ReferenceHash(LineNumbering));
+        // Internal UI state (menus, dialogs, overflow, optimistic formatting).
+        hash.Add((int)_activeRibbonTab); hash.Add(_isOverflowing); hash.Add(_overflowMenuOpen);
+        hash.Add(ReferenceHash(_overflowedCommandNames)); hash.Add(_overflowSearchQuery);
+        hash.Add(_linkDialogOpen); hash.Add(_pendingLinkUrl); hash.Add(_pendingLinkTitle); hash.Add(_linkError);
+        hash.Add(_styleGalleryOpen); hash.Add(_symbolMenuOpen); hash.Add(_equationMenuOpen);
+        hash.Add(_headerFooterFieldMenuOpen); hash.Add(_headerFooterPresetMenuOpen); hash.Add(_imageInsertMenuOpen);
+        hash.Add(_pageLayoutInspectorOpen); hash.Add(_tableGridPickerOpen); hash.Add(_docxImportOpen);
+        hash.Add(_keyboardMode); hash.Add(_wasHeaderFooterMode);
+        hash.Add(_styleFontSizeValue); hash.Add(_styleNameValue); hash.Add(_styleRenameSourceId); hash.Add(_styleRenameValue);
+        hash.Add(_optimisticParagraphAlignment.HasValue ? (int)_optimisticParagraphAlignment.Value : -1);
+        hash.Add(_optimisticParagraphAlignmentExpiresAt.UtcTicks);
+        hash.Add(_optimisticLineSpacing ?? double.MinValue); hash.Add(_optimisticLineSpacingExpiresAt.UtcTicks);
+        hash.Add(_optimisticBulletListActive); hash.Add(_optimisticNumberedListActive); hash.Add(_optimisticListExpiresAt.UtcTicks);
+        hash.Add(_lastFontFamilyChangeValue); hash.Add(_lastFontFamilyChangeAt.UtcTicks);
+        hash.Add(_lastFontSizeChangeValue); hash.Add(_lastFontSizeChangeAt.UtcTicks);
+        return hash.ToHashCode();
+    }
+
+    private static int ReferenceHash(object? value)
+        => value is null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(value);
+
+    // Perf plan N7.1: the overflow groups pipeline (distinct -> metadata scan -> visibility -> 4x sort
+    // -> group) used to run on EVERY toolbar render. The result is cached and reused while its inputs
+    // (overflow set, search query, registry version, mode flags) are unchanged, so re-renders hand the
+    // SAME instance to the menu component.
+    private IReadOnlyList<DocumentToolbarOverflowMenuGroup>? _overflowMenuGroupsCache;
+    private (string[] Names, string? Query, int RegistryVersion, DocumentToolbarMode Mode, bool HeaderFooter, object? Disabled) _overflowMenuGroupsCacheKey;
+
     private IReadOnlyList<DocumentToolbarOverflowMenuGroup> GetOverflowMenuGroups()
+    {
+        var key = (_overflowedCommandNames, _overflowSearchQuery, CommandRegistry?.Version ?? -1, ToolbarMode, IsHeaderFooterMode, (object?)DisabledFeatures);
+        if (_overflowMenuGroupsCache is not null && _overflowMenuGroupsCacheKey.Equals(key))
+        {
+            return _overflowMenuGroupsCache;
+        }
+
+        _overflowMenuGroupsCacheKey = key;
+        _overflowMenuGroupsCache = BuildOverflowMenuGroups();
+        return _overflowMenuGroupsCache;
+    }
+
+    private IReadOnlyList<DocumentToolbarOverflowMenuGroup> BuildOverflowMenuGroups()
     {
         var query = _overflowSearchQuery?.Trim();
         var items = _overflowedCommandNames
@@ -3397,6 +3489,9 @@
         }
 
         _wasHeaderFooterMode = IsHeaderFooterMode;
+        // N9.2: Blazor does not consult ShouldRender for the initial render -- seed the signature
+        // AFTER the state fix-ups above so the second render compares against the truly rendered state.
+        _lastToolbarRenderSignature ??= ComputeRenderSignature();
     }
 
     private bool IsActiveRibbonTab(DocumentRibbonTab tab) => _activeRibbonTab == tab;

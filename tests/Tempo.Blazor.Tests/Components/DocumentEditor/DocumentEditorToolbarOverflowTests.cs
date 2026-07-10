@@ -65,6 +65,48 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
         btn.HasAttribute("hidden").Should().BeTrue();
     }
 
+    // ─── Perf plan N7.1: overflow menu groups are cached between renders ──────
+
+    [Fact]
+    public async Task Toolbar_OverflowMenuGroups_AreReusedAcrossRendersWithUnchangedState()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold", "italic"]));
+
+        var menu = cut.FindComponent<TmDocumentToolbarOverflowMenu>();
+        var groups = menu.Instance.Groups;
+        groups.Should().NotBeNull();
+
+        // A re-render with unchanged inputs must hand the SAME groups instance to the menu —
+        // rebuilding the LINQ pipeline (distinct/sort/group + registry scans) per render was the bug.
+        cut.Render();
+        cut.FindComponent<TmDocumentToolbarOverflowMenu>().Instance.Groups
+            .Should().BeSameAs(groups, "unchanged overflow state must reuse the cached groups");
+
+        // Changed overflow set must rebuild.
+        await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold", "italic", "underline"]));
+        cut.FindComponent<TmDocumentToolbarOverflowMenu>().Instance.Groups
+            .Should().NotBeSameAs(groups, "a new overflow command set must rebuild the groups");
+    }
+
+    [Fact]
+    public async Task Toolbar_OverflowMenuGroups_RebuildWhenSearchQueryChanges()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(
+            true, ["bold", "italic", "underline", "strikethrough", "superscript", "subscript", "smallCaps", "allCaps"]));
+        cut.Find("[data-testid='document-toolbar-more']").Click();
+
+        var before = cut.FindComponent<TmDocumentToolbarOverflowMenu>().Instance.Groups;
+        cut.Find("[data-testid='document-toolbar-more-search']").Input("bold");
+
+        var after = cut.FindComponent<TmDocumentToolbarOverflowMenu>().Instance.Groups;
+        after.Should().NotBeSameAs(before, "a search query change must rebuild the groups");
+        after.SelectMany(group => group.Items).Should().OnlyContain(item =>
+            item.CommandName.Contains("bold", StringComparison.OrdinalIgnoreCase)
+            || item.Label.Contains("bold", StringComparison.OrdinalIgnoreCase));
+    }
+
     // ─── 4.1 Overflow menu ────────────────────────────────────────────────────
 
     [Fact]

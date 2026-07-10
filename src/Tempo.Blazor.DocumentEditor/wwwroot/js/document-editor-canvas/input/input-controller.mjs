@@ -597,7 +597,12 @@ export function createCanvasInputController(options = {}) {
 
         const commitResult = commit({
             before: {
-                model: clone(result.undoBeforeModel || beforeModel),
+                // Perf plan N5: the model is copy-on-write (applyCanvasTextEdit clones touched
+                // blocks into a NEW model object), so the pre-edit model object already IS the
+                // immutable undo snapshot — structuredClone-ing the whole document here cost a
+                // full-model deep copy on every keystroke. The selection stays cloned: it is a
+                // small object that the selection controller may still normalize/mutate.
+                model: result.undoBeforeModel || beforeModel,
                 selection: clone(result.undoBeforeSelection || beforeSelection),
             },
             model: result.model,

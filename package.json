@@ -9,7 +9,7 @@
     "build:document-editor:watch": "node tests/Tempo.Blazor.Tests/jsbuild/esbuild.mjs --watch",
     "build:reporting": "node scripts/build-reporting.mjs",
     "test:reporting-modules": "node --test src/Tempo.Blazor.Reporting/wwwroot/js/reporting/*.test.mjs",
-    "test:document-editor-modules": "sh -c 'node --test $(find src/Tempo.Blazor/wwwroot/js/document-editor src/Tempo.Blazor/wwwroot/js/document-editor-canvas -name \"*.test.mjs\" | sort)'"
+    "test:document-editor-modules": "node --test \"src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/**/*.test.mjs\" \"src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/**/*.test.mjs\""
   },
   "devDependencies": {
     "esbuild": "^0.21.0"

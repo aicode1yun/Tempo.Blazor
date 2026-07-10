@@ -18,6 +18,11 @@ export function buildDisplayList(model, layout, options = {}) {
         fontMetrics: options.fontMetrics,
         fontMetricsOptions: options.fontMetricsOptions,
         layoutCache: options.layoutCache,
+        // Perf plan N11.2: progressive first layout — an optional page/time budget plus the resume
+        // token from the previous partial pass. The display list is rebuilt per chunk over ALL pages
+        // laid out so far (the command cache keeps unchanged fragments cheap).
+        budget: options.layoutBudget || undefined,
+        resume: options.layoutResume || undefined,
     });
     const pages = textLayout.pages.length > 0 ? textLayout.pages : (Array.isArray(layout?.pages) ? layout.pages : []);
     const commands = [];
@@ -70,27 +75,42 @@ export function buildDisplayList(model, layout, options = {}) {
         }
     }
 
-    // Resolve the role colour for every signing field command (body + header/footer) from the engine's
-    // signing roles, so the renderer can tint each field by signer. Done in one pass so both layout
-    // paths stay free of role/colour concerns.
+    commands.sort(compareDisplayCommands);
+    // Perf plan N6.4: one pass computes the summary counters AND resolves signing-field role colours
+    // (body + header/footer) — this used to be a dedicated signing loop plus four full filters.
+    // Colour resolution intentionally runs even with no configured roles: the hash-palette fallback
+    // colours fields per submitter, which the signing E2E relies on.
     const signingRoles = Array.isArray(options.signingRoles) ? options.signingRoles : [];
+    let textRunCount = 0;
+    let mathEquationCount = 0;
+    let contentControlCount = 0;
+    let diagnosticCount = 0;
     for (const command of commands) {
         if (command.type === 'signingField') {
             command.roleColor = resolveSigningRoleColor(command.submitterUuid, signingRoles, command.fieldUuid);
+        } else if (command.type === 'textRun') {
+            textRunCount += 1;
+        } else if (command.type === 'mathEquation') {
+            mathEquationCount += 1;
+        } else if (command.type === 'formControl') {
+            contentControlCount += 1;
+        }
+
+        if (command.layer === CANVAS_RENDER_LAYERS.diagnostics) {
+            diagnosticCount += 1;
         }
     }
 
-    commands.sort(compareDisplayCommands);
     return {
         schemaVersion: 1,
         layout: textLayout,
         pages,
         commands,
         pageCount: pages.length,
-        textRunCount: commands.filter(command => command.type === 'textRun').length,
-        mathEquationCount: commands.filter(command => command.type === 'mathEquation').length,
-        contentControlCount: commands.filter(command => command.type === 'formControl').length,
-        diagnosticCount: commands.filter(command => command.layer === CANVAS_RENDER_LAYERS.diagnostics).length,
+        textRunCount,
+        mathEquationCount,
+        contentControlCount,
+        diagnosticCount,
         textRects: textLayout.textRects,
         lineNumbers: textLayout.lineNumbers,
         headerFooterRegions: headerFooterLayout.regions,
@@ -98,6 +118,10 @@ export function buildDisplayList(model, layout, options = {}) {
         measurementStats: textLayout.measurementStats,
         layoutCacheStats: textLayout.cacheStats || null,
         commandCacheStats,
+        // Perf plan N11.2: progressive layout state for the canvas stack / engine continuation loop.
+        layoutComplete: textLayout.layoutComplete !== false,
+        layoutResume: textLayout.resume || null,
+        layoutProgress: textLayout.progress || null,
     };
 }
 

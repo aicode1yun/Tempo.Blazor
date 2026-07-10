@@ -40,10 +40,31 @@ else
     // Resolved SVG content: built-in path, registry content, or null (= fallback span)
     private string? _resolvedSvg;
 
+    // Perf plan N9.3: icons are leaf components repeated ~35x in the document editor toolbar alone —
+    // when nothing they display changed, skip the render entirely.
+    private int? _lastRenderSignature;
+
+    // Built-in resolution memo: the switch is evaluated once per distinct icon name for the app
+    // lifetime (bounded by the finite set of names used).
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string?> BuiltInSvgCache =
+        new(StringComparer.Ordinal);
+
     protected override void OnParametersSet()
     {
-        var builtIn = GetBuiltInSvg(Name);
-        if (!string.IsNullOrEmpty(builtIn))
+        ResolveSvg();
+        // Blazor does not consult ShouldRender for the initial render -- seed the signature once so
+        // the second render is compared against the first (not treated as a change).
+        _lastRenderSignature ??= ComputeRenderSignature();
+    }
+
+    private void ResolveSvg()
+    {
+        var builtIn = BuiltInSvgCache.GetOrAdd(Name ?? string.Empty, static name =>
+        {
+            var svg = GetBuiltInSvg(name);
+            return string.IsNullOrEmpty(svg) ? null : svg;
+        });
+        if (builtIn is not null)
         {
             _resolvedSvg = builtIn;
             return;
@@ -60,6 +81,27 @@ else
         // Fallback 2: render <span class="tm-icon-unknown">
         _resolvedSvg = null;
     }
+
+    protected override bool ShouldRender()
+    {
+        var signature = ComputeRenderSignature();
+        if (_lastRenderSignature == signature)
+        {
+            return false;
+        }
+
+        _lastRenderSignature = signature;
+        return true;
+    }
+
+    private int ComputeRenderSignature()
+        => HashCode.Combine(
+            Name,
+            (int)Size,
+            (int)Color,
+            StrokeWidth,
+            _resolvedSvg,
+            AdditionalAttributes is null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(AdditionalAttributes));
 
     private string CssClass
     {

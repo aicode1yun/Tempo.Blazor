@@ -108,15 +108,46 @@ public static class DocumentEditorBuiltInToolbar
         return registry;
     }
 
+    // Perf plan N7.2: the lookups ran a linear scan over ~60 items per call (the overflow menu calls
+    // them per item per rebuild). Both dictionaries preserve the historical first-match semantics.
+    private static readonly Dictionary<string, DocumentToolbarItem> ItemsByCommandName = BuildItemsByCommandName();
+    private static readonly Dictionary<string, DocumentToolbarGroup> GroupsById = BuildGroupsById();
+
+    private static Dictionary<string, DocumentToolbarItem> BuildItemsByCommandName()
+    {
+        var map = new Dictionary<string, DocumentToolbarItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in Items)
+        {
+            if (!string.IsNullOrWhiteSpace(item.CommandName))
+            {
+                map.TryAdd(item.CommandName, item);
+            }
+        }
+
+        return map;
+    }
+
+    private static Dictionary<string, DocumentToolbarGroup> BuildGroupsById()
+    {
+        var map = new Dictionary<string, DocumentToolbarGroup>(StringComparer.OrdinalIgnoreCase);
+        foreach (var group in Groups)
+        {
+            if (!string.IsNullOrWhiteSpace(group.Id))
+            {
+                map.TryAdd(group.Id, group);
+            }
+        }
+
+        return map;
+    }
+
     /// <summary>Finds built-in metadata for the given command name.</summary>
     public static DocumentToolbarItem? FindItemByCommandName(string commandName) =>
-        Items.FirstOrDefault(item => string.Equals(item.CommandName, commandName, StringComparison.OrdinalIgnoreCase));
+        commandName is { Length: > 0 } && ItemsByCommandName.TryGetValue(commandName, out var item) ? item : null;
 
     /// <summary>Finds built-in group metadata for the given group id.</summary>
     public static DocumentToolbarGroup? FindGroup(string? groupId) =>
-        string.IsNullOrWhiteSpace(groupId)
-            ? null
-            : Groups.FirstOrDefault(group => string.Equals(group.Id, groupId, StringComparison.OrdinalIgnoreCase));
+        !string.IsNullOrWhiteSpace(groupId) && GroupsById.TryGetValue(groupId, out var group) ? group : null;
 
     private static DocumentToolbarItem Item(
         string id,

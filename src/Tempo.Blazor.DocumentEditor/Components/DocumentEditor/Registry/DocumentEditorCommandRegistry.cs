@@ -12,6 +12,14 @@ public sealed class DocumentEditorCommandRegistry
     private readonly Dictionary<string, DocumentEditorCommandState> _currentState =
         new(StringComparer.OrdinalIgnoreCase);
 
+    private string? _lastContextSignature;
+
+    /// <summary>
+    /// Monotonic counter incremented on every ACTUAL refresh (perf plan N7.3). Consumers can use it
+    /// as a cheap change token for derived caches (e.g. the toolbar overflow menu groups).
+    /// </summary>
+    public int Version { get; private set; }
+
     /// <summary>Registers a command. Throws if a command with the same name is already registered.</summary>
     public void Register(IDocumentEditorCommandEntry command)
     {
@@ -48,9 +56,11 @@ public sealed class DocumentEditorCommandRegistry
     /// The command stays disabled until all reasons are removed.</summary>
     public void AddForceDisableReason(string commandName, string reason)
     {
-        if (_forcedDisableReasons.TryGetValue(commandName, out var reasons))
+        if (_forcedDisableReasons.TryGetValue(commandName, out var reasons) && reasons.Add(reason))
         {
-            reasons.Add(reason);
+            // Forced reasons change command state without any context change — drop the signature
+            // gate so the next refresh recomputes (perf plan N7.3).
+            _lastContextSignature = null;
         }
     }
 
@@ -58,21 +68,33 @@ public sealed class DocumentEditorCommandRegistry
     /// The command becomes eligible for re-enabling once no reasons remain.</summary>
     public void RemoveForceDisableReason(string commandName, string reason)
     {
-        if (_forcedDisableReasons.TryGetValue(commandName, out var reasons))
+        if (_forcedDisableReasons.TryGetValue(commandName, out var reasons) && reasons.Remove(reason))
         {
-            reasons.Remove(reason);
+            _lastContextSignature = null;
         }
     }
 
-    /// <summary>Recomputes and caches the state of every registered command against the given context.</summary>
-    public Task RefreshAllAsync(DocumentEditorCommandContext context)
+    /// <summary>
+    /// Recomputes and caches the state of every registered command against the given context.
+    /// When <paramref name="contextSignature"/> is provided and matches the previous refresh's
+    /// signature, the rebuild is skipped entirely (perf plan N7.3) — the caller guarantees the
+    /// signature covers every input its command lambdas read. A null signature always refreshes.
+    /// </summary>
+    public Task RefreshAllAsync(DocumentEditorCommandContext context, string? contextSignature = null)
     {
         ArgumentNullException.ThrowIfNull(context);
+        if (contextSignature is not null && Version > 0 && string.Equals(contextSignature, _lastContextSignature, StringComparison.Ordinal))
+        {
+            return Task.CompletedTask;
+        }
+
+        _lastContextSignature = contextSignature;
         foreach (var (name, command) in _commands)
         {
             _currentState[name] = BuildState(command, context, _forcedDisableReasons[name]);
         }
 
+        Version += 1;
         return Task.CompletedTask;
     }
 
@@ -92,6 +114,10 @@ public sealed class DocumentEditorCommandRegistry
         var command = GetRequired(name);
         var state = BuildState(command, context, _forcedDisableReasons[name]);
         _currentState[name] = state;
+        // A single-command state write changes the observable registry state outside RefreshAllAsync:
+        // bump the version (derived caches must rebuild) and drop the signature gate.
+        Version += 1;
+        _lastContextSignature = null;
 
         if (!state.IsVisible || !state.IsEnabled)
         {

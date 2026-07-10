@@ -76,7 +76,8 @@
 </head>
 
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased">
-    <Routes @rendermode="InteractiveAuto" />
+    @* Routes lives in the .Client project so the WebAssembly leg of InteractiveAuto can find it. *@
+    <Tempo.Blazor.Demo.InteractiveAuto.Client.Routes @rendermode="InteractiveAuto" />
     <ReconnectModal />
     <script src="_content/Tempo.Blazor/js/richEditor.js"></script>
     <script src="_content/Tempo.Blazor/js/markdownEditor.js"></script>

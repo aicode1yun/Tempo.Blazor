@@ -29,6 +29,9 @@ import { createCanvasSelectionController } from './selection/selection-controlle
 import { createCanvasShortcutManager } from './shortcuts/shortcut-manager.mjs';
 import { createPrintDialogResult, createPrintPreviewSnapshot } from './view/print-preview.mjs';
 
+// Perf plan N11.2: page-chunk size for the idle continuation of the progressive first layout.
+const PROGRESSIVE_LAYOUT_CHUNK_PAGES = 10;
+
 export { CANVAS_LAYER_KINDS };
 export { DEFAULT_PAGE_SETUP } from './layout/page-geometry.mjs';
 
@@ -56,7 +59,18 @@ export class CanvasDocumentEngine {
         this.engineOptions = {
             contentControlRenderMode: options.contentControlRenderMode || 'form',
             signingRoles: Array.isArray(options.signingRoles) ? options.signingRoles : [],
+            // Perf plan N11.7: progressive first layout (budgeted mount + idle continuation).
+            // Default ON; pass progressiveFirstLayout:false in the engine options to roll back to
+            // the single-pass full layout.
+            progressiveFirstLayout: options.progressiveFirstLayout !== false,
         };
+        // Perf plan N11: progressive first-layout state. `complete:false` makes the mount render run
+        // with a page budget; idle continuations extend the laid range until the document completes.
+        this.progressiveLayout = { complete: false, model: null, resume: null, laidPages: 0 };
+        this.progressiveContinuationQueued = false;
+        this.scheduleProgressiveIdle = typeof options.scheduleProgressiveIdle === 'function'
+            ? options.scheduleProgressiveIdle
+            : null;
         this.pendingInputRender = null;
         this.inputRenderScheduled = false;
         // Deferred (debounced) proofing analysis + accessibility mirror rebuild — see refreshModelAnalysis.
@@ -241,6 +255,29 @@ export class CanvasDocumentEngine {
         const recalcOptions = this.recalcInfo.immediateRenderOptions(renderOptions);
         const layout = this.layoutService.layout(model, viewport);
         const viewState = this.commandRuntime.getViewState();
+        // Perf plan N11: progressive first layout. While the initial layout is incomplete, renders
+        // run with a page budget (mount = viewport + buffer; idle continuations extend in ~10-page
+        // chunks). An edit during the progressive phase re-runs a budgeted layout for the new model
+        // reference — the incremental layout cache keeps the already-laid prefix cheap. A render with
+        // fullLayout:true (or an active print preview, which needs every page) completes the layout
+        // synchronously, reusing the resume token when the model is unchanged.
+        const progressiveEnabled = this.engineOptions.progressiveFirstLayout === true;
+        let layoutBudget = null;
+        let layoutResume = null;
+        if (progressiveEnabled && this.progressiveLayout.complete !== true) {
+            const resumeMatches = this.progressiveLayout.resume !== null && this.progressiveLayout.model === model;
+            if (resumeMatches) {
+                layoutResume = this.progressiveLayout.resume;
+            }
+
+            if (renderOptions.fullLayout !== true && viewState.printPreview?.active !== true) {
+                const targetPages = Math.max(0, Number(renderOptions.progressiveTargetPages) || 0);
+                const basePages = resumeMatches
+                    ? (this.progressiveLayout.laidPages || 0) + PROGRESSIVE_LAYOUT_CHUNK_PAGES
+                    : this.initialLayoutPageBudget(viewport);
+                layoutBudget = { maxPages: Math.max(basePages, targetPages) };
+            }
+        }
         const render = this.canvasStack.render(layout, model, {
             contentControlRenderMode: this.engineOptions.contentControlRenderMode,
             signingRoles: this.engineOptions.signingRoles,
@@ -248,7 +285,21 @@ export class CanvasDocumentEngine {
             ...recalcOptions,
             viewState,
             viewport,
+            layoutBudget,
+            layoutResume,
         });
+        if (progressiveEnabled) {
+            const layoutState = this.canvasStack.getLayoutState();
+            this.progressiveLayout = {
+                complete: layoutState.complete,
+                model,
+                resume: layoutState.resume,
+                laidPages: layoutState.laidPages,
+            };
+            if (!layoutState.complete) {
+                this.scheduleProgressiveLayoutContinuation();
+            }
+        }
         this.selectionController.update(render.selectionLayout, model);
         // Proofing analysis and the accessibility DOM mirror are O(document). Re-position the existing
         // squiggles against the new text (cheap, last analysis) here; the expensive re-analysis and
@@ -256,11 +307,7 @@ export class CanvasDocumentEngine {
         this.proofingOverlay.update(this.proofingService.snapshot(), render);
         this.searchOverlay.update(this.commandRuntime.getSearchState(), render);
         this.restrictedEditing.update(model);
-        this.commentOverlay.update(model, render, { selectedCommentId: this.selectedCommentId || '' });
-        this.revisionOverlay.update(model, render, {
-            selectedRevisionId: this.selectedRevisionId || '',
-            reviewMode: this.reviewDisplayMode,
-        });
+        this.updateAnnotationOverlays(model, render);
         this.presenceOverlay.update(this.operationLog.cursors(), render, model);
         this.rulerOverlay.update(layout, model, {
             ...viewState,
@@ -270,7 +317,16 @@ export class CanvasDocumentEngine {
         this.lastLayout = layout;
         this.lastRender = render;
         this.refreshModelAnalysis(model, render);
-        this.lastPrintPreview = createPrintPreviewSnapshot(model, layout, render, viewState);
+        // N6.3: the snapshot double-filters every display command — testing/preview contract only.
+        // Computed eagerly when the preview is actually showing or on a settled (non-deferred)
+        // render; the deferred input render marks it stale and getPrintPreviewSnapshot() rebuilds
+        // on demand.
+        if (viewState.printPreview?.active === true || renderOptions.deferPaintDiagnostics !== true) {
+            this.lastPrintPreview = createPrintPreviewSnapshot(model, layout, render, viewState);
+            this.printPreviewStale = false;
+        } else {
+            this.printPreviewStale = true;
+        }
         this.host.setAttribute?.('data-canvas-engine-ready', 'true');
         this.publishPerformanceDiagnostics(this.performanceMetrics.recordRender(now() - startedAt, render), render);
         // The formatting diagnostics run the FULL command-state query (whole-document walks) and
@@ -286,6 +342,29 @@ export class CanvasDocumentEngine {
             render,
             architecture: this.getArchitecture(),
         };
+    }
+
+    // Perf plan N6.2: rebuilding the comment/revision marker DOM is O(display list) + a
+    // replaceChildren per render. When the document has NO annotations of a kind and none were
+    // rendered before (the typical typing document), the update is a guaranteed no-op — skip it.
+    // Any present annotation keeps the per-render update: marker geometry moves with the layout.
+    updateAnnotationOverlays(model, render) {
+        const comments = Array.isArray(model?.comments) ? model.comments : [];
+        const commentSignature = `${comments.length}|${this.selectedCommentId || ''}`;
+        if (comments.length > 0 || this.lastCommentOverlaySignature !== commentSignature) {
+            this.commentOverlay.update(model, render, { selectedCommentId: this.selectedCommentId || '' });
+            this.lastCommentOverlaySignature = commentSignature;
+        }
+
+        const revisions = Array.isArray(model?.revisions) ? model.revisions : [];
+        const revisionSignature = `${revisions.length}|${this.selectedRevisionId || ''}|${this.reviewDisplayMode || ''}`;
+        if (revisions.length > 0 || this.lastRevisionOverlaySignature !== revisionSignature) {
+            this.revisionOverlay.update(model, render, {
+                selectedRevisionId: this.selectedRevisionId || '',
+                reviewMode: this.reviewDisplayMode,
+            });
+            this.lastRevisionOverlaySignature = revisionSignature;
+        }
     }
 
     // Refreshes the O(document) proofing analysis + accessibility mirror without blocking typing:
@@ -362,11 +441,7 @@ export class CanvasDocumentEngine {
         this.selectionController.update(render.selectionLayout, model);
         this.proofingOverlay.update(this.proofingService.snapshot(), render);
         this.searchOverlay.update(this.commandRuntime.getSearchState(), render);
-        this.commentOverlay.update(model, render, { selectedCommentId: this.selectedCommentId || '' });
-        this.revisionOverlay.update(model, render, {
-            selectedRevisionId: this.selectedRevisionId || '',
-            reviewMode: this.reviewDisplayMode,
-        });
+        this.updateAnnotationOverlays(model, render);
         this.presenceOverlay.update(this.operationLog.cursors(), render, model);
         syncBlockVisualization(this.canvasStack, render.selectionLayout, model, viewState);
         this.lastRender = render;
@@ -385,6 +460,8 @@ export class CanvasDocumentEngine {
         // A full model replacement (import / document load) should refresh proofing + a11y immediately,
         // not on the typing debounce.
         this.forceImmediateAnalysis = true;
+        // Perf plan N11: a wholesale model replacement restarts the progressive first layout.
+        this.progressiveLayout = { complete: false, model: null, resume: null, laidPages: 0 };
         return this;
     }
 
@@ -407,6 +484,39 @@ export class CanvasDocumentEngine {
         return true;
     }
 
+    // O(1) accessors for the interop boundary (Phase N2): reading the model or the selection must not
+    // assemble the full snapshot — getSnapshot() runs queryCommandState() whose outline/bookmark walk
+    // is O(document), which made every settled-typing model pull pay a document-sized cost.
+    getModel() {
+        return this.modelStore.getModel();
+    }
+
+    getSelectionState() {
+        return this.selectionController.getState();
+    }
+
+    // On-demand print-preview snapshot (N6.3): rebuilt lazily when a deferred input render marked
+    // the cached one stale.
+    getPrintPreviewSnapshot(options = {}) {
+        // Perf plan N11: the print preview needs every page — finish a still-progressive layout
+        // synchronously (the resume token continues where the last idle chunk stopped). The generic
+        // getSnapshot() embed passes allowPartial:true so routine host state reads right after mount
+        // do NOT force the full layout — the idle continuations keep chunking instead.
+        if (options.allowPartial !== true
+            && this.engineOptions.progressiveFirstLayout === true
+            && this.progressiveLayout.complete !== true) {
+            this.render({ fullLayout: true });
+        }
+
+        if (this.printPreviewStale === true || !this.lastPrintPreview) {
+            this.lastPrintPreview = createPrintPreviewSnapshot(
+                this.modelStore.getModel(), this.lastLayout, this.lastRender, this.commandRuntime.getViewState());
+            this.printPreviewStale = false;
+        }
+
+        return this.lastPrintPreview;
+    }
+
     getSnapshot() {
         return {
             mounted: this.mounted,
@@ -426,7 +536,7 @@ export class CanvasDocumentEngine {
             presence: this.presenceOverlay.snapshot(),
             search: this.commandRuntime.getSearchState(),
             searchOverlay: this.searchOverlay.snapshot(),
-            printPreview: this.lastPrintPreview,
+            printPreview: this.getPrintPreviewSnapshot({ allowPartial: true }),
             printDialog: this.lastPrintDialog,
             shortcuts: this.shortcutManager.snapshot(),
             formatting: this.commandRuntime.queryCommandState(),
@@ -648,7 +758,14 @@ export class CanvasDocumentEngine {
                 return;
             }
 
-            const result = this.render({ ...pending, deferTextRectMetadata: true, deferFormattingDiagnostics: true });
+            const result = this.render({
+                ...pending,
+                deferTextRectMetadata: true,
+                deferFormattingDiagnostics: true,
+                // N6: page/root diagnostic attributes and the print-preview snapshot are testing
+                // contract only — the idle reconciliation render publishes the settled values.
+                deferPaintDiagnostics: true,
+            });
             this.publishInputRenderDiagnostics(result?.render);
             this.scheduleIdleReconciliation();
         });
@@ -681,6 +798,52 @@ export class CanvasDocumentEngine {
 
             this.recalcInfo.queueIdleReconciliation(() => this.render({ forceRepaint: false }));
         }, 180);
+    }
+
+    // Perf plan N11.2: the first-render page budget — enough pages to cover the viewport (plus one
+    // page of buffer), clamped so the mount stays fast even on huge viewports and small pages.
+    initialLayoutPageBudget(viewport) {
+        const approxPageHeight = 900;
+        const viewportBottom = (Math.max(0, Number(viewport?.scrollTop) || 0)) + (Math.max(0, Number(viewport?.height) || 0));
+        const pagesForViewport = Math.ceil(viewportBottom / approxPageHeight);
+        return Math.min(8, Math.max(2, pagesForViewport + 1));
+    }
+
+    // Perf plan N11.3: pages needed so the laid-out range covers the current scroll viewport (used
+    // by the scroll handler to synchronously extend a still-progressive layout).
+    progressivePagesForViewport() {
+        const viewport = this.readViewport();
+        const pages = this.lastRender?.displayList?.pages || [];
+        const zoom = Number(this.lastRender?.view?.zoomScale || 1) || 1;
+        const pageHeight = ((Number(pages[0]?.height) || 900) * zoom) + 24;
+        const viewportBottom = (Math.max(0, Number(viewport?.scrollTop) || 0)) + (Math.max(0, Number(viewport?.height) || 0));
+        return Math.max(1, Math.ceil(viewportBottom / Math.max(1, pageHeight)) + 1);
+    }
+
+    // Perf plan N11.2: single-flight idle continuation of the progressive first layout. Each firing
+    // extends the laid range by ~PROGRESSIVE_LAYOUT_CHUNK_PAGES pages until the layout completes.
+    scheduleProgressiveLayoutContinuation() {
+        if (this.progressiveContinuationQueued || !this.mounted) {
+            return;
+        }
+
+        this.progressiveContinuationQueued = true;
+        const schedule = this.scheduleProgressiveIdle || (callback => {
+            const view = this.document?.defaultView || globalThis.window || globalThis;
+            if (typeof view.requestIdleCallback === 'function') {
+                view.requestIdleCallback(callback, { timeout: 250 });
+            } else {
+                (view.setTimeout || setTimeout)(callback, 16);
+            }
+        });
+        schedule(() => {
+            this.progressiveContinuationQueued = false;
+            if (!this.mounted || this.progressiveLayout.complete === true) {
+                return;
+            }
+
+            this.render({ progressiveContinue: true });
+        });
     }
 
     clearIdleReconciliationTimer() {
@@ -1183,6 +1346,17 @@ export class CanvasDocumentEngine {
         schedule(() => {
             this.scrollRenderPending = false;
             this.performanceMetrics.recordScrollFrame(now() - startedAt);
+            // Perf plan N11.3: scrolling past the laid-out boundary while the progressive first
+            // layout is still running synchronously extends the layout to the scroll target
+            // (resume continues where the last chunk stopped), then paints.
+            if (this.engineOptions.progressiveFirstLayout === true && this.progressiveLayout.complete !== true) {
+                const neededPages = this.progressivePagesForViewport();
+                if (neededPages > (this.progressiveLayout.laidPages || 0)) {
+                    this.render({ progressiveTargetPages: neededPages + 1 });
+                    return;
+                }
+            }
+
             // Scroll never changes the model/layout — paint visible pages from the cached plan.
             this.repaint({ forceRepaint: false });
         });
@@ -1430,6 +1604,8 @@ export class CanvasDocumentEngine {
         root?.setAttribute?.('data-canvas-tile-cache-hit-count', String(render?.tileCache?.hits || 0));
         root?.setAttribute?.('data-canvas-measure-cache-size', String(measurementStats.MeasureCacheSize || 0));
         root?.setAttribute?.('data-canvas-measure-cache-eviction-count', String(measurementStats.MeasureEvictions || 0));
+        root?.setAttribute?.('data-canvas-measure-cache-hit-count', String(measurementStats.MeasureCacheHits || 0));
+        root?.setAttribute?.('data-canvas-measure-count', String(measurementStats.MeasureCount || 0));
         root?.setAttribute?.('data-canvas-recalc-dirty-block-count', String(recalc.dirtyBlockCount || 0));
         root?.setAttribute?.('data-canvas-recalc-first-dirty-block-index', String(diagnosticFirstDirtyIndex));
         root?.setAttribute?.('data-canvas-recalc-last-first-dirty-block-index', String(lastFirstDirtyIndex));

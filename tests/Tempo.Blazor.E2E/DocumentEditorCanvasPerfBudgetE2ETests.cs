@@ -18,10 +18,11 @@ public sealed class DocumentEditorCanvasPerfBudgetE2ETests : WasmTestBase
 {
     private const string LargeDocId = "large-perf-1000";
 
-    // First paint is the only reliable wall-clock budget (cold full-document layout). Scroll/typing
-    // are proven INCREMENTAL via structural metrics (no re-layout, virtualization, cache reuse), which
-    // are robust to CI/VM jitter; a generous typing budget still catches an O(document) regression.
-    private const double FirstPaintBudgetMs = 6000;
+    // First paint is the only reliable wall-clock budget. After perf plan N11 (progressive first
+    // layout) the mount render lays out only the viewport pages, so the budget tightened from the
+    // 6000 ms full-layout allowance; idle continuations finish the rest (awaited via
+    // data-canvas-layout-complete before final-count assertions).
+    private const double FirstPaintBudgetMs = 1000;
 
     [TestMethod]
     public async Task LargeDocument_ScrollAndTypeStayIncremental_WithinBudgets()
@@ -39,7 +40,12 @@ public sealed class DocumentEditorCanvasPerfBudgetE2ETests : WasmTestBase
             State = WaitForSelectorState.Attached,
             Timeout = 120_000,
         });
-        await page.WaitForTimeoutAsync(800);
+        // N11: the mount render is budgeted; wait for the idle continuations to finish the layout
+        // before asserting document-final counts (data-canvas-layout-complete is the contract).
+        await page.WaitForFunctionAsync(
+            @"() => document.querySelector('[data-testid=""document-canvas-engine-root""]')?.getAttribute('data-canvas-layout-complete') === 'true'",
+            new PageWaitForFunctionOptions { Timeout = 60_000 });
+        await page.WaitForTimeoutAsync(300);
 
         var initial = await ReadMetricsAsync(page);
         TestContext.WriteLine($"FIRST PAINT: firstPaintMs={initial.FirstPaintMs} pageCount={initial.PageCount} mountedPages={initial.MountedPageCount} renderCount={initial.RenderCount}");
@@ -59,7 +65,9 @@ public sealed class DocumentEditorCanvasPerfBudgetE2ETests : WasmTestBase
 
         var afterScroll = await ReadMetricsAsync(page);
         TestContext.WriteLine($"SCROLL: frames={afterScroll.ScrollFrameCount} mountedPages={afterScroll.MountedPageCount} renderCount {renderCountBeforeScroll}->{afterScroll.RenderCount}");
-        Assert.IsTrue(afterScroll.ScrollFrameCount > renderCountBeforeScroll, "Scrolling must register scroll frames.");
+        // (Compared against the pre-scroll FRAME count: with the N11 progressive layout the render
+        // count at load is ~1 per idle chunk, so comparing frames to renders no longer makes sense.)
+        Assert.IsTrue(afterScroll.ScrollFrameCount > initial.ScrollFrameCount, "Scrolling must register scroll frames.");
         Assert.IsTrue(afterScroll.RenderCount - renderCountBeforeScroll <= 1, $"Scrolling must NOT re-run the document layout. renderCount {renderCountBeforeScroll}->{afterScroll.RenderCount}.");
         Assert.IsTrue(afterScroll.MountedPageCount <= 8, $"Scrolling must stay virtualized (mounted={afterScroll.MountedPageCount}).");
 
@@ -76,6 +84,59 @@ public sealed class DocumentEditorCanvasPerfBudgetE2ETests : WasmTestBase
         var output = "/tmp/canvas-overlap-fix";
         Directory.CreateDirectory(output);
         await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions { Path = Path.Combine(output, "large-perf-doc.png"), Type = ScreenshotType.Png });
+    }
+
+    /// <summary>
+    /// Perf plan N11.3/N11.6 — scrolling hard right after load (while the progressive first layout
+    /// may still be running) must land on painted content: the scroll handler synchronously extends
+    /// the layout to the scroll target and the idle continuations finish the document.
+    /// </summary>
+    [TestMethod]
+    public async Task LargeDocument_ScrollDuringProgressiveLayout_LandsOnPaintedContent()
+    {
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+        await page.SetViewportSizeAsync(1440, 1000);
+        await page.GotoAsync($"{BaseUrl}/document-editor?documentId={LargeDocId}", new PageGotoOptions
+        {
+            WaitUntil = WaitUntilState.Load,
+            Timeout = 120_000,
+        });
+        await page.WaitForSelectorAsync("[data-testid='document-canvas-engine-host'][data-canvas-engine-ready='true']", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Attached,
+            Timeout = 120_000,
+        });
+
+        // Scroll far immediately — no settle wait — so the target likely sits past the laid range.
+        var completeAtScrollStart = await page.EvaluateAsync<string>(
+            @"() => document.querySelector('[data-testid=""document-canvas-engine-root""]')?.getAttribute('data-canvas-layout-complete') || ''");
+        for (var i = 0; i < 20; i++)
+        {
+            await page.Mouse.WheelAsync(0, 2400);
+            await page.EvaluateAsync("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))");
+        }
+
+        TestContext.WriteLine($"PROGRESSIVE SCROLL: layout-complete at scroll start='{completeAtScrollStart}'");
+        await page.WaitForFunctionAsync(
+            @"() => document.querySelector('[data-testid=""document-canvas-engine-root""]')?.getAttribute('data-canvas-layout-complete') === 'true'",
+            new PageWaitForFunctionOptions { Timeout = 60_000 });
+        await page.WaitForTimeoutAsync(400);
+
+        var metrics = await ReadMetricsAsync(page);
+        Assert.IsTrue(metrics.PageCount > 15, $"The document must finish laying out after the scroll (pages={metrics.PageCount}).");
+
+        // The viewport must show painted page content (mounted page canvases exist at the scroll target).
+        var mountedPages = await page.Locator("[data-testid='document-canvas-page']").CountAsync();
+        Assert.IsTrue(mountedPages > 0, "Scrolled viewport must contain mounted, painted pages.");
+        var paintedCommands = await page.EvaluateAsync<double>(
+            @"() => Math.max(...Array.from(document.querySelectorAll('[data-testid=""document-canvas-page""]'))
+                .map(pageEl => Number(pageEl.getAttribute('data-canvas-painted-command-count') || 0)), 0)");
+        Assert.IsTrue(paintedCommands > 0, "At least one mounted page at the scroll target must have painted commands.");
+
+        var output = "/tmp/canvas-overlap-fix";
+        Directory.CreateDirectory(output);
+        await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions { Path = Path.Combine(output, "n11-progressive-scroll.png"), Type = ScreenshotType.Png });
     }
 
     private static async Task<CanvasPerfMetrics> ReadMetricsAsync(IPage page)

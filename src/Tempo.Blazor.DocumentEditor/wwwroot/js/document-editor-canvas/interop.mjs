@@ -4,6 +4,7 @@ import { buildFormattingState } from './format-state.mjs';
 import { extractAnnotations, countModelWords } from './annotations-state.mjs';
 import { clampExportScale, renderDisplayListPageToCanvas } from './render/page-image-export.mjs';
 import { findSigningFieldAtSelection } from './controls/signing-field-selection.mjs';
+import { findContentControlAtSelection } from './controls/content-control-selection.mjs';
 import { extractSigningFields } from './controls/signing-field-areas.mjs';
 
 const instances = new Map();
@@ -138,7 +139,16 @@ export function dispose(handle) {
 
 export function getModelJson(handle) {
     const state = getInstance(handle);
-    return JSON.stringify(state.engine.getSnapshot().model);
+    // Phase N2: read the model directly — getSnapshot() would also run the O(document)
+    // queryCommandState (outline + bookmarks walk) just to throw everything but `model` away.
+    const model = typeof state.engine.getModel === 'function'
+        ? state.engine.getModel()
+        : state.engine.getSnapshot().model;
+    // Diagnostic counter: full-document pulls should happen only on save/export/compare, never on
+    // the settled-typing path (asserted by the typing E2E).
+    state.modelJsonRequestCount = (state.modelJsonRequestCount || 0) + 1;
+    state.host.setAttribute('data-canvas-model-json-request-count', String(state.modelJsonRequestCount));
+    return JSON.stringify(model);
 }
 
 export function getSnapshotJson(handle) {
@@ -206,6 +216,9 @@ export function getAnnotationsJson(handle) {
     // (no per-edit full marshal). pageCount comes from the already-computed layout; wordCount from the model.
     result.wordCount = countModelWords(model);
     result.pageCount = Array.isArray(state.engine.lastLayout?.pages) ? state.engine.lastLayout.pages.length : 0;
+    // Perf plan N11.5: consumers asserting final page/word counts must wait for layoutComplete —
+    // during the progressive first layout the counts only cover the laid-out prefix.
+    result.layoutComplete = state.engine.progressiveLayout?.complete !== false;
     return JSON.stringify(result);
 }
 
@@ -391,10 +404,14 @@ export function getFormattingStateJson(handle) {
 
 export function getPrintPreviewStateJson(handle) {
     const state = getInstance(handle);
-    const snapshot = state.engine.getSnapshot();
+    // N6.3: read the (lazily rebuilt) snapshot directly — the full engine snapshot would also run
+    // the O(document) queryCommandState just to be discarded.
+    const printPreview = typeof state.engine.getPrintPreviewSnapshot === 'function'
+        ? state.engine.getPrintPreviewSnapshot()
+        : state.engine.getSnapshot().printPreview;
     return JSON.stringify({
-        ...(snapshot.printPreview || {}),
-        dialog: snapshot.printDialog || null,
+        ...(printPreview || {}),
+        dialog: state.engine.lastPrintDialog || null,
     });
 }
 
@@ -405,13 +422,24 @@ export function getUndoStateJson(handle) {
 
 export function getSelectionStateJson(handle) {
     const state = getInstance(handle);
-    const snapshot = state.engine.getSnapshot();
-    const selection = snapshot.selection || {};
-    const signingField = findSigningFieldAtSelection(snapshot.model, selection);
+    // Phase N2: the selection pull runs after every settled edit (debounced toolbar sync), so it must
+    // stay O(selection) — the full snapshot would recompute the O(document) navigation state each time.
+    const selection = (typeof state.engine.getSelectionState === 'function'
+        ? state.engine.getSelectionState()
+        : state.engine.getSnapshot().selection) || {};
+    const model = typeof state.engine.getModel === 'function'
+        ? state.engine.getModel()
+        : state.engine.getSnapshot().model;
+    const signingField = findSigningFieldAtSelection(model, selection);
+    // The content control under the caret rides the same payload (O(focused block)), replacing the
+    // full-document marshal the C# popover sync used to perform.
+    const contentControl = findContentControlAtSelection(model, selection);
     return JSON.stringify({
         isCollapsed: selection.isCollapsed !== false,
         signingFieldSelected: signingField != null,
         signingField: signingField || null,
+        contentControlSelected: contentControl != null,
+        contentControl: contentControl || null,
         pageIndex: Number(selection.pageIndex || 0) || 0,
         anchorBlockId: selection.anchor?.blockId || '',
         anchorOffset: Number(selection.anchor?.offset || 0) || 0,
@@ -531,6 +559,8 @@ export function getPageMetricsJson(handle) {
         virtualizedPages: Math.max(0, total - (visible.length || total)),
         activePageIndex,
         pages,
+        // Perf plan N11.5: totalPages only covers the laid prefix until the progressive layout completes.
+        layoutComplete: state.engine.progressiveLayout?.complete !== false,
     });
 }
 

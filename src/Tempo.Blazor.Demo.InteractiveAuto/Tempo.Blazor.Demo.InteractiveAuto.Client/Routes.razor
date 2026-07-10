@@ -1,0 +1,17 @@
+@* The interactive router MUST live in the client project: with <Routes @rendermode="InteractiveAuto">,
+   the WebAssembly leg of Auto mode instantiates this component inside the browser-side runtime, which
+   only ships the client assembly. Hosting it in the server project made every WASM activation fail with
+   "Root component type ... could not be found in the assembly ..." (blank interactive regions once the
+   WASM runtime was cached, while the very first visit still worked through the Server circuit). *@
+<Router AppAssembly="typeof(Routes).Assembly" AdditionalAssemblies="new[] { typeof(Tempo.Blazor.Demo.SharedUI.Pages.Home).Assembly }">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Tempo.Blazor.Demo.SharedUI.Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="typeof(Tempo.Blazor.Demo.SharedUI.Layout.MainLayout)">
+            <Tempo.Blazor.Demo.SharedUI.Pages.NotFound />
+        </LayoutView>
+    </NotFound>
+</Router>

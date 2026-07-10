@@ -417,6 +417,69 @@ public class DocumentEditorCommandRegistryTests
         ctx.IsInEditableRegion.Should().BeFalse();
     }
 
+    // ─── Perf plan N7.3: refresh gating (context signature + monotonic version) ──
+
+    [Fact]
+    public async Task RefreshAllAsync_IncrementsMonotonicVersion()
+    {
+        var registry = new DocumentEditorCommandRegistry();
+        registry.Register(AlwaysEnabledCommand("bold", affectsData: true));
+
+        registry.Version.Should().Be(0, "no refresh ran yet");
+        await registry.RefreshAllAsync(EditableContext());
+        registry.Version.Should().Be(1);
+        await registry.RefreshAllAsync(EditableContext());
+        registry.Version.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task RefreshAllAsync_WithUnchangedSignature_SkipsTheRebuild()
+    {
+        var computeCount = 0;
+        var registry = new DocumentEditorCommandRegistry();
+        registry.Register(new FuncDocumentEditorCommandEntry(
+            "bold",
+            affectsData: true,
+            computeEnabled: _ => { computeCount++; return true; },
+            execute: (_, _) => Task.CompletedTask));
+
+        await registry.RefreshAllAsync(EditableContext(), "signature-a");
+        var afterFirst = computeCount;
+        afterFirst.Should().BeGreaterThan(0);
+        var version = registry.Version;
+
+        await registry.RefreshAllAsync(EditableContext(), "signature-a");
+        computeCount.Should().Be(afterFirst, "an unchanged signature must skip recomputing every command");
+        registry.Version.Should().Be(version, "a skipped refresh must not bump the version");
+
+        await registry.RefreshAllAsync(EditableContext(), "signature-b");
+        computeCount.Should().BeGreaterThan(afterFirst, "a changed signature must recompute");
+        registry.Version.Should().Be(version + 1);
+
+        await registry.RefreshAllAsync(EditableContext());
+        computeCount.Should().BeGreaterThan(afterFirst + 1, "a null signature must always refresh");
+    }
+
+    [Fact]
+    public async Task ForceDisableReasons_InvalidateTheSignatureGate()
+    {
+        var registry = new DocumentEditorCommandRegistry();
+        registry.Register(AlwaysEnabledCommand("bold", affectsData: true));
+
+        await registry.RefreshAllAsync(EditableContext(), "same");
+        registry.GetState("bold")!.IsEnabled.Should().BeTrue();
+
+        // Adding a forced-disable reason changes command state WITHOUT a context change — the
+        // signature gate must not serve the stale (enabled) state.
+        registry.AddForceDisableReason("bold", "dialog-open");
+        await registry.RefreshAllAsync(EditableContext(), "same");
+        registry.GetState("bold")!.IsEnabled.Should().BeFalse("forced-disable must bypass the signature gate");
+
+        registry.RemoveForceDisableReason("bold", "dialog-open");
+        await registry.RefreshAllAsync(EditableContext(), "same");
+        registry.GetState("bold")!.IsEnabled.Should().BeTrue();
+    }
+
     private static IDocumentEditorCommandEntry AlwaysEnabledCommand(string name, bool affectsData) =>
         new FuncDocumentEditorCommandEntry(
             name,

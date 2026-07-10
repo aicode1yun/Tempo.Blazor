@@ -89,29 +89,55 @@ export function createTileCache(options = {}) {
     };
 }
 
+// Perf plan N6.5: the signature is a rolling hash over the same per-command fingerprint fields the
+// old implementation joined into one giant string — building that string allocated O(page text)
+// per page on EVERY paint, including 100% cache hits. Two independent 32-bit accumulators plus the
+// command count keep the collision odds negligible for a paint cache.
 export function pageSignature(displayList, pageIndex) {
     const normalizedPageIndex = Number(pageIndex) || 0;
-    return (displayList?.commands || [])
-        .filter(command => Number(command?.pageIndex || 0) === normalizedPageIndex)
-        .filter(command => isContentCacheCommand(command))
-        .map(command => [
-            command.type,
-            command.id,
-            command.blockId,
-            Math.round(Number(command.x || 0) * 100) / 100,
-            Math.round(Number(command.y || 0) * 100) / 100,
-            Math.round(Number(command.width || 0) * 100) / 100,
-            Math.round(Number(command.height || 0) * 100) / 100,
-            command.text || '',
-            command.fill || '',
-            command.stroke || '',
-            // Rotation/flip do not change the axis-aligned x/y/width/height, so without them a rotate (or flip)
-            // yielded an identical signature and the page was never repainted (the bitmap stayed upright).
-            Math.round(Number(command.rotation || 0) * 100) / 100,
-            command.flipHorizontal === true ? 'fh' : '',
-            command.flipVertical === true ? 'fv' : '',
-        ].join(':'))
-        .join('|');
+    let hashA = 5381;
+    let hashB = 52711;
+    let count = 0;
+
+    const mixString = (value) => {
+        const text = String(value ?? '');
+        for (let index = 0; index < text.length; index += 1) {
+            const code = text.charCodeAt(index);
+            hashA = (((hashA << 5) + hashA) + code) | 0;
+            hashB = (((hashB << 7) - hashB) ^ code) | 0;
+        }
+        // Field separator so adjacent fields cannot alias (["ab", "c"] vs ["a", "bc"]).
+        hashA = (((hashA << 5) + hashA) + 31) | 0;
+        hashB = (((hashB << 7) - hashB) ^ 31) | 0;
+    };
+    const mixNumber = (value) => {
+        mixString(Math.round(Number(value || 0) * 100) / 100);
+    };
+
+    for (const command of displayList?.commands || []) {
+        if (Number(command?.pageIndex || 0) !== normalizedPageIndex || !isContentCacheCommand(command)) {
+            continue;
+        }
+
+        count += 1;
+        mixString(command.type);
+        mixString(command.id);
+        mixString(command.blockId);
+        mixNumber(command.x);
+        mixNumber(command.y);
+        mixNumber(command.width);
+        mixNumber(command.height);
+        mixString(command.text || '');
+        mixString(command.fill || '');
+        mixString(command.stroke || '');
+        // Rotation/flip do not change the axis-aligned x/y/width/height, so without them a rotate (or flip)
+        // yielded an identical signature and the page was never repainted (the bitmap stayed upright).
+        mixNumber(command.rotation);
+        mixString(command.flipHorizontal === true ? 'fh' : '');
+        mixString(command.flipVertical === true ? 'fv' : '');
+    }
+
+    return `${count}:${hashA >>> 0}:${hashB >>> 0}`;
 }
 
 function isContentCacheCommand(command) {
