@@ -201,6 +201,9 @@ public partial class TmDataTable<TItem>
     /// <summary>Fires when grouping configuration changes.</summary>
     [Parameter] public EventCallback<IReadOnlyList<string>> OnGroupingChanged { get; set; }
 
+    /// <summary>Additional HTML attributes to apply to each data row.</summary>
+    [Parameter] public Func<TItem, IReadOnlyDictionary<string, object>?>? RowAttributes { get; set; }
+
     // ── Parameters: slots ─────────────────────────────────────────
 
     /// <summary>Render fragment shown in the selection action bar (bulk actions).</summary>
@@ -217,6 +220,7 @@ public partial class TmDataTable<TItem>
     private bool IsAllSelected => _displayedItems.Count > 0 && _displayedItems.All(IsSelected);
     private bool IsSelected(TItem item) => _selectedItems.Contains(item);
     private int ColSpan => Math.Max(1, (Selectable ? 1 : 0) + _visibleColumns.Count);
+    private IReadOnlyDictionary<string, object>? GetRowAttributes(TItem item) => RowAttributes?.Invoke(item);
 
     /// <summary>Determines whether any toolbar control should be rendered.</summary>
     private bool HasVisibleToolbarControls() =>
@@ -983,6 +987,7 @@ public partial class TmDataTable<TItem>
                         builder.OpenElement(seq++, "tr");
                         builder.AddAttribute(seq++, "class", GetRowClass(rowItem));
                         builder.AddAttribute(seq++, "onclick", EventCallback.Factory.Create(this, () => HandleRowClickAsync(rowItem)));
+                        builder.AddMultipleAttributes(seq++, GetRowAttributes(rowItem));
 
                         if (Selectable)
                         {

@@ -48,7 +48,7 @@ public class TmButtonTests : LocalizationTestBase
     [Theory]
     [InlineData(ButtonType.Button, "button")]
     [InlineData(ButtonType.Submit, "submit")]
-    [InlineData(ButtonType.Reset,  "reset")]
+    [InlineData(ButtonType.Reset, "reset")]
     public void TmButton_Renders_Correct_Html_Type(ButtonType buttonType, string expectedHtmlType)
     {
         var cut = RenderComponent<TmButton>(p => p
@@ -61,13 +61,16 @@ public class TmButtonTests : LocalizationTestBase
     // ─── Variant CSS ──────────────────────────────────────────────────────────
 
     [Theory]
-    [InlineData(ButtonVariant.Primary,   "tm-btn-primary")]
+    [InlineData(ButtonVariant.Primary, "tm-btn-primary")]
     [InlineData(ButtonVariant.Secondary, "tm-btn-secondary")]
-    [InlineData(ButtonVariant.Ghost,     "tm-btn-ghost")]
-    [InlineData(ButtonVariant.Danger,    "tm-btn-danger")]
-    [InlineData(ButtonVariant.Outline,   "tm-btn-outline")]
-    [InlineData(ButtonVariant.Link,      "tm-btn-link")]
-    [InlineData(ButtonVariant.Default,   "tm-btn-default")]
+    [InlineData(ButtonVariant.Ghost, "tm-btn-ghost")]
+    [InlineData(ButtonVariant.Danger, "tm-btn-danger")]
+    [InlineData(ButtonVariant.Outline, "tm-btn-outline")]
+    [InlineData(ButtonVariant.Link, "tm-btn-link")]
+    [InlineData(ButtonVariant.Default, "tm-btn-default")]
+    [InlineData(ButtonVariant.OutlineSecondary, "tm-btn-outline-secondary")]
+    [InlineData(ButtonVariant.Warning, "tm-btn-warning")]
+    [InlineData(ButtonVariant.OutlineWarning, "tm-btn-outline-warning")]
     public void TmButton_Applies_Variant_CssClass(ButtonVariant variant, string expectedClass)
     {
         var cut = RenderComponent<TmButton>(p => p

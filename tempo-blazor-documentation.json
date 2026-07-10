@@ -2305,7 +2305,7 @@
       "kind": "Component",
       "category": "Buttons",
       "namespace": "Tempo.Blazor.Components.Buttons",
-      "description": "General-purpose button component with multiple visual variants (Primary, Secondary, Ghost, Danger, Outline, Link, Default), sizes (Xs, Sm, Md, Lg), optional icon, loading state with spinner, and full-width block mode.",
+      "description": "General-purpose button component with multiple visual variants (Primary, Secondary, Ghost, Danger, Outline, OutlineSecondary, Warning, OutlineWarning, Link, Default), sizes (Xs, Sm, Md, Lg), optional icon, loading state with spinner, and full-width block mode.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Buttons/TmButton.razor",
       "documentationStatus": "merged",
@@ -2409,6 +2409,9 @@
         "tm-btn-ghost",
         "tm-btn-danger",
         "tm-btn-outline",
+        "tm-btn-outline-secondary",
+        "tm-btn-warning",
+        "tm-btn-outline-warning",
         "tm-btn-link",
         "tm-btn-default",
         "tm-btn-xs",
@@ -2433,6 +2436,14 @@
         {
           "title": "Outline small button",
           "code": "<TmButton Variant=\"ButtonVariant.Outline\" Size=\"ButtonSize.Sm\">Cancel</TmButton>"
+        },
+        {
+          "title": "Warning button",
+          "code": "<TmButton Variant=\"ButtonVariant.Warning\">Needs attention</TmButton>"
+        },
+        {
+          "title": "Neutral outline button",
+          "code": "<TmButton Variant=\"ButtonVariant.OutlineSecondary\">Back</TmButton>"
         },
         {
           "title": "Full-width submit button",
@@ -6380,6 +6391,12 @@
           "description": "Page size options shown in the pagination dropdown."
         },
         {
+          "name": "RowAttributes",
+          "type": "Func<TItem, IReadOnlyDictionary<string, object>?>?",
+          "isRequired": false,
+          "description": "Optional row-level HTML attributes applied to every data row, including non-virtualized, virtualized, and grouped leaf rows."
+        },
+        {
           "name": "ScrollMode",
           "type": "DataTableScrollMode",
           "isRequired": false,
@@ -6581,6 +6598,10 @@
         {
           "title": "Server-side data table with selection and views",
           "code": "<TmDataTable TItem=\"OrderDto\"\n             DataProvider=\"@orderProvider\"\n             ViewContext=\"orders\"\n             ViewProvider=\"@viewProvider\"\n             Selectable=\"true\"\n             ShowGrouping=\"true\"\n             OnRowClick=\"HandleRowClick\"\n             OnSelectionChanged=\"HandleSelectionChanged\">\n    <SelectionActions>\n        <TmButton OnClick=\"DeleteSelected\">Delete</TmButton>\n    </SelectionActions>\n    <TmDataTableColumn Title=\"Order #\" Field=\"o => o.OrderNumber\" Sortable=\"true\" />\n    <TmDataTableColumn Title=\"Status\" Field=\"o => o.Status\" Filterable=\"true\" FilterType=\"FilterType.Select\" FilterOptions=\"@statusOptions\" />\n</TmDataTable>"
+        },
+        {
+          "title": "Row-level attributes for test ids and data hooks",
+          "code": "<TmDataTable TItem=\"OrderDto\"\n             Items=\"@orders\"\n             ViewContext=\"orders\"\n             RowAttributes=\"@(row => new Dictionary<string, object>\n             {\n                 [\"data-testid\"] = $\"order-{row.Id}\",\n                 [\"data-status\"] = row.Status\n             })\">\n    <TmDataTableColumn Title=\"Order #\" Field=\"o => o.OrderNumber\" />\n    <TmDataTableColumn Title=\"Status\" Field=\"o => o.Status\" />\n</TmDataTable>"
         },
         {
           "title": "Page-owned filters + content-only table",

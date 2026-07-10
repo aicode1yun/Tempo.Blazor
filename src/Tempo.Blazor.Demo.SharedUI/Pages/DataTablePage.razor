@@ -63,6 +63,56 @@
     }
 </section>
 
+<!-- Row Attributes -->
+<section class="demo-section" data-testid="datatable-row-attributes-demo">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Row Attributes</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 rounded-full">Attributes</span>
+    </div>
+
+    <div class="demo-grid demo-grid-3">
+        <div class="showcase-card p-0 overflow-hidden" data-testid="datatable-rowattrs-flat">
+            <TmDataTable TItem="Employee"
+                         ViewContext="demo-rowattrs-flat"
+                         Items="_rowAttributeEmployees"
+                         ToolbarMode="DataToolbarMode.ContentOnly"
+                         ShowPagination="false"
+                         RowAttributes='@(employee => GetDemoRowAttributes(employee, "flat"))'>
+                <TmDataTableColumn TItem="Employee" Title="Name" Field="e => e.Name" />
+                <TmDataTableColumn TItem="Employee" Title="Dept" Field="e => e.Dept" />
+            </TmDataTable>
+        </div>
+
+        <div class="showcase-card p-0 overflow-hidden" data-testid="datatable-rowattrs-virtual">
+            <TmDataTable TItem="Employee"
+                         ViewContext="demo-rowattrs-virtual"
+                         Items="_rowAttributeEmployees"
+                         ToolbarMode="DataToolbarMode.ContentOnly"
+                         ScrollMode="DataTableScrollMode.Virtualized"
+                         VirtualScrollHeight="220px"
+                         RowAttributes='@(employee => GetDemoRowAttributes(employee, "virtual"))'>
+                <TmDataTableColumn TItem="Employee" Title="Name" Field="e => e.Name" />
+                <TmDataTableColumn TItem="Employee" Title="Dept" Field="e => e.Dept" />
+            </TmDataTable>
+        </div>
+
+        <div class="showcase-card p-0 overflow-hidden" data-testid="datatable-rowattrs-grouped">
+            <TmDataTable @ref="_rowAttributesGroupedTable"
+                         TItem="Employee"
+                         ViewContext="demo-rowattrs-grouped"
+                         Items="_rowAttributeEmployees"
+                         ToolbarMode="DataToolbarMode.ContentOnly"
+                         ShowGrouping="true"
+                         GroupsCollapsedByDefault="false"
+                         ShowPagination="false"
+                         RowAttributes='@(employee => GetDemoRowAttributes(employee, "grouped"))'>
+                <TmDataTableColumn TItem="Employee" Title="Name" PropertyName="Name" Field="e => e.Name" />
+                <TmDataTableColumn TItem="Employee" Title="Dept" PropertyName="Dept" Field="e => e.Dept" Groupable="true" />
+            </TmDataTable>
+        </div>
+    </div>
+</section>
+
 <!-- Multi-Select Table -->
 <section class="demo-section">
     <div class="flex items-center space-x-2 mb-4">
@@ -458,6 +508,8 @@
     private bool _loading;
     private bool _showEmpty;
     private Employee? _lastClicked;
+    private TmDataTable<Employee>? _rowAttributesGroupedTable;
+    private bool _rowAttributesGroupApplied;
     private List<Employee> _selectedEmployees = [];
     // Filter Builder
     private IReadOnlyList<FilterDefinition> _employeeFilterDefs =
@@ -487,6 +539,14 @@
             60 + i * 3,
             $"emp{i}@example.com",
             Id: i)).ToList();
+
+    private readonly List<Employee> _rowAttributeEmployees =
+    [
+        new("Alice", "Developer", "Engineering", 91, "alice@example.com", Id: 101),
+        new("Bob", "Manager", "Sales", 84, "bob@example.com", Id: 102),
+        new("Carol", "Analyst", "Finance", 88, "carol@example.com", Id: 103),
+        new("Diana", "Lead", "Engineering", 95, "diana@example.com", Id: 104)
+    ];
 
     private readonly List<Employee> _treeEmployees = new()
     {
@@ -538,6 +598,25 @@
         _personProvider = PersonProvider;
         _viewProvider = ViewProvider;
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_rowAttributesGroupApplied && _rowAttributesGroupedTable is not null)
+        {
+            _rowAttributesGroupApplied = true;
+            _rowAttributesGroupedTable.AddGroupColumn("Dept");
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private static IReadOnlyDictionary<string, object> GetDemoRowAttributes(Employee employee, string mode) =>
+        new Dictionary<string, object>
+        {
+            ["data-testid"] = $"datatable-rowattrs-{mode}-{employee.Name.ToLowerInvariant()}",
+            ["data-row-mode"] = mode,
+            ["data-row-dept"] = employee.Dept,
+            ["data-row-score"] = employee.Score.ToString()
+        };
 
     private void OnRowClick(Employee emp) => _lastClicked = emp;
 

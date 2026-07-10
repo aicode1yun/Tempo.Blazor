@@ -134,6 +134,44 @@ public class TmDataTableGroupingTests : LocalizationTestBase
         cut.FindAll("tbody tr:not(.tm-data-table-group-row)").Should().HaveCount(6);
     }
 
+    [Fact]
+    public async Task DataTable_Grouped_RowAttributes_Applies_CustomAttributes_ToLeafRows()
+    {
+        var cut = RenderComponent<TmDataTable<GroupPerson>>(p =>
+        {
+            p.Add(c => c.Items, People);
+            p.Add(c => c.ShowGrouping, true);
+            p.Add(c => c.GroupsCollapsedByDefault, false);
+            p.Add(c => c.RowAttributes, row => new Dictionary<string, object>
+            {
+                ["data-testid"] = $"group-person-{row.Name.ToLowerInvariant()}",
+                ["data-department"] = row.Department
+            });
+            p.AddChildContent(b =>
+            {
+                b.OpenComponent<TmDataTableColumn<GroupPerson>>(0);
+                b.AddAttribute(1, "Title", "Name");
+                b.AddAttribute(2, "PropertyName", "Name");
+                b.AddAttribute(3, "Field", (Func<GroupPerson, object?>)(x => x.Name));
+                b.CloseComponent();
+
+                b.OpenComponent<TmDataTableColumn<GroupPerson>>(10);
+                b.AddAttribute(11, "Title", "Department");
+                b.AddAttribute(12, "PropertyName", "Department");
+                b.AddAttribute(13, "Field", (Func<GroupPerson, object?>)(x => x.Department));
+                b.AddAttribute(14, "Groupable", true);
+                b.CloseComponent();
+            });
+        });
+
+        await cut.InvokeAsync(() => cut.Instance.AddGroupColumn("Department"));
+
+        var row = cut.Find("[data-testid='group-person-alice']");
+        row.ClassList.Should().NotContain("tm-data-table-group-row");
+        row.GetAttribute("data-department").Should().Be("Engineering");
+        row.TextContent.Should().Contain("Alice");
+    }
+
     // --- Toggle expansion ---
 
     [Fact]
