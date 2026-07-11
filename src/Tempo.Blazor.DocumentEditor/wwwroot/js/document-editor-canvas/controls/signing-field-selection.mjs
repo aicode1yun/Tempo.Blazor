@@ -1,4 +1,5 @@
 import { createCanvasRunText } from '../layout/canvas-text-style.mjs';
+import { getBlockIndex } from './block-index.mjs';
 
 // Detects the signing field at the current caret (plan S2.11) so the host can open the field's
 // properties panel. A signing field run is a length-0 atomic box, so it sits at a single text offset;
@@ -46,52 +47,20 @@ function describe(field, location) {
     };
 }
 
+// Fáze 23 (code review N2): O(1) lookup přes memoizovaný per-model index (block-index.mjs) místo
+// plného průchodu po každém settled editu. Pokrytí zachováno: body bloky + tabulkové buňky +
+// header/footer bloky; bloky uvnitř block-scope content controlů se (historicky) nehledají.
 function locateBlock(model, blockId) {
-    const id = String(blockId || '');
-    for (const block of bodyBlocks(model)) {
-        if (String(block?.id || '') === id) {
-            return { block, headerFooterId: '', scope: '' };
-        }
+    const entry = getBlockIndex(model).get(String(blockId || ''));
+    if (!entry || entry.nestedInControl === true) {
+        return null;
     }
 
-    for (const headerFooter of Array.isArray(model?.headersFooters) ? model.headersFooters : []) {
-        for (const block of Array.isArray(headerFooter?.blocks) ? headerFooter.blocks : []) {
-            if (String(block?.id || '') === id) {
-                return {
-                    block,
-                    headerFooterId: String(headerFooter.id || ''),
-                    scope: scopeName(headerFooter.scope ?? headerFooter.Scope),
-                };
-            }
-        }
-    }
-
-    return null;
-}
-
-function bodyBlocks(model) {
-    const stack = Array.isArray(model?.body?.blocks) ? [...model.body.blocks].reverse() : [];
-    const result = [];
-    while (stack.length > 0) {
-        const block = stack.pop();
-        if (!block) {
-            continue;
-        }
-
-        result.push(block);
-        const rows = block?.content?.table?.rows;
-        if (Array.isArray(rows)) {
-            for (let rowIndex = rows.length - 1; rowIndex >= 0; rowIndex -= 1) {
-                for (const cell of [...(rows[rowIndex]?.cells || [])].reverse()) {
-                    for (const nested of [...(cell?.blocks || [])].reverse()) {
-                        stack.push(nested);
-                    }
-                }
-            }
-        }
-    }
-
-    return result;
+    return {
+        block: entry.block,
+        headerFooterId: entry.headerFooterId,
+        scope: entry.headerFooterId === '' ? '' : scopeName(entry.headerFooterScope),
+    };
 }
 
 function scopeName(value) {

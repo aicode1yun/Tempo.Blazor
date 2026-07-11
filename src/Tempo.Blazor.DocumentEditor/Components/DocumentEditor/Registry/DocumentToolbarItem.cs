@@ -35,6 +35,9 @@ public sealed record DocumentToolbarItem
     /// <summary>Optional runtime visibility predicate.</summary>
     public Func<DocumentToolbarVisibilityContext, bool>? VisibleWhen { get; init; }
 
+    /// <summary>Options rendered by the declarative select renderer (Fáze 17). Null for non-select items.</summary>
+    public IReadOnlyList<DocumentToolbarItemOption>? Options { get; init; }
+
     /// <summary>Resolved group identifier.</summary>
     public string? EffectiveGroup => Group ?? GroupId;
 

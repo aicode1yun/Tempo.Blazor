@@ -1,5 +1,6 @@
 import { createCanvasRunText } from '../layout/canvas-text-style.mjs';
 import { normalizeContentControl } from './sdt-model.mjs';
+import { getBlockIndex } from './block-index.mjs';
 
 // Phase N2: detects the popover-eligible content control at the caret so the host can drive the
 // content-control popover from the (O(focused block)) selection state instead of marshalling the
@@ -64,40 +65,12 @@ function describe(control) {
     };
 }
 
-// Depth-first walk over body blocks, descending into table cells and block-scope content controls
-// (same coverage as the C# EnumerateBlocks this replaces).
+// Fáze 23 (code review N2): O(1) lookup přes memoizovaný per-model index (block-index.mjs) místo
+// plného DFS po každém settled editu. Pokrytí zachováno: body bloky + tabulkové buňky + bloky
+// uvnitř block-scope content controlů; header/footer bloky se (historicky) nehledají.
 function findBlock(model, blockId) {
-    const stack = Array.isArray(model?.body?.blocks) ? [...model.body.blocks].reverse() : [];
-    while (stack.length > 0) {
-        const block = stack.pop();
-        if (!block) {
-            continue;
-        }
-
-        if (String(block?.id || '') === blockId) {
-            return block;
-        }
-
-        const rows = block?.content?.table?.rows;
-        if (Array.isArray(rows)) {
-            for (let rowIndex = rows.length - 1; rowIndex >= 0; rowIndex -= 1) {
-                for (const cell of [...(rows[rowIndex]?.cells || [])].reverse()) {
-                    for (const nested of [...(cell?.blocks || [])].reverse()) {
-                        stack.push(nested);
-                    }
-                }
-            }
-        }
-
-        const nestedControlBlocks = block?.content?.contentControl?.blocks;
-        if (Array.isArray(nestedControlBlocks)) {
-            for (let index = nestedControlBlocks.length - 1; index >= 0; index -= 1) {
-                stack.push(nestedControlBlocks[index]);
-            }
-        }
-    }
-
-    return null;
+    const entry = getBlockIndex(model).get(blockId);
+    return entry && entry.headerFooterId === '' ? entry.block : null;
 }
 
 function firstNonEmpty(...values) {

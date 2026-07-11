@@ -15,7 +15,9 @@
     <span>@MoreLabel</span>
 </button>
 
-@if (IsOpen && Groups.Count > 0)
+@* Fáze 18: menu se otevírá i s prázdným filtrem — search box musí zůstat viditelný s hláškou
+   „žádné výsledky" (dřívější gate Groups.Count > 0 ho schoval a uživatel nemohl filtr opravit). *@
+@if (IsOpen && (Groups.Count > 0 || ShowSearch))
 {
     var itemIndex = 0;
     <button type="button"
@@ -38,6 +40,12 @@
                        @oninput="OnSearchInput"
                        data-testid="document-toolbar-more-search" />
             </label>
+        }
+        @if (Groups.Count == 0)
+        {
+            <div class="tm-document-editor__overflow-menu-empty"
+                 role="status"
+                 data-testid="document-toolbar-more-empty">@NoResultsLabel</div>
         }
         @foreach (var group in Groups)
         {
@@ -69,6 +77,18 @@
 
 @code {
     private int _activeIndex;
+    private string? _lastSearchQuery;
+
+    protected override void OnParametersSet()
+    {
+        // Fáze 18: změna filtru mění množinu itemů — aktivní index se resetuje na první item,
+        // jinak ukazoval na náhodnou pozici v nové (kratší) množině.
+        if (!string.Equals(_lastSearchQuery, SearchQuery, StringComparison.Ordinal))
+        {
+            _lastSearchQuery = SearchQuery;
+            _activeIndex = 0;
+        }
+    }
 
     /// <summary>Whether the toolbar currently has overflowed commands.</summary>
     [Parameter] public bool IsOverflowing { get; set; }
@@ -93,6 +113,9 @@
 
     /// <summary>Accessible label and placeholder for the search input.</summary>
     [Parameter] public string SearchLabel { get; set; } = string.Empty;
+
+    /// <summary>Message shown when the search filter yields no commands (Fáze 18).</summary>
+    [Parameter] public string NoResultsLabel { get; set; } = string.Empty;
 
     /// <summary>Raised when the More button is clicked.</summary>
     [Parameter] public EventCallback OnToggle { get; set; }
@@ -149,6 +172,9 @@
                 if (active?.IsEnabled == true)
                 {
                     await OnCommandRequested.InvokeAsync(active.CommandName);
+                    // Fáze 18: po vykonání příkazu Enter/Space nebublá do rodiče (rodič by
+                    // klávesu zpracoval znovu — např. re-toggle menu).
+                    return;
                 }
                 break;
         }

@@ -80,25 +80,16 @@ test('empty and single-character segments are handled', () => {
     assert.strictEqual(single[1], metrics.measureText('x', STYLE).width);
 });
 
-test('chunked mode stays within tolerance of exact and keeps monotonicity + endpoints', () => {
+// Fáze 23 (code review N4): chunked interpolační režim (caretAdvanceMode: 'chunked') byl smazán
+// jako mrtvý kód — jediný odkaz mimo definici byl tento test. getCaretAdvances měří vždy exact
+// (byte-identicky s historickou per-prefix cestou); ignorace neznámé option je kontrakt:
+test('unknown caretAdvanceMode option is ignored — advances are always exact', () => {
     const exact = service();
-    const chunked = service({ caretAdvanceMode: 'chunked' });
+    const withStaleOption = service({ caretAdvanceMode: 'chunked' });
     const text = 'The quick brown fox jumps over the lazy dog, twice around';
 
-    const exactAdvances = exact.getCaretAdvances(text, STYLE);
-    const chunkedAdvances = chunked.getCaretAdvances(text, STYLE);
-
-    assert.equal(chunkedAdvances.length, exactAdvances.length);
-    assert.strictEqual(chunkedAdvances[0], 0);
-    assert.strictEqual(chunkedAdvances[text.length], exactAdvances[text.length],
-        'chunk anchors pin the exact width at the segment end');
-    for (let k = 1; k <= text.length; k += 1) {
-        assert.ok(chunkedAdvances[k] >= chunkedAdvances[k - 1], 'chunked advances stay monotonic');
-        assert.ok(Math.abs(chunkedAdvances[k] - exactAdvances[k]) <= 1.0,
-            `chunked drift at ${k}: ${Math.abs(chunkedAdvances[k] - exactAdvances[k])}px`);
-    }
-    // Every 16th prefix is a shaped anchor — exact by construction.
-    for (let k = 16; k <= text.length; k += 16) {
-        assert.strictEqual(chunkedAdvances[k], exactAdvances[k], `anchor at ${k} must be exact`);
-    }
+    assert.deepEqual(
+        Array.from(withStaleOption.getCaretAdvances(text, STYLE)),
+        Array.from(exact.getCaretAdvances(text, STYLE)),
+        'stale option must not change the exact measurement');
 });

@@ -21,6 +21,18 @@ internal sealed class ImageResolveCache
 
     public int Count => _entries.Count;
 
+    /// <summary>Fáze 21 — testovací průhled: interní LRU list musí zůstat 1:1 s <see cref="_entries"/>.</summary>
+    internal int LruCountForTests
+    {
+        get
+        {
+            lock (_lruLock)
+            {
+                return _lru.Count;
+            }
+        }
+    }
+
     public bool TryGet(string documentId, string assetId, out string? url)
     {
         var key = (documentId, assetId);
@@ -47,6 +59,14 @@ internal sealed class ImageResolveCache
         LinkedListNode<(string, string)>? node;
         lock (_lruLock)
         {
+            // Fáze 21 (code review): opakovaný Set téhož klíče musí odstranit starý node — jinak
+            // LRU list roste bez omezení a evikce (řízená jen _entries.Count) může přes zastaralý
+            // duplikát na tailu odstranit ČERSTVÝ záznam, zatímco skutečně nejstarší klíč přežije.
+            if (_entries.TryGetValue(key, out var existing) && existing.Node?.List is not null)
+            {
+                _lru.Remove(existing.Node);
+            }
+
             node = new LinkedListNode<(string, string)>(key);
             _lru.AddFirst(node);
         }

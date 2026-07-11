@@ -367,10 +367,7 @@
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontFamily"]))"
                             aria-label="@Loc["TmDocumentEditor_FontFamily"]"
                             aria-disabled="@AriaDisabled(!IsCommandEnabled("fontFamily"))"
-                            @oninput="HandleFontFamilyChangedAsync"
                             @onchange="HandleFontFamilyChangedAsync"
-                            @onpointerdown:preventDefault="true"
-                            @onmousedown:preventDefault="true"
                             data-testid="document-font-family">
                         <option value="">@Loc["TmDocumentEditor_FontFamilyDefault"]</option>
                         @foreach (var font in FontFamilies)
@@ -386,10 +383,7 @@
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontSize"]))"
                             aria-label="@Loc["TmDocumentEditor_FontSize"]"
                             aria-disabled="@AriaDisabled(!IsCommandEnabled("fontSize"))"
-                            @oninput="HandleFontSizeChangedAsync"
                             @onchange="HandleFontSizeChangedAsync"
-                            @onpointerdown:preventDefault="true"
-                            @onmousedown:preventDefault="true"
                             data-testid="document-font-size">
                         @if (FontSizeMixed)
                         {
@@ -536,7 +530,7 @@
                         @onmousedown:preventDefault="true"
                         data-command="doubleStrikethrough"
                         data-testid="document-double-strikethrough">
-                    <TmIcon Name="strikethrough" Size="IconSize.Sm" />
+                    <TmIcon Name="double-strikethrough" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_DoubleStrikethrough"]</span>
                 </button>
                 <button class="tm-document-editor__ribbon-button"
@@ -570,14 +564,15 @@
                 <label class="tm-document-editor__ribbon-select tm-document-editor__ribbon-select--compact" title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_ChangeCase"]))">
                     <TmIcon Name="case-sensitive" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ChangeCase"]</span>
-                    <select disabled="@(!IsCommandEnabled("changeCase"))"
+                    @* Fáze 18: value="" je konstanta — Blazor diff reset neemituje a select by zamrzl
+                       na poslední volbě; @key bump po každém výběru element přegeneruje na placeholder. *@
+                    <select @key="_changeCaseResetSeq"
+                            disabled="@(!IsCommandEnabled("changeCase"))"
                             value=""
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_ChangeCase"]))"
                             aria-label="@Loc["TmDocumentEditor_ChangeCase"]"
                             aria-disabled="@AriaDisabled(!IsCommandEnabled("changeCase"))"
                             @onchange="HandleChangeCaseChangedAsync"
-                            @onpointerdown:preventDefault="true"
-                            @onmousedown:preventDefault="true"
                             data-command="changeCase"
                             data-testid="document-change-case">
                         <option value="">@Loc["TmDocumentEditor_ChangeCase"]</option>
@@ -808,7 +803,7 @@
                         @onmousedown:preventDefault="true"
                         data-command="numberedList"
                         data-testid="document-numbered-list">
-                    <TmIcon Name="list" Size="IconSize.Sm" />
+                    <TmIcon Name="list-ordered" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_NumberedList"]</span>
                 </button>
             </section>
@@ -923,7 +918,7 @@
                                 @onclick="ToggleEquationMenu"
                                 data-command="insertEquation"
                                 data-testid="document-toolbar-equation">
-                            <TmIcon Name="superscript" Size="IconSize.Sm" />
+                            <TmIcon Name="sigma" Size="IconSize.Sm" />
                             <span>@Loc["TmDocumentEditor_InsertEquation"]</span>
                         </button>
                         @if (_equationMenuOpen)
@@ -982,7 +977,7 @@
                                 @onmousedown:preventDefault="true"
                                 data-command="insertSymbol"
                                 data-testid="document-toolbar-symbol">
-                            <TmIcon Name="pilcrow" Size="IconSize.Sm" />
+                            <TmIcon Name="omega" Size="IconSize.Sm" />
                             <span>@Loc["TmDocumentEditor_InsertSymbol"]</span>
                         </button>
                         @if (_symbolMenuOpen)
@@ -1100,12 +1095,7 @@
                             </label>
                             <label>
                                 <span>@Loc["TmDocumentEditor_Orientation"]</span>
-                                <select @bind:get="PageOrientationValue"
-                                        @bind:set="HandlePageOrientationValueChangedAsync"
-                                        data-testid="document-page-orientation">
-                                    <option value="Portrait">@Loc["TmDocumentEditor_OrientationPortrait"]</option>
-                                    <option value="Landscape">@Loc["TmDocumentEditor_OrientationLandscape"]</option>
-                                </select>
+                                @* Fáze 18: duplicitní <select> orientace odstraněn — segmentová tlačítka jsou jediné ovládání. *@
                                 <span class="tm-document-page-layout-inspector__segmented" role="group" aria-label="@Loc["TmDocumentEditor_Orientation"]">
                                     <button type="button"
                                             class="@GetPageOrientationButtonClass(false)"
@@ -1229,6 +1219,7 @@
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_DifferentFirstPage"]))"
                         aria-pressed="@DifferentFirstPage.ToString().ToLowerInvariant()"
                         @onclick="ToggleDifferentFirstPageAsync"
+                        data-command="differentFirstPage"
                         data-testid="document-different-first-page">
                     <TmIcon Name="panel-top" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_DifferentFirstPage"]</span>
@@ -1239,6 +1230,7 @@
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_DifferentOddEven"]))"
                         aria-pressed="@DifferentOddAndEvenPages.ToString().ToLowerInvariant()"
                         @onclick="ToggleDifferentOddEvenAsync"
+                        data-command="differentOddEven"
                         data-testid="document-different-odd-even">
                     <TmIcon Name="layout" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_DifferentOddEven"]</span>
@@ -1844,11 +1836,12 @@
     <TmDocumentToolbarOverflowMenu IsOverflowing="_isOverflowing"
                                    IsOpen="_overflowMenuOpen"
                                    ShowSearch="ShowOverflowSearch"
-                                   SearchQuery="_overflowSearchQuery"
+                                   SearchQuery="@_overflowSearchQuery"
                                    Groups="GetOverflowMenuGroups()"
                                    MoreLabel="@Loc["TmDocumentEditor_More"]"
                                    MoreCommandsLabel="@Loc["TmDocumentEditor_MoreCommands"]"
                                    SearchLabel="@Loc["Tm_Search"]"
+                                   NoResultsLabel="@Loc["TmDocumentEditor_OverflowNoResults"]"
                                    OnToggle="ToggleOverflowMenu"
                                    OnMoreKeyDown="HandleMoreButtonKeyDown"
                                    OnSearchInput="HandleOverflowSearchInput"
@@ -1936,8 +1929,11 @@
     private ElementReference _symbolMenu;
     private bool _wasHeaderFooterMode;
     private bool _keyboardMode;
+    private const string OverflowModulePath = "./_content/Tempo.Blazor.DocumentEditor/js/document-editor/toolbar/toolbar-overflow.mjs";
+
     private ElementReference _ribbonGroupsRef;
     private DotNetObjectReference<TmDocumentEditorToolbar>? _dotNetRef;
+    private IJSObjectReference? _overflowModule;
     private DocumentTextAlignment? _optimisticParagraphAlignment;
     private DateTimeOffset _optimisticParagraphAlignmentExpiresAt;
     private double? _optimisticLineSpacing;
@@ -1963,10 +1959,8 @@
     private bool _focusEquationMenuOnRender;
     private bool _focusSymbolMenuOnRender;
     private string[] _overflowedCommandNames = [];
-    private string? _lastFontFamilyChangeValue;
-    private DateTimeOffset _lastFontFamilyChangeAt;
-    private string? _lastFontSizeChangeValue;
-    private DateTimeOffset _lastFontSizeChangeAt;
+    // Fáze 18: reset sekvence changeCase selectu (@key bump vynutí přegenerování na placeholder).
+    private int _changeCaseResetSeq;
     private string _styleFontSizeValue = "20";
     private string? _styleNameValue;
     private string? _styleRenameValue;
@@ -2127,8 +2121,9 @@
             _dotNetRef = DotNetObjectReference.Create(this);
             try
             {
-                await JS.InvokeVoidAsync(
-                    "tmDocumentEditorToolbar.createOverflowController",
+                _overflowModule = await JS.InvokeAsync<IJSObjectReference>("import", OverflowModulePath);
+                await _overflowModule.InvokeVoidAsync(
+                    "createOverflowController",
                     _ribbonGroupsRef, _dotNetRef);
             }
             catch { /* JS not available in prerender/SSR */ }
@@ -2400,8 +2395,7 @@
         hash.Add(_optimisticParagraphAlignmentExpiresAt.UtcTicks);
         hash.Add(_optimisticLineSpacing ?? double.MinValue); hash.Add(_optimisticLineSpacingExpiresAt.UtcTicks);
         hash.Add(_optimisticBulletListActive); hash.Add(_optimisticNumberedListActive); hash.Add(_optimisticListExpiresAt.UtcTicks);
-        hash.Add(_lastFontFamilyChangeValue); hash.Add(_lastFontFamilyChangeAt.UtcTicks);
-        hash.Add(_lastFontSizeChangeValue); hash.Add(_lastFontSizeChangeAt.UtcTicks);
+        hash.Add(_changeCaseResetSeq);
         return hash.ToHashCode();
     }
 
@@ -2469,12 +2463,13 @@
                 Priority = ToolbarItemPriority.Secondary
             };
 
+        // Fáze 16: shodná sémantika s IsCommandEnabled — registry připojený + stav chybí ⇒ disabled.
         var state = CommandRegistry?.GetState(commandName);
         return new DocumentToolbarOverflowMenuItem(
             commandName,
             metadata,
             GetOverflowCommandLabel(commandName, metadata),
-            state is null || state.IsEnabled);
+            CommandRegistry is null || (state?.IsEnabled ?? false));
     }
 
     private bool IsOverflowItemVisible(DocumentToolbarOverflowMenuItem item)
@@ -2580,9 +2575,11 @@
     {
         try
         {
-            await JS.InvokeVoidAsync(
-                "tmDocumentEditorToolbar.disposeOverflowController",
-                _ribbonGroupsRef);
+            if (_overflowModule is not null)
+            {
+                await _overflowModule.InvokeVoidAsync("disposeOverflowController", _ribbonGroupsRef);
+                await _overflowModule.DisposeAsync();
+            }
         }
         catch { }
 
@@ -3350,11 +3347,16 @@
     private bool CanExecuteRedo =>
         !ReadOnly && (CanRedo || (CommandRegistry?.GetState("redo")?.IsEnabled ?? false));
 
+    // Fáze 16 — sjednocený fallback (jedno chování napříč cestami):
+    //   * Registry PŘIPOJENÝ = zdroj pravdy. Nezaregistrovaný příkaz ⇒ DISABLED tady a v overflow,
+    //     HIDDEN v deklarativní cestě (DocumentEditorToolbarRegistry.IsAvailable drop) — obě cesty
+    //     shodně říkají „příkaz není k dispozici" místo dřívějšího enabled-ale-mrtvého tlačítka.
+    //   * BEZ registry (standalone toolbar, 2.0.x konzumenti) platí historický fallback !ReadOnly.
     private bool IsCommandEnabled(string commandName) =>
-        CommandRegistry?.GetState(commandName)?.IsEnabled ?? !ReadOnly;
+        CommandRegistry is null ? !ReadOnly : CommandRegistry.GetState(commandName)?.IsEnabled ?? false;
 
     private bool IsCommandEnabled(string commandName, bool fallback) =>
-        CommandRegistry?.GetState(commandName)?.IsEnabled ?? fallback;
+        CommandRegistry is null ? fallback : CommandRegistry.GetState(commandName)?.IsEnabled ?? false;
 
     private static string AriaDisabled(bool disabled)
         => disabled ? "true" : "false";
@@ -3419,7 +3421,6 @@
 
     private DocumentLineNumbering EffectiveLineNumbering => CloneLineNumbering(LineNumbering);
 
-    private string PageOrientationValue => EffectivePageSettings.Landscape ? "Landscape" : "Portrait";
 
     private string GetPageOrientationButtonClass(bool landscape)
     {
@@ -3765,14 +3766,11 @@
         return ReviewDisplayModeChanged.InvokeAsync(mode);
     }
 
+    // Fáze 18: selecty mají jen @onchange (dřívější @oninput + @onchange double-fire maskoval
+    // 150ms dedup ShouldSkipDuplicateSelectChange — obojí odstraněno).
     private Task HandleFontFamilyChangedAsync(ChangeEventArgs args)
     {
         var value = args.Value?.ToString();
-        if (ShouldSkipDuplicateSelectChange(value, ref _lastFontFamilyChangeValue, ref _lastFontFamilyChangeAt))
-        {
-            return Task.CompletedTask;
-        }
-
         return string.IsNullOrWhiteSpace(value)
             ? Task.CompletedTask
             : OnFontFamilyChanged.InvokeAsync(value);
@@ -3781,11 +3779,6 @@
     private Task HandleFontSizeChangedAsync(ChangeEventArgs args)
     {
         var value = args.Value?.ToString();
-        if (ShouldSkipDuplicateSelectChange(value, ref _lastFontSizeChangeValue, ref _lastFontSizeChangeAt))
-        {
-            return Task.CompletedTask;
-        }
-
         return double.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var size)
             ? OnFontSizeChanged.InvokeAsync(size)
             : Task.CompletedTask;
@@ -3794,27 +3787,18 @@
     private Task HandleChangeCaseChangedAsync(ChangeEventArgs args)
     {
         var value = args.Value?.ToString();
-        return string.IsNullOrWhiteSpace(value)
-            ? Task.CompletedTask
-            : OnChangeCase.InvokeAsync(value);
-    }
-
-    private bool ShouldSkipDuplicateSelectChange(
-        string? value,
-        ref string? lastValue,
-        ref DateTimeOffset lastChangedAt)
-    {
-        var now = DateTimeOffset.UtcNow;
-        if (string.Equals(value, lastValue, StringComparison.Ordinal)
-            && now - lastChangedAt < TimeSpan.FromMilliseconds(150))
+        if (string.IsNullOrWhiteSpace(value))
         {
-            return true;
+            return Task.CompletedTask;
         }
 
-        lastValue = value;
-        lastChangedAt = now;
-        return false;
+        // Fáze 18: přegenerovat select na placeholder (viz @key v markupu).
+        _changeCaseResetSeq++;
+        return OnChangeCase.InvokeAsync(value);
     }
+
+    /// <summary>Fáze 18 — testovací průhled na reset sekvenci changeCase selectu.</summary>
+    internal int ChangeCaseResetSeqForTests => _changeCaseResetSeq;
 
     private Task HandleTextColorAppliedAsync(string? value)
     {
@@ -3871,12 +3855,6 @@
             : DocumentPageSize.A4;
         return RaisePageSetupChangedAsync(settings, EffectiveSectionColumns, EffectiveLineNumbering);
     }
-
-    private Task HandlePageOrientationChangedAsync(ChangeEventArgs args)
-        => HandlePageOrientationValueChangedAsync(args.Value?.ToString());
-
-    private Task HandlePageOrientationValueChangedAsync(string? value)
-        => SetPageOrientationAsync(string.Equals(value, "Landscape", StringComparison.OrdinalIgnoreCase));
 
     private Task SetPageOrientationAsync(bool landscape)
     {

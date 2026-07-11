@@ -921,13 +921,13 @@
                     <select class="tm-document-editor__mini-font-size"
                             value="@NormalizeMiniToolbarFontSize()"
                             disabled="@(!IsCommandEnabled("fontSize"))"
-                            @onpointerdown:preventDefault="true"
-                            @onmousedown:preventDefault="true"
+                            @onpointerdown:stopPropagation="true"
+                            @onmousedown:stopPropagation="true"
                             @onchange="HandleMiniToolbarFontSizeChangedAsync"
                             data-testid="document-mini-font-size"
                             aria-label="@Loc["TmDocumentEditor_FontSize"]"
                             title="@Loc["TmDocumentEditor_FontSize"]">
-                        @foreach (var size in MiniToolbarFontSizes)
+                        @foreach (var size in BuildMiniToolbarFontSizeOptions(_formattingState.FontSize))
                         {
                             <option value="@size">@($"{size} pt")</option>
                         }

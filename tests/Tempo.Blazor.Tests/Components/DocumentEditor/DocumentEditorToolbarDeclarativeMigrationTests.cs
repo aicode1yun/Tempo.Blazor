@@ -51,12 +51,12 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
     [Fact]
     public void Toolbar_FormattingControlsPreserveEditorSelectionOnPointerDown()
     {
+        // Nativní selecty (font-family, font-size, change-case) preventDefault mít NESMÍ —
+        // rušil by default akci otevírající popup (Fáze 13, DocumentEditorToolbarDropdownFixTests).
         var cut = RenderComponent<TmDocumentEditorToolbar>();
 
         foreach (var testId in new[]
         {
-            "document-font-family",
-            "document-font-size",
             "document-bold",
             "document-italic",
             "document-underline",

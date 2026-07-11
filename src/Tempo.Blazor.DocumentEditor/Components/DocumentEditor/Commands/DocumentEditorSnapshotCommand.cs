@@ -10,19 +10,23 @@ public sealed class DocumentEditorSnapshotCommand : IDocumentEditorCommand
     private readonly DocumentEditorDocument _after;
 
     /// <summary>
-    /// Creates a snapshot command. The command takes OWNERSHIP of <paramref name="before"/> and
-    /// <paramref name="after"/> — callers must pass dedicated clones (every call-site already does),
-    /// so re-cloning both whole-document snapshots here would only double the O(document) cost (N3.1).
+    /// Creates a snapshot command. By default (<paramref name="assumeOwnership"/> = false) the
+    /// command defensively clones <paramref name="before"/> and <paramref name="after"/> — the
+    /// historical 2.0.x contract, safe for external consumers passing live documents. Internal
+    /// perf call-sites that hand over dedicated clones pass <paramref name="assumeOwnership"/> = true
+    /// to skip the two O(document) copies (perf plan N3.1; same pattern as
+    /// CreateProviderBoundarySnapshot).
     /// </summary>
     public DocumentEditorSnapshotCommand(
         DocumentEditorDocument target,
         DocumentEditorDocument before,
         DocumentEditorDocument after,
-        string? description = null)
+        string? description = null,
+        bool assumeOwnership = false)
     {
         _target = target;
-        _before = before;
-        _after = after;
+        _before = assumeOwnership ? before : DocumentEditorCommandCloner.Clone(before);
+        _after = assumeOwnership ? after : DocumentEditorCommandCloner.Clone(after);
         Description = string.IsNullOrWhiteSpace(description) ? "Update document" : description;
     }
 

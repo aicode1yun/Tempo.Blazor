@@ -515,6 +515,64 @@ test('progressive first layout budgets the mount render and completes on idle co
         'the first page must keep its painted-command count across skipped repaints');
 });
 
+// Fáze 20 (code review N11.2): an EDIT during the progressive first layout replaces the model
+// reference, so the resume token no longer matches — but the re-layout budget must never fall
+// below the pages already laid out. Before the fix it clamped back to initialLayoutPageBudget
+// (≤8 pages): typing on page 30 of a large document collapsed data-canvas-page-count 30→8,
+// clipped the scroll range and hid the caret page until idle chunks caught up again.
+test('an edit during the progressive first layout does not shrink the laid page range (Fáze 20)', () => {
+    const buildModel = (firstText) => ({
+        documentId: 'phase20-progressive-edit',
+        body: {
+            blocks: Array.from({ length: 240 }, (_, index) => ({
+                id: `p${index}`,
+                type: 'paragraph',
+                order: index + 1,
+                paragraphProperties: {},
+                content: {
+                    type: 'paragraph',
+                    runs: [{
+                        id: `p${index}-run`,
+                        type: 'text',
+                        text: index === 0 ? firstText : `Paragraph ${index + 1} ${'progressive edit filler text '.repeat(8)}`,
+                        marks: [],
+                    }],
+                },
+            })),
+        },
+    });
+
+    const idleCallbacks = [];
+    const doc = createFakeDocument();
+    const host = doc.createElement('div');
+    const engine = createCanvasDocumentEngine({
+        host,
+        document: doc,
+        model: buildModel('Original first paragraph'),
+        scheduleProgressiveIdle: callback => idleCallbacks.push(callback),
+    });
+    engine.render();
+
+    // Extend the progressive layout well past the 8-page mount clamp.
+    let guard = 0;
+    while (engine.canvasStack.getLayoutState().laidPages < 12 && idleCallbacks.length > 0 && guard < 20) {
+        idleCallbacks.shift()();
+        guard += 1;
+    }
+    const laidBefore = engine.canvasStack.getLayoutState().laidPages;
+    assert.ok(laidBefore >= 12, `fixture must lay out past the mount clamp before the edit (got ${laidBefore})`);
+    assert.equal(engine.canvasStack.getLayoutState().complete, false, 'the layout must still be progressive');
+
+    // Simulate the input path: a copy-on-write edit swaps the model REFERENCE without resetting
+    // the progressive state (commitInputChange uses modelStore.setModel({normalize:false})).
+    engine.modelStore.setModel(buildModel('Edited first paragraph'), { normalize: false });
+    engine.render();
+
+    const laidAfter = engine.canvasStack.getLayoutState().laidPages;
+    assert.ok(laidAfter >= laidBefore,
+        `the re-layout after an edit must keep at least the already-laid range (before ${laidBefore}, after ${laidAfter})`);
+});
+
 function createFakeDocument() {
     return {
         createElement(tagName) {

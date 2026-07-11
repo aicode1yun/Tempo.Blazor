@@ -115,8 +115,11 @@ public class TmDocumentEditorCssTests
     public void CssFiles_ContainCanvasRestrictedEditingMarkers()
     {
         var root = FindRepositoryRoot();
+        // Fáze 15: ribbon styly (vč. --active markeru) žijí v _document-editor-toolbar.css —
+        // legacy ribbon blok v _document-editor.css byl odstraněn.
         var css = string.Concat(
             File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor.DocumentEditor", "wwwroot", "css", "components", "_document-editor.css")),
+            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor.DocumentEditor", "wwwroot", "css", "components", "_document-editor-toolbar.css")),
             File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor.DocumentEditor", "Components", "DocumentEditor", "TmDocumentCanvasEngineHost.razor.css")));
 
         css.Should().Contain(".tm-document-editor__ribbon-button--active");

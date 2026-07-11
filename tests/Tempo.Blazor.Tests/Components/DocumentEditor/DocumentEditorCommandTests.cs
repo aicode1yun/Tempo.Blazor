@@ -426,13 +426,14 @@ public class DocumentEditorCommandTests
     [Fact]
     public async Task SnapshotCommand_TakesOwnershipOfSnapshots_WithoutDefensiveCloning()
     {
-        // Perf plan N3.1: every call-site already hands the command dedicated clones, so the
-        // constructor must NOT deep-clone again. Ownership contract: a post-construction mutation
-        // of the passed snapshot is visible to the command.
+        // Perf plan N3.1 + Fáze 22: internal call-sites hand the command dedicated clones and opt in
+        // via assumeOwnership: true — the constructor must NOT deep-clone again. Ownership contract:
+        // a post-construction mutation of the passed snapshot is visible to the command. (The
+        // DEFAULT contract clones defensively — see DocumentEditorApiContractReviewTests.)
         var target = CreateDocument(Paragraph("Before"));
         var before = Clone(target);
         var after = Clone(target);
-        var command = new DocumentEditorSnapshotCommand(target, before, after, "Ownership");
+        var command = new DocumentEditorSnapshotCommand(target, before, after, "Ownership", assumeOwnership: true);
 
         after.Theme.BodyFontFamily = "Mutated After Construction";
         before.Theme.BodyFontFamily = "Mutated Before Construction";

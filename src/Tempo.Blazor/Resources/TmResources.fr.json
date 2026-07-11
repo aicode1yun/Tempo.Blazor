@@ -904,6 +904,7 @@
   "TmDocumentEditor_ModifyStyle": "Modifier le style",
   "TmDocumentEditor_More": "Plus",
   "TmDocumentEditor_MoreCommands": "Plus de commandes",
+  "TmDocumentEditor_OverflowNoResults": "Aucune commande correspondante",
   "TmDocumentEditor_NewComment": "Nouveau commentaire",
   "TmDocumentEditor_NoComments": "Aucun commentaire",
   "TmDocumentEditor_NoVersions": "Aucune version pour le moment",

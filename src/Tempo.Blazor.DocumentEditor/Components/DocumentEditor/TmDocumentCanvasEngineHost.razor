@@ -996,7 +996,20 @@
     // not retried on every render.
     // Perf plan N8.3: shared bounded LRU+TTL cache (was an unbounded per-instance dictionary that
     // never expired failed resolutions and grew with every asset ever seen by any mounted editor).
+    // TTL kontrakt: EnsureAssetUrlsResolvedAsync běží PŘED BuildCanvasModel v obou call-sites, takže
+    // expirovaný záznam je znovu rozřešen dřív, než se model staví — obrázek se neztratí ani na render.
     private static readonly Performance.ImageResolveCache ResolvedAssetUrlCache = new(capacity: 256, ttl: TimeSpan.FromMinutes(10));
+
+    // Fáze 21 (code review): cache je STATIC — v Blazor Serveru sdílený napříč circuity/tenanty.
+    // Klíč proto MUSÍ nést identitu resolveru: jinak uživatel B dostane URL (často podepsanou/SAS)
+    // rozřešenou resolverem uživatele A a jeho vlastní resolver se vůbec nezavolá. Každá instance
+    // resolveru dostává stabilní partition id; stejný (singleton) resolver cache sdílí dál.
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<object, string> ResolverPartitionIds = new();
+
+    private string ResolverScopedDocumentKey(string documentId)
+        => ImageUrlResolver is null
+            ? documentId
+            : $"{ResolverPartitionIds.GetValue(ImageUrlResolver, static _ => Guid.NewGuid().ToString("N"))}|{documentId}";
 
     private CanvasDocumentModel BuildCanvasModel()
     {
@@ -1011,7 +1024,7 @@
     // the engine whether a resolver existed).
     private void ApplyResolvedAssetUrls(CanvasDocumentModel model)
     {
-        var documentId = Document?.DocumentId ?? string.Empty;
+        var documentKey = ResolverScopedDocumentKey(Document?.DocumentId ?? string.Empty);
         foreach (var asset in model.Assets)
         {
             if (!string.IsNullOrWhiteSpace(asset.Url) || string.IsNullOrWhiteSpace(asset.Id))
@@ -1019,7 +1032,7 @@
                 continue;
             }
 
-            if (ResolvedAssetUrlCache.TryGet(documentId, asset.Id, out var url) && !string.IsNullOrWhiteSpace(url))
+            if (ResolvedAssetUrlCache.TryGet(documentKey, asset.Id, out var url) && !string.IsNullOrWhiteSpace(url))
             {
                 asset.Url = url;
             }
@@ -1036,12 +1049,13 @@
         }
 
         var documentId = Document.DocumentId ?? string.Empty;
+        var documentKey = ResolverScopedDocumentKey(documentId);
         foreach (var asset in Document.Assets)
         {
             var id = asset.Id;
             if (string.IsNullOrWhiteSpace(id)
                 || !string.IsNullOrWhiteSpace(asset.Url)
-                || ResolvedAssetUrlCache.TryGet(documentId, id, out _))
+                || ResolvedAssetUrlCache.TryGet(documentKey, id, out _))
             {
                 continue;
             }
@@ -1049,11 +1063,11 @@
             try
             {
                 var url = await ImageUrlResolver.ResolveUrlAsync(documentId, id);
-                ResolvedAssetUrlCache.Set(documentId, id, url ?? string.Empty);
+                ResolvedAssetUrlCache.Set(documentKey, id, url ?? string.Empty);
             }
             catch
             {
-                ResolvedAssetUrlCache.Set(documentId, id, string.Empty);
+                ResolvedAssetUrlCache.Set(documentKey, id, string.Empty);
             }
         }
     }

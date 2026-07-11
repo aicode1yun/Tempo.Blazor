@@ -32,6 +32,10 @@ public sealed class DocumentEditorCommandRegistry
 
         _commands[command.Name] = command;
         _forcedDisableReasons[command.Name] = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Fáze 22 (code review): registrace mění množinu příkazů bez změny kontextu — signature
+        // gate musí spadnout, jinak pozdě registrovaný příkaz nikdy nedostane stav (GetState null
+        // → trvale skryté/disabled tlačítko, dokud se kontext nezmění).
+        _lastContextSignature = null;
     }
 
     /// <summary>Tries to find a registered command by name. Returns <c>false</c> when not found.</summary>

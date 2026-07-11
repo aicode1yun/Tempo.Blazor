@@ -124,6 +124,28 @@ test('a second edit after undo does not corrupt older history entries', () => {
     controller.destroy();
 });
 
+// Fáze 20 (code review N5): cloneSnapshots:false dropped the deep clone for the whole change, and
+// the clone was re-added only for before.selection. after.selection stayed the LIVE result
+// selection that the selection controller normalizes/mutates in place — redo then restored a
+// mutated caret position. The history record must clone after.selection symmetrically.
+test('history after.selection is immune to later in-place mutation of the live selection (Fáze 20)', () => {
+    const { state, history, controller, type } = createHarness('Hi');
+
+    type('!');
+    const committedFocusOffset = state.selection.focus.offset;
+
+    // The selection controller may normalize/mutate the live selection object in place after commit.
+    state.selection.focus.offset = 999;
+    state.selection.anchor.offset = 999;
+
+    const transaction = history.undo();
+    assert.equal(transaction.after.selection.focus.offset, committedFocusOffset,
+        'redo selection must reflect the committed caret, not later in-place mutations');
+    assert.notStrictEqual(transaction.after.selection, state.selection,
+        'history must hold its own after.selection snapshot, not the live object');
+    controller.destroy();
+});
+
 test('typing coalescing keeps reference snapshots intact across merged transactions', () => {
     const { state, history, controller, type } = createHarness('t');
     const preEditModel = state.model;

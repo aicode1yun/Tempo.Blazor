@@ -1,0 +1,240 @@
+@page "/document-toolbar-renderers"
+@using Microsoft.AspNetCore.Components
+@using Tempo.Blazor.Components.DocumentEditor.Registry
+
+<PageTitle>Document Toolbar Renderers – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Document Toolbar Renderers</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        Declarative toolbar extension API of the document editor: describe items with
+        <code>DocumentToolbarItem</code>, register commands in a <code>DocumentEditorCommandRegistry</code>,
+        and let <code>DocumentToolbarComponentFactory</code> render them — no hand-written markup.
+    </p>
+</div>
+
+<!-- Declarative toolbar driven by a command registry -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Registry-driven toolbar</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+                Button, toggle, select and color picker rendered from descriptors; state (value, enabled)
+                flows from the command registry, execution flows back through <code>ExecuteAsync</code>.
+            </p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">Extension API</span>
+    </div>
+
+    <div class="showcase-card">
+        <label class="flex items-center gap-2 mb-4 text-sm text-slate-600 dark:text-slate-400">
+            <input type="checkbox"
+                   checked="@_readOnly"
+                   @onchange="ToggleReadOnlyAsync"
+                   data-testid="toolbar-renderers-readonly" />
+            <span>Read-only mode (commands with <code>AffectsData</code> get disabled by the registry)</span>
+        </label>
+
+        <div class="tm-document-editor__ribbon-group flex items-end gap-2 flex-wrap"
+             role="toolbar"
+             aria-label="Declarative demo toolbar"
+             data-testid="toolbar-renderers-toolbar">
+            @foreach (var item in _toolbarRegistry.GetAvailableItems(BuildVisibilityContext()))
+            {
+                @_factory.Render(BuildRenderContext(item))
+            }
+        </div>
+
+        <div class="mt-6 grid gap-2 text-sm text-slate-600 dark:text-slate-400">
+            <div>
+                Bold state:
+                <code data-testid="toolbar-renderers-bold-state">@(_boldActive ? "active" : "inactive")</code>
+            </div>
+            <div>
+                Line spacing:
+                <code data-testid="toolbar-renderers-spacing-state">@_lineSpacing</code>
+            </div>
+            <div>
+                Highlight color:
+                <code data-testid="toolbar-renderers-color-state">@_highlightColor</code>
+            </div>
+            <div>
+                Registry version:
+                <code data-testid="toolbar-renderers-registry-version">@_commandRegistry.Version</code>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Execution log -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Execution log</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Every interaction goes through <code>DocumentEditorCommandRegistry.ExecuteAsync</code> with the renderer-provided payload.</p>
+        </div>
+    </div>
+
+    <div class="showcase-card">
+        @if (_executionLog.Count == 0)
+        {
+            <p class="text-sm text-slate-500 dark:text-slate-400" data-testid="toolbar-renderers-log-empty">No commands executed yet.</p>
+        }
+        else
+        {
+            <ol class="text-sm text-slate-600 dark:text-slate-400 space-y-1" data-testid="toolbar-renderers-log">
+                @foreach (var entry in _executionLog)
+                {
+                    <li><code>@entry</code></li>
+                }
+            </ol>
+        }
+    </div>
+</section>
+
+@code {
+    private readonly DocumentToolbarComponentFactory _factory = DocumentToolbarComponentFactory.CreateDefault();
+    private readonly DocumentEditorCommandRegistry _commandRegistry = new();
+    private readonly DocumentEditorToolbarRegistry _toolbarRegistry;
+    private readonly List<string> _executionLog = [];
+
+    private bool _readOnly;
+    private bool _boldActive;
+    private string _lineSpacing = "1";
+    private string _highlightColor = "#ffd54f";
+
+    public DocumentToolbarRenderersPage()
+    {
+        _toolbarRegistry = new DocumentEditorToolbarRegistry(_commandRegistry);
+
+        _commandRegistry.Register(new DemoCommand(
+            name: "demoBold",
+            affectsData: true,
+            computeValue: () => _boldActive ? "active" : "inactive",
+            execute: _ => _boldActive = !_boldActive));
+        _commandRegistry.Register(new DemoCommand(
+            name: "demoLineSpacing",
+            affectsData: true,
+            computeValue: () => _lineSpacing,
+            execute: payload => _lineSpacing = payload?.ToString() ?? _lineSpacing));
+        _commandRegistry.Register(new DemoCommand(
+            name: "demoHighlightColor",
+            affectsData: true,
+            computeValue: () => _highlightColor,
+            execute: payload => _highlightColor = payload?.ToString() ?? _highlightColor));
+        _commandRegistry.Register(new DemoCommand(
+            name: "demoClearLog",
+            affectsData: false,
+            computeValue: () => null,
+            execute: _ => _executionLog.Clear()));
+
+        _toolbarRegistry.Register(new DocumentToolbarItem
+        {
+            Id = "demoBold",
+            CommandName = "demoBold",
+            Kind = DocumentToolbarItemKind.Toggle,
+            LabelKey = "Bold",
+            Order = 1,
+        });
+        _toolbarRegistry.Register(new DocumentToolbarItem
+        {
+            Id = "demoLineSpacing",
+            CommandName = "demoLineSpacing",
+            Kind = DocumentToolbarItemKind.Select,
+            LabelKey = "Line spacing",
+            Order = 2,
+            Options =
+            [
+                new DocumentToolbarItemOption("1", "Single"),
+                new DocumentToolbarItemOption("1.5", "One and a half"),
+                new DocumentToolbarItemOption("2", "Double"),
+            ],
+        });
+        _toolbarRegistry.Register(new DocumentToolbarItem
+        {
+            Id = "demoHighlightColor",
+            CommandName = "demoHighlightColor",
+            Kind = DocumentToolbarItemKind.ColorPicker,
+            LabelKey = "Highlight",
+            Order = 3,
+        });
+        _toolbarRegistry.Register(new DocumentToolbarItem
+        {
+            Id = "demoClearLog",
+            CommandName = "demoClearLog",
+            Kind = DocumentToolbarItemKind.Button,
+            LabelKey = "Clear log",
+            Order = 4,
+        });
+    }
+
+    protected override Task OnInitializedAsync() => RefreshRegistryAsync();
+
+    private DocumentEditorCommandContext BuildCommandContext() => new()
+    {
+        HasDocument = true,
+        IsReadOnly = _readOnly,
+    };
+
+    private DocumentToolbarVisibilityContext BuildVisibilityContext() => new()
+    {
+        CommandRegistry = _commandRegistry,
+    };
+
+    private DocumentToolbarRenderContext BuildRenderContext(DocumentToolbarItem item) => new(
+        item,
+        Execute: EventCallback.Factory.Create<object?>(this, payload => ExecuteCommandAsync(item, payload)),
+        CommandState: item.CommandName is null ? null : _commandRegistry.GetState(item.CommandName));
+
+    private async Task ExecuteCommandAsync(DocumentToolbarItem item, object? payload)
+    {
+        if (item.CommandName is null)
+        {
+            return;
+        }
+
+        var executed = await _commandRegistry.ExecuteAsync(item.CommandName, BuildCommandContext(), payload);
+        if (executed && item.CommandName != "demoClearLog")
+        {
+            _executionLog.Add(payload is null ? item.CommandName : $"{item.CommandName}({payload})");
+        }
+
+        await RefreshRegistryAsync();
+    }
+
+    private async Task ToggleReadOnlyAsync(ChangeEventArgs args)
+    {
+        _readOnly = args.Value is bool value && value;
+        await RefreshRegistryAsync();
+    }
+
+    private Task RefreshRegistryAsync() => _commandRegistry.RefreshAllAsync(BuildCommandContext());
+
+    /// <summary>Minimal public command entry — the delegate-based entry used by the built-in ribbon is internal.</summary>
+    private sealed class DemoCommand(
+        string name,
+        bool affectsData,
+        Func<string?> computeValue,
+        Action<object?> execute) : IDocumentEditorCommandEntry
+    {
+        public string Name => name;
+        public bool AffectsData => affectsData;
+        public string? DescriptionKey => null;
+        public string? TooltipKey => null;
+        public string? Category => "demo";
+        public string? DefaultShortcut => null;
+        public string? Icon => null;
+        public string? DisabledReasonKey => null;
+
+        public bool ComputeEnabled(DocumentEditorCommandContext context) => true;
+        public bool ComputeVisible(DocumentEditorCommandContext context) => true;
+        public string? ComputeValue(DocumentEditorCommandContext context) => computeValue();
+
+        public Task ExecuteAsync(DocumentEditorCommandContext context, object? payload = null)
+        {
+            execute(payload);
+            return Task.CompletedTask;
+        }
+    }
+}

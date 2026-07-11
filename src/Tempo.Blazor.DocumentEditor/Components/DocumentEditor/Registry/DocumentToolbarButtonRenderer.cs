@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 
 namespace Tempo.Blazor.Components.DocumentEditor.Registry;
 
@@ -16,7 +17,20 @@ public sealed class DocumentToolbarButtonRenderer : IDocumentToolbarItemRenderer
         builder.AddAttribute(2, "class", "tm-document-editor__ribbon-button");
         builder.AddAttribute(3, "data-command", context.Item.CommandName);
         builder.AddAttribute(4, "data-toolbar-item", context.Item.Id);
-        builder.AddContent(5, context.Item.LabelKey ?? context.Item.CommandName ?? context.Item.Id);
+        if (context.CommandState is { IsEnabled: false })
+        {
+            builder.AddAttribute(5, "disabled", true);
+        }
+
+        if (context.Execute.HasDelegate)
+        {
+            var execute = context.Execute;
+            builder.AddAttribute(6, "onclick", EventCallback.Factory.Create<MouseEventArgs>(
+                this,
+                _ => execute.InvokeAsync(null)));
+        }
+
+        builder.AddContent(7, context.Item.LabelKey ?? context.Item.CommandName ?? context.Item.Id);
         builder.CloseElement();
     };
 }

@@ -1,5 +1,17 @@
 import { createTypingCoalescer } from './coalescing.mjs';
 
+// Fáze 20: selection snapshoty jsou malé objekty — na rozdíl od modelu (copy-on-write, drží se
+// referencí dle N5) se klonují, protože selection controller je normalizuje/mutuje in-place.
+function cloneSelection(selection) {
+    if (selection == null) {
+        return selection;
+    }
+
+    return typeof structuredClone === 'function'
+        ? structuredClone(selection)
+        : JSON.parse(JSON.stringify(selection));
+}
+
 export function createCanvasHistoryController(options = {}) {
     const undoStack = [];
     const redoStack = [];
@@ -26,12 +38,17 @@ export function createCanvasHistoryController(options = {}) {
         }
 
         const before = change.before || null;
-        const after = change.after || {
-            model: change.model,
-            selection: change.selection,
-            formatState: change.formatState || null,
-            paragraphState: change.paragraphState || null,
-        };
+        // Fáze 20 (code review N5): after.selection is the LIVE result selection that the selection
+        // controller normalizes/mutates in place — redo would restore the mutated caret. Clone it
+        // symmetrically with before.selection (small object; the MODEL stays by reference per N5).
+        const after = change.after
+            ? { ...change.after, selection: cloneSelection(change.after.selection) }
+            : {
+                model: change.model,
+                selection: cloneSelection(change.selection),
+                formatState: change.formatState || null,
+                paragraphState: change.paragraphState || null,
+            };
         if (!before?.model || !after?.model) {
             return snapshot();
         }

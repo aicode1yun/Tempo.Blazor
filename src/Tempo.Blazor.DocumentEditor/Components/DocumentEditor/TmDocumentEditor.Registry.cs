@@ -619,7 +619,172 @@ public partial class TmDocumentEditor
             tooltipKey: "TmDocumentEditor_ViewClipboardHtml",
             category: "Debug",
             icon: "clipboard"));
+
+        // ── Fáze 16: příkazy dřív dostupné jen přes callbacky/RouteToCanvasEngineAsync ──
+        // Deklarativní toolbar (DocumentEditorToolbarRegistry.IsAvailable) itemy s nezaregistrovaným
+        // CommandName zahodí — každý CommandName z DocumentEditorBuiltInToolbar musí být registrovaný.
+
+        // Dedikované alignment aliasy pro deklarativní itemy (paragraphAlignment zůstává payload-driven).
+        RegisterAlignmentCommand("alignLeft", DocumentTextAlignment.Left, "align-left", "TmDocumentEditor_AlignLeft");
+        RegisterAlignmentCommand("alignCenter", DocumentTextAlignment.Center, "align-center", "TmDocumentEditor_AlignCenter");
+        RegisterAlignmentCommand("alignRight", DocumentTextAlignment.Right, "align-right", "TmDocumentEditor_AlignRight");
+        RegisterAlignmentCommand("alignJustify", DocumentTextAlignment.Justify, "align-justify", "TmDocumentEditor_AlignJustify");
+
+        RegisterInlineMarkCommand("superscript", InlineMarkType.Superscript, ctx => ctx.FormattingState.Superscript, "superscript", "TmDocumentEditor_Superscript");
+        RegisterInlineMarkCommand("subscript", InlineMarkType.Subscript, ctx => ctx.FormattingState.Subscript, "subscript", "TmDocumentEditor_Subscript");
+        RegisterInlineMarkCommand("smallCaps", InlineMarkType.SmallCaps, ctx => ctx.FormattingState.SmallCaps, "case-upper", "TmDocumentEditor_SmallCaps");
+        RegisterInlineMarkCommand("allCaps", InlineMarkType.AllCaps, ctx => ctx.FormattingState.AllCaps, "case-upper", "TmDocumentEditor_AllCaps");
+        RegisterInlineMarkCommand("doubleStrikethrough", InlineMarkType.DoubleStrikethrough, ctx => ctx.FormattingState.DoubleStrikethrough, "double-strikethrough", "TmDocumentEditor_DoubleStrikethrough");
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "changeCase", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, payload) => payload is string variant && variant.Length > 0
+                ? ChangeCaseAsync(variant)
+                : Task.CompletedTask,
+            descriptionKey: "TmDocumentEditor_ChangeCase",
+            tooltipKey: "TmDocumentEditor_ChangeCase",
+            category: "Formatting",
+            icon: "case-sensitive"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "increaseFontSize", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, _) => IncreaseFontSizeAsync(),
+            descriptionKey: "TmDocumentEditor_IncreaseFontSize",
+            tooltipKey: "TmDocumentEditor_IncreaseFontSize",
+            category: "Formatting",
+            icon: "plus"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "decreaseFontSize", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, _) => DecreaseFontSizeAsync(),
+            descriptionKey: "TmDocumentEditor_DecreaseFontSize",
+            tooltipKey: "TmDocumentEditor_DecreaseFontSize",
+            category: "Formatting",
+            icon: "minus"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "spacingBefore", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => ctx.FormattingState.SpacingBeforeMixed
+                ? "mixed"
+                : ctx.FormattingState.SpacingBefore.ToString("0.##", CultureInfo.InvariantCulture),
+            execute: (_, payload) => payload is double spacing ? ApplySpacingBeforeAsync(spacing) : Task.CompletedTask,
+            descriptionKey: "TmDocumentEditor_SpacingBefore",
+            tooltipKey: "TmDocumentEditor_SpacingBefore",
+            category: "Paragraph",
+            icon: "arrow-up-from-line"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "spacingAfter", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => ctx.FormattingState.SpacingAfterMixed
+                ? "mixed"
+                : ctx.FormattingState.SpacingAfter.ToString("0.##", CultureInfo.InvariantCulture),
+            execute: (_, payload) => payload is double spacing ? ApplySpacingAfterAsync(spacing) : Task.CompletedTask,
+            descriptionKey: "TmDocumentEditor_SpacingAfter",
+            tooltipKey: "TmDocumentEditor_SpacingAfter",
+            category: "Paragraph",
+            icon: "arrow-down-to-line"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "insertEquation", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument && UsingCanvasEngine,
+            execute: (_, payload) => InsertEquationAsync(payload as string ?? "fraction"),
+            descriptionKey: "TmDocumentEditor_InsertEquation",
+            tooltipKey: "TmDocumentEditor_InsertEquation",
+            category: "Insert",
+            icon: "sigma"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "insertSymbol", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument && UsingCanvasEngine,
+            execute: (_, payload) => InsertSymbolAsync(payload as string ?? "emDash"),
+            descriptionKey: "TmDocumentEditor_InsertSymbol",
+            tooltipKey: "TmDocumentEditor_InsertSymbol",
+            category: "Insert",
+            icon: "omega"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "showRuler", affectsData: false,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeValue: _ => _showRuler ? "active" : "inactive",
+            execute: (_, _) => SetRulerVisibleAsync(!_showRuler),
+            descriptionKey: "TmDocumentEditor_ShowRuler",
+            tooltipKey: "TmDocumentEditor_ShowRuler",
+            category: "View",
+            icon: "ruler"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "zoomPageWidth", affectsData: false,
+            computeEnabled: ctx => ctx.HasDocument && UsingCanvasEngine,
+            computeValue: _ => _zoomPageWidth ? "active" : "inactive",
+            execute: (_, _) => SetZoomPageWidthAsync(),
+            descriptionKey: "TmDocumentEditor_PageWidth",
+            tooltipKey: "TmDocumentEditor_PageWidth",
+            category: "View",
+            icon: "panel-top"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "differentFirstPage", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument && IsHeaderFooterRegion(ctx.ActiveRegion),
+            computeValue: _ => DifferentFirstPageHeaderFooter ? "active" : "inactive",
+            execute: (_, _) => SetDifferentFirstPageHeaderFooterAsync(!DifferentFirstPageHeaderFooter),
+            descriptionKey: "TmDocumentEditor_DifferentFirstPage",
+            tooltipKey: "TmDocumentEditor_DifferentFirstPage",
+            category: "HeaderFooter",
+            icon: "file-stack"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "differentOddEven", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument && IsHeaderFooterRegion(ctx.ActiveRegion),
+            computeValue: _ => DifferentOddAndEvenHeaderFooter ? "active" : "inactive",
+            execute: (_, _) => SetDifferentOddAndEvenHeaderFooterAsync(!DifferentOddAndEvenHeaderFooter),
+            descriptionKey: "TmDocumentEditor_DifferentOddEven",
+            tooltipKey: "TmDocumentEditor_DifferentOddEven",
+            category: "HeaderFooter",
+            icon: "layout"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "closeHeaderFooter", affectsData: false,
+            computeEnabled: ctx => ctx.HasDocument && IsHeaderFooterRegion(ctx.ActiveRegion),
+            execute: (_, _) => CloseHeaderFooterAsync(),
+            descriptionKey: "TmDocumentEditor_CloseHeaderFooter",
+            tooltipKey: "TmDocumentEditor_CloseHeaderFooter",
+            category: "HeaderFooter",
+            icon: "x"));
     }
+
+    private void RegisterAlignmentCommand(string name, DocumentTextAlignment alignment, string icon, string key) =>
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            name, affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => !ctx.FormattingState.ParagraphAlignmentMixed && ctx.FormattingState.ParagraphAlignment == alignment
+                ? "active"
+                : "inactive",
+            execute: (_, _) => ApplyParagraphAlignmentAsync(alignment),
+            descriptionKey: key,
+            tooltipKey: key,
+            category: "Paragraph",
+            icon: icon));
+
+    private void RegisterInlineMarkCommand(
+        string name,
+        InlineMarkType mark,
+        Func<DocumentEditorCommandContext, WysiwygFormattingValue> valueSelector,
+        string icon,
+        string key) =>
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            name, affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => FormattingValueToString(valueSelector(ctx)),
+            execute: (_, _) => ToggleInlineMarkAsync(mark),
+            descriptionKey: key,
+            tooltipKey: key,
+            category: "Formatting",
+            icon: icon));
 
     private DocumentEditorCommandContext BuildCommandContext() =>
         new()
@@ -675,6 +840,12 @@ public partial class TmDocumentEditor
             formatting.TextColor, formatting.TextColorMixed,
             formatting.HighlightColor, formatting.HighlightColorMixed,
             formatting.LineSpacing, formatting.LineSpacingMixed,
+            // Fáze 16: vstupy nových registrací (inline mark toggly, spacing selecty, view/header-footer stav).
+            formatting.Superscript, formatting.Subscript, formatting.SmallCaps, formatting.AllCaps,
+            formatting.DoubleStrikethrough,
+            formatting.SpacingBefore, formatting.SpacingBeforeMixed,
+            formatting.SpacingAfter, formatting.SpacingAfterMixed,
+            _showRuler, _zoomPageWidth, DifferentFirstPageHeaderFooter, DifferentOddAndEvenHeaderFooter,
             selection?.ActiveTableCellId, selection?.ActiveObjectId, selection?.ObjectSelection?.ObjectId,
             _selection.ActiveTableCellId, _selection.ActiveObjectId, _selection.ObjectSelection?.ObjectId,
             CanReviewRevisions, HasPendingRevisions,

@@ -101,7 +101,26 @@ else
             (int)Color,
             StrokeWidth,
             _resolvedSvg,
-            AdditionalAttributes is null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(AdditionalAttributes));
+            AttributesContentHash(AdditionalAttributes));
+
+    // Fáze 23 (code review N9.3): CaptureUnmatchedValues staví NOVÝ dictionary při každém parent
+    // renderu — identity hash byl tedy pokaždé jiný a render gating pro ikony s extra atributy
+    // tiše nefungoval. Hash se počítá z obsahu (pořadí-necitlivě přes XOR akumulaci).
+    private static int AttributesContentHash(Dictionary<string, object>? attributes)
+    {
+        if (attributes is null || attributes.Count == 0)
+        {
+            return 0;
+        }
+
+        var hash = 0;
+        foreach (var (key, value) in attributes)
+        {
+            hash ^= HashCode.Combine(key, value?.ToString());
+        }
+
+        return hash;
+    }
 
     private string CssClass
     {
@@ -134,7 +153,7 @@ else
         // Actions
         "check"         => "<polyline points='20 6 9 17 4 12'/>",
         "x" or "close" => "<line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/>",
-        "plus"          => "<line x1='12' y1='5' x2='12' y2='19'/><line x1='5' y1='12' x2='19' y2='12'/>",
+        "plus" or "add" => "<line x1='12' y1='5' x2='12' y2='19'/><line x1='5' y1='12' x2='19' y2='12'/>",
         "minus"         => "<line x1='5' y1='12' x2='19' y2='12'/>",
         "edit" or "pencil" => "<path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'/><path d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z'/>",
         "trash" or "trash-2" or "delete" => "<polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6'/><path d='M10 11v6'/><path d='M14 11v6'/><path d='M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2'/>",
@@ -374,6 +393,40 @@ else
         "hand"          => "<path d='M18 11V6a2 2 0 0 0-4 0v5'/><path d='M14 10V4a2 2 0 0 0-4 0v6'/><path d='M10 10.5V6a2 2 0 0 0-4 0v8'/><path d='M6 14l-1.3-1.3a2 2 0 0 0-2.8 2.8l5.6 5.6A5 5 0 0 0 11 22h4a5 5 0 0 0 5-5v-6a2 2 0 0 0-4 0v1'/>",
         "maximize" or "maximize-2" => "<polyline points='15 3 21 3 21 9'/><polyline points='9 21 3 21 3 15'/><line x1='21' y1='3' x2='14' y2='10'/><line x1='3' y1='21' x2='10' y2='14'/>",
         "minimize-2"    => "<polyline points='5 15 3 21 9 19 5 15'/><polyline points='19 9 21 3 15 5 19 9'/><line x1='3' y1='21' x2='10' y2='14'/><line x1='21' y1='3' x2='14' y2='10'/>",
+
+        // Document editor toolbar (Fáze 14 — audit chybějících ikon)
+        "ban"           => "<circle cx='12' cy='12' r='10'/><path d='M4.9 4.9l14.2 14.2'/>",
+        "between-horizontal-end" => "<rect x='3' y='3' width='13' height='7' rx='1'/><path d='M22 15l-3-3 3-3'/><rect x='3' y='14' width='13' height='7' rx='1'/>",
+        "between-vertical-end" => "<rect x='3' y='3' width='7' height='13' rx='1'/><path d='M9 22l3-3 3 3'/><rect x='14' y='3' width='7' height='13' rx='1'/>",
+        "book-open"     => "<path d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/><path d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/>",
+        "book-plus"     => "<path d='M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20'/><path d='M9 10h6'/><path d='M12 7v6'/>",
+        "captions"      => "<rect x='3' y='5' width='18' height='14' rx='2' ry='2'/><path d='M7 15h4'/><path d='M15 15h2'/><path d='M7 11h2'/><path d='M13 11h4'/>",
+        "case-sensitive" => "<path d='M3 15l4-8 4 8'/><path d='M4 13h6'/><circle cx='18' cy='12' r='3'/><path d='M21 9v6'/>",
+        "case-upper"    => "<path d='M3 15l4-8 4 8'/><path d='M4 13h6'/><path d='M15 15V7h4a2 2 0 0 1 0 4h-4h4.5a2 2 0 0 1 0 4z'/>",
+        "circle-minus"  => "<circle cx='12' cy='12' r='10'/><path d='M8 12h8'/>",
+        "clipboard-list" => "<path d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/><rect x='8' y='2' width='8' height='4' rx='1' ry='1'/><path d='M12 11h4'/><path d='M12 16h4'/><path d='M8 11h.01'/><path d='M8 16h.01'/>",
+        "columns-3"     => "<rect x='3' y='3' width='18' height='18' rx='2'/><path d='M9 3v18'/><path d='M15 3v18'/>",
+        "file-type"     => "<path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/><path d='M9 13v-1h6v1'/><path d='M12 12v6'/><path d='M11 18h2'/>",
+        "gallery-horizontal-end" => "<path d='M2 7v10'/><path d='M6 5v14'/><rect x='10' y='3' width='12' height='18' rx='2'/>",
+        "history"       => "<path d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/><path d='M3 3v5h5'/><path d='M12 7v5l4 2'/>",
+        "list-tree"     => "<path d='M21 12h-8'/><path d='M21 6H8'/><path d='M21 18h-8'/><path d='M3 6v4c0 1.1.9 2 2 2h3'/><path d='M3 10v6c0 1.1.9 2 2 2h3'/>",
+        "message-square-plus" => "<path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/><path d='M12 7v6'/><path d='M9 10h6'/>",
+        "paintbrush"    => "<path d='M18.37 2.63L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3z'/><path d='M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7'/><path d='M14.5 17.5L4.5 15'/>",
+        "printer"       => "<path d='M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2'/><path d='M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6'/><rect x='6' y='14' width='12' height='8' rx='1'/>",
+        "refresh-ccw"   => "<path d='M3 2v6h6'/><path d='M21 12A9 9 0 0 0 6 5.3L3 8'/><path d='M21 22v-6h-6'/><path d='M3 12a9 9 0 0 0 15 6.7l3-2.7'/>",
+        "rows-3"        => "<rect x='3' y='3' width='18' height='18' rx='2'/><path d='M21 9H3'/><path d='M21 15H3'/>",
+        "scan-text"     => "<path d='M3 7V5a2 2 0 0 1 2-2h2'/><path d='M17 3h2a2 2 0 0 1 2 2v2'/><path d='M21 17v2a2 2 0 0 1-2 2h-2'/><path d='M7 21H5a2 2 0 0 1-2-2v-2'/><path d='M7 8h8'/><path d='M7 12h10'/><path d='M7 16h6'/>",
+        "signature"     => "<path d='M3 17c1.5-1.5 3-4 3-7a2 2 0 0 1 4 0c0 3.5-2 7-4 9 1.5 0 3-1 4-2.5.5 1.5 1.5 2.5 3 2.5 1 0 2-.5 2.5-1.5.5 1 1.5 1.5 2.5 1.5H21'/><path d='M3 21h18'/>",
+        "subscript"     => "<path d='M4 5l8 8'/><path d='M12 5l-8 8'/><path d='M20 19h-4c0-1.5.44-2 1.5-2.5S20 15.33 20 14c0-.47-.17-.93-.48-1.29a2.11 2.11 0 0 0-2.62-.44c-.42.24-.74.62-.9 1.07'/>",
+        "superscript"   => "<path d='M4 19l8-8'/><path d='M12 19l-8-8'/><path d='M20 12h-4c0-1.5.44-2 1.5-2.5S20 8.33 20 7c0-.47-.17-.93-.48-1.29a2.11 2.11 0 0 0-2.62-.44c-.42.24-.74.61-.9 1.06'/>",
+        "wand-sparkles" => "<path d='M21.64 3.64l-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72'/><path d='M14 7l3 3'/><path d='M5 6v4'/><path d='M19 14v4'/><path d='M10 2v2'/><path d='M7 8H3'/><path d='M21 16h-4'/><path d='M11 3H9'/>",
+        // Rozlišení duplicit a sémantické ikony (Fáze 14)
+        "double-strikethrough" => "<path d='M16 4.9c-1.9-.5-3.5-.8-5-.8-2.7 0-5 .7-5 3.4 0 .5.1 1 .4 1.4M17.5 16c.3.4.5 1 .5 1.6 0 2.9-2.7 3.6-5.3 3.6-2 0-3.9-.3-5.4-.9'/><line x1='4' y1='10' x2='20' y2='10'/><line x1='4' y1='14' x2='20' y2='14'/>",
+        "sigma"         => "<path d='M18 7V5a1 1 0 0 0-1-1H6.5a.5.5 0 0 0-.4.8l4.5 6a2 2 0 0 1 0 2.4l-4.5 6a.5.5 0 0 0 .4.8H17a1 1 0 0 0 1-1v-2'/>",
+        "omega"         => "<path d='M3 20h4.5a.5.5 0 0 0 .5-.5v-.282a.52.52 0 0 0-.247-.437 8 8 0 1 1 8.494-.001.52.52 0 0 0-.247.438v.282a.5.5 0 0 0 .5.5H21'/>",
+        "a-large-small" => "<path d='M21 14h-5'/><path d='M16 16v-3.5a2.5 2.5 0 0 1 5 0V16'/><path d='M4.5 13h6'/><path d='M3 16l4.5-9 4.5 9'/>",
+        "arrow-up-from-line" => "<path d='M18 9l-6-6-6 6'/><path d='M12 3v14'/><path d='M5 21h14'/>",
+        "arrow-down-to-line" => "<path d='M12 17V3'/><path d='M6 11l6 6 6-6'/><path d='M19 21H5'/>",
 
         // Unknown built-in → empty string (caller checks IconRegistry next)
         _ => string.Empty

@@ -1708,6 +1708,7 @@
   "TmDocumentEditor_ModifyStyle": "Modify style",
   "TmDocumentEditor_More": "More",
   "TmDocumentEditor_MoreCommands": "More commands",
+  "TmDocumentEditor_OverflowNoResults": "No matching commands",
   "TmDocumentEditor_NewComment": "New comment",
   "TmDocumentEditor_NoComments": "No comments yet",
   "TmDocumentEditor_NoVersions": "No versions yet",

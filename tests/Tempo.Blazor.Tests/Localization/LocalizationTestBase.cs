@@ -2718,6 +2718,7 @@ public abstract class LocalizationTestBase : TestContext
         ["TmDocumentEditor_MarkEditableRegion"] = "Mark editable region",
         ["TmDocumentEditor_More"] = "More",
         ["TmDocumentEditor_MoreCommands"] = "More commands",
+        ["TmDocumentEditor_OverflowNoResults"] = "No matching commands",
         ["TmDocumentEditor_ShowMarkup"] = "Show markup",
         ["TmDocumentEditor_ReviewModeAllMarkup"] = "All markup",
         ["TmDocumentEditor_ReviewModeSimpleMarkup"] = "Simple markup",

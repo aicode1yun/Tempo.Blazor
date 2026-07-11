@@ -406,8 +406,13 @@ export function getPrintPreviewStateJson(handle) {
     const state = getInstance(handle);
     // N6.3: read the (lazily rebuilt) snapshot directly — the full engine snapshot would also run
     // the O(document) queryCommandState just to be discarded.
+    // Fáze 23 (code review N11): a routine state POLL must not force the full synchronous layout
+    // during the progressive first-layout window (that negated N11 and blocked the UI thread on a
+    // whole-document layout). Only an ACTIVE print preview needs every page — and its activation
+    // render already completes the layout (render() skips the page budget when the preview is on).
+    const previewActive = state.engine.commandRuntime?.getViewState?.()?.printPreview?.active === true;
     const printPreview = typeof state.engine.getPrintPreviewSnapshot === 'function'
-        ? state.engine.getPrintPreviewSnapshot()
+        ? state.engine.getPrintPreviewSnapshot({ allowPartial: previewActive !== true })
         : state.engine.getSnapshot().printPreview;
     return JSON.stringify({
         ...(printPreview || {}),

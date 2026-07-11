@@ -373,4 +373,70 @@ public static class IconNames
     public const string Scissors      = "scissors";
     /// <summary>Icon name for: Crop.</summary>
     public const string Crop          = "crop";
+
+    // ─── Document editor (Fáze 14) ────────────────────────────────────────────
+    /// <summary>Icon name for: Ban, Forbidden, Restrict.</summary>
+    public const string Ban                  = "ban";
+    /// <summary>Icon name for: BetweenHorizontalEnd, insert row after.</summary>
+    public const string BetweenHorizontalEnd = "between-horizontal-end";
+    /// <summary>Icon name for: BetweenVerticalEnd, insert column after.</summary>
+    public const string BetweenVerticalEnd   = "between-vertical-end";
+    /// <summary>Icon name for: BookOpen, Bibliography.</summary>
+    public const string BookOpen             = "book-open";
+    /// <summary>Icon name for: BookPlus, add citation.</summary>
+    public const string BookPlus             = "book-plus";
+    /// <summary>Icon name for: Captions.</summary>
+    public const string Captions             = "captions";
+    /// <summary>Icon name for: CaseSensitive, change case (Aa).</summary>
+    public const string CaseSensitive        = "case-sensitive";
+    /// <summary>Icon name for: CaseUpper, uppercase (AB).</summary>
+    public const string CaseUpper            = "case-upper";
+    /// <summary>Icon name for: CircleMinus, remove.</summary>
+    public const string CircleMinus          = "circle-minus";
+    /// <summary>Icon name for: ClipboardList.</summary>
+    public const string ClipboardList        = "clipboard-list";
+    /// <summary>Icon name for: Columns3, three columns / compare.</summary>
+    public const string Columns3             = "columns-3";
+    /// <summary>Icon name for: FileType, export typed file (PDF).</summary>
+    public const string FileType             = "file-type";
+    /// <summary>Icon name for: GalleryHorizontalEnd, style gallery.</summary>
+    public const string GalleryHorizontalEnd = "gallery-horizontal-end";
+    /// <summary>Icon name for: History, track changes.</summary>
+    public const string History              = "history";
+    /// <summary>Icon name for: ListOrdered, numbered list.</summary>
+    public const string ListOrdered          = "list-ordered";
+    /// <summary>Icon name for: ListTree, table of figures / outline.</summary>
+    public const string ListTree             = "list-tree";
+    /// <summary>Icon name for: MessageSquarePlus, add comment.</summary>
+    public const string MessageSquarePlus    = "message-square-plus";
+    /// <summary>Icon name for: Paintbrush, text color.</summary>
+    public const string Paintbrush           = "paintbrush";
+    /// <summary>Icon name for: Printer.</summary>
+    public const string Printer              = "printer";
+    /// <summary>Icon name for: RefreshCcw, update fields.</summary>
+    public const string RefreshCcw           = "refresh-ccw";
+    /// <summary>Icon name for: Rows3, three rows.</summary>
+    public const string Rows3                = "rows-3";
+    /// <summary>Icon name for: ScanText, mark editable region.</summary>
+    public const string ScanText             = "scan-text";
+    /// <summary>Icon name for: Signature, signing field.</summary>
+    public const string Signature            = "signature";
+    /// <summary>Icon name for: Subscript.</summary>
+    public const string Subscript            = "subscript";
+    /// <summary>Icon name for: Superscript.</summary>
+    public const string Superscript          = "superscript";
+    /// <summary>Icon name for: WandSparkles, style management / magic.</summary>
+    public const string WandSparkles         = "wand-sparkles";
+    /// <summary>Icon name for: DoubleStrikethrough (custom glyph, not lucide).</summary>
+    public const string DoubleStrikethrough  = "double-strikethrough";
+    /// <summary>Icon name for: Sigma, equation.</summary>
+    public const string Sigma                = "sigma";
+    /// <summary>Icon name for: Omega, symbol.</summary>
+    public const string Omega                = "omega";
+    /// <summary>Icon name for: ALargeSmall, font size.</summary>
+    public const string ALargeSmall          = "a-large-small";
+    /// <summary>Icon name for: ArrowUpFromLine, spacing before paragraph.</summary>
+    public const string ArrowUpFromLine      = "arrow-up-from-line";
+    /// <summary>Icon name for: ArrowDownToLine, spacing after paragraph.</summary>
+    public const string ArrowDownToLine      = "arrow-down-to-line";
 }

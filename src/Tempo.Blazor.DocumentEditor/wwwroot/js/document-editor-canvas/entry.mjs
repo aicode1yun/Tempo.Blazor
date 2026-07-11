@@ -272,9 +272,17 @@ export class CanvasDocumentEngine {
 
             if (renderOptions.fullLayout !== true && viewState.printPreview?.active !== true) {
                 const targetPages = Math.max(0, Number(renderOptions.progressiveTargetPages) || 0);
+                // Fáze 20 (code review): an EDIT swaps the model reference mid-progressive-layout
+                // (resume token no longer matches). The re-layout budget must never fall below the
+                // pages already laid nor below the current scroll viewport — otherwise typing on
+                // page 30 collapsed the laid range back to the ≤8-page mount clamp, clipping the
+                // scroll range and hiding the caret page until idle chunks caught up.
                 const basePages = resumeMatches
                     ? (this.progressiveLayout.laidPages || 0) + PROGRESSIVE_LAYOUT_CHUNK_PAGES
-                    : this.initialLayoutPageBudget(viewport);
+                    : Math.max(
+                        this.initialLayoutPageBudget(viewport),
+                        this.progressivePagesForViewport(),
+                        this.progressiveLayout.laidPages || 0);
                 layoutBudget = { maxPages: Math.max(basePages, targetPages) };
             }
         }

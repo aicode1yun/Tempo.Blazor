@@ -2698,7 +2698,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             _document,
             before,
             after,
-            "Apply header/footer preset"));
+            "Apply header/footer preset",
+            assumeOwnership: true));
         _currentDocument = _document;
         MarkDirtyAfterCommand();
         await InvokeAsync(StateHasChanged);
@@ -2824,7 +2825,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             _document,
             before,
             after,
-            "Change page setup"));
+            "Change page setup",
+            assumeOwnership: true));
         _currentDocument = _document;
         MarkDirtyAfterCommand();
         await InvokeAsync(StateHasChanged);
@@ -3605,8 +3607,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     ];
 
     private string NormalizeMiniToolbarFontSize()
+        => NormalizeMiniToolbarFontSizeValue(_formattingState.FontSize);
+
+    private static string NormalizeMiniToolbarFontSizeValue(string? value)
     {
-        var value = _formattingState.FontSize;
         if (string.IsNullOrWhiteSpace(value))
         {
             return "11";
@@ -3616,6 +3620,28 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         return double.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out var size)
             ? size.ToString("0.##", CultureInfo.InvariantCulture)
             : "11";
+    }
+
+    /// <summary>
+    /// Fáze 18: neceločíselné velikosti (10.5, 11.5 pt) neměly ve float toolbaru option a select
+    /// zobrazil prázdný box — aktuální hodnota mimo standardní řadu dostává dynamickou option
+    /// (vzor: custom block style option v hlavním toolbaru).
+    /// </summary>
+    internal static IReadOnlyList<string> BuildMiniToolbarFontSizeOptions(string? currentFontSize)
+    {
+        var current = NormalizeMiniToolbarFontSizeValue(currentFontSize);
+        var options = MiniToolbarFontSizes
+            .Select(size => size.ToString(CultureInfo.InvariantCulture))
+            .ToList();
+        if (!options.Contains(current, StringComparer.Ordinal))
+        {
+            var numericCurrent = double.Parse(current, CultureInfo.InvariantCulture);
+            var insertAt = options.FindIndex(option =>
+                double.Parse(option, CultureInfo.InvariantCulture) > numericCurrent);
+            options.Insert(insertAt < 0 ? options.Count : insertAt, current);
+        }
+
+        return options;
     }
 
     private string NormalizeMiniToolbarTextColor()
@@ -5551,7 +5577,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             _document,
             before,
             after,
-            "Change header/footer first page setting"));
+            "Change header/footer first page setting",
+            assumeOwnership: true));
         _currentDocument = _document;
         MarkDirtyAfterCommand();
         await InvokeAsync(StateHasChanged);
@@ -5584,7 +5611,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             _document,
             before,
             after,
-            "Change header/footer odd-even setting"));
+            "Change header/footer odd-even setting",
+            assumeOwnership: true));
         _currentDocument = _document;
         MarkDirtyAfterCommand();
         await InvokeAsync(StateHasChanged);
@@ -6293,7 +6321,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                 _document,
                 before,
                 after,
-                action == DocumentRevisionAction.Accepted ? "Accept all revisions" : "Reject all revisions"));
+                action == DocumentRevisionAction.Accepted ? "Accept all revisions" : "Reject all revisions",
+                assumeOwnership: true));
 
             _currentDocument = _document;
             _isDirty = true;
@@ -6382,7 +6411,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                 _document,
                 before,
                 after,
-                action == DocumentRevisionAction.Accepted ? "Accept revision" : "Reject revision"));
+                action == DocumentRevisionAction.Accepted ? "Accept revision" : "Reject revision",
+                assumeOwnership: true));
 
             _currentDocument = _document;
             _isDirty = true;

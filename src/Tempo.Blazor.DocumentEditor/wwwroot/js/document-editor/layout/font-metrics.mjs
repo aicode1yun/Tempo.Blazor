@@ -27,7 +27,6 @@ import { asText, clone } from '../core/helpers.mjs';
 const KEY_SEP = '';
 const DEFAULT_CACHE_LIMIT = 4096;
 const DEFAULT_CARET_ADVANCE_CACHE_LIMIT = 512;
-const CARET_ADVANCE_CHUNK = 16;
 
 // Normalise a measurement request into a canonical style record. Accepts both the
 // `bold`/`italic` boolean shorthands and explicit `fontWeight`/`fontStyle` strings,
@@ -122,10 +121,6 @@ export function createFontMetricsService(options) {
     const caretAdvanceLimit = Number(opts.caretAdvanceCacheLimit) > 0
         ? Number(opts.caretAdvanceCacheLimit)
         : DEFAULT_CARET_ADVANCE_CACHE_LIMIT;
-    // 'exact' (default) measures every prefix — byte-identical to the historical per-prefix
-    // measureText calls. 'chunked' measures a shaped anchor every 16 chars and interpolates
-    // per-character advances in between (opt-in; sub-pixel drift between anchors).
-    const caretAdvanceMode = opts.caretAdvanceMode === 'chunked' ? 'chunked' : 'exact';
     const createContext = typeof opts.createMeasureContext === 'function'
         ? opts.createMeasureContext
         : defaultCreateMeasureContext;
@@ -258,9 +253,9 @@ export function createFontMetricsService(options) {
             return cached;
         }
 
-        const advances = caretAdvanceMode === 'chunked' && value.length > CARET_ADVANCE_CHUNK
-            ? chunkedCaretAdvances(value, style)
-            : exactCaretAdvances(value, style);
+        // Fáze 23 (code review N4): chunked interpolační režim smazán jako mrtvý kód — nikdo ho
+        // v produkci nezapínal a exact režim drží byte-identitu s historickým měřením prefixů.
+        const advances = exactCaretAdvances(value, style);
         Object.freeze(advances);
         caretAdvanceCache.set(key, advances);
         if (caretAdvanceCache.size > caretAdvanceLimit) {
@@ -277,50 +272,6 @@ export function createFontMetricsService(options) {
         advances[0] = 0;
         for (let k = 1; k <= value.length; k += 1) {
             advances[k] = prefixWidth(style, value.slice(0, k));
-        }
-
-        return advances;
-    }
-
-    // Shaped anchor every CARET_ADVANCE_CHUNK characters; between anchors accumulate per-character
-    // widths and spread the shaping drift linearly, so anchors stay exact and intermediate stops
-    // drift at most a fraction of a pixel. O(n²/chunk) full-prefix measurements instead of O(n²).
-    function chunkedCaretAdvances(value, style) {
-        const advances = new Array(value.length + 1);
-        advances[0] = 0;
-        const charWidths = new Map();
-        const charWidth = (ch) => {
-            let width = charWidths.get(ch);
-            if (width === undefined) {
-                width = prefixWidth(style, ch);
-                charWidths.set(ch, width);
-            }
-
-            return width;
-        };
-
-        let anchorIndex = 0;
-        let anchorWidth = 0;
-        while (anchorIndex < value.length) {
-            const end = Math.min(value.length, anchorIndex + CARET_ADVANCE_CHUNK);
-            const endWidth = prefixWidth(style, value.slice(0, end));
-            const span = end - anchorIndex;
-            let accumulated = anchorWidth;
-            const partials = new Array(span);
-            for (let k = anchorIndex + 1; k <= end; k += 1) {
-                accumulated += charWidth(value[k - 1]);
-                partials[k - anchorIndex - 1] = accumulated;
-            }
-
-            const drift = endWidth - accumulated;
-            for (let k = anchorIndex + 1; k < end; k += 1) {
-                const corrected = partials[k - anchorIndex - 1] + drift * ((k - anchorIndex) / span);
-                advances[k] = Math.min(endWidth, Math.max(advances[k - 1], Math.max(1, corrected)));
-            }
-
-            advances[end] = endWidth;
-            anchorIndex = end;
-            anchorWidth = endWidth;
         }
 
         return advances;
