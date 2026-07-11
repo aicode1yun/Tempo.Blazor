@@ -42,6 +42,7 @@
 @import "components/_validation-summary.css";
 @import "components/_password-strength.css";
 @import "components/_number-input.css";
+@import "components/_decimal-input.css";
 @import "components/_masked-text-box.css";
 @import "components/_rating.css";
 @import "components/_slider.css";

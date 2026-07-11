@@ -717,6 +717,8 @@
   "TmDatePicker_Placeholder": "Vyberte datum",
   "TmDatePicker_PreviousMonth": "Předchozí měsíc",
   "TmDatePicker_Today": "Dnes",
+  "TmDecimalInput_Decrease": "Snížit",
+  "TmDecimalInput_Increase": "Zvýšit",
   "TmDateRangePicker_Clear": "Smazat",
   "TmDateRangePicker_Done": "Hotovo",
   "TmDateRangePicker_From": "Od",

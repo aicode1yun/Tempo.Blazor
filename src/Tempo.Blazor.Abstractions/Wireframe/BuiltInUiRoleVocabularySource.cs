@@ -20,6 +20,7 @@ public sealed class BuiltInUiRoleVocabularySource : IUiRoleVocabularySource
         R("number-input", "Number input", "Accepts numeric values.", "numeric input", "cislo", "TmNumberInput"),
         R("search-input", "Search input", "Accepts a query for filtering or finding content.", "search box", "search field", "vyhledavani", "TmSearchInput", "TmSearchBox"),
         R("currency-input", "Currency input", "Accepts monetary amounts.", "money input", "mena", "TmCurrencyInput"),
+        R("decimal-input", "Decimal input", "Accepts decimal values with culture-aware formatting, optionally as a percentage.", "decimal field", "percent input", "desetinne cislo", "procenta", "TmDecimalInput"),
         R("checkbox", "Checkbox", "Captures an independent boolean choice.", "check box", "zaskrtavatko", "TmCheckbox"),
         R("radio", "Radio", "Captures one choice inside an exclusive option group.", "radio button", "prepinac volby", "TmRadio"),
         R("radio-group", "Radio group", "Groups exclusive radio choices.", "option group", "skupina voleb", "TmRadioGroup"),

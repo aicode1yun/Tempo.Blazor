@@ -621,6 +621,129 @@
     </div>
 </section>
 
+<!-- Decimal Input -->
+<section class="demo-section" data-testid="decimal-input-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Decimal Input</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Culture-aware decimal entry with steppers, percent mode and EditForm validation</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">New</span>
+    </div>
+
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card" data-testid="decimal-input-basic-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Basic Usage</h3>
+            <div class="space-y-4">
+                <div data-testid="decimal-input-basic">
+                    <TmDecimalInput @bind-Value="_decimalBasic"
+                                    Label="Amount"
+                                    Placeholder="0.00"
+                                    HelpText="Type 1234,56 or 1234.56 — both are understood." />
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    Bound value:
+                    <span class="font-mono" data-testid="decimal-input-basic-value">@FormatBound(_decimalBasic)</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="showcase-card" data-testid="decimal-input-culture-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Culture Formatting</h3>
+            <div class="space-y-4">
+                <div data-testid="decimal-input-czech">
+                    <TmDecimalInput @bind-Value="_decimalCulture"
+                                    Label="Czech (cs-CZ)"
+                                    Culture="@CzechCulture"
+                                    Prefix="Kč"
+                                    ShowButtons="false" />
+                </div>
+                <div data-testid="decimal-input-english">
+                    <TmDecimalInput @bind-Value="_decimalCulture"
+                                    Label="English (en-US)"
+                                    Culture="@EnglishCulture"
+                                    Prefix="$"
+                                    ShowButtons="false" />
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    Both fields share one value:
+                    <span class="font-mono" data-testid="decimal-input-culture-value">@FormatBound(_decimalCulture)</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="showcase-card" data-testid="decimal-input-range-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Min / Max / Step</h3>
+            <div class="space-y-4">
+                <div data-testid="decimal-input-range">
+                    <TmDecimalInput @bind-Value="_decimalRange"
+                                    Label="Rating (0–10, step 0.5)"
+                                    Min="0"
+                                    Max="10"
+                                    Step="0.5m"
+                                    DecimalPlaces="1"
+                                    HelpText="Steppers and the ↑/↓ keys move by 0.5; out-of-range input is clamped." />
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    Bound value:
+                    <span class="font-mono" data-testid="decimal-input-range-value">@FormatBound(_decimalRange)</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="showcase-card" data-testid="decimal-input-percent-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Percent Mode</h3>
+            <div class="space-y-4">
+                <div data-testid="decimal-input-percent">
+                    <TmDecimalInput @bind-Value="_decimalPercent"
+                                    Label="VAT rate"
+                                    Percent="true"
+                                    Min="0"
+                                    Max="100"
+                                    Step="1"
+                                    HelpText="The field shows percent, the model keeps the fraction." />
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    Stored fraction:
+                    <span class="font-mono" data-testid="decimal-input-percent-value">@FormatBound(_decimalPercent)</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="showcase-card" data-testid="decimal-input-validation-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">EditForm Validation</h3>
+            <EditForm Model="_priceModel" OnValidSubmit="HandlePriceSubmit">
+                <DataAnnotationsValidator />
+                <div class="space-y-4">
+                    <div data-testid="decimal-input-validated">
+                        <TmDecimalInput @bind-Value="_priceModel.UnitPrice"
+                                        Label="Unit price"
+                                        Prefix="Kč"
+                                        Culture="@CzechCulture"
+                                        HelpText="Must be between 10 and 1000." />
+                    </div>
+                    <TmButton Type="ButtonType.Submit" Variant="ButtonVariant.Primary" data-testid="decimal-input-submit">Submit</TmButton>
+                </div>
+            </EditForm>
+        </div>
+
+        <div class="showcase-card" data-testid="decimal-input-states-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Disabled &amp; Read-only</h3>
+            <div class="space-y-4">
+                <div data-testid="decimal-input-disabled">
+                    <TmDecimalInput Value="1234.5m" Label="Disabled" Disabled="true" Culture="@CzechCulture" />
+                </div>
+                <div data-testid="decimal-input-readonly">
+                    <TmDecimalInput Value="1234.5m" Label="Read-only" ReadOnly="true" Culture="@CzechCulture" Suffix="Kč" />
+                </div>
+                <div data-testid="decimal-input-error">
+                    <TmDecimalInput Value="5m" Label="With error" Error="Amount is too low." Culture="@CzechCulture" />
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Signature Pad -->
 <section class="demo-section">
     <div class="flex items-center justify-between mb-4">
@@ -654,6 +777,31 @@
 </section>
 
 @code {
+    // Decimal Input
+    private static readonly System.Globalization.CultureInfo CzechCulture = System.Globalization.CultureInfo.GetCultureInfo("cs-CZ");
+    private static readonly System.Globalization.CultureInfo EnglishCulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+
+    private decimal? _decimalBasic = 1234.5m;
+    private decimal? _decimalCulture = 1234.5m;
+    private decimal? _decimalRange = 7.5m;
+    private decimal? _decimalPercent = 0.21m;
+    private readonly PriceModel _priceModel = new() { UnitPrice = 250m };
+
+    private sealed class PriceModel
+    {
+        [System.ComponentModel.DataAnnotations.Range(10, 1000, ErrorMessage = "Unit price must be between 10 and 1000.")]
+        public decimal? UnitPrice { get; set; }
+    }
+
+    /// <summary>Renders the bound decimal invariantly so the demo shows what the model really holds.</summary>
+    private static string FormatBound(decimal? value) =>
+        value?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
+
+    private void HandlePriceSubmit()
+    {
+        Toast.ShowSuccess($"Unit price accepted: {FormatBound(_priceModel.UnitPrice)}");
+    }
+
     // Expression Editor
     private string _exprValue = "Dear {{sender.name}}, your message ";
     

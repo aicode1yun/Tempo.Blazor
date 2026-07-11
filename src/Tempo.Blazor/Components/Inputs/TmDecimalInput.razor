@@ -1,0 +1,536 @@
+@namespace Tempo.Blazor.Components.Inputs
+@using System.Globalization
+@using System.Linq
+@using System.Linq.Expressions
+@using System.Text
+@using Microsoft.AspNetCore.Components.Forms
+@implements IDisposable
+
+<div class="tm-input-wrapper tm-decimal-input @(HasError ? "tm-decimal-input--error" : "") @Class">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="tm-input-label" for="@EffectiveId">@Label</label>
+    }
+
+    <div class="tm-decimal-input__control @(Disabled ? "tm-decimal-input__control--disabled" : "") @(ReadOnly ? "tm-decimal-input__control--readonly" : "") @(HasError ? "tm-decimal-input__control--error" : "")">
+        @if (ShowButtons)
+        {
+            <button type="button"
+                    class="tm-decimal-input__decrement"
+                    disabled="@(Disabled || ReadOnly || IsAtMin)"
+                    aria-label="@Loc["TmDecimalInput_Decrease"]"
+                    tabindex="-1"
+                    @onclick="DecrementAsync">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" focusable="false">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+            </button>
+        }
+
+        @if (!string.IsNullOrEmpty(Prefix))
+        {
+            <span class="tm-decimal-input__prefix">@Prefix</span>
+        }
+
+        <input id="@EffectiveId"
+               type="text"
+               inputmode="decimal"
+               class="tm-decimal-input__input"
+               value="@_text"
+               placeholder="@Placeholder"
+               disabled="@Disabled"
+               readonly="@ReadOnly"
+               autocomplete="@AutoComplete"
+               aria-invalid="@(HasError ? "true" : null)"
+               aria-describedby="@DescribedBy"
+               @attributes="AdditionalAttributes"
+               @onchange="HandleChangeAsync"
+               @oninput="HandleInput"
+               @onkeydown="HandleKeyDownAsync"
+               @onfocus="HandleFocus"
+               @onblur="HandleBlur" />
+
+        @if (!string.IsNullOrEmpty(ResolvedSuffix))
+        {
+            <span class="tm-decimal-input__suffix">@ResolvedSuffix</span>
+        }
+
+        @if (ShowButtons)
+        {
+            <button type="button"
+                    class="tm-decimal-input__increment"
+                    disabled="@(Disabled || ReadOnly || IsAtMax)"
+                    aria-label="@Loc["TmDecimalInput_Increase"]"
+                    tabindex="-1"
+                    @onclick="IncrementAsync">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" focusable="false">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+            </button>
+        }
+    </div>
+
+    @if (HasError)
+    {
+        <div id="@ErrorId" class="tm-input-error-message">@ResolvedError</div>
+    }
+    else if (!string.IsNullOrEmpty(HelpText))
+    {
+        <div id="@HelpId" class="tm-input-help-text">@HelpText</div>
+    }
+</div>
+
+@code {
+    /// <summary>Largest number of fractional digits <see cref="decimal"/> can represent.</summary>
+    private const int MaxDecimalPlaces = 28;
+
+    private readonly string _generatedId = $"tm-decimal-{Guid.NewGuid():N}";
+
+    /// <summary>Text currently shown in the input: formatted while idle, plain while the field has focus.</summary>
+    private string _text = string.Empty;
+
+    /// <summary>Text the user has typed but not committed yet — arrow keys must step from it, not from the stale value.</summary>
+    private string? _liveText;
+
+    private bool _focused;
+
+    // ── Value ──────────────────────────────────────────────────────────────────
+
+    /// <summary>Current decimal value. <c>null</c> when the input is empty or holds unparsable text.</summary>
+    [Parameter] public decimal? Value { get; set; }
+
+    /// <summary>Fires when the committed value changes (on change/blur, not on every keystroke).</summary>
+    [Parameter] public EventCallback<decimal?> ValueChanged { get; set; }
+
+    /// <summary>Number of fractional digits used for display and for rounding the committed value (default 2, clamped to 0–28).</summary>
+    [Parameter] public int DecimalPlaces { get; set; } = 2;
+
+    /// <summary>Show thousands separators while the field is not being edited (default <c>true</c>).</summary>
+    [Parameter] public bool UseGrouping { get; set; } = true;
+
+    /// <summary>Culture used for parsing and formatting. Defaults to <see cref="CultureInfo.CurrentCulture"/>.</summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
+
+    // ── Range ──────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Smallest allowed value, expressed on the displayed scale — in percent mode that means
+    /// <c>Min="0"</c> … <c>Max="100"</c> for 0–100 %.
+    /// </summary>
+    [Parameter] public decimal? Min { get; set; }
+
+    /// <summary>
+    /// Largest allowed value, expressed on the displayed scale — in percent mode that means
+    /// <c>Min="0"</c> … <c>Max="100"</c> for 0–100 %.
+    /// </summary>
+    [Parameter] public decimal? Max { get; set; }
+
+    /// <summary>
+    /// Amount added or removed by the steppers and the arrow keys, on the displayed scale
+    /// (default 1 — in percent mode, one percentage point).
+    /// </summary>
+    [Parameter] public decimal Step { get; set; } = 1m;
+
+    /// <summary>Show the +/− stepper buttons (default <c>true</c>).</summary>
+    [Parameter] public bool ShowButtons { get; set; } = true;
+
+    /// <summary>
+    /// Percent mode: <see cref="Value"/> holds the fraction (0.15) while the input shows and accepts
+    /// the percentage (15). <see cref="Min"/>, <see cref="Max"/> and <see cref="Step"/> also work on
+    /// the percentage scale, and a "%" suffix is added unless <see cref="Suffix"/> says otherwise.
+    /// </summary>
+    [Parameter] public bool Percent { get; set; }
+
+    // ── Presentation ───────────────────────────────────────────────────────────
+
+    /// <summary>Field label.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Placeholder text shown while the input is empty.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Prefix text rendered before the input (e.g. "€").</summary>
+    [Parameter] public string? Prefix { get; set; }
+
+    /// <summary>Suffix text rendered after the input (e.g. "/ pc").</summary>
+    [Parameter] public string? Suffix { get; set; }
+
+    /// <summary>
+    /// Error message. When set, it wins over any validation message coming from the surrounding
+    /// <see cref="Microsoft.AspNetCore.Components.Forms.EditContext"/>, replaces the help text and marks the field invalid.
+    /// </summary>
+    [Parameter] public string? Error { get; set; }
+
+    /// <summary>
+    /// Expression identifying the bound model field. Blazor supplies it automatically when you use
+    /// <c>@bind-Value</c>; it is what links the input to <c>DataAnnotationsValidator</c> messages
+    /// inside an <c>EditForm</c>.
+    /// </summary>
+    [Parameter] public Expression<Func<decimal?>>? ValueExpression { get; set; }
+
+    /// <summary>Help text rendered below the input.</summary>
+    [Parameter] public string? HelpText { get; set; }
+
+    /// <summary>Disable the input.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Render the input as read-only.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>HTML autocomplete attribute. Common values: "on", "off".</summary>
+    [Parameter] public string? AutoComplete { get; set; }
+
+    /// <summary>Explicit id of the input element. When omitted, a unique id is generated so the label stays associated.</summary>
+    [Parameter] public string? Id { get; set; }
+
+    /// <summary>Additional CSS class(es) applied to the wrapper.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Additional attributes applied to the input element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    /// <summary>The <c>EditForm</c>'s edit context, when the input is used inside one.</summary>
+    [CascadingParameter] private EditContext? CascadedEditContext { get; set; }
+
+    // ── Validation state ───────────────────────────────────────────────────────
+
+    private EditContext? _subscribedEditContext;
+    private FieldIdentifier? _fieldIdentifier;
+
+    /// <summary>The bound model field — from <see cref="ValueExpression"/>, or this component's own <see cref="Value"/>.</summary>
+    private FieldIdentifier FieldIdentifier
+    {
+        get
+        {
+            if (_fieldIdentifier is null && ValueExpression is not null)
+            {
+                _fieldIdentifier = FieldIdentifier.Create(ValueExpression);
+            }
+            return _fieldIdentifier ?? new FieldIdentifier(this, nameof(Value));
+        }
+    }
+
+    /// <summary>First validation message the surrounding <c>EditContext</c> holds for this field.</summary>
+    private string? ValidationMessage =>
+        CascadedEditContext?.GetValidationMessages(FieldIdentifier).FirstOrDefault();
+
+    /// <summary>Message actually shown: an explicit <see cref="Error"/> beats the validator's message.</summary>
+    private string? ResolvedError => !string.IsNullOrEmpty(Error) ? Error : ValidationMessage;
+
+    // ── Derived state ──────────────────────────────────────────────────────────
+
+    private bool HasError => !string.IsNullOrEmpty(ResolvedError);
+
+    /// <summary>
+    /// Id the label and the descriptions point at. An id splatted through <see cref="AdditionalAttributes"/>
+    /// wins on the input element, so it has to win here too or the association breaks.
+    /// </summary>
+    private string EffectiveId
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(Id)) return Id!;
+            if (AdditionalAttributes is not null
+                && AdditionalAttributes.TryGetValue("id", out var splatted)
+                && splatted is string splattedId
+                && !string.IsNullOrEmpty(splattedId))
+            {
+                return splattedId;
+            }
+            return _generatedId;
+        }
+    }
+    private string ErrorId => $"{EffectiveId}-error";
+    private string HelpId => $"{EffectiveId}-help";
+
+    private string? DescribedBy =>
+        HasError ? ErrorId
+        : !string.IsNullOrEmpty(HelpText) ? HelpId
+        : null;
+
+    private CultureInfo EffectiveCulture => Culture ?? CultureInfo.CurrentCulture;
+    private int EffectiveDecimalPlaces => Math.Clamp(DecimalPlaces, 0, MaxDecimalPlaces);
+
+    /// <summary>Suffix shown after the input — percent mode supplies "%" unless the caller set its own.</summary>
+    private string? ResolvedSuffix => !string.IsNullOrEmpty(Suffix) ? Suffix : Percent ? "%" : null;
+
+    private bool IsAtMin => Min.HasValue && DisplayValue.HasValue && DisplayValue.Value <= Min.Value;
+    private bool IsAtMax => Max.HasValue && DisplayValue.HasValue && DisplayValue.Value >= Max.Value;
+
+    /// <summary>The bound value on the scale the user sees: the percentage in percent mode, otherwise the value itself.</summary>
+    private decimal? DisplayValue => ToDisplay(Value);
+
+    private decimal? ToDisplay(decimal? stored) =>
+        Percent && stored.HasValue ? stored.Value * 100m : stored;
+
+    private decimal? ToStored(decimal? display) =>
+        Percent && display.HasValue ? display.Value / 100m : display;
+
+    protected override void OnParametersSet()
+    {
+        // While the user is typing, the input owns its own text; only re-sync when idle.
+        if (!_focused)
+        {
+            _text = FormatDecimal(DisplayValue, EffectiveDecimalPlaces, UseGrouping, EffectiveCulture);
+            _liveText = null;
+        }
+
+        if (!ReferenceEquals(CascadedEditContext, _subscribedEditContext))
+        {
+            DetachValidationStateChanged();
+
+            // A new edit context means a new model, so the cached field identifier — which holds a
+            // reference to the old model instance — would silently address the wrong object.
+            _fieldIdentifier = null;
+
+            _subscribedEditContext = CascadedEditContext;
+            if (_subscribedEditContext is not null)
+            {
+                _subscribedEditContext.OnValidationStateChanged += HandleValidationStateChanged;
+            }
+        }
+    }
+
+    private void HandleValidationStateChanged(object? sender, ValidationStateChangedEventArgs e) =>
+        InvokeAsync(StateHasChanged);
+
+    private void DetachValidationStateChanged()
+    {
+        if (_subscribedEditContext is not null)
+        {
+            _subscribedEditContext.OnValidationStateChanged -= HandleValidationStateChanged;
+            _subscribedEditContext = null;
+        }
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => DetachValidationStateChanged();
+
+    // ── Handlers ───────────────────────────────────────────────────────────────
+
+    private void HandleInput(ChangeEventArgs e) => _liveText = e.Value?.ToString();
+
+    private Task HandleChangeAsync(ChangeEventArgs e)
+    {
+        var display = ParseDecimal(e.Value?.ToString(), EffectiveCulture);
+        return CommitAsync(display);
+    }
+
+    private Task HandleKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (Disabled || ReadOnly) return Task.CompletedTask;
+
+        return e.Key switch
+        {
+            "ArrowUp"   => StepAsync(+1),
+            "ArrowDown" => StepAsync(-1),
+            _           => Task.CompletedTask,
+        };
+    }
+
+    private Task IncrementAsync() => StepAsync(+1);
+
+    private Task DecrementAsync() => StepAsync(-1);
+
+    /// <summary>Moves the displayed value by one <see cref="Step"/> in the given direction.</summary>
+    private Task StepAsync(int direction)
+    {
+        if (Disabled || ReadOnly) return Task.CompletedTask;
+
+        // Arrow keys arrive before the change event, so text typed since the last commit is only
+        // in _liveText — stepping from Value would silently throw that text away.
+        var current = (_liveText is not null ? ParseDecimal(_liveText, EffectiveCulture) : DisplayValue) ?? 0m;
+        return CommitAsync(current + (direction * Step));
+    }
+
+    /// <summary>Rounds, clamps and stores a value given on the displayed scale, then notifies the caller.</summary>
+    private async Task CommitAsync(decimal? display)
+    {
+        var rounded = Clamp(Round(display, EffectiveDecimalPlaces));
+        var stored = ToStored(rounded);
+
+        Value = stored;
+        _text = _focused
+            ? ToEditText(rounded)
+            : FormatDecimal(rounded, EffectiveDecimalPlaces, UseGrouping, EffectiveCulture);
+        _liveText = _text;
+
+        await ValueChanged.InvokeAsync(stored);
+
+        // The model has the new value now, so validation can run against it.
+        CascadedEditContext?.NotifyFieldChanged(FieldIdentifier);
+    }
+
+    private void HandleFocus()
+    {
+        // A read-only/disabled field can still take focus, but its text is never edited —
+        // dropping the group separators there would just look like a rendering glitch.
+        if (ReadOnly || Disabled) return;
+
+        _focused = true;
+        _text = ToEditText(DisplayValue);
+        _liveText = null;
+    }
+
+    private void HandleBlur()
+    {
+        _focused = false;
+        _liveText = null;
+        _text = FormatDecimal(DisplayValue, EffectiveDecimalPlaces, UseGrouping, EffectiveCulture);
+    }
+
+    /// <summary>Plain, group-separator-free rendering used while the field has focus.</summary>
+    private string ToEditText(decimal? display) =>
+        FormatDecimal(display, EffectiveDecimalPlaces, useGrouping: false, EffectiveCulture);
+
+    /// <summary>Keeps a displayed value inside <see cref="Min"/>/<see cref="Max"/>; both are on the displayed scale.</summary>
+    private decimal? Clamp(decimal? display)
+    {
+        if (!display.HasValue) return null;
+
+        var clamped = display.Value;
+        if (Min.HasValue && clamped < Min.Value) clamped = Min.Value;
+        if (Max.HasValue && clamped > Max.Value) clamped = Max.Value;
+        return clamped;
+    }
+
+    private static decimal? Round(decimal? value, int decimalPlaces)
+    {
+        if (!value.HasValue) return null;
+        try
+        {
+            return Math.Round(value.Value, decimalPlaces, MidpointRounding.AwayFromZero);
+        }
+        catch (OverflowException)
+        {
+            // Rounding up at the very edge of decimal's range — keep the parsed value.
+            return value;
+        }
+    }
+
+    // ── Parsing / formatting ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// Formats a value for display. Returns an empty string for <c>null</c>.
+    /// </summary>
+    /// <param name="value">Value to format.</param>
+    /// <param name="decimalPlaces">Number of fractional digits (clamped to 0–28).</param>
+    /// <param name="useGrouping">Whether to render thousands separators.</param>
+    /// <param name="culture">Culture whose separators are used; <c>null</c> falls back to the current culture.</param>
+    internal static string FormatDecimal(decimal? value, int decimalPlaces, bool useGrouping, CultureInfo? culture)
+    {
+        if (!value.HasValue) return string.Empty;
+
+        var effectiveCulture = culture ?? CultureInfo.CurrentCulture;
+        var places = Math.Clamp(decimalPlaces, 0, MaxDecimalPlaces);
+        var format = (useGrouping ? "N" : "F") + places.ToString(CultureInfo.InvariantCulture);
+
+        return value.Value.ToString(format, effectiveCulture);
+    }
+
+    /// <summary>
+    /// Parses user input leniently: strips currency symbols, unit text and every flavour of
+    /// whitespace, accepts both "," and "." as the decimal separator, and understands thousands
+    /// grouping. Returns <c>null</c> when the text carries no parsable number.
+    /// </summary>
+    /// <param name="raw">Raw text as typed or pasted by the user.</param>
+    /// <param name="culture">Culture that decides the ambiguous cases; <c>null</c> falls back to the current culture.</param>
+    internal static decimal? ParseDecimal(string? raw, CultureInfo? culture)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+
+        var effectiveCulture = culture ?? CultureInfo.CurrentCulture;
+        var cultureDecimal = effectiveCulture.NumberFormat.NumberDecimalSeparator;
+        var text = raw!.Trim();
+
+        // Cultures whose decimal separator is neither "." nor "," (e.g. ar-SA) are normalized up
+        // front so the scanner below only ever reasons about those two characters.
+        if (cultureDecimal.Length > 0 && cultureDecimal != "." && cultureDecimal != ",")
+        {
+            text = text.Replace(cultureDecimal, ".", StringComparison.Ordinal);
+        }
+
+        // 1. Keep digits and separators, remember a leading sign, drop everything else.
+        var negative = false;
+        var digitsAndSeparators = new StringBuilder(text.Length);
+        var hasDigit = false;
+
+        foreach (var ch in text)
+        {
+            if (char.IsDigit(ch))
+            {
+                digitsAndSeparators.Append(ch);
+                hasDigit = true;
+            }
+            else if (ch is '.' or ',')
+            {
+                digitsAndSeparators.Append(ch);
+            }
+            else if (!hasDigit && ch is '-' or '−' or '(')
+            {
+                negative = true;
+            }
+        }
+
+        if (!hasDigit) return null;
+
+        var scanned = digitsAndSeparators.ToString();
+
+        // 2. Decide which separator (if any) is the decimal point.
+        var lastDot = scanned.LastIndexOf('.');
+        var lastComma = scanned.LastIndexOf(',');
+        var decimalIndex = -1;
+
+        if (lastDot >= 0 && lastComma >= 0)
+        {
+            // Both present: the right-most one separates the fraction, the other groups thousands.
+            decimalIndex = Math.Max(lastDot, lastComma);
+        }
+        else if (lastDot >= 0 || lastComma >= 0)
+        {
+            var candidate = lastDot >= 0 ? '.' : ',';
+            var lastIndex = lastDot >= 0 ? lastDot : lastComma;
+            var occurrences = scanned.Count(ch => ch == candidate);
+            var digitsAfter = scanned.Length - lastIndex - 1;
+            var isCultureDecimal = cultureDecimal.Length == 1 && cultureDecimal[0] == candidate;
+
+            // A repeated separator always groups. A single one is the decimal point unless it is a
+            // foreign separator trailed by exactly three digits — that shape is thousands grouping.
+            if (occurrences == 1 && (isCultureDecimal || digitsAfter != 3))
+            {
+                decimalIndex = lastIndex;
+            }
+        }
+
+        // 3. Rebuild an invariant number: digits, one optional '.', optional leading '-'.
+        var normalized = new StringBuilder(scanned.Length + 1);
+        if (negative) normalized.Append('-');
+
+        for (var i = 0; i < scanned.Length; i++)
+        {
+            var ch = scanned[i];
+            if (char.IsDigit(ch))
+            {
+                normalized.Append(ch);
+            }
+            else if (i == decimalIndex)
+            {
+                normalized.Append('.');
+            }
+        }
+
+        if (normalized.Length > 0 && normalized[^1] == '.')
+        {
+            normalized.Length--; // "1234," → "1234"
+        }
+
+        return decimal.TryParse(
+            normalized.ToString(),
+            NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign,
+            CultureInfo.InvariantCulture,
+            out var parsed)
+            ? parsed
+            : null;
+    }
+}

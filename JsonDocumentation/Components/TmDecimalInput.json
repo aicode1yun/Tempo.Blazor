@@ -1,0 +1,186 @@
+{
+  "itemName": "TmDecimalInput",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "Culture-aware decimal input. Accepts both comma and dot as the decimal separator, cleans pasted text (currency symbols, units, thousands separators), formats the value on blur for the chosen culture, rounds to DecimalPlaces, supports Min/Max/Step with +/- steppers and ArrowUp/ArrowDown keys, offers a percent mode (the model keeps the fraction while the field shows the percentage), and reports DataAnnotations validation messages when used inside an EditForm.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "Value",
+      "type": "decimal?",
+      "isRequired": false,
+      "description": "Current decimal value. null when the input is empty or holds unparsable text."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<decimal?>",
+      "isRequired": false,
+      "description": "Fires when the committed value changes (on change/blur, not on every keystroke)."
+    },
+    {
+      "name": "ValueExpression",
+      "type": "Expression<Func<decimal?>>?",
+      "isRequired": false,
+      "description": "Expression identifying the bound model field. Blazor supplies it automatically when you use @bind-Value; it links the input to DataAnnotationsValidator messages inside an EditForm."
+    },
+    {
+      "name": "DecimalPlaces",
+      "type": "int",
+      "isRequired": false,
+      "default": "2",
+      "description": "Number of fractional digits used for display and for rounding the committed value (clamped to 0-28)."
+    },
+    {
+      "name": "UseGrouping",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Show thousands separators while the field is not being edited."
+    },
+    {
+      "name": "Culture",
+      "type": "CultureInfo?",
+      "isRequired": false,
+      "description": "Culture used for parsing and formatting. Defaults to CultureInfo.CurrentCulture."
+    },
+    {
+      "name": "Min",
+      "type": "decimal?",
+      "isRequired": false,
+      "description": "Smallest allowed value, on the displayed scale (in percent mode, Min=\"0\" ... Max=\"100\" means 0-100 %)."
+    },
+    {
+      "name": "Max",
+      "type": "decimal?",
+      "isRequired": false,
+      "description": "Largest allowed value, on the displayed scale (in percent mode, Min=\"0\" ... Max=\"100\" means 0-100 %)."
+    },
+    {
+      "name": "Step",
+      "type": "decimal",
+      "isRequired": false,
+      "default": "1",
+      "description": "Amount added or removed by the steppers and the arrow keys, on the displayed scale (in percent mode, one percentage point)."
+    },
+    {
+      "name": "ShowButtons",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Show the +/- stepper buttons."
+    },
+    {
+      "name": "Percent",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Percent mode: Value holds the fraction (0.15) while the input shows and accepts the percentage (15). Min, Max and Step also work on the percentage scale, and a \"%\" suffix is added unless Suffix says otherwise."
+    },
+    {
+      "name": "Label",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Field label."
+    },
+    {
+      "name": "Placeholder",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Placeholder text shown while the input is empty."
+    },
+    {
+      "name": "Prefix",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Prefix text rendered before the input (e.g. \"EUR\")."
+    },
+    {
+      "name": "Suffix",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Suffix text rendered after the input (e.g. \"/ pc\")."
+    },
+    {
+      "name": "Error",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Error message. When set, it wins over any validation message coming from the surrounding EditContext, replaces the help text and marks the field invalid."
+    },
+    {
+      "name": "HelpText",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Help text rendered below the input."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Disable the input."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Render the input as read-only."
+    },
+    {
+      "name": "AutoComplete",
+      "type": "string?",
+      "isRequired": false,
+      "description": "HTML autocomplete attribute. Common values: \"on\", \"off\"."
+    },
+    {
+      "name": "Id",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Explicit id of the input element. When omitted, a unique id is generated so the label stays associated."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class(es) applied to the wrapper."
+    }
+  ],
+  "cssClasses": [
+    "tm-input-wrapper",
+    "tm-decimal-input",
+    "tm-decimal-input--error",
+    "tm-decimal-input__control",
+    "tm-decimal-input__control--disabled",
+    "tm-decimal-input__control--readonly",
+    "tm-decimal-input__control--error",
+    "tm-decimal-input__input",
+    "tm-decimal-input__increment",
+    "tm-decimal-input__decrement",
+    "tm-decimal-input__prefix",
+    "tm-decimal-input__suffix",
+    "tm-input-label",
+    "tm-input-error-message",
+    "tm-input-help-text"
+  ],
+  "examples": [
+    {
+      "title": "Basic decimal input",
+      "code": "<TmDecimalInput @bind-Value=\"amount\" Label=\"Amount\" Placeholder=\"0.00\" />"
+    },
+    {
+      "title": "Czech formatting with a currency prefix",
+      "code": "<TmDecimalInput @bind-Value=\"amount\"\n                Label=\"Cena\"\n                Culture=\"@CultureInfo.GetCultureInfo(\"cs-CZ\")\"\n                Prefix=\"Kc\"\n                ShowButtons=\"false\" />"
+    },
+    {
+      "title": "Range with steppers",
+      "code": "<TmDecimalInput @bind-Value=\"rating\" Label=\"Rating\" Min=\"0\" Max=\"10\" Step=\"0.5m\" DecimalPlaces=\"1\" />"
+    },
+    {
+      "title": "Percent mode (model keeps the fraction)",
+      "code": "<TmDecimalInput @bind-Value=\"vatRate\" Label=\"VAT rate\" Percent=\"true\" Min=\"0\" Max=\"100\" Step=\"1\" />\n@* vatRate = 0.21m is shown as 21,00 % *@"
+    },
+    {
+      "title": "Inside an EditForm with DataAnnotations",
+      "code": "<EditForm Model=\"model\">\n    <DataAnnotationsValidator />\n    <TmDecimalInput @bind-Value=\"model.UnitPrice\" Label=\"Unit price\" Prefix=\"Kc\" />\n</EditForm>"
+    }
+  ]
+}

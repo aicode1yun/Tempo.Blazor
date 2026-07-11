@@ -102,11 +102,11 @@
 
 /* ── Error state ───────────────────────────────────────── */
 .tm-number-input--error {
-    border-color: var(--tm-color-error-500);
+    border-color: var(--tm-color-danger);
 }
 
 .tm-number-input--error:focus-within {
-    box-shadow: 0 0 0 3px rgba(var(--tm-color-error-500-rgb, 239, 68, 68), 0.15);
+    box-shadow: var(--tm-shadow-focus-danger);
 }
 
 /* ── Disabled state ────────────────────────────────────── */
@@ -149,6 +149,13 @@
 .tm-dark .tm-number-input__decrement:hover {
     background-color: var(--tm-color-neutral-600);
     color: var(--tm-color-neutral-100);
+}
+
+/* Must come after the dark base rule above: that selector is more specific than the plain
+   --error modifier, so without this the invalid border would be repainted neutral in dark mode. */
+[data-theme="dark"] .tm-number-input--error,
+.tm-dark .tm-number-input--error {
+    border-color: var(--tm-color-danger);
 }
 
 [data-theme="dark"] .tm-number-input--disabled,

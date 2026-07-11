@@ -650,6 +650,10 @@ public abstract class LocalizationTestBase : TestContext
         ["TmDatePicker_PreviousMonth"]  = "Previous month",
         ["TmDatePicker_NextMonth"]      = "Next month",
 
+        // TmDecimalInput
+        ["TmDecimalInput_Increase"]     = "Increase",
+        ["TmDecimalInput_Decrease"]     = "Decrease",
+
         // TmDateTimePicker
         ["TmDateTimePicker_Placeholder"] = "dd.MM.yyyy HH:mm",
         ["TmDateTimePicker_Clear"]       = "Clear",
@@ -3630,6 +3634,10 @@ public abstract class LocalizationTestBase : TestContext
         ["TmDatePicker_Today"]         = "Dnes",
         ["TmDatePicker_PreviousMonth"] = "Předchozí měsíc",
         ["TmDatePicker_NextMonth"]     = "Další měsíc",
+
+        // TmDecimalInput
+        ["TmDecimalInput_Increase"]    = "Zvýšit",
+        ["TmDecimalInput_Decrease"]    = "Snížit",
 
         // TmDateTimePicker
         ["TmDateTimePicker_Placeholder"] = "dd.MM.yyyy HH:mm",

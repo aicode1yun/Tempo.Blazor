@@ -200,6 +200,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmSearchInput"] = ["search-input"],
             ["TmQueryInput"] = ["text-input", "search-input"],
             ["TmCurrencyInput"] = ["currency-input"],
+            ["TmDecimalInput"] = ["decimal-input", "number-input"],
             ["TmCheckbox"] = ["checkbox"],
             ["TmRadio"] = ["radio"],
             ["TmRadioGroup"] = ["radio-group"],
@@ -514,6 +515,23 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("currencySymbol", "Currency Symbol", PropType.String, "Kč",     cat: "Appearance"),
                 P("required",       "Required",        PropType.Bool,   false,    cat: "Behavior"),
                 P("disabled",       "Disabled",        PropType.Bool,   false,    cat: "Behavior"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmDecimalInput", Category = "Inputs", DisplayName = "Decimal Input",
+            DefaultWidth = 200, DefaultHeight = 56,
+            Props =
+            [
+                P("label",       "Label",       PropType.String, "Amount", cat: "Content"),
+                P("suffix",      "Suffix",      PropType.String,           cat: "Appearance"),
+                P("percent",     "Percent",     PropType.Bool,   false,    cat: "Behavior"),
+                P("min",         "Min",         PropType.Double,           cat: "Behavior"),
+                P("max",         "Max",         PropType.Double,           cat: "Behavior"),
+                P("step",        "Step",        PropType.Double, 1.0,      cat: "Behavior"),
+                P("required",    "Required",    PropType.Bool,   false,    cat: "Behavior"),
+                P("disabled",    "Disabled",    PropType.Bool,   false,    cat: "Behavior"),
             ]
         };
 
