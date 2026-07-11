@@ -4215,6 +4215,55 @@
           "documentationStatus": "merged"
         },
         {
+          "itemName": "IcsCalendarSerializer",
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Scheduler",
+          "description": "Dependency-free iCalendar (RFC 5545) exporter/importer for scheduler events, with RRULE/EXDATE mapping, text escaping, and 75-octet line folding.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Scheduler/IcsCalendarSerializer.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "ContentType",
+              "kind": "Field",
+              "type": "string"
+            },
+            {
+              "name": "FileExtension",
+              "kind": "Field",
+              "type": "string"
+            },
+            {
+              "name": "Export",
+              "kind": "Method",
+              "type": "string",
+              "parameters": [
+                {
+                  "name": "events",
+                  "type": "IEnumerable<TmScheduleEvent>"
+                },
+                {
+                  "name": "calendarName",
+                  "type": "string?",
+                  "default": "null"
+                }
+              ]
+            },
+            {
+              "name": "Import",
+              "kind": "Method",
+              "type": "IReadOnlyList<TmScheduleEvent>",
+              "parameters": [
+                {
+                  "name": "content",
+                  "type": "string"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "itemName": "InMemoryDataProvider<TItem>",
           "kind": "Class",
           "category": "Components",
@@ -17748,6 +17797,13 @@
           ],
           "parameters": [
             {
+              "name": "AllowPrint",
+              "type": "bool",
+              "isRequired": false,
+              "default": "true",
+              "description": "Whether the toolbar shows a Print button (uses the browser print dialog with print CSS). Default: true."
+            },
+            {
               "name": "Class",
               "type": "string?",
               "isRequired": false,
@@ -17864,6 +17920,12 @@
               "isRequired": false,
               "default": "30",
               "description": "Slot duration in minutes for day/week views."
+            },
+            {
+              "name": "TimeZoneId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Display timezone (IANA id such as Europe/Prague, or a Windows id). When set, event times are converted to this zone at the render boundary (DST-aware). When null, the machine-local timezone is used and non-recurring events are passed through unchanged for backward compatibility."
             },
             {
               "name": "View",
@@ -18509,6 +18571,12 @@
               "description": "Fires when the user clicks Previous."
             },
             {
+              "name": "OnPrint",
+              "type": "EventCallback",
+              "isRequired": false,
+              "description": "Fires when the user clicks Print."
+            },
+            {
               "name": "OnToday",
               "type": "EventCallback",
               "isRequired": false,
@@ -18519,6 +18587,12 @@
               "type": "EventCallback<TmScheduleViewType>",
               "isRequired": false,
               "description": "Fires when the user clicks a view button."
+            },
+            {
+              "name": "ShowPrint",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether to show the Print button."
             },
             {
               "name": "View",
@@ -21286,12 +21360,12 @@
         }
       ],
       "summary": {
-        "itemCount": 296,
-        "manualItemCount": 296,
-        "generatedItemCount": 288,
+        "itemCount": 297,
+        "manualItemCount": 297,
+        "generatedItemCount": 289,
         "generatedOnlyItemCount": 0,
         "componentCount": 178,
-        "publicApiTypeCount": 110
+        "publicApiTypeCount": 111
       }
     },
     {
@@ -65833,6 +65907,26 @@
           ]
         },
         {
+          "itemName": "IScheduleExporter",
+          "kind": "Interface",
+          "category": "Interfaces",
+          "namespace": "Tempo.Blazor.Interfaces",
+          "description": "Serializes scheduler events into a calendar document (for example iCalendar / ICS).",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IScheduleCalendar.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "IScheduleImporter",
+          "kind": "Interface",
+          "category": "Interfaces",
+          "namespace": "Tempo.Blazor.Interfaces",
+          "description": "Parses a calendar document (for example iCalendar / ICS) into scheduler events.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IScheduleCalendar.cs",
+          "documentationStatus": "merged"
+        },
+        {
           "itemName": "ISelectOption<TValue>",
           "kind": "Interface",
           "category": "Interfaces",
@@ -88098,12 +88192,12 @@
       ],
       "libraryExamples": [],
       "summary": {
-        "itemCount": 1289,
-        "manualItemCount": 1289,
-        "generatedItemCount": 1272,
+        "itemCount": 1291,
+        "manualItemCount": 1291,
+        "generatedItemCount": 1274,
         "generatedOnlyItemCount": 0,
         "componentCount": 0,
-        "publicApiTypeCount": 1272
+        "publicApiTypeCount": 1274
       }
     },
     {
@@ -100493,10 +100587,10 @@
   ],
   "summary": {
     "packageCount": 23,
-    "itemCount": 2828,
-    "manualItemCount": 2828,
+    "itemCount": 2831,
+    "manualItemCount": 2831,
     "generatedOnlyItemCount": 0,
     "componentCount": 444,
-    "publicApiTypeCount": 2330
+    "publicApiTypeCount": 2333
   }
 }

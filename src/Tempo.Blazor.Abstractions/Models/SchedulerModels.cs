@@ -29,11 +29,21 @@ public class TmScheduleEvent
     /// <summary>Optional description.</summary>
     public string? Description { get; set; }
 
-    /// <summary>Start date and time.</summary>
-    public DateTime Start { get; set; }
+    /// <summary>
+    /// Start date and time, timezone-aware. Assigning a <see cref="DateTime"/> still works via the
+    /// implicit conversion (the machine-local offset is used); prefer an explicit
+    /// <see cref="DateTimeOffset"/> when the event belongs to a specific timezone.
+    /// </summary>
+    public DateTimeOffset Start { get; set; }
 
-    /// <summary>End date and time.</summary>
-    public DateTime End { get; set; }
+    /// <summary>End date and time, timezone-aware. See <see cref="Start"/> for the DateTime conversion note.</summary>
+    public DateTimeOffset End { get; set; }
+
+    /// <summary>Start wall-clock time (offset dropped). Convenience for legacy DateTime consumers.</summary>
+    public DateTime StartLocal => Start.DateTime;
+
+    /// <summary>End wall-clock time (offset dropped). Convenience for legacy DateTime consumers.</summary>
+    public DateTime EndLocal => End.DateTime;
 
     /// <summary>Whether this is an all-day event.</summary>
     public bool AllDay { get; set; }

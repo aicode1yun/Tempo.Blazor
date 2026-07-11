@@ -56,8 +56,8 @@ public class TmSchedulerResourceGroupingTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            new() { Title = "Room A Event", Start = new(2025, 6, 10, 10, 0, 0), End = new(2025, 6, 10, 11, 0, 0), ResourceId = "room-a" },
-            new() { Title = "Room B Event", Start = new(2025, 6, 10, 14, 0, 0), End = new(2025, 6, 10, 15, 0, 0), ResourceId = "room-b" },
+            new() { Title = "Room A Event", Start = new DateTime(2025, 6, 10, 10, 0, 0), End = new DateTime(2025, 6, 10, 11, 0, 0), ResourceId = "room-a" },
+            new() { Title = "Room B Event", Start = new DateTime(2025, 6, 10, 14, 0, 0), End = new DateTime(2025, 6, 10, 15, 0, 0), ResourceId = "room-b" },
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p

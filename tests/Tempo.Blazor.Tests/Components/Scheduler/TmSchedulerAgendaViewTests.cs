@@ -38,9 +38,9 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("Evt A", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0)),
-            Evt("Evt B", new(2025, 6, 10, 14, 0, 0), new(2025, 6, 10, 15, 0, 0)),
-            Evt("Evt C", new(2025, 6, 12, 9, 0, 0), new(2025, 6, 12, 10, 0, 0)),
+            Evt("Evt A", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0)),
+            Evt("Evt B", new DateTime(2025, 6, 10, 14, 0, 0), new DateTime(2025, 6, 10, 15, 0, 0)),
+            Evt("Evt C", new DateTime(2025, 6, 12, 9, 0, 0), new DateTime(2025, 6, 12, 10, 0, 0)),
         };
 
         var cut = RenderComponent<TmSchedulerAgendaView>(p => p
@@ -56,8 +56,8 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("Evt A", new(2025, 6, 5, 9, 0, 0), new(2025, 6, 5, 10, 0, 0)),
-            Evt("Evt B", new(2025, 6, 20, 9, 0, 0), new(2025, 6, 20, 10, 0, 0)),
+            Evt("Evt A", new DateTime(2025, 6, 5, 9, 0, 0), new DateTime(2025, 6, 5, 10, 0, 0)),
+            Evt("Evt B", new DateTime(2025, 6, 20, 9, 0, 0), new DateTime(2025, 6, 20, 10, 0, 0)),
         };
 
         var cut = RenderComponent<TmSchedulerAgendaView>(p => p
@@ -73,7 +73,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("Team Standup", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 9, 30, 0))
+            Evt("Team Standup", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 9, 30, 0))
         };
 
         var cut = RenderComponent<TmSchedulerAgendaView>(p => p
@@ -88,7 +88,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("Meeting", new(2025, 6, 10, 14, 30, 0), new(2025, 6, 10, 16, 0, 0))
+            Evt("Meeting", new DateTime(2025, 6, 10, 14, 30, 0), new DateTime(2025, 6, 10, 16, 0, 0))
         };
 
         var cut = RenderComponent<TmSchedulerAgendaView>(p => p
@@ -105,7 +105,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("Holiday", new(2025, 6, 10), new(2025, 6, 11), allDay: true)
+            Evt("Holiday", new DateTime(2025, 6, 10), new DateTime(2025, 6, 11), allDay: true)
         };
 
         var cut = RenderComponent<TmSchedulerAgendaView>(p => p
@@ -123,7 +123,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
         TmScheduleEvent? clicked = null;
         var events = new List<TmScheduleEvent>
         {
-            Evt("Review", new(2025, 6, 10, 15, 0, 0), new(2025, 6, 10, 16, 0, 0))
+            Evt("Review", new DateTime(2025, 6, 10, 15, 0, 0), new DateTime(2025, 6, 10, 16, 0, 0))
         };
 
         var cut = RenderComponent<TmSchedulerAgendaView>(p => p
@@ -142,7 +142,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("Sprint Planning", new(2025, 6, 10, 10, 0, 0), new(2025, 6, 10, 11, 0, 0), desc: "Q3 planning session")
+            Evt("Sprint Planning", new DateTime(2025, 6, 10, 10, 0, 0), new DateTime(2025, 6, 10, 11, 0, 0), desc: "Q3 planning session")
         };
 
         var cut = RenderComponent<TmSchedulerAgendaView>(p => p
@@ -157,7 +157,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("Colored", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0), color: "#e74c3c")
+            Evt("Colored", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0), color: "#e74c3c")
         };
 
         var cut = RenderComponent<TmSchedulerAgendaView>(p => p

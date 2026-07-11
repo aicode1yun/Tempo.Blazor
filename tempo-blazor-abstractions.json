@@ -10708,6 +10708,26 @@
       ]
     },
     {
+      "itemName": "IScheduleExporter",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Serializes scheduler events into a calendar document (for example iCalendar / ICS).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IScheduleCalendar.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IScheduleImporter",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Parses a calendar document (for example iCalendar / ICS) into scheduler events.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IScheduleCalendar.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ISelectOption<TValue>",
       "kind": "Interface",
       "category": "Interfaces",
@@ -32973,11 +32993,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1289,
-    "manualItemCount": 1289,
-    "generatedItemCount": 1272,
+    "itemCount": 1291,
+    "manualItemCount": 1291,
+    "generatedItemCount": 1274,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1272
+    "publicApiTypeCount": 1274
   }
 }

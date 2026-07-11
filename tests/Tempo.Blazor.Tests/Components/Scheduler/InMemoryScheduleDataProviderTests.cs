@@ -15,11 +15,11 @@ public class InMemoryScheduleDataProviderTests
     {
         var events = new[]
         {
-            Evt("Inside", new(2025, 6, 15, 10, 0, 0), new(2025, 6, 15, 11, 0, 0)),
-            Evt("Outside", new(2025, 7, 1, 10, 0, 0), new(2025, 7, 1, 11, 0, 0)),
+            Evt("Inside", new DateTime(2025, 6, 15, 10, 0, 0), new DateTime(2025, 6, 15, 11, 0, 0)),
+            Evt("Outside", new DateTime(2025, 7, 1, 10, 0, 0), new DateTime(2025, 7, 1, 11, 0, 0)),
         };
         var provider = new InMemoryScheduleDataProvider(events);
-        var query = new TmScheduleQuery(new(2025, 6, 1), new(2025, 7, 1));
+        var query = new TmScheduleQuery(new DateTime(2025, 6, 1), new DateTime(2025, 7, 1));
 
         var result = await provider.GetEventsAsync(query);
 
@@ -32,10 +32,10 @@ public class InMemoryScheduleDataProviderTests
     {
         var events = new[]
         {
-            Evt("Event", new(2025, 3, 1, 9, 0, 0), new(2025, 3, 1, 10, 0, 0)),
+            Evt("Event", new DateTime(2025, 3, 1, 9, 0, 0), new DateTime(2025, 3, 1, 10, 0, 0)),
         };
         var provider = new InMemoryScheduleDataProvider(events);
-        var query = new TmScheduleQuery(new(2025, 6, 1), new(2025, 7, 1));
+        var query = new TmScheduleQuery(new DateTime(2025, 6, 1), new DateTime(2025, 7, 1));
 
         var result = await provider.GetEventsAsync(query);
 
@@ -47,10 +47,10 @@ public class InMemoryScheduleDataProviderTests
     {
         var events = new[]
         {
-            Evt("Overlapping", new(2025, 5, 31, 22, 0, 0), new(2025, 6, 1, 2, 0, 0)),
+            Evt("Overlapping", new DateTime(2025, 5, 31, 22, 0, 0), new DateTime(2025, 6, 1, 2, 0, 0)),
         };
         var provider = new InMemoryScheduleDataProvider(events);
-        var query = new TmScheduleQuery(new(2025, 6, 1), new(2025, 7, 1));
+        var query = new TmScheduleQuery(new DateTime(2025, 6, 1), new DateTime(2025, 7, 1));
 
         var result = await provider.GetEventsAsync(query);
 
@@ -62,10 +62,10 @@ public class InMemoryScheduleDataProviderTests
     {
         var events = new[]
         {
-            Evt("Overlapping", new(2025, 6, 30, 22, 0, 0), new(2025, 7, 1, 2, 0, 0)),
+            Evt("Overlapping", new DateTime(2025, 6, 30, 22, 0, 0), new DateTime(2025, 7, 1, 2, 0, 0)),
         };
         var provider = new InMemoryScheduleDataProvider(events);
-        var query = new TmScheduleQuery(new(2025, 6, 1), new(2025, 7, 1));
+        var query = new TmScheduleQuery(new DateTime(2025, 6, 1), new DateTime(2025, 7, 1));
 
         var result = await provider.GetEventsAsync(query);
 
@@ -77,11 +77,11 @@ public class InMemoryScheduleDataProviderTests
     {
         var events = new[]
         {
-            new TmScheduleEvent { Title = "Room A", Start = new(2025, 6, 15, 10, 0, 0), End = new(2025, 6, 15, 11, 0, 0), ResourceId = "room-a" },
-            new TmScheduleEvent { Title = "Room B", Start = new(2025, 6, 15, 10, 0, 0), End = new(2025, 6, 15, 11, 0, 0), ResourceId = "room-b" },
+            new TmScheduleEvent { Title = "Room A", Start = new DateTime(2025, 6, 15, 10, 0, 0), End = new DateTime(2025, 6, 15, 11, 0, 0), ResourceId = "room-a" },
+            new TmScheduleEvent { Title = "Room B", Start = new DateTime(2025, 6, 15, 10, 0, 0), End = new DateTime(2025, 6, 15, 11, 0, 0), ResourceId = "room-b" },
         };
         var provider = new InMemoryScheduleDataProvider(events);
-        var query = new TmScheduleQuery(new(2025, 6, 1), new(2025, 7, 1), ResourceId: "room-a");
+        var query = new TmScheduleQuery(new DateTime(2025, 6, 1), new DateTime(2025, 7, 1), ResourceId: "room-a");
 
         var result = await provider.GetEventsAsync(query);
 
@@ -94,11 +94,11 @@ public class InMemoryScheduleDataProviderTests
     {
         var events = new[]
         {
-            new TmScheduleEvent { Title = "Room A", Start = new(2025, 6, 15, 10, 0, 0), End = new(2025, 6, 15, 11, 0, 0), ResourceId = "room-a" },
-            new TmScheduleEvent { Title = "Room B", Start = new(2025, 6, 15, 10, 0, 0), End = new(2025, 6, 15, 11, 0, 0), ResourceId = "room-b" },
+            new TmScheduleEvent { Title = "Room A", Start = new DateTime(2025, 6, 15, 10, 0, 0), End = new DateTime(2025, 6, 15, 11, 0, 0), ResourceId = "room-a" },
+            new TmScheduleEvent { Title = "Room B", Start = new DateTime(2025, 6, 15, 10, 0, 0), End = new DateTime(2025, 6, 15, 11, 0, 0), ResourceId = "room-b" },
         };
         var provider = new InMemoryScheduleDataProvider(events);
-        var query = new TmScheduleQuery(new(2025, 6, 1), new(2025, 7, 1));
+        var query = new TmScheduleQuery(new DateTime(2025, 6, 1), new DateTime(2025, 7, 1));
 
         var result = await provider.GetEventsAsync(query);
 
@@ -113,13 +113,13 @@ public class InMemoryScheduleDataProviderTests
             new TmScheduleEvent
             {
                 Title = "Daily Standup",
-                Start = new(2025, 6, 1, 9, 0, 0),
-                End = new(2025, 6, 1, 9, 30, 0),
+                Start = new DateTime(2025, 6, 1, 9, 0, 0),
+                End = new DateTime(2025, 6, 1, 9, 30, 0),
                 RecurrenceRule = "FREQ=DAILY;INTERVAL=1"
             }
         };
         var provider = new InMemoryScheduleDataProvider(events);
-        var query = new TmScheduleQuery(new(2025, 6, 1), new(2025, 6, 4));
+        var query = new TmScheduleQuery(new DateTime(2025, 6, 1), new DateTime(2025, 6, 4));
 
         var result = await provider.GetEventsAsync(query);
 
@@ -135,19 +135,19 @@ public class InMemoryScheduleDataProviderTests
             new TmScheduleEvent
             {
                 Title = "Daily",
-                Start = new(2025, 6, 1, 9, 0, 0),
-                End = new(2025, 6, 1, 9, 30, 0),
+                Start = new DateTime(2025, 6, 1, 9, 0, 0),
+                End = new DateTime(2025, 6, 1, 9, 30, 0),
                 RecurrenceRule = "FREQ=DAILY;COUNT=3"
             },
             new TmScheduleEvent
             {
                 Title = "One-off",
-                Start = new(2025, 6, 2, 14, 0, 0),
-                End = new(2025, 6, 2, 15, 0, 0)
+                Start = new DateTime(2025, 6, 2, 14, 0, 0),
+                End = new DateTime(2025, 6, 2, 15, 0, 0)
             }
         };
         var provider = new InMemoryScheduleDataProvider(events);
-        var query = new TmScheduleQuery(new(2025, 6, 1), new(2025, 6, 5));
+        var query = new TmScheduleQuery(new DateTime(2025, 6, 1), new DateTime(2025, 6, 5));
 
         var result = await provider.GetEventsAsync(query);
 

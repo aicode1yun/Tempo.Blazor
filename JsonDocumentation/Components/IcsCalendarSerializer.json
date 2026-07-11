@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Scheduler",
+  "description": "Dependency-free iCalendar (RFC 5545) exporter/importer for scheduler events, with RRULE/EXDATE mapping, text escaping, and 75-octet line folding.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Scheduler/IcsCalendarSerializer.cs",
+  "documentationStatus": "generated",
+  "itemName": "IcsCalendarSerializer"
+}

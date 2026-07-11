@@ -41,9 +41,9 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
     {
         var dates = new List<DateOnly>
         {
-            new(2025, 6, 9),
-            new(2025, 6, 10),
-            new(2025, 6, 11),
+            new DateOnly(2025, 6, 9),
+            new DateOnly(2025, 6, 10),
+            new DateOnly(2025, 6, 11),
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
@@ -57,8 +57,8 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
     {
         var dates = new List<DateOnly>
         {
-            new(2025, 6, 9),
-            new(2025, 6, 10),
+            new DateOnly(2025, 6, 9),
+            new DateOnly(2025, 6, 10),
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
@@ -94,7 +94,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("Conference", new(2025, 6, 10), new(2025, 6, 11), allDay: true)
+            Evt("Conference", new DateTime(2025, 6, 10), new DateTime(2025, 6, 11), allDay: true)
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
@@ -110,7 +110,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("Meeting", new(2025, 6, 10, 14, 0, 0), new(2025, 6, 10, 15, 0, 0))
+            Evt("Meeting", new DateTime(2025, 6, 10, 14, 0, 0), new DateTime(2025, 6, 10, 15, 0, 0))
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
@@ -127,7 +127,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("Meeting", new(2025, 6, 10, 12, 0, 0), new(2025, 6, 10, 13, 0, 0))
+            Evt("Meeting", new DateTime(2025, 6, 10, 12, 0, 0), new DateTime(2025, 6, 10, 13, 0, 0))
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
@@ -162,7 +162,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
         TmScheduleEvent? clicked = null;
         var events = new List<TmScheduleEvent>
         {
-            Evt("Standup", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 9, 30, 0))
+            Evt("Standup", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 9, 30, 0))
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
@@ -181,8 +181,8 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("Event A", new(2025, 6, 10, 10, 0, 0), new(2025, 6, 10, 12, 0, 0)),
-            Evt("Event B", new(2025, 6, 10, 11, 0, 0), new(2025, 6, 10, 13, 0, 0)),
+            Evt("Event A", new DateTime(2025, 6, 10, 10, 0, 0), new DateTime(2025, 6, 10, 12, 0, 0)),
+            Evt("Event B", new DateTime(2025, 6, 10, 11, 0, 0), new DateTime(2025, 6, 10, 13, 0, 0)),
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
@@ -206,7 +206,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("Colored", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0), color: "#ff5722")
+            Evt("Colored", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0), color: "#ff5722")
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p

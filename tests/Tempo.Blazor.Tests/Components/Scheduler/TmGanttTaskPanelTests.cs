@@ -22,8 +22,8 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
 
     private static List<TmWorkItem> AllTasksWithTwo => new()
     {
-        new() { Id = "1", Title = "Design", Start = new(2024, 6, 1), End = new(2024, 6, 10), PercentComplete = 50 },
-        new() { Id = "2", Title = "Dev", Start = new(2024, 6, 11), End = new(2024, 6, 20), PercentComplete = 0 }
+        new() { Id = "1", Title = "Design", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10), PercentComplete = 50 },
+        new() { Id = "2", Title = "Dev", Start = new DateTime(2024, 6, 11), End = new DateTime(2024, 6, 20), PercentComplete = 0 }
     };
 
     /// <summary>

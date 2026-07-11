@@ -34,7 +34,7 @@ public class TmSchedulerDayViewTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            new() { Title = "Daily Standup", Start = new(2025, 6, 10, 9, 0, 0), End = new(2025, 6, 10, 9, 30, 0) }
+            new() { Title = "Daily Standup", Start = new DateTime(2025, 6, 10, 9, 0, 0), End = new DateTime(2025, 6, 10, 9, 30, 0) }
         };
 
         var cut = RenderComponent<TmSchedulerDayView>(p => p
@@ -63,7 +63,7 @@ public class TmSchedulerDayViewTests : LocalizationTestBase
         TmScheduleEvent? clicked = null;
         var events = new List<TmScheduleEvent>
         {
-            new() { Title = "Review", Start = new(2025, 6, 10, 15, 0, 0), End = new(2025, 6, 10, 16, 0, 0) }
+            new() { Title = "Review", Start = new DateTime(2025, 6, 10, 15, 0, 0), End = new DateTime(2025, 6, 10, 16, 0, 0) }
         };
 
         var cut = RenderComponent<TmSchedulerDayView>(p => p

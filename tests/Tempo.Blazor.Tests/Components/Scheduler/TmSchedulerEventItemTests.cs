@@ -18,7 +18,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     [Fact]
     public void Renders_Event_Container()
     {
-        var evt = Evt("Meeting", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0));
+        var evt = Evt("Meeting", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0));
 
         var cut = RenderComponent<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt));
@@ -29,7 +29,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     [Fact]
     public void Renders_Event_Title()
     {
-        var evt = Evt("Sprint Review", new(2025, 6, 10, 14, 0, 0), new(2025, 6, 10, 15, 0, 0));
+        var evt = Evt("Sprint Review", new DateTime(2025, 6, 10, 14, 0, 0), new DateTime(2025, 6, 10, 15, 0, 0));
 
         var cut = RenderComponent<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt));
@@ -40,7 +40,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     [Fact]
     public void Renders_Event_Time()
     {
-        var evt = Evt("Meeting", new(2025, 6, 10, 14, 30, 0), new(2025, 6, 10, 16, 0, 0));
+        var evt = Evt("Meeting", new DateTime(2025, 6, 10, 14, 30, 0), new DateTime(2025, 6, 10, 16, 0, 0));
 
         var cut = RenderComponent<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt));
@@ -52,7 +52,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     [Fact]
     public void Renders_Color_Dot()
     {
-        var evt = Evt("Colored", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0), color: "#e74c3c");
+        var evt = Evt("Colored", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0), color: "#e74c3c");
 
         var cut = RenderComponent<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt));
@@ -64,7 +64,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     [Fact]
     public void AllDay_Shows_AllDay_Label_Instead_Of_Time()
     {
-        var evt = Evt("Holiday", new(2025, 6, 10), new(2025, 6, 11), allDay: true);
+        var evt = Evt("Holiday", new DateTime(2025, 6, 10), new DateTime(2025, 6, 11), allDay: true);
 
         var cut = RenderComponent<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt));
@@ -77,7 +77,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     public void Click_Fires_OnClick()
     {
         TmScheduleEvent? clicked = null;
-        var evt = Evt("Review", new(2025, 6, 10, 15, 0, 0), new(2025, 6, 10, 16, 0, 0));
+        var evt = Evt("Review", new DateTime(2025, 6, 10, 15, 0, 0), new DateTime(2025, 6, 10, 16, 0, 0));
 
         var cut = RenderComponent<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt)
@@ -92,7 +92,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     [Fact]
     public void Applies_Custom_CssClass()
     {
-        var evt = Evt("Custom", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0), cssClass: "urgent");
+        var evt = Evt("Custom", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0), cssClass: "urgent");
 
         var cut = RenderComponent<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt));
@@ -103,7 +103,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     [Fact]
     public void Uses_EventTemplate_When_Provided()
     {
-        var evt = Evt("Custom Render", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0));
+        var evt = Evt("Custom Render", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0));
 
         var cut = RenderComponent<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt)

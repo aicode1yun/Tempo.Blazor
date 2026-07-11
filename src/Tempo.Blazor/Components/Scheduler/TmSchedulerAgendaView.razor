@@ -88,7 +88,7 @@
 
         foreach (var evt in eventsInRange)
         {
-            var date = DateOnly.FromDateTime(evt.Start);
+            var date = DateOnly.FromDateTime(evt.StartLocal);
             if (date < DateOnly.FromDateTime(rangeStart))
                 date = DateOnly.FromDateTime(rangeStart);
 

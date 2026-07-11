@@ -276,8 +276,8 @@
         {
             if (evt.AllDay)
             {
-                var startDate = DateOnly.FromDateTime(evt.Start);
-                var endDate = DateOnly.FromDateTime(evt.End.AddDays(-1));
+                var startDate = DateOnly.FromDateTime(evt.StartLocal);
+                var endDate = DateOnly.FromDateTime(evt.EndLocal.AddDays(-1));
                 if (endDate < startDate) endDate = startDate;
 
                 for (var d = startDate; d <= endDate; d = d.AddDays(1))
@@ -292,7 +292,7 @@
             }
             else
             {
-                var date = DateOnly.FromDateTime(evt.Start);
+                var date = DateOnly.FromDateTime(evt.StartLocal);
                 if (!_timedMap.TryGetValue(date, out var list))
                 {
                     list = [];
@@ -321,15 +321,16 @@
 
     private static int GetEventStartMinutes(TmScheduleEvent evt, DateOnly date)
     {
+        // Position by display wall-clock (StartLocal), not the offset-bearing instant.
         var dayStart = date.ToDateTime(TimeOnly.MinValue);
-        var minutes = (int)(evt.Start - dayStart).TotalMinutes;
+        var minutes = (int)(evt.StartLocal - dayStart).TotalMinutes;
         return Math.Max(0, Math.Min(minutes, 24 * 60));
     }
 
     private static double GetEventHeightPercent(TmScheduleEvent evt, DateOnly date)
     {
         var startMin = GetEventStartMinutes(evt, date);
-        var endMin = (int)(evt.End - date.ToDateTime(TimeOnly.MinValue)).TotalMinutes;
+        var endMin = (int)(evt.EndLocal - date.ToDateTime(TimeOnly.MinValue)).TotalMinutes;
         endMin = Math.Max(startMin + 1, Math.Min(endMin, 24 * 60));
         return (endMin - startMin) / (24.0 * 60) * 100;
     }
@@ -344,25 +345,25 @@
     {
         if (events.Count == 0) return [];
 
-        var sorted = events.OrderBy(e => e.Start).ThenBy(e => e.End).ToList();
+        var sorted = events.OrderBy(e => e.StartLocal).ThenBy(e => e.EndLocal).ToList();
         var result = new List<PositionedEvent>();
 
         var groups = new List<List<TmScheduleEvent>>();
         var currentGroup = new List<TmScheduleEvent> { sorted[0] };
-        var groupEnd = sorted[0].End;
+        var groupEnd = sorted[0].EndLocal;
 
         for (var i = 1; i < sorted.Count; i++)
         {
-            if (sorted[i].Start < groupEnd)
+            if (sorted[i].StartLocal < groupEnd)
             {
                 currentGroup.Add(sorted[i]);
-                if (sorted[i].End > groupEnd) groupEnd = sorted[i].End;
+                if (sorted[i].EndLocal > groupEnd) groupEnd = sorted[i].EndLocal;
             }
             else
             {
                 groups.Add(currentGroup);
                 currentGroup = [sorted[i]];
-                groupEnd = sorted[i].End;
+                groupEnd = sorted[i].EndLocal;
             }
         }
         groups.Add(currentGroup);
@@ -376,7 +377,7 @@
                 var lane = -1;
                 for (var l = 0; l < lanes.Count; l++)
                 {
-                    if (evt.Start >= lanes[l])
+                    if (evt.StartLocal >= lanes[l])
                     {
                         lane = l;
                         break;
@@ -389,7 +390,7 @@
                     lanes.Add(DateTime.MinValue);
                 }
 
-                lanes[lane] = evt.End;
+                lanes[lane] = evt.EndLocal;
                 result.Add(new PositionedEvent(evt, lane, 0));
             }
 
