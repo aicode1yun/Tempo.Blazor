@@ -6,7 +6,7 @@
     display: flex;
     align-items: center;
     width: 100%;
-    border: 1px solid var(--tm-color-neutral-300, #d4d4d8);
+    border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-md, 0.375rem);
     background-color: var(--tm-color-surface, #fff);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -26,7 +26,7 @@
     font-size: var(--tm-font-size-sm, 0.875rem);
     font-weight: 500;
     font-variant-numeric: tabular-nums;
-    color: var(--tm-color-neutral-900, #18181b);
+    color: var(--tm-text-primary);
     background: transparent;
     border: none;
     outline: none;
@@ -34,7 +34,7 @@
 }
 
 .tm-decimal-input__input::placeholder {
-    color: var(--tm-color-neutral-400, #a1a1aa);
+    color: var(--tm-text-tertiary);
     font-weight: 400;
 }
 
@@ -47,9 +47,9 @@
     width: 2.25rem;
     align-self: stretch;
     padding: 0;
-    background-color: var(--tm-color-neutral-50, #fafafa);
+    background-color: var(--tm-bg-muted);
     border: none;
-    color: var(--tm-color-neutral-600, #52525b);
+    color: var(--tm-text-secondary);
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;
     flex-shrink: 0;
@@ -57,13 +57,13 @@
 
 .tm-decimal-input__increment:hover,
 .tm-decimal-input__decrement:hover {
-    background-color: var(--tm-color-neutral-100, #f4f4f5);
-    color: var(--tm-color-neutral-900, #18181b);
+    background-color: var(--tm-color-surface-hover);
+    color: var(--tm-text-primary);
 }
 
 .tm-decimal-input__increment:active,
 .tm-decimal-input__decrement:active {
-    background-color: var(--tm-color-neutral-200, #e4e4e7);
+    background-color: var(--tm-bg-muted);
 }
 
 .tm-decimal-input__increment:disabled,
@@ -73,11 +73,11 @@
 }
 
 .tm-decimal-input__decrement {
-    border-right: 1px solid var(--tm-color-neutral-200, #e4e4e7);
+    border-right: 1px solid var(--tm-border-color);
 }
 
 .tm-decimal-input__increment {
-    border-left: 1px solid var(--tm-color-neutral-200, #e4e4e7);
+    border-left: 1px solid var(--tm-border-color);
 }
 
 /* ── Prefix / Suffix ───────────────────────────────────── */
@@ -85,7 +85,7 @@
 .tm-decimal-input__suffix {
     font-size: var(--tm-font-size-xs, 0.8125rem);
     font-weight: 500;
-    color: var(--tm-color-neutral-500, #71717a);
+    color: var(--tm-text-secondary);
     white-space: nowrap;
     user-select: none;
     flex-shrink: 0;
@@ -113,7 +113,7 @@
 
 /* ── Read-only state ───────────────────────────────────── */
 .tm-decimal-input__control--readonly {
-    background-color: var(--tm-color-neutral-50, #fafafa);
+    background-color: var(--tm-bg-muted);
 }
 
 .tm-decimal-input__control--readonly .tm-decimal-input__input {
@@ -123,7 +123,7 @@
 /* ── Disabled state ────────────────────────────────────── */
 .tm-decimal-input__control--disabled {
     opacity: 0.6;
-    background-color: var(--tm-color-neutral-100, #f4f4f5);
+    background-color: var(--tm-bg-muted);
     cursor: not-allowed;
 }
 
@@ -131,59 +131,11 @@
     cursor: not-allowed;
 }
 
-/* ═══════════════════════════════════════════════════════
-   Dark mode
-   ═══════════════════════════════════════════════════════ */
-[data-theme="dark"] .tm-decimal-input__control,
-.tm-dark .tm-decimal-input__control {
-    border-color: var(--tm-color-neutral-600, #52525b);
-    background-color: var(--tm-color-neutral-800, #27272a);
-}
-
-[data-theme="dark"] .tm-decimal-input__input,
-.tm-dark .tm-decimal-input__input {
-    color: var(--tm-color-neutral-100, #f4f4f5);
-}
-
-[data-theme="dark"] .tm-decimal-input__prefix,
-[data-theme="dark"] .tm-decimal-input__suffix,
-.tm-dark .tm-decimal-input__prefix,
-.tm-dark .tm-decimal-input__suffix {
-    color: var(--tm-color-neutral-400, #a1a1aa);
-}
-
-[data-theme="dark"] .tm-decimal-input__increment,
-[data-theme="dark"] .tm-decimal-input__decrement,
-.tm-dark .tm-decimal-input__increment,
-.tm-dark .tm-decimal-input__decrement {
-    background-color: var(--tm-color-neutral-700, #3f3f46);
-    color: var(--tm-color-neutral-300, #d4d4d8);
-    border-color: var(--tm-color-neutral-600, #52525b);
-}
-
-[data-theme="dark"] .tm-decimal-input__increment:hover,
-[data-theme="dark"] .tm-decimal-input__decrement:hover,
-.tm-dark .tm-decimal-input__increment:hover,
-.tm-dark .tm-decimal-input__decrement:hover {
-    background-color: var(--tm-color-neutral-600, #52525b);
-    color: var(--tm-color-neutral-100, #f4f4f5);
-}
-
 /* Must come after the dark base rule above: that selector is more specific than the plain
    --error modifier, so without this the invalid border would be repainted neutral in dark mode. */
 [data-theme="dark"] .tm-decimal-input__control--error,
 .tm-dark .tm-decimal-input__control--error {
     border-color: var(--tm-color-danger);
-}
-
-[data-theme="dark"] .tm-decimal-input__control--readonly,
-.tm-dark .tm-decimal-input__control--readonly {
-    background-color: var(--tm-color-neutral-900, #18181b);
-}
-
-[data-theme="dark"] .tm-decimal-input__control--disabled,
-.tm-dark .tm-decimal-input__control--disabled {
-    background-color: var(--tm-color-neutral-900, #18181b);
 }
 
 /* ═══════════════════════════════════════════════════════

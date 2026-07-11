@@ -6,10 +6,10 @@
 }
 
 .tm-rating__star {
-  display: inline-flex;
-  cursor: pointer;
-  color: var(--tm-color-neutral-300);
-  transition: color var(--tm-transition-fast), transform var(--tm-transition-fast);
+    display: inline-flex;
+    cursor: pointer;
+    color: var(--tm-text-disabled);
+    transition: color var(--tm-transition-fast), transform var(--tm-transition-fast);
 }
 
 .tm-rating__star:hover {
@@ -41,10 +41,4 @@
 
 .tm-rating--disabled {
   cursor: not-allowed;
-}
-
-/* Dark mode */
-[data-theme="dark"] .tm-rating__star--empty,
-.tm-dark .tm-rating__star--empty {
-  color: var(--tm-color-neutral-600);
 }
