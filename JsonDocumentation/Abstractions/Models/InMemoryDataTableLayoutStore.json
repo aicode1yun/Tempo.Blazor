@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "In-memory IDataTableLayoutStore keyed by table + user for the lifetime of the instance. Suitable for demos, tests, and prototypes.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryDataTableLayoutStore.cs",
+  "documentationStatus": "generated",
+  "itemName": "InMemoryDataTableLayoutStore"
+}

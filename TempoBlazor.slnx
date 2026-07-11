@@ -7,6 +7,7 @@
     <Project Path="src/Tempo.Blazor.Demo.Server/Tempo.Blazor.Demo.Server.csproj" />
     <Project Path="src/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto.csproj" />
     <Project Path="src/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto.Client/Tempo.Blazor.Demo.InteractiveAuto.Client.csproj" />
+    <Project Path="src/Tempo.Blazor.DataTableXlsx/Tempo.Blazor.DataTableXlsx.csproj" />
     <Project Path="src/Tempo.Blazor.Demo.Api/Tempo.Blazor.Demo.Api.csproj" />
     <Project Path="src/Tempo.Blazor.Collaboration/Tempo.Blazor.Collaboration.csproj" />
     <Project Path="src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj" />

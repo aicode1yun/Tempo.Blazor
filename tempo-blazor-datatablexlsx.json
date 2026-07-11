@@ -1,0 +1,98 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.DataTableXlsx",
+    "title": "Tempo.Blazor.DataTableXlsx",
+    "description": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;datatable;xlsx;excel;openxml;export",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.DataTableXlsx"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "DocumentFormat.OpenXml",
+        "version": "3.3.0"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Export"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.DataTableXlsx",
+    "overview": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.DataTableXlsx"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "DocumentFormat.OpenXml",
+        "version": "3.3.0"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "XlsxDataTableExporter",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Export",
+      "description": "XLSX IDataTableExporter backed by DocumentFormat.OpenXml. Writes the header row followed by data rows into a single worksheet using inline strings.",
+      "packageId": "Tempo.Blazor.DataTableXlsx",
+      "sourcePath": "src/Tempo.Blazor.DataTableXlsx/XlsxDataTableExporter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ContentType",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "FileExtension",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Format",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Export",
+          "kind": "Method",
+          "type": "byte[]",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "DataTableExportData"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [],
+  "summary": {
+    "itemCount": 1,
+    "manualItemCount": 1,
+    "generatedItemCount": 1,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 0,
+    "publicApiTypeCount": 1
+  }
+}

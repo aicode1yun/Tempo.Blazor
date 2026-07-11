@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "A single sort instruction (column key + direction). In DataTableQuery.SortDescriptors the position defines precedence.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SortDescriptor.cs",
+  "documentationStatus": "generated",
+  "itemName": "SortDescriptor"
+}

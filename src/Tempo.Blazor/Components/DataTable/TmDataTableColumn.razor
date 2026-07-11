@@ -58,6 +58,12 @@
     /// <summary>Custom header render fragment (replaces plain Title text when set).</summary>
     [Parameter] public RenderFragment? HeaderTemplate { get; set; }
 
+    /// <summary>Whether this column supports inline editing (requires TmDataTable.Editable).</summary>
+    [Parameter] public bool Editable { get; set; }
+
+    /// <summary>Template rendered for this cell when the row is in edit mode. Replaces CellTemplate/Field.</summary>
+    [Parameter] public RenderFragment<TItem>? EditTemplate { get; set; }
+
     /// <summary>Display order (lower index = further left). Columns with same order preserve declaration order.</summary>
     [Parameter] public int Order { get; set; }
 

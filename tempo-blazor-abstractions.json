@@ -10340,6 +10340,16 @@
       ]
     },
     {
+      "itemName": "IDataTableLayoutStore",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Per-user persistence hook for a data table's column layout (widths and pin state), separate from saved views.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IDataTableLayoutStore.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IDataTableViewProvider",
       "kind": "Interface",
       "category": "Interfaces",
@@ -11731,6 +11741,16 @@
       ]
     },
     {
+      "itemName": "ColumnPin",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Pin state for a data table column: None, Left, or Right.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ContextMenuContext<TMetadata>",
       "kind": "Class",
       "category": "Models",
@@ -11783,6 +11803,16 @@
       ]
     },
     {
+      "itemName": "DataTableExportData",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Tabular snapshot of a data table for export: visible column headers and fully materialized rows (all pages) for the current filter/sort.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DataTableFilter",
       "kind": "Record",
       "category": "Models",
@@ -11790,6 +11820,16 @@
       "description": "Represents a single column filter predicate.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableQuery.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DataTableLayout",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Per-user, per-table column layout: pixel widths and pin state keyed by column key. Persisted through an IDataTableLayoutStore.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableLayout.cs",
       "documentationStatus": "merged"
     },
     {
@@ -11859,6 +11899,16 @@
           "code": "var query = new DataTableQuery\n{\n    Page = 1,\n    PageSize = 50,\n    SortColumn = \"LastName\",\n    SortDescending = false,\n    SearchText = \"smith\",\n    Filters = new List<FilterDefinition>\n    {\n        new() { Column = \"Status\", Operator = \"eq\", Value = \"Active\" },\n        new() { Column = \"Age\", Operator = \"gt\", Value = 18 }\n    }\n};"
         }
       ]
+    },
+    {
+      "itemName": "DataTableSortDirection",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Sort direction for a data table column (Ascending or Descending).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SortDescriptor.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "DataTableView",
@@ -13976,6 +14026,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IDataTableExporter",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Serializes a DataTableExportData snapshot into a downloadable document (for example CSV or XLSX).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IGanttRealtimeConnection",
       "kind": "Interface",
       "category": "Models",
@@ -13994,6 +14054,64 @@
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ImageUrlResolvers.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "InMemoryDataTableLayoutStore",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "In-memory IDataTableLayoutStore keyed by table + user for the lifetime of the instance. Suitable for demos, tests, and prototypes.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryDataTableLayoutStore.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "LoadLayoutAsync",
+          "kind": "Method",
+          "type": "Task<DataTableLayout?>",
+          "parameters": [
+            {
+              "name": "viewContext",
+              "type": "string"
+            },
+            {
+              "name": "userId",
+              "type": "string?",
+              "default": "null"
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "SaveLayoutAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "viewContext",
+              "type": "string"
+            },
+            {
+              "name": "layout",
+              "type": "DataTableLayout"
+            },
+            {
+              "name": "userId",
+              "type": "string?",
+              "default": "null"
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
     },
     {
       "itemName": "InMemoryPdfAnnotationProvider",
@@ -15993,6 +16111,16 @@
           "description": "Stable role identifier used by fields."
         }
       ]
+    },
+    {
+      "itemName": "SortDescriptor",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "A single sort instruction (column key + direction). In DataTableQuery.SortDescriptors the position defines precedence.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SortDescriptor.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "StockChartDataPoint",
@@ -32845,11 +32973,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1281,
-    "manualItemCount": 1281,
-    "generatedItemCount": 1264,
+    "itemCount": 1289,
+    "manualItemCount": 1289,
+    "generatedItemCount": 1272,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1264
+    "publicApiTypeCount": 1272
   }
 }

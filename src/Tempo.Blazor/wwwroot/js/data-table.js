@@ -30,7 +30,15 @@ window.tmDataTable = (function () {
             document.removeEventListener('pointercancel', onUp);
             document.body.style.userSelect = '';
             document.body.style.cursor = '';
-            dotNetRef.invokeMethodAsync('OnColumnResizeCommitted').catch(() => { });
+            if (frame) {
+                cancelAnimationFrame(frame);
+                frame = 0;
+            }
+            // Flush the final width before committing so a release within one frame of the last
+            // movement still persists the exact width the user left.
+            dotNetRef.invokeMethodAsync('OnColumnResized', columnKey, lastWidth)
+                .then(() => dotNetRef.invokeMethodAsync('OnColumnResizeCommitted'))
+                .catch(() => { });
         }
 
         document.body.style.userSelect = 'none';
@@ -40,5 +48,24 @@ window.tmDataTable = (function () {
         document.addEventListener('pointercancel', onUp);
     }
 
-    return { startColumnResize };
+    function downloadFile(fileName, contentType, base64) {
+        try {
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const blob = new Blob([bytes], { type: contentType || 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName || 'export';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (err) {
+            console.error('tmDataTable.downloadFile', err);
+        }
+    }
+
+    return { startColumnResize, downloadFile };
 })();

@@ -113,6 +113,10 @@
         "description": "Optional XLSX import and export helpers for Tempo.Blazor Gantt components, backed by DocumentFormat.OpenXml."
       },
       {
+        "name": "Tempo.Blazor.DataTableXlsx",
+        "description": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml."
+      },
+      {
         "name": "Tempo.Blazor.DocumentEditor",
         "description": "Document editor components for Tempo.Blazor, including canvas rendering, collaboration UI, clipboard normalization, and document editor interop assets."
       },

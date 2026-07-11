@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataTable",
+  "description": "Dependency-free CSV IDataTableExporter with RFC 4180 quoting and an optional UTF-8 BOM for Excel.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataTable/CsvDataTableExporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "CsvDataTableExporter"
+}

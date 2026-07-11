@@ -115,113 +115,95 @@
     "packages": [
       {
         "name": "Tempo.Blazor",
-        "description": "Core component library with common UI components, CSS, and JS interop. Larger optional components are distributed through feature packages.",
-        "required": true
-      },
-      {
-        "name": "Tempo.Blazor.All",
-        "description": "Compatibility package that references Tempo.Blazor plus the split feature packages and exposes AddTempoBlazorAll().",
-        "required": false
+        "description": "Comprehensive Blazor component library with 100+ components. Supports WebAssembly, Server, and InteractiveAuto render modes. Multi-targets .NET 8/9/10. Includes multilingual support (EN/CS), CSS variable theming, and dark mode. Optional FluentValidation integration is available through Tempo.Blazor.FluentValidation."
       },
       {
         "name": "Tempo.Blazor.PdfViewer",
-        "description": "Optional PDF.js powered PDF viewer component and PDF.js static web assets.",
-        "required": false
+        "description": "PDF.js powered PDF viewer component for Tempo.Blazor with thumbnails, search, text layer, rotation, zoom, and continuous scroll."
       },
       {
         "name": "Tempo.Blazor.Codes",
-        "description": "Optional QR code and barcode components backed by QRCoder and ZXing.Net.",
-        "required": false
+        "description": "QR code and barcode components for Tempo.Blazor backed by QRCoder and ZXing.Net."
       },
       {
         "name": "Tempo.Blazor.DiagramEditor",
-        "description": "Optional diagram editor components and diagram static web assets.",
-        "required": false
-      },
-      {
-        "name": "Tempo.Blazor.DocumentEditor",
-        "description": "Optional document editor components, canvas runtime, clipboard normalization, and document editor static web assets.",
-        "required": false
-      },
-      {
-        "name": "Tempo.Blazor.NotionEditor",
-        "description": "Optional Notion-style editor components, block/database UI, collaboration UI, comments, media, and Tempo embed blocks.",
-        "required": false
-      },
-      {
-        "name": "Tempo.Blazor.Signing",
-        "description": "Optional signing workflow components, PDF template designer, recipient roles, signing form runner, verification panels, and audit trail UI.",
-        "required": false
+        "description": "Diagram editor components for Tempo.Blazor, including stencil libraries, templates, import helpers, auto-layout, and diagram canvas interop."
       },
       {
         "name": "Tempo.Blazor.Wireframe",
-        "description": "Optional wireframe editor components and wireframe static web assets.",
-        "required": false
+        "description": "Wireframe editor components for Tempo.Blazor with toolbox, schema registry, canvas interop, page tabs, minimap, and export helpers."
       },
       {
         "name": "Tempo.Blazor.Modeling",
-        "description": "Optional modeling editor components built on the diagram editor package.",
-        "required": false
+        "description": "Modeling editor components for Tempo.Blazor, including BPMN, UML, ArchiMate, ERD notation profiles and diagram generation."
       },
       {
         "name": "Tempo.Blazor.Spreadsheet",
-        "description": "Optional Excel-like spreadsheet editor, XLSX import/export, and spreadsheet static web assets.",
-        "required": false
+        "description": "Excel-like spreadsheet components for Tempo.Blazor, including canvas rendering, formula editing, workbook import/export, and spreadsheet interop assets."
       },
       {
         "name": "Tempo.Blazor.GanttXlsx",
-        "description": "Optional Gantt XLSX import/export helpers backed by DocumentFormat.OpenXml.",
-        "required": false
+        "description": "Optional XLSX import and export helpers for Tempo.Blazor Gantt components, backed by DocumentFormat.OpenXml."
+      },
+      {
+        "name": "Tempo.Blazor.DataTableXlsx",
+        "description": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml."
+      },
+      {
+        "name": "Tempo.Blazor.DocumentEditor",
+        "description": "Document editor components for Tempo.Blazor, including canvas rendering, collaboration UI, clipboard normalization, and document editor interop assets."
+      },
+      {
+        "name": "Tempo.Blazor.NotionEditor",
+        "description": "Notion-style editor components for Tempo.Blazor, including pages, blocks, databases, collaboration UI, comments, media, and Tempo embed blocks."
+      },
+      {
+        "name": "Tempo.Blazor.Signing",
+        "description": "Signing workflow components for Tempo.Blazor, including PDF template design, recipient roles, signing form runner, document comments, verification panels, and audit trail UI."
+      },
+      {
+        "name": "Tempo.Blazor.All",
+        "description": "Compatibility package for Tempo.Blazor that references the core package and split feature packages for applications that want the full component suite."
       },
       {
         "name": "Tempo.Blazor.Abstractions",
-        "description": "Interfaces and models (zero UI dependencies). Safe to reference from API/service projects for shared contracts like ITmAttachmentProvider, ITmFileProvider, IDashboardProvider, etc.",
-        "required": false
+        "description": "Interfaces and models for Tempo.Blazor component library. Zero UI dependencies – safe to reference from API/service projects."
       },
       {
         "name": "Tempo.Blazor.FluentValidation",
-        "description": "Optional FluentValidation integration. Provides FluentValidationValidator component and EditContext extensions for async validation.",
-        "required": false
+        "description": "FluentValidation integration for Tempo.Blazor component library. Provides FluentValidationValidator component for EditForm and assembly scanning for validator registration."
       },
       {
         "name": "Tempo.Blazor.Collaboration",
-        "description": "Optional SignalR collaboration adapters for document editor and document library refresh workflows.",
-        "required": false
+        "description": "SignalR collaboration providers for Tempo.Blazor document editor abstractions."
       },
       {
         "name": "Tempo.Blazor.DocumentFormats",
-        "description": "Optional server-side import/export package for DOCX, ODT, HTML, Markdown, images, and Notion/document model conversion.",
-        "required": false
+        "description": "Optional server-side DOCX and ODT import/export support for TmDocumentEditor."
       },
       {
         "name": "Tempo.Blazor.EmailTemplates.Abstractions",
-        "description": "Email template document model, rendering contracts, MJML import/export, templating, DTOs, and validation.",
-        "required": false
+        "description": "Logic and contracts for the Tempo.Blazor email template editor: block model, MJML generation and import, Scriban templating sandbox, variable extraction, render pipeline, DTOs and validators. No Blazor dependency – safe to reference from API/service projects."
       },
       {
         "name": "Tempo.Blazor.EmailTemplates",
-        "description": "Visual email template editor UI components and editor-side services.",
-        "required": false
+        "description": "Drag-and-drop email template editor component (TmEmailTemplateEditor) for Tempo.Blazor. Visual MJML editor with full MJML 4 parity, bidirectional MJML import/export, Scriban variable templating and live preview. Built entirely on Tempo.Blazor components."
       },
       {
         "name": "Tempo.Blazor.Mcp",
-        "description": "MCP tools for Tempo.Blazor wireframe schemas, document operations, validation, and implementation briefs.",
-        "required": false
+        "description": "Model Context Protocol (MCP) tools for designing and editing Tempo.Blazor wireframes, diagrams, editor documents and reports with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server."
       },
       {
         "name": "Tempo.Reporting.Abstractions",
-        "description": "Report definition contracts, validation models, data provider interfaces, report server DTOs, and the typed HTTP client for remote report servers.",
-        "required": false
+        "description": "Contracts, JSON definition schema, validation models, data provider interfaces, and server DTOs for Tempo Reporting. No Blazor or ASP.NET dependency."
       },
       {
         "name": "Tempo.Reporting.Engine",
-        "description": "Server/WASM-capable reporting engine for expressions, processing, fixed-page layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives.",
-        "required": false
+        "description": "Tempo Reporting processing engine with expression evaluation, parameter resolution, layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives."
       },
       {
         "name": "Tempo.Blazor.Reporting",
-        "description": "Blazor reporting components: report viewer, parameter panel, explorer, lightweight designer, embedded sources, and remote Report Server integration.",
-        "required": false
+        "description": "Blazor reporting components for Tempo Reporting: report viewer, parameter panel, explorer, lightweight designer, embedded sources, and remote Report Server integration."
       }
     ],
     "installation": {
@@ -3235,6 +3217,44 @@
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/DataTable/ColumnVisibilityItem.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "CsvDataTableExporter",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DataTable",
+      "description": "Dependency-free CSV IDataTableExporter with RFC 4180 quoting and an optional UTF-8 BOM for Excel.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/DataTable/CsvDataTableExporter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ContentType",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "FileExtension",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Format",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Export",
+          "kind": "Method",
+          "type": "byte[]",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "DataTableExportData"
+            }
+          ]
+        }
+      ]
     },
     {
       "itemName": "DataTableScrollMode",
@@ -6430,10 +6450,22 @@
           "description": "Initial page size. Default: 25."
         },
         {
+          "name": "DetailTemplate",
+          "type": "RenderFragment<TItem>?",
+          "isRequired": false,
+          "description": "Template rendered as an expandable detail row beneath a data row."
+        },
+        {
           "name": "DisplayResolver",
           "type": "Func<string, string?, string?>?",
           "isRequired": false,
           "description": "Universal display resolver for field labels and filter values. DisplayResolver(fieldName, null) → localized field/column label (e.g., \"Status\" → \"Stav\") DisplayResolver(fieldName, rawValue) → localized value (e.g., (\"Status\",\"Active\") → \"Aktivní\") Return null to use defaults (FilterDefinition.FieldLabel, column Title, or raw value). Set once on the component — flows to ViewManager, FilterBuilder, and ColumnPicker."
+        },
+        {
+          "name": "Editable",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Enables inline row editing (double-click a row). Requires editable columns with EditTemplate."
         },
         {
           "name": "EmptyTitle",
@@ -6468,16 +6500,46 @@
           "description": "In-memory items. When set without DataProvider, client-side sort/filter/pagination applies."
         },
         {
+          "name": "LayoutChanged",
+          "type": "EventCallback<DataTableLayout>",
+          "isRequired": false,
+          "description": "Fires whenever the column layout (widths or pin state) changes."
+        },
+        {
+          "name": "LayoutStore",
+          "type": "IDataTableLayoutStore?",
+          "isRequired": false,
+          "description": "Persistence hook for per-user column layout (widths + pin state). Optional."
+        },
+        {
           "name": "OnGroupingChanged",
           "type": "EventCallback<IReadOnlyList<string>>",
           "isRequired": false,
           "description": "Fires when grouping configuration changes."
         },
         {
+          "name": "OnLoadDetail",
+          "type": "Func<TItem, Task>?",
+          "isRequired": false,
+          "description": "Invoked once, the first time a row is expanded, so the host can lazily load detail data before renders it."
+        },
+        {
           "name": "OnRowClick",
           "type": "EventCallback<TItem>",
           "isRequired": false,
           "description": "Fires when a data row is clicked."
+        },
+        {
+          "name": "OnRowCommit",
+          "type": "Func<TItem, Task<bool>>?",
+          "isRequired": false,
+          "description": "Invoked to persist a committed row edit. Return false to keep the row in edit mode (for example when a server rejected the change). When null, the edit commits locally."
+        },
+        {
+          "name": "OnRowEditCancelled",
+          "type": "EventCallback<TItem>",
+          "isRequired": false,
+          "description": "Fires when a row edit is cancelled."
         },
         {
           "name": "OnSelectionChanged",
@@ -6497,6 +6559,12 @@
           "type": "Func<TItem, IReadOnlyDictionary<string, object>?>?",
           "isRequired": false,
           "description": "Optional row-level HTML attributes applied to every data row, including non-virtualized, virtualized, and grouped leaf rows."
+        },
+        {
+          "name": "RowEditValidator",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Optional validator content rendered inside the row's cascading while editing (for example <FluentValidationValidator /> or <DataAnnotationsValidator />). Commit is blocked while the edit context is invalid."
         },
         {
           "name": "ScrollMode",
@@ -6528,6 +6596,13 @@
           "type": "RenderFragment?",
           "isRequired": false,
           "description": "Render fragment shown in the selection action bar (bulk actions)."
+        },
+        {
+          "name": "ShowColumnMenu",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether column header controls (pin toggle, resize handle) are shown. Default true."
         },
         {
           "name": "ShowColumnPicker",
@@ -6770,6 +6845,18 @@
           "description": "Additional CSS class applied to each data cell in this column."
         },
         {
+          "name": "Editable",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether this column supports inline editing (requires TmDataTable.Editable)."
+        },
+        {
+          "name": "EditTemplate",
+          "type": "RenderFragment<TItem>?",
+          "isRequired": false,
+          "description": "Template rendered for this cell when the row is in edit mode. Replaces CellTemplate/Field."
+        },
+        {
           "name": "Field",
           "type": "Func<TItem, object?>",
           "isRequired": true,
@@ -6845,10 +6932,23 @@
           "description": "Display order (lower index = further left). Columns with same order preserve declaration order."
         },
         {
+          "name": "Pinned",
+          "type": "ColumnPin",
+          "isRequired": false,
+          "default": "ColumnPin.None",
+          "description": "Default pin state (left/right/none). User pin changes override this at runtime. Default None."
+        },
+        {
           "name": "PropertyName",
           "type": "string?",
           "isRequired": false,
           "description": "Property name for sorting and filtering (e.g. \"Name\", \"CreatedAt\"). Defaults to Title when null."
+        },
+        {
+          "name": "Resizable",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the user can drag-resize this column. Default false."
         },
         {
           "name": "Sortable",
@@ -21135,6 +21235,10 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor/wwwroot/js/data-table.js",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor/wwwroot/js/file-manager.js",
       "kind": "JavaScript"
     },
@@ -21180,11 +21284,11 @@
     }
   ],
   "summary": {
-    "itemCount": 295,
-    "manualItemCount": 295,
-    "generatedItemCount": 287,
+    "itemCount": 296,
+    "manualItemCount": 296,
+    "generatedItemCount": 288,
     "generatedOnlyItemCount": 0,
     "componentCount": 178,
-    "publicApiTypeCount": 109
+    "publicApiTypeCount": 110
   }
 }

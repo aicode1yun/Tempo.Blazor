@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Components.Filters;
@@ -24,7 +25,6 @@ public partial class TmDataTable<TItem> : IDisposable
     private bool _layoutLoaded;
     private DotNetObjectReference<TmDataTable<TItem>>? _dotNetRef;
     private const int DefaultPinnedWidth = 160;
-    private const int CheckboxColumnWidth = 44;
     private const int MinColumnWidth = 60;
 
     /// <summary>Persistence hook for per-user column layout (widths + pin state). Optional.</summary>
@@ -35,6 +35,213 @@ public partial class TmDataTable<TItem> : IDisposable
 
     /// <summary>Whether column header controls (pin toggle, resize handle) are shown. Default true.</summary>
     [Parameter] public bool ShowColumnMenu { get; set; } = true;
+
+    // ── Inline edit state ─────────────────────────────────────────
+    private TItem? _editingItem;
+    private EditContext? _editContext;
+    private bool _editHasErrors;
+
+    /// <summary>Enables inline row editing (double-click a row). Requires editable columns with EditTemplate.</summary>
+    [Parameter] public bool Editable { get; set; }
+
+    /// <summary>
+    /// Invoked to persist a committed row edit. Return false to keep the row in edit mode
+    /// (for example when a server rejected the change). When null, the edit commits locally.
+    /// </summary>
+    [Parameter] public Func<TItem, Task<bool>>? OnRowCommit { get; set; }
+
+    /// <summary>Fires when a row edit is cancelled.</summary>
+    [Parameter] public EventCallback<TItem> OnRowEditCancelled { get; set; }
+
+    /// <summary>
+    /// Optional validator content rendered inside the row's cascading <see cref="EditContext"/> while
+    /// editing (for example <c>&lt;FluentValidationValidator /&gt;</c> or <c>&lt;DataAnnotationsValidator /&gt;</c>).
+    /// Commit is blocked while the edit context is invalid.
+    /// </summary>
+    [Parameter] public RenderFragment? RowEditValidator { get; set; }
+
+    private int _editingRowIndex = -1;
+    private bool AnyEditableColumn => _columns.Any(c => c.Editable);
+
+    // Editing is tracked by row index (not item value) so value-equal duplicate rows do not all
+    // enter edit mode together, and value-type TItem does not falsely match default(TItem).
+    private bool IsEditingRow(int rowIndex) => _editingRowIndex == rowIndex && _editContext is not null;
+
+    private void StartEditAt(int rowIndex, TItem item)
+    {
+        if (!Editable || !AnyEditableColumn) return;
+        _editingRowIndex = rowIndex;
+        _editingItem = item;
+        _editContext = new EditContext(item!);
+        _editHasErrors = false;
+        StateHasChanged();
+    }
+
+    /// <summary>Begins inline editing of a row (host-triggered equivalent of a double-click).</summary>
+    public void BeginRowEdit(TItem item)
+    {
+        var index = _displayedItems.FindIndex(x => EqualityComparer<TItem>.Default.Equals(x, item));
+        if (index >= 0)
+        {
+            StartEditAt(index, item);
+        }
+    }
+
+    private async Task CommitEditAsync()
+    {
+        if (_editingItem is null || _editContext is null) return;
+
+        if (!_editContext.Validate())
+        {
+            _editHasErrors = true;
+            StateHasChanged();
+            return;
+        }
+
+        var item = _editingItem;
+        var committed = OnRowCommit is null || await OnRowCommit(item);
+        if (committed)
+        {
+            _editingItem = default;
+            _editContext = null;
+            _editingRowIndex = -1;
+            _editHasErrors = false;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task CancelEditAsync()
+    {
+        var item = _editingItem;
+        _editingItem = default;
+        _editContext = null;
+        _editingRowIndex = -1;
+        _editHasErrors = false;
+        if (item is not null)
+        {
+            await OnRowEditCancelled.InvokeAsync(item);
+        }
+
+        StateHasChanged();
+    }
+
+    private Task HandleEditKeyDownAsync(KeyboardEventArgs e)
+        => e.Key switch
+        {
+            "Escape" => CancelEditAsync(),
+            "Enter" => CommitEditAsync(),
+            _ => Task.CompletedTask
+        };
+
+    // ── Master-detail expandable rows ─────────────────────────────
+    private readonly HashSet<TItem> _expandedRows = new();
+    private readonly HashSet<TItem> _detailLoaded = new();
+
+    /// <summary>Template rendered as an expandable detail row beneath a data row.</summary>
+    [Parameter] public RenderFragment<TItem>? DetailTemplate { get; set; }
+
+    /// <summary>
+    /// Invoked once, the first time a row is expanded, so the host can lazily load detail data
+    /// before <see cref="DetailTemplate"/> renders it.
+    /// </summary>
+    [Parameter] public Func<TItem, Task>? OnLoadDetail { get; set; }
+
+    private bool HasDetail => DetailTemplate is not null;
+    private bool IsRowExpanded(TItem item) => _expandedRows.Contains(item);
+
+    /// <summary>Toggles a row's expandable detail, lazily invoking <see cref="OnLoadDetail"/> on first expand.</summary>
+    public async Task ToggleRowDetailAsync(TItem item)
+    {
+        if (!_expandedRows.Add(item))
+        {
+            _expandedRows.Remove(item);
+            StateHasChanged();
+            return;
+        }
+
+        if (_detailLoaded.Add(item) && OnLoadDetail is not null)
+        {
+            await OnLoadDetail(item);
+        }
+
+        StateHasChanged();
+    }
+
+    // ── Export ────────────────────────────────────────────────────
+
+    private async Task<IReadOnlyList<TItem>> GatherAllRowsAsync()
+    {
+        if (DataProvider is not null)
+        {
+            var query = new DataTableQuery
+            {
+                Page = 1,
+                PageSize = int.MaxValue,
+                SortColumn = _sortColumn,
+                SortDescending = _sortDescending,
+                SortDescriptors = _sortDescriptors.ToList(),
+                Filters = _activeFilters.Values.ToList(),
+                SearchText = _searchText
+            };
+            var result = await DataProvider.GetDataAsync(query);
+            return result.Items;
+        }
+
+        var items = (Items ?? []).AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(_searchText))
+        {
+            var search = _searchText.Trim();
+            items = items.Where(item =>
+                _columns.Any(col => col.Field?.Invoke(item)?.ToString()
+                    ?.Contains(search, StringComparison.OrdinalIgnoreCase) == true));
+        }
+
+        foreach (var filter in _activeFilters.Values)
+        {
+            var col = _columns.FirstOrDefault(c => c.Key == filter.Column);
+            if (col?.Field is not null)
+            {
+                items = ApplyClientFilter(items, col.Field, filter);
+            }
+        }
+
+        return ApplySort(items).ToList();
+    }
+
+    /// <summary>
+    /// Materializes the full result set for the current filter/sort (all pages, paging bypassed)
+    /// as an export snapshot of the visible columns.
+    /// </summary>
+    public async Task<DataTableExportData> BuildExportDataAsync()
+    {
+        var rows = await GatherAllRowsAsync();
+        var headers = _visibleColumns.Select(c => c.Title).ToList();
+        var data = rows
+            .Select(item => (IReadOnlyList<string?>)_visibleColumns
+                .Select(c => c.Field?.Invoke(item)?.ToString())
+                .ToList())
+            .ToList();
+
+        return new DataTableExportData { Name = ViewContext, Headers = headers, Rows = data };
+    }
+
+    /// <summary>Exports the current filter/sort result set (all pages) and triggers a browser download.</summary>
+    /// <param name="exporter">Format-specific exporter (CSV, XLSX, …).</param>
+    /// <param name="fileName">Optional file name; defaults to the view context plus the exporter extension.</param>
+    public async Task ExportAsync(IDataTableExporter exporter, string? fileName = null)
+    {
+        ArgumentNullException.ThrowIfNull(exporter);
+        var data = await BuildExportDataAsync();
+        var bytes = exporter.Export(data);
+        var name = fileName ?? $"{ViewContext}.{exporter.FileExtension}";
+        try
+        {
+            await JS.InvokeVoidAsync("tmDataTable.downloadFile", name, exporter.ContentType, Convert.ToBase64String(bytes));
+        }
+        catch { /* JS unavailable (e.g. tests) */ }
+    }
     // ── Column registry ──────────────────────────────────────────
     private readonly List<TmDataTableColumn<TItem>> _columns = [];
     private readonly List<TmDataTableColumn<TItem>> _visibleColumns = [];
@@ -263,7 +470,7 @@ public partial class TmDataTable<TItem> : IDisposable
 
     private bool IsAllSelected => _displayedItems.Count > 0 && _displayedItems.All(IsSelected);
     private bool IsSelected(TItem item) => _selectedItems.Contains(item);
-    private int ColSpan => Math.Max(1, (Selectable ? 1 : 0) + _visibleColumns.Count);
+    private int ColSpan => Math.Max(1, (HasDetail ? 1 : 0) + (Selectable ? 1 : 0) + _visibleColumns.Count);
     /// <summary>
     /// Attribute names the table manages itself on each &lt;tr&gt;. A consumer <see cref="RowAttributes"/>
     /// dictionary must not override these, or it would clobber row styling, selection clicks, keyboard
@@ -442,7 +649,10 @@ public partial class TmDataTable<TItem> : IDisposable
         _stickyLeft.Clear();
         _stickyRight.Clear();
 
-        var leftOffset = Selectable ? CheckboxColumnWidth : 0;
+        // Left-pinned columns stack from the container edge. Leading utility columns (expander,
+        // checkbox) are not sticky, so their width is not reserved — a pinned column simply sticks
+        // over them once they scroll away.
+        var leftOffset = 0;
         foreach (var col in _visibleColumns.Where(c => GetPin(c) == ColumnPin.Left))
         {
             _stickyLeft[col.Key] = leftOffset;
@@ -1249,6 +1459,13 @@ public partial class TmDataTable<TItem> : IDisposable
                         builder.AddAttribute(seq++, "class", GetRowClass(rowItem));
                         builder.AddAttribute(seq++, "onclick", EventCallback.Factory.Create(this, () => HandleRowClickAsync(rowItem)));
                         builder.AddMultipleAttributes(seq++, GetRowAttributes(rowItem));
+
+                        if (HasDetail)
+                        {
+                            builder.OpenElement(seq++, "td");
+                            builder.AddAttribute(seq++, "class", "tm-col-expander");
+                            builder.CloseElement();
+                        }
 
                         if (Selectable)
                         {

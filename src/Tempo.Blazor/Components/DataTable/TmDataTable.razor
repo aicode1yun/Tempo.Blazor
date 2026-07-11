@@ -127,6 +127,10 @@
             {
                 <thead>
                     <tr>
+                        @if (HasDetail)
+                        {
+                            <th class="tm-col-expander" aria-hidden="true"></th>
+                        }
                         @if (Selectable)
                         {
                             <th class="tm-col-check">
@@ -187,6 +191,7 @@
                     @if (_visibleColumns.Any(c => c.Filterable))
                     {
                         <tr class="tm-filter-row">
+                            @if (HasDetail) { <th></th> }
                             @if (Selectable) { <th></th> }
                             @foreach (var col in _visibleColumns)
                             {
@@ -251,6 +256,10 @@
                             @onclick="() => HandleRowClickAsync(rowItem)"
                             @onkeydown="e => HandleRowKeyDownAsync(e, rowItem)"
                             @attributes="GetRowAttributes(rowItem)">
+                            @if (HasDetail)
+                            {
+                                <td class="tm-col-expander"></td>
+                            }
                             @if (Selectable)
                             {
                                 <td class="tm-col-check">
@@ -278,37 +287,106 @@
                 }
                 else
                 {
-                    @foreach (var item in _displayedItems)
+                    @for (var rowIndex = 0; rowIndex < _displayedItems.Count; rowIndex++)
                     {
-                        var rowItem = item;
-                        <tr class="@GetRowClass(rowItem)"
-                            tabindex="0"
-                            @onclick="() => HandleRowClickAsync(rowItem)"
-                            @onkeydown="e => HandleRowKeyDownAsync(e, rowItem)"
-                            @attributes="GetRowAttributes(rowItem)">
-                            @if (Selectable)
-                            {
-                                <td class="tm-col-check">
-                                    <input type="checkbox"
-                                           checked="@IsSelected(rowItem)"
-                                           @onchange="e => ToggleRowSelectionAsync(rowItem, e)"
-                                           @onclick:stopPropagation="true" />
-                                </td>
-                            }
-                            @foreach (var col in _visibleColumns)
-                            {
-                                <td class="@GetCellClass(col)" style="@GetColumnStyle(col)">
-                                    @if (col.CellTemplate is not null)
+                        var rowItem = _displayedItems[rowIndex];
+                        var currentRowIndex = rowIndex;
+                        @if (Editable && IsEditingRow(currentRowIndex))
+                        {
+                            <CascadingValue Value="_editContext" IsFixed="false">
+                                <tr class="tm-row-editing" data-testid="row-editing" @onkeydown="HandleEditKeyDownAsync">
+                                    @if (HasDetail)
                                     {
-                                        @col.CellTemplate(rowItem)
+                                        <td class="tm-col-expander"></td>
                                     }
-                                    else
+                                    @if (Selectable)
                                     {
-                                        @col.Field?.Invoke(rowItem)
+                                        <td class="tm-col-check"></td>
                                     }
-                                </td>
-                            }
-                        </tr>
+                                    @foreach (var col in _visibleColumns)
+                                    {
+                                        <td class="@GetCellClass(col)" style="@GetColumnStyle(col)">
+                                            @if (col.Editable && col.EditTemplate is not null)
+                                            {
+                                                @col.EditTemplate(rowItem)
+                                            }
+                                            else if (col.CellTemplate is not null)
+                                            {
+                                                @col.CellTemplate(rowItem)
+                                            }
+                                            else
+                                            {
+                                                @col.Field?.Invoke(rowItem)
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                                <tr class="tm-row-edit-actions">
+                                    <td colspan="@ColSpan">
+                                        @RowEditValidator
+                                        @if (_editHasErrors)
+                                        {
+                                            <span class="tm-row-edit-error" data-testid="edit-error">@Loc["TmDataTable_EditInvalid"]</span>
+                                        }
+                                        <button type="button" class="tm-data-table-edit-save" data-testid="edit-commit"
+                                                @onclick="CommitEditAsync">@Loc["TmDataTable_Save"]</button>
+                                        <button type="button" class="tm-data-table-edit-cancel" data-testid="edit-cancel"
+                                                @onclick="CancelEditAsync">@Loc["TmDataTable_Cancel"]</button>
+                                    </td>
+                                </tr>
+                            </CascadingValue>
+                        }
+                        else
+                        {
+                            <tr class="@GetRowClass(rowItem)"
+                                tabindex="0"
+                                @ondblclick="() => StartEditAt(currentRowIndex, rowItem)"
+                                @onclick="() => HandleRowClickAsync(rowItem)"
+                                @onkeydown="e => HandleRowKeyDownAsync(e, rowItem)"
+                                @attributes="GetRowAttributes(rowItem)">
+                                @if (HasDetail)
+                                {
+                                    <td class="tm-col-expander">
+                                        <button type="button" class="tm-row-expander-btn"
+                                                aria-label="@Loc["TmDataTable_ToggleDetail"]"
+                                                aria-expanded="@IsRowExpanded(rowItem).ToString().ToLowerInvariant()"
+                                                data-testid="expander"
+                                                @onclick:stopPropagation="true"
+                                                @onclick="() => ToggleRowDetailAsync(rowItem)">
+                                            <span class="tm-row-expander-icon @(IsRowExpanded(rowItem) ? "tm-row-expander-icon--open" : "")" aria-hidden="true"></span>
+                                        </button>
+                                    </td>
+                                }
+                                @if (Selectable)
+                                {
+                                    <td class="tm-col-check">
+                                        <input type="checkbox"
+                                               checked="@IsSelected(rowItem)"
+                                               @onchange="e => ToggleRowSelectionAsync(rowItem, e)"
+                                               @onclick:stopPropagation="true" />
+                                    </td>
+                                }
+                                @foreach (var col in _visibleColumns)
+                                {
+                                    <td class="@GetCellClass(col)" style="@GetColumnStyle(col)">
+                                        @if (col.CellTemplate is not null)
+                                        {
+                                            @col.CellTemplate(rowItem)
+                                        }
+                                        else
+                                        {
+                                            @col.Field?.Invoke(rowItem)
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                        @if (HasDetail && IsRowExpanded(rowItem))
+                        {
+                            <tr class="tm-row-detail" data-testid="row-detail">
+                                <td colspan="@ColSpan">@DetailTemplate!(rowItem)</td>
+                            </tr>
+                        }
                     }
                 }
             </tbody>
