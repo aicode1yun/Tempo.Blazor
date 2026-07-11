@@ -1,0 +1,23 @@
+{
+  "kind": "Interface",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "An IWireframeComponentProvider whose custom component types are namespaced to a single application. Register it with services.AddWireframeComponentProvider<T>(); when two providers register the same WireframeComponentDef.Type, the higher Priority wins.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeComponentProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "IWireframeScopedComponentProvider",
+  "members": [
+    {
+      "name": "ScopeAppId",
+      "type": "string",
+      "description": "Application id used to namespace the provider's custom component types."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Scope custom components to one app",
+      "code": "public sealed class MyAppComponents : IWireframeScopedComponentProvider\n{\n    public string ScopeAppId => \"my-app\";\n    public int Priority => 10;   // wins over the built-ins\n\n    public IEnumerable<WireframeComponentDef> GetComponents() => [ /* … */ ];\n}\n\n// Program.cs\nbuilder.Services.AddWireframeComponentProvider<MyAppComponents>();"
+    }
+  ]
+}

@@ -2,7 +2,7 @@
   "itemName": "TmNotionTableRowBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionTableRowBlock Blazor component in the Notion Editor category.",
+  "description": "Renders one row of a TmNotionTableBlock as a <tr> of editable cells. Applies the header-row/header-column styling, the per-column horizontal alignment, cell background colours, merge spans, range-selection highlight, drag handles for row reordering, and Tab/Shift+Tab navigation across cells.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Table",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Table/TmNotionTableRowBlock.razor",
@@ -12,16 +12,159 @@
   ],
   "parameters": [
     {
-      "name": "OnCellsChanged",
-      "type": "EventCallback<IReadOnlyList<NotionTableCell>>",
-      "isRequired": false
-    },
-    {
       "name": "Row",
       "type": "IPageBlock",
       "isRequired": true,
-      "editorRequired": true
+      "editorRequired": true,
+      "description": "The TableRow block whose Content is an ITableRowBlockContent (Cells or RichCells)."
+    },
+    {
+      "name": "RowIndex",
+      "type": "int",
+      "isRequired": false,
+      "default": "0",
+      "description": "Zero-based index of this row inside the table; used for selection and cell focus."
+    },
+    {
+      "name": "ColumnCount",
+      "type": "int",
+      "isRequired": false,
+      "default": "0",
+      "description": "Number of columns to render. Rows with fewer cells are padded with empty cells."
+    },
+    {
+      "name": "ColumnAlignments",
+      "type": "IReadOnlyList<TableColumnAlignment>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Per-column horizontal alignment imported from a GFM table separator row. Columns beyond the list keep the renderer default (None)."
+    },
+    {
+      "name": "IsHeaderRow",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Renders the row with header styling (shaded background, semibold text)."
+    },
+    {
+      "name": "HasHeaderColumn",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Renders the first cell of the row with header styling."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Removes the drag handle and renders the cells non-editable."
+    },
+    {
+      "name": "IsDragging",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Whether this row is the one currently being dragged."
+    },
+    {
+      "name": "IsDragOver",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Whether a dragged row is currently hovering over this row."
+    },
+    {
+      "name": "CanDelete",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Shows the delete-row affordance. The last remaining row cannot be deleted."
+    },
+    {
+      "name": "IsCellSelected",
+      "type": "Func<int, int, bool>?",
+      "isRequired": false,
+      "description": "Predicate (row, column) telling the row whether a given cell is inside the current selection range."
+    },
+    {
+      "name": "OnCellsChanged",
+      "type": "EventCallback<IReadOnlyList<NotionTableCell>>",
+      "isRequired": false,
+      "description": "Fired on cell blur when any cell content changed. Arg = the full new cell list of this row."
+    },
+    {
+      "name": "OnDeleteRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when the user activates the delete-row affordance."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when a cell in this row receives focus."
+    },
+    {
+      "name": "OnTabFromLastCell",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when Tab is pressed in the last cell — the table moves focus to the first cell of the next row."
+    },
+    {
+      "name": "OnShiftTabFromFirstCell",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when Shift+Tab is pressed in the first cell — the table moves focus to the last cell of the previous row."
+    },
+    {
+      "name": "OnDragStart",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when the user starts dragging this row by its handle."
+    },
+    {
+      "name": "OnDragOver",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired while a dragged row hovers over this row."
+    },
+    {
+      "name": "OnDrop",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when a dragged row is dropped onto this row."
+    },
+    {
+      "name": "OnDragEnd",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when the drag gesture ends, regardless of whether a drop happened."
+    },
+    {
+      "name": "OnCellMouseDown",
+      "type": "EventCallback<TableCellSelectionRequest>",
+      "isRequired": false,
+      "description": "Fired on mouse-down in a cell; starts a range selection."
+    },
+    {
+      "name": "OnCellMouseEnter",
+      "type": "EventCallback<TableCellSelectionRequest>",
+      "isRequired": false,
+      "description": "Fired when the pointer enters a cell while a range selection is being dragged."
+    },
+    {
+      "name": "OnCellMouseUp",
+      "type": "EventCallback<TableCellSelectionRequest>",
+      "isRequired": false,
+      "description": "Fired on mouse-up in a cell; completes a range selection."
     }
   ],
-  "subcategory": "Blocks / Table"
+  "subcategory": "Blocks / Table",
+  "examples": [
+    {
+      "title": "Row with per-column alignment",
+      "code": "@* Rendered by TmNotionTableBlock; shown here to document the contract *@\n<TmNotionTableRowBlock Row=\"@_row\"\n                       RowIndex=\"0\"\n                       ColumnCount=\"3\"\n                       ColumnAlignments=\"@_alignments\"\n                       IsHeaderRow=\"true\"\n                       OnCellsChanged=\"SaveRowAsync\" />\n\n@code {\n    // <td> gets tm-notion-table__cell-td--align-center / --align-right\n    private TableColumnAlignment[] _alignments =\n        [TableColumnAlignment.None, TableColumnAlignment.Center, TableColumnAlignment.Right];\n}"
+    }
+  ]
 }

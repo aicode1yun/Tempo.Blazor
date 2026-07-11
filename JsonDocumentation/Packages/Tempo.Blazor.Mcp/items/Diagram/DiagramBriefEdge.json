@@ -1,0 +1,47 @@
+{
+  "kind": "Record",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "One connector of a DiagramBriefPage. Both the endpoint node ids and their stencil ids are carried, so an agent can reason about what is connected without resolving the nodes itself. Endpoints are nullable because a connector may be dangling.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramBriefEdge",
+  "members": [
+    {
+      "name": "Id",
+      "type": "string",
+      "description": "The connector's id."
+    },
+    {
+      "name": "SourceNodeId",
+      "type": "string?",
+      "description": "Id of the source node, or null when the endpoint is unattached."
+    },
+    {
+      "name": "SourceStencilId",
+      "type": "string?",
+      "description": "Stencil id of the source node, when attached."
+    },
+    {
+      "name": "TargetNodeId",
+      "type": "string?",
+      "description": "Id of the target node, or null when the endpoint is unattached."
+    },
+    {
+      "name": "TargetStencilId",
+      "type": "string?",
+      "description": "Stencil id of the target node, when attached."
+    },
+    {
+      "name": "Label",
+      "type": "string?",
+      "description": "The connector's label, when it has one."
+    },
+    {
+      "name": "Routing",
+      "type": "string",
+      "description": "The connector's routing mode."
+    }
+  ]
+}

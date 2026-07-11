@@ -37,6 +37,7 @@ public sealed class DocumentMarkdownExporter
                 break;
             case ListBlockContent list:
                 markdown.Append(list.Ordered ? $"{Math.Max(1, list.StartNumber)}. " : "- ")
+                    .Append(list.IsChecked switch { true => "[x] ", false => "[ ] ", null => string.Empty })
                     .Append(RenderInlines(list.Inlines))
                     .AppendLine();
                 break;
@@ -54,6 +55,9 @@ public sealed class DocumentMarkdownExporter
                 var source = image.Url ?? image.AssetId ?? string.Empty;
                 markdown.Append("![").Append(alt).Append("](").Append(EscapeUrl(source)).Append(')').AppendLine().AppendLine();
                 break;
+            case CodeBlockContent code:
+                AppendCode(markdown, code);
+                break;
             case PageBreakBlockContent:
                 markdown.AppendLine("---").AppendLine();
                 break;
@@ -70,22 +74,73 @@ public sealed class DocumentMarkdownExporter
             return;
         }
 
-        var firstRow = table.Rows[0];
+        var columnCount = table.Rows.Max(row => row.Cells.Count);
+        if (columnCount == 0)
+        {
+            return;
+        }
+
+        AppendTableRow(markdown, table.Rows[0], columnCount);
+
         markdown.Append("| ");
-        markdown.Append(string.Join(" | ", firstRow.Cells.Select(cell => EscapeText(string.Join(' ', cell.Blocks.Select(DocumentModelText.GetBlockText))))));
-        markdown.AppendLine(" |");
-        markdown.Append("| ");
-        markdown.Append(string.Join(" | ", firstRow.Cells.Select(_ => "---")));
+        markdown.Append(string.Join(" | ", Enumerable.Range(0, columnCount).Select(column => SeparatorFor(table, column))));
         markdown.AppendLine(" |");
 
         foreach (var row in table.Rows.Skip(1))
         {
-            markdown.Append("| ");
-            markdown.Append(string.Join(" | ", row.Cells.Select(cell => EscapeText(string.Join(' ', cell.Blocks.Select(DocumentModelText.GetBlockText))))));
-            markdown.AppendLine(" |");
+            AppendTableRow(markdown, row, columnCount);
         }
 
         markdown.AppendLine();
+    }
+
+    private static void AppendTableRow(StringBuilder markdown, TableRowContent row, int columnCount)
+    {
+        var cells = Enumerable.Range(0, columnCount)
+            .Select(column => column < row.Cells.Count ? RenderTableCell(row.Cells[column]) : string.Empty);
+
+        markdown.Append("| ");
+        markdown.Append(string.Join(" | ", cells));
+        markdown.AppendLine(" |");
+    }
+
+    private static string RenderTableCell(TableCellContent cell)
+        => EscapeText(string.Join(' ', cell.Blocks.Select(DocumentModelText.GetBlockText)));
+
+    private static string SeparatorFor(TableBlockContent table, int column)
+    {
+        var alignment = column < table.ColumnAlignments.Count
+            ? table.ColumnAlignments[column]
+            : TableColumnAlignment.None;
+
+        return alignment switch
+        {
+            TableColumnAlignment.Left => ":---",
+            TableColumnAlignment.Center => ":---:",
+            TableColumnAlignment.Right => "---:",
+            _ => "---"
+        };
+    }
+
+    /// <summary>
+    /// Writes a fenced block. The fence grows past the longest backtick run inside the code, so a
+    /// snippet that itself contains ``` still round-trips.
+    /// </summary>
+    private static void AppendCode(StringBuilder markdown, CodeBlockContent code)
+    {
+        var longestRun = 0;
+        var current = 0;
+        foreach (var ch in code.Code)
+        {
+            current = ch == '`' ? current + 1 : 0;
+            longestRun = Math.Max(longestRun, current);
+        }
+
+        var fence = new string('`', Math.Max(3, longestRun + 1));
+        markdown.Append(fence).AppendLine(code.Language ?? string.Empty)
+            .AppendLine(code.Code)
+            .AppendLine(fence)
+            .AppendLine();
     }
 
     private static string RenderInlines(IEnumerable<InlineContent> inlines)
@@ -93,9 +148,12 @@ public sealed class DocumentMarkdownExporter
         var rendered = new StringBuilder();
         foreach (var inline in inlines)
         {
+            // Inside inline code every character is literal, so escaping would emit the backslashes.
+            var isCode = inline.Marks.Any(mark => mark.Type == InlineMarkType.FontFamily);
+
             var text = inline switch
             {
-                TextRun run => EscapeText(run.Text),
+                TextRun run => isCode ? run.Text : EscapeText(run.Text),
                 TokenRun token => "{{" + EscapeText(token.Key) + "}}",
                 DocumentNoteReferenceRun note => "[^" + EscapeText(note.NoteId) + "]",
                 DocumentDrawingRun drawing => RenderDrawing(drawing),
@@ -125,6 +183,7 @@ public sealed class DocumentMarkdownExporter
                 InlineMarkType.Bold => "**" + text + "**",
                 InlineMarkType.Italic => "*" + text + "*",
                 InlineMarkType.Strikethrough => "~~" + text + "~~",
+                InlineMarkType.FontFamily => "`" + text + "`",
                 InlineMarkType.Link when mark.Link is not null && IsSafeMarkdownUrl(mark.Link.Href) => "[" + text + "](" + EscapeUrl(mark.Link.Href) + ")",
                 _ => text
             };

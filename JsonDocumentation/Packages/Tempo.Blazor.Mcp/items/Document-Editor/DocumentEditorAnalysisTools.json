@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "MCP validation and analysis tools for DocumentEditor snapshots.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorAnalysisTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorAnalysisTools"
+}

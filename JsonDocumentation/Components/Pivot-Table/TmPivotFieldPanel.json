@@ -16,66 +16,66 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Filter field configurations."
+      "description": "When true, enables drag-and-drop. Default: true."
     },
     {
       "name": "AutoApplyFilters",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "When true, enables drag-and-drop. Default: true."
+      "description": "When true, filter changes are applied immediately without clicking Apply. Default: true."
     },
     {
       "name": "ColumnFieldKeys",
       "type": "List<string>",
       "isRequired": false,
       "default": "[]",
-      "description": "Keys of fields currently in the row area."
+      "description": "Keys of fields currently in the column area."
     },
     {
       "name": "FilterFields",
       "type": "Dictionary<string, List<object?>>",
       "isRequired": false,
       "default": "[]",
-      "description": "Value field configurations in the data area."
+      "description": "Filter field configurations."
     },
     {
       "name": "Items",
       "type": "IEnumerable<TItem>?",
       "isRequired": false,
-      "description": "All available field definitions."
+      "description": "Source data items used to compute distinct filter values."
     },
     {
       "name": "OnConfigurationChanged",
       "type": "EventCallback<PivotTableConfiguration>",
       "isRequired": false,
-      "description": "When true, shows a checkbox tree instead of the Unused zone. Default: false."
+      "description": "Fires when the user applies a new configuration."
     },
     {
       "name": "OnSortChanged",
       "type": "EventCallback<(string FieldKey, PivotSortDirection Direction, PivotSortBy SortBy)>",
       "isRequired": false,
-      "description": "Fires when the user applies a new configuration."
+      "description": "Fires when a field's sort direction or criterion changes."
     },
     {
       "name": "RowFieldKeys",
       "type": "List<string>",
       "isRequired": false,
       "default": "[]",
-      "description": "Source data items used to compute distinct filter values."
+      "description": "Keys of fields currently in the row area."
     },
     {
       "name": "ShowFieldTree",
       "type": "bool",
       "isRequired": false,
-      "description": "When true, filter changes are applied immediately without clicking Apply. Default: true."
+      "description": "When true, shows a checkbox tree instead of the Unused zone. Default: false."
     },
     {
       "name": "ValueFields",
       "type": "List<PivotValueFieldConfiguration>",
       "isRequired": false,
       "default": "[]",
-      "description": "Keys of fields currently in the column area."
+      "description": "Value field configurations in the data area."
     }
   ],
   "typeParameters": [

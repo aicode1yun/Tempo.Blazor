@@ -15,25 +15,25 @@
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user wants to delete the selected named range."
+      "description": "Raised when the dialog is dismissed."
     },
     {
       "name": "OnDelete",
       "type": "EventCallback<SpreadsheetNamedRange>",
       "isRequired": false,
-      "description": "Raised when the user wants to edit the selected named range."
+      "description": "Raised when the user wants to delete the selected named range."
     },
     {
       "name": "OnEdit",
       "type": "EventCallback<SpreadsheetNamedRange>",
       "isRequired": false,
-      "description": "Raised when the user wants to create a new named range."
+      "description": "Raised when the user wants to edit the selected named range."
     },
     {
       "name": "OnNew",
       "type": "EventCallback",
       "isRequired": true,
-      "description": "The workbook whose named ranges are being managed.",
+      "description": "Raised when the user wants to create a new named range.",
       "editorRequired": true
     }
   ],

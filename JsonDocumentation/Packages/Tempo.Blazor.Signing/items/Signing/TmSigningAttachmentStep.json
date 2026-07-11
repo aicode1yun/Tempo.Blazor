@@ -15,62 +15,62 @@
       "name": "Accept",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether file input allows multiple files."
+      "description": "Accepted file types for upload."
     },
     {
       "name": "AllowMultiple",
       "type": "bool",
       "isRequired": false,
-      "description": "Short text describing where the field appears in the document."
+      "description": "Whether file input allows multiple files."
     },
     {
       "name": "AppearsOn",
       "type": "string?",
       "isRequired": false,
-      "description": "Generated stamp text or image identifier."
+      "description": "Short text describing where the field appears in the document."
     },
     {
       "name": "Attachments",
       "type": "IReadOnlyList<TmSigningStepAttachment>",
       "isRequired": false,
       "default": "[]",
-      "description": "Signing field represented by this step."
+      "description": "Current uploaded attachments."
     },
     {
       "name": "AttachmentsChanged",
       "type": "EventCallback<IReadOnlyList<TmSigningStepAttachment>>",
       "isRequired": false,
-      "description": "Current uploaded attachments."
+      "description": "Callback invoked when attachments change."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Fallback culture used when localized field text is missing."
+      "description": "Additional CSS classes for the shell element."
     },
     {
       "name": "Culture",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the controls are disabled."
+      "description": "Culture used to resolve localized field text."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Accepted file types for upload."
+      "description": "Whether the controls are disabled."
     },
     {
       "name": "FallbackCulture",
       "type": "string?",
       "isRequired": false,
-      "description": "Culture used to resolve localized field text."
+      "description": "Fallback culture used when localized field text is missing."
     },
     {
       "name": "StampValue",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback invoked when attachments change."
+      "description": "Generated stamp text or image identifier."
     }
   ]
 }

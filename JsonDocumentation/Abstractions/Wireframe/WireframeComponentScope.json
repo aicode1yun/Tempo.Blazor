@@ -1,0 +1,77 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Identifies the application-specific component scope used by wireframe registries. Scoped custom component types are namespaced as app:{appId}:{localType}.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/WireframeComponentScope.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeComponentScope",
+  "members": [
+    {
+      "name": "AppId",
+      "type": "string",
+      "description": "Application id for this component scope."
+    },
+    {
+      "name": "TypePrefix",
+      "type": "string",
+      "description": "Type prefix used for custom components in this scope."
+    },
+    {
+      "name": "ForApp",
+      "type": "static WireframeComponentScope ForApp(string appId) => new(appId)",
+      "description": "Creates a component scope for the supplied application id."
+    },
+    {
+      "name": "ForApp",
+      "type": "static WireframeComponentScope ForApp()",
+      "description": "Creates a component scope for the supplied application id."
+    },
+    {
+      "name": "FromAppId",
+      "type": "static WireframeComponentScope? FromAppId()",
+      "description": "Creates a scope when an application id is present; otherwise returns null."
+    },
+    {
+      "name": "IsScopedType",
+      "type": "static bool IsScopedType()",
+      "description": "Returns true when is an app-scoped component type."
+    },
+    {
+      "name": "TryGetAppId",
+      "type": "static bool TryGetAppId()",
+      "description": "Attempts to extract the application id from an app-scoped component type."
+    },
+    {
+      "name": "GetLocalType",
+      "type": "static string GetLocalType()",
+      "description": "Returns the local component type name without the app scope prefix."
+    },
+    {
+      "name": "NamespaceType",
+      "type": "string NamespaceType()",
+      "description": "Returns the scoped type for a local component type."
+    },
+    {
+      "name": "MatchesAppId",
+      "type": "bool MatchesAppId()",
+      "description": "Returns true when identifies the same scope."
+    },
+    {
+      "name": "ContainsType",
+      "type": "bool ContainsType()",
+      "description": "Returns true when belongs to this app scope."
+    },
+    {
+      "name": "AppPackId",
+      "type": "static string AppPackId()",
+      "description": "Returns the target pack id for an app-scoped pack."
+    },
+    {
+      "name": "IsVisibleInTargetPacks",
+      "type": "static bool IsVisibleInTargetPacks()",
+      "description": "Returns true when a schema/definition is visible for the supplied document target packs. Null or empty target lists preserve legacy visibility; built-ins are always visible."
+    }
+  ]
+}

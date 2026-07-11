@@ -31,7 +31,7 @@
       "name": "BlockHasUnreadActivity",
       "type": "bool",
       "isRequired": false,
-      "description": "Number of resolved-but-unread block comment threads for this block."
+      "description": "True when any thread on this block has unread activity (new entry, reaction, resolve)."
     },
     {
       "name": "BlockIndex",
@@ -48,7 +48,7 @@
       "name": "BlockResolvedUnreadCount",
       "type": "int",
       "isRequired": false,
-      "description": "Number of unresolved block comment threads for this block."
+      "description": "Number of resolved-but-unread block comment threads for this block."
     },
     {
       "name": "Blocks",
@@ -61,12 +61,13 @@
       "name": "BlockThreadCount",
       "type": "int",
       "isRequired": false,
-      "description": "True when any thread on this block has unread activity (new entry, reaction, resolve)."
+      "description": "Total number of comment threads on this block."
     },
     {
       "name": "BlockUnresolvedCount",
       "type": "int",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Number of unresolved block comment threads for this block."
     },
     {
       "name": "IsFocused",
@@ -81,7 +82,8 @@
     {
       "name": "NumberedListNumber",
       "type": "int",
-      "isRequired": false
+      "isRequired": false,
+      "description": "1-based ordinal for NumberedList blocks, pre-computed by TmNotionBlockList."
     },
     {
       "name": "OnAddAfter",
@@ -128,7 +130,7 @@
       "name": "OnComment",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when a text block requests keyboard focus movement to a sibling block."
+      "description": "Raised when the user clicks the Comment button in the block handle menu."
     },
     {
       "name": "OnConvertBlock",
@@ -173,7 +175,7 @@
       "name": "OnInsertTemplateBlocks",
       "type": "EventCallback<IReadOnlyList<IPageBlock>>",
       "isRequired": false,
-      "description": "Raised when '{{' token syntax is typed. Args are viewport coords."
+      "description": "Raised when a TemplateButton block requests insertion of its template blocks after itself."
     },
     {
       "name": "OnInsertTemplateBlocksAfter",
@@ -185,25 +187,25 @@
       "name": "OnMentionMenu",
       "type": "EventCallback<(string BlockId, double Top, double Left)>",
       "isRequired": false,
-      "description": "Raised when a '/' typed in this block opens the slash menu. Args are viewport coords."
+      "description": "Raised when '@' mention syntax is typed. Args are viewport coords."
     },
     {
       "name": "OnMoveFocus",
       "type": "EventCallback<(string BlockId, int Direction)>",
       "isRequired": false,
-      "description": "Raised when a TemplateButton block requests insertion of its template blocks after itself."
+      "description": "Raised when a text block requests keyboard focus movement to a sibling block."
     },
     {
       "name": "OnNewThread",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user clicks the Comment button in the block handle menu."
+      "description": "Raised when the user clicks the New Thread button in the block handle menu."
     },
     {
       "name": "OnPageLinkMenu",
       "type": "EventCallback<(string BlockId, double Top, double Left)>",
       "isRequired": false,
-      "description": "Raised when '@' mention syntax is typed. Args are viewport coords."
+      "description": "Raised when '[[' page-link syntax is typed. Args are viewport coords."
     },
     {
       "name": "OnReorder",
@@ -214,13 +216,14 @@
     {
       "name": "OnSlashMenu",
       "type": "EventCallback<(string BlockId, double Top, double Left)>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Raised when a '/' typed in this block opens the slash menu. Args are viewport coords."
     },
     {
       "name": "OnTokenMenu",
       "type": "EventCallback<(string BlockId, double Top, double Left)>",
       "isRequired": false,
-      "description": "Raised when '[[' page-link syntax is typed. Args are viewport coords."
+      "description": "Raised when '{{' token syntax is typed. Args are viewport coords."
     },
     {
       "name": "OnUpdated",

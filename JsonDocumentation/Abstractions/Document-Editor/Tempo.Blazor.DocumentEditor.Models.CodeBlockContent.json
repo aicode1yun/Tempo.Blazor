@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Content of a DocumentBlockType.Code block: a fenced code block in Markdown, a <pre> in HTML, a Notion Code block. The text is stored verbatim — never as inlines — so no emphasis, link or escape parsing is applied to it, and a snippet containing ** or _ round-trips unchanged.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentBlocks.cs",
+  "documentationStatus": "generated",
+  "itemName": "Tempo.Blazor.DocumentEditor.Models.CodeBlockContent",
+  "examples": [
+    {
+      "title": "Import a fenced code block and export it back",
+      "language": "csharp",
+      "code": "var document = new DocumentMarkdownImporter().Import(\"```csharp\\nvar x = 1;\\n```\");\n\nvar code = (CodeBlockContent)document.Blocks[0].Content!;\n// code.Language == \"csharp\"\n// code.Code     == \"var x = 1;\"\n\n// The exporter grows the fence past any backtick run inside the code,\n// so a snippet that itself contains ``` still round-trips.\nvar markdown = new DocumentMarkdownExporter().Export(document);"
+    },
+    {
+      "title": "Build a code block by hand",
+      "language": "csharp",
+      "code": "var block = new DocumentBlock\n{\n    Type = DocumentBlockType.Code,\n    Order = 0,\n    Content = new CodeBlockContent\n    {\n        Language = \"json\",\n        Code = \"{ \\\"id\\\": 1 }\"\n    }\n};"
+    }
+  ],
+  "members": [
+    {
+      "name": "Language",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Language identifier from the opening fence (```csharp) or from a class=\"language-x\" on the inner <code>. Null when the fence carried none."
+    },
+    {
+      "name": "Code",
+      "kind": "Property",
+      "type": "string",
+      "description": "The code itself, newlines preserved. Never parsed for inline markup."
+    }
+  ]
+}

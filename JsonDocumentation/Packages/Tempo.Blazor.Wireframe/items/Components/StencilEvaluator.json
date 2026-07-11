@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Evaluates safe stencil binding expressions. The grammar is deliberately tiny: literals, bare identifiers that read the element's props, the built-ins size.w, size.h and repeat.index, arithmetic and comparison operators, ?? and ternary conditionals, and the single permitted function token(key, fallback). Any other call is a parse error. The public evaluation APIs never throw — an unparseable or nonsensical expression yields StencilValue.Null — so a broken stencil pack cannot take the editor down.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilEvaluator.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilEvaluator",
+  "examples": [
+    {
+      "title": "Use StencilEvaluator",
+      "code": "var evaluator = new StencilEvaluator();\n\n// bare identifiers read props; size.w / size.h / repeat.index are built in\nvar label = evaluator.Evaluate(\"label\", context).AsString();\nvar half  = evaluator.Evaluate(\"size.w / 2\", context).AsDouble();\nvar fill  = evaluator.Evaluate(\"token('color.primary', '#000')\", context).AsString();\n\n// nothing throws — a malformed expression is simply null\nvar broken = evaluator.Evaluate(\"alert(1)\", context);   // StencilValue.Null"
+    }
+  ],
+  "members": [
+    {
+      "name": "Evaluate",
+      "type": "StencilValue Evaluate(string? expression, StencilEvalContext? context = null)",
+      "description": "Parses and evaluates an expression string. Returns StencilValue.Null on any failure."
+    },
+    {
+      "name": "Evaluate",
+      "type": "StencilValue Evaluate(StencilExpression expression, StencilEvalContext? context = null)",
+      "description": "Evaluates an already-parsed expression, which avoids re-parsing in hot render paths."
+    }
+  ]
+}

@@ -42,7 +42,10 @@ public class NotionToDocumentModelConverterTests
         ((Dm.HeadingBlockContent)document.Blocks[1].Content).Level.Should().Be(2);
         ((Dm.ListBlockContent)document.Blocks[2].Content).IndentLevel.Should().Be(1);
         ((Dm.ListBlockContent)document.Blocks[3].Content).Ordered.Should().BeTrue();
-        GetText(document.Blocks[4]).Should().Contain("[x] Done");
+        // The checkbox is state, not text: a literal "[x] " prefix used to be escaped by the
+        // Markdown exporter into "\[x\]", which no importer reads back as a task.
+        ((Dm.ListBlockContent)document.Blocks[4].Content).IsChecked.Should().BeTrue();
+        GetText(document.Blocks[4]).Should().ContainSingle().Which.Should().Be("Done");
     }
 
     [Fact]
@@ -100,7 +103,11 @@ public class NotionToDocumentModelConverterTests
         var result = NotionToDocumentModelConverter.ConvertPage(Page("Warnings"), blocks);
 
         result.Document.Blocks.Should().HaveCount(2);
-        result.Warnings.Should().Contain(warning => warning.Code == "notion.block.approximate" && warning.SourcePath!.Contains(BlockType.Code.ToString(), StringComparison.Ordinal));
+
+        // Code now has a document-model counterpart, so converting it is exact, not approximate.
+        result.Document.Blocks[0].Type.Should().Be(Dm.DocumentBlockType.Code);
+        result.Warnings.Should().NotContain(warning => warning.SourcePath!.Contains(BlockType.Code.ToString(), StringComparison.Ordinal));
+
         result.Warnings.Should().Contain(warning => warning.Code == "notion.block.approximate" && warning.SourcePath!.Contains(BlockType.Diagram.ToString(), StringComparison.Ordinal));
     }
 
@@ -201,6 +208,7 @@ public class NotionToDocumentModelConverterTests
             Dm.QuoteBlockContent quote => quote.Inlines.OfType<Dm.TextRun>().Select(run => run.Text),
             Dm.TableBlockContent table => table.Rows.SelectMany(row => row.Cells).SelectMany(cell => cell.Blocks).SelectMany(GetText),
             Dm.ImageBlockContent image => [image.AltText ?? image.Caption ?? image.Url ?? image.AssetId ?? string.Empty],
+            Dm.CodeBlockContent code => [code.Code],
             Dm.PageBreakBlockContent => ["Page break"],
             _ => []
         };

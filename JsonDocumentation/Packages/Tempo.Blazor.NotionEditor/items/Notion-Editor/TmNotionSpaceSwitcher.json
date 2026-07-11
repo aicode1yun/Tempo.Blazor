@@ -15,25 +15,25 @@
       "name": "CurrentPageId",
       "type": "string?",
       "isRequired": false,
-      "description": "Raised when the selected space id changes."
+      "description": "Currently opened page id used by overview move actions."
     },
     {
       "name": "OnCurrentPageMoved",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Currently opened page id used by overview move actions."
+      "description": "Raised after the provider moves the current page to a different space."
     },
     {
       "name": "SelectedSpaceId",
       "type": "string?",
       "isRequired": false,
-      "description": "Optional provider that supplies spaces and cross-space page moves."
+      "description": "Currently selected space id. Null means the provider default or implicit space."
     },
     {
       "name": "SelectedSpaceIdChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Currently selected space id. Null means the provider default or implicit space."
+      "description": "Raised when the selected space id changes."
     }
   ],
   "subcategory": "Sidebar"

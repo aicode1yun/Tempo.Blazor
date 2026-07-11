@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
-  "description": "Parses a CommonMark / GFM Markdown string into an ordered list of objects. Supports: headings, paragraphs, bullet lists, numbered lists, task lists, blockquotes, fenced code blocks, horizontal rules, images, block equations, tables, and inline formatting.",
+  "description": "Parses a CommonMark / GFM Markdown string into an ordered list of IPageBlock objects. Supports headings, paragraphs, bullet lists, numbered lists, task lists, blockquotes, fenced code blocks, horizontal rules, images, block equations, GFM tables and inline formatting. A table becomes one BlockType.Table block plus child BlockType.TableRow blocks whose ParentBlockId points at it — the same shape TmNotionTableBlock loads at runtime. Outer pipes are optional, escaped \\| stays cell content, and the separator row's alignment (:---, :---:, ---:) is captured in TableBlockContent.ColumnAlignments. Untrusted text is HTML-encoded and link/image URLs are restricted to http, https, mailto and relative targets, so raw <script> or javascript: payloads cannot survive the import.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionMarkdownImporter.cs",
   "documentationStatus": "generated",
@@ -35,5 +35,19 @@
       ]
     }
   ],
-  "itemName": "NotionMarkdownImporter"
+  "itemName": "NotionMarkdownImporter",
+  "examples": [
+    {
+      "title": "Import Markdown into page blocks",
+      "code": "var blocks = NotionMarkdownImporter.Import(markdown, pageId);\n\n// persist through your IBlockProvider\nforeach (var block in blocks)\n{\n    await BlockProvider.CreateBlockAsync(pageId.ToString(), block, previousBlockId: null);\n}"
+    },
+    {
+      "title": "A table imports as a parent block with child rows",
+      "code": "const string markdown = \"\"\"\n    | Name | Status |\n    | :--- | ---: |\n    | CF26 | Ready |\n    \"\"\";\n\nvar blocks = NotionMarkdownImporter.Import(markdown, pageId);\n\nvar table = blocks.Single(b => b.Type == BlockType.Table);\nvar rows  = blocks.Where(b => b.Type == BlockType.TableRow).ToList();\n\n// rows are children of the table, never orphans\nAssert.All(rows, r => Assert.Equal(table.Id, r.ParentBlockId));\n\nvar content = (ITableBlockContent)table.Content;\n// [Left, Right]\nvar alignments = content.ColumnAlignments;"
+    },
+    {
+      "title": "Inline conversion is XSS-safe",
+      "code": "// raw markup is encoded, unsafe schemes lose the link\nNotionMarkdownImporter.InlineMarkdownToHtml(\"<img src=x onerror=alert(1)>\");\n// → \"&lt;img src=x onerror=alert(1)&gt;\"\n\nNotionMarkdownImporter.InlineMarkdownToHtml(\"[click](javascript:alert(1))\");\n// → \"click\"   (no <a href>)\n\nNotionMarkdownImporter.InlineMarkdownToHtml(\"[ok](https://example.test)\");\n// → \"<a href=\\\"https://example.test\\\">ok</a>\""
+    }
+  ]
 }

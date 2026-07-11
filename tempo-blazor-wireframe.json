@@ -122,13 +122,14 @@
       ]
     },
     {
+      "itemName": "AddLayerCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
-      "description": "Undoable command that adds a new layer to the active page.",
+      "description": "Adds a new layer to the active page of a WireframeDocument. Undoable.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/AddLayerCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -146,7 +147,12 @@
           "type": "void"
         }
       ],
-      "itemName": "AddLayerCommand"
+      "examples": [
+        {
+          "title": "Use AddLayerCommand",
+          "code": "// WireframeLayer generates its own Id\nvar layer = new WireframeLayer { Name = \"Annotations\" };\ncommandStack.Push(new AddLayerCommand(document, layer));"
+        }
+      ]
     },
     {
       "itemName": "AlignElementsCommand",
@@ -176,13 +182,14 @@
       ]
     },
     {
+      "itemName": "BringToFrontCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
-      "description": "Brings the selected elements to the front by assigning them a ZIndex higher than all other elements.",
+      "description": "Moves the given elements above all other elements on the page. Undoable.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/BringToFrontCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -200,16 +207,22 @@
           "type": "void"
         }
       ],
-      "itemName": "BringToFrontCommand"
+      "examples": [
+        {
+          "title": "Use BringToFrontCommand",
+          "code": "commandStack.Push(new BringToFrontCommand(document, selectedIds));"
+        }
+      ]
     },
     {
+      "itemName": "BuiltInStencilPackProvider",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe",
-      "description": "Provides built-in Tempo stencil-pack definitions backed by trusted native renderers.",
+      "description": "Provides the built-in Tempo stencil-pack definitions, backed by trusted native renderers. Registered automatically with Priority 0, so any custom provider with a higher Priority can override a built-in component type.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/BuiltInStencilPackProvider.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Priority",
@@ -233,7 +246,12 @@
           "type": "IEnumerable<WireframeComponentDef>"
         }
       ],
-      "itemName": "BuiltInStencilPackProvider"
+      "examples": [
+        {
+          "title": "Override a built-in component",
+          "code": "public sealed class MyOverrides : IWireframeComponentProvider\n{\n    // higher than BuiltInStencilPackProvider.Priority (0)\n    public int Priority => 1;\n\n    public IEnumerable<WireframeComponentDef> GetComponents() =>\n        [ MyCustomButtonDef ];   // same Type as the built-in TmButton → wins\n}"
+        }
+      ]
     },
     {
       "kind": "Class",
@@ -307,13 +325,14 @@
       ]
     },
     {
+      "itemName": "CopyStyleCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
-      "description": "Copies the style (Props) and optionally size of a single element to the static clipboard.",
+      "description": "Copies the style (Props) — and optionally the size — of a single element into the static WireframeClipboard. Unlike the other wireframe commands it does not implement IWireframeCommand and has no Undo(), because it changes no document state; execute it directly instead of pushing it onto a command stack.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/CopyStyleCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Execute",
@@ -321,7 +340,12 @@
           "type": "void"
         }
       ],
-      "itemName": "CopyStyleCommand"
+      "examples": [
+        {
+          "title": "Use CopyStyleCommand",
+          "code": "new CopyStyleCommand(selectedElement).Execute();\n\n// copy style and size together\nnew CopyStyleCommand(selectedElement, includeSize: true).Execute();"
+        }
+      ]
     },
     {
       "itemName": "DistributeElementsCommand",
@@ -398,24 +422,55 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IWireframeScopedComponentProvider",
       "kind": "Interface",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe",
-      "description": "Marker interface for providers whose definitions belong to a single application scope. Registry entries are exposed under app:{ScopeAppId}:{Type}.",
+      "description": "An IWireframeComponentProvider whose custom component types are namespaced to a single application. Register it with services.AddWireframeComponentProvider<T>(); when two providers register the same WireframeComponentDef.Type, the higher Priority wins.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeComponentProvider.cs",
-      "documentationStatus": "generated",
-      "itemName": "IWireframeScopedComponentProvider"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ScopeAppId",
+          "type": "string",
+          "description": "Application id used to namespace the provider's custom component types."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Scope custom components to one app",
+          "code": "public sealed class MyAppComponents : IWireframeScopedComponentProvider\n{\n    public string ScopeAppId => \"my-app\";\n    public int Priority => 10;   // wins over the built-ins\n\n    public IEnumerable<WireframeComponentDef> GetComponents() => [ /* … */ ];\n}\n\n// Program.cs\nbuilder.Services.AddWireframeComponentProvider<MyAppComponents>();"
+        }
+      ]
     },
     {
+      "itemName": "IWireframeSvgRenderer",
       "kind": "Interface",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe",
       "description": "Renders wireframe pages to standalone SVG strings fully headless — no browser, no JS interop — by reusing the live component visuals through WireframePageSvg.BuildFragment. Suitable for server-side preview generation, MCP, and backfill, where no DOM is available.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeSvgRenderer.cs",
-      "documentationStatus": "generated",
-      "itemName": "IWireframeSvgRenderer"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "RenderPageAsync",
+          "type": "Task<string> RenderPageAsync(WireframePage page, WireframeComponentScope? scope = null, WireframePageSvgOptions? options = null)",
+          "description": "Renders a single page to an SVG string. Component definitions are resolved in scope (pass the app scope to resolve app-scoped custom components). Always returns a valid <svg> — an empty page yields a sized placeholder, never null."
+        },
+        {
+          "name": "RenderDocumentAsync",
+          "type": "Task<IReadOnlyList<WireframePageRender>> RenderDocumentAsync(WireframeDocument document, WireframeComponentScope? scope = null, WireframePageSvgOptions? options = null)",
+          "description": "Renders every page of the document in document order, returning one WireframePageRender per page."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Render pages server-side",
+          "code": "@* registered by AddTempoBlazorWireframe() *@\n@inject IWireframeSvgRenderer Renderer\n\nvar svg = await Renderer.RenderPageAsync(page);\n\n// or the whole document\nforeach (var render in await Renderer.RenderDocumentAsync(document))\n{\n    await File.WriteAllTextAsync($\"{render.PageId}.svg\", render.Svg);\n}"
+        }
+      ]
     },
     {
       "itemName": "JsonWireframeComponentProvider",
@@ -565,13 +620,14 @@
       ]
     },
     {
+      "itemName": "NativeRendererRegistry",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Maps trusted native stencil renderer ids to C# wireframe SVG render actions.",
+      "description": "Maps trusted native stencil renderer ids to C# wireframe SVG render actions. A stencil pack may only reference renderer ids present in the registry, which is what keeps declarative packs from executing arbitrary code.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/NativeRendererRegistry.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Register",
@@ -596,16 +652,22 @@
           "description": "Trusted native renderers backed by the built-in Tempo wireframe provider."
         }
       ],
-      "itemName": "NativeRendererRegistry"
+      "examples": [
+        {
+          "title": "Compile a pack against the trusted renderers",
+          "code": "// the registry is supplied to the compiler's constructor\nvar compiler = new StencilPackCompiler(NativeRendererRegistry.TempoBuiltIn);\nvar result   = compiler.CompileWithDiagnostics(pack);"
+        }
+      ]
     },
     {
+      "itemName": "PasteSizeCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
-      "description": "Applies the copied width/height from to selected elements (undoable).",
+      "description": "Applies the width/height previously copied into WireframeClipboard to the selected elements. Undoable.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/PasteSizeCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -623,16 +685,22 @@
           "type": "void"
         }
       ],
-      "itemName": "PasteSizeCommand"
+      "examples": [
+        {
+          "title": "Use PasteSizeCommand",
+          "code": "new CopyStyleCommand(sourceElement, includeSize: true).Execute();\ncommandStack.Push(new PasteSizeCommand(document, selectedIds));"
+        }
+      ]
     },
     {
+      "itemName": "PasteStyleCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
-      "description": "Applies the copied style from to selected elements (undoable).",
+      "description": "Applies the style (Props) previously copied into WireframeClipboard to the selected elements. Undoable. The component registry is needed to know which props are style props for each element type.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/PasteStyleCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -650,7 +718,12 @@
           "type": "void"
         }
       ],
-      "itemName": "PasteStyleCommand"
+      "examples": [
+        {
+          "title": "Use PasteStyleCommand",
+          "code": "new CopyStyleCommand(sourceElement).Execute();\ncommandStack.Push(new PasteStyleCommand(document, selectedIds, registry));"
+        }
+      ]
     },
     {
       "itemName": "RemoveConnectorsCommand",
@@ -697,13 +770,14 @@
       ]
     },
     {
+      "itemName": "RemoveLayerCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
-      "description": "Undoable command that removes a layer and moves its elements to the default layer.",
+      "description": "Removes a layer and moves its elements to the default layer. Undoable.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/RemoveLayerCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -721,16 +795,22 @@
           "type": "void"
         }
       ],
-      "itemName": "RemoveLayerCommand"
+      "examples": [
+        {
+          "title": "Use RemoveLayerCommand",
+          "code": "commandStack.Push(new RemoveLayerCommand(document, layerId));"
+        }
+      ]
     },
     {
+      "itemName": "RenameLayerCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
-      "description": "Undoable command that renames a layer.",
+      "description": "Renames a layer. Undoable — the old name is supplied explicitly so Undo() can restore it.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/RenameLayerCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -748,16 +828,22 @@
           "type": "void"
         }
       ],
-      "itemName": "RenameLayerCommand"
+      "examples": [
+        {
+          "title": "Use RenameLayerCommand",
+          "code": "commandStack.Push(new RenameLayerCommand(document, layer.Id, layer.Name, \"Background\"));"
+        }
+      ]
     },
     {
+      "itemName": "ReorderLayersCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
-      "description": "Undoable command that reorders layers.",
+      "description": "Reorders layers by rewriting their Order property. Undoable.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ReorderLayersCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -775,7 +861,12 @@
           "type": "void"
         }
       ],
-      "itemName": "ReorderLayersCommand"
+      "examples": [
+        {
+          "title": "Use ReorderLayersCommand",
+          "code": "var order = new Dictionary<string, int>\n{\n    [backgroundLayerId] = 0,\n    [contentLayerId]    = 1,\n};\n\ncommandStack.Push(new ReorderLayersCommand(document, order));"
+        }
+      ]
     },
     {
       "itemName": "ResizeCanvasCommand",
@@ -859,13 +950,14 @@
       ]
     },
     {
+      "itemName": "SendToBackCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
-      "description": "Sends the selected elements to the back by assigning them a ZIndex lower than all other elements.",
+      "description": "Moves the given elements below all other elements on the page. Undoable.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/SendToBackCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -883,16 +975,22 @@
           "type": "void"
         }
       ],
-      "itemName": "SendToBackCommand"
+      "examples": [
+        {
+          "title": "Use SendToBackCommand",
+          "code": "commandStack.Push(new SendToBackCommand(document, selectedIds));"
+        }
+      ]
     },
     {
+      "itemName": "StencilEvalContext",
       "kind": "Record",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Immutable data available to stencil expression evaluation.",
+      "description": "Immutable data available to stencil expression evaluation: the element's props, its size, the current repeat index, and the token resolver.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilEvalContext.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "WithRepeatIndex",
@@ -912,16 +1010,22 @@
           "type": "static StencilEvalContext"
         }
       ],
-      "itemName": "StencilEvalContext"
+      "examples": [
+        {
+          "title": "Use StencilEvalContext",
+          "code": "var context = new StencilEvalContext(\n    Props: element.Props,        // read by bare identifier, e.g. \"label\"\n    SizeW: element.W,            // read as size.w\n    SizeH: element.H,            // read as size.h\n    RepeatIndex: 0,              // read as repeat.index\n    Tokens: tokenResolver);      // read as token('key')\n\n// render a repeated part\nfor (var i = 0; i < count; i++)\n{\n    var itemContext = context.WithRepeatIndex(i);\n    var y = evaluator.Evaluate(\"repeat.index * 24\", itemContext).AsDouble();\n}"
+        }
+      ]
     },
     {
+      "itemName": "StencilEvaluator",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Evaluates safe stencil expressions. Public evaluation APIs never throw.",
+      "description": "Evaluates safe stencil binding expressions. The grammar is deliberately tiny: literals, bare identifiers that read the element's props, the built-ins size.w, size.h and repeat.index, arithmetic and comparison operators, ?? and ternary conditionals, and the single permitted function token(key, fallback). Any other call is a parse error. The public evaluation APIs never throw — an unparseable or nonsensical expression yields StencilValue.Null — so a broken stencil pack cannot take the editor down.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilEvaluator.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Evaluate",
@@ -941,16 +1045,22 @@
           ]
         }
       ],
-      "itemName": "StencilEvaluator"
+      "examples": [
+        {
+          "title": "Use StencilEvaluator",
+          "code": "var evaluator = new StencilEvaluator();\n\n// bare identifiers read props; size.w / size.h / repeat.index are built in\nvar label = evaluator.Evaluate(\"label\", context).AsString();\nvar half  = evaluator.Evaluate(\"size.w / 2\", context).AsDouble();\nvar fill  = evaluator.Evaluate(\"token('color.primary', '#000')\", context).AsString();\n\n// nothing throws — a malformed expression is simply null\nvar broken = evaluator.Evaluate(\"alert(1)\", context);   // StencilValue.Null"
+        }
+      ]
     },
     {
+      "itemName": "StencilExpression",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "A parsed safe binding expression. Public parsing APIs never throw on malformed input: they return a literal-mode instance with set to true. The only permitted function call is token(key); any other call becomes a parse error and is handled by the same literal fallback.",
+      "description": "A parsed safe binding expression. Public parsing APIs never throw on malformed input: they return a literal-mode instance with IsMalformed set to true. The only permitted function call is token(key); any other call becomes a parse error and is handled by the same literal fallback. Parse once and hand the instance to StencilEvaluator.Evaluate to avoid re-parsing in hot render paths.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Literal",
@@ -1149,66 +1259,217 @@
           "type": "StencilExpressionNode?"
         }
       ],
-      "itemName": "StencilExpression"
+      "examples": [
+        {
+          "title": "Parse once, evaluate many times",
+          "code": "var expression = StencilExpression.Parse(\"size.w / 2\");\n\nforeach (var element in elements)\n{\n    var half = evaluator.Evaluate(expression, ContextFor(element)).AsDouble();\n}\n\n// malformed input never throws\nvar broken = StencilExpression.Parse(\"alert(1)\");\n// broken.IsMalformed == true"
+        }
+      ]
     },
     {
+      "itemName": "StencilExpression.StencilExpressionNode",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Public class defined by Tempo.Blazor.Wireframe.",
+      "description": "A single node of a parsed stencil expression tree. Its Kind decides which of the other members carry meaning.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
-      "documentationStatus": "generated",
-      "itemName": "StencilExpression.StencilExpressionNode"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Kind",
+          "type": "StencilExpressionNodeKind",
+          "description": "Discriminates the node: literal, property, built-in, operator, conditional, map or token."
+        }
+      ]
     },
     {
+      "itemName": "StencilExpression.StencilExpressionNodeKind",
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Public enum defined by Tempo.Blazor.Wireframe.",
+      "description": "Node kinds of a parsed stencil expression tree.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
-      "documentationStatus": "generated",
-      "itemName": "StencilExpression.StencilExpressionNodeKind"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Literal",
+          "description": "A constant string, number, bool or null."
+        },
+        {
+          "name": "Property",
+          "description": "A bare identifier that reads a prop from StencilEvalContext.Props."
+        },
+        {
+          "name": "SizeWidth",
+          "description": "The built-in size.w."
+        },
+        {
+          "name": "SizeHeight",
+          "description": "The built-in size.h."
+        },
+        {
+          "name": "RepeatIndex",
+          "description": "The built-in repeat.index."
+        },
+        {
+          "name": "Unary",
+          "description": "A unary operator applied to one operand."
+        },
+        {
+          "name": "Binary",
+          "description": "A binary operator applied to two operands."
+        },
+        {
+          "name": "Coalesce",
+          "description": "The ?? null-coalescing operator."
+        },
+        {
+          "name": "Conditional",
+          "description": "A ternary condition ? then : else."
+        },
+        {
+          "name": "Map",
+          "description": "A value lookup against an inline map."
+        },
+        {
+          "name": "Token",
+          "description": "A token(key, fallback) lookup resolved through StencilTokenResolver."
+        }
+      ]
     },
     {
+      "itemName": "StencilExpression.StencilExpressionOperator",
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Public enum defined by Tempo.Blazor.Wireframe.",
+      "description": "Operators allowed inside a stencil expression.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
-      "documentationStatus": "generated",
-      "itemName": "StencilExpression.StencilExpressionOperator"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Add",
+          "description": "Numeric addition or string concatenation."
+        },
+        {
+          "name": "Subtract",
+          "description": "Numeric subtraction."
+        },
+        {
+          "name": "Multiply",
+          "description": "Numeric multiplication."
+        },
+        {
+          "name": "Divide",
+          "description": "Numeric division."
+        },
+        {
+          "name": "Equal",
+          "description": "Equality comparison."
+        },
+        {
+          "name": "NotEqual",
+          "description": "Inequality comparison."
+        },
+        {
+          "name": "Greater",
+          "description": "Greater-than comparison."
+        },
+        {
+          "name": "GreaterOrEqual",
+          "description": "Greater-than-or-equal comparison."
+        },
+        {
+          "name": "Less",
+          "description": "Less-than comparison."
+        },
+        {
+          "name": "LessOrEqual",
+          "description": "Less-than-or-equal comparison."
+        },
+        {
+          "name": "And",
+          "description": "Logical conjunction."
+        }
+      ]
     },
     {
+      "itemName": "StencilPackCompilationResult",
       "kind": "Record",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
       "description": "Compiled stencil pack definitions plus non-fatal validation diagnostics.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilPackCompiler.cs",
-      "documentationStatus": "generated",
-      "itemName": "StencilPackCompilationResult"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Definitions",
+          "type": "IReadOnlyList<WireframeComponentDef>",
+          "description": "The components that compiled successfully."
+        },
+        {
+          "name": "Warnings",
+          "type": "IReadOnlyList<StencilPackValidationWarning>",
+          "description": "Non-fatal validation problems found while compiling."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Inspect the compilation result",
+          "code": "var result = new StencilPackCompiler(NativeRendererRegistry.TempoBuiltIn)\n    .CompileWithDiagnostics(pack);\n\n// warnings are non-fatal — the pack still yielded usable definitions\nif (result.Warnings.Count > 0)\n{\n    logger.LogWarning(\"{Count} stencil warnings\", result.Warnings.Count);\n}\n\nvar definitions = result.Definitions;"
+        }
+      ]
     },
     {
+      "itemName": "StencilPackCompiler",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Compiles declarative stencil pack components into wireframe component definitions.",
+      "description": "Compiles declarative stencil pack components into wireframe component definitions. Validation problems are reported as non-fatal warnings on the result rather than as exceptions, so one bad component does not discard the whole pack.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilPackCompiler.cs",
-      "documentationStatus": "generated",
-      "itemName": "StencilPackCompiler"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "StencilPackCompiler",
+          "type": "StencilPackCompiler()",
+          "description": "Uses a fresh, empty NativeRendererRegistry."
+        },
+        {
+          "name": "StencilPackCompiler",
+          "type": "StencilPackCompiler(NativeRendererRegistry nativeRenderers)",
+          "description": "Compiles against a specific set of trusted native renderers, e.g. NativeRendererRegistry.TempoBuiltIn."
+        },
+        {
+          "name": "CompileWithDiagnostics",
+          "type": "StencilPackCompilationResult CompileWithDiagnostics(StencilPack pack)",
+          "description": "Compiles the pack and returns the definitions together with non-fatal validation warnings."
+        },
+        {
+          "name": "Compile",
+          "type": "IEnumerable<WireframeComponentDef> Compile(StencilPack pack)",
+          "description": "Convenience overload that returns only the definitions and discards the warnings."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Compile a stencil pack and inspect the diagnostics",
+          "code": "// pass the trusted renderers to the compiler, not to Compile()\nvar compiler = new StencilPackCompiler(NativeRendererRegistry.TempoBuiltIn);\n\nvar result = compiler.CompileWithDiagnostics(pack);\nforeach (var warning in result.Warnings)\n{\n    logger.LogWarning(\"stencil pack: {Warning}\", warning);\n}\n\n// or, when the warnings do not matter\nvar definitions = compiler.Compile(pack);"
+        }
+      ]
     },
     {
+      "itemName": "StencilPackComponentProvider",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Exposes compiled stencil pack components to the wireframe component registry.",
+      "description": "Exposes compiled stencil pack components to the wireframe component registry. Implements IWireframeScopedComponentProvider, so a pack's component types are namespaced to one application.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilPackComponentProvider.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "ProviderId",
@@ -1236,16 +1497,22 @@
           "type": "string"
         }
       ],
-      "itemName": "StencilPackComponentProvider"
+      "examples": [
+        {
+          "title": "Serve a stencil pack to the registry",
+          "code": "// the provider takes the pack itself and compiles it\nvar provider = new StencilPackComponentProvider(pack, scopeAppIdOrNamespace: \"my-app\");\n\nbuilder.Services.AddSingleton<IWireframeComponentProvider>(provider);"
+        }
+      ]
     },
     {
+      "itemName": "StencilTokenResolver",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Resolves a token key through element override, document theme, pack theme, pack defaults, and finally a literal fallback. Keys are matched with .",
+      "description": "Resolves a token key through a fixed precedence chain: element override, document theme, pack theme, pack defaults, and finally a literal fallback. Keys are matched with StringComparer.Ordinal, so token lookups are case-sensitive.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilTokenResolver.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Resolve",
@@ -1265,16 +1532,22 @@
           ]
         }
       ],
-      "itemName": "StencilTokenResolver"
+      "examples": [
+        {
+          "title": "Use StencilTokenResolver",
+          "code": "// the resolver is supplied through the evaluation context\nvar context = StencilEvalContext.Empty with { Tokens = tokenResolver };\n\n// token() is the only function a stencil expression may call;\n// the optional second argument is a literal fallback\nvar fill = evaluator.Evaluate(\"token('color.primary', '#3b82f6')\", context).AsString();\n\n// lookup order: element override → document theme → pack theme → pack defaults → fallback"
+        }
+      ]
     },
     {
+      "itemName": "StencilValue",
       "kind": "RecordStruct",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Safe value wrapper used by the stencil expression evaluator.",
+      "description": "Safe value wrapper used by the stencil expression evaluator. Wraps a raw object (often a JsonElement) and exposes total, never-throwing conversions, so a malformed stencil expression degrades to a default instead of crashing the renderer.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilValue.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "IsNull",
@@ -1305,7 +1578,12 @@
           "type": "static StencilValue"
         }
       ],
-      "itemName": "StencilValue"
+      "examples": [
+        {
+          "title": "Use StencilValue",
+          "code": "var value = evaluator.Evaluate(\"label\", context);   // a bare identifier reads a prop\n\nif (!value.IsNull)\n{\n    var label = value.AsString();\n}\n\n// conversions never throw — a malformed expression yields the default\nvar width = evaluator.Evaluate(\"size.w * 2\", context).AsDouble();   // 0 on failure"
+        }
+      ]
     },
     {
       "kind": "Class",
@@ -1555,13 +1833,14 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "ToggleLayerLockCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
-      "description": "Undoable command that toggles a layer's lock state.",
+      "description": "Toggles the lock state of a layer; locked layers cannot be edited on the canvas. Undoable.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ToggleLayerLockCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -1579,16 +1858,22 @@
           "type": "void"
         }
       ],
-      "itemName": "ToggleLayerLockCommand"
+      "examples": [
+        {
+          "title": "Use ToggleLayerLockCommand",
+          "code": "commandStack.Push(new ToggleLayerLockCommand(document, layerId));"
+        }
+      ]
     },
     {
+      "itemName": "ToggleLayerVisibilityCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
-      "description": "Undoable command that toggles a layer's visibility.",
+      "description": "Toggles the visibility of a layer. Undoable.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ToggleLayerVisibilityCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -1606,7 +1891,12 @@
           "type": "void"
         }
       ],
-      "itemName": "ToggleLayerVisibilityCommand"
+      "examples": [
+        {
+          "title": "Use ToggleLayerVisibilityCommand",
+          "code": "commandStack.Push(new ToggleLayerVisibilityCommand(document, layerId));"
+        }
+      ]
     },
     {
       "itemName": "UngroupElementsCommand",
@@ -2255,44 +2545,124 @@
       ]
     },
     {
+      "itemName": "WireframePageRender",
       "kind": "Record",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe",
       "description": "One rendered wireframe page: its identity and dimensions plus the standalone SVG string.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeSvgRenderer.cs",
-      "documentationStatus": "generated",
-      "itemName": "WireframePageRender"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "PageId",
+          "type": "string",
+          "description": "The page's stable id (WireframePage.Id)."
+        },
+        {
+          "name": "Name",
+          "type": "string",
+          "description": "The page's display name."
+        },
+        {
+          "name": "Width",
+          "type": "double",
+          "description": "Canvas width in pixels."
+        },
+        {
+          "name": "Height",
+          "type": "double",
+          "description": "Canvas height in pixels."
+        },
+        {
+          "name": "Svg",
+          "type": "string",
+          "description": "The rendered SVG markup for the page."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Consume a render result",
+          "code": "foreach (var render in await renderer.RenderDocumentAsync(document))\n{\n    Console.WriteLine($\"{render.Name}: {render.Width}x{render.Height}\");\n    await File.WriteAllTextAsync($\"{render.PageId}.svg\", render.Svg);\n}"
+        }
+      ]
     },
     {
+      "itemName": "WireframePageSvg",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe",
-      "description": "Produces a clean, interaction-free SVG RenderFragment for a single WireframePage. This is the shared presentation layer reused by the live canvas and by headless server-side rendering (IWireframeSvgRenderer), so the visual stays in one place and previews cannot drift from the editor. It renders ONLY presentation: - the page <svg> root + connector arrow markers (and an optional grid) in <defs>, - the page background, - visible connector paths and their labels, - each element as a translated inner-<svg> viewport hosting the component's WireframeComponentDef.RenderSvg (with a dashed fallback for unknown types). It deliberately omits every piece of interaction chrome: selection/resize handles, connector hit-test paths, waypoint handles, pointer-events surfaces and cursor styling.",
+      "description": "Produces a clean, interaction-free SVG RenderFragment for a single WireframePage. This is the shared presentation layer reused by the live canvas and by headless server-side rendering (IWireframeSvgRenderer), so the visual stays in one place and previews cannot drift from the editor. It renders only presentation: the page <svg> root plus connector arrow markers (and an optional grid) in <defs>, the page background, visible connector paths and their labels, and each element as a translated inner-<svg> viewport hosting the component.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframePageSvg.cs",
-      "documentationStatus": "generated",
-      "itemName": "WireframePageSvg"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BuildFragment",
+          "type": "static RenderFragment BuildFragment(WireframePage page, WireframeComponentRegistry registry, WireframeComponentScope? scope = null, WireframePageSvgOptions? options = null)",
+          "description": "Builds the presentation-only fragment for one page. page and registry are required; options defaults to WireframePageSvgOptions.Default."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Embed a static page preview",
+          "code": "@* the same visual the editor canvas draws, without any interaction *@\n@WireframePageSvg.BuildFragment(page, registry)\n\n@* with a grid *@\n@WireframePageSvg.BuildFragment(page, registry, options: new WireframePageSvgOptions { ShowGrid = true })"
+        }
+      ]
     },
     {
+      "itemName": "WireframePageSvgOptions",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe",
       "description": "Options controlling a static wireframe page → SVG render.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframePageSvg.cs",
-      "documentationStatus": "generated",
-      "itemName": "WireframePageSvgOptions"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Default",
+          "type": "static WireframePageSvgOptions Default",
+          "description": "Shared default options (no grid, white background)."
+        },
+        {
+          "name": "ShowGrid",
+          "type": "bool",
+          "description": "When true, draws the canvas grid. Defaults to false — previews rarely want a grid."
+        },
+        {
+          "name": "ShowBackground",
+          "type": "bool",
+          "description": "When true, draws the page background rectangle. Defaults to true."
+        },
+        {
+          "name": "BackgroundFill",
+          "type": "string",
+          "description": "Background fill colour used when ShowBackground is true. Defaults to \"white\"."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Transparent preview without a grid",
+          "code": "var options = new WireframePageSvgOptions\n{\n    ShowGrid = false,\n    ShowBackground = false,\n};\n\nvar svg = await renderer.RenderPageAsync(page, options: options);"
+        }
+      ]
     },
     {
+      "itemName": "WireframeSvgRenderer",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Wireframe",
-      "description": "Default IWireframeSvgRenderer built on the static HtmlRenderer. Each render hosts WireframePageSvg.BuildFragment in a tiny throwaway component and serializes the result to a string. No browser, no JS interop — safe to call on the server.",
+      "description": "Default IWireframeSvgRenderer built on the static HtmlRenderer. Each render hosts WireframePageSvg.BuildFragment in a tiny throwaway component and serialises the result to a string. No browser, no JS interop — safe to call on the server.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeSvgRenderer.cs",
-      "documentationStatus": "generated",
-      "itemName": "WireframeSvgRenderer"
+      "documentationStatus": "merged",
+      "examples": [
+        {
+          "title": "Resolve the default renderer",
+          "code": "// registered by AddTempoBlazorWireframe()\nvar renderer = services.GetRequiredService<IWireframeSvgRenderer>();\nvar svg = await renderer.RenderPageAsync(page);"
+        }
+      ]
     },
     {
       "itemName": "WireframeThumbnailRenderer",
@@ -2344,13 +2714,14 @@
       ]
     },
     {
+      "itemName": "WireframeServiceCollectionExtensions",
       "kind": "Class",
       "category": "Configuration",
       "namespace": "Tempo.Blazor.Configuration",
       "description": "Extension methods for registering Tempo.Blazor wireframe editor services.",
       "packageId": "Tempo.Blazor.Wireframe",
       "sourcePath": "src/Tempo.Blazor.Wireframe/Configuration/WireframeServiceCollectionExtensions.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AddTempoBlazorWireframe",
@@ -2365,7 +2736,12 @@
           ]
         }
       ],
-      "itemName": "WireframeServiceCollectionExtensions"
+      "examples": [
+        {
+          "title": "Register the services in Program.cs",
+          "code": "builder.Services.AddTempoBlazorWireframe();"
+        }
+      ]
     },
     {
       "itemName": "TmWireframeContextMenu",
@@ -3046,7 +3422,7 @@
           "name": "IndicatorPos",
           "type": "double?",
           "isRequired": false,
-          "description": "Current zoom scale."
+          "description": "Cursor position in SVG space (null = hidden)."
         },
         {
           "name": "Orientation",
@@ -3060,40 +3436,40 @@
           "type": "double",
           "isRequired": false,
           "default": "1.0",
-          "description": "Canvas viewBox H."
+          "description": "Current zoom scale."
         },
         {
           "name": "Size",
           "type": "int",
           "isRequired": false,
           "default": "20",
-          "description": "\"Horizontal\" or \"Vertical\"."
+          "description": "Pixel size of the ruler (height for H, width for V)."
         },
         {
           "name": "ViewBoxH",
           "type": "double",
           "isRequired": false,
           "default": "800",
-          "description": "Canvas viewBox W."
+          "description": "Canvas viewBox H."
         },
         {
           "name": "ViewBoxW",
           "type": "double",
           "isRequired": false,
           "default": "1200",
-          "description": "Canvas viewBox Y."
+          "description": "Canvas viewBox W."
         },
         {
           "name": "ViewBoxX",
           "type": "double",
           "isRequired": false,
-          "description": "Pixel size of the ruler (height for H, width for V)."
+          "description": "Canvas viewBox X."
         },
         {
           "name": "ViewBoxY",
           "type": "double",
           "isRequired": false,
-          "description": "Canvas viewBox X."
+          "description": "Canvas viewBox Y."
         }
       ]
     },
@@ -3168,9 +3544,9 @@
   ],
   "summary": {
     "itemCount": 90,
-    "manualItemCount": 59,
+    "manualItemCount": 90,
     "generatedItemCount": 78,
-    "generatedOnlyItemCount": 31,
+    "generatedOnlyItemCount": 0,
     "componentCount": 9,
     "publicApiTypeCount": 69
   }

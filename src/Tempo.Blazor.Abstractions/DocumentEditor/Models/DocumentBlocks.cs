@@ -27,7 +27,10 @@ public enum DocumentBlockType
     PageBreak,
 
     /// <summary>Structured document tag block.</summary>
-    ContentControl
+    ContentControl,
+
+    /// <summary>Preformatted code block. Its text is never parsed for inline markup.</summary>
+    Code
 }
 
 /// <summary>Text alignment for paragraph-like document blocks.</summary>
@@ -201,6 +204,16 @@ public abstract class DocumentBlockContent
 {
 }
 
+/// <summary>Preformatted code block content. The code is stored verbatim, never as inlines.</summary>
+public class CodeBlockContent : DocumentBlockContent
+{
+    /// <summary>Language identifier from the opening fence, or <c>null</c> when the fence carried none.</summary>
+    public string? Language { get; set; }
+
+    /// <summary>The code, with newlines preserved and no inline markup applied.</summary>
+    public string Code { get; set; } = string.Empty;
+}
+
 /// <summary>Paragraph block content.</summary>
 public class ParagraphBlockContent : DocumentBlockContent
 {
@@ -329,6 +342,12 @@ public class ListBlockContent : DocumentBlockContent
     /// <summary>Whether this item restarts numbering at its level.</summary>
     public bool RestartNumbering { get; set; }
 
+    /// <summary>
+    /// Checkbox state of a GFM task-list item (<c>- [ ]</c> / <c>- [x]</c>).
+    /// <c>null</c> for an ordinary list item, which has no checkbox at all.
+    /// </summary>
+    public bool? IsChecked { get; set; }
+
     /// <summary>Whether this item explicitly continues the previous numbering sequence.</summary>
     public bool ContinueNumbering { get; set; }
 
@@ -417,6 +436,28 @@ public class TableBlockContent : DocumentBlockContent
 
     /// <summary>Presentation properties for the table as a whole.</summary>
     public TableLayoutContent Layout { get; set; } = new();
+
+    /// <summary>
+    /// Per-column horizontal alignment, indexed by column. Shorter than the widest row means the
+    /// remaining columns are <see cref="TableColumnAlignment.None"/>.
+    /// </summary>
+    public List<TableColumnAlignment> ColumnAlignments { get; set; } = [];
+}
+
+/// <summary>Horizontal alignment of a table column, as expressed by a GFM table separator row.</summary>
+public enum TableColumnAlignment
+{
+    /// <summary>No explicit alignment (<c>---</c>); the renderer decides.</summary>
+    None = 0,
+
+    /// <summary>Align column content to the leading edge (<c>:---</c>).</summary>
+    Left,
+
+    /// <summary>Center column content (<c>:---:</c>).</summary>
+    Center,
+
+    /// <summary>Align column content to the trailing edge (<c>---:</c>).</summary>
+    Right
 }
 
 /// <summary>Presentation properties for a document table.</summary>

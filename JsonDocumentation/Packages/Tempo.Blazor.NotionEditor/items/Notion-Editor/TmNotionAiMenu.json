@@ -15,68 +15,68 @@
       "name": "ContextHtml",
       "type": "string?",
       "isRequired": false,
-      "description": "Selected plain text used by the improve mode."
+      "description": "Selected or page HTML context passed to the provider."
     },
     {
       "name": "InitialMode",
       "type": "NotionAiMenuMode",
       "isRequired": false,
       "default": "NotionAiMenuMode.Generate",
-      "description": "Renders the component as a wider page-level panel."
+      "description": "Initial mode selected when the menu opens."
     },
     {
       "name": "Left",
       "type": "double",
       "isRequired": false,
-      "description": "Fixed top coordinate for inline menu placement."
+      "description": "Fixed left coordinate for inline menu placement."
     },
     {
       "name": "OnAccepted",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Explicit provider used by tests or advanced integrations. Defaults to the editor context provider."
+      "description": "Raised when generated output is accepted. The argument is sanitized HTML."
     },
     {
       "name": "OnClosed",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when generated output is accepted. The argument is sanitized HTML."
+      "description": "Raised when the user closes or discards the menu."
     },
     {
       "name": "PageId",
       "type": "string?",
       "isRequired": false,
-      "description": "Initial mode selected when the menu opens."
+      "description": "Optional page identifier used for summary and page-scoped questions."
     },
     {
       "name": "Panel",
       "type": "bool",
       "isRequired": false,
-      "description": "Fixed left coordinate for inline menu placement."
+      "description": "Renders the component as a wider page-level panel."
     },
     {
       "name": "Provider",
       "type": "INotionAIProvider?",
       "isRequired": false,
-      "description": "Optional target culture for translation requests."
+      "description": "Explicit provider used by tests or advanced integrations. Defaults to the editor context provider."
     },
     {
       "name": "SourceText",
       "type": "string?",
       "isRequired": false,
-      "description": "Optional page identifier used for summary and page-scoped questions."
+      "description": "Selected plain text used by the improve mode."
     },
     {
       "name": "TargetCulture",
       "type": "string?",
       "isRequired": false,
-      "description": "Selected or page HTML context passed to the provider."
+      "description": "Optional target culture for translation requests."
     },
     {
       "name": "Top",
       "type": "double",
       "isRequired": false,
-      "description": "Controls whether the AI menu is rendered."
+      "description": "Fixed top coordinate for inline menu placement."
     }
   ],
   "subcategory": "UI"

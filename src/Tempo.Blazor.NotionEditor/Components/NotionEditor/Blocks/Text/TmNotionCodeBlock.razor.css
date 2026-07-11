@@ -6,9 +6,49 @@
    copy-button icon alignment.
    ═══════════════════════════════════════════════════════════════ */
 
+/* ── Highlight layer ───────────────────────────────────────────── */
+
+/* The coloured code is painted into a <pre> and the textarea sits on top of it with transparent
+   text. Every metric below must match the textarea exactly, or the caret drifts off the glyphs. */
+
+.tm-notion-code-block__editor {
+    position: relative;
+}
+
+.tm-notion-code-block__highlight {
+    position:       absolute;
+    inset:          0;
+    margin:         0;
+    padding:        0;
+    border:         none;
+    overflow:       hidden;   /* scrolled in step with the textarea, never on its own */
+    pointer-events: none;
+    white-space:    pre;
+    tab-size:       4;
+    font-family:    var(--tm-notion-font-mono);
+    font-size:      var(--tm-notion-code-size);
+    line-height:    1.7;
+    background:     transparent;
+}
+
+.tm-notion-code-block__code {
+    display:     block;
+    font:        inherit;
+    color:       var(--tm-text-primary);
+    background:  transparent;
+    white-space: inherit;
+}
+
+.tm-notion-code-block--wrap .tm-notion-code-block__highlight {
+    white-space: pre-wrap;
+    word-break:  break-word;
+}
+
 /* ── Textarea reset — inherits font from global __content rule ── */
 
 textarea.tm-notion-code-block__content {
+    position:         relative;
+    z-index:          1;
     border:           none;
     padding:          0;
     margin:           0;
@@ -24,7 +64,8 @@ textarea.tm-notion-code-block__content {
     font-family:      var(--tm-notion-font-mono);
     font-size:        var(--tm-notion-code-size);
     line-height:      1.7;
-    color:            var(--tm-text-primary);
+    /* The glyphs come from the highlight layer; only the caret and the selection stay visible. */
+    color:            transparent;
     tab-size:         4;
     white-space:      pre;
     caret-color:      var(--tm-text-primary);
@@ -40,9 +81,9 @@ textarea.tm-notion-code-block__content {
 /* Readonly textarea: no cursor, no selection highlight */
 
 textarea.tm-notion-code-block__content[readonly] {
-    cursor:     default;
+    cursor:      default;
     user-select: text;
-    color:       var(--tm-text-secondary);
+    caret-color: transparent;
 }
 
 /* ── Copy button icon alignment ───────────────────────────────── */
@@ -81,4 +122,137 @@ textarea.tm-notion-code-block__content[readonly] {
     font-weight:  var(--tm-font-weight-medium);
     color:        var(--tm-text-secondary);
     padding:      2px 0;
+}
+
+/* ── Markdown preview ─────────────────────────────────────────── */
+
+.tm-notion-code-block__preview-toggle {
+    display:          inline-flex;
+    align-items:      center;
+    gap:              4px;
+    padding:          2px 8px;
+    border:           1px solid var(--tm-color-border, var(--tm-border-color, #e5e7eb));
+    border-radius:    var(--tm-radius-sm, 0.25rem);
+    background:       transparent;
+    color:            var(--tm-text-secondary, #6b7280);
+    font-family:      var(--tm-notion-font-sans);
+    font-size:        var(--tm-font-size-xs, 0.75rem);
+    font-weight:      var(--tm-font-weight-medium, 500);
+    cursor:           pointer;
+    transition:       background-color var(--tm-transition-fast, 100ms ease),
+                      color var(--tm-transition-fast, 100ms ease);
+}
+
+.tm-notion-code-block__preview-toggle:hover {
+    background-color: var(--tm-color-surface-hover, #f3f4f6);
+    color:            var(--tm-color-text, #1f2937);
+}
+
+.tm-notion-code-block__preview-toggle:focus-visible {
+    outline:          2px solid var(--tm-color-primary, #5470ef);
+    outline-offset:   1px;
+}
+
+.tm-notion-code-block__preview-toggle--active {
+    background-color: var(--tm-color-primary-subtle, #eef2ff);
+    border-color:     var(--tm-color-primary, #5470ef);
+    color:            var(--tm-color-primary-text, #1e40af);
+}
+
+.tm-notion-code-block__preview {
+    padding:     8px 0;
+    color:       var(--tm-color-text, #1f2937);
+    font-family: var(--tm-notion-font-sans);
+    font-size:   var(--tm-font-size-sm, 0.875rem);
+    line-height: var(--tm-line-height-normal, 1.5);
+    overflow-x:  auto;
+}
+
+/* The preview is a MarkupString, so its children carry no scope attribute. Without ::deep none of
+   the rules below ever match and a rendered table shows up without borders or padding. */
+.tm-notion-code-block__preview ::deep :first-child { margin-top: 0; }
+.tm-notion-code-block__preview ::deep :last-child  { margin-bottom: 0; }
+
+/* Preview tables mirror TmNotionTableBlock so both read as the same component. */
+.tm-notion-code-block__preview ::deep table {
+    border-collapse: collapse;
+    margin:          8px 0;
+}
+
+.tm-notion-code-block__preview ::deep th,
+.tm-notion-code-block__preview ::deep td {
+    border:     1px solid var(--tm-color-border, var(--tm-border-color, #e3e3e3));
+    padding:    6px 10px;
+    text-align: left;
+    background: var(--tm-bg-surface, #fff);
+}
+
+/* --tm-color-bg-subtle is not defined anywhere; without the chain the header stays light in dark mode. */
+.tm-notion-code-block__preview ::deep th {
+    background-color: var(--tm-color-bg-subtle, var(--tm-bg-surface-secondary, #f7f7f7));
+    font-weight:      var(--tm-font-weight-semibold, 600);
+}
+
+.tm-notion-code-block__preview ::deep h1,
+.tm-notion-code-block__preview ::deep h2,
+.tm-notion-code-block__preview ::deep h3 {
+    font-weight: var(--tm-font-weight-semibold, 600);
+    margin:      12px 0 6px;
+}
+
+.tm-notion-code-block__preview ::deep code {
+    font-family:      var(--tm-font-family-mono, ui-monospace, monospace);
+    background-color: var(--tm-color-bg-subtle, var(--tm-bg-surface-secondary, #f2f2f2));
+    border-radius:    3px;
+    padding:          1px 4px;
+}
+
+.tm-notion-code-block__preview ::deep blockquote {
+    border-left: 3px solid var(--tm-color-border, var(--tm-border-color, #e3e3e3));
+    margin:      8px 0;
+    padding-left: 10px;
+    color:       var(--tm-color-text-muted, #6b7280);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tm-notion-code-block__preview-toggle {
+        transition: none;
+    }
+}
+
+/* Prism paints with its own theme when the host page loads one; without it the tokens fall back
+   to design tokens so the block still reads correctly in both light and dark mode. */
+
+.tm-notion-code-block__code ::deep .token.comment,
+.tm-notion-code-block__code ::deep .token.prolog,
+.tm-notion-code-block__code ::deep .token.doctype,
+.tm-notion-code-block__code ::deep .token.cdata { color: var(--tm-color-text-muted, #6b7280); }
+
+.tm-notion-code-block__code ::deep .token.punctuation { color: var(--tm-text-secondary); }
+
+.tm-notion-code-block__code ::deep .token.keyword,
+.tm-notion-code-block__code ::deep .token.selector,
+.tm-notion-code-block__code ::deep .token.important,
+.tm-notion-code-block__code ::deep .token.atrule { color: var(--tm-color-primary, #7c3aed); }
+
+.tm-notion-code-block__code ::deep .token.string,
+.tm-notion-code-block__code ::deep .token.char,
+.tm-notion-code-block__code ::deep .token.attr-value,
+.tm-notion-code-block__code ::deep .token.regex { color: var(--tm-color-success, #15803d); }
+
+.tm-notion-code-block__code ::deep .token.number,
+.tm-notion-code-block__code ::deep .token.boolean,
+.tm-notion-code-block__code ::deep .token.constant,
+.tm-notion-code-block__code ::deep .token.symbol { color: var(--tm-color-warning, #b45309); }
+
+.tm-notion-code-block__code ::deep .token.function,
+.tm-notion-code-block__code ::deep .token.class-name,
+.tm-notion-code-block__code ::deep .token.tag { color: var(--tm-color-info, #1d4ed8); }
+
+.tm-notion-code-block__code ::deep .token.operator,
+.tm-notion-code-block__code ::deep .token.entity,
+.tm-notion-code-block__code ::deep .token.url { color: var(--tm-text-primary); }
+
+@media (prefers-reduced-motion: reduce) {
+    .tm-notion-code-block__highlight { transition: none; }
 }

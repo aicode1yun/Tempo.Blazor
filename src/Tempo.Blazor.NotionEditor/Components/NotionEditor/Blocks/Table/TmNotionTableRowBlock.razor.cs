@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
+using TableColumnAlignment = Tempo.Blazor.DocumentEditor.Models.TableColumnAlignment;
 
 namespace Tempo.Blazor.Components.NotionEditor.Blocks.Table;
 
@@ -19,6 +21,9 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
 
     [Parameter] public int  RowIndex        { get; set; }
     [Parameter] public int  ColumnCount     { get; set; }
+
+    /// <summary>Per-column horizontal alignment; columns beyond the list keep the renderer default.</summary>
+    [Parameter] public IReadOnlyList<TableColumnAlignment> ColumnAlignments { get; set; } = [];
     [Parameter] public bool IsHeaderRow     { get; set; }
     [Parameter] public bool HasHeaderColumn { get; set; }
     [Parameter] public bool ReadOnly        { get; set; }
@@ -101,7 +106,7 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
             for (var c = 0; c < Math.Min(_cells.Count, _cellRefs.Length); c++)
             {
                 if (_cells[c].IsMergeHidden) continue;
-                try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _cellRefs[c], _cells[c].Html); }
+                try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _cellRefs[c], SanitizeForRender(_cells[c].Html)); }
                 catch { }
             }
         }
@@ -109,12 +114,18 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
 
     // ── Cell events ───────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// A cell is written into the DOM with innerHTML, so stored markup would run on render.
+    /// The editor's own inline chrome — status chips, mentions, inline math — is preserved.
+    /// </summary>
+    private static string SanitizeForRender(string html) => NotionInlineHtmlSanitizer.SanitizeBlockContent(html);
+
     private async Task OnCellBlurAsync(int colIndex)
     {
         if (ReadOnly || colIndex >= _cellRefs.Length) return;
         try
         {
-            var html = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _cellRefs[colIndex]);
+            var html = SanitizeForRender(await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _cellRefs[colIndex]));
             if (html == _cells[colIndex].Html) return;
             _cells[colIndex].Html = html;
             await OnCellsChanged.InvokeAsync(_cells.AsReadOnly());
@@ -140,6 +151,22 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
         => string.IsNullOrWhiteSpace(cell.BackgroundColor)
             ? string.Empty
             : $"background:{cell.BackgroundColor}";
+
+    /// <summary>BEM modifier carrying the column's imported horizontal alignment, if any.</summary>
+    private string AlignmentClass(int columnIndex)
+    {
+        var alignment = columnIndex < ColumnAlignments.Count
+            ? ColumnAlignments[columnIndex]
+            : TableColumnAlignment.None;
+
+        return alignment switch
+        {
+            TableColumnAlignment.Left => "tm-notion-table__cell-td--align-left",
+            TableColumnAlignment.Center => "tm-notion-table__cell-td--align-center",
+            TableColumnAlignment.Right => "tm-notion-table__cell-td--align-right",
+            _ => string.Empty
+        };
+    }
 
     private static List<NotionTableCell> NormalizeCells(ITableRowBlockContent? content, int columnCount)
     {

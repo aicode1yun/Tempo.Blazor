@@ -33,5 +33,5 @@
       "type": "bool"
     }
   ],
-  "itemName": "CodeBlockContent"
+  "itemName": "Tempo.Blazor.NotionEditor.Models.CodeBlockContent"
 }

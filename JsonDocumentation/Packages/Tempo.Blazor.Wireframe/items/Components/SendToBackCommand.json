@@ -1,0 +1,38 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+  "description": "Moves the given elements below all other elements on the page. Undoable.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/SendToBackCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "SendToBackCommand",
+  "members": [
+    {
+      "name": "SendToBackCommand",
+      "type": "SendToBackCommand(WireframeDocument doc, IEnumerable<string> ids)",
+      "description": "Creates the command for the selected element ids."
+    },
+    {
+      "name": "Name",
+      "type": "string",
+      "description": "Human-readable label shown in undo/redo tooltips."
+    },
+    {
+      "name": "Execute",
+      "type": "void Execute()",
+      "description": "Applies the change to the document."
+    },
+    {
+      "name": "Undo",
+      "type": "void Undo()",
+      "description": "Restores the state captured before Execute() ran."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use SendToBackCommand",
+      "code": "commandStack.Push(new SendToBackCommand(document, selectedIds));"
+    }
+  ]
+}

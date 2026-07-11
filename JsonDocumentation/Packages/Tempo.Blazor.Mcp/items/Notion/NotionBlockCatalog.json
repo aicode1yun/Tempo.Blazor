@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion",
+  "namespace": "Tempo.Blazor.Mcp.Notion",
+  "description": "Maps Notion block types to their polymorphic content payloads.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionBlockCatalog.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionBlockCatalog"
+}

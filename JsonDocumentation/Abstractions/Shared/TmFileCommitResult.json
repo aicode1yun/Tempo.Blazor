@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Result returned after committing provider-managed draft assets.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileCommitResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmFileCommitResult",
+  "members": [
+    {
+      "name": "Success",
+      "type": "bool",
+      "description": "Whether the commit operation succeeded."
+    },
+    {
+      "name": "AssetIds",
+      "type": "IReadOnlyList<string>",
+      "description": "Asset ids that were committed."
+    },
+    {
+      "name": "ErrorMessage",
+      "type": "string?",
+      "description": "Error message when Success is false."
+    }
+  ]
+}

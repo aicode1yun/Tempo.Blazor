@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "Applies ordered diagram edit operations to a working copy of a document.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramOperationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramOperationEngine"
+}

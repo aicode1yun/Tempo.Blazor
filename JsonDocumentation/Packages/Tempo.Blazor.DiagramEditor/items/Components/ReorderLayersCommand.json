@@ -1,0 +1,33 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Reorders layers by rewriting their Order property. Undoable — Undo() restores the previous ordering.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ReorderLayersCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReorderLayersCommand",
+  "members": [
+    {
+      "name": "ReorderLayersCommand",
+      "type": "ReorderLayersCommand(DiagramDocument doc, Dictionary<string, int> newOrders)",
+      "description": "Creates the command."
+    },
+    {
+      "name": "Execute",
+      "type": "void Execute()",
+      "description": "Applies the change to the document."
+    },
+    {
+      "name": "Undo",
+      "type": "void Undo()",
+      "description": "Restores the state captured before Execute() ran."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use ReorderLayersCommand",
+      "code": "var order = new Dictionary<string, int>\n{\n    [backgroundLayerId] = 0,\n    [contentLayerId]    = 1,\n    [annotationLayerId] = 2,\n};\n\ncommandStack.Push(new ReorderLayersCommand(document, order));"
+    }
+  ]
+}

@@ -28,14 +28,14 @@
       "name": "OnClosed",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Additional CSS class."
+      "description": "Raised when the close button is clicked."
     },
     {
       "name": "PageSize",
       "type": "int",
       "isRequired": false,
       "default": "DefaultPageSize",
-      "description": "Raised when the close button is clicked."
+      "description": "Number of audit entries shown per page."
     }
   ],
   "subcategory": "UI"

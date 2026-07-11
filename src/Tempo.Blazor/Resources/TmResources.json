@@ -2583,7 +2583,10 @@
   "TmNotionCodeBlock_CaptionPlaceholder": "Add caption…",
   "TmNotionCodeBlock_Copied": "Copied!",
   "TmNotionCodeBlock_CopyCode": "Copy",
+  "TmNotionCodeBlock_PreviewLabel": "Rendered Markdown preview",
   "TmNotionCodeBlock_SelectLanguage": "Language",
+  "TmNotionCodeBlock_ShowEditor": "Edit",
+  "TmNotionCodeBlock_ShowPreview": "Preview",
   "TmNotionCollab_ActiveUsers": "Active collaborators",
   "TmNotionCollab_Connected": "Connected",
   "TmNotionCollab_Connecting": "Connecting…",
@@ -4594,5 +4597,6 @@
   "Tm_Select": "Select",
   "Tm_SelectAll": "Select all",
   "Tm_Upload": "Upload",
-  "Tm_Yes": "Yes"
+  "Tm_Yes": "Yes",
+  "TmNotionBlock_TodoPlaceholder": "To-do"
 }

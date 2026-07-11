@@ -21,43 +21,43 @@
       "name": "Culture",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the builder controls are disabled."
+      "description": "Culture used to resolve field labels in the token picker."
     },
     {
       "name": "CurrentFieldUuid",
       "type": "string?",
       "isRequired": false,
-      "description": "Computed field edited by the formula builder."
+      "description": "Field identifier edited by the formula builder when <see cref=\"Field\"/> is not supplied."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Callback invoked after the edited field is updated on save."
+      "description": "Whether the builder controls are disabled."
     },
     {
       "name": "FallbackCulture",
       "type": "string?",
       "isRequired": false,
-      "description": "Culture used to resolve field labels in the token picker."
+      "description": "Fallback culture used when a field label is missing for <see cref=\"Culture\"/>."
     },
     {
       "name": "Field",
       "type": "SigningField?",
       "isRequired": false,
-      "description": "All fields in the current signing template."
+      "description": "Computed field edited by the formula builder."
     },
     {
       "name": "FieldChanged",
       "type": "EventCallback<SigningField>",
       "isRequired": false,
-      "description": "Callback invoked after a valid formula is saved. The supplied value is normalized to UUID tokens."
+      "description": "Callback invoked after the edited field is updated on save."
     },
     {
       "name": "Saved",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Callback invoked when displayed formula text changes."
+      "description": "Callback invoked after a valid formula is saved. The supplied value is normalized to UUID tokens."
     },
     {
       "name": "Value",
@@ -69,7 +69,7 @@
       "name": "ValueChanged",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Formula text displayed by the builder. Human-readable field tokens are accepted."
+      "description": "Callback invoked when displayed formula text changes."
     }
   ]
 }

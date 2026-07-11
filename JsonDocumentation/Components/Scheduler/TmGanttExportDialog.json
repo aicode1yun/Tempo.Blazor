@@ -15,13 +15,13 @@
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fires when the user confirms export with the chosen options."
+      "description": "Fires when the dialog should close."
     },
     {
       "name": "OnExport",
       "type": "EventCallback<GanttExportOptions>",
       "isRequired": false,
-      "description": "Whether the dialog is visible."
+      "description": "Fires when the user confirms export with the chosen options."
     }
   ]
 }

@@ -1812,7 +1812,7 @@ public sealed class Eb1BaselineRenderer
             PageId        = pageGuid,
             ParentBlockId = block.ParentBlockId,
             Type          = block.Type,
-            Order         = GetNextOrder(pageGuid, block.ParentBlockId),
+            Order         = InsertOrderAfter(pageGuid, block.ParentBlockId, afterBlockId, count: 1),
             Content       = block.Content,
             CreatedAt     = DateTime.UtcNow,
             LastEditedAt  = DateTime.UtcNow
@@ -1822,20 +1822,62 @@ public sealed class Eb1BaselineRenderer
         return await Task.FromResult(newBlock);
     }
 
+    /// <summary>
+    /// Order of the first of <paramref name="count"/> blocks inserted after <paramref name="afterBlockId"/>,
+    /// shifting the following siblings out of the way. Without the shift a block split off with Enter
+    /// jumps to the end of the page on the next reload, because it silently got the next free order.
+    /// </summary>
+    private int InsertOrderAfter(Guid pageId, Guid? parentBlockId, string? afterBlockId, int count)
+    {
+        if (!Guid.TryParse(afterBlockId, out var anchorId)
+            || !_blocks.TryGetValue(anchorId, out var anchor)
+            || anchor.PageId != pageId
+            || anchor.ParentBlockId != parentBlockId)
+        {
+            return GetNextOrder(pageId, parentBlockId);
+        }
+
+        var insertAt = anchor.Order + 1;
+        foreach (var sibling in GetSiblingBlocks(pageId, parentBlockId).Where(s => s.Order >= insertAt))
+        {
+            sibling.Order += count;
+        }
+
+        return insertAt;
+    }
+
     public async Task<IEnumerable<IPageBlock>> CreateBlocksAsync(string pageId, IEnumerable<IPageBlock> blocks, string? afterBlockId)
     {
         var pageGuid = Guid.Parse(pageId);
         var created  = new List<IPageBlock>();
 
-        foreach (var block in blocks)
+        // The store owns the ids, so a child that names a parent from this same batch must follow
+        // it to its new id. A parent that is not in the batch already lives on the page; leave it.
+        var batch = blocks.ToList();
+
+        // Callers may leave Id unset; only real ids can be remapped.
+        var idMap = new Dictionary<Guid, Guid>();
+        var newIds = new Guid[batch.Count];
+        for (var i = 0; i < batch.Count; i++)
         {
+            newIds[i] = Guid.NewGuid();
+            if (batch[i].Id != Guid.Empty) idMap[batch[i].Id] = newIds[i];
+        }
+
+        for (var i = 0; i < batch.Count; i++)
+        {
+            var block = batch[i];
+            var parentId = block.ParentBlockId is { } parent && idMap.TryGetValue(parent, out var mapped)
+                ? mapped
+                : block.ParentBlockId;
+
             var newBlock = new PageBlock
             {
-                Id            = Guid.NewGuid(),
+                Id            = newIds[i],
                 PageId        = pageGuid,
-                ParentBlockId = block.ParentBlockId,
+                ParentBlockId = parentId,
                 Type          = block.Type,
-                Order         = GetNextOrder(pageGuid, block.ParentBlockId),
+                Order         = 0, // assigned below, once the whole batch is known
                 Content       = block.Content,
                 CreatedAt     = DateTime.UtcNow,
                 LastEditedAt  = DateTime.UtcNow
@@ -1845,7 +1887,53 @@ public sealed class Eb1BaselineRenderer
             created.Add(newBlock);
         }
 
+        // Batch-inserted siblings keep their relative order behind the anchor. Children are ordered
+        // within their own parent, which was created in this same batch.
+        AssignBatchOrder(pageGuid, created, afterBlockId);
+
         return await Task.FromResult(created);
+    }
+
+    private void AssignBatchOrder(Guid pageId, List<IPageBlock> created, string? afterBlockId)
+    {
+        foreach (var group in created.Cast<PageBlock>().GroupBy(block => block.ParentBlockId))
+        {
+            var siblings = group.ToList();
+            var isTopLevel = group.Key is null;
+            var start = isTopLevel
+                ? InsertOrderAfterExcluding(pageId, null, afterBlockId, siblings)
+                : GetNextOrderExcluding(pageId, group.Key, siblings);
+
+            for (var i = 0; i < siblings.Count; i++) siblings[i].Order = start + i;
+        }
+    }
+
+    private int InsertOrderAfterExcluding(Guid pageId, Guid? parentBlockId, string? afterBlockId, List<PageBlock> exclude)
+    {
+        if (!Guid.TryParse(afterBlockId, out var anchorId)
+            || !_blocks.TryGetValue(anchorId, out var anchor)
+            || anchor.PageId != pageId
+            || anchor.ParentBlockId != parentBlockId)
+        {
+            return GetNextOrderExcluding(pageId, parentBlockId, exclude);
+        }
+
+        var insertAt = anchor.Order + 1;
+        foreach (var sibling in GetSiblingBlocks(pageId, parentBlockId)
+                     .Where(s => s.Order >= insertAt && !exclude.Contains(s)))
+        {
+            sibling.Order += exclude.Count;
+        }
+
+        return insertAt;
+    }
+
+    private int GetNextOrderExcluding(Guid pageId, Guid? parentBlockId, List<PageBlock> exclude)
+    {
+        var max = _blocks.Values
+            .Where(b => b.PageId == pageId && b.ParentBlockId == parentBlockId && !exclude.Contains(b))
+            .Max(b => (int?)b.Order) ?? -1;
+        return max + 1;
     }
 
     public Task<IReadOnlyList<PageBlock>> CreateImportedBlocksAsync(
@@ -1894,11 +1982,66 @@ public sealed class Eb1BaselineRenderer
         await Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Writes blocks back with the ids, parents and order they had. Undo of a delete uses this:
+    /// recreating them would mint new ids and the restored container would no longer own its rows.
+    /// </summary>
+    public async Task RestoreBlocksAsync(IEnumerable<IPageBlock> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            _blocks[block.Id] = new PageBlock
+            {
+                Id            = block.Id,
+                PageId        = block.PageId,
+                ParentBlockId = block.ParentBlockId,
+                Type          = block.Type,
+                Order         = block.Order,
+                Content       = block.Content,
+                CreatedAt     = block.CreatedAt,
+                LastEditedAt  = DateTime.UtcNow
+            };
+        }
+
+        await Task.CompletedTask;
+    }
+
     public async Task DeleteBlockAsync(string blockId)
     {
-        if (Guid.TryParse(blockId, out var id))
-            _blocks.Remove(id);
+        if (!Guid.TryParse(blockId, out var id) || !_blocks.TryGetValue(id, out var block))
+        {
+            await Task.CompletedTask;
+            return;
+        }
+
+        // Delete the whole subtree. A surviving TableRow, Column or toggle child would have no
+        // parent to render it and would surface on the page as a stray block.
+        foreach (var descendant in DescendantsOf(id)) _blocks.Remove(descendant.Id);
+        _blocks.Remove(id);
+
+        // The gap the block leaves in the sibling order is deliberate: everything sorts by Order, and
+        // undo restores the block at exactly the position it had. Renumbering would collide with it.
         await Task.CompletedTask;
+    }
+
+    /// <summary>Every block below <paramref name="rootId"/>, deepest last.</summary>
+    private List<PageBlock> DescendantsOf(Guid rootId)
+    {
+        var result = new List<PageBlock>();
+        var frontier = new Queue<Guid>();
+        frontier.Enqueue(rootId);
+
+        while (frontier.Count > 0)
+        {
+            var parentId = frontier.Dequeue();
+            foreach (var child in _blocks.Values.Where(block => block.ParentBlockId == parentId))
+            {
+                result.Add(child);
+                frontier.Enqueue(child.Id);
+            }
+        }
+
+        return result;
     }
 
     public void Reset()
@@ -2066,15 +2209,23 @@ public sealed class Eb1BaselineRenderer
             .ToList();
         var targetIndex = Math.Clamp(request.TargetIndex, 0, targetSiblings.Count);
 
+        var descendants = DescendantsOf(blockId);
+
         block.PageId = targetPageId;
         block.ParentBlockId = targetParentId;
         block.Order = targetIndex;
         block.LastEditedAt = DateTime.UtcNow;
+
+        // The subtree travels with the block; a child left on the old page is unreachable.
+        foreach (var descendant in descendants) descendant.PageId = targetPageId;
+
         targetSiblings.Insert(targetIndex, block);
         RenumberSiblings(targetSiblings);
 
+        // The caller's SourceParentBlockId is a hint, not a fact: renumber the parent the block
+        // actually came from.
         if (sourceChanged)
-            RenumberSiblings(GetSiblingBlocks(sourcePageId, sourceParentId ?? sourceParentFromStore).Where(candidate => candidate.Id != blockId));
+            RenumberSiblings(GetSiblingBlocks(sourcePageId, sourceParentFromStore).Where(candidate => candidate.Id != blockId));
 
         await Task.CompletedTask;
     }
@@ -2098,71 +2249,199 @@ public sealed class Eb1BaselineRenderer
 
     public async Task<IPageBlock> DuplicateBlockAsync(string blockId)
     {
-        if (Guid.TryParse(blockId, out var id) && _blocks.TryGetValue(id, out var src))
+        if (!Guid.TryParse(blockId, out var id) || !_blocks.TryGetValue(id, out var src))
+            throw new KeyNotFoundException($"Block {blockId} not found");
+
+        // Deep copy: a shared Content instance would make editing the copy edit the original, and a
+        // table duplicated without its rows renders empty.
+        var idMap = new Dictionary<Guid, Guid> { [src.Id] = Guid.NewGuid() };
+        var subtree = DescendantsOf(src.Id);
+        foreach (var descendant in subtree) idMap[descendant.Id] = Guid.NewGuid();
+
+        var dup = new PageBlock
         {
-            var dup = new PageBlock
+            Id            = idMap[src.Id],
+            PageId        = src.PageId,
+            ParentBlockId = src.ParentBlockId,
+            Type          = src.Type,
+            Order         = InsertOrderAfter(src.PageId, src.ParentBlockId, src.Id.ToString(), count: 1),
+            Content       = CloneContent(src.Content),
+            CreatedAt     = DateTime.UtcNow,
+            LastEditedAt  = DateTime.UtcNow
+        };
+        _blocks[dup.Id] = dup;
+
+        foreach (var descendant in subtree)
+        {
+            var copy = new PageBlock
             {
-                Id            = Guid.NewGuid(),
-                PageId        = src.PageId,
-                ParentBlockId = src.ParentBlockId,
-                Type          = src.Type,
-                Order         = src.Order + 1,
-                Content       = src.Content,
+                Id            = idMap[descendant.Id],
+                PageId        = descendant.PageId,
+                ParentBlockId = idMap[descendant.ParentBlockId!.Value],
+                Type          = descendant.Type,
+                Order         = descendant.Order,
+                Content       = CloneContent(descendant.Content),
                 CreatedAt     = DateTime.UtcNow,
                 LastEditedAt  = DateTime.UtcNow
             };
-
-            _blocks[dup.Id] = dup;
-            return await Task.FromResult(dup);
+            _blocks[copy.Id] = copy;
         }
 
-        throw new KeyNotFoundException($"Block {blockId} not found");
+        return await Task.FromResult(dup);
     }
 
-    public async Task<IPageBlock> ConvertBlockTypeAsync(string blockId, BlockType newType)
+    /// <summary>Round-trips the content through JSON; IBlockContent is polymorphic, so the concrete type survives.</summary>
+    private static IBlockContent CloneContent(IBlockContent content) =>
+        System.Text.Json.JsonSerializer.Deserialize<IBlockContent>(
+            System.Text.Json.JsonSerializer.Serialize(content))!;
+
+    public Task<IPageBlock> ConvertBlockTypeAsync(string blockId, BlockType newType)
+        => ConvertBlockTypeAsync(blockId, newType, currentHtml: null);
+
+    /// <summary>
+    /// Converts a block. When <paramref name="currentHtml"/> is supplied the editor's live
+    /// contenteditable value wins over the stored content, so text typed since the last blur survives.
+    /// </summary>
+    public async Task<IPageBlock> ConvertBlockTypeAsync(string blockId, BlockType newType, string? currentHtml)
     {
-        if (Guid.TryParse(blockId, out var id) && _blocks.TryGetValue(id, out var block))
+        if (!Guid.TryParse(blockId, out var id) || !_blocks.TryGetValue(id, out var block))
         {
-            block.Type          = newType;
-            block.Content       = CreateConvertedContent(newType, block.Content);
-            block.LastEditedAt  = DateTime.UtcNow;
-            _blocks[id]         = block;
-
-            // When converting to Table, create default child rows
-            if (newType == BlockType.Table && block.Content is TableBlockContent tbl)
-            {
-                var colCount = tbl.ColumnCount > 0 ? tbl.ColumnCount : 3;
-                if (tbl.ColumnCount == 0)
-                {
-                    tbl.ColumnCount = colCount;
-                    _blocks[id] = block;
-                }
-
-                for (var r = 0; r < 2; r++)
-                {
-                    var rowId = Guid.NewGuid();
-                    var rowBlock = new PageBlock
-                    {
-                        Id            = rowId,
-                        PageId        = block.PageId,
-                        ParentBlockId = block.Id,
-                        Type          = BlockType.TableRow,
-                        Order         = r,
-                        Content       = new TableRowBlockContent
-                        {
-                            Cells = Enumerable.Range(0, colCount).Select(_ => string.Empty).ToList()
-                        },
-                        CreatedAt     = DateTime.UtcNow,
-                        LastEditedAt  = DateTime.UtcNow
-                    };
-                    _blocks[rowId] = rowBlock;
-                }
-            }
-
-            return await Task.FromResult(block);
+            throw new KeyNotFoundException($"Block {blockId} not found");
         }
 
-        throw new KeyNotFoundException($"Block {blockId} not found");
+        var previousType = block.Type;
+        var previousContent = block.Content;
+
+        // Remember the typed data so a later conversion back to this type can restore it.
+        _conversionMemory[(id, previousType)] = previousContent;
+
+        CascadeChildren(block, previousType, newType);
+
+        block.Type          = newType;
+        block.Content       = CreateConvertedContent(newType, previousContent, currentHtml);
+        block.LastEditedAt  = DateTime.UtcNow;
+
+        if (_conversionMemory.TryGetValue((id, newType), out var remembered))
+        {
+            RestoreTypedFields(block.Content, remembered);
+        }
+
+        _blocks[id] = block;
+
+        if (newType == BlockType.Table)
+        {
+            EnsureTableRows(block, TextOf(previousContent, currentHtml));
+        }
+
+        return await Task.FromResult<IPageBlock>(block);
+    }
+
+    /// <summary>Remembers each block's content per source type so reverse conversions can restore typed data.</summary>
+    private readonly Dictionary<(Guid BlockId, BlockType Type), IBlockContent> _conversionMemory = [];
+
+    /// <summary>
+    /// A block that stops being a container must not leave its children dangling: table rows are
+    /// meaningless without their table and are deleted, everything else moves up to the block's own parent.
+    /// </summary>
+    private void CascadeChildren(PageBlock block, BlockType previousType, BlockType newType)
+    {
+        if (previousType == newType)
+        {
+            return;
+        }
+
+        var children = _blocks.Values
+            .Where(candidate => candidate.ParentBlockId == block.Id)
+            .OrderBy(candidate => candidate.Order)
+            .ToList();
+
+        if (children.Count == 0)
+        {
+            return;
+        }
+
+        if (previousType == BlockType.Table)
+        {
+            foreach (var row in children.Where(child => child.Type == BlockType.TableRow))
+            {
+                _blocks.Remove(row.Id);
+            }
+
+            children = children.Where(child => child.Type != BlockType.TableRow).ToList();
+        }
+
+        if (CanHoldChildren(newType) || children.Count == 0)
+        {
+            return;
+        }
+
+        // Re-parent onto the block's own parent, appended after the existing siblings.
+        var nextOrder = _blocks.Values
+            .Where(candidate => candidate.ParentBlockId == block.ParentBlockId && candidate.Id != block.Id)
+            .Select(candidate => candidate.Order)
+            .DefaultIfEmpty(block.Order)
+            .Max() + 1;
+
+        foreach (var child in children)
+        {
+            child.ParentBlockId = block.ParentBlockId;
+            child.Order = nextOrder++;
+            _blocks[child.Id] = child;
+        }
+    }
+
+    private static bool CanHoldChildren(BlockType type) => type
+        is BlockType.Toggle
+        or BlockType.Callout
+        or BlockType.Table
+        or BlockType.ColumnList
+        or BlockType.Column
+        or BlockType.SyncedBlockOrigin
+        or BlockType.SyncedBlockRef
+        or BlockType.Quote;
+
+    /// <summary>Creates the two default rows only when the table has none, so repeated conversions stay idempotent.</summary>
+    private void EnsureTableRows(PageBlock block, string headerText)
+    {
+        if (block.Content is not TableBlockContent table)
+        {
+            return;
+        }
+
+        if (table.ColumnCount <= 0)
+        {
+            table.ColumnCount = 3;
+        }
+
+        var existingRows = _blocks.Values.Count(candidate =>
+            candidate.ParentBlockId == block.Id && candidate.Type == BlockType.TableRow);
+
+        if (existingRows > 0)
+        {
+            return;
+        }
+
+        for (var rowIndex = 0; rowIndex < 2; rowIndex++)
+        {
+            var cells = Enumerable.Range(0, table.ColumnCount).Select(_ => string.Empty).ToList();
+            if (rowIndex == 0 && !string.IsNullOrEmpty(headerText))
+            {
+                cells[0] = headerText;
+            }
+
+            var rowId = Guid.NewGuid();
+            _blocks[rowId] = new PageBlock
+            {
+                Id            = rowId,
+                PageId        = block.PageId,
+                ParentBlockId = block.Id,
+                Type          = BlockType.TableRow,
+                Order         = rowIndex,
+                Content       = new TableRowBlockContent { Cells = cells },
+                CreatedAt     = DateTime.UtcNow,
+                LastEditedAt  = DateTime.UtcNow
+            };
+        }
     }
 
     public async Task<string> GetBlockLinkAsync(string blockId)
@@ -2332,9 +2611,17 @@ public sealed class Eb1BaselineRenderer
         _                                                           => new TextBlockContent()
     };
 
-    private static IBlockContent CreateConvertedContent(BlockType type, IBlockContent source)
+    /// <summary>Reads a block's text regardless of whether it stores it as HTML or as code.</summary>
+    private static string TextOf(IBlockContent source, string? currentHtml = null) => currentHtml ?? source switch
     {
-        var html = source is ITextBlockContent text ? text.Html : string.Empty;
+        ITextBlockContent text => text.Html,
+        ICodeBlockContent code => code.Code,
+        _ => string.Empty
+    };
+
+    private static IBlockContent CreateConvertedContent(BlockType type, IBlockContent source, string? currentHtml = null)
+    {
+        var html = TextOf(source, currentHtml);
         var backgroundColor = source is ITextBlockContent bg ? bg.BackgroundColor : null;
         var textColor = source is ITextBlockContent color ? color.TextColor : null;
         var alignment = source is ITextBlockContent aligned ? aligned.Alignment : Tempo.Blazor.NotionEditor.Enums.TextAlignment.Left;
@@ -2349,8 +2636,52 @@ public sealed class Eb1BaselineRenderer
             BlockType.TodoItem => new TodoBlockContent { Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
             BlockType.Toggle => new ToggleBlockContent { Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
             BlockType.Quote => new TextBlockContent { Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
-            BlockType.Callout => new CalloutBlockContent { Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
+            BlockType.Callout => new CalloutBlockContent { Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment, IconEmoji = DefaultCalloutIcon },
+            BlockType.Code => new CodeBlockContent { Code = html },
             _ => CreateDefaultContent(type)
         };
+    }
+
+    private const string DefaultCalloutIcon = "💡";
+
+    /// <summary>
+    /// Copies data that only the target type can hold from the block's last content of that type.
+    /// The text always comes from the conversion itself — only the typed extras are restored.
+    /// </summary>
+    private static void RestoreTypedFields(IBlockContent target, IBlockContent remembered)
+    {
+        switch (target)
+        {
+            case TodoBlockContent todo when remembered is ITodoBlockContent previousTodo:
+                todo.IsChecked = previousTodo.IsChecked;
+                todo.AssigneeId = previousTodo.AssigneeId;
+                todo.AssigneeDisplayName = previousTodo.AssigneeDisplayName;
+                todo.DueDate = previousTodo.DueDate;
+                break;
+
+            case CalloutBlockContent callout when remembered is ICalloutBlockContent previousCallout:
+                callout.IconEmoji = previousCallout.IconEmoji ?? DefaultCalloutIcon;
+                callout.IconImageUrl = previousCallout.IconImageUrl;
+                callout.Variant = previousCallout.Variant;
+                break;
+
+            case CodeBlockContent code when remembered is ICodeBlockContent previousCode:
+                code.Language = previousCode.Language;
+                code.ShowLineNumbers = previousCode.ShowLineNumbers;
+                code.WrapLines = previousCode.WrapLines;
+                code.Caption = previousCode.Caption;
+                break;
+
+            case ToggleBlockContent toggle when remembered is IToggleBlockContent previousToggle:
+                toggle.IsOpen = previousToggle.IsOpen;
+                break;
+
+            case TableBlockContent table when remembered is ITableBlockContent previousTable:
+                table.ColumnCount = previousTable.ColumnCount;
+                table.HasHeaderRow = previousTable.HasHeaderRow;
+                table.HasHeaderColumn = previousTable.HasHeaderColumn;
+                table.ColumnAlignments = previousTable.ColumnAlignments;
+                break;
+        }
     }
 }

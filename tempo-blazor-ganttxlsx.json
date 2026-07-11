@@ -73,13 +73,14 @@
   },
   "items": [
     {
+      "itemName": "GanttXlsxServiceCollectionExtensions",
       "kind": "Class",
       "category": "Configuration",
       "namespace": "Tempo.Blazor.Configuration",
-      "description": "Extension methods for registering optional Tempo.Blazor Gantt XLSX helpers.",
+      "description": "Extension methods for registering the optional Tempo.Blazor Gantt XLSX helpers.",
       "packageId": "Tempo.Blazor.GanttXlsx",
       "sourcePath": "src/Tempo.Blazor.GanttXlsx/Configuration/GanttXlsxServiceCollectionExtensions.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AddTempoBlazorGanttXlsx",
@@ -94,7 +95,12 @@
           ]
         }
       ],
-      "itemName": "GanttXlsxServiceCollectionExtensions"
+      "examples": [
+        {
+          "title": "Register the services in Program.cs",
+          "code": "builder.Services.AddTempoBlazorGanttXlsx();"
+        }
+      ]
     },
     {
       "itemName": "GanttExcelImporter",
@@ -120,9 +126,9 @@
   "libraryExamples": [],
   "summary": {
     "itemCount": 3,
-    "manualItemCount": 2,
+    "manualItemCount": 3,
     "generatedItemCount": 3,
-    "generatedOnlyItemCount": 1,
+    "generatedOnlyItemCount": 0,
     "componentCount": 0,
     "publicApiTypeCount": 3
   }

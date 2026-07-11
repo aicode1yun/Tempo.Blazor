@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
+using TableColumnAlignment = Tempo.Blazor.DocumentEditor.Models.TableColumnAlignment;
 
 namespace Tempo.Blazor.Components.NotionEditor.Services;
 
@@ -21,15 +22,24 @@ public static class NotionHtmlExporter
         if (!string.IsNullOrWhiteSpace(pageTitle))
             body.AppendLine($"<h1 class=\"notion-title\">{HtmlEncode(pageTitle)}</h1>");
 
+        var childRows = blocks
+            .Where(block => block.Type == BlockType.TableRow && block.ParentBlockId.HasValue)
+            .GroupBy(block => block.ParentBlockId!.Value)
+            .ToDictionary(group => group.Key, group => group.OrderBy(block => block.Order).ToList());
+
         bool inUl = false, inOl = false, inTable = false, tableFirstRow = false;
 
         foreach (var block in blocks)
         {
+            // rows owned by a Table block are rendered with their parent
+            if (block.Type == BlockType.TableRow && block.ParentBlockId.HasValue)
+                continue;
+
             // close open list containers when changing block type
             if (block.Type != BlockType.BulletList && inUl)   { body.AppendLine("</ul>"); inUl = false; }
             if (block.Type != BlockType.NumberedList && inOl) { body.AppendLine("</ol>"); inOl = false; }
 
-            // close open table when leaving TableRow blocks
+            // close open legacy flat table when leaving TableRow blocks
             if (block.Type != BlockType.TableRow && inTable)
             {
                 body.AppendLine("</tbody></table>");
@@ -46,6 +56,10 @@ public static class NotionHtmlExporter
                 case BlockType.NumberedList:
                     if (!inOl) { body.AppendLine("<ol>"); inOl = true; }
                     body.AppendLine(RenderNumbered(block));
+                    break;
+
+                case BlockType.Table:
+                    body.AppendLine(RenderTable(block, childRows.TryGetValue(block.Id, out var rows) ? rows : []));
                     break;
 
                 case BlockType.TableRow:
@@ -282,11 +296,62 @@ public static class NotionHtmlExporter
     private static string RenderTableRow(IPageBlock block, bool isHeader)
     {
         if (block.Content is not ITableRowBlockContent tr) return string.Empty;
-        var tag   = isHeader ? "th" : "td";
-        var cells = tr.Cells.Select(c => $"<{tag}>{SanitizeInlineHtml(c)}</{tag}>");
-        var row   = $"<tr>{string.Join(string.Empty, cells)}</tr>";
+        var row = RenderRowCells(tr.Cells, isHeader, []);
         return isHeader ? $"<table class=\"notion-table\"><thead>{row}</thead><tbody>" : row;
     }
+
+    /// <summary>Renders a Table block together with its child TableRow blocks.</summary>
+    private static string RenderTable(IPageBlock tableBlock, IReadOnlyList<IPageBlock> rowBlocks)
+    {
+        var rows = rowBlocks
+            .Select(row => row.Content as ITableRowBlockContent)
+            .Where(row => row is not null)
+            .Select(row => row!.Cells)
+            .ToList();
+
+        if (rows.Count == 0) return string.Empty;
+
+        var content = tableBlock.Content as ITableBlockContent;
+        var hasHeaderRow = content?.HasHeaderRow ?? true;
+        var alignments = content?.ColumnAlignments ?? [];
+        var builder = new StringBuilder("<table class=\"notion-table\">");
+
+        var bodyRows = rows;
+        if (hasHeaderRow)
+        {
+            builder.Append("<thead>").Append(RenderRowCells(rows[0], isHeader: true, alignments)).Append("</thead>");
+            bodyRows = [.. rows.Skip(1)];
+        }
+
+        builder.Append("<tbody>");
+        foreach (var cells in bodyRows)
+        {
+            builder.Append(RenderRowCells(cells, isHeader: false, alignments));
+        }
+
+        return builder.Append("</tbody></table>").ToString();
+    }
+
+    private static string RenderRowCells(
+        IReadOnlyList<string> cells,
+        bool isHeader,
+        IReadOnlyList<TableColumnAlignment> alignments)
+    {
+        var tag = isHeader ? "th" : "td";
+        var rendered = cells.Select((cell, column) =>
+            $"<{tag}{AlignmentAttribute(alignments, column)}>{SanitizeInlineHtml(cell)}</{tag}>");
+        return $"<tr>{string.Join(string.Empty, rendered)}</tr>";
+    }
+
+    /// <summary>Emits the GFM column alignment inline so the markup stays self-contained.</summary>
+    private static string AlignmentAttribute(IReadOnlyList<TableColumnAlignment> alignments, int column)
+        => (column < alignments.Count ? alignments[column] : TableColumnAlignment.None) switch
+        {
+            TableColumnAlignment.Left => " style=\"text-align:left\"",
+            TableColumnAlignment.Center => " style=\"text-align:center\"",
+            TableColumnAlignment.Right => " style=\"text-align:right\"",
+            _ => string.Empty
+        };
 
     // ── Page links ────────────────────────────────────────────────────────────
 

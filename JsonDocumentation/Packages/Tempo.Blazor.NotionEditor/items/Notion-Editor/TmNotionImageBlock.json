@@ -15,36 +15,37 @@
       "name": "OnAlignmentChanged",
       "type": "EventCallback<MediaAlignment>",
       "isRequired": false,
-      "description": "Raised on caption blur when text changed. Null = empty."
+      "description": "Raised when alignment changes."
     },
     {
       "name": "OnCaptionSaved",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Raised when resize drag ends. Arg = new pixel width."
+      "description": "Raised on caption blur when text changed. Null = empty."
     },
     {
       "name": "OnDeleteRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when alignment changes."
+      "description": "Raised when the block requests deletion."
     },
     {
       "name": "OnFocused",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the block requests deletion."
+      "description": "Raised when the component receives focus."
     },
     {
       "name": "OnMediaSet",
       "type": "EventCallback<(string? FileId, string? Url)>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Raised when the user sets a new image (URL or uploaded file)."
     },
     {
       "name": "OnWidthChanged",
       "type": "EventCallback<int>",
       "isRequired": false,
-      "description": "Raised when the user sets a new image (URL or uploaded file)."
+      "description": "Raised when resize drag ends. Arg = new pixel width."
     }
   ],
   "subcategory": "Blocks / Media"

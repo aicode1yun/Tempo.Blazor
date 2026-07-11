@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion",
+  "namespace": "Tempo.Blazor.Mcp.Notion",
+  "description": "MCP schema and validation tools for NotionEditor.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionSchemaAndValidationTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionSchemaAndValidationTools"
+}

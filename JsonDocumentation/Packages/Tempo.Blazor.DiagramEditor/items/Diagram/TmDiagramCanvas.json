@@ -14,50 +14,51 @@
     {
       "name": "ActiveGroupId",
       "type": "string?",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Active group identifier. Only nodes with matching ParentGroupId are rendered."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Prevent all editing interactions."
+      "description": "Additional CSS class applied to the canvas wrapper."
     },
     {
       "name": "DocumentChanged",
       "type": "EventCallback<DiagramDocument>",
       "isRequired": false,
-      "description": "Document to display and edit."
+      "description": "Raised after every mutation."
     },
     {
       "name": "GridSize",
       "type": "int",
       "isRequired": false,
       "default": "8",
-      "description": "Show grid lines on the canvas background."
+      "description": "Snap-to-grid cell size in pixels. 0 = disabled."
     },
     {
       "name": "OnCanvasContextMenu",
       "type": "EventCallback<(double CanvasX, double CanvasY, double ScreenX, double ScreenY)>",
       "isRequired": false,
-      "description": "Raised when the user presses Escape and there is a table cell sub-selection that should be cleared before the node selection. Used to implement the draw.io-style \"drill-out\" cascade (first Escape exits cell mode, second Escape clears node selection)."
+      "description": "Raised when the empty canvas is right-clicked to open a context menu."
     },
     {
       "name": "OnClearTableCellSelection",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when a table cell is right-clicked to open a context menu."
+      "description": "Raised when the user presses Escape and there is a table cell sub-selection that should be cleared before the node selection. Used to implement the draw.io-style \"drill-out\" cascade (first Escape exits cell mode, second Escape clears node selection)."
     },
     {
       "name": "OnCloseContextMenu",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the empty canvas is right-clicked to open a context menu."
+      "description": "Raised when the context menu should be closed (e.g. second right-click)."
     },
     {
       "name": "OnEdgeContextMenu",
       "type": "EventCallback<(string EdgeId, double ScreenX, double ScreenY)>",
       "isRequired": false,
-      "description": "Raised when a node is right-clicked or long-pressed to open a context menu."
+      "description": "Raised when an edge is right-clicked to open a context menu."
     },
     {
       "name": "OnEdgeCreated",
@@ -68,73 +69,73 @@
       "name": "OnEnterGroup",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Raised when the user presses Ctrl+Shift+L to lock selected nodes."
+      "description": "Raised when the user double-clicks or presses Ctrl+Shift+G on a group to enter it."
     },
     {
       "name": "OnExitGroup",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user double-clicks or presses Ctrl+Shift+G on a group to enter it."
+      "description": "Raised when the user presses Ctrl+Shift+F to exit the current group."
     },
     {
       "name": "OnGroupSelected",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user presses Ctrl+PageUp/PageDown to switch page."
+      "description": "Raised when the user presses Ctrl+Shift+G to group selected nodes."
     },
     {
       "name": "OnLockSelected",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user presses Ctrl+Shift+G to group selected nodes."
+      "description": "Raised when the user presses Ctrl+Shift+L to lock selected nodes."
     },
     {
       "name": "OnNavigateToCorner",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Raised when the user presses a quick-insert stencil key (A,S,D,F,R)."
+      "description": "Raised when the user presses Ctrl+Home/End to navigate to a corner."
     },
     {
       "name": "OnNodeContextMenu",
       "type": "EventCallback<(string NodeId, double ScreenX, double ScreenY)>",
       "isRequired": false,
-      "description": "Raised when a port is clicked to start drawing an edge."
+      "description": "Raised when a node is right-clicked or long-pressed to open a context menu."
     },
     {
       "name": "OnNodeLinkClicked",
       "type": "EventCallback<(string NodeId, string Link)>",
       "isRequired": false,
-      "description": "Raised when a table cell is clicked (with or without Ctrl)."
+      "description": "Raised when a node with a link is clicked."
     },
     {
       "name": "OnPortMouseDown",
       "type": "EventCallback<(string NodeId, string PortId)>",
       "isRequired": false,
-      "description": "Raised when the ruler cursor moves."
+      "description": "Raised when a port is clicked to start drawing an edge."
     },
     {
       "name": "OnQuickInsert",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Active group identifier. Only nodes with matching ParentGroupId are rendered."
+      "description": "Raised when the user presses a quick-insert stencil key (A,S,D,F,R)."
     },
     {
       "name": "OnRedo",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when user requests undo."
+      "description": "Raised when user requests redo."
     },
     {
       "name": "OnRulerCursorMoved",
       "type": "EventCallback<(double X, double Y)>",
       "isRequired": false,
-      "description": "Raised when the viewport changes after pan, zoom, or fit."
+      "description": "Raised when the ruler cursor moves."
     },
     {
       "name": "OnSelectionChanged",
       "type": "EventCallback<string[]>",
       "isRequired": false,
-      "description": "Current zoom level used for pixel-to-document conversion."
+      "description": "Raised when the user changes the selection."
     },
     {
       "name": "OnShowReplace",
@@ -146,94 +147,94 @@
       "name": "OnShowSearch",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user switches tool mode."
+      "description": "Raised when the user presses Ctrl+F."
     },
     {
       "name": "OnSwitchPage",
       "type": "EventCallback<int>",
       "isRequired": false,
-      "description": "Raised when the user presses Ctrl+Home/End to navigate to a corner."
+      "description": "Raised when the user presses Ctrl+PageUp/PageDown to switch page."
     },
     {
       "name": "OnTableCellContextMenu",
       "type": "EventCallback<(string NodeId, int Row, int Column, double ScreenX, double ScreenY)>",
       "isRequired": false,
-      "description": "Raised when an edge is right-clicked to open a context menu."
+      "description": "Raised when a table cell is right-clicked to open a context menu."
     },
     {
       "name": "OnTableCellSelect",
       "type": "EventCallback<(string NodeId, int Row, int Column, bool IsCtrlHeld)>",
       "isRequired": false,
-      "description": "Selected table cells for multi-select merge UI."
+      "description": "Raised when a table cell is clicked (with or without Ctrl)."
     },
     {
       "name": "OnToggleBold",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user presses Ctrl+Shift+F to exit the current group."
+      "description": "Raised when the user presses Ctrl+B to toggle bold on selected nodes."
     },
     {
       "name": "OnToggleItalic",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user presses Ctrl+B to toggle bold on selected nodes."
+      "description": "Raised when the user presses Ctrl+I to toggle italic on selected nodes."
     },
     {
       "name": "OnToggleUnderline",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user presses Ctrl+I to toggle italic on selected nodes."
+      "description": "Raised when the user presses Ctrl+U to toggle underline on selected nodes."
     },
     {
       "name": "OnToolModeChanged",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Raised when user requests redo."
+      "description": "Raised when the user switches tool mode."
     },
     {
       "name": "OnUndo",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user changes the selection."
+      "description": "Raised when user requests undo."
     },
     {
       "name": "ReadOnly",
       "type": "bool",
       "isRequired": false,
-      "description": "Snap-to-grid cell size in pixels. 0 = disabled."
+      "description": "Prevent all editing interactions."
     },
     {
       "name": "SelectedTableCells",
       "type": "List<(int Row, int Column)>",
       "isRequired": false,
       "default": "[]",
-      "description": "Raised when the context menu should be closed (e.g. second right-click)."
+      "description": "Selected table cells for multi-select merge UI."
     },
     {
       "name": "ShowGrid",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Raised after every mutation."
+      "description": "Show grid lines on the canvas background."
     },
     {
       "name": "ViewportChanged",
       "type": "EventCallback<DiagramMinimapViewport>",
       "isRequired": false,
-      "description": "Raised when the zoom level changes (e.g. via wheel)."
+      "description": "Raised when the viewport changes after pan, zoom, or fit."
     },
     {
       "name": "Zoom",
       "type": "double",
       "isRequired": false,
       "default": "1.0",
-      "description": "Additional CSS class applied to the canvas wrapper."
+      "description": "Current zoom level used for pixel-to-document conversion."
     },
     {
       "name": "ZoomChanged",
       "type": "EventCallback<double>",
       "isRequired": false,
-      "description": "Raised when the user presses Ctrl+U to toggle underline on selected nodes."
+      "description": "Raised when the zoom level changes (e.g. via wheel)."
     }
   ]
 }

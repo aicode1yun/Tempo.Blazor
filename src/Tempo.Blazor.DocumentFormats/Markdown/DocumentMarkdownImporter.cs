@@ -63,6 +63,14 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
                 continue;
             }
 
+            if (TryReadFencedCode(lines, index, out var code, out var afterFence))
+            {
+                code.Order = order++;
+                document.Blocks.Add(code);
+                index = afterFence;
+                continue;
+            }
+
             if (TryReadTable(lines, index, out var table, out var nextIndex))
             {
                 table.Order = order++;
@@ -104,6 +112,55 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
         }
 
         return document;
+    }
+
+    /// <summary>
+    /// Reads a fenced code block. The body is taken verbatim — no inline markup, no escaping —
+    /// and an unterminated fence runs to the end of the document rather than losing its lines.
+    /// </summary>
+    private static bool TryReadFencedCode(string[] lines, int index, out DocumentBlock block, out int nextIndex)
+    {
+        block = new DocumentBlock();
+        nextIndex = index;
+
+        var fence = FenceRegex().Match(lines[index].TrimEnd('\r'));
+        if (!fence.Success)
+        {
+            return false;
+        }
+
+        var marker = fence.Groups["fence"].Value;
+        var language = fence.Groups["language"].Value.Trim();
+
+        var body = new List<string>();
+        var cursor = index + 1;
+        while (cursor < lines.Length)
+        {
+            var line = lines[cursor].TrimEnd('\r');
+            var closing = FenceRegex().Match(line);
+            if (closing.Success
+                && closing.Groups["fence"].Value.Length >= marker.Length
+                && closing.Groups["language"].Value.Trim().Length == 0)
+            {
+                cursor++;
+                break;
+            }
+
+            body.Add(line);
+            cursor++;
+        }
+
+        block = new DocumentBlock
+        {
+            Type = DocumentBlockType.Code,
+            Content = new CodeBlockContent
+            {
+                Language = language.Length == 0 ? null : language,
+                Code = string.Join('\n', body)
+            }
+        };
+        nextIndex = cursor;
+        return true;
     }
 
     private static bool TryReadSingleLineBlock(string line, double order, out DocumentBlock block)
@@ -181,6 +238,16 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
                 ? parsed
                 : 1;
 
+            // A GFM task list item carries its checkbox as state, not as the literal text "[x] ".
+            var text = list.Groups["text"].Value.Trim();
+            bool? isChecked = null;
+            var task = TaskPrefixRegex().Match(text);
+            if (!ordered && task.Success)
+            {
+                isChecked = task.Groups["state"].Value is "x" or "X";
+                text = task.Groups["text"].Value.Trim();
+            }
+
             block = new DocumentBlock
             {
                 Type = DocumentBlockType.List,
@@ -189,8 +256,9 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
                 {
                     Ordered = ordered,
                     StartNumber = startNumber,
+                    IsChecked = isChecked,
                     IndentLevel = list.Groups["indent"].Value.Replace("\t", "    ", StringComparison.Ordinal).Length / 2,
-                    Inlines = ParseInlines(list.Groups["text"].Value.Trim())
+                    Inlines = ParseInlines(text)
                 }
             };
             return true;
@@ -208,11 +276,15 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
             return false;
         }
 
+        var headerCells = SplitTableCells(lines[index]);
+        var columnCount = headerCells.Count;
+        var alignments = ParseColumnAlignments(lines[index + 1], columnCount);
+
         var rows = new List<TableRowContent>
         {
             new()
             {
-                Cells = SplitTableCells(lines[index])
+                Cells = headerCells
                     .Select(cell => CreateTableCell(cell, isHeader: true))
                     .ToList()
             }
@@ -223,7 +295,7 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
         {
             rows.Add(new TableRowContent
             {
-                Cells = SplitTableCells(lines[nextIndex])
+                Cells = NormalizeCellCount(SplitTableCells(lines[nextIndex]), columnCount, string.Empty)
                     .Select(cell => CreateTableCell(cell, isHeader: false))
                     .ToList()
             });
@@ -233,18 +305,104 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
         block = new DocumentBlock
         {
             Type = DocumentBlockType.Table,
-            Content = new TableBlockContent { Rows = rows }
+            Content = new TableBlockContent { Rows = rows, ColumnAlignments = alignments }
         };
         return true;
     }
 
+    /// <summary>A table starts wherever a cell-bearing line is followed by a GFM delimiter row.</summary>
     private static bool LooksLikeTable(string[] lines, int index)
         => index + 1 < lines.Length
             && IsTableRow(lines[index])
-            && TableSeparatorRegex().IsMatch(lines[index + 1].Trim());
+            && IsTableSeparator(lines[index + 1]);
 
-    private static bool IsTableRow(string line)
-        => line.Trim().StartsWith('|') && line.Trim().EndsWith('|');
+    /// <summary>
+    /// A delimiter row is a pipe-delimited line whose every cell is a run of dashes with optional
+    /// colon anchors. Requiring a pipe is what separates a single-column delimiter (<c>| --- |</c>)
+    /// from a thematic break (<c>---</c>).
+    /// </summary>
+    private static bool IsTableSeparator(string line)
+    {
+        var trimmed = line.Trim();
+        if (!ContainsUnescapedPipe(trimmed))
+        {
+            return false;
+        }
+
+        var cells = SplitTableCells(trimmed);
+        return cells.Count > 0 && cells.All(cell => SeparatorCellRegex().IsMatch(cell.Trim()));
+    }
+
+    /// <summary>Outer pipes are optional in GFM; a row only needs one unescaped cell delimiter.</summary>
+    private static bool IsTableRow(string line) => ContainsUnescapedPipe(line);
+
+    private static bool ContainsUnescapedPipe(string line)
+    {
+        var escaped = false;
+        foreach (var ch in line)
+        {
+            if (escaped)
+            {
+                escaped = false;
+                continue;
+            }
+
+            if (ch == '\\')
+            {
+                escaped = true;
+                continue;
+            }
+
+            if (ch == '|')
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static List<TableColumnAlignment> ParseColumnAlignments(string separatorLine, int columnCount)
+    {
+        var alignments = SplitTableCells(separatorLine)
+            .Select(ParseColumnAlignment)
+            .ToList();
+
+        return NormalizeCellCount(alignments, columnCount, TableColumnAlignment.None);
+    }
+
+    private static TableColumnAlignment ParseColumnAlignment(string separatorCell)
+    {
+        var cell = separatorCell.Trim();
+        var left = cell.StartsWith(':');
+        var right = cell.EndsWith(':') && cell.Length > 1;
+
+        return (left, right) switch
+        {
+            (true, true) => TableColumnAlignment.Center,
+            (true, false) => TableColumnAlignment.Left,
+            (false, true) => TableColumnAlignment.Right,
+            _ => TableColumnAlignment.None
+        };
+    }
+
+    /// <summary>Pads short rows and truncates overlong ones so every row matches the header width.</summary>
+    private static List<T> NormalizeCellCount<T>(IReadOnlyList<T> cells, int columnCount, T padding)
+    {
+        if (cells.Count == columnCount)
+        {
+            return [.. cells];
+        }
+
+        if (cells.Count > columnCount)
+        {
+            return [.. cells.Take(columnCount)];
+        }
+
+        var normalized = new List<T>(cells);
+        normalized.AddRange(Enumerable.Repeat(padding, columnCount - cells.Count));
+        return normalized;
+    }
 
     private static TableCellContent CreateTableCell(string markdown, bool isHeader) => new()
     {
@@ -262,16 +420,18 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
 
     private static IReadOnlyList<string> SplitTableCells(string line)
     {
-        var trimmed = line.Trim().Trim('|');
+        var trimmed = line.Trim();
         var cells = new List<string>();
         var current = new StringBuilder();
         var escaped = false;
+        var endedOnDelimiter = false;
         foreach (var ch in trimmed)
         {
             if (escaped)
             {
                 current.Append(ch);
                 escaped = false;
+                endedOnDelimiter = false;
                 continue;
             }
 
@@ -285,13 +445,27 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
             {
                 cells.Add(current.ToString());
                 current.Clear();
+                endedOnDelimiter = true;
                 continue;
             }
 
             current.Append(ch);
+            endedOnDelimiter = false;
         }
 
         cells.Add(current.ToString());
+
+        // Leading and trailing pipes are optional delimiters in GFM, not empty cells.
+        if (endedOnDelimiter && cells.Count > 1)
+        {
+            cells.RemoveAt(cells.Count - 1);
+        }
+
+        if (cells.Count > 1 && trimmed.StartsWith('|'))
+        {
+            cells.RemoveAt(0);
+        }
+
         return cells;
     }
 
@@ -338,11 +512,11 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
             }
 
             if (TryReadDelimited(markdown, index, "**", InlineMarkType.Bold, out var marked, out consumed)
-                || TryReadDelimited(markdown, index, "__", InlineMarkType.Bold, out marked, out consumed)
+                || TryReadUnderscoreDelimited(markdown, index, "__", InlineMarkType.Bold, out marked, out consumed)
                 || TryReadDelimited(markdown, index, "~~", InlineMarkType.Strikethrough, out marked, out consumed)
                 || TryReadDelimited(markdown, index, "`", InlineMarkType.FontFamily, out marked, out consumed)
                 || TryReadDelimited(markdown, index, "*", InlineMarkType.Italic, out marked, out consumed)
-                || TryReadDelimited(markdown, index, "_", InlineMarkType.Italic, out marked, out consumed))
+                || TryReadUnderscoreDelimited(markdown, index, "_", InlineMarkType.Italic, out marked, out consumed))
             {
                 result.Add(marked);
                 index += consumed;
@@ -424,6 +598,45 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
         return true;
     }
 
+    /// <summary>
+    /// Underscore emphasis only fires at word boundaries. Without this, <c>snake_case_name</c>
+    /// and Python's <c>__init__</c> would come out italicised, which is why GFM restricts
+    /// <c>_</c> — but not <c>*</c> — to run starts and ends.
+    /// </summary>
+    private static bool TryReadUnderscoreDelimited(
+        string markdown,
+        int index,
+        string delimiter,
+        InlineMarkType markType,
+        out TextRun run,
+        out int consumed)
+    {
+        run = new TextRun();
+        consumed = 0;
+
+        if (index > 0 && IsWordCharacter(markdown[index - 1]))
+        {
+            return false;
+        }
+
+        if (!TryReadDelimited(markdown, index, delimiter, markType, out run, out consumed))
+        {
+            return false;
+        }
+
+        var after = index + consumed;
+        if (after < markdown.Length && IsWordCharacter(markdown[after]))
+        {
+            run = new TextRun();
+            consumed = 0;
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsWordCharacter(char value) => char.IsLetterOrDigit(value);
+
     private static bool TryReadDelimited(
         string markdown,
         int index,
@@ -490,9 +703,15 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
     [GeneratedRegex("""^(?<indent>\s*)(?<marker>(?:[-+*])|(?:\d+[.)]))\s+(?<text>.+)$""")]
     private static partial Regex ListRegex();
 
+    [GeneratedRegex("""^(?<fence>`{3,}|~{3,})(?<language>[^`]*)$""")]
+    private static partial Regex FenceRegex();
+
+    [GeneratedRegex("""^\[(?<state>[ xX]?)\]\s+(?<text>.*)$""")]
+    private static partial Regex TaskPrefixRegex();
+
     [GeneratedRegex("""\d+""")]
     private static partial Regex NumberPrefixRegex();
 
-    [GeneratedRegex("""^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$""")]
-    private static partial Regex TableSeparatorRegex();
+    [GeneratedRegex("""^:?-+:?$""")]
+    private static partial Regex SeparatorCellRegex();
 }

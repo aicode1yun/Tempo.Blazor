@@ -21,47 +21,47 @@
       "name": "IndicatorPos",
       "type": "double?",
       "isRequired": false,
-      "description": "Current zoom scale."
+      "description": "Cursor position in SVG space (null = hidden)."
     },
     {
       "name": "Scale",
       "type": "double",
       "isRequired": false,
       "default": "1.0",
-      "description": "Canvas viewBox H."
+      "description": "Current zoom scale."
     },
     {
       "name": "Size",
       "type": "int",
       "isRequired": false,
       "default": "20",
-      "description": "\"Horizontal\" or \"Vertical\"."
+      "description": "Pixel size of the ruler (height for H, width for V)."
     },
     {
       "name": "ViewBoxH",
       "type": "double",
       "isRequired": false,
       "default": "800",
-      "description": "Canvas viewBox W."
+      "description": "Canvas viewBox H."
     },
     {
       "name": "ViewBoxW",
       "type": "double",
       "isRequired": false,
       "default": "1200",
-      "description": "Canvas viewBox Y."
+      "description": "Canvas viewBox W."
     },
     {
       "name": "ViewBoxX",
       "type": "double",
       "isRequired": false,
-      "description": "Pixel size of the ruler (height for H, width for V)."
+      "description": "Canvas viewBox X."
     },
     {
       "name": "ViewBoxY",
       "type": "double",
       "isRequired": false,
-      "description": "Canvas viewBox X."
+      "description": "Canvas viewBox Y."
     }
   ]
 }

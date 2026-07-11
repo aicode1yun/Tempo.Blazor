@@ -1,0 +1,17 @@
+{
+  "kind": "Class",
+  "category": "Reporting",
+  "namespace": "Tempo.Blazor.Mcp.Reporting",
+  "description": "Applies ordered MCP report edit operations to a working copy.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportOperationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportOperationEngine",
+  "members": [
+    {
+      "name": "Apply",
+      "type": "static ReportOperationResult Apply()",
+      "description": "Applies report edit operations to a copy of ."
+    }
+  ]
+}

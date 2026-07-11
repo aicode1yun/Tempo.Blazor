@@ -545,6 +545,19 @@ public static class NotionEditorEndpoints
             }
         });
 
+        blockGroup.MapPost("/restore", async (List<PageBlock> blocks, MockNotionBlockStore store) =>
+        {
+            try
+            {
+                await store.RestoreBlocksAsync(blocks);
+                return Results.Ok(blocks);
+            }
+            catch (Exception ex)
+            {
+                return Results.BadRequest(ex.Message);
+            }
+        });
+
         blockGroup.MapPost("/batch", (BatchCreateBlocksRequest request, MockNotionBlockStore store) =>
         {
             try
@@ -645,7 +658,7 @@ public static class NotionEditorEndpoints
         {
             try
             {
-                var converted = store.ConvertBlockTypeAsync(blockId, request.NewType).Result;
+                var converted = store.ConvertBlockTypeAsync(blockId, request.NewType, request.CurrentHtml).Result;
                 return Results.Ok(converted);
             }
             catch (KeyNotFoundException)
@@ -1444,7 +1457,7 @@ public record UpdatePageRequest(string? Title, string? Description, string? Icon
     bool? IsFullWidth = null, bool? IsSmallText = null, bool? IsLocked = null);
 public record CreateBlockRequest(string PageId, PageBlock Block, string? AfterBlockId = null);
 public record ReorderBlocksRequest(string PageId, IEnumerable<string> OrderedBlockIds);
-public record ConvertBlockRequest(BlockType NewType);
+public record ConvertBlockRequest(BlockType NewType, string? CurrentHtml = null);
 public record BatchCreateBlocksRequest(string PageId, IEnumerable<PageBlock> Blocks, string? AfterBlockId = null);
 public record TaskCompletionRequest(bool Completed);
 public record MovePageToSpaceRequest(string SpaceId);

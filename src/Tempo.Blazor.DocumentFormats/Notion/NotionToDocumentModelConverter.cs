@@ -117,6 +117,8 @@ public static partial class NotionToDocumentModelConverter
             BlockType.Quote => CreateQuote(block.Id.ToString("N"), order, TextInlines(block.Content as Nm.ITextBlockContent)),
             BlockType.Callout => CreateCallout(block, order),
             BlockType.Image => CreateImage(block, order),
+            BlockType.Divider => CreatePageBreak(block.Id.ToString("N"), order),
+            BlockType.Code => CreateCode(block, order),
             _ => CreateApproximateParagraph(block, order, warnings)
         };
     }
@@ -146,6 +148,28 @@ public static partial class NotionToDocumentModelConverter
             }
         };
 
+    private static Dm.DocumentBlock CreatePageBreak(string id, int order)
+        => new()
+        {
+            Id = id,
+            Type = Dm.DocumentBlockType.PageBreak,
+            Order = order,
+            Content = new Dm.PageBreakBlockContent()
+        };
+
+    private static Dm.DocumentBlock CreateCode(IPageBlock block, int order)
+        => new()
+        {
+            Id = block.Id.ToString("N"),
+            Type = Dm.DocumentBlockType.Code,
+            Order = order,
+            Content = new Dm.CodeBlockContent
+            {
+                Language = (block.Content as Nm.ICodeBlockContent)?.Language,
+                Code = (block.Content as Nm.ICodeBlockContent)?.Code ?? string.Empty
+            }
+        };
+
     private static Dm.DocumentBlock CreateList(string id, int order, bool ordered, Nm.IListBlockContent? content)
         => new()
         {
@@ -160,22 +184,17 @@ public static partial class NotionToDocumentModelConverter
             }
         };
 
+    /// <summary>
+    /// The checkbox is model state on <see cref="Dm.ListBlockContent.IsChecked"/>. It used to be
+    /// glued in front of the text as a literal "[x] ", which the Markdown exporter then escaped
+    /// into "\[x\]" — the task never survived a round trip.
+    /// </summary>
     private static Dm.DocumentBlock CreateTodo(string id, int order, Nm.ITodoBlockContent? content)
     {
-        var prefix = content?.IsChecked == true ? "[x] " : "[ ] ";
         var inlines = TextInlines(content).ToList();
         if (inlines.Count == 0)
         {
             inlines.Add(new Dm.TextRun());
-        }
-
-        if (inlines[0] is Dm.TextRun first)
-        {
-            first.Text = prefix + first.Text;
-        }
-        else
-        {
-            inlines.Insert(0, new Dm.TextRun { Text = prefix });
         }
 
         return new Dm.DocumentBlock
@@ -186,6 +205,7 @@ public static partial class NotionToDocumentModelConverter
             Content = new Dm.ListBlockContent
             {
                 Ordered = false,
+                IsChecked = content?.IsChecked ?? false,
                 Inlines = inlines
             }
         };
@@ -281,7 +301,12 @@ public static partial class NotionToDocumentModelConverter
             Id = tableBlock.Id.ToString("N"),
             Type = Dm.DocumentBlockType.Table,
             Order = order,
-            Content = new Dm.TableBlockContent { Rows = rows }
+            Content = new Dm.TableBlockContent
+            {
+                Rows = rows,
+                // Legacy pages store rows without a Table parent, so there is no alignment to read back.
+                ColumnAlignments = [.. tableContent?.ColumnAlignments ?? []]
+            }
         };
     }
 

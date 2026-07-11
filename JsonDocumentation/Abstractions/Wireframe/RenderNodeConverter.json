@@ -1,0 +1,16 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "System.Text.Json converter that reads and writes RenderNode. A render node is a JSON object whose \"kind\" discriminates the node type; any other property becomes an attribute. The converter throws JsonException on a non-object node, so a malformed stencil pack fails at deserialisation rather than at render time. It is applied automatically through StencilJsonOptions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/RenderNodeConverter.cs",
+  "documentationStatus": "generated",
+  "itemName": "RenderNodeConverter",
+  "examples": [
+    {
+      "title": "Deserialise a stencil pack",
+      "code": "// StencilJsonOptions already registers RenderNodeConverter\nvar pack = JsonSerializer.Deserialize<StencilPack>(json, StencilJsonOptions.Default);"
+    }
+  ]
+}

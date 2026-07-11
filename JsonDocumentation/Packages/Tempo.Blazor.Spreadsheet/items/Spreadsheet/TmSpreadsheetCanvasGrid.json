@@ -15,298 +15,298 @@
       "name": "ActiveCellChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "When true the grid is displayed in read-only mode: cell editing, context menu, and editing-related callbacks are disabled."
+      "description": "Called when the active cell changes."
     },
     {
       "name": "CellValueCommitted",
       "type": "EventCallback<(string CellRef, string? Value)>",
       "isRequired": false,
-      "description": "Called when the user Ctrl+clicks a hyperlink in a cell."
+      "description": "Called when a cell value is committed after editing."
     },
     {
       "name": "CellValuesCommittedBatch",
       "type": "EventCallback<IReadOnlyList<CanvasCellEditCommit>>",
       "isRequired": false,
-      "description": "Called when a cell value is committed after editing."
+      "description": "Called when a batch of cell values is committed from the JavaScript engine."
     },
     {
       "name": "ColumnWidth",
       "type": "double",
       "isRequired": false,
       "default": "64",
-      "description": "Default row height in pixels."
+      "description": "Default column width in pixels."
     },
     {
       "name": "ExternalFormulaEditValue",
       "type": "string?",
       "isRequired": false,
-      "description": "The zoom factor applied to the grid geometry and fonts (1.0 = 100%)."
+      "description": "The external formula editor value when reference-picking is driven by the formula bar instead of inline cell editing."
     },
     {
       "name": "ExternalFormulaOriginCellRef",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether a formula-bar editing session is currently active even before the latest live value is mirrored into the grid."
+      "description": "The origin cell of an external formula-bar session, used as an additional guard against unintended pointer selection changes."
     },
     {
       "name": "ExternalFormulaSessionActive",
       "type": "bool",
       "isRequired": false,
-      "description": "The external formula editor value when reference-picking is driven by the formula bar instead of inline cell editing."
+      "description": "Whether a formula-bar editing session is currently active even before the latest live value is mirrored into the grid."
     },
     {
       "name": "FilterButtonClicked",
       "type": "EventCallback<CanvasFilterButtonClick>",
       "isRequired": false,
-      "description": "Called when a batch of cell values is committed from the JavaScript engine."
+      "description": "Called when the user clicks the auto-filter dropdown button of a header cell."
     },
     {
       "name": "IsFormatPainterActive",
       "type": "bool",
       "isRequired": false,
-      "description": "Called when the user requests strikethrough toggle."
+      "description": "Whether Format Painter mode is active."
     },
     {
       "name": "IsReadonly",
       "type": "bool",
       "isRequired": false,
-      "description": "The origin cell of an external formula-bar session, used as an additional guard against unintended pointer selection changes."
+      "description": "When true the grid is displayed in read-only mode: cell editing, context menu, and editing-related callbacks are disabled."
     },
     {
       "name": "OnBoldToggleRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests redo."
+      "description": "Called when the user requests bold toggle."
     },
     {
       "name": "OnCellEdit",
       "type": "EventCallback<SpreadsheetCellEditEventArgs>",
       "isRequired": false,
-      "description": "Called when the user requests select all."
+      "description": "Called when a cell enters or exits edit mode."
     },
     {
       "name": "OnCellReferenceRequested",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Called when a cell enters or exits edit mode."
+      "description": "Called when formula point mode inserts a cell reference."
     },
     {
       "name": "OnClearAllRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when content should be cleared."
+      "description": "Called when content and formatting should be cleared."
     },
     {
       "name": "OnClearContentRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when formatting should be cleared."
+      "description": "Called when content should be cleared."
     },
     {
       "name": "OnClearFormattingRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when Format Painter is activated from context menu."
+      "description": "Called when formatting should be cleared."
     },
     {
       "name": "OnColumnResizeRequested",
       "type": "EventCallback<(int ColIndex, double Width)>",
       "isRequired": false,
-      "description": "Called when formula point mode inserts a cell reference."
+      "description": "Called when a column is resized."
     },
     {
       "name": "OnCopyRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user clicks the in-cell validation dropdown arrow (list type)."
+      "description": "Called when the user requests a copy operation."
     },
     {
       "name": "OnCutRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests a paste-special operation (Ctrl+Shift+V)."
+      "description": "Called when the user requests a cut operation."
     },
     {
       "name": "OnDeleteColumnRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests insert column."
+      "description": "Called when the user requests delete column."
     },
     {
       "name": "OnDeleteRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests delete column."
+      "description": "Called when the user requests delete selection."
     },
     {
       "name": "OnDeleteRowRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests insert row."
+      "description": "Called when the user requests delete row."
     },
     {
       "name": "OnFindRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the zoom should reset to 100% (Ctrl+0)."
+      "description": "Called when the Find panel should open (Ctrl+F)."
     },
     {
       "name": "OnFormatCellsRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when a row is resized."
+      "description": "Called when the user requests the Format Cells dialog."
     },
     {
       "name": "OnFormatPainterActivateRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when hidden columns near the selection should be shown."
+      "description": "Called when Format Painter is activated from context menu."
     },
     {
       "name": "OnFormatPainterApply",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Whether Format Painter mode is active."
+      "description": "Called when Format Painter applies to a cell."
     },
     {
       "name": "OnFormatPainterCancel",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when Format Painter applies to a cell."
+      "description": "Called when Format Painter is cancelled."
     },
     {
       "name": "OnHideColumnsRequested",
       "type": "EventCallback<(int Start, int End)>",
       "isRequired": false,
-      "description": "Called when hidden rows near the selection should be shown."
+      "description": "Called when selected columns should be hidden."
     },
     {
       "name": "OnHideRowsRequested",
       "type": "EventCallback<(int Start, int End)>",
       "isRequired": false,
-      "description": "Called when Format Painter is cancelled."
+      "description": "Called when selected rows should be hidden."
     },
     {
       "name": "OnHyperlinkClick",
       "type": "EventCallback<SpreadsheetHyperlink>",
       "isRequired": false,
-      "description": "Called when the active cell changes."
+      "description": "Called when the user Ctrl+clicks a hyperlink in a cell."
     },
     {
       "name": "OnInsertColumnRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests delete row."
+      "description": "Called when the user requests insert column."
     },
     {
       "name": "OnInsertRowRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests a cut operation."
+      "description": "Called when the user requests insert row."
     },
     {
       "name": "OnItalicToggleRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests bold toggle."
+      "description": "Called when the user requests italic toggle."
     },
     {
       "name": "OnPasteRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests a copy operation."
+      "description": "Called when the user requests a paste operation."
     },
     {
       "name": "OnPasteSpecialRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests a paste operation."
+      "description": "Called when the user requests a paste-special operation (Ctrl+Shift+V)."
     },
     {
       "name": "OnRedoRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests undo."
+      "description": "Called when the user requests redo."
     },
     {
       "name": "OnReplaceRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the Find panel should open (Ctrl+F)."
+      "description": "Called when the Replace panel should open (Ctrl+H)."
     },
     {
       "name": "OnRowResizeRequested",
       "type": "EventCallback<(int RowIndex, double Height)>",
       "isRequired": false,
-      "description": "Called when a column is resized."
+      "description": "Called when a row is resized."
     },
     {
       "name": "OnSelectAllRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests underline toggle."
+      "description": "Called when the user requests select all."
     },
     {
       "name": "OnStrikeThroughToggleRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests the Format Cells dialog."
+      "description": "Called when the user requests strikethrough toggle."
     },
     {
       "name": "OnUnderlineToggleRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests italic toggle."
+      "description": "Called when the user requests underline toggle."
     },
     {
       "name": "OnUndoRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the user requests delete selection."
+      "description": "Called when the user requests undo."
     },
     {
       "name": "OnUnhideColumnsRequested",
       "type": "EventCallback<(int Start, int End)>",
       "isRequired": false,
-      "description": "Called when selected columns should be hidden."
+      "description": "Called when hidden columns near the selection should be shown."
     },
     {
       "name": "OnUnhideRowsRequested",
       "type": "EventCallback<(int Start, int End)>",
       "isRequired": false,
-      "description": "Called when selected rows should be hidden."
+      "description": "Called when hidden rows near the selection should be shown."
     },
     {
       "name": "OnZoomResetRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Called when the zoom should change by one step (+1 to zoom in, -1 to zoom out)."
+      "description": "Called when the zoom should reset to 100% (Ctrl+0)."
     },
     {
       "name": "OnZoomStep",
       "type": "EventCallback<int>",
       "isRequired": false,
-      "description": "Called when content and formatting should be cleared."
+      "description": "Called when the zoom should change by one step (+1 to zoom in, -1 to zoom out)."
     },
     {
       "name": "RowHeight",
       "type": "double",
       "isRequired": false,
       "default": "20",
-      "description": "The sheet to render."
+      "description": "Default row height in pixels."
     },
     {
       "name": "ValidationDropButtonClicked",
       "type": "EventCallback<(int Row, int Col, double ClientX, double ClientY)>",
       "isRequired": false,
-      "description": "Called when the user clicks the auto-filter dropdown button of a header cell."
+      "description": "Called when the user clicks the in-cell validation dropdown arrow (list type)."
     },
     {
       "name": "Zoom",
       "type": "double",
       "isRequired": false,
       "default": "1.0",
-      "description": "Default column width in pixels."
+      "description": "The zoom factor applied to the grid geometry and fonts (1.0 = 100%)."
     }
   ]
 }

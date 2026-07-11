@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Source-generated System.Text.Json serializer metadata for the document editor persistence model and its provider contracts. Wired into DocumentEditorJson.Options as the first link of the resolver chain so document clones, saves and interop marshals avoid reflection-based serialization.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentEditorJsonContext.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorJsonContext"
+}

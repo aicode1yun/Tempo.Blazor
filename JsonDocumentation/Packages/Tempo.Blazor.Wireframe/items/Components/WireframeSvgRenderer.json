@@ -1,0 +1,16 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Default IWireframeSvgRenderer built on the static HtmlRenderer. Each render hosts WireframePageSvg.BuildFragment in a tiny throwaway component and serialises the result to a string. No browser, no JS interop — safe to call on the server.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeSvgRenderer.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeSvgRenderer",
+  "examples": [
+    {
+      "title": "Resolve the default renderer",
+      "code": "// registered by AddTempoBlazorWireframe()\nvar renderer = services.GetRequiredService<IWireframeSvgRenderer>();\nvar svg = await renderer.RenderPageAsync(page);"
+    }
+  ]
+}

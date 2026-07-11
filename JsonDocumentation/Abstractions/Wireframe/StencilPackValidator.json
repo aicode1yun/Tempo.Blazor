@@ -1,0 +1,17 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Validation helpers for stencil pack metadata that should not block loading.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilPackValidator.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilPackValidator",
+  "members": [
+    {
+      "name": "ValidateRoles",
+      "type": "static IReadOnlyList<StencilPackValidationWarning> ValidateRoles()",
+      "description": "Validates component role references against . Unknown roles are reported as warnings so packs can be loaded before new role definitions are added to the vocabulary."
+    }
+  ]
+}

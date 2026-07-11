@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using System.Net;
 using Tempo.Blazor.Abstractions.Shared;
+using Tempo.Blazor.Components.NotionEditor.Commands;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.Components.NotionEditor.UI;
 using Tempo.Blazor.NotionEditor.Enums;
@@ -73,6 +74,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     // ── State ────────────────────────────────────────────────────────────────
 
     private List<IPageBlock> _blocks          = [];
+
+    /// <summary>Undo / redo history for this page. Structural edits go through it.</summary>
+    private readonly NotionCommandStack _commands = new();
     private bool             _isLoadingBlocks;
     private string?          _loadBlocksError;
     private Guid?            _activeBlockId;
@@ -228,6 +232,10 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             {
                 await JS.InvokeVoidAsync("tmNotionEditor.initSelectionWatcher", _pageRef, _toolbarDotNetRef);
                 _toolbarWatcherReady = true;
+
+                // Ctrl+Z / Ctrl+Y drive the editor's own history. While the caret sits in a block the
+                // user is still typing into, the browser keeps them for its character-level undo.
+                await JS.InvokeVoidAsync("tmNotionEditor.initUndoRedo", _toolbarDotNetRef);
             }
             catch { /* SSR / test */ }
             try
@@ -335,20 +343,35 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         }
     }
 
-    /// <summary>Deletes the block with the given ID.</summary>
+    /// <summary>Deletes the block with the given ID, leaving the caret at the end of its predecessor.</summary>
     public async Task DeleteBlockAsync(string blockId)
     {
         if (ReadOnly) return;
 
-        var block = _blocks.FirstOrDefault(b => b.Id.ToString() == blockId);
-        if (block is null) return;
+        var index = _blocks.FindIndex(b => b.Id.ToString() == blockId);
+        if (index < 0) return;
+
+        var block    = _blocks[index];
+        var previous = index > 0 ? _blocks[index - 1] : null;
 
         try
         {
-            await Context.BlockProvider.DeleteBlockAsync(blockId);
-            _blocks.Remove(block);
-            if (_activeBlockId == block.Id) _activeBlockId = null;
+            // The subtree has to be captured before the delete cascades it away, or undo has
+            // nothing to put back.
+            var descendants = await CollectDescendantsAsync(block);
+
+            await _commands.PushAsync(new DeleteBlockCommand(
+                Context.BlockProvider, _blocks, Page.Id.ToString(), block, descendants));
+
+            if (_activeBlockId == block.Id) _activeBlockId = previous?.Id;
             StateHasChanged();
+
+            if (previous is not null)
+            {
+                // Backspace on an empty block should feel like deleting a character: the caret
+                // continues where the text above ends.
+                await PlaceCaretAtEndAsync(previous);
+            }
         }
         catch
         {
@@ -356,6 +379,50 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             StateHasChanged();
         }
     }
+
+    /// <summary>
+    /// Folds a block into its predecessor: the predecessor absorbs <paramref name="html"/> at its
+    /// end, this block is deleted, and the caret lands on the seam between the two former blocks.
+    /// A block with no predecessor stays where it is.
+    /// </summary>
+    public async Task MergeBlockIntoPreviousAsync(string blockId, string html)
+    {
+        if (ReadOnly) return;
+
+        var index = _blocks.FindIndex(b => b.Id.ToString() == blockId);
+        if (index <= 0) return;
+
+        var previous = _blocks[index - 1];
+        if (previous.Content is not ITextBlockContent previousText) return;
+
+        var seam   = NotionBlockMerger.CaretOffsetForSeam(previousText.Html);
+        var merged = NotionBlockContentFactory.WithHtml(previous, NotionBlockMerger.Join(previousText.Html, html));
+
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(merged);
+            await Context.BlockProvider.DeleteBlockAsync(blockId);
+        }
+        catch
+        {
+            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
+            StateHasChanged();
+            return;
+        }
+
+        _blocks.RemoveAt(index);
+        _blocks[index - 1] = merged;
+        _blocks            = [.. _blocks]; // new reference — cascading consumers (ToC) see the change
+        _activeBlockId     = merged.Id;
+        StateHasChanged();
+
+        await RestoreCaretAsync(merged.Id.ToString(), seam);
+    }
+
+    private async Task PlaceCaretAtEndAsync(IPageBlock block) =>
+        await RestoreCaretAsync(
+            block.Id.ToString(),
+            NotionBlockMerger.CaretOffsetForSeam(NotionBlockContentFactory.HtmlOf(block.Content)));
 
     /// <summary>
     /// Reorders blocks using an optimistic local update, then persists via the provider.
@@ -395,8 +462,61 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         StateHasChanged();
     }
 
+    /// <summary>Whether an editor-level undo step is available.</summary>
+    public bool CanUndo => _commands.CanUndo;
+
+    /// <summary>Whether an editor-level redo step is available.</summary>
+    public bool CanRedo => _commands.CanRedo;
+
+    /// <summary>Undoes the last structural edit and re-renders the page.</summary>
+    [JSInvokable]
+    public async Task UndoAsync()
+    {
+        if (ReadOnly || !_commands.CanUndo) return;
+
+        await _commands.UndoAsync();
+        await RefreshAsync();
+    }
+
+    /// <summary>Redoes the last undone structural edit and re-renders the page.</summary>
+    [JSInvokable]
+    public async Task RedoAsync()
+    {
+        if (ReadOnly || !_commands.CanRedo) return;
+
+        await _commands.RedoAsync();
+        await RefreshAsync();
+    }
+
+    /// <summary>Every block nested under <paramref name="block"/>, deepest last.</summary>
+    private async Task<List<IPageBlock>> CollectDescendantsAsync(IPageBlock block)
+    {
+        var result = new List<IPageBlock>();
+        var frontier = new Queue<IPageBlock>();
+        frontier.Enqueue(block);
+
+        while (frontier.Count > 0)
+        {
+            var parent = frontier.Dequeue();
+            IEnumerable<IPageBlock> children;
+            try { children = await Context.BlockProvider.GetChildBlocksAsync(parent.Id.ToString()); }
+            catch { continue; }
+
+            foreach (var child in children)
+            {
+                result.Add(child);
+                frontier.Enqueue(child);
+            }
+        }
+
+        return result;
+    }
+
     /// <summary>Returns the current ordered list of blocks (read-only view).</summary>
     public IReadOnlyList<IPageBlock> Blocks => _blocks;
+
+    /// <summary>The block that currently holds the caret, or <c>null</c> when the page is not focused.</summary>
+    public Guid? ActiveBlockId => _activeBlockId;
 
     // ── Page settings handlers ────────────────────────────────────────────────
 
@@ -564,18 +684,94 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Reads the block's live contenteditable value and caret position before a conversion.
+    /// Text typed since the last blur lives only in the DOM, so converting from the stored
+    /// content would silently discard it.
+    /// </summary>
+    private async Task<(string? Html, int? CaretOffset)> CaptureLiveEditsAsync(string blockId)
+    {
+        try
+        {
+            var html = await JS.InvokeAsync<string?>("tmNotionEditor.getEditableHtml", blockId);
+            var caret = await JS.InvokeAsync<int?>("tmNotionEditor.getCaretOffset", blockId);
+            return (html, caret);
+        }
+        catch
+        {
+            return (null, null);
+        }
+    }
+
+    /// <summary>Restores the caret to the offset it had before the conversion re-rendered the block.</summary>
+    private async Task RestoreCaretAsync(string blockId, int? caretOffset)
+    {
+        if (caretOffset is null) return;
+
+        try
+        {
+            await JS.InvokeVoidAsync("tmNotionEditor.setCaretOffset", blockId, caretOffset.Value);
+        }
+        catch
+        {
+            // The converted block may have no editable (table, divider) — nothing to restore.
+        }
+    }
+
+    /// <summary>Pulls the block's children back from the provider, e.g. the rows a Table conversion created.</summary>
+    private async Task SyncConvertedChildrenAsync(IPageBlock converted)
+    {
+        if (!CanHoldChildBlocks(converted.Type)) return;
+
+        try
+        {
+            var children = await Context.BlockProvider.GetChildBlocksAsync(converted.Id.ToString());
+            _blocks.RemoveAll(block => block.ParentBlockId == converted.Id);
+            _blocks.AddRange(children);
+        }
+        catch
+        {
+            // Leave the client list as-is; the block renders its own children on next load.
+        }
+    }
+
+    private static bool CanHoldChildBlocks(BlockType type) => type
+        is BlockType.Table
+        or BlockType.Toggle
+        or BlockType.ColumnList
+        or BlockType.Column;
+
     private async Task HandleConvertBlockAsync((string blockId, BlockType newType) args)
     {
         if (ReadOnly) return;
 
+        var (liveHtml, caretOffset) = await CaptureLiveEditsAsync(args.blockId);
+
+        var source = _blocks.FirstOrDefault(block => block.Id.ToString() == args.blockId);
+
         try
         {
-            var converted = await Context.BlockProvider.ConvertBlockTypeAsync(args.blockId, args.newType);
+            var converted = await Context.BlockProvider.ConvertBlockTypeAsync(args.blockId, args.newType, liveHtml);
             var idx = _blocks.FindIndex(b => b.Id == converted.Id);
             if (idx >= 0) _blocks[idx] = converted;
+
+            // Recorded, not executed: the provider already did the conversion. Undo puts the old
+            // type and the old content back, so a heading demoted by mistake keeps its text.
+            if (source is not null)
+            {
+                _commands.Record(new ConvertBlockCommand(
+                    Context.BlockProvider, _blocks, converted.Id,
+                    source.Type, source.Content, converted.Type, converted.Content));
+            }
+
+            await SyncConvertedChildrenAsync(converted);
+
             Context.RaiseBlockConverted(converted);
             _activeBlockId = converted.Id;
+            _blocks = [.._blocks];
             StateHasChanged();
+
+            await RestoreCaretAsync(converted.Id.ToString(), caretOffset);
         }
         catch
         {
@@ -594,22 +790,32 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         var afterBlock = _blocks.FirstOrDefault(b => b.Id.ToString() == args.AfterBlockId);
         var baseOrder  = afterBlock?.Order ?? (_blocks.Count > 0 ? _blocks.Max(b => b.Order) : 0);
 
+        // Every inserted block gets a fresh id, so a parent's children have to be re-pointed at it.
+        // A pasted table arrives as a Table plus its TableRow children; without the remap the table
+        // renders empty and the orphaned rows fall back to paragraphs.
+        var idMap = args.Blocks.ToDictionary(src => src.Id, _ => Guid.NewGuid());
+
         var newBlocks = args.Blocks.Select((src, i) => (IPageBlock)new PageBlock
         {
-            Id           = Guid.NewGuid(),
-            PageId       = Page.Id,
-            Type         = src.Type,
-            Order        = baseOrder + i + 1,
-            Content      = src.Content,
-            CreatedAt    = DateTime.UtcNow,
-            LastEditedAt = DateTime.UtcNow
+            Id            = idMap[src.Id],
+            PageId        = Page.Id,
+            ParentBlockId = src.ParentBlockId is { } parent && idMap.TryGetValue(parent, out var mapped)
+                ? mapped
+                : null,
+            Type          = src.Type,
+            Order         = src.ParentBlockId is null ? baseOrder + i + 1 : src.Order,
+            Content       = src.Content,
+            CreatedAt     = DateTime.UtcNow,
+            LastEditedAt  = DateTime.UtcNow
         }).ToList();
 
         try
         {
             var created   = await Context.BlockProvider.CreateBlocksAsync(Page.Id.ToString(), newBlocks, args.AfterBlockId);
             var insertIdx = afterBlock is null ? _blocks.Count : _blocks.IndexOf(afterBlock) + 1;
-            foreach (var b in created.OrderBy(b => b.Order))
+
+            // _blocks holds the page's top level only; a container fetches its own children.
+            foreach (var b in created.Where(b => b.ParentBlockId is null).OrderBy(b => b.Order))
                 _blocks.Insert(Math.Clamp(insertIdx++, 0, _blocks.Count), b);
             StateHasChanged();
         }
@@ -1283,11 +1489,12 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         if (ReadOnly) return;
 
         var existing = _blocks.FirstOrDefault(b => b.Id.ToString() == blockId);
-        var html = existing?.Content is ITextBlockContent text ? text.Html : string.Empty;
+        var (liveHtml, caretOffset) = await CaptureLiveEditsAsync(blockId);
+        var html = liveHtml ?? (existing?.Content is ITextBlockContent text ? text.Html : string.Empty);
 
         try
         {
-            var converted = await Context.BlockProvider.ConvertBlockTypeAsync(blockId, BlockType.Callout);
+            var converted = await Context.BlockProvider.ConvertBlockTypeAsync(blockId, BlockType.Callout, liveHtml);
             var content = converted.Content as ICalloutBlockContent;
             var updated = new PageBlock
             {
@@ -1315,6 +1522,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             if (idx >= 0) _blocks[idx] = updated;
             Context.RaiseBlockConverted(updated);
             _activeBlockId = updated.Id;
+            StateHasChanged();
+
+            await RestoreCaretAsync(updated.Id.ToString(), caretOffset);
         }
         catch
         {

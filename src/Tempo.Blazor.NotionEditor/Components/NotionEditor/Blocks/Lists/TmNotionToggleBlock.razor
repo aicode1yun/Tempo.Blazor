@@ -63,9 +63,13 @@
             else
             {
                 <TmNotionBlockList Blocks="_children"
+                                   PageId="Block.PageId"
+                                   ParentBlockId="Block.Id"
                                    ReadOnly="ReadOnly"
                                    ActiveBlockId="_activeChildId"
                                    OnReorder="HandleChildReorderAsync"
+                                   OnExternalBlockDropped="HandleExternalChildDroppedAsync"
+                                   OnExternalBlockRemoved="HandleExternalChildRemovedAsync"
                                    OnBlockFocused="HandleChildFocusedAsync"
                                    OnBlockDeleted="HandleChildDeletedAsync"
                                    OnBlockUpdated="HandleChildUpdatedAsync"

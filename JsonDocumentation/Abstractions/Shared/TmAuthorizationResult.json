@@ -1,0 +1,37 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Result returned by an ITmAuthorizationProvider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmAuthorizationResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmAuthorizationResult",
+  "members": [
+    {
+      "name": "Allowed",
+      "type": "bool",
+      "description": "True when the requested action is allowed."
+    },
+    {
+      "name": "Reason",
+      "type": "string?",
+      "description": "Optional machine-readable reason or policy code."
+    },
+    {
+      "name": "Metadata",
+      "type": "Dictionary<string, object>?",
+      "description": "Optional provider-specific metadata."
+    },
+    {
+      "name": "Allow",
+      "type": "static TmAuthorizationResult Allow()",
+      "description": "Creates an allowed authorization result."
+    },
+    {
+      "name": "Deny",
+      "type": "static TmAuthorizationResult Deny()",
+      "description": "Creates a denied authorization result."
+    }
+  ]
+}

@@ -14,10 +14,15 @@
         var block = Blocks[i];
         var num   = GetNumberedListNumber(idx);
         var bci   = GetBlockCommentInfo(block.Id.ToString());
-        <TmNotionBlock Block="block"
+        var prevIndent = GetPreviousListIndentLevel(idx);
+        @* Without @key Blazor diffs by index: inserting or removing a block above makes the
+           component below receive a different Block and overwrite its still-unsaved DOM. *@
+        <TmNotionBlock @key="block.Id"
+                       Block="block"
                        ReadOnly="@ReadOnly"
                        BlockIndex="@idx"
                        NumberedListNumber="@num"
+                       PreviousListIndentLevel="@prevIndent"
                        IsFocused="ActiveBlockId.HasValue && ActiveBlockId.Value == block.Id"
                        IsSelected="ActiveBlockId.HasValue && ActiveBlockId.Value == block.Id"
                        BlockUnresolvedCount="@bci.Unresolved"
@@ -30,6 +35,7 @@
                        BlockThreadCount="@bci.ThreadCount"
                        OnFocused="() => OnBlockFocused.InvokeAsync(block.Id.ToString())"
                        OnDeleted="() => OnBlockDeleted.InvokeAsync(block.Id.ToString())"
+                       OnMergeWithPrevious="html => OnMergeBlockWithPrevious.InvokeAsync((block.Id.ToString(), html))"
                        OnUpdated="OnBlockUpdated"
                        OnDuplicate="OnBlockDuplicated"
                        OnConvertTo="t => OnConvertBlock.InvokeAsync((block.Id.ToString(), t))"

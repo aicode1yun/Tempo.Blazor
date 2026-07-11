@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "MCP validation tools for diagram/draw documents.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramValidationTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramValidationTools"
+}

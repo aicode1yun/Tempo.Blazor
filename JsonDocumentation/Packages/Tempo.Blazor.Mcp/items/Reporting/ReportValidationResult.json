@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Reporting",
+  "namespace": "Tempo.Blazor.Mcp.Reporting",
+  "description": "Validation result for report definitions.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportValidationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportValidationResult"
+}

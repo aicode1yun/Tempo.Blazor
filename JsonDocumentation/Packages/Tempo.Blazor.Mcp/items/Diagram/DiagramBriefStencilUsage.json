@@ -1,0 +1,22 @@
+{
+  "kind": "Record",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "How many times one stencil is used, either on a single page or across the whole document.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramBriefStencilUsage",
+  "members": [
+    {
+      "name": "StencilId",
+      "type": "string",
+      "description": "The stencil's id."
+    },
+    {
+      "name": "Count",
+      "type": "int",
+      "description": "Number of nodes using this stencil in the enclosing scope."
+    }
+  ]
+}

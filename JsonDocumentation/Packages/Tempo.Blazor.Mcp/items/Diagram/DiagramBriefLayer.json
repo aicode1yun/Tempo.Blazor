@@ -1,0 +1,37 @@
+{
+  "kind": "Record",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "One layer of a DiagramBriefPage, including its visibility and lock state.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramBriefLayer",
+  "members": [
+    {
+      "name": "Id",
+      "type": "string",
+      "description": "The layer's id."
+    },
+    {
+      "name": "Name",
+      "type": "string",
+      "description": "The layer's display name."
+    },
+    {
+      "name": "IsVisible",
+      "type": "bool",
+      "description": "Whether the layer is currently visible."
+    },
+    {
+      "name": "IsLocked",
+      "type": "bool",
+      "description": "Whether the layer is locked against editing."
+    },
+    {
+      "name": "Order",
+      "type": "int",
+      "description": "The layer's z-order."
+    }
+  ]
+}

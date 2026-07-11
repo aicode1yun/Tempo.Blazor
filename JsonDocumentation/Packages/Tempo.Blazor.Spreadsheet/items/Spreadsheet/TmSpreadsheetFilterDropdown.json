@@ -15,63 +15,63 @@
       "name": "ColumnIndex",
       "type": "int",
       "isRequired": true,
-      "description": "The active auto-filter.",
+      "description": "The zero-based column index this dropdown filters.",
       "editorRequired": true
     },
     {
       "name": "Culture",
       "type": "CultureInfo?",
       "isRequired": false,
-      "description": "The zero-based column index this dropdown filters."
+      "description": "The culture used to format and compare values."
     },
     {
       "name": "Filter",
       "type": "SpreadsheetAutoFilter",
       "isRequired": true,
-      "description": "The sheet the filter applies to.",
+      "description": "The active auto-filter.",
       "editorRequired": true
     },
     {
       "name": "OnApply",
       "type": "EventCallback<SpreadsheetColumnFilter?>",
       "isRequired": false,
-      "description": "Raised when the user requests a descending sort by this column."
+      "description": "Raised when the user applies a value filter (null clears this column's filter)."
     },
     {
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user opens the custom text/number/date filter dialog."
+      "description": "Raised when the dropdown is dismissed."
     },
     {
       "name": "OnOpenCustomFilter",
       "type": "EventCallback<int>",
       "isRequired": false,
-      "description": "Raised when the user applies a value filter (null clears this column's filter)."
+      "description": "Raised when the user opens the custom text/number/date filter dialog."
     },
     {
       "name": "OnSortAscending",
       "type": "EventCallback<int>",
       "isRequired": false,
-      "description": "The top position (px) of the dropdown."
+      "description": "Raised when the user requests an ascending sort by this column."
     },
     {
       "name": "OnSortDescending",
       "type": "EventCallback<int>",
       "isRequired": false,
-      "description": "Raised when the user requests an ascending sort by this column."
+      "description": "Raised when the user requests a descending sort by this column."
     },
     {
       "name": "X",
       "type": "double",
       "isRequired": false,
-      "description": "The culture used to format and compare values."
+      "description": "The left position (px) of the dropdown."
     },
     {
       "name": "Y",
       "type": "double",
       "isRequired": false,
-      "description": "The left position (px) of the dropdown."
+      "description": "The top position (px) of the dropdown."
     }
   ],
   "subcategory": "Data"

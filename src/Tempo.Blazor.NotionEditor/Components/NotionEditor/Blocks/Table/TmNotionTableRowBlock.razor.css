@@ -29,7 +29,7 @@
     width: 20px;
     height: 20px;
     border-radius: 3px;
-    color: var(--tm-color-muted, #9ca3af);
+    color: var(--tm-color-muted, var(--tm-color-text-muted, #9ca3af));
     font-size: 11px;
     letter-spacing: -2px;
     cursor: grab;
@@ -38,7 +38,7 @@
 }
 
 .tm-notion-table__drag-icon:hover {
-    background-color: var(--tm-color-bg-hover, #f3f4f6);
+    background-color: var(--tm-color-bg-hover, var(--tm-color-surface-hover, #f3f4f6));
     color: var(--tm-color-text, #374151);
 }
 
@@ -49,7 +49,7 @@
     padding: 0;
     border: none;
     background: none;
-    color: var(--tm-color-muted, #9ca3af);
+    color: var(--tm-color-muted, var(--tm-color-text-muted, #9ca3af));
     cursor: pointer;
     border-radius: 3px;
     align-items: center;
@@ -62,7 +62,7 @@
 }
 
 .tm-notion-table__row-delete:hover {
-    background-color: var(--tm-color-danger-bg, #fee2e2);
+    background-color: var(--tm-color-danger-bg, var(--tm-color-danger-subtle, #fee2e2));
     color: var(--tm-color-danger, #ef4444);
 }
 
@@ -79,6 +79,20 @@
 
 .tm-notion-table__cell-td--selected {
     box-shadow: inset 0 0 0 2px var(--tm-color-primary, #5470ef);
+}
+
+/* Column alignment carried over from a GFM table separator row (:---, :---:, ---:).
+   Inherited by .tm-notion-table__cell; purely geometric, so it needs no theme variant. */
+.tm-notion-table__cell-td--align-left {
+    text-align: left;
+}
+
+.tm-notion-table__cell-td--align-center {
+    text-align: center;
+}
+
+.tm-notion-table__cell-td--align-right {
+    text-align: right;
 }
 
 .tm-notion-table__cell {
@@ -112,7 +126,7 @@
 
 .tm-notion-table-row--header .tm-notion-table__cell-td,
 .tm-notion-table__cell-td--header-col {
-    background-color: var(--tm-color-bg-subtle, #f7f7f7);
+    background-color: var(--tm-color-bg-subtle, var(--tm-bg-surface-secondary, #f7f7f7));
 }
 
 .tm-notion-table-row--header .tm-notion-table__cell,

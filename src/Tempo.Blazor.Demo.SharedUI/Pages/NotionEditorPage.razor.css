@@ -1,0 +1,57 @@
+/* Rendered Markdown preview inside the "Markdown Tables" demo section.
+   Mirrors TmNotionTableBlock so the demo reads like the real block. */
+
+.tm-notion-md-demo-preview {
+    color:       var(--tm-color-text, #1f2937);
+    line-height: var(--tm-line-height-normal, 1.5);
+    overflow-x:  auto;
+}
+
+.tm-notion-md-demo-preview :first-child { margin-top: 0; }
+.tm-notion-md-demo-preview :last-child  { margin-bottom: 0; }
+
+.tm-notion-md-demo-preview ::deep table {
+    border-collapse: collapse;
+    margin:          8px 0;
+}
+
+.tm-notion-md-demo-preview ::deep th,
+.tm-notion-md-demo-preview ::deep td {
+    border:     1px solid var(--tm-color-border, var(--tm-border-color, #e3e3e3));
+    padding:    6px 10px;
+    text-align: left;
+    background: var(--tm-bg-surface, #fff);
+}
+
+.tm-notion-md-demo-preview ::deep th {
+    background-color: var(--tm-color-bg-subtle, var(--tm-bg-surface-secondary, #f7f7f7));
+    font-weight:      var(--tm-font-weight-semibold, 600);
+}
+
+/* ── Live markdown shortcut cheatsheet ─────────────────────────────────── */
+
+.demo-shortcuts {
+    border-collapse: collapse;
+    width:           100%;
+    max-width:       520px;
+    font-size:       var(--tm-font-size-sm, 0.875rem);
+}
+
+.demo-shortcuts th,
+.demo-shortcuts td {
+    border:     1px solid var(--tm-color-border, var(--tm-border-color, #e3e3e3));
+    padding:    6px 10px;
+    text-align: left;
+    color:      var(--tm-color-text, #1f2937);
+    background: var(--tm-bg-surface, #fff);
+}
+
+.demo-shortcuts th {
+    background-color: var(--tm-color-bg-subtle, var(--tm-bg-surface-secondary, #f7f7f7));
+    font-weight:      var(--tm-font-weight-semibold, 600);
+}
+
+.demo-shortcuts code {
+    font-family: var(--tm-font-family-mono, ui-monospace, monospace);
+    white-space: pre;
+}

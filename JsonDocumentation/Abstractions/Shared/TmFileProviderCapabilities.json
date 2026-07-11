@@ -1,0 +1,48 @@
+{
+  "kind": "Enum",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Operations supported by an ITmFileProvider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileProviderCapabilities.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmFileProviderCapabilities",
+  "values": [
+    {
+      "name": "None",
+      "description": "No optional operations are supported."
+    },
+    {
+      "name": "Upload",
+      "description": "Provider can upload complete streams."
+    },
+    {
+      "name": "Resolve",
+      "description": "Provider can resolve asset ids to URLs or access tickets."
+    },
+    {
+      "name": "Delete",
+      "description": "Provider can delete assets."
+    },
+    {
+      "name": "DraftAssets",
+      "description": "Provider supports draft assets that are committed later."
+    },
+    {
+      "name": "CommitDraftAssets",
+      "description": "Provider can commit draft assets."
+    },
+    {
+      "name": "SignedUrls",
+      "description": "Provider returns short-lived or signed URLs."
+    },
+    {
+      "name": "RefreshUrls",
+      "description": "Provider can refresh short-lived URLs."
+    },
+    {
+      "name": "ChunkUpload",
+      "description": "Provider supports chunked upload."
+    }
+  ]
+}

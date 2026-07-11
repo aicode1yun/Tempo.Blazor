@@ -1,0 +1,67 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Single chunk in a chunked upload session.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileChunk.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmFileChunk",
+  "members": [
+    {
+      "name": "FileName",
+      "type": "string",
+      "description": "Original or display file name."
+    },
+    {
+      "name": "ContentType",
+      "type": "string?",
+      "description": "MIME content type, when known."
+    },
+    {
+      "name": "TotalSizeBytes",
+      "type": "long",
+      "description": "Total file size in bytes."
+    },
+    {
+      "name": "ChunkIndex",
+      "type": "int",
+      "description": "Zero-based chunk index."
+    },
+    {
+      "name": "TotalChunks",
+      "type": "int",
+      "description": "Total number of chunks."
+    },
+    {
+      "name": "Data",
+      "type": "byte[]",
+      "description": "Bytes carried by this chunk."
+    },
+    {
+      "name": "UploadSessionId",
+      "type": "string?",
+      "description": "Upload session id from a previous chunk, when the provider requires one."
+    },
+    {
+      "name": "EntityRef",
+      "type": "TmEntityRef?",
+      "description": "Entity that will own or reference the uploaded asset."
+    },
+    {
+      "name": "Purpose",
+      "type": "string?",
+      "description": "Optional purpose, such as \"activity-attachment\"."
+    },
+    {
+      "name": "Metadata",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for provider use."
+    },
+    {
+      "name": "IsLast",
+      "type": "bool",
+      "description": "True when this is the final chunk."
+    }
+  ]
+}

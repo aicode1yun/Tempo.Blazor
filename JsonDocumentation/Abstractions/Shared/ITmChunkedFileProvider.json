@@ -1,0 +1,17 @@
+{
+  "kind": "Interface",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Optional file provider contract for chunked uploads.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmChunkedFileProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITmChunkedFileProvider",
+  "members": [
+    {
+      "name": "UploadChunkAsync",
+      "type": "Task<TmFileUploadResult> UploadChunkAsync(TmFileChunk chunk, CancellationToken cancellationToken = default)",
+      "description": "Uploads a single chunk in a larger file upload."
+    }
+  ]
+}

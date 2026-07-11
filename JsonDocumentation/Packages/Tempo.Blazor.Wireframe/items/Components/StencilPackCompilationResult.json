@@ -1,0 +1,28 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Compiled stencil pack definitions plus non-fatal validation diagnostics.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilPackCompiler.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilPackCompilationResult",
+  "members": [
+    {
+      "name": "Definitions",
+      "type": "IReadOnlyList<WireframeComponentDef>",
+      "description": "The components that compiled successfully."
+    },
+    {
+      "name": "Warnings",
+      "type": "IReadOnlyList<StencilPackValidationWarning>",
+      "description": "Non-fatal validation problems found while compiling."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Inspect the compilation result",
+      "code": "var result = new StencilPackCompiler(NativeRendererRegistry.TempoBuiltIn)\n    .CompileWithDiagnostics(pack);\n\n// warnings are non-fatal — the pack still yielded usable definitions\nif (result.Warnings.Count > 0)\n{\n    logger.LogWarning(\"{Count} stencil warnings\", result.Warnings.Count);\n}\n\nvar definitions = result.Definitions;"
+    }
+  ]
+}

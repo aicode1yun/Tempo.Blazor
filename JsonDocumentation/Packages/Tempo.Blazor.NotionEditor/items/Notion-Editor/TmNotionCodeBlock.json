@@ -2,7 +2,7 @@
   "itemName": "TmNotionCodeBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "Self-contained code block with language selector, textarea editor, copy button, and optional caption. Uses a dedicated JS keyboard handler (initCodeKeyboardHandler) that handles Tab/Shift+Tab indentation and Backspace-on-empty — Tab does NOT move focus like other text blocks.",
+  "description": "Code block with a language selector, copy button, optional caption and an optional Markdown preview. Syntax highlighting is delegated to Prism: when the host page defines window.Prism the code is painted behind a transparent textarea, otherwise it renders as plain monospace text. No Prism asset ships with the package - the same graceful-degradation contract as KaTeX for equations.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Text",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Text/TmNotionCodeBlock.razor",
@@ -12,34 +12,81 @@
   ],
   "parameters": [
     {
-      "name": "OnCaptionSaved",
-      "type": "EventCallback<string?>",
+      "name": "Content",
+      "type": "ICodeBlockContent?",
       "isRequired": false,
-      "description": "Fired when the user selects a new language. Arg = language name (null → plain text)."
+      "description": "Block content: the code string, the language name, the optional caption, and the WrapLines flag."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Renders the block without the language selector and without an editable textarea."
+    },
+    {
+      "name": "IsFocused",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Whether the surrounding editor considers this block focused."
+    },
+    {
+      "name": "AllowMarkdownPreview",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Enables the read-only Markdown preview toggle. The toggle only appears when the block's language is Markdown; the block always opens in editor mode. Set to false to hide the toggle entirely."
     },
     {
       "name": "OnCodeSaved",
       "type": "EventCallback<string>",
-      "isRequired": false
-    },
-    {
-      "name": "OnDeleteRequested",
-      "type": "EventCallback",
       "isRequired": false,
-      "description": "Fired on caption blur when the caption has changed. Arg = new caption (null if empty)."
-    },
-    {
-      "name": "OnFocused",
-      "type": "EventCallback",
-      "isRequired": false,
-      "description": "Fired when Backspace is pressed in an empty code block."
+      "description": "Fired on blur when the code text has changed. Arg = new code string."
     },
     {
       "name": "OnLanguageChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Fired on blur when the code text has changed. Arg = new code string."
+      "description": "Fired when the user selects a new language. Arg = language name (null → plain text)."
+    },
+    {
+      "name": "OnCaptionSaved",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Fired on caption blur when the caption has changed. Arg = new caption (null if empty)."
+    },
+    {
+      "name": "OnDeleteRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when Backspace is pressed in an empty code block."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when the textarea receives focus."
     }
   ],
-  "subcategory": "Blocks / Text"
+  "subcategory": "Blocks / Text",
+  "examples": [
+    {
+      "title": "Read-only code block",
+      "code": "<TmNotionCodeBlock Content=\"@_content\" ReadOnly=\"true\" />\n\n@code {\n    private CodeBlockContent _content = new()\n    {\n        Code = \"var x = 42;\",\n        Language = \"C#\"\n    };\n}"
+    },
+    {
+      "title": "Markdown block with the preview toggle",
+      "code": "@* language \"Markdown\" makes the Preview/Edit toggle appear in the block header *@\n<TmNotionCodeBlock Content=\"@_markdown\"\n                   OnCodeSaved=\"code => _markdown.Code = code\" />\n\n@code {\n    private CodeBlockContent _markdown = new()\n    {\n        Language = \"Markdown\",\n        Code = \"\"\"\n            | Name | Status |\n            | :--- | ---: |\n            | CF26 | Ready |\n            \"\"\"\n    };\n}"
+    },
+    {
+      "title": "Hide the Markdown preview toggle",
+      "code": "@* Consumers that render Markdown themselves can opt out of the built-in preview *@\n<TmNotionCodeBlock Content=\"@_content\" AllowMarkdownPreview=\"false\" />"
+    },
+    {
+      "title": "Enable syntax highlighting",
+      "language": "html",
+      "code": "<!-- index.html of the host app. Grammars must be registered synchronously,\n     so the Prism autoloader plugin does not work here. -->\n<script defer\n  src=\"https://cdn.jsdelivr.net/combine/npm/prismjs@1.29.0/prism.min.js,npm/prismjs@1.29.0/components/prism-csharp.min.js\"\n  crossorigin=\"anonymous\"></script>\n\n<!-- Without it the block still renders, just without colour. -->"
+    }
+  ]
 }

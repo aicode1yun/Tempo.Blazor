@@ -15,20 +15,20 @@
       "name": "Hyperlink",
       "type": "SpreadsheetHyperlink?",
       "isRequired": true,
-      "description": "The workbook (used for named range choices).",
+      "description": "The existing hyperlink to edit, or null for a new one.",
       "editorRequired": true
     },
     {
       "name": "OnCancel",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user saves the dialog."
+      "description": "Raised when the dialog is dismissed."
     },
     {
       "name": "OnSave",
       "type": "EventCallback<SpreadsheetHyperlink>",
       "isRequired": false,
-      "description": "The existing hyperlink to edit, or null for a new one."
+      "description": "Raised when the user saves the dialog."
     }
   ],
   "subcategory": "Dialogs"

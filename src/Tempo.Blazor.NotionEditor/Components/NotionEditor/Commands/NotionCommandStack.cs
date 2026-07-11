@@ -71,6 +71,30 @@ public sealed class NotionCommandStack
         OnStackChanged?.Invoke();
     }
 
+    /// <summary>
+    /// Pushes a command that has already been applied. Some provider calls perform the edit and
+    /// return its result in one go — a block conversion, for instance — so executing the command
+    /// again would apply it twice. Undo and redo behave exactly as for <see cref="PushAsync"/>.
+    /// </summary>
+    public void Record(INotionCommand command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        if (_currentBatch is not null)
+        {
+            _currentBatch.Add(command);
+            OnStackChanged?.Invoke();
+            return;
+        }
+
+        _undoStack.AddLast(command);
+        if (_undoStack.Count > _maxDepth)
+            _undoStack.RemoveFirst();
+
+        _redoStack.Clear();
+        OnStackChanged?.Invoke();
+    }
+
     // ── Batch (multi-command undo step) ──────────────────────────────────────
 
     /// <summary>

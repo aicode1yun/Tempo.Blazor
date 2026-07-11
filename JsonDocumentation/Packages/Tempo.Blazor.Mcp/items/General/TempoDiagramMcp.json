@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Mcp",
+  "description": "Registration helpers for the diagram/draw MCP tools.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "TempoDiagramMcp",
+  "members": [
+    {
+      "name": "ToolTypes",
+      "type": "static IReadOnlyList<Type>",
+      "description": "The diagram/draw tool types, exposed for hosts that register tools by type."
+    },
+    {
+      "name": "AddTempoDiagramMcpTools",
+      "type": "static IServiceCollection AddTempoDiagramMcpTools()",
+      "description": "Registers dependencies required by the diagram/draw MCP tools. The host must supply ITempoDocumentLibraryProvider and IDiagramDocumentProvider; stencil providers are optional and enable the catalog tools plus stricter validation."
+    }
+  ]
+}

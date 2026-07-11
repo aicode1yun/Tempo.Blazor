@@ -15,24 +15,25 @@
       "name": "OnAISelected",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user selects a slash-menu item with item metadata."
+      "description": "Raised when the user selects the AI assistant action."
     },
     {
       "name": "OnClosed",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user selects the AI assistant action."
+      "description": "Raised when the user dismisses the menu (Escape / backdrop click)."
     },
     {
       "name": "OnItemSelected",
       "type": "EventCallback<BlockType>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Raised when the user selects a block type."
     },
     {
       "name": "OnSlashItemSelected",
       "type": "EventCallback<SlashMenuItem>",
       "isRequired": false,
-      "description": "Raised when the user selects a block type."
+      "description": "Raised when the user selects a slash-menu item with item metadata."
     }
   ],
   "subcategory": "UI"

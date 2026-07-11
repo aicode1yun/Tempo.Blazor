@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "The outcome of validating a document editor snapshot.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorValidationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorValidationResult"
+}

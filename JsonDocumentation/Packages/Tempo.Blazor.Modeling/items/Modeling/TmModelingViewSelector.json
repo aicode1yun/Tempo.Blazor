@@ -15,25 +15,25 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Raised when the viewpoint changes."
+      "description": "Additional CSS class applied to the selector root."
     },
     {
       "name": "OnNotationChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Selected viewpoint key."
+      "description": "Raised when the notation changes."
     },
     {
       "name": "OnViewpointChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Raised when the notation changes."
+      "description": "Raised when the viewpoint changes."
     },
     {
       "name": "ViewpointKey",
       "type": "string?",
       "isRequired": false,
-      "description": "Selected notation key."
+      "description": "Selected viewpoint key."
     }
   ]
 }

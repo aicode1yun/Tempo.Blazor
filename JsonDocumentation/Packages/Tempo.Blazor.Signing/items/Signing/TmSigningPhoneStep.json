@@ -15,106 +15,106 @@
       "name": "AppearsOn",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback invoked when a verification code should be sent."
+      "description": "Short text describing where the field appears in the document."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Fallback culture used when localized field text is missing."
+      "description": "Additional CSS classes for the shell element."
     },
     {
       "name": "CodeSent",
       "type": "bool",
       "isRequired": false,
-      "description": "Callback invoked when OTP code changes."
+      "description": "Whether the OTP input is already visible."
     },
     {
       "name": "CountryCode",
       "type": "string",
       "isRequired": false,
       "default": "\"+1\"",
-      "description": "Signing field represented by this step."
+      "description": "Selected country calling code."
     },
     {
       "name": "CountryCodeChanged",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Selected country calling code."
+      "description": "Callback invoked when country code changes."
     },
     {
       "name": "CountryOptions",
       "type": "IReadOnlyList<PhoneCountryOption>",
       "isRequired": false,
       "default": "DefaultCountryOptions",
-      "description": "Seconds shown in the resend countdown state."
+      "description": "Available country code options."
     },
     {
       "name": "Culture",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the controls are disabled."
+      "description": "Culture used to resolve localized field text."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Short text describing where the field appears in the document."
+      "description": "Whether the controls are disabled."
     },
     {
       "name": "FallbackCulture",
       "type": "string?",
       "isRequired": false,
-      "description": "Culture used to resolve localized field text."
+      "description": "Fallback culture used when localized field text is missing."
     },
     {
       "name": "OnSendCode",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Available country code options."
+      "description": "Callback invoked when a verification code should be sent."
     },
     {
       "name": "OtpCode",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback invoked when the normalized phone value changes."
+      "description": "Current OTP code."
     },
     {
       "name": "OtpCodeChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Current OTP code."
+      "description": "Callback invoked when OTP code changes."
     },
     {
       "name": "PhoneNumber",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback invoked when country code changes."
+      "description": "Local phone number."
     },
     {
       "name": "PhoneNumberChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Local phone number."
+      "description": "Callback invoked when phone number changes."
     },
     {
       "name": "ResendSeconds",
       "type": "int",
       "isRequired": false,
       "default": "30",
-      "description": "Whether the OTP input is already visible."
+      "description": "Seconds shown in the resend countdown state."
     },
     {
       "name": "Value",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback invoked when phone number changes."
+      "description": "Normalized full phone number."
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Normalized full phone number."
+      "description": "Callback invoked when the normalized phone value changes."
     }
   ]
 }

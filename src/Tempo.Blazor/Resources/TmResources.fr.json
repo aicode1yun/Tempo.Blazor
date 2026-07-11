@@ -1357,6 +1357,9 @@
   "TmNotionBlockTypeSwitcher_BasicBlocks": "Blocs de base",
   "TmNotionBlockTypeSwitcher_Blocks": "Blocs",
   "TmNotionBlockTypeSwitcher_Lists": "Listes",
+  "TmNotionCodeBlock_PreviewLabel": "Aperçu du Markdown rendu",
+  "TmNotionCodeBlock_ShowEditor": "Modifier",
+  "TmNotionCodeBlock_ShowPreview": "Aperçu",
   "TmNotionBlock_DocumentNotFound": "Document introuvable",
   "TmNotionBlock_InsertExisting": "Insérer un existant…",
   "TmNotionBlock_RemoveBlock": "Supprimer",
@@ -2597,5 +2600,6 @@
   "Tm_Select": "Sélectionner",
   "Tm_SelectAll": "Tout sélectionner",
   "Tm_Upload": "Importer",
-  "Tm_Yes": "Oui"
+  "Tm_Yes": "Oui",
+  "TmNotionBlock_TodoPlaceholder": "Tâche"
 }

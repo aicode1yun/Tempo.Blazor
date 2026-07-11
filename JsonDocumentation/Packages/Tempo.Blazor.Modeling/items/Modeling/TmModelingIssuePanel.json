@@ -15,13 +15,13 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Raised when the user selects an issue that points to a model element or relationship."
+      "description": "Additional CSS class applied to the panel root."
     },
     {
       "name": "OnIssueSelected",
       "type": "EventCallback<ModelingIssueDto>",
       "isRequired": false,
-      "description": "Issues to render in severity-coded order."
+      "description": "Raised when the user selects an issue that points to a model element or relationship."
     }
   ]
 }

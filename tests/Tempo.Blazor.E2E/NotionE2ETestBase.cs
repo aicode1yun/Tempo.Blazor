@@ -1,3 +1,4 @@
+using System.Net.Http;
 using Microsoft.Playwright;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Net;
@@ -15,8 +16,28 @@ public abstract class NotionE2ETestBase : WasmTestBase
 
     protected IPage Page => _page ?? throw new InvalidOperationException("OpenNotionEditorAsync must be called before using the page.");
 
+    /// <summary>Restores the demo page, its blocks and its history to their seeded state.</summary>
+    protected static async Task ResetNotionDemoDataAsync()
+    {
+        using var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        using var http = new HttpClient(handler);
+
+        try { await http.PostAsync("https://localhost:5100/api/notion/reset", null); }
+        catch { /* The API may not be up yet; the test's own waits will report that. */ }
+    }
+
+    /// <summary>
+    /// Opens the demo editor on a freshly seeded page. Without the reset every test inherits the
+    /// blocks the previous ones converted or deleted, so a class that expects a paragraph to be
+    /// there fails purely because of the order it happened to run in.
+    /// </summary>
     protected async Task<IPage> OpenNotionEditorAsync(string query = "")
     {
+        await ResetNotionDemoDataAsync();
+
         var context = await CreateContextAsync();
         await context.AddInitScriptAsync("window.localStorage.setItem('tm-demo-culture', 'en');");
 

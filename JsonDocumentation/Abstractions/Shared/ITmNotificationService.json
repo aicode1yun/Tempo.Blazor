@@ -1,0 +1,47 @@
+{
+  "kind": "Interface",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Shared service contract for persistent user notifications.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmNotificationService.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITmNotificationService",
+  "members": [
+    {
+      "name": "OnChanged",
+      "type": "event Action?",
+      "description": "Raised after notifications or read state change."
+    },
+    {
+      "name": "Capabilities",
+      "type": "TmNotificationServiceCapabilities",
+      "description": "Operations this service supports."
+    },
+    {
+      "name": "PublishAsync",
+      "type": "Task<TmNotification> PublishAsync(TmNotification notification, CancellationToken cancellationToken = default)",
+      "description": "Publishes a notification."
+    },
+    {
+      "name": "GetNotificationsAsync",
+      "type": "Task<IReadOnlyList<TmNotification>> GetNotificationsAsync(TmNotificationQuery query, CancellationToken cancellationToken = default)",
+      "description": "Gets notifications for a recipient."
+    },
+    {
+      "name": "GetUnreadCountAsync",
+      "type": "Task<int> GetUnreadCountAsync(string recipientUserId, CancellationToken cancellationToken = default)",
+      "description": "Gets unread notification count for a recipient."
+    },
+    {
+      "name": "MarkAsReadAsync",
+      "type": "Task MarkAsReadAsync(string notificationId, string recipientUserId, CancellationToken cancellationToken = default)",
+      "description": "Marks one notification as read."
+    },
+    {
+      "name": "MarkAllAsReadAsync",
+      "type": "Task MarkAllAsReadAsync(string recipientUserId, CancellationToken cancellationToken = default)",
+      "description": "Marks all notifications for a recipient as read."
+    }
+  ]
+}

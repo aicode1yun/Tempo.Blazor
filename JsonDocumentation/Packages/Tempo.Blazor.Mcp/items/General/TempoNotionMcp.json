@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Mcp",
+  "description": "Registration helpers for the NotionEditor MCP tools.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "TempoNotionMcp",
+  "members": [
+    {
+      "name": "ToolTypes",
+      "type": "static IReadOnlyList<Type>",
+      "description": "The NotionEditor tool types, exposed for hosts that register tools by type."
+    },
+    {
+      "name": "AddTempoNotionMcpTools",
+      "type": "static IServiceCollection AddTempoNotionMcpTools()",
+      "description": "Registers dependencies required by the NotionEditor MCP tools. The host must supply INotionDataProvider and INotionBlockProvider."
+    }
+  ]
+}

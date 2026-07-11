@@ -15,19 +15,19 @@
       "name": "OnClosed",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when a template is selected."
+      "description": "Raised when the dialog should close without selecting a template."
     },
     {
       "name": "OnTemplateSelected",
       "type": "EventCallback<NotionTemplateDto>",
       "isRequired": false,
-      "description": "Optional provider that supplies workspace page templates."
+      "description": "Raised when a template is selected."
     },
     {
       "name": "TemplateProvider",
       "type": "INotionTemplateProvider?",
       "isRequired": false,
-      "description": "Controls whether the template gallery dialog is rendered."
+      "description": "Optional provider that supplies workspace page templates."
     }
   ],
   "subcategory": "UI"

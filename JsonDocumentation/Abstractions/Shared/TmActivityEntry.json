@@ -1,0 +1,67 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Shared immutable activity or audit entry linked to a Tempo entity.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmActivityEntry.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmActivityEntry",
+  "members": [
+    {
+      "name": "Id",
+      "type": "string",
+      "description": "Stable activity entry identifier."
+    },
+    {
+      "name": "EntityRef",
+      "type": "TmEntityRef",
+      "description": "Entity this activity entry belongs to."
+    },
+    {
+      "name": "Actor",
+      "type": "TmUserRef?",
+      "description": "User that performed the action, when known."
+    },
+    {
+      "name": "Action",
+      "type": "string",
+      "description": "Action key, for example create, edit, or restore-version."
+    },
+    {
+      "name": "Timestamp",
+      "type": "DateTimeOffset",
+      "description": "UTC timestamp when the activity occurred."
+    },
+    {
+      "name": "Summary",
+      "type": "string?",
+      "description": "Optional human-readable summary."
+    },
+    {
+      "name": "Before",
+      "type": "string?",
+      "description": "Optional human-readable state before the change."
+    },
+    {
+      "name": "After",
+      "type": "string?",
+      "description": "Optional human-readable state after the change."
+    },
+    {
+      "name": "Diff",
+      "type": "string?",
+      "description": "Optional diff payload or summary."
+    },
+    {
+      "name": "CorrelationId",
+      "type": "string?",
+      "description": "Optional correlation identifier used to group related activity entries."
+    },
+    {
+      "name": "Metadata",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for consumer use."
+    }
+  ]
+}

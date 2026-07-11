@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Copies the style — and optionally the size — of a single node into the static DiagramClipboard. Unlike the other diagram commands it does not implement IDiagramCommand and has no Undo(), because it changes no document state; execute it directly instead of pushing it onto a DiagramCommandStack.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/CopyStyleCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "CopyStyleCommand",
+  "members": [
+    {
+      "name": "CopyStyleCommand",
+      "type": "CopyStyleCommand(DiagramNode node, bool includeSize = false)",
+      "description": "Creates the command."
+    },
+    {
+      "name": "Execute",
+      "type": "void Execute()",
+      "description": "Stores the node's style (and size when includeSize is true) in DiagramClipboard."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use CopyStyleCommand",
+      "code": "// CopyStyleCommand only writes to the static DiagramClipboard, so it has no Undo()\n// and must NOT be pushed onto a DiagramCommandStack — just execute it.\nnew CopyStyleCommand(selectedNode).Execute();\n\n// copy style and size together\nnew CopyStyleCommand(selectedNode, includeSize: true).Execute();"
+    }
+  ]
+}

@@ -15,116 +15,116 @@
       "name": "Area",
       "type": "SigningFieldArea?",
       "isRequired": false,
-      "description": "Signing field definition to render."
+      "description": "Normalized document area used to position the overlay."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback invoked when a resize operation should start."
+      "description": "Additional CSS classes for the root element."
     },
     {
       "name": "Completed",
       "type": "bool",
       "isRequired": false,
-      "description": "Whether the field is in an invalid state."
+      "description": "Whether the field has been completed."
     },
     {
       "name": "Culture",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the browser context menu is prevented for context menu interactions. Defaults to true."
+      "description": "Culture used to resolve localized field and option text."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Whether the overlay should be rendered as read-only."
+      "description": "Whether the overlay should be disabled."
     },
     {
       "name": "Draggable",
       "type": "bool",
       "isRequired": false,
-      "description": "Whether the overlay should be disabled."
+      "description": "Whether a pointer down on the overlay starts a move operation."
     },
     {
       "name": "Editable",
       "type": "bool",
       "isRequired": false,
-      "description": "Whether a pointer down on the overlay starts a move operation."
+      "description": "Whether resize handles should be shown."
     },
     {
       "name": "FallbackCulture",
       "type": "string?",
       "isRequired": false,
-      "description": "Culture used to resolve localized field and option text."
+      "description": "Fallback culture used when localized text is missing."
     },
     {
       "name": "Focused",
       "type": "bool",
       "isRequired": false,
-      "description": "Whether the field is currently selected."
+      "description": "Whether the field currently has focus."
     },
     {
       "name": "Invalid",
       "type": "bool",
       "isRequired": false,
-      "description": "Whether the field currently has focus."
+      "description": "Whether the field is in an invalid state."
     },
     {
       "name": "OnClick",
       "type": "EventCallback<TmSigningFieldOverlayPointerEventArgs>",
       "isRequired": false,
-      "description": "Fallback culture used when localized text is missing."
+      "description": "Callback invoked when the overlay is clicked."
     },
     {
       "name": "OnContextMenu",
       "type": "EventCallback<TmSigningFieldOverlayPointerEventArgs>",
       "isRequired": false,
-      "description": "Callback invoked when the overlay is double-clicked."
+      "description": "Callback invoked when the overlay receives a context menu interaction."
     },
     {
       "name": "OnDoubleClick",
       "type": "EventCallback<TmSigningFieldOverlayPointerEventArgs>",
       "isRequired": false,
-      "description": "Callback invoked when the overlay is clicked."
+      "description": "Callback invoked when the overlay is double-clicked."
     },
     {
       "name": "OnStartMove",
       "type": "EventCallback<TmSigningFieldOverlayPointerEventArgs>",
       "isRequired": false,
-      "description": "Callback invoked when the overlay receives a context menu interaction."
+      "description": "Callback invoked when a move operation should start."
     },
     {
       "name": "OnStartResize",
       "type": "EventCallback<TmSigningFieldOverlayResizeEventArgs>",
       "isRequired": false,
-      "description": "Callback invoked when a move operation should start."
+      "description": "Callback invoked when a resize operation should start."
     },
     {
       "name": "PreventDefaultContextMenu",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether resize handles should be shown."
+      "description": "Whether the browser context menu is prevented for context menu interactions. Defaults to true."
     },
     {
       "name": "ReadOnly",
       "type": "bool",
       "isRequired": false,
-      "description": "Whether the field has been completed."
+      "description": "Whether the overlay should be rendered as read-only."
     },
     {
       "name": "Selected",
       "type": "bool",
       "isRequired": false,
-      "description": "Current field value. The expected value shape depends on the field type."
+      "description": "Whether the field is currently selected."
     },
     {
       "name": "Value",
       "type": "object?",
       "isRequired": false,
-      "description": "Normalized document area used to position the overlay."
+      "description": "Current field value. The expected value shape depends on the field type."
     }
   ]
 }

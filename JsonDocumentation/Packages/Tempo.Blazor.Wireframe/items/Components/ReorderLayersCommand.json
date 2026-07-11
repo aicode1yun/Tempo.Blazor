@@ -1,0 +1,38 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+  "description": "Reorders layers by rewriting their Order property. Undoable.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ReorderLayersCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReorderLayersCommand",
+  "members": [
+    {
+      "name": "ReorderLayersCommand",
+      "type": "ReorderLayersCommand(WireframeDocument doc, Dictionary<string, int> newOrders)",
+      "description": "Creates the command from a layer-id to order map."
+    },
+    {
+      "name": "Name",
+      "type": "string",
+      "description": "Human-readable label shown in undo/redo tooltips."
+    },
+    {
+      "name": "Execute",
+      "type": "void Execute()",
+      "description": "Applies the change to the document."
+    },
+    {
+      "name": "Undo",
+      "type": "void Undo()",
+      "description": "Restores the state captured before Execute() ran."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use ReorderLayersCommand",
+      "code": "var order = new Dictionary<string, int>\n{\n    [backgroundLayerId] = 0,\n    [contentLayerId]    = 1,\n};\n\ncommandStack.Push(new ReorderLayersCommand(document, order));"
+    }
+  ]
+}

@@ -15,7 +15,7 @@
       "name": "CursorX",
       "type": "double",
       "isRequired": false,
-      "description": "Page scale factor (1.0 = 1:1)."
+      "description": "Cursor position for crosshair."
     },
     {
       "name": "CursorY",
@@ -28,45 +28,45 @@
       "type": "double",
       "isRequired": false,
       "default": "1.0",
-      "description": "Measurement unit."
+      "description": "Page scale factor (1.0 = 1:1)."
     },
     {
       "name": "Unit",
       "type": "MeasurementUnit",
       "isRequired": false,
       "default": "MeasurementUnit.Px",
-      "description": "Current zoom level (1.0 = 100%)."
+      "description": "Measurement unit."
     },
     {
       "name": "ViewportH",
       "type": "double",
       "isRequired": false,
-      "description": "Viewport width in document coordinates."
+      "description": "Viewport height in document coordinates."
     },
     {
       "name": "ViewportW",
       "type": "double",
       "isRequired": false,
-      "description": "Viewport Y in document coordinates."
+      "description": "Viewport width in document coordinates."
     },
     {
       "name": "ViewportX",
       "type": "double",
       "isRequired": false,
-      "description": "Either horizontal or vertical."
+      "description": "Viewport X in document coordinates."
     },
     {
       "name": "ViewportY",
       "type": "double",
       "isRequired": false,
-      "description": "Viewport X in document coordinates."
+      "description": "Viewport Y in document coordinates."
     },
     {
       "name": "Zoom",
       "type": "double",
       "isRequired": false,
       "default": "1.0",
-      "description": "Viewport height in document coordinates."
+      "description": "Current zoom level (1.0 = 100%)."
     }
   ]
 }

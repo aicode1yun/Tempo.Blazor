@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -17,30 +18,36 @@ namespace Tempo.Blazor.Components.NotionEditor.Services;
 ///   <item><term>### (Space)</term><description>Heading3</description></item>
 ///   <item><term>## (Space)</term><description>Heading2</description></item>
 ///   <item><term># (Space)</term><description>Heading1</description></item>
+///   <item><term>- [x] (Space) or [x] (Space)</term><description>TodoItem (checked)</description></item>
+///   <item><term>- [ ] (Space), [ ] (Space) or [] (Space)</term><description>TodoItem (unchecked)</description></item>
 ///   <item><term>* (Space) or - (Space)</term><description>BulletList</description></item>
-///   <item><term>1. (Space)</term><description>NumberedList</description></item>
-///   <item><term>[x] (Space)</term><description>TodoItem (checked)</description></item>
-///   <item><term>[] (Space)</term><description>TodoItem (unchecked)</description></item>
+///   <item><term>any digits followed by ". " (e.g. 1. , 12. )</term><description>NumberedList</description></item>
 ///   <item><term>&gt; (Space)</term><description>Quote</description></item>
 ///   <item><term>``` (Enter or standalone)</term><description>Code</description></item>
 ///   <item><term>--- (Enter or standalone)</term><description>Divider</description></item>
 /// </list>
 /// </summary>
-public sealed class MarkdownShortcutDetector
+public sealed partial class MarkdownShortcutDetector
 {
     // Ordered from most-specific (longest prefix) to least-specific to avoid
-    // false positives between overlapping prefixes such as "# " vs "## ".
+    // false positives between overlapping prefixes such as "# " vs "## ",
+    // or the task-list "- [x] " vs the bullet "- ".
     private static readonly (string Prefix, BlockType Type, bool IsChecked)[] _rules =
     [
-        ("### ", BlockType.Heading3,     false),
-        ("## ",  BlockType.Heading2,     false),
-        ("# ",   BlockType.Heading1,     false),
-        ("[x] ", BlockType.TodoItem,     true),
-        ("[] ",  BlockType.TodoItem,     false),
-        ("* ",   BlockType.BulletList,   false),
-        ("- ",   BlockType.BulletList,   false),
-        ("1. ",  BlockType.NumberedList, false),
-        ("> ",   BlockType.Quote,        false),
+        ("### ",   BlockType.Heading3,   false),
+        ("## ",    BlockType.Heading2,   false),
+        ("# ",     BlockType.Heading1,   false),
+        ("- [x] ", BlockType.TodoItem,   true),
+        ("- [X] ", BlockType.TodoItem,   true),
+        ("- [ ] ", BlockType.TodoItem,   false),
+        ("- [] ",  BlockType.TodoItem,   false),
+        ("[x] ",   BlockType.TodoItem,   true),
+        ("[X] ",   BlockType.TodoItem,   true),
+        ("[ ] ",   BlockType.TodoItem,   false),
+        ("[] ",    BlockType.TodoItem,   false),
+        ("* ",     BlockType.BulletList, false),
+        ("- ",     BlockType.BulletList, false),
+        ("> ",     BlockType.Quote,      false),
     ];
 
     // Exact-match shortcuts triggered by Enter (the text IS the trigger itself, no trailing text).
@@ -71,6 +78,15 @@ public sealed class MarkdownShortcutDetector
                 var remainder = lineText[prefix.Length..];
                 return new MarkdownShortcutResult(type, remainder, isChecked);
             }
+        }
+
+        // Ordered list accepts any leading number, not just "1." — matches the importer.
+        var numbered = NumberedPrefixRegex().Match(lineText);
+        if (numbered.Success)
+        {
+            return new MarkdownShortcutResult(
+                BlockType.NumberedList,
+                lineText[numbered.Length..]);
         }
 
         // Exact rules (triggered by Enter — the text equals the shortcut token exactly).
@@ -113,4 +129,7 @@ public sealed class MarkdownShortcutDetector
     public static bool IsCheckedTodo(string jsShortcutKey) =>
         string.Equals(jsShortcutKey, "todo_checked", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(jsShortcutKey, "todoDone", StringComparison.OrdinalIgnoreCase);
+
+    [GeneratedRegex(@"^\d+\. ")]
+    private static partial Regex NumberedPrefixRegex();
 }
