@@ -76,7 +76,7 @@
 }
 
 .tm-entity-picker__option:hover {
-    background-color: var(--tm-bg-hover);
+    background-color: var(--tm-color-surface-hover);
     color: var(--tm-color-primary);
 }
 

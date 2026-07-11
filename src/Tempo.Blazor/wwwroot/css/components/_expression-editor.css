@@ -5,7 +5,7 @@
 .tm-expression-editor {
     display: flex;
     flex-direction: column;
-    gap: var(--tm-spacing-2, 0.5rem);
+    gap: var(--tm-space-2, 0.5rem);
 }
 
 .tm-expression-editor__label {
@@ -16,14 +16,14 @@
 
 .tm-expression-editor__body {
     display: flex;
-    gap: var(--tm-spacing-3, 0.75rem);
+    gap: var(--tm-space-3, 0.75rem);
     border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-md, 0.5rem);
     overflow: hidden;
 }
 
 .tm-expression-editor--error .tm-expression-editor__body {
-    border-color: var(--tm-color-danger-500, #ef4444);
+    border-color: var(--tm-color-danger);
 }
 
 /* ── Textarea ── */
@@ -31,7 +31,7 @@
 .tm-expression-editor__textarea {
     flex: 1;
     min-height: 100px;
-    padding: var(--tm-spacing-3, 0.75rem);
+    padding: var(--tm-space-3, 0.75rem);
     border: none;
     outline: none;
     resize: vertical;
@@ -64,7 +64,7 @@
 }
 
 .tm-expression-editor__panel-title {
-    padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-3, 0.75rem);
+    padding: var(--tm-space-2, 0.5rem) var(--tm-space-3, 0.75rem);
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -79,7 +79,7 @@
     align-items: flex-start;
     gap: 2px;
     width: 100%;
-    padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-3, 0.75rem);
+    padding: var(--tm-space-2, 0.5rem) var(--tm-space-3, 0.75rem);
     border: none;
     background: transparent;
     cursor: pointer;
@@ -120,7 +120,7 @@
 
 .tm-expression-editor__error {
     font-size: var(--tm-font-size-sm, 0.875rem);
-    color: var(--tm-color-danger-600, #dc2626);
+    color: var(--tm-color-danger-text);
 }
 
 [data-theme="dark"] .tm-expression-editor__var-name,

@@ -47,7 +47,7 @@
 }
 
 .tm-scheduler-toolbar-nav-btn:hover {
-    background: var(--tm-bg-hover, #f1f5f9);
+    background: var(--tm-color-surface-hover, #f1f5f9);
     border-color: var(--tm-color-primary, #3b82f6);
 }
 
@@ -92,7 +92,7 @@
 }
 
 .tm-scheduler-toolbar-view-btn:hover {
-    background: var(--tm-bg-hover, #f1f5f9);
+    background: var(--tm-color-surface-hover, #f1f5f9);
     color: var(--tm-text-primary, #0f172a);
 }
 
@@ -102,7 +102,7 @@
 }
 
 .tm-scheduler-toolbar-view-btn--active:hover {
-    background: var(--tm-color-primary-dark, #2563eb);
+    background: var(--tm-color-primary, #2563eb);
     color: #fff;
 }
 
@@ -134,7 +134,7 @@
 }
 
 .tm-scheduler-context-menu-item:hover {
-    background: var(--tm-bg-hover, #f1f5f9);
+    background: var(--tm-color-surface-hover, #f1f5f9);
 }
 
 .tm-scheduler-context-menu-item--danger {
@@ -160,18 +160,18 @@
 
 /* Dark mode support */
 [data-theme="dark"] .tm-scheduler-context-menu {
-    background: var(--tm-bg-surface-dark, #1e293b);
-    border-color: var(--tm-border-color-dark, #334155);
+    background: var(--tm-bg-surface, #1e293b);
+    border-color: var(--tm-border-color, #334155);
 }
 
 [data-theme="dark"] .tm-scheduler-context-menu-item {
-    color: var(--tm-text-primary-dark, #f1f5f9);
+    color: var(--tm-text-primary, #f1f5f9);
 }
 
 [data-theme="dark"] .tm-scheduler-context-menu-item:hover {
-    background: var(--tm-bg-hover-dark, #334155);
+    background: var(--tm-color-surface-hover, #334155);
 }
 
 [data-theme="dark"] .tm-scheduler-context-menu-divider {
-    background: var(--tm-border-color-dark, #334155);
+    background: var(--tm-border-color, #334155);
 }

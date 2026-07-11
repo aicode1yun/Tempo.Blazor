@@ -105,13 +105,13 @@
    ═══════════════════════════════════════════════════════ */
 .tm-split-button--danger .tm-split-button__primary,
 .tm-split-button--danger .tm-split-button__toggle {
-    background-color: var(--tm-color-danger-600, #dc2626);
+    background-color: var(--tm-color-danger-hover);
     color: var(--tm-color-white);
 }
 
 .tm-split-button--danger .tm-split-button__primary:hover:not(:disabled),
 .tm-split-button--danger .tm-split-button__toggle:hover:not(:disabled) {
-    background-color: var(--tm-color-danger-700, #b91c1c);
+    background-color: var(--tm-color-danger);
 }
 
 /* ═══════════════════════════════════════════════════════

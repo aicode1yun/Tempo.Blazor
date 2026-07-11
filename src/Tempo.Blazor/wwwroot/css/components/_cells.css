@@ -239,7 +239,7 @@
 }
 
 .tm-dbc__popup-option:hover {
-    background: var(--tm-bg-hover, #f3f4f6);
+    background: var(--tm-color-surface-hover, #f3f4f6);
 }
 
 .tm-dbc__popup-option--active {
@@ -274,7 +274,7 @@
     transition: background 0.08s;
 }
 
-.tm-dbc__popup-clear:hover { background: var(--tm-bg-hover, #f3f4f6); }
+.tm-dbc__popup-clear:hover { background: var(--tm-color-surface-hover, #f3f4f6); }
 
 .tm-dbc__popup-footer {
     padding: 6px 8px;

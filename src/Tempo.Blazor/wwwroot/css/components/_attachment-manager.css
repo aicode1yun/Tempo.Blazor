@@ -11,7 +11,7 @@
 .tm-attachment-actions { display: flex; gap: var(--tm-space-1); flex-shrink: 0; }
 .tm-attachment-download, .tm-attachment-delete {
   background: none; border: none; cursor: pointer; padding: var(--tm-space-1);
-  border-radius: var(--tm-radius-sm); color: var(--tm-text-secondary); font-size: var(--tm-font-size-base);
+  border-radius: var(--tm-radius-sm); color: var(--tm-text-secondary); font-size: var(--tm-font-size-md);
   transition: background var(--tm-transition-fast), color var(--tm-transition-fast);
 }
 .tm-attachment-download:hover { background: var(--tm-bg-surface); color: var(--tm-color-primary); }

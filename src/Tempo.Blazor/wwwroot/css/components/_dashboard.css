@@ -141,10 +141,10 @@
     0deg,
     transparent,
     transparent calc(var(--row-height, 60px) - 1px),
-    var(--tm-border-color-subtle, rgba(0,0,0,0.05)) calc(var(--row-height, 60px) - 1px),
-    var(--tm-border-color-subtle, rgba(0,0,0,0.05)) var(--row-height, 60px)
+    var(--tm-color-border-subtle, rgba(0,0,0,0.05)) calc(var(--row-height, 60px) - 1px),
+    var(--tm-color-border-subtle, rgba(0,0,0,0.05)) var(--row-height, 60px)
   );
-  border: 1px dashed var(--tm-border-color-subtle, rgba(0,0,0,0.1));
+  border: 1px dashed var(--tm-color-border-subtle, rgba(0,0,0,0.1));
   border-radius: var(--tm-radius-md);
 }
 

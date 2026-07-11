@@ -14,7 +14,7 @@
 
 .tm-popover__body {
     position: absolute;
-    z-index: var(--tm-z-popover, 900);
+    z-index: var(--tm-z-dropdown, 900);
     min-width: 200px;
     padding: 0.75rem 1rem;
     background-color: var(--tm-color-surface, #fff);

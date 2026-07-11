@@ -10,7 +10,7 @@
     display: flex;
     gap: var(--tm-space-4, 1rem);
     padding-bottom: var(--tm-space-4, 1rem);
-    border-bottom: 1px solid var(--tm-border-color-light, #f1f5f9);
+    border-bottom: 1px solid var(--tm-border-color, #f1f5f9);
 }
 
 .tm-scheduler-agenda-group:last-child {
@@ -64,7 +64,7 @@
 }
 
 .tm-scheduler-agenda-event:hover {
-    background: var(--tm-bg-hover, #f1f5f9);
+    background: var(--tm-color-surface-hover, #f1f5f9);
 }
 
 .tm-scheduler-agenda-event-dot {

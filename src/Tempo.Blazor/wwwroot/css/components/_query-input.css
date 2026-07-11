@@ -5,7 +5,7 @@
 .tm-query-input {
     display: flex;
     flex-direction: column;
-    gap: var(--tm-spacing-1, 0.25rem);
+    gap: var(--tm-space-1, 0.25rem);
     width: 100%;
 }
 
@@ -27,7 +27,7 @@
     font-size: var(--tm-font-size-sm, 0.875rem);
     line-height: 1.5;
     letter-spacing: normal;
-    padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-3, 0.75rem);
+    padding: var(--tm-space-2, 0.5rem) var(--tm-space-3, 0.75rem);
     white-space: pre;
     box-sizing: border-box;
 }
@@ -56,7 +56,7 @@
 }
 
 .tm-query-input__input[aria-invalid="true"] {
-    border-color: var(--tm-color-danger-400, #f87171);
+    border-color: var(--tm-color-danger);
 }
 
 .tm-query-input__input::placeholder {
@@ -79,7 +79,7 @@
     color: transparent;
     text-decoration-line: underline;
     text-decoration-style: wavy;
-    text-decoration-color: var(--tm-color-danger-500, #ef4444);
+    text-decoration-color: var(--tm-color-danger);
     text-decoration-skip-ink: none;
     text-underline-offset: 2px;
 }
@@ -93,7 +93,7 @@
     right: 0;
     z-index: 20;
     margin: 0;
-    padding: var(--tm-spacing-1, 0.25rem);
+    padding: var(--tm-space-1, 0.25rem);
     list-style: none;
     max-height: 280px;
     overflow-y: auto;
@@ -104,20 +104,20 @@
 }
 
 .tm-query-input__status {
-    padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-3, 0.75rem);
+    padding: var(--tm-space-2, 0.5rem) var(--tm-space-3, 0.75rem);
     font-size: var(--tm-font-size-sm, 0.875rem);
     color: var(--tm-text-secondary);
 }
 
 .tm-query-input__status--error {
-    color: var(--tm-color-danger-600, #dc2626);
+    color: var(--tm-color-danger-text);
 }
 
 .tm-query-input__option {
     display: flex;
     align-items: center;
-    gap: var(--tm-spacing-2, 0.5rem);
-    padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-2, 0.5rem);
+    gap: var(--tm-space-2, 0.5rem);
+    padding: var(--tm-space-2, 0.5rem) var(--tm-space-2, 0.5rem);
     border-radius: var(--tm-radius-sm, 0.375rem);
     cursor: pointer;
     font-size: var(--tm-font-size-sm, 0.875rem);
@@ -169,9 +169,15 @@
 
 .tm-query-input__kind--field    { background-color: var(--tm-color-primary-500, #3b82f6); }
 .tm-query-input__kind--operator { background-color: var(--tm-text-secondary); }
-.tm-query-input__kind--value    { background-color: var(--tm-color-success-500, #10b981); }
-.tm-query-input__kind--function { background-color: var(--tm-color-warning-500, #f59e0b); }
-.tm-query-input__kind--keyword  { background-color: var(--tm-color-secondary-500, #8b5cf6); }
+.tm-query-input__kind--value    {
+    background-color: var(--tm-color-success);
+}
+.tm-query-input__kind--function {
+    background-color: var(--tm-color-warning);
+}
+.tm-query-input__kind--keyword  {
+    background-color: var(--tm-color-secondary);
+}
 
 /* ── Disabled ── */
 

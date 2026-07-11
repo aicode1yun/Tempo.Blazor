@@ -19,7 +19,7 @@
 
 .tm-inline-edit-display:hover {
     border-color: var(--tm-border-color, #e2e8f0);
-    background: var(--tm-bg-hover, #f1f5f9);
+    background: var(--tm-color-surface-hover, #f1f5f9);
 }
 
 .tm-inline-edit-display:focus-visible {

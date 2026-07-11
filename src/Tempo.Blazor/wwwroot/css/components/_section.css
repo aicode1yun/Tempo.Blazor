@@ -53,7 +53,7 @@
 }
 
 .tm-section--collapsible .tm-section-header:hover {
-    background: var(--tm-bg-hover, #f1f5f9);
+    background: var(--tm-color-surface-hover, #f1f5f9);
 }
 
 .tm-section-chevron {

@@ -108,7 +108,7 @@
 
 [data-theme="dark"] .tm-stock-chart,
 .tm-dark .tm-stock-chart {
-    background: var(--tm-color-surface-dark, #1f2937);
+    background: var(--tm-color-surface, #1f2937);
 }
 
 @media (prefers-reduced-motion: reduce) {

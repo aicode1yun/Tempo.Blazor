@@ -29,7 +29,7 @@
   text-align: left;
   font-weight: 600;
   white-space: nowrap;
-  color: var(--tm-color-text-secondary);
+  color: var(--tm-text-secondary);
 }
 
 .tm-tree-list-header-text {
@@ -53,7 +53,7 @@
 
 .tm-tree-list-cell--empty {
   text-align: center;
-  color: var(--tm-color-text-secondary);
+  color: var(--tm-text-secondary);
   padding: var(--tm-space-8);
 }
 
@@ -76,7 +76,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--tm-color-text-secondary);
+  color: var(--tm-text-secondary);
   cursor: pointer;
   border-radius: var(--tm-radius-sm);
   transition: background var(--tm-transition-fast);

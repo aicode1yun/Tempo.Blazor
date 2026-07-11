@@ -76,12 +76,12 @@
 }
 
 .tm-rte-findreplace-result {
-  padding: var(--tm-space-2) var(--tm-space-3);
-  background: var(--tm-color-success-100);
-  color: var(--tm-color-success-700);
-  border-radius: var(--tm-radius-md);
-  font-size: var(--tm-font-size-sm);
-  text-align: center;
+    padding: var(--tm-space-2) var(--tm-space-3);
+    background: var(--tm-color-success-subtle);
+    color: var(--tm-color-success-text);
+    border-radius: var(--tm-radius-md);
+    font-size: var(--tm-font-size-sm);
+    text-align: center;
 }
 
 .tm-rte-btn-replaceall {

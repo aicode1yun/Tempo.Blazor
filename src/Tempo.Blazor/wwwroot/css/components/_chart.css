@@ -6,7 +6,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--tm-spacing-2, 0.5rem);
+    gap: var(--tm-space-2, 0.5rem);
 }
 
 .tm-chart svg {
@@ -102,15 +102,15 @@
 .tm-chart__legend {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--tm-spacing-3, 0.75rem);
+    gap: var(--tm-space-3, 0.75rem);
     justify-content: center;
-    padding: var(--tm-spacing-2, 0.5rem) 0;
+    padding: var(--tm-space-2, 0.5rem) 0;
 }
 
 .tm-chart__legend-item {
     display: flex;
     align-items: center;
-    gap: var(--tm-spacing-1, 0.25rem);
+    gap: var(--tm-space-1, 0.25rem);
     font-size: var(--tm-font-size-sm, 0.875rem);
     color: var(--tm-text-secondary);
 }

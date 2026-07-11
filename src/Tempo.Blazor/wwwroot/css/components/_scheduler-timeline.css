@@ -31,7 +31,7 @@
     font-weight: var(--tm-font-weight-semibold, 600);
     color: var(--tm-text-tertiary, #94a3b8);
     text-align: center;
-    border-right: 1px solid var(--tm-border-color-light, #f1f5f9);
+    border-right: 1px solid var(--tm-border-color, #f1f5f9);
 }
 
 .tm-scheduler-timeline-time-header:last-child {
@@ -42,7 +42,7 @@
 .tm-scheduler-timeline-row {
     display: flex;
     min-height: 3rem;
-    border-bottom: 1px solid var(--tm-border-color-light, #f1f5f9);
+    border-bottom: 1px solid var(--tm-border-color, #f1f5f9);
 }
 
 .tm-scheduler-timeline-row:last-child {
@@ -76,12 +76,12 @@
     top: 0;
     bottom: 0;
     cursor: pointer;
-    border-right: 1px solid var(--tm-border-color-light, #f1f5f9);
+    border-right: 1px solid var(--tm-border-color, #f1f5f9);
     transition: background-color 0.1s ease;
 }
 
 .tm-scheduler-timeline-slot:hover {
-    background: var(--tm-bg-hover, rgba(241, 245, 249, 0.5));
+    background: var(--tm-color-surface-hover, rgba(241, 245, 249, 0.5));
 }
 
 /* ── Event ── */
