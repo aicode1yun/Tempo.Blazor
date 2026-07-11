@@ -2,11 +2,9 @@
   "name": "tempo-blazor-documenteditor-build",
   "private": true,
   "version": "0.0.0",
-  "description": "Build tooling for the document editor JS modules. Not published.",
+  "description": "Build and test tooling for Tempo.Blazor JS modules (reporting bundles, document editor Node tests). Not published.",
   "type": "module",
   "scripts": {
-    "build:document-editor": "node tests/Tempo.Blazor.Tests/jsbuild/esbuild.mjs",
-    "build:document-editor:watch": "node tests/Tempo.Blazor.Tests/jsbuild/esbuild.mjs --watch",
     "build:reporting": "node scripts/build-reporting.mjs",
     "test:reporting-modules": "node --test src/Tempo.Blazor.Reporting/wwwroot/js/reporting/*.test.mjs",
     "test:document-editor-modules": "node --test \"src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/**/*.test.mjs\" \"src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/**/*.test.mjs\""
