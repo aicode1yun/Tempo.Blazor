@@ -1,0 +1,38 @@
+{
+  "kind": "Enum",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Horizontal alignment of a table column, as expressed by a GFM table separator row. None (---) leaves the alignment to the renderer, Left (:---), Center (:---:) and Right (---:) are explicit. Stored on TableBlockContent.ColumnAlignments and preserved across Markdown import, export and the DocumentModel/Notion converters.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentBlocks.cs",
+  "documentationStatus": "generated",
+  "itemName": "TableColumnAlignment",
+  "values": [
+    {
+      "name": "None",
+      "value": "0",
+      "description": "No explicit alignment (---). The renderer decides; the Markdown exporter writes --- back."
+    },
+    {
+      "name": "Left",
+      "value": "1",
+      "description": "Align column content to the leading edge (:---)."
+    },
+    {
+      "name": "Center",
+      "value": "2",
+      "description": "Center column content (:---:)."
+    },
+    {
+      "name": "Right",
+      "value": "3",
+      "description": "Align column content to the trailing edge (---:)."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Alignment is read from the separator row",
+      "code": "const string markdown = \"\"\"\n    | Plain | Left | Center | Right |\n    | --- | :--- | :---: | ---: |\n    | a | b | c | d |\n    \"\"\";\n\nvar document = new DocumentMarkdownImporter().Import(markdown);\nvar table    = (TableBlockContent)document.Blocks[0].Content;\n\n// [None, Left, Center, Right]\nvar alignments = table.ColumnAlignments;\n\n// exporting reproduces the very same separator row\nvar roundTripped = new DocumentMarkdownExporter().Export(document);"
+    }
+  ]
+}

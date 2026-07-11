@@ -14,139 +14,142 @@
     {
       "name": "ActiveBlockId",
       "type": "Guid?",
-      "isRequired": false
+      "isRequired": false,
+      "description": "The block that currently holds the caret; it renders focused and selected."
     },
     {
       "name": "BlockCommentCounts",
       "type": "IReadOnlyDictionary<string, TmNotionPage.BlockCommentInfo>",
-      "isRequired": true
+      "isRequired": true,
+      "description": "Per-block comment summary for margin-thread indicators and hover tooltip."
     },
     {
       "name": "Blocks",
       "type": "IReadOnlyList<IPageBlock>",
       "isRequired": true,
       "default": "[]",
-      "editorRequired": true
+      "editorRequired": true,
+      "description": "The ordered blocks this list renders. Keyed by block ID, so reordering never re-binds a block to a different component."
     },
     {
       "name": "OnAddBlockAfter",
       "type": "EventCallback<(string AfterBlockId, BlockType Type, string? InitialHtml)>",
       "isRequired": false,
-      "description": "Fired when a block requests type conversion (blockId, newType)."
+      "description": "Fired when a new block should be inserted after the given block (afterBlockId, type, initialHtml)."
     },
     {
       "name": "OnAddBlockAtEnd",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fired when a new block should be inserted after the given block (afterBlockId, type, initialHtml)."
+      "description": "Fired when the user clicks the empty area below all blocks."
     },
     {
       "name": "OnBlockDeleted",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fired when a block receives focus. Arg is the block ID string."
+      "description": "Fired when a block requests deletion. Arg is the block ID string."
     },
     {
       "name": "OnBlockDuplicated",
       "type": "EventCallback<IPageBlock>",
       "isRequired": false,
-      "description": "Fired when a block's content was saved by the user."
+      "description": "Fired when a block should be duplicated (carries the source block)."
     },
     {
       "name": "OnBlockFocused",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fired when a block was moved out of this list after a successful external drop."
+      "description": "Fired when a block receives focus. Arg is the block ID string."
     },
     {
       "name": "OnBlockUpdated",
       "type": "EventCallback<IPageBlock>",
       "isRequired": false,
-      "description": "Fired when a block requests deletion. Arg is the block ID string."
+      "description": "Fired when a block's content was saved by the user."
     },
     {
       "name": "OnComment",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fired when a template button block inserts its template blocks after itself."
+      "description": "Fired when a block's comment button is clicked. Arg is the block ID string."
     },
     {
       "name": "OnConvertBlock",
       "type": "EventCallback<(string, BlockType)>",
       "isRequired": false,
-      "description": "Fired when a block should be duplicated (carries the source block)."
+      "description": "Fired when a block requests type conversion (blockId, newType)."
     },
     {
       "name": "OnExternalBlockDropped",
       "type": "EventCallback<MoveNotionBlockRequest>",
       "isRequired": false,
-      "description": "Fired when blocks are reordered via drag-and-drop (sourceIndex, targetIndex)."
+      "description": "Fired when a block from another list is dropped into this list."
     },
     {
       "name": "OnExternalBlockRemoved",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fired when a block from another list is dropped into this list."
+      "description": "Fired when a block was moved out of this list after a successful external drop."
     },
     {
       "name": "OnInsertTemplateBlocksAfter",
       "type": "EventCallback<(string AfterBlockId, IReadOnlyList<IPageBlock> Blocks)>",
       "isRequired": false,
-      "description": "Fired when a block requests keyboard focus movement within this list."
+      "description": "Fired when a template button block inserts its template blocks after itself."
     },
     {
       "name": "OnMentionMenu",
       "type": "EventCallback<(string BlockId, double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when a block's '/' keystroke opens the slash menu (blockId, top, left)."
+      "description": "Fired when '@' mention syntax is typed in a block (blockId, top, left)."
     },
     {
       "name": "OnMoveFocus",
       "type": "EventCallback<(string BlockId, int Direction)>",
       "isRequired": false,
-      "description": "Fired when '{{' token syntax is typed in a block (blockId, top, left)."
+      "description": "Fired when a block requests keyboard focus movement within this list."
     },
     {
       "name": "OnNewThread",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fired when a block's comment button is clicked. Arg is the block ID string."
+      "description": "Fired when a block's new-thread button is clicked. Arg is the block ID string."
     },
     {
       "name": "OnPageLinkMenu",
       "type": "EventCallback<(string BlockId, double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when '@' mention syntax is typed in a block (blockId, top, left)."
+      "description": "Fired when '[[' page-link syntax is typed in a block (blockId, top, left)."
     },
     {
       "name": "OnReorder",
       "type": "EventCallback<(int, int)>",
       "isRequired": false,
-      "description": "Per-block comment summary for margin-thread indicators and hover tooltip."
+      "description": "Fired when blocks are reordered via drag-and-drop (sourceIndex, targetIndex)."
     },
     {
       "name": "OnSlashMenu",
       "type": "EventCallback<(string BlockId, double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when the user clicks the empty area below all blocks."
+      "description": "Fired when a block's '/' keystroke opens the slash menu (blockId, top, left)."
     },
     {
       "name": "OnTokenMenu",
       "type": "EventCallback<(string BlockId, double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when '[[' page-link syntax is typed in a block (blockId, top, left)."
+      "description": "Fired when '{{' token syntax is typed in a block (blockId, top, left)."
     },
     {
       "name": "ParentBlockId",
       "type": "Guid?",
       "isRequired": false,
-      "description": "Page ID owned by this rendered list."
+      "description": "Parent block ID for nested lists. Null means the top-level page list."
     },
     {
       "name": "ReadOnly",
       "type": "bool",
       "isRequired": false,
-      "description": "Parent block ID for nested lists. Null means the top-level page list."
+      "description": "When true every editing interaction on the rendered blocks is disabled."
     }
   ],
   "subcategory": "Blocks"

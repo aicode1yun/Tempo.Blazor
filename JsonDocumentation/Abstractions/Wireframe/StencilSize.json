@@ -1,0 +1,38 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "An immutable width/height pair used by stencil definitions, for example a component's default size.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilSize.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilSize",
+  "members": [
+    {
+      "name": "Width",
+      "type": "double",
+      "description": "Width in pixels."
+    },
+    {
+      "name": "Height",
+      "type": "double",
+      "description": "Height in pixels."
+    },
+    {
+      "name": "StencilSize",
+      "type": "StencilSize()",
+      "description": "Creates a zero-sized instance."
+    },
+    {
+      "name": "StencilSize",
+      "type": "StencilSize(double width, double height)",
+      "description": "Creates an instance with the given dimensions."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Declare a default size",
+      "code": "var defaultSize = new StencilSize(120, 36);"
+    }
+  ]
+}

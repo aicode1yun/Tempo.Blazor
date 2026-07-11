@@ -15,19 +15,19 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Raised when the user ends a drag operation from a tree node."
+      "description": "Additional CSS class applied to the tree root."
     },
     {
       "name": "OnElementDragEnded",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user starts dragging an element node. Reserved for canvas drop support."
+      "description": "Raised when the user ends a drag operation from a tree node."
     },
     {
       "name": "OnElementDragStarted",
       "type": "EventCallback<ModelingElementDto>",
       "isRequired": false,
-      "description": "Raised when the user selects an element node."
+      "description": "Raised when the user starts dragging an element node. Reserved for canvas drop support."
     },
     {
       "name": "OnElementSelected",
@@ -45,7 +45,7 @@
       "name": "SelectedElementChanged",
       "type": "EventCallback<ModelingElementDto?>",
       "isRequired": false,
-      "description": "Currently selected element."
+      "description": "Raised when <see cref=\"SelectedElement\"/> changes."
     }
   ]
 }

@@ -1,0 +1,159 @@
+{
+  "kind": "Component",
+  "category": "Spreadsheet",
+  "itemName": "TmSpreadsheet",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/TmSpreadsheet.razor",
+  "documentationStatus": "generated",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Spreadsheet"
+  ],
+  "description": "An Excel-like spreadsheet component for viewing and editing tabular data. Supports cell editing, formulas, styling, multi-sheet workbooks, and XLSX import/export.",
+  "parameters": [
+    {
+      "name": "Data",
+      "type": "byte[]?",
+      "isRequired": false,
+      "description": "XLSX file data to load into the spreadsheet."
+    },
+    {
+      "name": "InitialWorkbook",
+      "type": "SpreadsheetWorkbook?",
+      "isRequired": false,
+      "description": "Pre-populates the spreadsheet with an existing workbook on first render. Subsequent parameter changes are ignored — read the Workbook property to get the current state after editing."
+    },
+    {
+      "name": "Mode",
+      "type": "SpreadsheetMode",
+      "isRequired": false,
+      "default": "SpreadsheetMode.Full",
+      "description": "Controls the display and interaction mode of the spreadsheet."
+    },
+    {
+      "name": "Height",
+      "type": "string?",
+      "isRequired": false,
+      "default": "\"600px\"",
+      "description": "The CSS height of the spreadsheet container."
+    },
+    {
+      "name": "Width",
+      "type": "string?",
+      "isRequired": false,
+      "default": "\"100%\"",
+      "description": "The CSS width of the spreadsheet container."
+    },
+    {
+      "name": "RowsCount",
+      "type": "int",
+      "isRequired": false,
+      "default": "200",
+      "description": "The initial number of rows to render."
+    },
+    {
+      "name": "ColumnsCount",
+      "type": "int",
+      "isRequired": false,
+      "default": "50",
+      "description": "The initial number of columns to render."
+    },
+    {
+      "name": "RowHeight",
+      "type": "double",
+      "isRequired": false,
+      "default": "20",
+      "description": "The default row height in pixels."
+    },
+    {
+      "name": "ColumnWidth",
+      "type": "double",
+      "isRequired": false,
+      "default": "64",
+      "description": "The default column width in pixels."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes to apply to the root element."
+    },
+    {
+      "name": "AdditionalAttributes",
+      "type": "Dictionary<string, object>?",
+      "isRequired": false,
+      "description": "Additional HTML attributes splatted onto the root element."
+    },
+    {
+      "name": "OnOpen",
+      "type": "EventCallback<SpreadsheetOpenEventArgs>",
+      "isRequired": false,
+      "description": "Called when a file is opened/imported."
+    },
+    {
+      "name": "OnDownload",
+      "type": "EventCallback<SpreadsheetDownloadEventArgs>",
+      "isRequired": false,
+      "description": "Called when the workbook is downloaded/exported."
+    },
+    {
+      "name": "OnChange",
+      "type": "EventCallback<SpreadsheetChangeEventArgs>",
+      "isRequired": false,
+      "description": "Called when any cell value or formula changes."
+    },
+    {
+      "name": "OnSelect",
+      "type": "EventCallback<SpreadsheetSelectEventArgs>",
+      "isRequired": false,
+      "description": "Called when the active cell or selection changes."
+    },
+    {
+      "name": "OnCellEdit",
+      "type": "EventCallback<SpreadsheetCellEditEventArgs>",
+      "isRequired": false,
+      "description": "Called when a cell enters or exits edit mode."
+    }
+  ],
+  "publicMethods": [
+    {
+      "name": "Workbook",
+      "type": "SpreadsheetWorkbook",
+      "description": "Gets the underlying workbook for programmatic access."
+    },
+    {
+      "name": "SetCellValue",
+      "type": "void SetCellValue(string cellRef, object? value)",
+      "description": "Sets the value of a cell on the active sheet, e.g. SetCellValue(\"A1\", 42)."
+    },
+    {
+      "name": "ExportToExcelAsync",
+      "type": "Task<byte[]> ExportToExcelAsync()",
+      "description": "Serialises the current workbook to XLSX bytes."
+    },
+    {
+      "name": "ImportFromExcelAsync",
+      "type": "Task ImportFromExcelAsync(byte[] data)",
+      "description": "Replaces the current workbook with the contents of the supplied XLSX bytes."
+    },
+    {
+      "name": "FocusGridAsync",
+      "type": "Task FocusGridAsync()",
+      "description": "Moves keyboard focus to the grid."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Basic spreadsheet",
+      "code": "<TmSpreadsheet Height=\"500px\"\n               RowsCount=\"100\"\n               ColumnsCount=\"20\"\n               OnChange=\"HandleChange\" />\n\n@code {\n    private void HandleChange(SpreadsheetChangeEventArgs args)\n        => Console.WriteLine($\"{args.CellRef} = {args.NewValue}\");\n}"
+    },
+    {
+      "title": "Load and export an XLSX workbook",
+      "code": "<TmSpreadsheet @ref=\"_sheet\" Data=\"@_xlsxBytes\" />\n\n<TmButton OnClick=\"DownloadAsync\">Download</TmButton>\n\n@code {\n    private TmSpreadsheet? _sheet;\n    private byte[]? _xlsxBytes;\n\n    private async Task DownloadAsync()\n    {\n        var bytes = await _sheet!.ExportToExcelAsync();\n        // hand the bytes to your download helper\n    }\n}"
+    },
+    {
+      "title": "Read-only view and programmatic edits",
+      "code": "<TmSpreadsheet @ref=\"_sheet\" Mode=\"SpreadsheetMode.Full\" />\n\n@code {\n    private TmSpreadsheet? _sheet;\n\n    protected override void OnAfterRender(bool firstRender)\n    {\n        if (!firstRender) return;\n        _sheet!.SetCellValue(\"A1\", \"Total\");\n        _sheet.SetCellValue(\"B1\", \"=SUM(B2:B10)\");\n    }\n}"
+    }
+  ]
+}

@@ -15,56 +15,56 @@
       "name": "ActiveDraggedElement",
       "type": "ModelingElementDto?",
       "isRequired": false,
-      "description": "Raised when a dragged modeling tree item is dropped onto the preview canvas."
+      "description": "Modeling element currently being dragged from the model tree."
     },
     {
       "name": "AllowNodeDrop",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Modeling element currently being dragged from the model tree."
+      "description": "When false, model tree drops are ignored without mutating the preview document."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Raised when a relationship edge is selected in the generated preview."
+      "description": "Additional CSS class applied to the preview root."
     },
     {
       "name": "DocumentChanged",
       "type": "EventCallback<DiagramDocument>",
       "isRequired": false,
-      "description": "Generated diagram document to show in the preview. Null renders the pre-generation empty state."
+      "description": "Raised when the embedded diagram editor reports a document mutation."
     },
     {
       "name": "OnDrop",
       "type": "EventCallback<DragEventArgs>",
       "isRequired": false,
-      "description": "Raised when the user requests a fresh diagram generation from the currently loaded model."
+      "description": "Raised when a dragged modeling tree item is dropped onto the preview canvas."
     },
     {
       "name": "OnGenerateRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user requests opening the generated document in the full diagram editor."
+      "description": "Raised when the user requests a fresh diagram generation from the currently loaded model."
     },
     {
       "name": "OnNodeDropped",
       "type": "EventCallback<ModelingNodeDroppedEventArgs>",
       "isRequired": false,
-      "description": "When false, model tree drops are ignored without mutating the preview document."
+      "description": "Raised after a tree element is reused as a new diagram node."
     },
     {
       "name": "OnOpenInEditor",
       "type": "EventCallback<DiagramDocument>",
       "isRequired": false,
-      "description": "Raised when the embedded diagram editor reports a document mutation."
+      "description": "Raised when the user requests opening the generated document in the full diagram editor."
     },
     {
       "name": "OnRelationshipSelected",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Raised after a tree element is reused as a new diagram node."
+      "description": "Raised when a relationship edge is selected in the generated preview."
     }
   ]
 }

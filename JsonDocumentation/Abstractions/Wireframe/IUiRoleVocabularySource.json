@@ -1,0 +1,27 @@
+{
+  "kind": "Interface",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Supplies UI role definitions to UiRoleVocabulary. Implement this interface to extend the built-in role vocabulary with product-specific concepts or synonyms.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/IUiRoleVocabularySource.cs",
+  "documentationStatus": "generated",
+  "itemName": "IUiRoleVocabularySource",
+  "members": [
+    {
+      "name": "SourceId",
+      "type": "string",
+      "description": "Unique identifier for this vocabulary source."
+    },
+    {
+      "name": "Priority",
+      "type": "int",
+      "description": "Higher priority wins when duplicate role slugs provide display metadata. Synonyms are always merged across sources."
+    },
+    {
+      "name": "GetRoles",
+      "type": "IEnumerable<UiRoleDefinition> GetRoles()",
+      "description": "Returns all UI role definitions supplied by this source."
+    }
+  ]
+}

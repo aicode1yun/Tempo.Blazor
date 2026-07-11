@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Reporting",
+  "namespace": "Tempo.Blazor.Mcp.Reporting",
+  "description": "AI-readable description of one report element discriminator.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportDefinitionPromptSchema.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportElementSchemaDescriptor"
+}

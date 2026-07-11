@@ -15,19 +15,19 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback raised when the user requests loading the model again."
+      "description": "Additional CSS class applied to the panel root."
     },
     {
       "name": "IsLoading",
       "type": "bool",
       "isRequired": false,
-      "description": "Metadata describing the currently loaded modeling source."
+      "description": "Whether a model load is currently in progress."
     },
     {
       "name": "OnLoadRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Whether a model load is currently in progress."
+      "description": "Callback raised when the user requests loading the model again."
     }
   ]
 }

@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Configuration",
+  "namespace": "Tempo.Blazor.Configuration",
+  "description": "Extension methods for registering the optional Tempo.Blazor Gantt XLSX helpers.",
+  "packageId": "Tempo.Blazor.GanttXlsx",
+  "sourcePath": "src/Tempo.Blazor.GanttXlsx/Configuration/GanttXlsxServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "GanttXlsxServiceCollectionExtensions",
+  "members": [
+    {
+      "name": "AddTempoBlazorGanttXlsx",
+      "type": "IServiceCollection AddTempoBlazorGanttXlsx(this IServiceCollection services)",
+      "description": "Marks the optional Gantt XLSX feature package as registered."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Register the services in Program.cs",
+      "code": "builder.Services.AddTempoBlazorGanttXlsx();"
+    }
+  ]
+}

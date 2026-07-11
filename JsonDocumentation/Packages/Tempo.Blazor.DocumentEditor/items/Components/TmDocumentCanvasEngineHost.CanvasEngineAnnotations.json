@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "description": "Live comment + revision lists pulled from the engine model (B3). The lists already use the canonical <see cref=\"DocumentComment\"/> / <see cref=\"DocumentRevision\"/> shapes, so they bind directly.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmDocumentCanvasEngineHost.CanvasEngineAnnotations"
+}

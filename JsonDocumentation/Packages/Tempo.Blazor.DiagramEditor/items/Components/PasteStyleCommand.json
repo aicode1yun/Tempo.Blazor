@@ -1,0 +1,33 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Applies the style previously copied into DiagramClipboard to the selected nodes. Undoable — Undo() restores each node's original style.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/PasteStyleCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "PasteStyleCommand",
+  "members": [
+    {
+      "name": "PasteStyleCommand",
+      "type": "PasteStyleCommand(DiagramDocument doc, string[] nodeIds)",
+      "description": "Creates the command."
+    },
+    {
+      "name": "Execute",
+      "type": "void Execute()",
+      "description": "Applies the change to the document."
+    },
+    {
+      "name": "Undo",
+      "type": "void Undo()",
+      "description": "Restores the state captured before Execute() ran."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use PasteStyleCommand",
+      "code": "new CopyStyleCommand(sourceNode).Execute();\n\n// Push() executes the command and records it for undo\ncommandStack.Push(new PasteStyleCommand(document, selectedNodeIds));"
+    }
+  ]
+}

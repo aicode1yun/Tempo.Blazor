@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Reporting",
+  "namespace": "Tempo.Blazor.Mcp.Reporting",
+  "description": "MCP preview rendering tools for report definitions.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportPreviewTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportPreviewTools"
+}

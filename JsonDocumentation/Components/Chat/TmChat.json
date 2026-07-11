@@ -15,39 +15,39 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the input is disabled."
+      "description": "Additional CSS classes."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Placeholder for the message input."
+      "description": "Whether the input is disabled."
     },
     {
       "name": "Messages",
       "type": "IReadOnlyList<ChatMessage>",
       "isRequired": false,
       "default": "[]",
-      "description": "The currently authenticated user."
+      "description": "List of messages to display."
     },
     {
       "name": "OnAttachmentClick",
       "type": "EventCallback<ChatAttachment>",
       "isRequired": false,
-      "description": "Fired when the user sends a message."
+      "description": "Fired when an attachment is clicked."
     },
     {
       "name": "Placeholder",
       "type": "string?",
       "isRequired": false,
-      "description": "Users currently typing."
+      "description": "Placeholder for the message input."
     },
     {
       "name": "TypingUsers",
       "type": "IReadOnlyList<ChatUser>",
       "isRequired": false,
       "default": "[]",
-      "description": "List of messages to display."
+      "description": "Users currently typing."
     }
   ]
 }

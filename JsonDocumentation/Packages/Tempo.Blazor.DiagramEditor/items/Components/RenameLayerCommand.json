@@ -1,0 +1,33 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Renames a layer. Undoable — Undo() restores the previous name.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RenameLayerCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "RenameLayerCommand",
+  "members": [
+    {
+      "name": "RenameLayerCommand",
+      "type": "RenameLayerCommand(DiagramLayer layer, string newName)",
+      "description": "Creates the command."
+    },
+    {
+      "name": "Execute",
+      "type": "void Execute()",
+      "description": "Applies the change to the document."
+    },
+    {
+      "name": "Undo",
+      "type": "void Undo()",
+      "description": "Restores the state captured before Execute() ran."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use RenameLayerCommand",
+      "code": "commandStack.Push(new RenameLayerCommand(layer, \"Background\"));"
+    }
+  ]
+}

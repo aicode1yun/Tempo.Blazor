@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
-  "description": "Parses an HTML string (document or fragment) into an ordered list of objects. Uses a regex-based approach supporting: headings, paragraphs, ul/ol lists, blockquotes, pre/code blocks, hr dividers, images, tables, and details/summary toggles.",
+  "description": "Parses an HTML string (document or fragment) into an ordered list of IPageBlock objects: headings, paragraphs, ul/ol lists (including nested ones), blockquotes, pre/code blocks, hr dividers, images, tables and details/summary toggles. Opening and closing tags are paired by counting nesting depth, so nested <div>s and nested lists parse correctly. A <table> becomes one BlockType.Table block plus child TableRow blocks with ParentBlockId set; HasHeaderRow is inferred from a first row made entirely of <th>. Only a whitelist of inline tags survives, <a href> and <img src> must use http, https, mailto or a relative URL, and everything else is dropped.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionHtmlImporter.cs",
   "documentationStatus": "generated",
@@ -23,5 +23,19 @@
       ]
     }
   ],
-  "itemName": "NotionHtmlImporter"
+  "itemName": "NotionHtmlImporter",
+  "examples": [
+    {
+      "title": "Import an HTML fragment",
+      "code": "var blocks = NotionHtmlImporter.Import(html, pageId);"
+    },
+    {
+      "title": "A <table> imports as a parent block with child rows",
+      "code": "const string html = \"\"\"\n    <table>\n      <thead><tr><th>Name</th><th>Status</th></tr></thead>\n      <tbody><tr><td>CF26</td><td>Ready</td></tr></tbody>\n    </table>\n    \"\"\";\n\nvar blocks  = NotionHtmlImporter.Import(html, pageId);\nvar table   = blocks.Single(b => b.Type == BlockType.Table);\nvar content = (ITableBlockContent)table.Content;\n\n// true — the first row is all <th>\nvar hasHeader = content.HasHeaderRow;"
+    },
+    {
+      "title": "Unsafe markup is stripped",
+      "code": "var blocks = NotionHtmlImporter.Import(\n    \"<p><a href=\\\"javascript:alert(1)\\\">click</a></p>\", pageId);\n\n// the text survives, the link does not\nvar html = ((ITextBlockContent)blocks[0].Content).Html;   // \"<a>click</a>\"\n\n// an <img> with an unsafe src produces no Image block at all\nNotionHtmlImporter.Import(\"<img src=\\\"javascript:alert(1)\\\">\", pageId);   // []"
+    }
+  ]
 }

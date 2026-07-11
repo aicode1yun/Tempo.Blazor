@@ -1,0 +1,33 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "Lints a single wireframe element's props against its component schema: unknown keys, wrong types, and invalid enum values. LintAndNormalize additionally rewrites enum values to their canonical casing, which lets an agent's near-miss input be accepted.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframePropLinter.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframePropLinter",
+  "members": [
+    {
+      "name": "Lint",
+      "type": "static IReadOnlyList<WireframeLintWarning> Lint(WireframeElement el, WireframeComponentSchema schema)",
+      "description": "Reports problems without changing the element."
+    },
+    {
+      "name": "LintAndNormalize",
+      "type": "static IReadOnlyList<WireframeLintWarning> LintAndNormalize(WireframeElement el, WireframeComponentSchema schema)",
+      "description": "Reports problems and normalises enum values on the element in place."
+    },
+    {
+      "name": "SuggestNearest",
+      "type": "static string? SuggestNearest(string key, WireframeComponentSchema schema)",
+      "description": "Suggests the closest known prop name for a misspelled key, or null when nothing is close enough."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Accept near-miss agent input",
+      "code": "// rewrites e.g. \"PRIMARY\" → \"primary\" and reports what it changed\nvar warnings = WireframePropLinter.LintAndNormalize(element, schema);\n\nvar suggestion = WireframePropLinter.SuggestNearest(\"lable\", schema);   // \"label\""
+    }
+  ]
+}

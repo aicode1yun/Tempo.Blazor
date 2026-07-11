@@ -1,0 +1,28 @@
+{
+  "kind": "Record",
+  "category": "Notion",
+  "namespace": "Tempo.Blazor.Mcp.Notion",
+  "description": "Outcome of validating a Notion page and its block tree before an MCP write tool applies it.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionValidationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionValidationResult",
+  "members": [
+    {
+      "name": "IsValid",
+      "type": "bool",
+      "description": "Whether the page and blocks passed validation."
+    },
+    {
+      "name": "Errors",
+      "type": "IReadOnlyList<string>",
+      "description": "Validation errors; empty when IsValid is true."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Validate before writing",
+      "code": "var result = NotionValidationEngine.Validate(page, blocks);\n\nif (!result.IsValid)\n{\n    return McpToolResults.Failure(\n        McpToolResults.InvalidOperation,\n        string.Join(\"; \", result.Errors));\n}"
+    }
+  ]
+}

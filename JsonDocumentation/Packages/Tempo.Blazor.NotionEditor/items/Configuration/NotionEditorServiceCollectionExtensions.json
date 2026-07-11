@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Configuration",
+  "namespace": "Tempo.Blazor.Configuration",
+  "description": "Extension methods for registering the services required by the Notion-style editor component group.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Configuration/NotionEditorServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionEditorServiceCollectionExtensions",
+  "members": [
+    {
+      "name": "AddTempoBlazorNotionEditor",
+      "type": "IServiceCollection AddTempoBlazorNotionEditor(this IServiceCollection services)",
+      "description": "Registers the services required by TmNotionEditor and its blocks."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Register the editor services",
+      "code": "// Program.cs\nbuilder.Services.AddTempoBlazorNotionEditor();\n\n// then supply your own providers\nbuilder.Services.AddScoped<INotionDataProvider, MyNotionDataProvider>();\nbuilder.Services.AddScoped<INotionBlockProvider, MyNotionBlockProvider>();"
+    }
+  ]
+}

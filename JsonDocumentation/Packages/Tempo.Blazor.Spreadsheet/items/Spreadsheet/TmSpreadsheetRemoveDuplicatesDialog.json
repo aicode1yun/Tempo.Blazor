@@ -15,20 +15,20 @@
       "name": "HeaderLabels",
       "type": "IReadOnlyDictionary<int, string>?",
       "isRequired": true,
-      "description": "The range being deduplicated.",
+      "description": "Header text per absolute column index, used to label columns when my data has headers is on. Columns without an entry fall back to their column letter.",
       "editorRequired": true
     },
     {
       "name": "OnApply",
       "type": "EventCallback<SpreadsheetRemoveDuplicatesOptions>",
       "isRequired": false,
-      "description": "Header text per absolute column index, used to label columns when my data has headers is on. Columns without an entry fall back to their column letter."
+      "description": "Raised when the user applies the dialog."
     },
     {
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user applies the dialog."
+      "description": "Raised when the dialog is dismissed."
     }
   ],
   "subcategory": "Dialogs"

@@ -15,25 +15,25 @@
       "name": "Expanded",
       "type": "bool",
       "isRequired": false,
-      "description": "Page identifier whose page-level comment threads are displayed."
+      "description": "Whether the page comment section is expanded."
     },
     {
       "name": "OnCountChanged",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the expanded state changes."
+      "description": "Raised after the comment count may have changed."
     },
     {
       "name": "OnExpandedChanged",
       "type": "EventCallback<bool>",
       "isRequired": false,
-      "description": "Whether the page comment section is expanded."
+      "description": "Raised when the expanded state changes."
     },
     {
       "name": "OnMentionClicked",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Raised after the comment count may have changed."
+      "description": "Raised when a user mention inside a comment is activated."
     }
   ],
   "subcategory": "UI"

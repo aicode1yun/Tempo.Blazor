@@ -15,27 +15,27 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Maximum number of top pages to show."
+      "description": "Additional CSS class."
     },
     {
       "name": "CurrentPageId",
       "type": "Guid?",
       "isRequired": true,
-      "description": "Space whose top pages should be displayed.",
+      "description": "Currently open page id used for the main analytics summary.",
       "editorRequired": true
     },
     {
       "name": "OnClosed",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Additional CSS class."
+      "description": "Raised when the close button is clicked."
     },
     {
       "name": "SpaceId",
       "type": "string",
       "isRequired": true,
       "default": "\"\"",
-      "description": "Analytics provider used to query page views and top pages.",
+      "description": "Space whose top pages should be displayed.",
       "editorRequired": true
     },
     {
@@ -43,7 +43,7 @@
       "type": "int",
       "isRequired": false,
       "default": "5",
-      "description": "Currently open page id used for the main analytics summary."
+      "description": "Maximum number of top pages to show."
     }
   ],
   "subcategory": "UI"

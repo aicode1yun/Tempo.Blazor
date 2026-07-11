@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Exposes compiled stencil pack components to the wireframe component registry. Implements IWireframeScopedComponentProvider, so a pack's component types are namespaced to one application.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilPackComponentProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilPackComponentProvider",
+  "examples": [
+    {
+      "title": "Serve a stencil pack to the registry",
+      "code": "// the provider takes the pack itself and compiles it\nvar provider = new StencilPackComponentProvider(pack, scopeAppIdOrNamespace: \"my-app\");\n\nbuilder.Services.AddSingleton<IWireframeComponentProvider>(provider);"
+    }
+  ],
+  "members": [
+    {
+      "name": "StencilPackComponentProvider",
+      "type": "StencilPackComponentProvider(StencilPack pack, string? scopeAppIdOrNamespace = null, int priority = 50)",
+      "description": "Compiles the pack and exposes its components. Priority defaults to 50, above BuiltInStencilPackProvider (0)."
+    },
+    {
+      "name": "StencilPackComponentProvider",
+      "type": "StencilPackComponentProvider(StencilPack pack, UiRoleVocabulary roleVocabulary, string? scopeAppIdOrNamespace = null, int priority = 50)",
+      "description": "Same, but resolves UI roles through the supplied vocabulary."
+    }
+  ]
+}

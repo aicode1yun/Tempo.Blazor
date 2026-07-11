@@ -45,6 +45,18 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
     [Parameter] public EventCallback                            OnDeleteRequested { get; set; }
 
     /// <summary>
+    /// Raised when Backspace is pressed at the start of a non-empty block. The payload is the
+    /// block's current, sanitized HTML, which the previous block absorbs before this one is deleted.
+    /// </summary>
+    [Parameter] public EventCallback<string>                    OnMergeWithPrevious { get; set; }
+
+    /// <summary>
+    /// Raised when pasted HTML carries more than one block element. The payload is the raw
+    /// clipboard HTML; the consumer turns it into page blocks.
+    /// </summary>
+    [Parameter] public EventCallback<string>                    OnStructuredPaste { get; set; }
+
+    /// <summary>
     /// Fired when a markdown or conversion shortcut is detected.
     /// Special value "paragraph" means the user pressed Enter on an empty header.
     /// </summary>
@@ -174,6 +186,36 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
 
     // ── Children loading ──────────────────────────────────────────────────────
 
+    /// <summary>A block dragged in from another list: persist the move, then reload the subtree.</summary>
+    private async Task HandleExternalChildDroppedAsync(MoveNotionBlockRequest request)
+    {
+        try
+        {
+            await Context.BlockProvider.MoveBlockAsync(request);
+        }
+        catch
+        {
+            // Fall through: reloading resyncs the toggle with whatever the server actually has.
+        }
+
+        _childrenLoaded = false;
+        await LoadChildrenAsync();
+    }
+
+    /// <summary>A child that was dragged out of this toggle into another list.</summary>
+    private Task HandleExternalChildRemovedAsync(string childId)
+    {
+        var child = _children.FirstOrDefault(block => block.Id.ToString() == childId);
+        if (child is not null)
+        {
+            _children.Remove(child);
+            if (_activeChildId == child.Id) _activeChildId = null;
+            StateHasChanged();
+        }
+
+        return Task.CompletedTask;
+    }
+
     private async Task LoadChildrenAsync()
     {
         _loadingChildren = true;
@@ -230,6 +272,27 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
 
     [JSInvokable]
     public async Task OnBackspaceOnEmpty() => await OnDeleteRequested.InvokeAsync();
+
+    /// <summary>
+    /// Called from notion-editor.js when Backspace is pressed while the caret sits before the
+    /// first character. Blocks used without a merge consumer simply keep their text.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnBackspaceAtStart(string html)
+    {
+        if (!OnMergeWithPrevious.HasDelegate) return;
+        await OnMergeWithPrevious.InvokeAsync(NotionInlineHtmlSanitizer.SanitizeBlockContent(html));
+    }
+
+    /// <summary>
+    /// Called from notion-editor.js when the clipboard HTML has several block elements. Blocks
+    /// used without a consumer fall back to the inline paste that JS already performed.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnHtmlPasted(string html)
+    {
+        if (OnStructuredPaste.HasDelegate) await OnStructuredPaste.InvokeAsync(html);
+    }
 
     [JSInvokable]
     public void OnTabPressed(bool shiftKey) { }

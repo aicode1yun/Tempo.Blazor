@@ -75,13 +75,14 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "PdfViewerServiceCollectionExtensions",
       "kind": "Class",
       "category": "Configuration",
       "namespace": "Tempo.Blazor.Configuration",
       "description": "Extension methods for registering Tempo.Blazor PDF viewer services.",
       "packageId": "Tempo.Blazor.PdfViewer",
       "sourcePath": "src/Tempo.Blazor.PdfViewer/Configuration/PdfViewerServiceCollectionExtensions.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AddTempoBlazorPdfViewer",
@@ -96,7 +97,12 @@
           ]
         }
       ],
-      "itemName": "PdfViewerServiceCollectionExtensions"
+      "examples": [
+        {
+          "title": "Register the services in Program.cs",
+          "code": "builder.Services.AddTempoBlazorPdfViewer();"
+        }
+      ]
     },
     {
       "itemName": "TmPdfViewer",
@@ -232,9 +238,9 @@
   ],
   "summary": {
     "itemCount": 3,
-    "manualItemCount": 2,
+    "manualItemCount": 3,
     "generatedItemCount": 3,
-    "generatedOnlyItemCount": 1,
+    "generatedOnlyItemCount": 0,
     "componentCount": 1,
     "publicApiTypeCount": 2
   }

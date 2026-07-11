@@ -27,6 +27,9 @@ public partial class TmNotionColumnListBlock : ComponentBase, IAsyncDisposable
     [Parameter] public bool                     ReadOnly { get; set; }
 
     [Parameter] public EventCallback<IPageBlock> OnUpdated { get; set; }
+
+    /// <summary>Raised when the column list has no columns left and should be removed from the page.</summary>
+    [Parameter] public EventCallback             OnDeleteRequested { get; set; }
     [Parameter] public EventCallback             OnFocused { get; set; }
     [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnSlashMenu { get; set; }
     [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnMentionMenu { get; set; }
@@ -77,8 +80,19 @@ public partial class TmNotionColumnListBlock : ComponentBase, IAsyncDisposable
                 .OrderBy(b => (b.Content as IColumnBlockContent)?.ColumnIndex ?? b.Order)
                 .ToList();
 
-            if (_columns.Count == 0)
+            var action = NotionColumnListSeeding.Decide(
+                (Block.Content as IColumnListBlockContent)?.ColumnCount ?? 0,
+                _columns.Count);
+
+            if (action == ColumnListAction.Seed)
+            {
                 await InitDefaultColumnsAsync();
+            }
+            else if (action == ColumnListAction.Collapse && OnDeleteRequested.HasDelegate)
+            {
+                await OnDeleteRequested.InvokeAsync();
+                return;
+            }
 
             _columnsLoaded     = true;
             _resizeInitialized = false;

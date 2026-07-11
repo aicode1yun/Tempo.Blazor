@@ -1,0 +1,37 @@
+{
+  "kind": "Record",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "One slot in a wireframe archetype: which region it belongs to, which component type fills it, and where it sits. Width and height are left unset — the operation engine resolves them from the active WireframeSchemaRegistry.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeArchetypes.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeArchetypes.SlotSpec",
+  "members": [
+    {
+      "name": "Region",
+      "type": "string",
+      "description": "Named region of the archetype, e.g. \"navbar\" or \"hero\"."
+    },
+    {
+      "name": "Type",
+      "type": "string",
+      "description": "Component type that fills the slot, e.g. \"TmMenu\"."
+    },
+    {
+      "name": "X",
+      "type": "double",
+      "description": "Left edge in canvas pixels."
+    },
+    {
+      "name": "Y",
+      "type": "double",
+      "description": "Top edge in canvas pixels."
+    },
+    {
+      "name": "WSpan",
+      "type": "int?",
+      "description": "Optional column span; null lets the engine decide."
+    }
+  ]
+}

@@ -15,33 +15,33 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Raised when the user clicks or drags the minimap to navigate. Arguments are the document-space centre point."
+      "description": "Additional CSS class on the wrapper div."
     },
     {
       "name": "NavigateRequested",
       "type": "EventCallback<DiagramMinimapNavigateArgs>",
       "isRequired": false,
-      "description": "Fixed pixel width of the minimap panel. Height is derived from canvas aspect ratio."
+      "description": "Raised when the user clicks or drags the minimap to navigate. Arguments are the document-space centre point."
     },
     {
       "name": "SelectedIds",
       "type": "string[]",
       "isRequired": false,
       "default": "[]",
-      "description": "Document to render."
+      "description": "IDs of currently selected elements (highlighted in blue)."
     },
     {
       "name": "Viewport",
       "type": "DiagramMinimapViewport?",
       "isRequired": false,
-      "description": "IDs of currently selected elements (highlighted in blue)."
+      "description": "Current viewport state in document coordinates. When null the viewport rect is not shown."
     },
     {
       "name": "Width",
       "type": "int",
       "isRequired": false,
       "default": "200",
-      "description": "Current viewport state in document coordinates. When null the viewport rect is not shown."
+      "description": "Fixed pixel width of the minimap panel. Height is derived from canvas aspect ratio."
     }
   ]
 }

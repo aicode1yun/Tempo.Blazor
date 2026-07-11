@@ -15,14 +15,14 @@
       "name": "OnApply",
       "type": "EventCallback<SpreadsheetSortSpec>",
       "isRequired": true,
-      "description": "The range being sorted.",
+      "description": "Raised when the user applies the sort.",
       "editorRequired": true
     },
     {
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user applies the sort."
+      "description": "Raised when the dialog is dismissed."
     }
   ],
   "subcategory": "Dialogs"

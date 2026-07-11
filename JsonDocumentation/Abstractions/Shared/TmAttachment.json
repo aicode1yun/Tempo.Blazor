@@ -1,0 +1,77 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Shared file attachment linked to a Tempo entity.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmAttachment.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmAttachment",
+  "members": [
+    {
+      "name": "Id",
+      "type": "string",
+      "description": "Stable attachment identifier."
+    },
+    {
+      "name": "EntityRef",
+      "type": "TmEntityRef",
+      "description": "Entity this attachment belongs to."
+    },
+    {
+      "name": "FileName",
+      "type": "string",
+      "description": "Original or display file name."
+    },
+    {
+      "name": "ContentType",
+      "type": "string?",
+      "description": "MIME content type, when known."
+    },
+    {
+      "name": "SizeBytes",
+      "type": "long",
+      "description": "File size in bytes."
+    },
+    {
+      "name": "Url",
+      "type": "string?",
+      "description": "Download or preview URL, when the provider exposes one directly."
+    },
+    {
+      "name": "AssetId",
+      "type": "string?",
+      "description": "Provider-managed blob or asset identifier."
+    },
+    {
+      "name": "UploadedBy",
+      "type": "TmUserRef?",
+      "description": "User that uploaded this attachment, when known."
+    },
+    {
+      "name": "UploadedAt",
+      "type": "DateTimeOffset",
+      "description": "Timestamp when the attachment was uploaded or linked."
+    },
+    {
+      "name": "Purpose",
+      "type": "string?",
+      "description": "Optional purpose, such as \"work-item\", \"document-manager\", \"signature\", or \"notion-media\"."
+    },
+    {
+      "name": "CanDownload",
+      "type": "bool",
+      "description": "Whether the current viewer may download this attachment."
+    },
+    {
+      "name": "CanDelete",
+      "type": "bool",
+      "description": "Whether the current viewer may remove this attachment link."
+    },
+    {
+      "name": "Metadata",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for consumer use."
+    }
+  ]
+}

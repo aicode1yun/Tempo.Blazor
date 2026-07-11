@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Reporting",
+  "namespace": "Tempo.Blazor.Mcp.Reporting",
+  "description": "Report definition parsing and validation helpers used by MCP tools.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportValidationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportValidationEngine",
+  "members": [
+    {
+      "name": "ValidateJson",
+      "type": "static ReportValidationResult ValidateJson()",
+      "description": "Parses and validates a report definition JSON payload."
+    },
+    {
+      "name": "Validate",
+      "type": "static ReportValidationResult Validate()",
+      "description": "Validates a report definition instance."
+    },
+    {
+      "name": "TryDeserialize",
+      "type": "static bool TryDeserialize()",
+      "description": "Attempts to deserialize a report definition."
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Shared tag definition used across Tempo components.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmTag.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmTag",
+  "members": [
+    {
+      "name": "Id",
+      "type": "string",
+      "description": "Stable tag identifier."
+    },
+    {
+      "name": "Label",
+      "type": "string",
+      "description": "Display label."
+    },
+    {
+      "name": "Color",
+      "type": "string?",
+      "description": "Optional CSS color value or design token."
+    },
+    {
+      "name": "Description",
+      "type": "string?",
+      "description": "Optional longer description."
+    },
+    {
+      "name": "SourceKey",
+      "type": "string?",
+      "description": "Optional provider/source discriminator."
+    },
+    {
+      "name": "TenantId",
+      "type": "string?",
+      "description": "Optional tenant, workspace, or application scope identifier."
+    },
+    {
+      "name": "Metadata",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for consumer use."
+    },
+    {
+      "name": "ToRef",
+      "type": "TmTagRef ToRef()",
+      "description": "Creates a lightweight reference snapshot."
+    }
+  ]
+}

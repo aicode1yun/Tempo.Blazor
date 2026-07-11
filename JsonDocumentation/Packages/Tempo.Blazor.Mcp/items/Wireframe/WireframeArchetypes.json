@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "Canonical wireframe scaffold archetypes. Slot dimensions are intentionally absent here; the operation engine resolves W/H from the active WireframeSchemaRegistry.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeArchetypes.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeArchetypes"
+}

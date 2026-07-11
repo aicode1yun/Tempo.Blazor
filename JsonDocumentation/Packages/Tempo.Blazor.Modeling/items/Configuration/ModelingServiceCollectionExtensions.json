@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Configuration",
+  "namespace": "Tempo.Blazor.Configuration",
+  "description": "Extension methods for registering Tempo.Blazor modeling services.",
+  "packageId": "Tempo.Blazor.Modeling",
+  "sourcePath": "src/Tempo.Blazor.Modeling/Configuration/ModelingServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "ModelingServiceCollectionExtensions",
+  "members": [
+    {
+      "name": "AddTempoBlazorModeling",
+      "type": "IServiceCollection AddTempoBlazorModeling(this IServiceCollection services)",
+      "description": "Registers the services required by the modeling component group. Also calls AddTempoBlazorDiagramEditor(), because modeling builds on the diagram editor."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Register the services in Program.cs",
+      "code": "builder.Services.AddTempoBlazorModeling();"
+    }
+  ]
+}

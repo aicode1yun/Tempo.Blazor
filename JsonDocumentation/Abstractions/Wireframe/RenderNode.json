@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "JSON render tree node used by stencil components.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/RenderNode.cs",
+  "documentationStatus": "generated",
+  "itemName": "RenderNode"
+}

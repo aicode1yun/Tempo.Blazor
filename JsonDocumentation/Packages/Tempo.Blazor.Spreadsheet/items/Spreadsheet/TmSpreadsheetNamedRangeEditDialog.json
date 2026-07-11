@@ -15,19 +15,19 @@
       "name": "OnCancel",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user saves the dialog."
+      "description": "Raised when the dialog is dismissed."
     },
     {
       "name": "OnSave",
       "type": "EventCallback<SpreadsheetNamedRange>",
       "isRequired": false,
-      "description": "The range to edit, or null when creating a new one."
+      "description": "Raised when the user saves the dialog."
     },
     {
       "name": "Range",
       "type": "SpreadsheetNamedRange?",
       "isRequired": true,
-      "description": "The workbook containing the named range.",
+      "description": "The range to edit, or null when creating a new one.",
       "editorRequired": true
     }
   ],

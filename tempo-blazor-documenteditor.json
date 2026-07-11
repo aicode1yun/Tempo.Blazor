@@ -157,14 +157,42 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "BringToFrontCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.DocumentEditor.Commands",
-      "description": "Moves one positioned image above all other image objects.",
+      "description": "Moves one positioned image above all other image objects in the document. Implements IDocumentEditorCommand, so it is asynchronous and undoable: ExecuteAsync() applies the new z-index and UndoAsync() restores the previous one. Note that Tempo.Blazor.Wireframe has a same-named command with a different signature.",
       "packageId": "Tempo.Blazor.DocumentEditor",
       "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Commands/BringToFrontCommand.cs",
-      "documentationStatus": "generated",
-      "itemName": "BringToFrontCommand"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BringToFrontCommand",
+          "type": "BringToFrontCommand(DocumentEditorDocument document, string blockId, string? description = null)",
+          "description": "Creates the command for the image block identified by blockId. The description labels the undo step and defaults to \"Bring image to front\"."
+        },
+        {
+          "name": "Description",
+          "type": "string",
+          "description": "Human-readable command description for tooltips and diagnostics."
+        },
+        {
+          "name": "ExecuteAsync",
+          "type": "Task ExecuteAsync()",
+          "description": "Applies the new z-index to the image."
+        },
+        {
+          "name": "UndoAsync",
+          "type": "Task UndoAsync()",
+          "description": "Restores the z-index captured before ExecuteAsync() ran."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Use BringToFrontCommand",
+          "code": "var command = new BringToFrontCommand(document, imageBlockId);\nawait command.ExecuteAsync();\n\n// later\nawait command.UndoAsync();"
+        }
+      ]
     },
     {
       "itemName": "CallbackDocumentEditorCommand",
@@ -870,11 +898,16 @@
           "name": "RefreshAllAsync",
           "kind": "Method",
           "type": "Task",
-          "description": "Recomputes and caches the state of every registered command against the given context.",
+          "description": "Recomputes and caches the state of every registered command against the given context. When is provided and matches the previous refresh's signature, the rebuild is skipped entirely (perf plan N7.3) — the caller guarantees the signature covers every input its command lambdas read. A null signature always refreshes.",
           "parameters": [
             {
               "name": "context",
               "type": "DocumentEditorCommandContext"
+            },
+            {
+              "name": "contextSignature",
+              "type": "string?",
+              "default": "null"
             }
           ]
         },
@@ -921,6 +954,12 @@
               "type": "out IDocumentEditorCommandEntry?"
             }
           ]
+        },
+        {
+          "name": "Version",
+          "kind": "Property",
+          "type": "int",
+          "description": "Monotonic counter incremented on every ACTUAL refresh (perf plan N7.3). Consumers can use it as a cheap change token for derived caches (e.g. the toolbar overflow menu groups)."
         }
       ]
     },
@@ -2783,14 +2822,42 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "SendToBackCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.DocumentEditor.Commands",
-      "description": "Moves one positioned image below all other image objects.",
+      "description": "Moves one positioned image below all other image objects in the document. Implements IDocumentEditorCommand, so it is asynchronous and undoable: ExecuteAsync() applies the new z-index and UndoAsync() restores the previous one. Note that Tempo.Blazor.Wireframe has a same-named command with a different signature.",
       "packageId": "Tempo.Blazor.DocumentEditor",
       "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Commands/SendToBackCommand.cs",
-      "documentationStatus": "generated",
-      "itemName": "SendToBackCommand"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "SendToBackCommand",
+          "type": "SendToBackCommand(DocumentEditorDocument document, string blockId, string? description = null)",
+          "description": "Creates the command for the image block identified by blockId. The description labels the undo step and defaults to \"Send image behind text\"."
+        },
+        {
+          "name": "Description",
+          "type": "string",
+          "description": "Human-readable command description for tooltips and diagnostics."
+        },
+        {
+          "name": "ExecuteAsync",
+          "type": "Task ExecuteAsync()",
+          "description": "Applies the new z-index to the image."
+        },
+        {
+          "name": "UndoAsync",
+          "type": "Task UndoAsync()",
+          "description": "Restores the z-index captured before ExecuteAsync() ran."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Use SendToBackCommand",
+          "code": "var command = new SendToBackCommand(document, imageBlockId);\nawait command.ExecuteAsync();\n\n// later\nawait command.UndoAsync();"
+        }
+      ]
     },
     {
       "itemName": "StrikethroughMark",
@@ -2930,6 +2997,296 @@
       "description": "Text run with optional formatting marks.",
       "packageId": "Tempo.Blazor.DocumentEditor",
       "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Wysiwyg/Model/Inlines.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasClipboardImageUploadRequest",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas clipboard image upload request received from JavaScript.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasClipboardImageUploadResult",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas clipboard image upload result returned to JavaScript.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineAnnotations",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Live comment + revision lists pulled from the engine model (B3). The lists already use the canonical <see cref=\"DocumentComment\"/> / <see cref=\"DocumentRevision\"/> shapes, so they bind directly.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineAnnotationSelection",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas comment or revision marker selection emitted from JavaScript.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineBookmarkState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas engine bookmark state exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineChangedState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas engine changed state exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineClipboardResult",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Result of a programmatic clipboard operation (B11/B12 context-menu copy/cut/paste).",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineCommandResult",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas engine command execution result exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineCommandState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas engine command query state exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineContentControlState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Content control at the current selection, computed by the engine over the focused block only (perf plan N2) so the popover never needs the full-document marshal.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineContextMenuRequest",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas context menu request sent from the canvas JavaScript runtime.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineDiagnosticsState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas engine diagnostics exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineFormattingState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas engine formatting state exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineImageState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Selected canvas image state exposed to the editor properties panel.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineMisspelling",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas misspelling diagnostic exposed to Blazor context menu handlers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineNavigationState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas engine navigation state exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEnginePresenceCursor",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas presence cursor geometry exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEnginePresenceState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas presence overlay state exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEnginePrintDialogState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Browser print dialog request state.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEnginePrintPreviewState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas print preview state exposed to Blazor callers and tests.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineRemoteApplyResult",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas remote operation apply result exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineRemoteConflict",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas remote operation conflict detail exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineSearchMatch",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas engine search match exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineSearchState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas engine search state exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineSelectionState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas engine selection state exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineSigningFieldSelection",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Signing field at the current selection, for the properties panel (plan S2.11/S2.21).",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineUiState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Primitives-only UI snapshot pushed from the engine (see interop.mjs buildUiState) so the parent toolbar can update pressed-state / dirty / undo availability / page count without a follow-up interop pull.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineUiStateEnvelope",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Wrapper used to pluck just the pushed <see cref=\"CanvasEngineUiState\"/> out of the selection payload.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmDocumentCanvasEngineHost.CanvasEngineUndoState",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor",
+      "description": "Canvas engine undo state exposed to Blazor callers.",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
       "documentationStatus": "merged"
     },
     {
@@ -3149,13 +3506,14 @@
       ]
     },
     {
+      "itemName": "DocumentEditorServiceCollectionExtensions",
       "kind": "Class",
       "category": "Configuration",
       "namespace": "Tempo.Blazor.Configuration",
       "description": "Extension methods for registering Tempo.Blazor document editor services.",
       "packageId": "Tempo.Blazor.DocumentEditor",
       "sourcePath": "src/Tempo.Blazor.DocumentEditor/Configuration/DocumentEditorServiceCollectionExtensions.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AddTempoBlazorDocumentEditor",
@@ -3170,7 +3528,12 @@
           ]
         }
       ],
-      "itemName": "DocumentEditorServiceCollectionExtensions"
+      "examples": [
+        {
+          "title": "Register the services in Program.cs",
+          "code": "builder.Services.AddTempoBlazorDocumentEditor();"
+        }
+      ]
     },
     {
       "itemName": "TmDocumentAutocompleteMenu",
@@ -3278,7 +3641,7 @@
           "name": "Block",
           "type": "DocumentBlock?",
           "isRequired": false,
-          "description": "Document id used by provider-backed image resolution."
+          "description": "Block to render."
         },
         {
           "name": "DocumentId",
@@ -3291,20 +3654,20 @@
           "name": "ImageUrlResolver",
           "type": "IDocumentImageUrlResolver?",
           "isRequired": false,
-          "description": "Block to render."
+          "description": "Optional resolver for provider-managed image assets."
         },
         {
           "name": "OnCommentSelected",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Pending provider-backed suggestions to decorate near their block."
+          "description": "Raised when a rendered inline comment anchor is selected."
         },
         {
           "name": "Suggestions",
           "type": "IReadOnlyList<DocumentSuggestion>",
           "isRequired": false,
           "default": "[]",
-          "description": "Optional resolver for provider-managed image assets."
+          "description": "Pending provider-backed suggestions to decorate near their block."
         }
       ]
     },
@@ -4203,76 +4566,76 @@
           "name": "Author",
           "type": "DocumentEditorAuthor?",
           "isRequired": false,
-          "description": "Whether a newer local draft should replace the server snapshot during load."
+          "description": "Author used for save requests and audit events."
         },
         {
           "name": "AutoSaveInterval",
           "type": "TimeSpan?",
           "isRequired": false,
-          "description": "Whether provider-backed suggestions start enabled."
+          "description": "Optional autosave interval. Set to null to disable autosave."
         },
         {
           "name": "CanComment",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether major versions require a non-empty description."
+          "description": "Whether the current user can add comments and replies."
         },
         {
           "name": "CanDeleteOwnComments",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the current user can resolve or reopen comment threads."
+          "description": "Whether the current user can delete their own comments."
         },
         {
           "name": "CanResolveComments",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether the current user can add comments and replies."
+          "description": "Whether the current user can resolve or reopen comment threads."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Raised immediately before a save request is sent to the provider."
+          "description": "Additional CSS class for the root element."
         },
         {
           "name": "CollaborationClientId",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional provider used to synchronize realtime collaborative edits."
+          "description": "Stable collaboration client id for the current editor instance."
         },
         {
           "name": "CollaborationProvider",
           "type": "IDocumentCollaborationProvider?",
           "isRequired": false,
-          "description": "Optional proofing options used by the canvas engine spelling overlay."
+          "description": "Optional provider used to synchronize realtime collaborative edits."
         },
         {
           "name": "CollaborationSyncInterval",
           "type": "TimeSpan",
           "isRequired": false,
           "default": "TimeSpan.FromSeconds(2)",
-          "description": "Stable collaboration client id for the current editor instance."
+          "description": "Interval used to poll provider-backed collaboration updates."
         },
         {
           "name": "ComparisonProvider",
           "type": "IDocumentComparisonProvider?",
           "isRequired": false,
-          "description": "Optional host provider used to import and export external document formats."
+          "description": "Optional host provider used to compare arbitrary document sources."
         },
         {
           "name": "ContentControlRenderMode",
           "type": "string?",
           "isRequired": false,
-          "description": "Provider-managed image assets that can be inserted from the editor image menu."
+          "description": "Canvas content-control rendering mode. Use form for plain fill mode or design for structured-tag chrome."
         },
         {
           "name": "DisabledFeatures",
           "type": "IReadOnlyCollection<string>?",
           "isRequired": false,
-          "description": "Whether debug tools (View JSON etc.) are shown in the toolbar. Intended for development only."
+          "description": "Feature names that should be disabled for this editor instance."
         },
         {
           "name": "DocumentId",
@@ -4286,58 +4649,58 @@
           "name": "FontProvider",
           "type": "IDocumentFontProvider?",
           "isRequired": false,
-          "description": "Optional provider used to resolve template token values for preview."
+          "description": "Optional provider for available editor font families."
         },
         {
           "name": "FormatProvider",
           "type": "IDocumentFormatProvider?",
           "isRequired": false,
-          "description": "Optional host provider used to export the current document as PDF."
+          "description": "Optional host provider used to import and export external document formats."
         },
         {
           "name": "ImageAssetOptions",
           "type": "IReadOnlyList<DocumentImageAsset>",
           "isRequired": false,
           "default": "[]",
-          "description": "Optional image provider used by upload and clipboard image flows."
+          "description": "Provider-managed image assets that can be inserted from the editor image menu."
         },
         {
           "name": "ImageProvider",
           "type": "IDocumentImageProvider?",
           "isRequired": false,
-          "description": "Optional resolver for provider-managed document image assets."
+          "description": "Optional image provider used by upload and clipboard image flows."
         },
         {
           "name": "ImageUrlResolver",
           "type": "IDocumentImageUrlResolver?",
           "isRequired": false,
-          "description": "Feature names that should be disabled for this editor instance."
+          "description": "Optional resolver for provider-managed document image assets."
         },
         {
           "name": "ImageValidation",
           "type": "DocumentImageValidationOptions",
           "isRequired": true,
-          "description": "Canvas content-control rendering mode. Use form for plain fill mode or design for structured-tag chrome."
+          "description": "Image validation options used by upload and clipboard image flows."
         },
         {
           "name": "MentionProvider",
           "type": "ITmPeopleProvider?",
           "isRequired": false,
-          "description": "Whether the current user can delete their own comments."
+          "description": "Optional mention provider reused by the comment composer."
         },
         {
           "name": "Mode",
           "type": "DocumentEditorMode",
           "isRequired": false,
           "default": "DocumentEditorMode.Edit",
-          "description": "Host-controlled permissions for the current user."
+          "description": "Current editor mode."
         },
         {
           "name": "OfflineMode",
           "type": "DocumentEditorOfflineMode",
           "isRequired": false,
           "default": "DocumentEditorOfflineMode.Disabled",
-          "description": "Interval used to poll provider-backed collaboration updates."
+          "description": "Offline draft behavior for the editor. Defaults to disabled."
         },
         {
           "name": "OfflineStore",
@@ -4349,25 +4712,25 @@
           "name": "OnDocumentCompared",
           "type": "EventCallback<DocumentCompareResult>",
           "isRequired": false,
-          "description": "Raised after the optional document format provider returns an export result."
+          "description": "Raised after a document comparison completes."
         },
         {
           "name": "OnDocumentFormatExported",
           "type": "EventCallback<DocumentFormatExportProviderResult>",
           "isRequired": false,
-          "description": "Raised after the optional PDF export provider returns a result."
+          "description": "Raised after the optional document format provider returns an export result."
         },
         {
           "name": "OnDocumentLoaded",
           "type": "EventCallback<DocumentEditorDocument>",
           "isRequired": false,
-          "description": "Additional CSS class for the root element."
+          "description": "Raised after a document was loaded successfully."
         },
         {
           "name": "OnPdfExported",
           "type": "EventCallback<DocumentPdfExportResult>",
           "isRequired": false,
-          "description": "Raised after a document version was created successfully."
+          "description": "Raised after the optional PDF export provider returns a result."
         },
         {
           "name": "OnSaveRequested",
@@ -4379,44 +4742,44 @@
           "name": "OnVersionCreated",
           "type": "EventCallback<DocumentVersion>",
           "isRequired": false,
-          "description": "Raised after a document was loaded successfully."
+          "description": "Raised after a document version was created successfully."
         },
         {
           "name": "PdfExportProvider",
           "type": "IDocumentPdfExportProvider?",
           "isRequired": false,
-          "description": "Optional provider for available editor font families."
+          "description": "Optional host provider used to export the current document as PDF."
         },
         {
           "name": "Permissions",
           "type": "DocumentEditorPermissions",
           "isRequired": true,
-          "description": "Whether the editor is read-only."
+          "description": "Host-controlled permissions for the current user."
         },
         {
           "name": "PreferLocalDraft",
           "type": "bool",
           "isRequired": false,
-          "description": "Optional provider used to submit an offline draft back to the authoritative store."
+          "description": "Whether a newer local draft should replace the server snapshot during load."
         },
         {
           "name": "ProofingOptions",
           "type": "DocumentProofingOptions?",
           "isRequired": false,
-          "description": "Optional provider used to store and review document suggestions."
+          "description": "Optional proofing options used by the canvas engine spelling overlay."
         },
         {
           "name": "Provider",
           "type": "IDocumentEditorProvider?",
           "isRequired": false,
-          "description": "Stable document id to load from the provider.",
+          "description": "Document editor provider used for load/save/version/comment operations.",
           "editorRequired": true
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Document editor provider used for load/save/version/comment operations."
+          "description": "Whether the editor is read-only."
         },
         {
           "name": "RenderEngine",
@@ -4428,40 +4791,40 @@
           "name": "RequireMajorVersionDescription",
           "type": "bool",
           "isRequired": false,
-          "description": "Optional autosave interval. Set to null to disable autosave."
+          "description": "Whether major versions require a non-empty description."
         },
         {
           "name": "ShowComments",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Visual mode used by the document editor toolbar."
+          "description": "Whether the comments rail is displayed."
         },
         {
           "name": "ShowDebugTools",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the version history panel is displayed."
+          "description": "Whether debug tools (View JSON etc.) are shown in the toolbar. Intended for development only."
         },
         {
           "name": "ShowToolbar",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Current editor mode."
+          "description": "Whether the Word-like toolbar/ribbon is displayed."
         },
         {
           "name": "ShowVersionHistory",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether the comments rail is displayed."
+          "description": "Whether the version history panel is displayed."
         },
         {
           "name": "SigningFieldsChanged",
           "type": "EventCallback<IReadOnlyList<Tempo.Blazor.Abstractions.Models.SigningField>>",
           "isRequired": false,
-          "description": "Signer roles used to colour inline signing fields and to attribute placed fields (plan S2)."
+          "description": "Raised after a signing field is inserted, updated, or removed in the editor."
         },
         {
           "name": "SigningRoles",
@@ -4474,13 +4837,13 @@
           "name": "SuggestionProvider",
           "type": "IDocumentSuggestionProvider?",
           "isRequired": false,
-          "description": "Whether local comparison should be used if the comparison provider fails."
+          "description": "Optional provider used to store and review document suggestions."
         },
         {
           "name": "SuggestionsEnabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether track changes starts enabled."
+          "description": "Whether provider-backed suggestions start enabled."
         },
         {
           "name": "SyncProvider",
@@ -4492,33 +4855,33 @@
           "name": "TokenProvider",
           "type": "ITokenDataProvider?",
           "isRequired": false,
-          "description": "Optional mention provider reused by the comment composer."
+          "description": "Optional token provider reused by the document token autocomplete menu."
         },
         {
           "name": "TokenValueProvider",
           "type": "IDocumentTokenValueProvider?",
           "isRequired": false,
-          "description": "Optional token provider reused by the document token autocomplete menu."
+          "description": "Optional provider used to resolve template token values for preview."
         },
         {
           "name": "ToolbarMode",
           "type": "DocumentToolbarMode",
           "isRequired": false,
           "default": "DocumentToolbarMode.Ribbon",
-          "description": "Whether the Word-like toolbar/ribbon is displayed."
+          "description": "Visual mode used by the document editor toolbar."
         },
         {
           "name": "TrackChangesEnabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Image validation options used by upload and clipboard image flows."
+          "description": "Whether track changes starts enabled."
         },
         {
           "name": "UseLocalComparisonFallback",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Optional host provider used to compare arbitrary document sources."
+          "description": "Whether local comparison should be used if the comparison provider fails."
         }
       ]
     },
@@ -5982,13 +6345,13 @@
           "type": "string",
           "isRequired": false,
           "default": "\"\"",
-          "description": "Inline content to render."
+          "description": "Document id used by provider-backed image resolution."
         },
         {
           "name": "ImageUrlResolver",
           "type": "IDocumentImageUrlResolver?",
           "isRequired": false,
-          "description": "Document id used by provider-backed image resolution."
+          "description": "Optional resolver for provider-managed image assets."
         },
         {
           "name": "Inline",
@@ -6000,7 +6363,7 @@
           "name": "OnCommentSelected",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Optional resolver for provider-managed image assets."
+          "description": "Raised when a comment anchor inline is selected."
         }
       ]
     },
@@ -7182,13 +7545,14 @@
       ]
     },
     {
+      "itemName": "IndexedDbDocumentOfflineStore",
       "kind": "Class",
       "category": "Services",
       "namespace": "Tempo.Blazor.Services",
-      "description": "Browser IndexedDB-backed offline store for document editor drafts.",
+      "description": "Browser IndexedDB-backed offline store for document editor drafts. Persists unsaved edits locally so they survive a reload or a lost connection, and can be replayed once the backend is reachable again. Requires a JS runtime, so it only works in an interactive (WASM or Server) render mode.",
       "packageId": "Tempo.Blazor.DocumentEditor",
       "sourcePath": "src/Tempo.Blazor.DocumentEditor/Services/IndexedDbDocumentOfflineStore.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "DeleteDraftAsync",
@@ -7239,7 +7603,12 @@
           ]
         }
       ],
-      "itemName": "IndexedDbDocumentOfflineStore"
+      "examples": [
+        {
+          "title": "Register and flush pending drafts",
+          "code": "// Program.cs\nbuilder.Services.AddScoped<IDocumentOfflineStore, IndexedDbDocumentOfflineStore>();\n\n// when the connection comes back\nforeach (var draft in await store.ListPendingDraftsAsync())\n{\n    await api.SaveDocumentAsync(draft);\n    await store.DeleteDraftAsync(draft.Id);\n}"
+        }
+      ]
     }
   ],
   "libraryExamples": [],
@@ -7441,6 +7810,10 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/controls/content-control-selection.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/controls/forms-mode.mjs",
       "kind": "JavaScript"
     },
@@ -7462,6 +7835,10 @@
     },
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/controls/signing-field-selection.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/controls/__tests__/content-control-selection.test.mjs",
       "kind": "JavaScript"
     },
     {
@@ -7589,6 +7966,10 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/input/__tests__/undo-snapshot-reference.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/interop-page-image-export.test.mjs",
       "kind": "JavaScript"
     },
@@ -7657,11 +8038,19 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/layout/__tests__/font-metrics-persistence.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/layout/__tests__/header-footer.test.mjs",
       "kind": "JavaScript"
     },
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/layout/__tests__/hyphenation.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/layout/__tests__/immutable-model-contract.test.mjs",
       "kind": "JavaScript"
     },
     {
@@ -7678,6 +8067,10 @@
     },
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/layout/__tests__/pagination.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/layout/__tests__/progressive-layout.test.mjs",
       "kind": "JavaScript"
     },
     {
@@ -7929,7 +8322,15 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/render/__tests__/defer-paint-diagnostics.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/render/__tests__/display-list.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/render/__tests__/image-cache-lru.test.mjs",
       "kind": "JavaScript"
     },
     {
@@ -7942,6 +8343,10 @@
     },
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/render/__tests__/page-mount-order.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/render/__tests__/progressive-display-list.test.mjs",
       "kind": "JavaScript"
     },
     {
@@ -8785,6 +9190,10 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/layout/__tests__/caret-advances.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/layout/__tests__/line-breaker-soft-hyphen.test.mjs",
       "kind": "JavaScript"
     },
@@ -9278,11 +9687,11 @@
     }
   ],
   "summary": {
-    "itemCount": 191,
-    "manualItemCount": 187,
-    "generatedItemCount": 186,
-    "generatedOnlyItemCount": 4,
+    "itemCount": 220,
+    "manualItemCount": 220,
+    "generatedItemCount": 215,
+    "generatedOnlyItemCount": 0,
     "componentCount": 35,
-    "publicApiTypeCount": 151
+    "publicApiTypeCount": 180
   }
 }

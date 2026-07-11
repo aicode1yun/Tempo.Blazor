@@ -1,0 +1,28 @@
+{
+  "kind": "Enum",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Severity level used to style a shared notification.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotificationSeverity.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmNotificationSeverity",
+  "values": [
+    {
+      "name": "Info",
+      "description": "Informational notification."
+    },
+    {
+      "name": "Success",
+      "description": "Successful outcome notification."
+    },
+    {
+      "name": "Warning",
+      "description": "Warning notification."
+    },
+    {
+      "name": "Error",
+      "description": "Error or failure notification."
+    }
+  ]
+}

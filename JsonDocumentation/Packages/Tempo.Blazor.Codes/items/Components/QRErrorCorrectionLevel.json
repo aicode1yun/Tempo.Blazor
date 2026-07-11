@@ -1,0 +1,38 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataDisplay",
+  "description": "QR code error correction levels. A higher level survives more damage or occlusion (for example a logo overlaid on the code) at the cost of encoding capacity.",
+  "packageId": "Tempo.Blazor.Codes",
+  "sourcePath": "src/Tempo.Blazor.Codes/Components/DataDisplay/QRErrorCorrectionLevel.cs",
+  "documentationStatus": "generated",
+  "itemName": "QRErrorCorrectionLevel",
+  "values": [
+    {
+      "name": "L",
+      "value": "0",
+      "description": "Recovers 7% of data."
+    },
+    {
+      "name": "M",
+      "value": "1",
+      "description": "Recovers 15% of data."
+    },
+    {
+      "name": "Q",
+      "value": "2",
+      "description": "Recovers 25% of data."
+    },
+    {
+      "name": "H",
+      "value": "3",
+      "description": "Recovers 30% of data."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use QRErrorCorrectionLevel",
+      "code": "<TmQRCode Value=\"https://example.test\"\n          ErrorCorrectionLevel=\"QRErrorCorrectionLevel.H\" />\n\n@* H tolerates the most damage — pick it when overlaying a logo *@"
+    }
+  ]
+}

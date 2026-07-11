@@ -15,33 +15,33 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Shows a clear button. Default true."
+      "description": "Additional CSS class."
     },
     {
       "name": "Colors",
       "type": "IReadOnlyList<string>?",
       "isRequired": false,
-      "description": "Event fired when a color is selected."
+      "description": "Predefined colors to display. Defaults to a standard palette."
     },
     {
       "name": "Columns",
       "type": "int",
       "isRequired": false,
       "default": "8",
-      "description": "Predefined colors to display. Defaults to a standard palette."
+      "description": "Number of columns in the grid. Default 8."
     },
     {
       "name": "ShowClearButton",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Number of columns in the grid. Default 8."
+      "description": "Shows a clear button. Default true."
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "The currently selected color value."
+      "description": "Event fired when a color is selected."
     }
   ]
 }

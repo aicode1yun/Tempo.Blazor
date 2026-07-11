@@ -15,18 +15,19 @@
       "name": "OnClosed",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when a color is chosen. Exactly one element of the tuple is non-null: (hex, null) → text color selected; (null, hex) → background color selected. (null, null) → default (remove color) selected for either section."
+      "description": "Raised when the picker is dismissed without a selection."
     },
     {
       "name": "SelectedBgColor",
       "type": "string?",
       "isRequired": false,
-      "description": "Currently active text-color hex, or null for default."
+      "description": "Currently active background-color hex, or null for default."
     },
     {
       "name": "SelectedTextColor",
       "type": "string?",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Currently active text-color hex, or null for default."
     }
   ],
   "subcategory": "UI"

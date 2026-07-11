@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Provides the built-in Tempo stencil-pack definitions, backed by trusted native renderers. Registered automatically with Priority 0, so any custom provider with a higher Priority can override a built-in component type.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/BuiltInStencilPackProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "BuiltInStencilPackProvider",
+  "members": [
+    {
+      "name": "Priority",
+      "type": "int",
+      "description": "Always 0 — the lowest priority, so custom providers win."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Override a built-in component",
+      "code": "public sealed class MyOverrides : IWireframeComponentProvider\n{\n    // higher than BuiltInStencilPackProvider.Priority (0)\n    public int Priority => 1;\n\n    public IEnumerable<WireframeComponentDef> GetComponents() =>\n        [ MyCustomButtonDef ];   // same Type as the built-in TmButton → wins\n}"
+    }
+  ]
+}

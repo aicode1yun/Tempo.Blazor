@@ -15,25 +15,25 @@
       "name": "Content",
       "type": "IPagePropertiesBlockContent?",
       "isRequired": false,
-      "description": "Owning page block for persistence context."
+      "description": "Saved page properties content."
     },
     {
       "name": "OnContentChanged",
       "type": "EventCallback<PagePropertiesBlockContent>",
       "isRequired": false,
-      "description": "Whether the properties table is rendered without editing affordances."
+      "description": "Raised when edited page properties should be persisted."
     },
     {
       "name": "OnFocused",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when edited page properties should be persisted."
+      "description": "Raised when the block receives focus."
     },
     {
       "name": "ReadOnly",
       "type": "bool",
       "isRequired": false,
-      "description": "Saved page properties content."
+      "description": "Whether the properties table is rendered without editing affordances."
     }
   ],
   "subcategory": "Blocks / Special"

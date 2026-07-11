@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
-  "description": "Converts an ordered list of objects into a self-contained HTML document. Each block type maps to an appropriate HTML element with embedded Notion-style CSS.",
+  "description": "Converts an ordered list of IPageBlock objects into a self-contained HTML document. Each block type maps to an appropriate element with embedded Notion-style CSS. A BlockType.Table block is rendered from its child TableRow blocks into <table><thead>/<tbody>, and each cell carries the column's alignment as an inline text-align style when TableBlockContent.ColumnAlignments declares one. Legacy consecutive TableRow blocks without a parent Table block are still exported correctly.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionHtmlExporter.cs",
   "documentationStatus": "generated",
@@ -24,5 +24,15 @@
       ]
     }
   ],
-  "itemName": "NotionHtmlExporter"
+  "itemName": "NotionHtmlExporter",
+  "examples": [
+    {
+      "title": "Export page blocks to HTML",
+      "code": "var blocks = await BlockProvider.GetBlocksAsync(pageId.ToString());\nvar html   = NotionHtmlExporter.Export(blocks, pageTitle: page.Title);"
+    },
+    {
+      "title": "Render Markdown to HTML without an extra dependency",
+      "code": "// This is exactly what TmNotionCodeBlock's Markdown preview does.\nvar blocks = NotionMarkdownImporter.Import(markdown, Guid.Empty);\nvar html   = NotionHtmlExporter.Export(blocks);\n\n// <table class=\"notion-table\">\n//   <thead><tr><th style=\"text-align:left\">Name</th>…"
+    }
+  ]
 }

@@ -15,34 +15,34 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Number of posts per page."
+      "description": "Additional CSS class."
     },
     {
       "name": "CurrentUserId",
       "type": "string?",
       "isRequired": true,
-      "description": "Space whose blog posts are shown.",
+      "description": "Current user id used as author for newly created posts.",
       "editorRequired": true
     },
     {
       "name": "OnClosed",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Additional CSS class."
+      "description": "Raised when the panel close button is clicked."
     },
     {
       "name": "PageSize",
       "type": "int",
       "isRequired": false,
       "default": "5",
-      "description": "Current user id used as author for newly created posts."
+      "description": "Number of posts per page."
     },
     {
       "name": "SpaceId",
       "type": "string",
       "isRequired": true,
       "default": "\"\"",
-      "description": "Blog provider used to query and mutate posts.",
+      "description": "Space whose blog posts are shown.",
       "editorRequired": true
     }
   ],

@@ -15,61 +15,61 @@
       "name": "AppearsOn",
       "type": "string?",
       "isRequired": false,
-      "description": "Optional HTML id applied to the validation message for aria-describedby links."
+      "description": "Short text describing where the field appears in the document."
     },
     {
       "name": "ChildContent",
       "type": "RenderFragment?",
       "isRequired": false,
-      "description": "Short text describing where the field appears in the document."
+      "description": "Step body content."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Step body content."
+      "description": "Additional CSS classes for the root element."
     },
     {
       "name": "Culture",
       "type": "string?",
       "isRequired": false,
-      "description": "Optional description rendered below the label."
+      "description": "Culture used to resolve field labels and descriptions."
     },
     {
       "name": "Description",
       "type": "string?",
       "isRequired": false,
-      "description": "Explicit label overriding the field title or name."
+      "description": "Optional description rendered below the label."
     },
     {
       "name": "FallbackCulture",
       "type": "string?",
       "isRequired": false,
-      "description": "Culture used to resolve field labels and descriptions."
+      "description": "Fallback culture used when the requested culture is missing."
     },
     {
       "name": "Label",
       "type": "string?",
       "isRequired": false,
-      "description": "Signing field represented by this step."
+      "description": "Explicit label overriding the field title or name."
     },
     {
       "name": "Required",
       "type": "bool?",
       "isRequired": false,
-      "description": "Fallback culture used when the requested culture is missing."
+      "description": "Whether the step is required. Defaults to the field requirement."
     },
     {
       "name": "ValidationMessage",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the step is required. Defaults to the field requirement."
+      "description": "Validation message shown below the step content."
     },
     {
       "name": "ValidationMessageId",
       "type": "string?",
       "isRequired": false,
-      "description": "Validation message shown below the step content."
+      "description": "Optional HTML id applied to the validation message for aria-describedby links."
     }
   ]
 }

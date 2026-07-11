@@ -23,19 +23,19 @@
     border: 1px solid var(--tm-color-border, #e3e3e3);
     border-radius: var(--tm-radius-sm, 4px);
     background: transparent;
-    color: var(--tm-color-muted, #9ca3af);
+    color: var(--tm-color-muted, var(--tm-color-text-muted, #9ca3af));
     font-size: 12px;
     cursor: pointer;
     transition: background-color 0.12s, color 0.12s, border-color 0.12s;
 }
 
 .tm-notion-table-block__toggle:hover {
-    background-color: var(--tm-color-bg-hover, #f3f4f6);
+    background-color: var(--tm-color-bg-hover, var(--tm-color-surface-hover, #f3f4f6));
     color: var(--tm-color-text, #374151);
 }
 
 .tm-notion-table-block__toggle--active {
-    background-color: var(--tm-color-primary-bg-subtle, #eef2ff);
+    background-color: var(--tm-color-primary-bg-subtle, var(--tm-color-primary-subtle, #eef2ff));
     color: var(--tm-color-primary, #5470ef);
     border-color: var(--tm-color-primary, #5470ef);
     font-weight: 500;
@@ -194,7 +194,7 @@
 /* ── Header row ────────────────────────────────────────────────────────────── */
 
 .tm-notion-table--has-header-row tbody tr:first-child .tm-notion-table__cell-td {
-    background-color: var(--tm-color-bg-subtle, #f7f7f7);
+    background-color: var(--tm-color-bg-subtle, var(--tm-bg-surface-secondary, #f7f7f7));
 }
 
 .tm-notion-table--has-header-row tbody tr:first-child .tm-notion-table__cell {
@@ -205,7 +205,7 @@
 
 .tm-notion-table__cell-td--header-col .tm-notion-table__cell {
     font-weight: 600;
-    background-color: var(--tm-color-bg-subtle, #f7f7f7);
+    background-color: var(--tm-color-bg-subtle, var(--tm-bg-surface-secondary, #f7f7f7));
 }
 
 /* ── Column control row (thead) ────────────────────────────────────────────── */
@@ -235,7 +235,7 @@
     padding: 0;
     border: none;
     background: none;
-    color: var(--tm-color-muted, #9ca3af);
+    color: var(--tm-color-muted, var(--tm-color-text-muted, #9ca3af));
     cursor: pointer;
     border-radius: 4px;
     align-items: center;
@@ -249,7 +249,7 @@
 }
 
 .tm-notion-table__col-delete:hover {
-    background-color: var(--tm-color-danger-bg, #fee2e2);
+    background-color: var(--tm-color-danger-bg, var(--tm-color-danger-subtle, #fee2e2));
     color: var(--tm-color-danger, #ef4444);
 }
 
@@ -286,7 +286,7 @@
     width: 20px;
     height: 20px;
     border-radius: 3px;
-    color: var(--tm-color-muted, #9ca3af);
+    color: var(--tm-color-muted, var(--tm-color-text-muted, #9ca3af));
     font-size: 11px;
     letter-spacing: -2px;
     cursor: grab;
@@ -295,7 +295,7 @@
 }
 
 .tm-notion-table__drag-icon:hover {
-    background-color: var(--tm-color-bg-hover, #f3f4f6);
+    background-color: var(--tm-color-bg-hover, var(--tm-color-surface-hover, #f3f4f6));
     color: var(--tm-color-text, #374151);
 }
 
@@ -306,7 +306,7 @@
     padding: 0;
     border: none;
     background: none;
-    color: var(--tm-color-muted, #9ca3af);
+    color: var(--tm-color-muted, var(--tm-color-text-muted, #9ca3af));
     cursor: pointer;
     border-radius: 3px;
     align-items: center;
@@ -319,7 +319,7 @@
 }
 
 .tm-notion-table__row-delete:hover {
-    background-color: var(--tm-color-danger-bg, #fee2e2);
+    background-color: var(--tm-color-danger-bg, var(--tm-color-danger-subtle, #fee2e2));
     color: var(--tm-color-danger, #ef4444);
 }
 
@@ -343,7 +343,7 @@
     padding: 4px 10px;
     border: none;
     background: none;
-    color: var(--tm-color-muted, #9ca3af);
+    color: var(--tm-color-muted, var(--tm-color-text-muted, #9ca3af));
     font-size: 13px;
     cursor: pointer;
     border-radius: 4px;
@@ -353,7 +353,7 @@
 }
 
 .tm-notion-table-block__add-row:hover {
-    background-color: var(--tm-color-bg-hover, #f3f4f6);
+    background-color: var(--tm-color-bg-hover, var(--tm-color-surface-hover, #f3f4f6));
     color: var(--tm-color-text, #374151);
 }
 
@@ -373,7 +373,7 @@
     border: 1px solid var(--tm-color-border, #e3e3e3);
     border-left: none;
     background: none;
-    color: var(--tm-color-muted, #9ca3af);
+    color: var(--tm-color-muted, var(--tm-color-text-muted, #9ca3af));
     cursor: pointer;
     align-self: stretch;
     transition: background-color 0.12s, color 0.12s;
@@ -381,7 +381,7 @@
 }
 
 .tm-notion-table-block__add-col:hover {
-    background-color: var(--tm-color-bg-hover, #f3f4f6);
+    background-color: var(--tm-color-bg-hover, var(--tm-color-surface-hover, #f3f4f6));
     color: var(--tm-color-text, #374151);
 }
 

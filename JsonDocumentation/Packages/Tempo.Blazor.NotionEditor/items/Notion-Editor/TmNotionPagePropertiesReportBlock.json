@@ -15,25 +15,25 @@
       "name": "Content",
       "type": "IPagePropertiesReportBlockContent?",
       "isRequired": false,
-      "description": "Owning page block for focus context."
+      "description": "Saved report configuration."
     },
     {
       "name": "OnContentChanged",
       "type": "EventCallback<PagePropertiesReportBlockContent>",
       "isRequired": false,
-      "description": "Whether report configuration controls are hidden."
+      "description": "Raised when edited report configuration should be persisted."
     },
     {
       "name": "OnFocused",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when edited report configuration should be persisted."
+      "description": "Raised when the block receives focus."
     },
     {
       "name": "ReadOnly",
       "type": "bool",
       "isRequired": false,
-      "description": "Saved report configuration."
+      "description": "Whether report configuration controls are hidden."
     }
   ],
   "subcategory": "Blocks / Special"

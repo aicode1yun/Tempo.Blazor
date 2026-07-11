@@ -15,54 +15,55 @@
       "name": "OnAIAskPageRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when user picks the AI page summary action."
+      "description": "Raised when user picks the AI page question action."
     },
     {
       "name": "OnAISummarizeRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when user picks \"Page restrictions\"."
+      "description": "Raised when user picks the AI page summary action."
     },
     {
       "name": "OnNavigateToImportedPage",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Raised when user picks the AI page question action."
+      "description": "Raised after a successful import — contains new page ID."
     },
     {
       "name": "OnPageDeleted",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when page metadata (IsFullWidth, IsSmallText, IsLocked, IsFavorite) changes."
+      "description": "Raised after page is moved to trash — parent should navigate away."
     },
     {
       "name": "OnPageHistoryRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised after page is moved to trash — parent should navigate away."
+      "description": "Raised when user picks \"Page history\"."
     },
     {
       "name": "OnPageInfoRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when user picks \"Page history\"."
+      "description": "Raised when user picks \"Page info\"."
     },
     {
       "name": "OnPageUpdated",
       "type": "EventCallback<INotionPage>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Raised when page metadata (IsFullWidth, IsSmallText, IsLocked, IsFavorite) changes."
     },
     {
       "name": "OnRestrictionsRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when user picks \"Share\"."
+      "description": "Raised when user picks \"Page restrictions\"."
     },
     {
       "name": "OnShareRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when user picks \"Page info\"."
+      "description": "Raised when user picks \"Share\"."
     },
     {
       "name": "ReadOnly",

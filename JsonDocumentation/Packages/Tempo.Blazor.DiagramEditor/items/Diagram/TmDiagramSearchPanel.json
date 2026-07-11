@@ -15,86 +15,86 @@
       "name": "CurrentIndex",
       "type": "int",
       "isRequired": false,
-      "description": "Total number of matches."
+      "description": "Zero-based index of the currently highlighted match."
     },
     {
       "name": "CurrentIndexChanged",
       "type": "EventCallback<int>",
       "isRequired": false,
-      "description": "Zero-based index of the currently highlighted match."
+      "description": "Fires when the active match index changes."
     },
     {
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fires when the active match index changes."
+      "description": "Fires when the panel should close."
     },
     {
       "name": "OnReplace",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Error message displayed when the regex pattern is invalid."
+      "description": "Fires when the user clicks the Replace button."
     },
     {
       "name": "OnReplaceAll",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fires when the user clicks the Replace button."
+      "description": "Fires when the user clicks the Replace All button."
     },
     {
       "name": "QueryChanged",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Current search query."
+      "description": "Fires when the query changes."
     },
     {
       "name": "RegexError",
       "type": "string?",
       "isRequired": false,
-      "description": "Fires when the regex toggle changes."
+      "description": "Error message displayed when the regex pattern is invalid."
     },
     {
       "name": "ReplaceQuery",
       "type": "string",
       "isRequired": false,
       "default": "\"\"",
-      "description": "Fires when the \"search all pages\" toggle changes."
+      "description": "Current replacement text."
     },
     {
       "name": "ReplaceQueryChanged",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Current replacement text."
+      "description": "Fires when the replacement text changes."
     },
     {
       "name": "ResultsCount",
       "type": "int",
       "isRequired": false,
-      "description": "Fires when the query changes."
+      "description": "Total number of matches."
     },
     {
       "name": "SearchAllPages",
       "type": "bool",
       "isRequired": false,
-      "description": "Fires when the panel should close."
+      "description": "When true, search spans all pages instead of just the active one."
     },
     {
       "name": "SearchAllPagesChanged",
       "type": "EventCallback<bool>",
       "isRequired": false,
-      "description": "When true, search spans all pages instead of just the active one."
+      "description": "Fires when the \"search all pages\" toggle changes."
     },
     {
       "name": "UseRegex",
       "type": "bool",
       "isRequired": false,
-      "description": "Fires when the replacement text changes."
+      "description": "When true, the query is treated as a regular expression."
     },
     {
       "name": "UseRegexChanged",
       "type": "EventCallback<bool>",
       "isRequired": false,
-      "description": "When true, the query is treated as a regular expression."
+      "description": "Fires when the regex toggle changes."
     }
   ]
 }

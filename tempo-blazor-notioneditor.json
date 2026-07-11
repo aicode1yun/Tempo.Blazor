@@ -116,13 +116,14 @@
       ]
     },
     {
+      "itemName": "BatchCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.NotionEditor.Commands",
-      "description": "Groups multiple instances into a single undo / redo step. Commands are executed in insertion order by and reversed (last-to-first) by . This is the type used internally by when a batch scope is open; it can also be built externally and pushed as a single atomic command.",
+      "description": "Groups multiple INotionCommand instances into a single undo/redo step. Commands run in insertion order in ExecuteAsync and are reversed last-to-first in UndoAsync. NotionCommandStack builds one internally while a batch scope is open, but it can also be constructed directly and pushed as one atomic command.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Commands/BatchCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Count",
@@ -158,7 +159,16 @@
           "type": "string"
         }
       ],
-      "itemName": "BatchCommand"
+      "examples": [
+        {
+          "title": "Push several edits as one undo step",
+          "code": "// Any INotionCommand can join the batch — AddBlockCommand,\n// UpdateBlockContentCommand, MoveBlockCommand, DeleteBlockCommand…\nvar batch = new BatchCommand(\"Insert table row\", [\n    new AddBlockCommand(blockProvider, blocks, pageId, rowTemplate, afterBlockId),\n    new UpdateBlockContentCommand(blockProvider, blocks, tableBlockId, before, after),\n]);\n\n// PushAsync executes the batch and records it as one undo step\nawait commandStack.PushAsync(batch);\n\n// a single Ctrl+Z reverts both commands, last-to-first\nawait commandStack.UndoAsync();"
+        },
+        {
+          "title": "Build a batch incrementally",
+          "code": "var batch = new BatchCommand(\"Clear selection\");\n\nforeach (var block in selectedBlocks)\n{\n    // commands must NOT have been executed yet\n    batch.Add(new DeleteBlockCommand(blockProvider, blocks, block));\n}\n\nif (batch.Count > 0)\n{\n    await commandStack.PushAsync(batch);\n}"
+        }
+      ]
     },
     {
       "itemName": "CommentHtmlFormatter",
@@ -283,6 +293,12 @@
           "name": "UndoAsync",
           "kind": "Method",
           "type": "Task"
+        },
+        {
+          "name": "PageId",
+          "kind": "Property",
+          "type": "string",
+          "description": "The page the deleted block belongs to."
         }
       ]
     },
@@ -331,7 +347,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
-      "description": "Pure C# service that recognises Notion-style markdown shortcut patterns typed at the beginning of a block line. Invoke after the user presses Space or Enter. The argument must be the full plain-text content of the current block (including the trigger character that was just appended). Pattern table (most-specific first to avoid prefix collisions): PatternBlock type ### (Space)Heading3 ## (Space)Heading2 # (Space)Heading1 * (Space) or - (Space)BulletList 1. (Space)NumberedList [x] (Space)TodoItem (checked) [] (Space)TodoItem (unchecked) > (Space)Quote ``` (Enter or standalone)Code --- (Enter or standalone)Divider",
+      "description": "Pure C# service that recognises Notion-style markdown shortcut patterns typed at the beginning of a block line. Call Detect after the user presses Space or Enter, passing the full plain-text content of the current block including the trigger character. Matching is prefix-based, so the text after the trigger is returned in TextAfterTrigger. Recognised prefixes, most specific first: \"### \", \"## \", \"# \", \"- [x] \", \"- [ ] \", \"[x] \", \"[ ] \", \"[] \", \"* \", \"- \", \"> \", plus any digits followed by \". \" for a numbered list. The exact tokens \"```\" and \"---\" (Enter) become a Code block and a Divider. FromJsShortcutKey and IsCheckedTodo bridge the shortcut keys emitted by notion-editor.js to the C# type system.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/MarkdownShortcutDetector.cs",
       "documentationStatus": "merged",
@@ -371,6 +387,16 @@
               "type": "string"
             }
           ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "Detect a shortcut after Space",
+          "code": "var detector = new MarkdownShortcutDetector();\n\nvar result = detector.Detect(\"## \");\n// result.SuggestedType    == BlockType.Heading2\n// result.TextAfterTrigger == \"\"\n\nresult = detector.Detect(\"- [x] done\");\n// result.SuggestedType    == BlockType.TodoItem\n// result.IsChecked        == true\n// result.TextAfterTrigger == \"done\"\n\nresult = detector.Detect(\"12. \");\n// result.SuggestedType    == BlockType.NumberedList\n\ndetector.Detect(\"plain text\");   // null"
+        },
+        {
+          "title": "Bridge the JS shortcut keys",
+          "code": "[JSInvokable]\npublic async Task OnMarkdownShortcut(string shortcutKey)\n{\n    var type = MarkdownShortcutDetector.FromJsShortcutKey(shortcutKey);\n    if (type is null) return;\n\n    var isChecked = MarkdownShortcutDetector.IsCheckedTodo(shortcutKey);\n    await ConvertCurrentBlockAsync(type.Value, isChecked);\n}"
         }
       ]
     },
@@ -624,6 +650,18 @@
           "kind": "Method",
           "type": "Task",
           "description": "Executes and pushes it onto the undo stack. When a batch is open the command is appended to it instead of being pushed directly — it will be committed as part of .",
+          "parameters": [
+            {
+              "name": "command",
+              "type": "INotionCommand"
+            }
+          ]
+        },
+        {
+          "name": "Record",
+          "kind": "Method",
+          "type": "void",
+          "description": "Pushes a command that has already been applied. Some provider calls perform the edit and return its result in one go — a block conversion, for instance — so executing the command again would apply it twice. Undo and redo behave exactly as for .",
           "parameters": [
             {
               "name": "command",
@@ -955,7 +993,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
-      "description": "Converts an ordered list of objects into a self-contained HTML document. Each block type maps to an appropriate HTML element with embedded Notion-style CSS.",
+      "description": "Converts an ordered list of IPageBlock objects into a self-contained HTML document. Each block type maps to an appropriate element with embedded Notion-style CSS. A BlockType.Table block is rendered from its child TableRow blocks into <table><thead>/<tbody>, and each cell carries the column's alignment as an inline text-align style when TableBlockContent.ColumnAlignments declares one. Legacy consecutive TableRow blocks without a parent Table block are still exported correctly.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionHtmlExporter.cs",
       "documentationStatus": "merged",
@@ -976,6 +1014,16 @@
             }
           ]
         }
+      ],
+      "examples": [
+        {
+          "title": "Export page blocks to HTML",
+          "code": "var blocks = await BlockProvider.GetBlocksAsync(pageId.ToString());\nvar html   = NotionHtmlExporter.Export(blocks, pageTitle: page.Title);"
+        },
+        {
+          "title": "Render Markdown to HTML without an extra dependency",
+          "code": "// This is exactly what TmNotionCodeBlock's Markdown preview does.\nvar blocks = NotionMarkdownImporter.Import(markdown, Guid.Empty);\nvar html   = NotionHtmlExporter.Export(blocks);\n\n// <table class=\"notion-table\">\n//   <thead><tr><th style=\"text-align:left\">Name</th>…"
+        }
       ]
     },
     {
@@ -983,7 +1031,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
-      "description": "Parses an HTML string (document or fragment) into an ordered list of objects. Uses a regex-based approach supporting: headings, paragraphs, ul/ol lists, blockquotes, pre/code blocks, hr dividers, images, tables, and details/summary toggles.",
+      "description": "Parses an HTML string (document or fragment) into an ordered list of IPageBlock objects: headings, paragraphs, ul/ol lists (including nested ones), blockquotes, pre/code blocks, hr dividers, images, tables and details/summary toggles. Opening and closing tags are paired by counting nesting depth, so nested <div>s and nested lists parse correctly. A <table> becomes one BlockType.Table block plus child TableRow blocks with ParentBlockId set; HasHeaderRow is inferred from a first row made entirely of <th>. Only a whitelist of inline tags survives, <a href> and <img src> must use http, https, mailto or a relative URL, and everything else is dropped.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionHtmlImporter.cs",
       "documentationStatus": "merged",
@@ -1002,6 +1050,20 @@
               "type": "Guid"
             }
           ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "Import an HTML fragment",
+          "code": "var blocks = NotionHtmlImporter.Import(html, pageId);"
+        },
+        {
+          "title": "A <table> imports as a parent block with child rows",
+          "code": "const string html = \"\"\"\n    <table>\n      <thead><tr><th>Name</th><th>Status</th></tr></thead>\n      <tbody><tr><td>CF26</td><td>Ready</td></tr></tbody>\n    </table>\n    \"\"\";\n\nvar blocks  = NotionHtmlImporter.Import(html, pageId);\nvar table   = blocks.Single(b => b.Type == BlockType.Table);\nvar content = (ITableBlockContent)table.Content;\n\n// true — the first row is all <th>\nvar hasHeader = content.HasHeaderRow;"
+        },
+        {
+          "title": "Unsafe markup is stripped",
+          "code": "var blocks = NotionHtmlImporter.Import(\n    \"<p><a href=\\\"javascript:alert(1)\\\">click</a></p>\", pageId);\n\n// the text survives, the link does not\nvar html = ((ITextBlockContent)blocks[0].Content).Html;   // \"<a>click</a>\"\n\n// an <img> with an unsafe src produces no Image block at all\nNotionHtmlImporter.Import(\"<img src=\\\"javascript:alert(1)\\\">\", pageId);   // []"
         }
       ]
     },
@@ -1080,7 +1142,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
-      "description": "Converts an ordered list of objects into a Markdown string. Inline HTML attributes in block content (bold, italic, code, links…) are mapped to standard CommonMark / GFM syntax.",
+      "description": "Converts an ordered list of IPageBlock objects into a Markdown string. Inline HTML in block content (bold, italic, code, links…) is mapped back to CommonMark / GFM syntax. A BlockType.Table block is rendered together with its child TableRow blocks: the separator row reproduces TableBlockContent.ColumnAlignments (:---, :---:, ---:), short rows are padded to the column count, and pipes inside cells are escaped. Legacy pages that stored consecutive TableRow blocks without a parent Table block are still exported correctly.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionMarkdownExporter.cs",
       "documentationStatus": "merged",
@@ -1113,6 +1175,16 @@
             }
           ]
         }
+      ],
+      "examples": [
+        {
+          "title": "Export page blocks to Markdown",
+          "code": "var blocks   = await BlockProvider.GetBlocksAsync(pageId.ToString());\nvar markdown = NotionMarkdownExporter.Export(blocks, pageTitle: page.Title);"
+        },
+        {
+          "title": "Alignment survives the round-trip",
+          "code": "var blocks   = NotionMarkdownImporter.Import(\"a | b\\n:--- | ---:\\n1 | 2\", pageId);\nvar markdown = NotionMarkdownExporter.Export(blocks);\n\n// | a | b |\n// | :--- | ---: |\n// | 1 | 2 |"
+        }
       ]
     },
     {
@@ -1120,7 +1192,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
-      "description": "Parses a CommonMark / GFM Markdown string into an ordered list of objects. Supports: headings, paragraphs, bullet lists, numbered lists, task lists, blockquotes, fenced code blocks, horizontal rules, images, block equations, tables, and inline formatting.",
+      "description": "Parses a CommonMark / GFM Markdown string into an ordered list of IPageBlock objects. Supports headings, paragraphs, bullet lists, numbered lists, task lists, blockquotes, fenced code blocks, horizontal rules, images, block equations, GFM tables and inline formatting. A table becomes one BlockType.Table block plus child BlockType.TableRow blocks whose ParentBlockId points at it — the same shape TmNotionTableBlock loads at runtime. Outer pipes are optional, escaped \\| stays cell content, and the separator row's alignment (:---, :---:, ---:) is captured in TableBlockContent.ColumnAlignments. Untrusted text is HTML-encoded and link/image URLs are restricted to http, https, mailto and relative targets, so raw <script> or javascript: payloads cannot survive the import.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionMarkdownImporter.cs",
       "documentationStatus": "merged",
@@ -1144,13 +1216,27 @@
           "name": "InlineMarkdownToHtml",
           "kind": "Method",
           "type": "string",
-          "description": "Converts CommonMark inline elements to HTML for storage in block content.",
+          "description": "Converts CommonMark inline elements to HTML for storage in block content. Everything that is not generated markup is HTML-encoded, and link/image URLs are restricted to http, https, mailto and relative targets.",
           "parameters": [
             {
               "name": "text",
               "type": "string"
             }
           ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "Import Markdown into page blocks",
+          "code": "var blocks = NotionMarkdownImporter.Import(markdown, pageId);\n\n// persist through your IBlockProvider\nforeach (var block in blocks)\n{\n    await BlockProvider.CreateBlockAsync(pageId.ToString(), block, previousBlockId: null);\n}"
+        },
+        {
+          "title": "A table imports as a parent block with child rows",
+          "code": "const string markdown = \"\"\"\n    | Name | Status |\n    | :--- | ---: |\n    | CF26 | Ready |\n    \"\"\";\n\nvar blocks = NotionMarkdownImporter.Import(markdown, pageId);\n\nvar table = blocks.Single(b => b.Type == BlockType.Table);\nvar rows  = blocks.Where(b => b.Type == BlockType.TableRow).ToList();\n\n// rows are children of the table, never orphans\nAssert.All(rows, r => Assert.Equal(table.Id, r.ParentBlockId));\n\nvar content = (ITableBlockContent)table.Content;\n// [Left, Right]\nvar alignments = content.ColumnAlignments;"
+        },
+        {
+          "title": "Inline conversion is XSS-safe",
+          "code": "// raw markup is encoded, unsafe schemes lose the link\nNotionMarkdownImporter.InlineMarkdownToHtml(\"<img src=x onerror=alert(1)>\");\n// → \"&lt;img src=x onerror=alert(1)&gt;\"\n\nNotionMarkdownImporter.InlineMarkdownToHtml(\"[click](javascript:alert(1))\");\n// → \"click\"   (no <a href>)\n\nNotionMarkdownImporter.InlineMarkdownToHtml(\"[ok](https://example.test)\");\n// → \"<a href=\\\"https://example.test\\\">ok</a>\""
         }
       ]
     },
@@ -1376,13 +1462,14 @@
       ]
     },
     {
+      "itemName": "NotionEditorServiceCollectionExtensions",
       "kind": "Class",
       "category": "Configuration",
       "namespace": "Tempo.Blazor.Configuration",
-      "description": "Extension methods for registering Tempo.Blazor Notion editor services.",
+      "description": "Extension methods for registering the services required by the Notion-style editor component group.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Configuration/NotionEditorServiceCollectionExtensions.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AddTempoBlazorNotionEditor",
@@ -1397,7 +1484,12 @@
           ]
         }
       ],
-      "itemName": "NotionEditorServiceCollectionExtensions"
+      "examples": [
+        {
+          "title": "Register the editor services",
+          "code": "// Program.cs\nbuilder.Services.AddTempoBlazorNotionEditor();\n\n// then supply your own providers\nbuilder.Services.AddScoped<INotionDataProvider, MyNotionDataProvider>();\nbuilder.Services.AddScoped<INotionBlockProvider, MyNotionBlockProvider>();"
+        }
+      ]
     },
     {
       "itemName": "TmCommentMentionInput",
@@ -1459,68 +1551,68 @@
           "name": "ContextHtml",
           "type": "string?",
           "isRequired": false,
-          "description": "Selected plain text used by the improve mode."
+          "description": "Selected or page HTML context passed to the provider."
         },
         {
           "name": "InitialMode",
           "type": "NotionAiMenuMode",
           "isRequired": false,
           "default": "NotionAiMenuMode.Generate",
-          "description": "Renders the component as a wider page-level panel."
+          "description": "Initial mode selected when the menu opens."
         },
         {
           "name": "Left",
           "type": "double",
           "isRequired": false,
-          "description": "Fixed top coordinate for inline menu placement."
+          "description": "Fixed left coordinate for inline menu placement."
         },
         {
           "name": "OnAccepted",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Explicit provider used by tests or advanced integrations. Defaults to the editor context provider."
+          "description": "Raised when generated output is accepted. The argument is sanitized HTML."
         },
         {
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when generated output is accepted. The argument is sanitized HTML."
+          "description": "Raised when the user closes or discards the menu."
         },
         {
           "name": "PageId",
           "type": "string?",
           "isRequired": false,
-          "description": "Initial mode selected when the menu opens."
+          "description": "Optional page identifier used for summary and page-scoped questions."
         },
         {
           "name": "Panel",
           "type": "bool",
           "isRequired": false,
-          "description": "Fixed left coordinate for inline menu placement."
+          "description": "Renders the component as a wider page-level panel."
         },
         {
           "name": "Provider",
           "type": "INotionAIProvider?",
           "isRequired": false,
-          "description": "Optional target culture for translation requests."
+          "description": "Explicit provider used by tests or advanced integrations. Defaults to the editor context provider."
         },
         {
           "name": "SourceText",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional page identifier used for summary and page-scoped questions."
+          "description": "Selected plain text used by the improve mode."
         },
         {
           "name": "TargetCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Selected or page HTML context passed to the provider."
+          "description": "Optional target culture for translation requests."
         },
         {
           "name": "Top",
           "type": "double",
           "isRequired": false,
-          "description": "Controls whether the AI menu is rendered."
+          "description": "Fixed top coordinate for inline menu placement."
         },
         {
           "name": "Visible",
@@ -1555,27 +1647,27 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Maximum number of top pages to show."
+          "description": "Additional CSS class."
         },
         {
           "name": "CurrentPageId",
           "type": "Guid?",
           "isRequired": false,
-          "description": "Space whose top pages should be displayed.",
+          "description": "Currently open page id used for the main analytics summary.",
           "editorRequired": true
         },
         {
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Additional CSS class."
+          "description": "Raised when the close button is clicked."
         },
         {
           "name": "SpaceId",
           "type": "string",
           "isRequired": true,
           "default": "\"\"",
-          "description": "Analytics provider used to query page views and top pages.",
+          "description": "Space whose top pages should be displayed.",
           "editorRequired": true
         },
         {
@@ -1583,7 +1675,7 @@
           "type": "int",
           "isRequired": false,
           "default": "5",
-          "description": "Currently open page id used for the main analytics summary."
+          "description": "Maximum number of top pages to show."
         }
       ]
     },
@@ -1649,14 +1741,14 @@
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Additional CSS class."
+          "description": "Raised when the close button is clicked."
         },
         {
           "name": "PageSize",
           "type": "int",
           "isRequired": false,
           "default": "DefaultPageSize",
-          "description": "Raised when the close button is clicked."
+          "description": "Number of audit entries shown per page."
         }
       ]
     },
@@ -1677,7 +1769,8 @@
         {
           "name": "ActiveBlockId",
           "type": "Guid?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "The block that currently holds the caret; it renders focused and selected."
         },
         {
           "name": "Block",
@@ -1695,7 +1788,7 @@
           "name": "BlockHasUnreadActivity",
           "type": "bool",
           "isRequired": false,
-          "description": "Number of resolved-but-unread block comment threads for this block."
+          "description": "True when any thread on this block has unread activity (new entry, reaction, resolve)."
         },
         {
           "name": "BlockIndex",
@@ -1711,20 +1804,21 @@
           "name": "BlockResolvedUnreadCount",
           "type": "int",
           "isRequired": false,
-          "description": "Number of unresolved block comment threads for this block."
+          "description": "Number of resolved-but-unread block comment threads for this block."
         },
         {
           "name": "Blocks",
           "type": "IReadOnlyList<IPageBlock>",
           "isRequired": true,
           "default": "[]",
+          "description": "The ordered blocks this list renders. Keyed by block ID, so reordering never re-binds a block to a different component.",
           "editorRequired": true
         },
         {
           "name": "BlockThreadCount",
           "type": "int",
           "isRequired": false,
-          "description": "True when any thread on this block has unread activity (new entry, reaction, resolve)."
+          "description": "Total number of comment threads on this block."
         },
         {
           "name": "BlockUnresolvedCount",
@@ -1798,7 +1892,7 @@
           "name": "OnComment",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when a text block requests keyboard focus movement to a sibling block."
+          "description": "Raised when the user clicks the Comment button in the block handle menu."
         },
         {
           "name": "OnConvertBlock",
@@ -1843,7 +1937,7 @@
           "name": "OnInsertTemplateBlocks",
           "type": "EventCallback<IReadOnlyList<IPageBlock>>",
           "isRequired": false,
-          "description": "Raised when '{{' token syntax is typed. Args are viewport coords."
+          "description": "Raised when a TemplateButton block requests insertion of its template blocks after itself."
         },
         {
           "name": "OnInsertTemplateBlocksAfter",
@@ -1855,25 +1949,37 @@
           "name": "OnMentionMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
           "isRequired": false,
-          "description": "Raised when a '/' typed in this block opens the slash menu. Args are viewport coords."
+          "description": "Raised when '@' mention syntax is typed. Args are viewport coords."
+        },
+        {
+          "name": "OnMergeBlockWithPrevious",
+          "type": "EventCallback<(string BlockId, string Html)>",
+          "isRequired": false,
+          "description": "Raised when Backspace at the start of a block should fold it into its predecessor. Carries the block's ID and its current HTML."
+        },
+        {
+          "name": "OnMergeWithPrevious",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when Backspace at the start of this block should fold it into its predecessor. The payload is the block's current HTML."
         },
         {
           "name": "OnMoveFocus",
           "type": "EventCallback<(string BlockId, int Direction)>",
           "isRequired": false,
-          "description": "Raised when a TemplateButton block requests insertion of its template blocks after itself."
+          "description": "Raised when a text block requests keyboard focus movement to a sibling block."
         },
         {
           "name": "OnNewThread",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user clicks the Comment button in the block handle menu."
+          "description": "Raised when the user clicks the New Thread button in the block handle menu."
         },
         {
           "name": "OnPageLinkMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
           "isRequired": false,
-          "description": "Raised when '@' mention syntax is typed. Args are viewport coords."
+          "description": "Raised when '[[' page-link syntax is typed. Args are viewport coords."
         },
         {
           "name": "OnReorder",
@@ -1891,7 +1997,7 @@
           "name": "OnTokenMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
           "isRequired": false,
-          "description": "Raised when '[[' page-link syntax is typed. Args are viewport coords."
+          "description": "Raised when '{{' token syntax is typed. Args are viewport coords."
         },
         {
           "name": "OnUpdated",
@@ -1909,6 +2015,12 @@
           "type": "Guid?",
           "isRequired": false,
           "description": "Page ID owned by this rendered list."
+        },
+        {
+          "name": "PreviousListIndentLevel",
+          "type": "int?",
+          "isRequired": false,
+          "description": "Indent level of the list item directly above this block, or null when this is the first block or the block above is not a list item. Tab may not nest deeper than one level below it."
         },
         {
           "name": "ReadOnly",
@@ -2026,7 +2138,8 @@
         {
           "name": "ActiveBlockId",
           "type": "Guid?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "The block that currently holds the caret; it renders focused and selected."
         },
         {
           "name": "BlockCommentCounts",
@@ -2039,115 +2152,122 @@
           "type": "IReadOnlyList<IPageBlock>",
           "isRequired": true,
           "default": "[]",
+          "description": "The ordered blocks this list renders. Keyed by block ID, so reordering never re-binds a block to a different component.",
           "editorRequired": true
         },
         {
           "name": "OnAddBlockAfter",
           "type": "EventCallback<(string AfterBlockId, BlockType Type, string? InitialHtml)>",
           "isRequired": false,
-          "description": "Fired when a block requests type conversion (blockId, newType)."
+          "description": "Fired when a new block should be inserted after the given block (afterBlockId, type, initialHtml)."
         },
         {
           "name": "OnAddBlockAtEnd",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when a new block should be inserted after the given block (afterBlockId, type, initialHtml)."
+          "description": "Fired when the user clicks the empty area below all blocks."
         },
         {
           "name": "OnBlockDeleted",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when a block receives focus. Arg is the block ID string."
+          "description": "Fired when a block requests deletion. Arg is the block ID string."
         },
         {
           "name": "OnBlockDuplicated",
           "type": "EventCallback<IPageBlock>",
           "isRequired": false,
-          "description": "Fired when a block's content was saved by the user."
+          "description": "Fired when a block should be duplicated (carries the source block)."
         },
         {
           "name": "OnBlockFocused",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when a block was moved out of this list after a successful external drop."
+          "description": "Fired when a block receives focus. Arg is the block ID string."
         },
         {
           "name": "OnBlockUpdated",
           "type": "EventCallback<IPageBlock>",
           "isRequired": false,
-          "description": "Fired when a block requests deletion. Arg is the block ID string."
+          "description": "Fired when a block's content was saved by the user."
         },
         {
           "name": "OnComment",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when a template button block inserts its template blocks after itself."
+          "description": "Fired when a block's comment button is clicked. Arg is the block ID string."
         },
         {
           "name": "OnConvertBlock",
           "type": "EventCallback<(string, BlockType)>",
           "isRequired": false,
-          "description": "Fired when a block should be duplicated (carries the source block)."
+          "description": "Fired when a block requests type conversion (blockId, newType)."
         },
         {
           "name": "OnExternalBlockDropped",
           "type": "EventCallback<MoveNotionBlockRequest>",
           "isRequired": false,
-          "description": "Fired when blocks are reordered via drag-and-drop (sourceIndex, targetIndex)."
+          "description": "Fired when a block from another list is dropped into this list."
         },
         {
           "name": "OnExternalBlockRemoved",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when a block from another list is dropped into this list."
+          "description": "Fired when a block was moved out of this list after a successful external drop."
         },
         {
           "name": "OnInsertTemplateBlocksAfter",
           "type": "EventCallback<(string AfterBlockId, IReadOnlyList<IPageBlock> Blocks)>",
           "isRequired": false,
-          "description": "Fired when a block requests keyboard focus movement within this list."
+          "description": "Fired when a template button block inserts its template blocks after itself."
         },
         {
           "name": "OnMentionMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when a block's '/' keystroke opens the slash menu (blockId, top, left)."
+          "description": "Fired when '@' mention syntax is typed in a block (blockId, top, left)."
+        },
+        {
+          "name": "OnMergeBlockWithPrevious",
+          "type": "EventCallback<(string BlockId, string Html)>",
+          "isRequired": false,
+          "description": "Raised when Backspace at the start of a block should fold it into its predecessor. Carries the block's ID and its current HTML."
         },
         {
           "name": "OnMoveFocus",
           "type": "EventCallback<(string BlockId, int Direction)>",
           "isRequired": false,
-          "description": "Fired when '{{' token syntax is typed in a block (blockId, top, left)."
+          "description": "Fired when a block requests keyboard focus movement within this list."
         },
         {
           "name": "OnNewThread",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when a block's comment button is clicked. Arg is the block ID string."
+          "description": "Fired when a block's new-thread button is clicked. Arg is the block ID string."
         },
         {
           "name": "OnPageLinkMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '@' mention syntax is typed in a block (blockId, top, left)."
+          "description": "Fired when '[[' page-link syntax is typed in a block (blockId, top, left)."
         },
         {
           "name": "OnReorder",
           "type": "EventCallback<(int, int)>",
           "isRequired": false,
-          "description": "Per-block comment summary for margin-thread indicators and hover tooltip."
+          "description": "Fired when blocks are reordered via drag-and-drop (sourceIndex, targetIndex)."
         },
         {
           "name": "OnSlashMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when the user clicks the empty area below all blocks."
+          "description": "Fired when a block's '/' keystroke opens the slash menu (blockId, top, left)."
         },
         {
           "name": "OnTokenMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '[[' page-link syntax is typed in a block (blockId, top, left)."
+          "description": "Fired when '{{' token syntax is typed in a block (blockId, top, left)."
         },
         {
           "name": "PageId",
@@ -2159,13 +2279,13 @@
           "name": "ParentBlockId",
           "type": "Guid?",
           "isRequired": false,
-          "description": "Page ID owned by this rendered list."
+          "description": "Parent block ID for nested lists. Null means the top-level page list."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Parent block ID for nested lists. Null means the top-level page list."
+          "description": "When true every editing interaction on the rendered blocks is disabled."
         }
       ]
     },
@@ -2225,34 +2345,34 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Number of posts per page."
+          "description": "Additional CSS class."
         },
         {
           "name": "CurrentUserId",
           "type": "string?",
           "isRequired": false,
-          "description": "Space whose blog posts are shown.",
+          "description": "Current user id used as author for newly created posts.",
           "editorRequired": true
         },
         {
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Additional CSS class."
+          "description": "Raised when the panel close button is clicked."
         },
         {
           "name": "PageSize",
           "type": "int",
           "isRequired": false,
           "default": "5",
-          "description": "Current user id used as author for newly created posts."
+          "description": "Number of posts per page."
         },
         {
           "name": "SpaceId",
           "type": "string",
           "isRequired": true,
           "default": "\"\"",
-          "description": "Blog provider used to query and mutate posts.",
+          "description": "Space whose blog posts are shown.",
           "editorRequired": true
         }
       ]
@@ -2275,20 +2395,20 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "True while the post is being published."
+          "description": "Additional CSS class."
         },
         {
           "name": "IsPublishing",
           "type": "bool",
           "isRequired": false,
-          "description": "Blog post to render.",
+          "description": "True while the post is being published.",
           "editorRequired": true
         },
         {
           "name": "OnPublish",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Additional CSS class."
+          "description": "Raised when the publish button is clicked. Arg is the post id."
         },
         {
           "name": "Post",
@@ -2386,55 +2506,67 @@
           "name": "OnDeleteRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when Enter is pressed on a non-empty item. Arg = HTML after the split point."
+          "description": "Fired when Backspace is pressed on an empty item."
         },
         {
           "name": "OnEnterSplit",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired on blur when HTML has changed. Arg = new HTML."
+          "description": "Fired when Enter is pressed on a non-empty item. Arg = HTML after the split point."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when a markdown or conversion shortcut is detected. Special value \"paragraph\" means the user pressed Enter on an empty item."
+          "description": "Fired when the editable receives focus."
         },
         {
           "name": "OnIndentChange",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Fired when Backspace is pressed on an empty item."
+          "description": "Fired when Tab / Shift+Tab. Bool = shiftKey (true = outdent)."
         },
         {
           "name": "OnMentionMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '/' is typed. Args = (top, left) caret coords."
+          "description": "Fired when '@' is typed. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnMergeWithPrevious",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when Backspace is pressed at the start of a non-empty block. The payload is the block's current, sanitized HTML, which the previous block absorbs before this one is deleted."
         },
         {
           "name": "OnPageLinkMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '@' is typed. Args = (top, left) caret coords."
+          "description": "Fired when '[[' is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnSlashMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when the editable receives focus."
+          "description": "Fired when '/' is typed. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnStructuredPaste",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when pasted HTML carries more than one block element. The payload is the raw clipboard HTML; the consumer turns it into page blocks."
         },
         {
           "name": "OnTokenMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '[[' is typed. Args = (top, left) caret coords."
+          "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnTypeConvert",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when Tab / Shift+Tab. Bool = shiftKey (true = outdent)."
+          "description": "Fired when a markdown or conversion shortcut is detected. Special value \"paragraph\" means the user pressed Enter on an empty item."
         },
         {
           "name": "Placeholder",
@@ -2467,61 +2599,73 @@
           "name": "OnDeleteRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired after Enter splits the block. Arg = HTML fragment after the split point."
+          "description": "Fired when Backspace is pressed on an empty block."
         },
         {
           "name": "OnEmojiChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
+          "description": "Fired when the emoji icon is changed or removed. Arg = new emoji string, or null when the user removes the icon."
         },
         {
           "name": "OnEnterSplit",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired on blur when the HTML has changed. Arg = new HTML."
+          "description": "Fired after Enter splits the block. Arg = HTML fragment after the split point."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when a markdown pattern is recognised. Arg = shortcut key."
+          "description": "Fired when the editable body receives focus."
         },
         {
           "name": "OnIndentChange",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Fired when Backspace is pressed on an empty block."
+          "description": "Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent)."
         },
         {
           "name": "OnMentionMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '/' is typed in a trigger position. Args = (top, left) caret coords."
+          "description": "Fired when '@' mention syntax is typed. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnMergeWithPrevious",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when Backspace is pressed at the start of a non-empty block. The payload is the block's current, sanitized HTML, which the previous block absorbs before this one is deleted."
         },
         {
           "name": "OnPageLinkMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '@' mention syntax is typed. Args = (top, left) caret coords."
+          "description": "Fired when '[[' page-link syntax is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnSlashMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when the editable body receives focus."
+          "description": "Fired when '/' is typed in a trigger position. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnStructuredPaste",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when pasted HTML carries more than one block element. The payload is the raw clipboard HTML; the consumer turns it into page blocks."
         },
         {
           "name": "OnTokenMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '[[' page-link syntax is typed. Args = (top, left) caret coords."
+          "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnTypeConvert",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent)."
+          "description": "Fired when a markdown pattern is recognised. Arg = shortcut key."
         },
         {
           "name": "Placeholder",
@@ -2575,25 +2719,25 @@
           "name": "Content",
           "type": "IChildrenDisplayBlockContent?",
           "isRequired": false,
-          "description": "Owning page block used to resolve the current page when no root page is configured."
+          "description": "Saved Children Display block configuration."
         },
         {
           "name": "OnContentChanged",
           "type": "EventCallback<ChildrenDisplayBlockContent>",
           "isRequired": false,
-          "description": "Whether editing controls are hidden."
+          "description": "Raised after the block configuration changes."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised after the block configuration changes."
+          "description": "Raised when the block receives focus."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Saved Children Display block configuration."
+          "description": "Whether editing controls are hidden."
         }
       ]
     },
@@ -2603,7 +2747,7 @@
       "category": "Notion Editor",
       "subcategory": "Blocks / Text",
       "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Text",
-      "description": "Self-contained code block with language selector, textarea editor, copy button, and optional caption. Uses a dedicated JS keyboard handler (initCodeKeyboardHandler) that handles Tab/Shift+Tab indentation and Backspace-on-empty — Tab does NOT move focus like other text blocks.",
+      "description": "Code block with a language selector, copy button, optional caption and an optional Markdown preview. Syntax highlighting is delegated to Prism: when the host page defines window.Prism the code is painted behind a transparent textarea, otherwise it renders as plain monospace text. No Prism asset ships with the package - the same graceful-degradation contract as KaTeX for equations.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Text/TmNotionCodeBlock.razor",
       "documentationStatus": "merged",
@@ -2612,15 +2756,24 @@
       ],
       "parameters": [
         {
+          "name": "AllowMarkdownPreview",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Enables the read-only Markdown preview toggle. The toggle only appears when the block's language is Markdown; the block always opens in editor mode. Set to false to hide the toggle entirely."
+        },
+        {
           "name": "IsFocused",
           "type": "bool",
-          "isRequired": false
+          "isRequired": false,
+          "default": "false",
+          "description": "Whether the surrounding editor considers this block focused."
         },
         {
           "name": "OnCaptionSaved",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Fired when the user selects a new language. Arg = language name (null → plain text)."
+          "description": "Fired on caption blur when the caption has changed. Arg = new caption (null if empty)."
         },
         {
           "name": "OnCodeSaved",
@@ -2632,19 +2785,51 @@
           "name": "OnDeleteRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired on caption blur when the caption has changed. Arg = new caption (null if empty)."
+          "description": "Fired when Backspace is pressed in an empty code block."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when Backspace is pressed in an empty code block."
+          "description": "Fired when the textarea receives focus."
         },
         {
           "name": "OnLanguageChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Fired on blur when the code text has changed. Arg = new code string."
+          "description": "Fired when the user selects a new language. Arg = language name (null → plain text)."
+        },
+        {
+          "name": "Content",
+          "type": "ICodeBlockContent?",
+          "isRequired": false,
+          "description": "Block content: the code string, the language name, the optional caption, and the WrapLines flag."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Renders the block without the language selector and without an editable textarea."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Read-only code block",
+          "code": "<TmNotionCodeBlock Content=\"@_content\" ReadOnly=\"true\" />\n\n@code {\n    private CodeBlockContent _content = new()\n    {\n        Code = \"var x = 42;\",\n        Language = \"C#\"\n    };\n}"
+        },
+        {
+          "title": "Markdown block with the preview toggle",
+          "code": "@* language \"Markdown\" makes the Preview/Edit toggle appear in the block header *@\n<TmNotionCodeBlock Content=\"@_markdown\"\n                   OnCodeSaved=\"code => _markdown.Code = code\" />\n\n@code {\n    private CodeBlockContent _markdown = new()\n    {\n        Language = \"Markdown\",\n        Code = \"\"\"\n            | Name | Status |\n            | :--- | ---: |\n            | CF26 | Ready |\n            \"\"\"\n    };\n}"
+        },
+        {
+          "title": "Hide the Markdown preview toggle",
+          "code": "@* Consumers that render Markdown themselves can opt out of the built-in preview *@\n<TmNotionCodeBlock Content=\"@_content\" AllowMarkdownPreview=\"false\" />"
+        },
+        {
+          "title": "Enable syntax highlighting",
+          "language": "html",
+          "code": "<!-- index.html of the host app. Grammars must be registered synchronously,\n     so the Prism autoloader plugin does not work here. -->\n<script defer\n  src=\"https://cdn.jsdelivr.net/combine/npm/prismjs@1.29.0/prism.min.js,npm/prismjs@1.29.0/components/prism-csharp.min.js\"\n  crossorigin=\"anonymous\"></script>\n\n<!-- Without it the block still renders, just without colour. -->"
         }
       ]
     },
@@ -2686,7 +2871,7 @@
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when a color is chosen. Exactly one element of the tuple is non-null: (hex, null) → text color selected; (null, hex) → background color selected. (null, null) → default (remove color) selected for either section."
+          "description": "Raised when the picker is dismissed without a selection."
         },
         {
           "name": "OnColorSelected",
@@ -2698,7 +2883,7 @@
           "name": "SelectedBgColor",
           "type": "string?",
           "isRequired": false,
-          "description": "Currently active text-color hex, or null for default."
+          "description": "Currently active background-color hex, or null for default."
         },
         {
           "name": "SelectedTextColor",
@@ -2768,16 +2953,17 @@
         {
           "name": "OnTokenMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
+          "isRequired": false,
+          "description": "Raised when the column list has no columns left and should be removed from the page."
+        },
+        {
+          "name": "OnUpdated",
+          "type": "EventCallback<IPageBlock>",
           "isRequired": false
         },
         {
           "name": "ReadOnly",
           "type": "bool",
-          "isRequired": false
-        },
-        {
-          "name": "OnUpdated",
-          "type": "EventCallback<IPageBlock>",
           "isRequired": false
         }
       ]
@@ -2806,19 +2992,19 @@
           "name": "OnContentChanged",
           "type": "EventCallback<ContentByLabelBlockContent>",
           "isRequired": false,
-          "description": "Whether editing controls are hidden."
+          "description": "Raised after the block configuration changes."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised after the block configuration changes."
+          "description": "Raised when the block receives focus."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Saved Content-by-Label block configuration."
+          "description": "Whether editing controls are hidden."
         }
       ]
     },
@@ -3725,13 +3911,13 @@
           "name": "OnAddAfter",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when the block receives focus (click or Tab)."
+          "description": "Fired when Enter is pressed — parent should add a Paragraph block below."
         },
         {
           "name": "OnDeleteRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when Enter is pressed — parent should add a Paragraph block below."
+          "description": "Fired when Backspace or Delete is pressed — parent should remove the block."
         },
         {
           "name": "OnFocused",
@@ -4057,13 +4243,13 @@
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when the user clicks \"Remove icon\"."
+          "description": "Fired when the backdrop is clicked (close without action)."
         },
         {
           "name": "OnRemoved",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when the user clicks an emoji. Arg = the emoji character string."
+          "description": "Fired when the user clicks \"Remove icon\"."
         },
         {
           "name": "OnSelected",
@@ -4075,7 +4261,7 @@
           "name": "ShowRemoveButton",
           "type": "bool",
           "isRequired": false,
-          "description": "Fired when the backdrop is clicked (close without action)."
+          "description": "When true, a \"Remove icon\" button is shown in the header."
         }
       ]
     },
@@ -4134,25 +4320,25 @@
           "name": "Content",
           "type": "IExcerptBlockContent?",
           "isRequired": false,
-          "description": "Owning page block for persistence context."
+          "description": "Saved excerpt content."
         },
         {
           "name": "OnContentChanged",
           "type": "EventCallback<ExcerptBlockContent>",
           "isRequired": false,
-          "description": "Whether the excerpt is rendered without editing affordances."
+          "description": "Raised when edited excerpt HTML should be persisted."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when edited excerpt HTML should be persisted."
+          "description": "Raised when the excerpt receives focus."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Saved excerpt content."
+          "description": "Whether the excerpt is rendered without editing affordances."
         }
       ]
     },
@@ -4180,25 +4366,25 @@
           "name": "Content",
           "type": "IExcerptIncludeBlockContent?",
           "isRequired": false,
-          "description": "Owning page block used for persistence and focus context."
+          "description": "Saved Excerpt Include configuration."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised after source page selection changes."
+          "description": "Raised when the block receives focus."
         },
         {
           "name": "OnUpdated",
           "type": "EventCallback<IPageBlock>",
           "isRequired": false,
-          "description": "Whether editing controls are hidden."
+          "description": "Raised after source page selection changes."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Saved Excerpt Include configuration."
+          "description": "Whether editing controls are hidden."
         }
       ]
     },
@@ -4262,61 +4448,73 @@
           "name": "OnDeleteRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when Enter is pressed; creates a new Paragraph, not another heading. Arg = HTML fragment after the caret (may be empty)."
+          "description": "Fired when Backspace is pressed on an empty block."
         },
         {
           "name": "OnEnterSplit",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired on blur when HTML content changed. Arg = new HTML."
+          "description": "Fired when Enter is pressed; creates a new Paragraph, not another heading. Arg = HTML fragment after the caret (may be empty)."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when a markdown shortcut is recognised (e.g. \"heading1\", \"heading2\")."
+          "description": "Fired when the element receives focus."
         },
         {
           "name": "OnIndentChange",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Fired when Backspace is pressed on an empty block."
+          "description": "Fired when Tab / Shift+Tab. Bool = shiftKey."
         },
         {
           "name": "OnMentionMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '/' slash command is triggered. Args = (top, left) caret coords."
+          "description": "Fired when '@' mention is triggered. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnMergeWithPrevious",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when Backspace is pressed at the start of a non-empty block. The payload is the block's current, sanitized HTML, which the previous block absorbs before this one is deleted."
         },
         {
           "name": "OnPageLinkMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '@' mention is triggered. Args = (top, left) caret coords."
+          "description": "Fired when '[[' page-link is triggered. Args = (top, left) caret coords."
         },
         {
           "name": "OnSlashMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when the element receives focus."
+          "description": "Fired when '/' slash command is triggered. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnStructuredPaste",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when pasted HTML carries more than one block element. The payload is the raw clipboard HTML; the consumer turns it into page blocks."
         },
         {
           "name": "OnToggleChanged",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
+          "description": "Fired when the toggle arrow is clicked. Bool = new isOpen state."
         },
         {
           "name": "OnTokenMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '[[' page-link is triggered. Args = (top, left) caret coords."
+          "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnTypeConvert",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when Tab / Shift+Tab. Bool = shiftKey."
+          "description": "Fired when a markdown shortcut is recognised (e.g. \"heading1\", \"heading2\")."
         }
       ]
     },
@@ -4338,25 +4536,25 @@
           "name": "OnAlignmentChanged",
           "type": "EventCallback<MediaAlignment>",
           "isRequired": false,
-          "description": "Raised on caption blur when text changed. Null = empty."
+          "description": "Raised when alignment changes."
         },
         {
           "name": "OnCaptionSaved",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Raised when resize drag ends. Arg = new pixel width."
+          "description": "Raised on caption blur when text changed. Null = empty."
         },
         {
           "name": "OnDeleteRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when alignment changes."
+          "description": "Raised when the block requests deletion."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the block requests deletion."
+          "description": "Raised when the component receives focus."
         },
         {
           "name": "OnMediaSet",
@@ -4368,7 +4566,7 @@
           "name": "OnWidthChanged",
           "type": "EventCallback<int>",
           "isRequired": false,
-          "description": "Raised when the user sets a new image (URL or uploaded file)."
+          "description": "Raised when resize drag ends. Arg = new pixel width."
         },
         {
           "name": "ReadOnly",
@@ -4469,13 +4667,13 @@
           "type": "IReadOnlyList<string>",
           "isRequired": false,
           "default": "[]",
-          "description": "Identifier of the page whose labels are edited."
+          "description": "Current labels assigned to the page."
         },
         {
           "name": "OnLabelsChanged",
           "type": "EventCallback<IReadOnlyList<string>>",
           "isRequired": false,
-          "description": "Whether editing controls are hidden."
+          "description": "Raised after labels are successfully persisted."
         },
         {
           "name": "PageId",
@@ -4487,7 +4685,7 @@
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Current labels assigned to the page."
+          "description": "Whether editing controls are hidden."
         }
       ]
     },
@@ -4574,13 +4772,13 @@
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user picks a mention. Args: (type, id, displayText)."
+          "description": "Raised when the user dismisses the menu."
         },
         {
           "name": "OnItemSelected",
           "type": "EventCallback<(string Type, string Id, string Display)>",
           "isRequired": false,
-          "description": "When true only the Pages tab is shown (triggered by '[[')."
+          "description": "Raised when the user picks a mention. Args: (type, id, displayText)."
         },
         {
           "name": "PagesOnly",
@@ -4608,7 +4806,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Current user id used by the \"my tasks\" filter."
+          "description": "Additional CSS class."
         },
         {
           "name": "CurrentUserId",
@@ -4621,13 +4819,13 @@
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Additional CSS class."
+          "description": "Raised when the panel close button is clicked."
         },
         {
           "name": "OnNavigateToBlock",
           "type": "EventCallback<(string PageId, string BlockId)>",
           "isRequired": false,
-          "description": "Raised when the panel close button is clicked."
+          "description": "Raised when a source task is selected for navigation. Args are page id and block id."
         },
         {
           "name": "WorkItemSource",
@@ -4704,55 +4902,67 @@
           "name": "OnDeleteRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when Enter is pressed on a non-empty item. Arg = HTML after the split point."
+          "description": "Fired when Backspace is pressed on an empty item."
         },
         {
           "name": "OnEnterSplit",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired on blur when HTML has changed. Arg = new HTML."
+          "description": "Fired when Enter is pressed on a non-empty item. Arg = HTML after the split point."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when a markdown or conversion shortcut is detected. Special value \"paragraph\" means the user pressed Enter on an empty item."
+          "description": "Fired when the editable receives focus."
         },
         {
           "name": "OnIndentChange",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Fired when Backspace is pressed on an empty item."
+          "description": "Fired when Tab / Shift+Tab. Bool = shiftKey (true = outdent)."
         },
         {
           "name": "OnMentionMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '/' is typed. Args = (top, left) caret coords."
+          "description": "Fired when '@' is typed. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnMergeWithPrevious",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when Backspace is pressed at the start of a non-empty block. The payload is the block's current, sanitized HTML, which the previous block absorbs before this one is deleted."
         },
         {
           "name": "OnPageLinkMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '@' is typed. Args = (top, left) caret coords."
+          "description": "Fired when '[[' is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnSlashMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when the editable receives focus."
+          "description": "Fired when '/' is typed. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnStructuredPaste",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when pasted HTML carries more than one block element. The payload is the raw clipboard HTML; the consumer turns it into page blocks."
         },
         {
           "name": "OnTokenMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '[[' is typed. Args = (top, left) caret coords."
+          "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnTypeConvert",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when Tab / Shift+Tab. Bool = shiftKey (true = outdent)."
+          "description": "Fired when a markdown or conversion shortcut is detected. Special value \"paragraph\" means the user pressed Enter on an empty item."
         },
         {
           "name": "Placeholder",
@@ -4978,25 +5188,25 @@
           "name": "Expanded",
           "type": "bool",
           "isRequired": false,
-          "description": "Page identifier whose page-level comment threads are displayed."
+          "description": "Whether the page comment section is expanded."
         },
         {
           "name": "OnCountChanged",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the expanded state changes."
+          "description": "Raised after the comment count may have changed."
         },
         {
           "name": "OnExpandedChanged",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Whether the page comment section is expanded."
+          "description": "Raised when the expanded state changes."
         },
         {
           "name": "OnMentionClicked",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Raised after the comment count may have changed."
+          "description": "Raised when a user mention inside a comment is activated."
         },
         {
           "name": "PageId",
@@ -5025,7 +5235,7 @@
           "name": "OnCommentBadgeClicked",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Total unresolved comment count for the page (header badge)."
+          "description": "Fired when the comment badge in the header is clicked."
         },
         {
           "name": "OnPageUpdated",
@@ -5060,7 +5270,7 @@
           "name": "UnresolvedCommentCount",
           "type": "int",
           "isRequired": false,
-          "description": "Fired when Enter is pressed in the title, signalling to add a new block."
+          "description": "Total unresolved comment count for the page (header badge)."
         }
       ]
     },
@@ -5161,25 +5371,25 @@
           "name": "Content",
           "type": "IPagePropertiesBlockContent?",
           "isRequired": false,
-          "description": "Owning page block for persistence context."
+          "description": "Saved page properties content."
         },
         {
           "name": "OnContentChanged",
           "type": "EventCallback<PagePropertiesBlockContent>",
           "isRequired": false,
-          "description": "Whether the properties table is rendered without editing affordances."
+          "description": "Raised when edited page properties should be persisted."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when edited page properties should be persisted."
+          "description": "Raised when the block receives focus."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Saved page properties content."
+          "description": "Whether the properties table is rendered without editing affordances."
         }
       ]
     },
@@ -5207,25 +5417,25 @@
           "name": "Content",
           "type": "IPagePropertiesReportBlockContent?",
           "isRequired": false,
-          "description": "Owning page block for focus context."
+          "description": "Saved report configuration."
         },
         {
           "name": "OnContentChanged",
           "type": "EventCallback<PagePropertiesReportBlockContent>",
           "isRequired": false,
-          "description": "Whether report configuration controls are hidden."
+          "description": "Raised when edited report configuration should be persisted."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when edited report configuration should be persisted."
+          "description": "Raised when the block receives focus."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Saved report configuration."
+          "description": "Whether report configuration controls are hidden."
         }
       ]
     },
@@ -5292,37 +5502,37 @@
           "name": "OnAIAskPageRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when user picks the AI page summary action."
+          "description": "Raised when user picks the AI page question action."
         },
         {
           "name": "OnAISummarizeRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when user picks \"Page restrictions\"."
+          "description": "Raised when user picks the AI page summary action."
         },
         {
           "name": "OnNavigateToImportedPage",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Raised when user picks the AI page question action."
+          "description": "Raised after a successful import — contains new page ID."
         },
         {
           "name": "OnPageDeleted",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when page metadata (IsFullWidth, IsSmallText, IsLocked, IsFavorite) changes."
+          "description": "Raised after page is moved to trash — parent should navigate away."
         },
         {
           "name": "OnPageHistoryRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised after page is moved to trash — parent should navigate away."
+          "description": "Raised when user picks \"Page history\"."
         },
         {
           "name": "OnPageInfoRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when user picks \"Page history\"."
+          "description": "Raised when user picks \"Page info\"."
         },
         {
           "name": "OnPageUpdated",
@@ -5334,13 +5544,13 @@
           "name": "OnRestrictionsRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when user picks \"Share\"."
+          "description": "Raised when user picks \"Page restrictions\"."
         },
         {
           "name": "OnShareRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when user picks \"Page info\"."
+          "description": "Raised when user picks \"Share\"."
         },
         {
           "name": "Page",
@@ -5455,34 +5665,34 @@
           "name": "BlockProvider",
           "type": "INotionBlockProvider",
           "isRequired": true,
-          "description": "Provider used to load the shared Notion page.",
+          "description": "Provider used to load blocks for the shared Notion page.",
           "editorRequired": true
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional comments provider enabled only when the public share allows comments."
+          "description": "Additional CSS class on the public page shell."
         },
         {
           "name": "CommentProvider",
           "type": "ITmCommentProvider?",
           "isRequired": false,
-          "description": "Provider used to load blocks for the shared Notion page.",
+          "description": "Optional comments provider enabled only when the public share allows comments.",
           "editorRequired": true
         },
         {
           "name": "DataProvider",
           "type": "INotionDataProvider",
           "isRequired": true,
-          "description": "Provider that resolves public share tokens.",
+          "description": "Provider used to load the shared Notion page.",
           "editorRequired": true
         },
         {
           "name": "PublicShareProvider",
           "type": "INotionPublicShareProvider",
           "isRequired": true,
-          "description": "Public share token from the route.",
+          "description": "Provider that resolves public share tokens.",
           "editorRequired": true
         },
         {
@@ -5517,55 +5727,67 @@
           "name": "OnDeleteRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired after Enter splits the block. Arg = HTML fragment after the split point."
+          "description": "Fired when Backspace is pressed on an empty block."
         },
         {
           "name": "OnEnterSplit",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired on blur when the HTML has changed. Arg = new HTML."
+          "description": "Fired after Enter splits the block. Arg = HTML fragment after the split point."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when a markdown pattern is recognised. Arg = shortcut key."
+          "description": "Fired when the element receives focus."
         },
         {
           "name": "OnIndentChange",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Fired when Backspace is pressed on an empty block."
+          "description": "Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent)."
         },
         {
           "name": "OnMentionMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '/' is typed in a trigger position. Args = (top, left) caret coords."
+          "description": "Fired when '@' mention syntax is typed. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnMergeWithPrevious",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when Backspace is pressed at the start of a non-empty block. The payload is the block's current, sanitized HTML, which the previous block absorbs before this one is deleted."
         },
         {
           "name": "OnPageLinkMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '@' mention syntax is typed. Args = (top, left) caret coords."
+          "description": "Fired when '[[' page-link syntax is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnSlashMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when the element receives focus."
+          "description": "Fired when '/' is typed in a trigger position. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnStructuredPaste",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when pasted HTML carries more than one block element. The payload is the raw clipboard HTML; the consumer turns it into page blocks."
         },
         {
           "name": "OnTokenMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '[[' page-link syntax is typed. Args = (top, left) caret coords."
+          "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnTypeConvert",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent)."
+          "description": "Fired when a markdown pattern is recognised. Arg = shortcut key."
         },
         {
           "name": "Placeholder",
@@ -5592,26 +5814,26 @@
           "name": "EffectivePermission",
           "type": "PageEffectivePermissionDto?",
           "isRequired": false,
-          "description": "Provider used for loading and saving restrictions."
+          "description": "Effective permission displayed by the dialog when inherited."
         },
         {
           "name": "OnSaved",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Effective permission displayed by the dialog when inherited."
+          "description": "Raised after restrictions are saved successfully."
         },
         {
           "name": "PageId",
           "type": "Guid",
           "isRequired": true,
-          "description": "Raised when dialog visibility changes.",
+          "description": "Page identifier whose restrictions are edited.",
           "editorRequired": true
         },
         {
           "name": "Provider",
           "type": "INotionPermissionProvider?",
           "isRequired": false,
-          "description": "Page identifier whose restrictions are edited.",
+          "description": "Provider used for loading and saving restrictions.",
           "editorRequired": true
         },
         {
@@ -5624,7 +5846,7 @@
           "name": "VisibleChanged",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Controls whether the dialog is visible."
+          "description": "Raised when dialog visibility changes."
         }
       ]
     },
@@ -5646,14 +5868,14 @@
           "name": "PageId",
           "type": "Guid",
           "isRequired": true,
-          "description": "Raised when dialog visibility changes.",
+          "description": "Page identifier whose public share is managed.",
           "editorRequired": true
         },
         {
           "name": "Provider",
           "type": "INotionPublicShareProvider?",
           "isRequired": false,
-          "description": "Page identifier whose public share is managed.",
+          "description": "Provider used for creating, revoking, and reading public shares.",
           "editorRequired": true
         },
         {
@@ -5666,7 +5888,7 @@
           "name": "VisibleChanged",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Controls whether the dialog is visible."
+          "description": "Raised when dialog visibility changes."
         }
       ]
     },
@@ -5740,7 +5962,7 @@
           "name": "OnTrashRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "ID of the currently active (open) page — highlights it in the tree."
+          "description": "Raised when the user requests to open the full trash view."
         }
       ]
     },
@@ -5832,13 +6054,13 @@
           "name": "OnAISelected",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user selects a slash-menu item with item metadata."
+          "description": "Raised when the user selects the AI assistant action."
         },
         {
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user selects the AI assistant action."
+          "description": "Raised when the user dismisses the menu (Escape / backdrop click)."
         },
         {
           "name": "OnItemSelected",
@@ -5850,7 +6072,7 @@
           "name": "OnSlashItemSelected",
           "type": "EventCallback<SlashMenuItem>",
           "isRequired": false,
-          "description": "Raised when the user selects a block type."
+          "description": "Raised when the user selects a slash-menu item with item metadata."
         }
       ]
     },
@@ -5872,25 +6094,25 @@
           "name": "CurrentPageId",
           "type": "string?",
           "isRequired": false,
-          "description": "Raised when the selected space id changes."
+          "description": "Currently opened page id used by overview move actions."
         },
         {
           "name": "OnCurrentPageMoved",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Currently opened page id used by overview move actions."
+          "description": "Raised after the provider moves the current page to a different space."
         },
         {
           "name": "SelectedSpaceId",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional provider that supplies spaces and cross-space page moves."
+          "description": "Currently selected space id. Null means the provider default or implicit space."
         },
         {
           "name": "SelectedSpaceIdChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Currently selected space id. Null means the provider default or implicit space."
+          "description": "Raised when the selected space id changes."
         },
         {
           "name": "SpaceProvider",
@@ -5982,37 +6204,37 @@
           "type": "NotionStatusColor",
           "isRequired": false,
           "default": "NotionStatusColor.Gray",
-          "description": "Initial label used when opening the picker for an existing chip."
+          "description": "Initial color used when opening the picker."
         },
         {
           "name": "InitialLabel",
           "type": "string?",
           "isRequired": false,
-          "description": "Fixed left position in CSS pixels."
+          "description": "Initial label used when opening the picker for an existing chip."
         },
         {
           "name": "Left",
           "type": "double",
           "isRequired": false,
-          "description": "Fixed top position in CSS pixels."
+          "description": "Fixed left position in CSS pixels."
         },
         {
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user confirms a non-empty status label."
+          "description": "Raised when the user dismisses the picker."
         },
         {
           "name": "OnInserted",
           "type": "EventCallback<(string Label, NotionStatusColor Color)>",
           "isRequired": false,
-          "description": "Initial color used when opening the picker."
+          "description": "Raised when the user confirms a non-empty status label."
         },
         {
           "name": "Top",
           "type": "double",
           "isRequired": false,
-          "description": "Shows or hides the picker."
+          "description": "Fixed top position in CSS pixels."
         },
         {
           "name": "Visible",
@@ -6123,7 +6345,7 @@
       "category": "Notion Editor",
       "subcategory": "Blocks / Table",
       "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Table",
-      "description": "TmNotionTableBlock Blazor component in the Notion Editor category.",
+      "description": "Editable table block. The Table block itself carries the shape (column count, header flags, per-column alignment); its rows are separate TableRow blocks loaded as children via IBlockProvider.GetChildBlocksAsync(tableId) and ordered by Order. Supports adding/deleting rows and columns, a header row and header column, cell range selection with merge/split, cell background colours, column sorting, row drag-and-drop, and undo of the last table change.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Table/TmNotionTableBlock.razor",
       "documentationStatus": "merged",
@@ -6135,22 +6357,43 @@
           "name": "Block",
           "type": "IPageBlock",
           "isRequired": true,
-          "editorRequired": true
+          "editorRequired": true,
+          "description": "The Table block. Its Id is used to load the child TableRow blocks."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired when any cell inside the table receives focus."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
-          "isRequired": false
+          "isRequired": false,
+          "default": "false",
+          "description": "Hides the toolbar, row handles and add-row/add-column affordances, and renders cells non-editable."
+        },
+        {
+          "name": "Content",
+          "type": "ITableBlockContent?",
+          "isRequired": false,
+          "description": "Table shape: ColumnCount, HasHeaderRow, HasHeaderColumn and ColumnAlignments (per-column alignment carried over from a GFM separator row)."
         },
         {
           "name": "OnUpdated",
           "type": "EventCallback<IPageBlock>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired when the table block itself changes (column count, header flags)."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Render a table block",
+          "code": "@* Rows are fetched as child blocks of the Table block through the cascaded NotionEditorContext *@\n<TmNotionTableBlock Block=\"@_tableBlock\"\n                    Content=\"@((ITableBlockContent)_tableBlock.Content)\"\n                    OnUpdated=\"HandleTableUpdatedAsync\" />"
+        },
+        {
+          "title": "Build a table with column alignment",
+          "code": "@* Alignment survives Markdown import/export: --- | :--- | :---: | ---: *@\nvar table = new PageBlock\n{\n    Id = Guid.NewGuid(),\n    PageId = pageId,\n    Type = BlockType.Table,\n    Content = new TableBlockContent\n    {\n        ColumnCount = 3,\n        HasHeaderRow = true,\n        ColumnAlignments = [TableColumnAlignment.Left, TableColumnAlignment.Center, TableColumnAlignment.Right]\n    }\n};\n\n// each row is a child block\nvar row = new PageBlock\n{\n    Id = Guid.NewGuid(),\n    PageId = pageId,\n    ParentBlockId = table.Id,   // required — rows are children of the table\n    Type = BlockType.TableRow,\n    Order = 0,\n    Content = new TableRowBlockContent { Cells = [\"Name\", \"Status\", \"Score\"] }\n};"
         }
       ]
     },
@@ -6181,7 +6424,7 @@
       "category": "Notion Editor",
       "subcategory": "Blocks / Table",
       "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Table",
-      "description": "TmNotionTableRowBlock Blazor component in the Notion Editor category.",
+      "description": "Renders one row of a TmNotionTableBlock as a <tr> of editable cells. Applies the header-row/header-column styling, the per-column horizontal alignment, cell background colours, merge spans, range-selection highlight, drag handles for row reordering, and Tab/Shift+Tab navigation across cells.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Table/TmNotionTableRowBlock.razor",
       "documentationStatus": "merged",
@@ -6192,23 +6435,156 @@
         {
           "name": "CanDelete",
           "type": "bool",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Shows the delete-row affordance. The last remaining row cannot be deleted.",
+          "default": "false"
+        },
+        {
+          "name": "ColumnCount",
+          "type": "int",
+          "isRequired": false,
+          "default": "0",
+          "description": "Number of columns to render. Rows with fewer cells are padded with empty cells."
         },
         {
           "name": "IsCellSelected",
           "type": "Func<int, int, bool>?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Predicate (row, column) telling the row whether a given cell is inside the current selection range."
         },
         {
           "name": "Row",
           "type": "IPageBlock",
           "isRequired": true,
-          "editorRequired": true
+          "editorRequired": true,
+          "description": "The TableRow block whose Content is an ITableRowBlockContent (Cells or RichCells)."
+        },
+        {
+          "name": "RowIndex",
+          "type": "int",
+          "isRequired": false,
+          "default": "0",
+          "description": "Zero-based index of this row inside the table; used for selection and cell focus."
+        },
+        {
+          "name": "ColumnAlignments",
+          "type": "IReadOnlyList<TableColumnAlignment>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Per-column horizontal alignment imported from a GFM table separator row. Columns beyond the list keep the renderer default (None)."
+        },
+        {
+          "name": "IsHeaderRow",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Renders the row with header styling (shaded background, semibold text)."
+        },
+        {
+          "name": "HasHeaderColumn",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Renders the first cell of the row with header styling."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Removes the drag handle and renders the cells non-editable."
+        },
+        {
+          "name": "IsDragging",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Whether this row is the one currently being dragged."
+        },
+        {
+          "name": "IsDragOver",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Whether a dragged row is currently hovering over this row."
         },
         {
           "name": "OnCellsChanged",
           "type": "EventCallback<IReadOnlyList<NotionTableCell>>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired on cell blur when any cell content changed. Arg = the full new cell list of this row."
+        },
+        {
+          "name": "OnDeleteRequested",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fired when the user activates the delete-row affordance."
+        },
+        {
+          "name": "OnFocused",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fired when a cell in this row receives focus."
+        },
+        {
+          "name": "OnTabFromLastCell",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fired when Tab is pressed in the last cell — the table moves focus to the first cell of the next row."
+        },
+        {
+          "name": "OnShiftTabFromFirstCell",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fired when Shift+Tab is pressed in the first cell — the table moves focus to the last cell of the previous row."
+        },
+        {
+          "name": "OnDragStart",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fired when the user starts dragging this row by its handle."
+        },
+        {
+          "name": "OnDragOver",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fired while a dragged row hovers over this row."
+        },
+        {
+          "name": "OnDrop",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fired when a dragged row is dropped onto this row."
+        },
+        {
+          "name": "OnDragEnd",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fired when the drag gesture ends, regardless of whether a drop happened."
+        },
+        {
+          "name": "OnCellMouseDown",
+          "type": "EventCallback<TableCellSelectionRequest>",
+          "isRequired": false,
+          "description": "Fired on mouse-down in a cell; starts a range selection."
+        },
+        {
+          "name": "OnCellMouseEnter",
+          "type": "EventCallback<TableCellSelectionRequest>",
+          "isRequired": false,
+          "description": "Fired when the pointer enters a cell while a range selection is being dragged."
+        },
+        {
+          "name": "OnCellMouseUp",
+          "type": "EventCallback<TableCellSelectionRequest>",
+          "isRequired": false,
+          "description": "Fired on mouse-up in a cell; completes a range selection."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Row with per-column alignment",
+          "code": "@* Rendered by TmNotionTableBlock; shown here to document the contract *@\n<TmNotionTableRowBlock Row=\"@_row\"\n                       RowIndex=\"0\"\n                       ColumnCount=\"3\"\n                       ColumnAlignments=\"@_alignments\"\n                       IsHeaderRow=\"true\"\n                       OnCellsChanged=\"SaveRowAsync\" />\n\n@code {\n    // <td> gets tm-notion-table__cell-td--align-center / --align-right\n    private TableColumnAlignment[] _alignments =\n        [TableColumnAlignment.None, TableColumnAlignment.Center, TableColumnAlignment.Right];\n}"
         }
       ]
     },
@@ -6276,19 +6652,19 @@
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when a template is selected."
+          "description": "Raised when the dialog should close without selecting a template."
         },
         {
           "name": "OnTemplateSelected",
           "type": "EventCallback<NotionTemplateDto>",
           "isRequired": false,
-          "description": "Optional provider that supplies workspace page templates."
+          "description": "Raised when a template is selected."
         },
         {
           "name": "TemplateProvider",
           "type": "INotionTemplateProvider?",
           "isRequired": false,
-          "description": "Controls whether the template gallery dialog is rendered."
+          "description": "Optional provider that supplies workspace page templates."
         },
         {
           "name": "Visible",
@@ -6322,67 +6698,79 @@
           "name": "OnDeleteRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired after Enter splits the block. Arg = HTML fragment after the split point."
+          "description": "Fired when Backspace is pressed on an empty block."
         },
         {
           "name": "OnEnterSplit",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired on blur when the HTML has changed. Arg = new HTML."
+          "description": "Fired after Enter splits the block. Arg = HTML fragment after the split point."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when a markdown pattern is recognised. Arg = shortcut key (e.g. \"heading1\")."
+          "description": "Fired when the element receives focus."
         },
         {
           "name": "OnIndentChange",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Fired when Backspace is pressed on an empty block."
+          "description": "Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent)."
         },
         {
           "name": "OnMentionMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '/' is typed in a trigger position. Args = (top, left) caret coords."
+          "description": "Fired when '@' mention syntax is typed. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnMergeWithPrevious",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when Backspace is pressed at the start of a non-empty block. The payload is the block's current, sanitized HTML, which the previous block absorbs before this one is deleted."
         },
         {
           "name": "OnMoveFocusNext",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when ArrowUp requests focus movement to the previous block."
+          "description": "Fired when ArrowDown requests focus movement to the next block."
         },
         {
           "name": "OnMoveFocusPrevious",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when the element receives focus."
+          "description": "Fired when ArrowUp requests focus movement to the previous block."
         },
         {
           "name": "OnPageLinkMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '@' mention syntax is typed. Args = (top, left) caret coords."
+          "description": "Fired when '[[' page-link syntax is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnSlashMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when ArrowDown requests focus movement to the next block."
+          "description": "Fired when '/' is typed in a trigger position. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnStructuredPaste",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when pasted HTML carries more than one block element. The payload is the raw clipboard HTML; the consumer turns it into page blocks."
         },
         {
           "name": "OnTokenMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '[[' page-link syntax is typed. Args = (top, left) caret coords."
+          "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnTypeConvert",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent)."
+          "description": "Fired when a markdown pattern is recognised. Arg = shortcut key (e.g. \"heading1\")."
         },
         {
           "name": "Placeholder",
@@ -6440,7 +6828,7 @@
           "name": "OnAssigneeChanged",
           "type": "EventCallback<(string? AssigneeId, string? AssigneeDisplayName)>",
           "isRequired": false,
-          "description": "Fired when the checkbox is toggled. Arg = new checked state."
+          "description": "Fired when the todo assignee changes. Args = assignee ID and display name."
         },
         {
           "name": "OnCheckedChanged",
@@ -6452,61 +6840,73 @@
           "name": "OnContentSaved",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when the todo due date changes. Arg = selected due date or null."
+          "description": "Fired on blur when HTML has changed. Arg = new HTML."
         },
         {
           "name": "OnDeleteRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when Enter is pressed on a non-empty item. Arg = HTML after the split point."
+          "description": "Fired when Backspace is pressed on an empty item."
         },
         {
           "name": "OnDueDateChanged",
           "type": "EventCallback<DateTime?>",
           "isRequired": false,
-          "description": "Fired when the todo assignee changes. Args = assignee ID and display name."
+          "description": "Fired when the todo due date changes. Arg = selected due date or null."
         },
         {
           "name": "OnEnterSplit",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired on blur when HTML has changed. Arg = new HTML."
+          "description": "Fired when Enter is pressed on a non-empty item. Arg = HTML after the split point."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when a markdown or conversion shortcut is detected. Special value \"paragraph\" means the user pressed Enter on an empty item."
+          "description": "Fired when the editable receives focus."
         },
         {
           "name": "OnMentionMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '/' is typed. Args = (top, left) caret coords."
+          "description": "Fired when '@' is typed. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnMergeWithPrevious",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when Backspace is pressed at the start of a non-empty block. The payload is the block's current, sanitized HTML, which the previous block absorbs before this one is deleted."
         },
         {
           "name": "OnPageLinkMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '@' is typed. Args = (top, left) caret coords."
+          "description": "Fired when '[[' is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnSlashMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when the editable receives focus."
+          "description": "Fired when '/' is typed. Args = (top, left) caret coords."
+        },
+        {
+          "name": "OnStructuredPaste",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when pasted HTML carries more than one block element. The payload is the raw clipboard HTML; the consumer turns it into page blocks."
         },
         {
           "name": "OnTokenMenu",
           "type": "EventCallback<(double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '[[' is typed. Args = (top, left) caret coords."
+          "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
         },
         {
           "name": "OnTypeConvert",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when Backspace is pressed on an empty item."
+          "description": "Fired when a markdown or conversion shortcut is detected. Special value \"paragraph\" means the user pressed Enter on an empty item."
         },
         {
           "name": "Placeholder",
@@ -6545,55 +6945,67 @@
           "name": "OnDeleteRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when Enter is pressed on a non-empty header. Arg = HTML after the split point."
+          "description": "Fired when Backspace is pressed on an empty header."
         },
         {
           "name": "OnEnterSplit",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired on blur when header HTML has changed. Arg = new HTML."
+          "description": "Fired when Enter is pressed on a non-empty header. Arg = HTML after the split point."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fired when a markdown or conversion shortcut is detected. Special value \"paragraph\" means the user pressed Enter on an empty header."
+          "description": "Fired when the header editable receives focus."
         },
         {
           "name": "OnMentionMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '/' is typed. Args = (blockId, top, left) caret coords."
+          "description": "Fired when '@' is typed. Args = (blockId, top, left) caret coords."
+        },
+        {
+          "name": "OnMergeWithPrevious",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when Backspace is pressed at the start of a non-empty block. The payload is the block's current, sanitized HTML, which the previous block absorbs before this one is deleted."
         },
         {
           "name": "OnOpenChanged",
           "type": "EventCallback<(bool IsOpen, string? Html)>",
           "isRequired": false,
-          "description": "Fired when the header editable receives focus."
+          "description": "Fired when the open/closed state changes. Arg = new IsOpen value."
         },
         {
           "name": "OnPageLinkMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '@' is typed. Args = (blockId, top, left) caret coords."
+          "description": "Fired when '[[' is typed. Args = (blockId, top, left) caret coords."
         },
         {
           "name": "OnSlashMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when the open/closed state changes. Arg = new IsOpen value."
+          "description": "Fired when '/' is typed. Args = (blockId, top, left) caret coords."
+        },
+        {
+          "name": "OnStructuredPaste",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when pasted HTML carries more than one block element. The payload is the raw clipboard HTML; the consumer turns it into page blocks."
         },
         {
           "name": "OnTokenMenu",
           "type": "EventCallback<(string BlockId, double Top, double Left)>",
           "isRequired": false,
-          "description": "Fired when '[[' is typed. Args = (blockId, top, left) caret coords."
+          "description": "Fired when '{{' token syntax is typed. Args = (blockId, top, left) caret coords."
         },
         {
           "name": "OnTypeConvert",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when Backspace is pressed on an empty header."
+          "description": "Fired when a markdown or conversion shortcut is detected. Special value \"paragraph\" means the user pressed Enter on an empty header."
         },
         {
           "name": "Placeholder",
@@ -6620,7 +7032,7 @@
           "name": "CurrentKey",
           "type": "string?",
           "isRequired": false,
-          "description": "Raised when the user clicks \"Create token\" (optional). Arg = current search query."
+          "description": "Pre-selects the item matching this key when the dropdown opens."
         },
         {
           "name": "Left",
@@ -6631,13 +7043,13 @@
           "name": "OnClosed",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user selects a token. Args = (Key, DisplayName, ColorClass)."
+          "description": "Raised when the user dismisses the dropdown (Escape / backdrop click)."
         },
         {
           "name": "OnCreateRequested",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Raised when the user dismisses the dropdown (Escape / backdrop click)."
+          "description": "Raised when the user clicks \"Create token\" (optional). Arg = current search query."
         },
         {
           "name": "OnItemSelected",
@@ -6807,13 +7219,13 @@
           "name": "OnContentChanged",
           "type": "EventCallback<WorkItemBlockContent>",
           "isRequired": false,
-          "description": "Whether editing controls are disabled."
+          "description": "Raised when provider data or block configuration changes."
         },
         {
           "name": "OnFocused",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when provider data or block configuration changes."
+          "description": "Raised when the block receives focus."
         },
         {
           "name": "ReadOnly",
@@ -6825,7 +7237,7 @@
           "name": "WorkItemProviders",
           "type": "TmWorkItemProviderRegistry?",
           "isRequired": false,
-          "description": "Work-item block content."
+          "description": "Registry of available work-item sources."
         }
       ]
     }
@@ -6859,9 +7271,9 @@
   ],
   "summary": {
     "itemCount": 169,
-    "manualItemCount": 167,
+    "manualItemCount": 169,
     "generatedItemCount": 168,
-    "generatedOnlyItemCount": 2,
+    "generatedOnlyItemCount": 0,
     "componentCount": 128,
     "publicApiTypeCount": 40
   }

@@ -1,0 +1,43 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataDisplay",
+  "description": "Supported barcode formats. Code128 and Code39 are general-purpose linear symbologies, EAN13 and UPC are retail product codes, and QR is the 2D format.",
+  "packageId": "Tempo.Blazor.Codes",
+  "sourcePath": "src/Tempo.Blazor.Codes/Components/DataDisplay/BarcodeFormat.cs",
+  "documentationStatus": "generated",
+  "itemName": "BarcodeFormat",
+  "values": [
+    {
+      "name": "Code128",
+      "value": "0",
+      "description": "Code 128 linear barcode."
+    },
+    {
+      "name": "Code39",
+      "value": "1",
+      "description": "Code 39 linear barcode."
+    },
+    {
+      "name": "EAN13",
+      "value": "2",
+      "description": "EAN-13 retail barcode."
+    },
+    {
+      "name": "UPC",
+      "value": "3",
+      "description": "UPC barcode."
+    },
+    {
+      "name": "QR",
+      "value": "4",
+      "description": "QR code (2D)."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use BarcodeFormat",
+      "code": "<TmBarcode Value=\"5901234123457\"\n           Format=\"BarcodeFormat.EAN13\" />"
+    }
+  ]
+}

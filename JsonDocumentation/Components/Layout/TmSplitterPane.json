@@ -15,37 +15,37 @@
       "name": "AdditionalCssClass",
       "type": "string?",
       "isRequired": false,
-      "description": "Event fired when collapsed state changes."
+      "description": "Additional CSS classes."
     },
     {
       "name": "Collapsed",
       "type": "bool",
       "isRequired": false,
-      "description": "Whether the pane can be collapsed."
+      "description": "Whether the pane is collapsed."
     },
     {
       "name": "CollapsedChanged",
       "type": "EventCallback<bool>",
       "isRequired": false,
-      "description": "Whether the pane is collapsed."
+      "description": "Event fired when collapsed state changes."
     },
     {
       "name": "Collapsible",
       "type": "bool",
       "isRequired": false,
-      "description": "The maximum size of the pane."
+      "description": "Whether the pane can be collapsed."
     },
     {
       "name": "MaxSize",
       "type": "string?",
       "isRequired": false,
-      "description": "The minimum size of the pane."
+      "description": "The maximum size of the pane."
     },
     {
       "name": "MinSize",
       "type": "string?",
       "isRequired": false,
-      "description": "The initial size of the pane (in pixels or percentage)."
+      "description": "The minimum size of the pane."
     },
     {
       "name": "Parent",
@@ -57,7 +57,7 @@
       "name": "Size",
       "type": "string?",
       "isRequired": false,
-      "description": "The content to render inside the pane."
+      "description": "The initial size of the pane (in pixels or percentage)."
     }
   ]
 }

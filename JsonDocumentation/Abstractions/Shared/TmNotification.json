@@ -1,0 +1,87 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Shared persistent notification model for Tempo components.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotification.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmNotification",
+  "members": [
+    {
+      "name": "Id",
+      "type": "string",
+      "description": "Stable notification identifier."
+    },
+    {
+      "name": "Recipient",
+      "type": "TmUserRef?",
+      "description": "Recipient snapshot, when available."
+    },
+    {
+      "name": "RecipientUserId",
+      "type": "string",
+      "description": "Recipient user id for hosts that do not have a full user snapshot."
+    },
+    {
+      "name": "Actor",
+      "type": "TmUserRef?",
+      "description": "User that caused the notification, when known."
+    },
+    {
+      "name": "Type",
+      "type": "string",
+      "description": "Notification type key, for example mention or page-edited."
+    },
+    {
+      "name": "Title",
+      "type": "string",
+      "description": "Short notification title."
+    },
+    {
+      "name": "Body",
+      "type": "string?",
+      "description": "Optional detail body."
+    },
+    {
+      "name": "Severity",
+      "type": "TmNotificationSeverity",
+      "description": "Severity used by notification UI."
+    },
+    {
+      "name": "CreatedAt",
+      "type": "DateTimeOffset",
+      "description": "UTC timestamp when the notification was created."
+    },
+    {
+      "name": "ReadAt",
+      "type": "DateTimeOffset?",
+      "description": "UTC timestamp when the recipient read the notification."
+    },
+    {
+      "name": "ActionUrl",
+      "type": "string?",
+      "description": "Optional URL opened when the notification is clicked."
+    },
+    {
+      "name": "EntityRef",
+      "type": "TmEntityRef?",
+      "description": "Optional entity related to the notification."
+    },
+    {
+      "name": "CorrelationId",
+      "type": "string?",
+      "description": "Optional correlation identifier used to group related notifications."
+    },
+    {
+      "name": "Metadata",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for consumer use."
+    },
+    {
+      "name": "IsRead",
+      "type": "bool",
+      "description": "Returns true when the notification has been read."
+    }
+  ]
+}

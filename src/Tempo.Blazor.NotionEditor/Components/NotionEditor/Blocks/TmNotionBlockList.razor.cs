@@ -19,6 +19,7 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
 
     // ── Parameters ───────────────────────────────────────────────────────────
 
+    /// <summary>The ordered blocks this list renders. Keyed by block ID, so reordering never re-binds a block to a different component.</summary>
     [Parameter, EditorRequired]
     public IReadOnlyList<IPageBlock> Blocks { get; set; } = [];
 
@@ -28,8 +29,10 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
     /// <summary>Parent block ID for nested lists. Null means the top-level page list.</summary>
     [Parameter] public Guid? ParentBlockId { get; set; }
 
+    /// <summary>When true every editing interaction on the rendered blocks is disabled.</summary>
     [Parameter] public bool ReadOnly { get; set; }
 
+    /// <summary>The block that currently holds the caret; it renders focused and selected.</summary>
     [Parameter] public Guid? ActiveBlockId { get; set; }
 
     /// <summary>Per-block comment summary for margin-thread indicators and hover tooltip.</summary>
@@ -49,6 +52,12 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
 
     /// <summary>Fired when a block requests deletion. Arg is the block ID string.</summary>
     [Parameter] public EventCallback<string> OnBlockDeleted { get; set; }
+
+    /// <summary>
+    /// Raised when Backspace at the start of a block should fold it into its predecessor.
+    /// Carries the block's ID and its current HTML.
+    /// </summary>
+    [Parameter] public EventCallback<(string BlockId, string Html)> OnMergeBlockWithPrevious { get; set; }
 
     /// <summary>Fired when a block's content was saved by the user.</summary>
     [Parameter] public EventCallback<IPageBlock> OnBlockUpdated { get; set; }
@@ -137,6 +146,15 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
         if (OnExternalBlockRemoved.HasDelegate)
             await OnExternalBlockRemoved.InvokeAsync(blockId);
     }
+
+    /// <summary>
+    /// Indent level of the list item directly above <paramref name="index"/>. Null when this is the
+    /// first block or the block above is not a list item — Tab then has nothing to nest under.
+    /// </summary>
+    private int? GetPreviousListIndentLevel(int index) =>
+        index > 0 && Blocks[index - 1].Content is IListBlockContent previous
+            ? previous.IndentLevel
+            : null;
 
     // ── Comment info helper ──────────────────────────────────────────────────
 

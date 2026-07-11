@@ -96,6 +96,7 @@
                                        OnExternalBlockRemoved="HandleExternalBlockRemovedAsync"
                                        OnBlockFocused="HandleBlockFocusedAsync"
                                        OnBlockDeleted="HandleBlockDeletedAsync"
+                                       OnMergeBlockWithPrevious="args => MergeBlockIntoPreviousAsync(args.BlockId, args.Html)"
                                        OnBlockUpdated="HandleBlockUpdatedAsync"
                                        OnBlockDuplicated="HandleBlockDuplicatedAsync"
                                        OnConvertBlock="HandleConvertBlockAsync"

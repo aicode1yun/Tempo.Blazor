@@ -15,43 +15,43 @@
       "name": "AppearsOn",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback invoked when the numeric value changes."
+      "description": "Short text describing where the field appears in the document."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Fallback culture used when localized field text is missing."
+      "description": "Additional CSS classes for the shell element."
     },
     {
       "name": "Culture",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the input is disabled."
+      "description": "Culture used to resolve localized field text."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Short text describing where the field appears in the document."
+      "description": "Whether the input is disabled."
     },
     {
       "name": "FallbackCulture",
       "type": "string?",
       "isRequired": false,
-      "description": "Culture used to resolve localized field text."
+      "description": "Fallback culture used when localized field text is missing."
     },
     {
       "name": "Value",
       "type": "decimal?",
       "isRequired": false,
-      "description": "Signing field represented by this step."
+      "description": "Current numeric value."
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<decimal?>",
       "isRequired": false,
-      "description": "Current numeric value."
+      "description": "Callback invoked when the numeric value changes."
     }
   ]
 }

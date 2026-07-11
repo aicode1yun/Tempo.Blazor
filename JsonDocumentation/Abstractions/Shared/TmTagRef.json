@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Lightweight tag snapshot embedded in shared models.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmTagRef.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmTagRef",
+  "members": [
+    {
+      "name": "Id",
+      "type": "string",
+      "description": "Stable tag identifier."
+    },
+    {
+      "name": "Label",
+      "type": "string",
+      "description": "Display label captured at the time of embedding."
+    },
+    {
+      "name": "Color",
+      "type": "string?",
+      "description": "Optional CSS color value or design token."
+    },
+    {
+      "name": "SourceKey",
+      "type": "string?",
+      "description": "Optional provider/source discriminator."
+    },
+    {
+      "name": "TenantId",
+      "type": "string?",
+      "description": "Optional tenant, workspace, or application scope identifier."
+    },
+    {
+      "name": "FromLabel",
+      "type": "static TmTagRef FromLabel()",
+      "description": "Creates a tag reference from a plain label."
+    }
+  ]
+}

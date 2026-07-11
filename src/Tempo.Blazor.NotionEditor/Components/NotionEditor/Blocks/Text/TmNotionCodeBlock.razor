@@ -11,7 +11,7 @@
                     aria-label="@Loc["TmNotionCodeBlock_SelectLanguage"]"
                     @bind="_selectedLanguage"
                     @bind:after="HandleLanguageChangedAsync">
-                @foreach (var lang in _languages)
+                @foreach (var lang in _languageOptions)
                 {
                     <option value="@lang">@lang</option>
                 }
@@ -20,6 +20,19 @@
         else
         {
             <span class="tm-notion-code-block__lang">@_displayLanguage</span>
+        }
+
+        @if (_canPreviewMarkdown)
+        {
+            <button class="tm-notion-code-block__preview-toggle @(_showPreview ? "tm-notion-code-block__preview-toggle--active" : "")"
+                    type="button"
+                    data-testid="notion-code-preview-toggle"
+                    aria-pressed="@(_showPreview ? "true" : "false")"
+                    aria-label="@(_showPreview ? Loc["TmNotionCodeBlock_ShowEditor"] : Loc["TmNotionCodeBlock_ShowPreview"])"
+                    @onclick="TogglePreviewAsync"
+                    @onclick:stopPropagation="true">
+                @(_showPreview ? Loc["TmNotionCodeBlock_ShowEditor"] : Loc["TmNotionCodeBlock_ShowPreview"])
+            </button>
         }
 
         <button class="tm-notion-code-block__copy @(_codeCopied ? "tm-notion-code-block__copy--copied" : "")"
@@ -45,17 +58,35 @@
 
     </div>
 
-    <textarea class="tm-notion-code-block__content"
-              @ref="_textareaRef"
-              readonly="@ReadOnly"
-              spellcheck="false"
-              autocomplete="off"
-              autocorrect="off"
-              autocapitalize="off"
-              @oninput="() => _codeDirty = true"
-              @onblur="OnCodeBlurAsync"
-              @onfocus="HandleFocusAsync">
-    </textarea>
+    @if (_showPreview)
+    {
+        <div class="tm-notion-code-block__preview"
+             data-testid="notion-code-preview"
+             role="region"
+             aria-label="@Loc["TmNotionCodeBlock_PreviewLabel"]">
+            @RenderMarkdownPreview()
+        </div>
+    }
+    else
+    {
+        @* The highlight layer sits behind a textarea whose own text is transparent, so the caret,
+           the selection and every editing behaviour stay native while the code shows its colours. *@
+        <div class="tm-notion-code-block__editor">
+            <pre class="tm-notion-code-block__highlight" aria-hidden="true"><code class="tm-notion-code-block__code @_highlightLanguageClass">@_highlightedCode</code></pre>
+
+            <textarea class="tm-notion-code-block__content"
+                      @ref="_textareaRef"
+                      readonly="@ReadOnly"
+                      spellcheck="false"
+                      autocomplete="off"
+                      autocorrect="off"
+                      autocapitalize="off"
+                      @oninput="HandleCodeInputAsync"
+                      @onblur="OnCodeBlurAsync"
+                      @onfocus="HandleFocusAsync">
+            </textarea>
+        </div>
+    }
 
     @if (_showCaption)
     {

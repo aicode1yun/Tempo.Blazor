@@ -15,7 +15,7 @@
       "name": "OnTrashRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "ID of the currently active (open) page — highlights it in the tree."
+      "description": "Raised when the user requests to open the full trash view."
     }
   ],
   "subcategory": "Sidebar"

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "Outcome of applying a granular operation batch to a diagram document.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramOperationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramOperationResult"
+}

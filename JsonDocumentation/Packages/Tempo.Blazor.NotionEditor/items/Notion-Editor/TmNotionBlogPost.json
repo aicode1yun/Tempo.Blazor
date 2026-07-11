@@ -15,20 +15,20 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "True while the post is being published."
+      "description": "Additional CSS class."
     },
     {
       "name": "IsPublishing",
       "type": "bool",
       "isRequired": true,
-      "description": "Blog post to render.",
+      "description": "True while the post is being published.",
       "editorRequired": true
     },
     {
       "name": "OnPublish",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Additional CSS class."
+      "description": "Raised when the publish button is clicked. Arg is the post id."
     }
   ],
   "subcategory": "UI"

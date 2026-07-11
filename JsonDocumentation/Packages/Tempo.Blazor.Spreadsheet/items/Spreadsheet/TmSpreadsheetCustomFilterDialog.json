@@ -16,19 +16,19 @@
       "type": "SpreadsheetFilterKind",
       "isRequired": false,
       "default": "SpreadsheetFilterKind.Text",
-      "description": "The column index the filter applies to."
+      "description": "The kind of filter (text/number/date)."
     },
     {
       "name": "OnApply",
       "type": "EventCallback<SpreadsheetColumnFilter?>",
       "isRequired": false,
-      "description": "The kind of filter (text/number/date)."
+      "description": "Raised when the user applies the custom filter (null clears it)."
     },
     {
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user applies the custom filter (null clears it)."
+      "description": "Raised when the dialog is dismissed."
     }
   ],
   "subcategory": "Dialogs"

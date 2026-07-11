@@ -1,0 +1,17 @@
+{
+  "kind": "Interface",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Authorizes user actions against shared Tempo entity references.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmAuthorizationProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITmAuthorizationProvider",
+  "members": [
+    {
+      "name": "AuthorizeAsync",
+      "type": "ValueTask<TmAuthorizationResult> AuthorizeAsync(TmAuthorizationRequest request, CancellationToken cancellationToken = default)",
+      "description": "Evaluates whether the requested action is allowed."
+    }
+  ]
+}

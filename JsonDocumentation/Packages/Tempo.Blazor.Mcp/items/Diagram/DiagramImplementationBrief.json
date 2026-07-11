@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "Builds a deterministic implementation brief from a diagram document.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramImplementationBrief"
+}

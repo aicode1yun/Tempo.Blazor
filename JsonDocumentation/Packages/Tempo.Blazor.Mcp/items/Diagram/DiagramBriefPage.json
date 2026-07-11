@@ -1,0 +1,52 @@
+{
+  "kind": "Record",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "One page of a DiagramBrief: its canvas size plus the layers, nodes, edges and stencil usage it contains.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramBriefPage",
+  "members": [
+    {
+      "name": "Id",
+      "type": "string",
+      "description": "The page's id."
+    },
+    {
+      "name": "Name",
+      "type": "string",
+      "description": "The page's display name."
+    },
+    {
+      "name": "Width",
+      "type": "double",
+      "description": "Canvas width in pixels."
+    },
+    {
+      "name": "Height",
+      "type": "double",
+      "description": "Canvas height in pixels."
+    },
+    {
+      "name": "Layers",
+      "type": "IReadOnlyList<DiagramBriefLayer>",
+      "description": "The page's layers, in order."
+    },
+    {
+      "name": "Nodes",
+      "type": "IReadOnlyList<DiagramBriefNode>",
+      "description": "The page's nodes."
+    },
+    {
+      "name": "Edges",
+      "type": "IReadOnlyList<DiagramBriefEdge>",
+      "description": "The page's connectors."
+    },
+    {
+      "name": "StencilsUsed",
+      "type": "IReadOnlyList<DiagramBriefStencilUsage>",
+      "description": "How often each stencil is used on this page."
+    }
+  ]
+}

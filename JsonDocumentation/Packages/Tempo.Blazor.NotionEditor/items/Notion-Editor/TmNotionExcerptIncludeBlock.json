@@ -15,25 +15,25 @@
       "name": "Content",
       "type": "IExcerptIncludeBlockContent?",
       "isRequired": false,
-      "description": "Owning page block used for persistence and focus context."
+      "description": "Saved Excerpt Include configuration."
     },
     {
       "name": "OnFocused",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised after source page selection changes."
+      "description": "Raised when the block receives focus."
     },
     {
       "name": "OnUpdated",
       "type": "EventCallback<IPageBlock>",
       "isRequired": false,
-      "description": "Whether editing controls are hidden."
+      "description": "Raised after source page selection changes."
     },
     {
       "name": "ReadOnly",
       "type": "bool",
       "isRequired": false,
-      "description": "Saved Excerpt Include configuration."
+      "description": "Whether editing controls are hidden."
     }
   ],
   "subcategory": "Blocks / Special"

@@ -1,0 +1,57 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Query options for resolving shared notifications.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotificationQuery.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmNotificationQuery",
+  "members": [
+    {
+      "name": "RecipientUserId",
+      "type": "string",
+      "description": "Recipient user id whose notifications should be returned."
+    },
+    {
+      "name": "EntityRef",
+      "type": "TmEntityRef?",
+      "description": "Optional exact entity reference filter."
+    },
+    {
+      "name": "EntityType",
+      "type": "string?",
+      "description": "Optional entity type filter."
+    },
+    {
+      "name": "EntityId",
+      "type": "string?",
+      "description": "Optional entity id filter."
+    },
+    {
+      "name": "Type",
+      "type": "string?",
+      "description": "Optional notification type key filter."
+    },
+    {
+      "name": "SearchText",
+      "type": "string?",
+      "description": "Optional free-text filter matched against title, body, and actor fields."
+    },
+    {
+      "name": "IncludeRead",
+      "type": "bool",
+      "description": "When false, only unread notifications are returned."
+    },
+    {
+      "name": "Skip",
+      "type": "int",
+      "description": "Number of matching notifications to skip."
+    },
+    {
+      "name": "Take",
+      "type": "int",
+      "description": "Maximum number of matching notifications to return."
+    }
+  ]
+}

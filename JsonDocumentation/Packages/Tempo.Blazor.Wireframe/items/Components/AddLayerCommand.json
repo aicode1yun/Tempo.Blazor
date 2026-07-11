@@ -1,0 +1,38 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+  "description": "Adds a new layer to the active page of a WireframeDocument. Undoable.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/AddLayerCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "AddLayerCommand",
+  "members": [
+    {
+      "name": "AddLayerCommand",
+      "type": "AddLayerCommand(WireframeDocument doc, WireframeLayer layer)",
+      "description": "Creates the command for an already-constructed layer."
+    },
+    {
+      "name": "Name",
+      "type": "string",
+      "description": "Human-readable label shown in undo/redo tooltips."
+    },
+    {
+      "name": "Execute",
+      "type": "void Execute()",
+      "description": "Applies the change to the document."
+    },
+    {
+      "name": "Undo",
+      "type": "void Undo()",
+      "description": "Restores the state captured before Execute() ran."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use AddLayerCommand",
+      "code": "// WireframeLayer generates its own Id\nvar layer = new WireframeLayer { Name = \"Annotations\" };\ncommandStack.Push(new AddLayerCommand(document, layer));"
+    }
+  ]
+}

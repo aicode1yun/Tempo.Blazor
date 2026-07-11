@@ -15,26 +15,26 @@
       "name": "Block",
       "type": "DocumentBlock?",
       "isRequired": false,
-      "description": "Document id used by provider-backed image resolution."
+      "description": "Block to render."
     },
     {
       "name": "ImageUrlResolver",
       "type": "IDocumentImageUrlResolver?",
       "isRequired": false,
-      "description": "Block to render."
+      "description": "Optional resolver for provider-managed image assets."
     },
     {
       "name": "OnCommentSelected",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Pending provider-backed suggestions to decorate near their block."
+      "description": "Raised when a rendered inline comment anchor is selected."
     },
     {
       "name": "Suggestions",
       "type": "IReadOnlyList<DocumentSuggestion>",
       "isRequired": false,
       "default": "[]",
-      "description": "Optional resolver for provider-managed image assets."
+      "description": "Pending provider-backed suggestions to decorate near their block."
     }
   ]
 }

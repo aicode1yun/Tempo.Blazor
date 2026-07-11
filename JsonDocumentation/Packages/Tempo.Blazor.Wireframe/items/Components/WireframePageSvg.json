@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Produces a clean, interaction-free SVG RenderFragment for a single WireframePage. This is the shared presentation layer reused by the live canvas and by headless server-side rendering (IWireframeSvgRenderer), so the visual stays in one place and previews cannot drift from the editor. It renders only presentation: the page <svg> root plus connector arrow markers (and an optional grid) in <defs>, the page background, visible connector paths and their labels, and each element as a translated inner-<svg> viewport hosting the component.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframePageSvg.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframePageSvg",
+  "members": [
+    {
+      "name": "BuildFragment",
+      "type": "static RenderFragment BuildFragment(WireframePage page, WireframeComponentRegistry registry, WireframeComponentScope? scope = null, WireframePageSvgOptions? options = null)",
+      "description": "Builds the presentation-only fragment for one page. page and registry are required; options defaults to WireframePageSvgOptions.Default."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Embed a static page preview",
+      "code": "@* the same visual the editor canvas draws, without any interaction *@\n@WireframePageSvg.BuildFragment(page, registry)\n\n@* with a grid *@\n@WireframePageSvg.BuildFragment(page, registry, options: new WireframePageSvgOptions { ShowGrid = true })"
+    }
+  ]
+}

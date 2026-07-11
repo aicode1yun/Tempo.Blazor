@@ -1,0 +1,17 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "A single node of a parsed stencil expression tree. Its Kind decides which of the other members carry meaning.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilExpression.StencilExpressionNode",
+  "members": [
+    {
+      "name": "Kind",
+      "type": "StencilExpressionNodeKind",
+      "description": "Discriminates the node: literal, property, built-in, operator, conditional, map or token."
+    }
+  ]
+}

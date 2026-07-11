@@ -103,6 +103,20 @@ window.tmNotionEditor = (function () {
         return !el.textContent.trim() && !el.querySelector('img');
     }
 
+    /** True when the caret sits before every character of the element and nothing is selected. */
+    function _caretAtStart(el) {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || !selection.isCollapsed) return false;
+
+        const range = selection.getRangeAt(0);
+        if (!el.contains(range.startContainer)) return false;
+
+        const probe = range.cloneRange();
+        probe.selectNodeContents(el);
+        probe.setEnd(range.startContainer, range.startOffset);
+        return probe.toString().length === 0;
+    }
+
     function _escHtml(s) {
         return String(s)
             .replace(/&/g, '&amp;')
@@ -118,18 +132,126 @@ window.tmNotionEditor = (function () {
         return chars.slice(0, Math.max(1, maxLength - 1)).join('').trimEnd() + '\u2026';
     }
 
+    /**
+     * Block-level markdown shortcuts, ordered most-specific first so that "- [x] " never
+     * matches the bullet "- ". Keep in sync with MarkdownShortcutDetector.cs.
+     */
+    const _BLOCK_SHORTCUTS = [
+        [/^### $/,        'heading3'],
+        [/^## $/,         'heading2'],
+        [/^# $/,          'heading1'],
+        [/^- \[[xX]\] $/, 'todoDone'],
+        [/^- \[ ?\] $/,   'todo'],
+        [/^\[[xX]\] $/,   'todoDone'],
+        [/^\[ ?\] $/,     'todo'],
+        [/^[*\-+] $/,     'bullet'],
+        [/^\d+\. $/,      'numbered'],
+        [/^> $/,          'quote'],
+    ];
+
+    /** Returns { key, triggerLength } or null. */
     function _detectMarkdownShortcut(text) {
-        if (/^# $/.test(text))          return 'heading1';
-        if (/^## $/.test(text))         return 'heading2';
-        if (/^### $/.test(text))        return 'heading3';
-        if (/^[*\-] $/.test(text))      return 'bullet';
-        if (/^1\. $/.test(text))        return 'numbered';
-        if (/^\[\] $/.test(text))       return 'todo';
-        if (/^\[x\] $/.test(text))      return 'todoDone';
-        if (/^> $/.test(text))          return 'quote';
-        if (/^```$/.test(text.trim()))  return 'code';
-        if (/^---$/.test(text.trim()))  return 'divider';
+        for (const [pattern, key] of _BLOCK_SHORTCUTS) {
+            if (pattern.test(text)) return { key, triggerLength: text.length };
+        }
+        const trimmed = text.trim();
+        if (/^```$/.test(trimmed)) return { key: 'code', triggerLength: text.length };
+        if (/^---$/.test(trimmed)) return { key: 'divider', triggerLength: text.length };
         return null;
+    }
+
+    /** Inline markdown applied as soon as its closing delimiter is typed. */
+    const _INLINE_SHORTCUTS = [
+        [/\*\*([^*\s](?:[^*]*[^*\s])?)\*\*$/, 'strong'],
+        [/~~([^~\s](?:[^~]*[^~\s])?)~~$/,     's'],
+        [/`([^`\s](?:[^`]*[^`\s])?)`$/,       'code'],
+    ];
+
+    /** Deletes `count` characters immediately before the caret, leaving the rest of the block alone. */
+    function _deleteBeforeCaret(element, count) {
+        if (count <= 0) return;
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
+
+        const caret = selection.getRangeAt(0);
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        range.setEnd(caret.startContainer, caret.startOffset);
+
+        // Walk back `count` plain-text characters from the caret.
+        const text = range.toString();
+        const keep = Math.max(0, text.length - count);
+
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        let remaining = keep;
+        let startNode = element;
+        let startOffset = 0;
+        let node = walker.nextNode();
+        while (node) {
+            if (remaining <= node.textContent.length) {
+                startNode = node;
+                startOffset = remaining;
+                break;
+            }
+            remaining -= node.textContent.length;
+            node = walker.nextNode();
+        }
+
+        const kill = document.createRange();
+        kill.setStart(startNode, startOffset);
+        kill.setEnd(caret.startContainer, caret.startOffset);
+        kill.deleteContents();
+
+        selection.removeAllRanges();
+        const collapsed = document.createRange();
+        collapsed.setStart(startNode, Math.min(startOffset, startNode.textContent?.length ?? 0));
+        collapsed.collapse(true);
+        selection.addRange(collapsed);
+    }
+
+    /**
+     * Replaces a just-closed inline pattern (**bold**, ~~strike~~, `code`) with its element.
+     * Returns true when something was replaced.
+     */
+    function _applyInlineShortcut(element) {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return false;
+
+        const caret = selection.getRangeAt(0);
+        const node = caret.startContainer;
+        if (node.nodeType !== Node.TEXT_NODE) return false;
+
+        // Only look at the text node holding the caret, so we never reformat across existing markup.
+        const before = node.textContent.slice(0, caret.startOffset);
+
+        for (const [pattern, tag] of _INLINE_SHORTCUTS) {
+            const match = pattern.exec(before);
+            if (!match) continue;
+
+            const start = caret.startOffset - match[0].length;
+            const range = document.createRange();
+            range.setStart(node, start);
+            range.setEnd(node, caret.startOffset);
+            range.deleteContents();
+
+            const wrapper = document.createElement(tag);
+            wrapper.textContent = match[1];
+            range.insertNode(wrapper);
+
+            // Park the caret after the new element so typing continues unformatted.
+            const spacer = document.createTextNode('\u200B');
+            wrapper.after(spacer);
+            selection.removeAllRanges();
+            const after = document.createRange();
+            after.setStart(spacer, 1);
+            after.collapse(true);
+            selection.addRange(after);
+
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            return true;
+        }
+
+        return false;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -151,6 +273,92 @@ window.tmNotionEditor = (function () {
 
     function getHtml(element) {
         return element ? element.innerHTML : '';
+    }
+
+    /**
+     * Reads the live contenteditable value of a block by its id.
+     * Conversions triggered from the toolbar or the slash menu have no element
+     * reference, so they look the editable up through the block's data-block-id.
+     * Returns null when the block has no editable (image, divider, table…).
+     */
+    function getEditableHtml(blockId) {
+        if (!blockId) return null;
+        const block = document.querySelector(`[data-block-id="${CSS.escape(blockId)}"]`);
+        if (!block) return null;
+
+        // A container block (toggle, column, table) nests other blocks, each with its own
+        // editable. Only the editable that belongs to THIS block may be read.
+        const editable = Array
+            .from(block.querySelectorAll('[contenteditable="true"]'))
+            .find(el => el.closest('[data-block-id]') === block);
+
+        return editable ? editable.innerHTML : null;
+    }
+
+    /** The block's own editable element, or null. Shared by the caret helpers below. */
+    function _ownEditable(blockId) {
+        if (!blockId) return null;
+        const block = document.querySelector(`[data-block-id="${CSS.escape(blockId)}"]`);
+        if (!block) return null;
+        return Array
+            .from(block.querySelectorAll('[contenteditable="true"]'))
+            .find(el => el.closest('[data-block-id]') === block) ?? null;
+    }
+
+    /** Caret offset in plain-text characters from the start of the block's editable. */
+    function getCaretOffset(blockId) {
+        const editable = _ownEditable(blockId);
+        if (!editable) return null;
+
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return null;
+
+        const range = selection.getRangeAt(0);
+        if (!editable.contains(range.startContainer)) return null;
+
+        const probe = range.cloneRange();
+        probe.selectNodeContents(editable);
+        probe.setEnd(range.startContainer, range.startOffset);
+        return probe.toString().length;
+    }
+
+    /** Places the caret at a plain-text offset, clamped to the block's text length. */
+    function setCaretOffset(blockId, offset) {
+        const editable = _ownEditable(blockId);
+        if (!editable) return false;
+
+        editable.focus();
+
+        const walker = document.createTreeWalker(editable, NodeFilter.SHOW_TEXT);
+        let remaining = Math.max(0, offset ?? 0);
+        let node = walker.nextNode();
+        let target = null;
+        let targetOffset = 0;
+
+        while (node) {
+            if (remaining <= node.textContent.length) {
+                target = node;
+                targetOffset = remaining;
+                break;
+            }
+            remaining -= node.textContent.length;
+            node = walker.nextNode();
+        }
+
+        const range = document.createRange();
+        if (target) {
+            range.setStart(target, targetOffset);
+        } else {
+            // Empty block, or offset past the end — collapse to the end of the content.
+            range.selectNodeContents(editable);
+            range.collapse(false);
+        }
+        range.collapse(true);
+
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return true;
     }
 
     function setHtml(element, html) {
@@ -433,6 +641,8 @@ window.tmNotionEditor = (function () {
             mark.appendChild(frag);
             r.insertNode(mark);
         }
+
+        _notifyInput(mark);
         sel.removeAllRanges();
 
         if (dotNetRef && callbackName) {
@@ -640,15 +850,22 @@ window.tmNotionEditor = (function () {
             } else if (activeDrag.sourceContainer !== containerElement && dst !== -1) {
                 const targetPageId = containerElement.getAttribute('data-page-id') || activeDrag.sourcePageId || '';
                 const targetParentBlockId = containerElement.getAttribute('data-parent-block-id') || '';
-                dotNetRef.invokeMethodAsync(
+                // Take the block out of the source list first. Adding it to the target before the
+                // source lets go would show the same block in two lists until the move resolves.
+                // The target reloads from the server, and it refreshes the page on failure, so the
+                // source never ends up permanently missing a block the move did not actually take.
+                const dropped = () => dotNetRef.invokeMethodAsync(
                     'OnExternalBlockDropped',
                     activeDrag.blockId,
                     targetPageId,
                     activeDrag.sourceParentBlockId || null,
                     targetParentBlockId || null,
                     dst
-                )
-                    .then(() => activeDrag.sourceDotNetRef?.invokeMethodAsync('OnExternalBlockRemoved', activeDrag.blockId))
+                );
+
+                const sourceRef = activeDrag.sourceDotNetRef;
+                Promise.resolve(sourceRef?.invokeMethodAsync('OnExternalBlockRemoved', activeDrag.blockId))
+                    .then(dropped, dropped)
                     .catch(console.error);
             }
         }
@@ -739,8 +956,13 @@ window.tmNotionEditor = (function () {
         const value = String(text || '').trim();
         if (!value || /\s/.test(value)) return false;
         try {
-            const url = /^https?:\/\//i.test(value) ? new URL(value) : new URL(`https://${value}`);
-            return url.protocol === 'http:' || url.protocol === 'https:';
+            const explicitScheme = /^https?:\/\//i.test(value);
+            const url = explicitScheme ? new URL(value) : new URL(`https://${value}`);
+            if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+
+            // Without a scheme the host must look like a domain. `new URL('https://bold')` parses,
+            // so any single pasted word would otherwise be mistaken for a link and lose its markup.
+            return explicitScheme || /\.[a-z]{2,}$/i.test(url.hostname);
         } catch {
             return false;
         }
@@ -1009,6 +1231,30 @@ window.tmNotionEditor = (function () {
         }, 0);
     }
 
+    const _PASTE_BLOCK_TAGS = 'p, div, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, pre, table, hr, figure';
+
+    /** Elements that have no inline representation, so pasting one always builds a real block. */
+    const _PASTE_STANDALONE_TAGS = 'table, pre, hr';
+
+    /**
+     * Does the clipboard carry block structure worth preserving? Word and Google Docs wrap
+     * everything in a <div> or an <html><body>, so wrappers are not counted — one paragraph inside
+     * three of them still reads as one block, while a list of five items reads as five.
+     */
+    function _countPastedBlocks(html) {
+        const template = document.createElement('template');
+        template.innerHTML = String(html || '');
+
+        // A table, a code block or a rule cannot live inside a paragraph: always go structured.
+        if (template.content.querySelector(_PASTE_STANDALONE_TAGS)) return 2;
+
+        return Array.from(template.content.querySelectorAll(_PASTE_BLOCK_TAGS)).filter(el => {
+            if (el.matches('li')) return true;
+            if (el.matches('ul, ol')) return false;      // counted through their <li> children
+            return !el.querySelector(_PASTE_BLOCK_TAGS); // a wrapper is not a block of its own
+        }).length;
+    }
+
     async function handleSmartLinkPaste(element, dotNetRef, event) {
         const cd = event.clipboardData || window.clipboardData;
         const text = cd?.getData?.('text/plain') || '';
@@ -1020,6 +1266,13 @@ window.tmNotionEditor = (function () {
         const trimmed = text.trim();
 
         if (html.trim() && !isSmartLinkCandidate(trimmed)) {
+            if (_countPastedBlocks(html) > 1) {
+                // Several block elements: let C# import them into real page blocks. Flattening
+                // them into this one would turn a pasted article into a single paragraph.
+                dotNetRef.invokeMethodAsync('OnHtmlPasted', html).catch(console.error);
+                return true;
+            }
+
             insertHtmlAtCurrentRange(element, sanitizePastedHtml(html));
             return true;
         }
@@ -1050,13 +1303,47 @@ window.tmNotionEditor = (function () {
     // 26.5 — Keyboard handler
     // ═══════════════════════════════════════════════════════════════════════════
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Undo / redo — editor history vs the browser's own contenteditable history
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /** Editables the user has typed into since they last got focus. */
+    const _dirtyEditables = new WeakSet();
+
+    function _markEditableDirty(element) { _dirtyEditables.add(element); }
+    function _clearEditableDirty(element) { _dirtyEditables.delete(element); }
+
+    /**
+     * True when the browser should keep Ctrl+Z for itself: the caret is inside a block the user is
+     * still typing into, and undoing character by character is what they expect. Once the block is
+     * committed the editor's own history takes over and undoes whole structural edits.
+     */
+    function _nativeUndoOwnsTheCaret() {
+        const editable = document.activeElement?.closest?.('[contenteditable="true"]');
+        return !!editable && _dirtyEditables.has(editable);
+    }
+
+    function initUndoRedo(dotNetRef) {
+        const onKeyDown = (e) => {
+            const key = e.key?.toLowerCase();
+            if (!(e.ctrlKey || e.metaKey) || (key !== 'z' && key !== 'y')) return;
+            if (_nativeUndoOwnsTheCaret()) return;
+
+            e.preventDefault();
+            const redo = key === 'y' || (key === 'z' && e.shiftKey);
+            dotNetRef.invokeMethodAsync(redo ? 'RedoAsync' : 'UndoAsync').catch(console.error);
+        };
+
+        document.addEventListener('keydown', onKeyDown, true);
+        return () => document.removeEventListener('keydown', onKeyDown, true);
+    }
+
     function initKeyboardHandler(element, dotNetRef) {
         if (!element) { console.warn('initKeyboardHandler: element is null'); return; }
         if (!_blocks.has(element)) _blocks.set(element, { dotNetRef, listeners: [] });
         const state = _blocks.get(element);
         state.dotNetRef = dotNetRef;
         _offAll(state.listeners);
-        console.log('initKeyboardHandler attached to', element);
 
         function _htmlAroundCaret() {
             const r = _range();
@@ -1100,6 +1387,13 @@ window.tmNotionEditor = (function () {
                 dotNetRef.invokeMethodAsync('OnBackspaceOnEmpty').catch(console.error);
                 return;
             }
+            if (e.key === 'Backspace' && _caretAtStart(element)) {
+                // Non-empty block with the caret at the very start: merge into the previous block
+                // instead of deleting a character that is not there.
+                e.preventDefault();
+                dotNetRef.invokeMethodAsync('OnBackspaceAtStart', element.innerHTML).catch(console.error);
+                return;
+            }
             if (e.key === 'Tab') {
                 e.preventDefault();
                 dotNetRef.invokeMethodAsync('OnTabPressed', e.shiftKey).catch(console.error);
@@ -1115,12 +1409,17 @@ window.tmNotionEditor = (function () {
 
         const onInput = () => {
             const text = getTextBeforeCaret(element);
-            console.log('onInput text:', element.textContent || '');
 
             const shortcut = _detectMarkdownShortcut(text);
             if (shortcut) {
-                element.innerHTML = '';
-                dotNetRef.invokeMethodAsync('OnMarkdownShortcut', shortcut).catch(console.error);
+                // Remove only the trigger. Clearing the whole block would throw away anything the
+                // user had typed after the caret; the conversion then reads the live DOM.
+                _deleteBeforeCaret(element, shortcut.triggerLength);
+                dotNetRef.invokeMethodAsync('OnMarkdownShortcut', shortcut.key).catch(console.error);
+                return;
+            }
+
+            if (_applyInlineShortcut(element)) {
                 return;
             }
 
@@ -1199,7 +1498,9 @@ window.tmNotionEditor = (function () {
 
         state.listeners.push(
             _on(element, 'keydown', onKeyDown),
-            _on(element, 'input',   onInput),
+            _on(element, 'input',   () => { _markEditableDirty(element); onInput(); }),
+            _on(element, 'focus',   () => _clearEditableDirty(element)),
+            _on(element, 'blur',    () => _clearEditableDirty(element)),
             _on(element, 'click',   onClick),
             _on(element, 'paste',   event => { handleSmartLinkPaste(element, dotNetRef, event).catch(console.error); })
         );
@@ -1208,6 +1509,24 @@ window.tmNotionEditor = (function () {
     // ═══════════════════════════════════════════════════════════════════════════
     // 26.6 — Inline math (KaTeX with plain-text fallback)
     // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Returns the code as highlighted HTML. Prism is optional, exactly like KaTeX: without it the
+     * code comes back HTML-escaped but untokenised, so the block still renders, just without colour.
+     * Returns a string the caller renders — it never writes the DOM, so Blazor stays the sole owner
+     * of the code element and cannot wipe what was painted.
+     */
+    function highlightToHtml(code, prismLanguage) {
+        const text = String(code ?? '');
+        const grammar = prismLanguage && window.Prism?.languages?.[prismLanguage];
+        if (grammar) {
+            try {
+                // A trailing newline needs a spacer or the last line of the layer collapses.
+                return window.Prism.highlight(text, grammar, prismLanguage) + (text.endsWith('\n') ? '\n' : '');
+            } catch { /* fall through to escaped plain text */ }
+        }
+        return _escHtml(text);
+    }
 
     function renderEquation(element, latex) {
         if (!element) return;
@@ -2518,25 +2837,79 @@ window.tmNotionEditor = (function () {
         return element?.closest?.('code') ?? null;
     }
 
+    /**
+     * Strips one colour property from every element touching the selection, and unwraps the
+     * element when nothing else is left on it. execCommand('removeFormat') would also strip
+     * bold, italic and links, which is not what "Default" means.
+     */
+    function _clearInlineColor(property) {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
+
+        const range = selection.getRangeAt(0);
+        const root = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+            ? range.commonAncestorContainer
+            : range.commonAncestorContainer.parentElement;
+        if (!root) return;
+
+        const host = root.closest('[contenteditable="true"]') ?? root;
+        const candidates = [host, ...host.querySelectorAll('*')]
+            .filter(el => el.nodeType === Node.ELEMENT_NODE && el !== host && range.intersectsNode(el));
+
+        const cssProperty = property === 'color' ? 'color' : 'background-color';
+
+        for (const el of candidates) {
+            if (!el.style || !el.style.getPropertyValue(cssProperty)) continue;
+
+            el.style.removeProperty(cssProperty);
+            if (!el.getAttribute('style')) el.removeAttribute('style');
+
+            // A span that carried nothing but the colour has no reason to exist any more.
+            if (el.tagName === 'SPAN' && el.attributes.length === 0) {
+                const parent = el.parentNode;
+                while (el.firstChild) parent.insertBefore(el.firstChild, el);
+                parent.removeChild(el);
+            }
+        }
+
+        host.normalize();
+        host.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
     function applyInlineColor(scope, colorValue) {
+        // Without this the browser emits the deprecated <font color> element, which the block
+        // sanitizer drops on save — the colour would vanish on the next reload.
+        document.execCommand('styleWithCSS', false, true);
+
         if (scope === 'text') {
             if (!colorValue) {
-                document.execCommand('removeFormat', false, null);
+                _clearInlineColor('color');
             } else {
                 document.execCommand('foreColor', false, colorValue);
             }
         } else {
             if (!colorValue) {
-                document.execCommand('hiliteColor', false, 'transparent');
+                _clearInlineColor('backgroundColor');
             } else {
                 document.execCommand('hiliteColor', false, colorValue);
             }
         }
     }
 
+    /**
+     * Blazor only marks a block dirty from its `oninput` handler, and DOM surgery done from
+     * JS fires no such event. Without this the change is silently dropped on blur.
+     */
+    function _notifyInput(node) {
+        const host = (node?.nodeType === 1 ? node : node?.parentElement)
+            ?.closest('[contenteditable="true"]');
+        host?.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
     function toggleInlineCode() {
         const sel = window.getSelection();
         if (!sel || sel.rangeCount === 0) return;
+        const anchor = sel.anchorNode;
         const r = sel.getRangeAt(0);
         const codeEl = _closestInlineCode(sel.anchorNode);
         if (codeEl && !codeEl.closest('pre')) {
@@ -2555,11 +2928,14 @@ window.tmNotionEditor = (function () {
                 r.insertNode(code);
             }
         }
+
+        _notifyInput(anchor);
     }
 
     function insertInlineMath() {
         const sel = window.getSelection();
         if (!sel || sel.rangeCount === 0) return;
+        const anchor = sel.anchorNode;
         const r     = sel.getRangeAt(0);
         const expr  = sel.toString().trim() || 'x';
         const span  = document.createElement('span');
@@ -2570,6 +2946,8 @@ window.tmNotionEditor = (function () {
             r.deleteContents();
             r.insertNode(span);
         } catch { /* ignore */ }
+
+        _notifyInput(anchor);
     }
 
     function adjustInlineToolbarPosition(toolbarEl) {
@@ -2923,7 +3301,7 @@ window.tmNotionEditor = (function () {
     // ── Public API ─────────────────────────────────────────────────────────────
     return {
         // 26.1
-        initBlock, destroyBlock, getHtml, setHtml,
+        initBlock, destroyBlock, getHtml, getEditableHtml, getCaretOffset, setCaretOffset, setHtml,
         focus, focusAtEnd, focusAtStart, focusAtOffset,
         initFocusTrap, destroyFocusTrap,
         initEditorKeyHandler, destroyEditorKeyHandler,
@@ -2941,7 +3319,8 @@ window.tmNotionEditor = (function () {
         // 26.6
         renderEquation, renderInlineMath,
         // 26.7
-        handlePaste, copyBlocksToClipboard,
+        handlePaste, copyBlocksToClipboard, initUndoRedo,
+        highlightToHtml,
         initBlockPaste, destroyBlockPaste,
         initBlockDropZone, destroyBlockDropZone,
         // 26.8

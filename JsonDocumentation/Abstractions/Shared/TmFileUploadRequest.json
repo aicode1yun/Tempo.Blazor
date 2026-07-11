@@ -1,0 +1,52 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Request for uploading a file stream to a provider-managed asset store.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileUploadRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmFileUploadRequest",
+  "members": [
+    {
+      "name": "FileName",
+      "type": "string",
+      "description": "Original or display file name."
+    },
+    {
+      "name": "ContentType",
+      "type": "string?",
+      "description": "MIME content type, when known."
+    },
+    {
+      "name": "SizeBytes",
+      "type": "long?",
+      "description": "File size in bytes, when known."
+    },
+    {
+      "name": "EntityRef",
+      "type": "TmEntityRef?",
+      "description": "Entity that will own or reference this asset, when known at upload time."
+    },
+    {
+      "name": "Purpose",
+      "type": "string?",
+      "description": "Optional purpose, such as \"document-image\" or \"notion-media\"."
+    },
+    {
+      "name": "LocalAssetId",
+      "type": "string?",
+      "description": "Optional caller-selected asset id for draft workflows."
+    },
+    {
+      "name": "IsDraft",
+      "type": "bool",
+      "description": "True when the uploaded asset is a draft until committed."
+    },
+    {
+      "name": "Metadata",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for provider use."
+    }
+  ]
+}

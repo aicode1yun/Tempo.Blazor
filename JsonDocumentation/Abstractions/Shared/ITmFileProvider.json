@@ -1,0 +1,32 @@
+{
+  "kind": "Interface",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Provider contract for blob or asset storage independent of entity attachment links.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmFileProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITmFileProvider",
+  "members": [
+    {
+      "name": "Capabilities",
+      "type": "TmFileProviderCapabilities",
+      "description": "Operations this provider supports."
+    },
+    {
+      "name": "UploadAsync",
+      "type": "Task<TmFileUploadResult> UploadAsync(TmFileUploadRequest request, Stream content, CancellationToken cancellationToken = default)",
+      "description": "Uploads a complete file stream."
+    },
+    {
+      "name": "ResolveAsync",
+      "type": "Task<TmFileResolveResult> ResolveAsync(TmFileResolveRequest request, CancellationToken cancellationToken = default)",
+      "description": "Resolves an asset id to an access URL or ticket."
+    },
+    {
+      "name": "DeleteAsync",
+      "type": "Task DeleteAsync(string assetId, CancellationToken cancellationToken = default)",
+      "description": "Deletes a provider-managed asset."
+    }
+  ]
+}

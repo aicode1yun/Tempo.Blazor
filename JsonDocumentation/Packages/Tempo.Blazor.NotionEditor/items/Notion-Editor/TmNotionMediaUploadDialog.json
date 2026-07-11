@@ -15,7 +15,8 @@
       "name": "MediaType",
       "type": "string",
       "isRequired": false,
-      "default": "\"file\""
+      "default": "\"file\"",
+      "description": "\"image\" | \"video\" | \"audio\" | \"pdf\" | \"file\""
     },
     {
       "name": "OnConfirmed",

@@ -2561,7 +2561,10 @@
   "TmNotionCodeBlock_CaptionPlaceholder": "Přidat popisek…",
   "TmNotionCodeBlock_Copied": "Zkopírováno!",
   "TmNotionCodeBlock_CopyCode": "Kopírovat",
+  "TmNotionCodeBlock_PreviewLabel": "Náhled vykresleného Markdownu",
   "TmNotionCodeBlock_SelectLanguage": "Jazyk",
+  "TmNotionCodeBlock_ShowEditor": "Upravit",
+  "TmNotionCodeBlock_ShowPreview": "Náhled",
   "TmNotionCollab_ActiveUsers": "Aktivní spolupracovníci",
   "TmNotionCollab_Connected": "Připojeno",
   "TmNotionCollab_Connecting": "Připojování…",
@@ -4548,5 +4551,6 @@
   "Tm_Select": "Vybrat",
   "Tm_SelectAll": "Vybrat vše",
   "Tm_Upload": "Nahrát",
-  "Tm_Yes": "Ano"
+  "Tm_Yes": "Ano",
+  "TmNotionBlock_TodoPlaceholder": "Úkol"
 }

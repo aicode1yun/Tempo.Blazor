@@ -1,0 +1,37 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Library-agnostic UI role that describes a component concept such as search-input, data-table, or signature-pad.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/UiRoleDefinition.cs",
+  "documentationStatus": "generated",
+  "itemName": "UiRoleDefinition",
+  "members": [
+    {
+      "name": "UiRoleDefinition",
+      "type": "public UiRoleDefinition()",
+      "description": "Creates a validated UI role definition."
+    },
+    {
+      "name": "Slug",
+      "type": "string",
+      "description": "Stable kebab-case role identifier."
+    },
+    {
+      "name": "DisplayName",
+      "type": "string",
+      "description": "Human-readable role name."
+    },
+    {
+      "name": "Definition",
+      "type": "string",
+      "description": "Short role definition used by authoring and validation tools."
+    },
+    {
+      "name": "Synonyms",
+      "type": "IReadOnlyList<string>",
+      "description": "Known English, Czech, legacy, and historically incorrect names for the role."
+    }
+  ]
+}

@@ -15,49 +15,49 @@
       "name": "AppearsOn",
       "type": "string?",
       "isRequired": false,
-      "description": "Document area used to infer cells maxlength."
+      "description": "Short text describing where the field appears in the document."
     },
     {
       "name": "Area",
       "type": "SigningFieldArea?",
       "isRequired": false,
-      "description": "Callback invoked when the text value changes."
+      "description": "Document area used to infer cells maxlength."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Fallback culture used when localized field text is missing."
+      "description": "Additional CSS classes for the shell element."
     },
     {
       "name": "Culture",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the input is disabled."
+      "description": "Culture used to resolve localized field text."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Short text describing where the field appears in the document."
+      "description": "Whether the input is disabled."
     },
     {
       "name": "FallbackCulture",
       "type": "string?",
       "isRequired": false,
-      "description": "Culture used to resolve localized field text."
+      "description": "Fallback culture used when localized field text is missing."
     },
     {
       "name": "Value",
       "type": "string?",
       "isRequired": false,
-      "description": "Signing field represented by this step."
+      "description": "Current text value."
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Current text value."
+      "description": "Callback invoked when the text value changes."
     }
   ]
 }

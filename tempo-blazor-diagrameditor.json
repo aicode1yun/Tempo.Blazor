@@ -104,13 +104,14 @@
       ]
     },
     {
+      "itemName": "AddLayerCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Diagram.Commands",
-      "description": "Adds a new layer to the diagram (undoable).",
+      "description": "Adds a new layer to a DiagramDocument as a single undoable step. Execute() appends the layer, Undo() removes it again.",
       "packageId": "Tempo.Blazor.DiagramEditor",
       "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/AddLayerCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Layer",
@@ -133,7 +134,12 @@
           "type": "void"
         }
       ],
-      "itemName": "AddLayerCommand"
+      "examples": [
+        {
+          "title": "Use AddLayerCommand",
+          "code": "var command = new AddLayerCommand(diagramDocument, \"Annotations\");\n\n// Push() executes the command and records it for undo;\n// without a stack, call command.Execute() directly.\ncommandStack.Push(command);\n\nvar newLayerId = command.Layer.Id;"
+        }
+      ]
     },
     {
       "itemName": "AddNodeCommand",
@@ -532,13 +538,14 @@
       ]
     },
     {
+      "itemName": "CopyStyleCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Diagram.Commands",
-      "description": "Copies the style and optionally size of a single node to the static clipboard.",
+      "description": "Copies the style — and optionally the size — of a single node into the static DiagramClipboard. Unlike the other diagram commands it does not implement IDiagramCommand and has no Undo(), because it changes no document state; execute it directly instead of pushing it onto a DiagramCommandStack.",
       "packageId": "Tempo.Blazor.DiagramEditor",
       "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/CopyStyleCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Execute",
@@ -546,7 +553,12 @@
           "type": "void"
         }
       ],
-      "itemName": "CopyStyleCommand"
+      "examples": [
+        {
+          "title": "Use CopyStyleCommand",
+          "code": "// CopyStyleCommand only writes to the static DiagramClipboard, so it has no Undo()\n// and must NOT be pushed onto a DiagramCommandStack — just execute it.\nnew CopyStyleCommand(selectedNode).Execute();\n\n// copy style and size together\nnew CopyStyleCommand(selectedNode, includeSize: true).Execute();"
+        }
+      ]
     },
     {
       "itemName": "CsvParser",
@@ -2001,13 +2013,14 @@
       ]
     },
     {
+      "itemName": "PasteSizeCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Diagram.Commands",
-      "description": "Applies the copied width/height from to the selected nodes (undoable).",
+      "description": "Applies the width/height previously copied into DiagramClipboard to the selected nodes. Undoable — Undo() restores each node's original size.",
       "packageId": "Tempo.Blazor.DiagramEditor",
       "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/PasteSizeCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -2025,16 +2038,22 @@
           "type": "void"
         }
       ],
-      "itemName": "PasteSizeCommand"
+      "examples": [
+        {
+          "title": "Use PasteSizeCommand",
+          "code": "new CopyStyleCommand(sourceNode, includeSize: true).Execute();\n\ncommandStack.Push(new PasteSizeCommand(document, selectedNodeIds));"
+        }
+      ]
     },
     {
+      "itemName": "PasteStyleCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Diagram.Commands",
-      "description": "Applies the copied style from to the selected nodes (undoable).",
+      "description": "Applies the style previously copied into DiagramClipboard to the selected nodes. Undoable — Undo() restores each node's original style.",
       "packageId": "Tempo.Blazor.DiagramEditor",
       "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/PasteStyleCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -2052,7 +2071,12 @@
           "type": "void"
         }
       ],
-      "itemName": "PasteStyleCommand"
+      "examples": [
+        {
+          "title": "Use PasteStyleCommand",
+          "code": "new CopyStyleCommand(sourceNode).Execute();\n\n// Push() executes the command and records it for undo\ncommandStack.Push(new PasteStyleCommand(document, selectedNodeIds));"
+        }
+      ]
     },
     {
       "itemName": "PlaceholderHelper",
@@ -2109,13 +2133,14 @@
       ]
     },
     {
+      "itemName": "RemoveLayerCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Diagram.Commands",
-      "description": "Removes a layer and moves its nodes to the default (null) layer (undoable).",
+      "description": "Removes a layer and moves the nodes that lived on it to the default (null) layer. Undoable — Undo() restores the layer and reassigns its nodes.",
       "packageId": "Tempo.Blazor.DiagramEditor",
       "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RemoveLayerCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -2133,7 +2158,12 @@
           "type": "void"
         }
       ],
-      "itemName": "RemoveLayerCommand"
+      "examples": [
+        {
+          "title": "Use RemoveLayerCommand",
+          "code": "commandStack.Push(new RemoveLayerCommand(document, layerId));"
+        }
+      ]
     },
     {
       "itemName": "RemoveNodesCommand",
@@ -2212,13 +2242,14 @@
       ]
     },
     {
+      "itemName": "RenameLayerCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Diagram.Commands",
-      "description": "Renames a layer (undoable).",
+      "description": "Renames a layer. Undoable — Undo() restores the previous name.",
       "packageId": "Tempo.Blazor.DiagramEditor",
       "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/RenameLayerCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -2236,16 +2267,22 @@
           "type": "void"
         }
       ],
-      "itemName": "RenameLayerCommand"
+      "examples": [
+        {
+          "title": "Use RenameLayerCommand",
+          "code": "commandStack.Push(new RenameLayerCommand(layer, \"Background\"));"
+        }
+      ]
     },
     {
+      "itemName": "ReorderLayersCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Diagram.Commands",
-      "description": "Reorders layers by their Order property (undoable).",
+      "description": "Reorders layers by rewriting their Order property. Undoable — Undo() restores the previous ordering.",
       "packageId": "Tempo.Blazor.DiagramEditor",
       "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ReorderLayersCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -2263,7 +2300,12 @@
           "type": "void"
         }
       ],
-      "itemName": "ReorderLayersCommand"
+      "examples": [
+        {
+          "title": "Use ReorderLayersCommand",
+          "code": "var order = new Dictionary<string, int>\n{\n    [backgroundLayerId] = 0,\n    [contentLayerId]    = 1,\n    [annotationLayerId] = 2,\n};\n\ncommandStack.Push(new ReorderLayersCommand(document, order));"
+        }
+      ]
     },
     {
       "itemName": "ReplaceShapeCommand",
@@ -3050,13 +3092,14 @@
       ]
     },
     {
+      "itemName": "ToggleLayerLockCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Diagram.Commands",
-      "description": "Toggles the lock state of a layer (undoable).",
+      "description": "Toggles the lock state of a layer; locked layers cannot be edited on the canvas. Undoable.",
       "packageId": "Tempo.Blazor.DiagramEditor",
       "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ToggleLayerLockCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -3074,16 +3117,22 @@
           "type": "void"
         }
       ],
-      "itemName": "ToggleLayerLockCommand"
+      "examples": [
+        {
+          "title": "Use ToggleLayerLockCommand",
+          "code": "commandStack.Push(new ToggleLayerLockCommand(layer));"
+        }
+      ]
     },
     {
+      "itemName": "ToggleLayerVisibilityCommand",
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Diagram.Commands",
-      "description": "Toggles the visibility of a layer (undoable).",
+      "description": "Toggles the visibility of a layer. Undoable.",
       "packageId": "Tempo.Blazor.DiagramEditor",
       "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ToggleLayerVisibilityCommand.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Name",
@@ -3101,7 +3150,12 @@
           "type": "void"
         }
       ],
-      "itemName": "ToggleLayerVisibilityCommand"
+      "examples": [
+        {
+          "title": "Use ToggleLayerVisibilityCommand",
+          "code": "commandStack.Push(new ToggleLayerVisibilityCommand(layer));"
+        }
+      ]
     },
     {
       "itemName": "Uml25DiagramStencilProvider",
@@ -3612,13 +3666,14 @@
       ]
     },
     {
+      "itemName": "DiagramEditorServiceCollectionExtensions",
       "kind": "Class",
       "category": "Configuration",
       "namespace": "Tempo.Blazor.Configuration",
       "description": "Extension methods for registering Tempo.Blazor diagram editor services.",
       "packageId": "Tempo.Blazor.DiagramEditor",
       "sourcePath": "src/Tempo.Blazor.DiagramEditor/Configuration/DiagramEditorServiceCollectionExtensions.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AddTempoBlazorDiagramEditor",
@@ -3633,7 +3688,12 @@
           ]
         }
       ],
-      "itemName": "DiagramEditorServiceCollectionExtensions"
+      "examples": [
+        {
+          "title": "Register the services in Program.cs",
+          "code": "builder.Services.AddTempoBlazorDiagramEditor();"
+        }
+      ]
     },
     {
       "itemName": "TmDiagramArrowSelect",
@@ -3678,7 +3738,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Prevent all editing interactions."
+          "description": "Additional CSS class applied to the canvas wrapper."
         },
         {
           "name": "Document",
@@ -3690,32 +3750,32 @@
           "name": "DocumentChanged",
           "type": "EventCallback<DiagramDocument>",
           "isRequired": false,
-          "description": "Document to display and edit."
+          "description": "Raised after every mutation."
         },
         {
           "name": "GridSize",
           "type": "int",
           "isRequired": false,
           "default": "8",
-          "description": "Show grid lines on the canvas background."
+          "description": "Snap-to-grid cell size in pixels. 0 = disabled."
         },
         {
           "name": "OnCanvasContextMenu",
           "type": "EventCallback<(double CanvasX, double CanvasY, double ScreenX, double ScreenY)>",
           "isRequired": false,
-          "description": "Raised when the user presses Escape and there is a table cell sub-selection that should be cleared before the node selection. Used to implement the draw.io-style \"drill-out\" cascade (first Escape exits cell mode, second Escape clears node selection)."
+          "description": "Raised when the empty canvas is right-clicked to open a context menu."
         },
         {
           "name": "OnClearTableCellSelection",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when a table cell is right-clicked to open a context menu."
+          "description": "Raised when the user presses Escape and there is a table cell sub-selection that should be cleared before the node selection. Used to implement the draw.io-style \"drill-out\" cascade (first Escape exits cell mode, second Escape clears node selection)."
         },
         {
           "name": "OnCloseContextMenu",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the empty canvas is right-clicked to open a context menu."
+          "description": "Raised when the context menu should be closed (e.g. second right-click)."
         },
         {
           "name": "OnConnectArrowClicked",
@@ -3727,7 +3787,7 @@
           "name": "OnEdgeContextMenu",
           "type": "EventCallback<(string EdgeId, double ScreenX, double ScreenY)>",
           "isRequired": false,
-          "description": "Raised when a node is right-clicked or long-pressed to open a context menu."
+          "description": "Raised when an edge is right-clicked to open a context menu."
         },
         {
           "name": "OnEdgeCreated",
@@ -3738,49 +3798,49 @@
           "name": "OnEnterGroup",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Raised when the user presses Ctrl+Shift+L to lock selected nodes."
+          "description": "Raised when the user double-clicks or presses Ctrl+Shift+G on a group to enter it."
         },
         {
           "name": "OnExitGroup",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user double-clicks or presses Ctrl+Shift+G on a group to enter it."
+          "description": "Raised when the user presses Ctrl+Shift+F to exit the current group."
         },
         {
           "name": "OnGroupSelected",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user presses Ctrl+PageUp/PageDown to switch page."
+          "description": "Raised when the user presses Ctrl+Shift+G to group selected nodes."
         },
         {
           "name": "OnLockSelected",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user presses Ctrl+Shift+G to group selected nodes."
+          "description": "Raised when the user presses Ctrl+Shift+L to lock selected nodes."
         },
         {
           "name": "OnNavigateToCorner",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Raised when the user presses a quick-insert stencil key (A,S,D,F,R)."
+          "description": "Raised when the user presses Ctrl+Home/End to navigate to a corner."
         },
         {
           "name": "OnNodeContextMenu",
           "type": "EventCallback<(string NodeId, double ScreenX, double ScreenY)>",
           "isRequired": false,
-          "description": "Raised when a port is clicked to start drawing an edge."
+          "description": "Raised when a node is right-clicked or long-pressed to open a context menu."
         },
         {
           "name": "OnNodeLinkClicked",
           "type": "EventCallback<(string NodeId, string Link)>",
           "isRequired": false,
-          "description": "Raised when a table cell is clicked (with or without Ctrl)."
+          "description": "Raised when a node with a link is clicked."
         },
         {
           "name": "OnPortMouseDown",
           "type": "EventCallback<(string NodeId, string PortId)>",
           "isRequired": false,
-          "description": "Raised when the ruler cursor moves."
+          "description": "Raised when a port is clicked to start drawing an edge."
         },
         {
           "name": "OnPortMouseDownEvent",
@@ -3791,25 +3851,25 @@
           "name": "OnQuickInsert",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Active group identifier. Only nodes with matching ParentGroupId are rendered."
+          "description": "Raised when the user presses a quick-insert stencil key (A,S,D,F,R)."
         },
         {
           "name": "OnRedo",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when user requests undo."
+          "description": "Raised when user requests redo."
         },
         {
           "name": "OnRulerCursorMoved",
           "type": "EventCallback<(double X, double Y)>",
           "isRequired": false,
-          "description": "Raised when the viewport changes after pan, zoom, or fit."
+          "description": "Raised when the ruler cursor moves."
         },
         {
           "name": "OnSelectionChanged",
           "type": "EventCallback<string[]>",
           "isRequired": false,
-          "description": "Current zoom level used for pixel-to-document conversion."
+          "description": "Raised when the user changes the selection."
         },
         {
           "name": "OnShowReplace",
@@ -3821,43 +3881,43 @@
           "name": "OnShowSearch",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user switches tool mode."
+          "description": "Raised when the user presses Ctrl+F."
         },
         {
           "name": "OnSwitchPage",
           "type": "EventCallback<int>",
           "isRequired": false,
-          "description": "Raised when the user presses Ctrl+Home/End to navigate to a corner."
+          "description": "Raised when the user presses Ctrl+PageUp/PageDown to switch page."
         },
         {
           "name": "OnTableCellContextMenu",
           "type": "EventCallback<(string NodeId, int Row, int Column, double ScreenX, double ScreenY)>",
           "isRequired": false,
-          "description": "Raised when an edge is right-clicked to open a context menu."
+          "description": "Raised when a table cell is right-clicked to open a context menu."
         },
         {
           "name": "OnTableCellSelect",
           "type": "EventCallback<(string NodeId, int Row, int Column, bool IsCtrlHeld)>",
           "isRequired": false,
-          "description": "Selected table cells for multi-select merge UI."
+          "description": "Raised when a table cell is clicked (with or without Ctrl)."
         },
         {
           "name": "OnToggleBold",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user presses Ctrl+Shift+F to exit the current group."
+          "description": "Raised when the user presses Ctrl+B to toggle bold on selected nodes."
         },
         {
           "name": "OnToggleItalic",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user presses Ctrl+B to toggle bold on selected nodes."
+          "description": "Raised when the user presses Ctrl+I to toggle italic on selected nodes."
         },
         {
           "name": "OnToggleUnderline",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user presses Ctrl+I to toggle italic on selected nodes."
+          "description": "Raised when the user presses Ctrl+U to toggle underline on selected nodes."
         },
         {
           "name": "OnToolboxDrop",
@@ -3868,33 +3928,33 @@
           "name": "OnToolModeChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Raised when user requests redo."
+          "description": "Raised when the user switches tool mode."
         },
         {
           "name": "OnUndo",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user changes the selection."
+          "description": "Raised when user requests undo."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Snap-to-grid cell size in pixels. 0 = disabled."
+          "description": "Prevent all editing interactions."
         },
         {
           "name": "SelectedTableCells",
           "type": "List<(int Row, int Column)>",
           "isRequired": false,
           "default": "[]",
-          "description": "Raised when the context menu should be closed (e.g. second right-click)."
+          "description": "Selected table cells for multi-select merge UI."
         },
         {
           "name": "ShowGrid",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Raised after every mutation."
+          "description": "Show grid lines on the canvas background."
         },
         {
           "name": "ShowPageView",
@@ -3907,20 +3967,20 @@
           "name": "ViewportChanged",
           "type": "EventCallback<DiagramMinimapViewport>",
           "isRequired": false,
-          "description": "Raised when the zoom level changes (e.g. via wheel)."
+          "description": "Raised when the viewport changes after pan, zoom, or fit."
         },
         {
           "name": "Zoom",
           "type": "double",
           "isRequired": false,
           "default": "1.0",
-          "description": "Additional CSS class applied to the canvas wrapper."
+          "description": "Current zoom level used for pixel-to-document conversion."
         },
         {
           "name": "ZoomChanged",
           "type": "EventCallback<double>",
           "isRequired": false,
-          "description": "Raised when the user presses Ctrl+U to toggle underline on selected nodes."
+          "description": "Raised when the zoom level changes (e.g. via wheel)."
         }
       ]
     },
@@ -3961,7 +4021,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional named HttpClient to use for SVG/PNG/PDF export calls."
+          "description": "Additional CSS class on the editor root."
         },
         {
           "name": "Document",
@@ -3973,82 +4033,82 @@
           "name": "DocumentChanged",
           "type": "EventCallback<DiagramDocument>",
           "isRequired": false,
-          "description": "Document being edited. Bind with @bind-Document."
+          "description": "Raised after every mutation."
         },
         {
           "name": "ExportHttpClientName",
           "type": "string",
           "isRequired": false,
           "default": "\"\"",
-          "description": "Show page view with shadow and boundaries on the canvas."
+          "description": "Optional named HttpClient to use for SVG/PNG/PDF export calls."
         },
         {
           "name": "GridSize",
           "type": "int",
           "isRequired": false,
           "default": "8",
-          "description": "Show grid lines on the canvas background."
+          "description": "Snap-to-grid cell size in pixels. 0 = disabled."
         },
         {
           "name": "OnSelectedIdsChanged",
           "type": "EventCallback<string[]>",
           "isRequired": false,
-          "description": "Additional CSS class on the editor root."
+          "description": "Raised when selected diagram item identifiers change."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Raised after every mutation."
+          "description": "Prevent all editing interactions."
         },
         {
           "name": "ShowGrid",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Show the top toolbar."
+          "description": "Show grid lines on the canvas background."
         },
         {
           "name": "ShowLayersPanel",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Show the properties panel on the right."
+          "description": "Show the layers panel on the right."
         },
         {
           "name": "ShowMinimap",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Show the layers panel on the right."
+          "description": "Show the minimap at the bottom of the right sidebar."
         },
         {
           "name": "ShowPageView",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Snap-to-grid cell size in pixels. 0 = disabled."
+          "description": "Show page view with shadow and boundaries on the canvas."
         },
         {
           "name": "ShowPropertiesPanel",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Show the component toolbox panel on the left."
+          "description": "Show the properties panel on the right."
         },
         {
           "name": "ShowToolbar",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Show the minimap at the bottom of the right sidebar."
+          "description": "Show the top toolbar."
         },
         {
           "name": "ShowToolbox",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Prevent all editing interactions."
+          "description": "Show the component toolbox panel on the left."
         }
       ]
     },
@@ -4089,7 +4149,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Raised when the user clicks or drags the minimap to navigate. Arguments are the document-space centre point."
+          "description": "Additional CSS class on the wrapper div."
         },
         {
           "name": "Document",
@@ -4101,27 +4161,27 @@
           "name": "NavigateRequested",
           "type": "EventCallback<DiagramMinimapNavigateArgs>",
           "isRequired": false,
-          "description": "Fixed pixel width of the minimap panel. Height is derived from canvas aspect ratio."
+          "description": "Raised when the user clicks or drags the minimap to navigate. Arguments are the document-space centre point."
         },
         {
           "name": "SelectedIds",
           "type": "string[]",
           "isRequired": false,
           "default": "[]",
-          "description": "Document to render."
+          "description": "IDs of currently selected elements (highlighted in blue)."
         },
         {
           "name": "Viewport",
           "type": "DiagramMinimapViewport?",
           "isRequired": false,
-          "description": "IDs of currently selected elements (highlighted in blue)."
+          "description": "Current viewport state in document coordinates. When null the viewport rect is not shown."
         },
         {
           "name": "Width",
           "type": "int",
           "isRequired": false,
           "default": "200",
-          "description": "Current viewport state in document coordinates. When null the viewport rect is not shown."
+          "description": "Fixed pixel width of the minimap panel. Height is derived from canvas aspect ratio."
         }
       ]
     },
@@ -4146,7 +4206,8 @@
         {
           "name": "OnEdgeManualRoutingChanged",
           "type": "EventCallback<(string EdgeId, bool Value)>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Raised when the \"Manual routing\" checkbox is toggled for an edge. The editor listens so it can seed an empty Waypoints list from the auto-router when the user flips to manual on an orthogonal-like edge — otherwise the edge would collapse to a straight line at the moment of toggle."
         }
       ]
     },
@@ -4187,7 +4248,7 @@
           "name": "CursorX",
           "type": "double",
           "isRequired": false,
-          "description": "Page scale factor (1.0 = 1:1)."
+          "description": "Cursor position for crosshair."
         },
         {
           "name": "CursorY",
@@ -4207,45 +4268,45 @@
           "type": "double",
           "isRequired": false,
           "default": "1.0",
-          "description": "Measurement unit."
+          "description": "Page scale factor (1.0 = 1:1)."
         },
         {
           "name": "Unit",
           "type": "MeasurementUnit",
           "isRequired": false,
           "default": "MeasurementUnit.Px",
-          "description": "Current zoom level (1.0 = 100%)."
+          "description": "Measurement unit."
         },
         {
           "name": "ViewportH",
           "type": "double",
           "isRequired": false,
-          "description": "Viewport width in document coordinates."
+          "description": "Viewport height in document coordinates."
         },
         {
           "name": "ViewportW",
           "type": "double",
           "isRequired": false,
-          "description": "Viewport Y in document coordinates."
+          "description": "Viewport width in document coordinates."
         },
         {
           "name": "ViewportX",
           "type": "double",
           "isRequired": false,
-          "description": "Either horizontal or vertical."
+          "description": "Viewport X in document coordinates."
         },
         {
           "name": "ViewportY",
           "type": "double",
           "isRequired": false,
-          "description": "Viewport X in document coordinates."
+          "description": "Viewport Y in document coordinates."
         },
         {
           "name": "Zoom",
           "type": "double",
           "isRequired": false,
           "default": "1.0",
-          "description": "Viewport height in document coordinates."
+          "description": "Current zoom level (1.0 = 100%)."
         }
       ]
     },
@@ -4266,31 +4327,31 @@
           "name": "CurrentIndex",
           "type": "int",
           "isRequired": false,
-          "description": "Total number of matches."
+          "description": "Zero-based index of the currently highlighted match."
         },
         {
           "name": "CurrentIndexChanged",
           "type": "EventCallback<int>",
           "isRequired": false,
-          "description": "Zero-based index of the currently highlighted match."
+          "description": "Fires when the active match index changes."
         },
         {
           "name": "OnClose",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fires when the active match index changes."
+          "description": "Fires when the panel should close."
         },
         {
           "name": "OnReplace",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Error message displayed when the regex pattern is invalid."
+          "description": "Fires when the user clicks the Replace button."
         },
         {
           "name": "OnReplaceAll",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fires when the user clicks the Replace button."
+          "description": "Fires when the user clicks the Replace All button."
         },
         {
           "name": "Query",
@@ -4303,56 +4364,56 @@
           "name": "QueryChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Current search query."
+          "description": "Fires when the query changes."
         },
         {
           "name": "RegexError",
           "type": "string?",
           "isRequired": false,
-          "description": "Fires when the regex toggle changes."
+          "description": "Error message displayed when the regex pattern is invalid."
         },
         {
           "name": "ReplaceQuery",
           "type": "string",
           "isRequired": false,
           "default": "\"\"",
-          "description": "Fires when the \"search all pages\" toggle changes."
+          "description": "Current replacement text."
         },
         {
           "name": "ReplaceQueryChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Current replacement text."
+          "description": "Fires when the replacement text changes."
         },
         {
           "name": "ResultsCount",
           "type": "int",
           "isRequired": false,
-          "description": "Fires when the query changes."
+          "description": "Total number of matches."
         },
         {
           "name": "SearchAllPages",
           "type": "bool",
           "isRequired": false,
-          "description": "Fires when the panel should close."
+          "description": "When true, search spans all pages instead of just the active one."
         },
         {
           "name": "SearchAllPagesChanged",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "When true, search spans all pages instead of just the active one."
+          "description": "Fires when the \"search all pages\" toggle changes."
         },
         {
           "name": "UseRegex",
           "type": "bool",
           "isRequired": false,
-          "description": "Fires when the replacement text changes."
+          "description": "When true, the query is treated as a regular expression."
         },
         {
           "name": "UseRegexChanged",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "When true, the query is treated as a regular expression."
+          "description": "Fires when the regex toggle changes."
         }
       ]
     },
@@ -4483,13 +4544,13 @@
           "name": "StencilDragStart",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Additional CSS class."
+          "description": "Raised when a stencil drag starts."
         },
         {
           "name": "StencilKeyboardInsert",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Raised when a stencil drag starts."
+          "description": "Raised when a focused stencil item is activated from the keyboard."
         }
       ]
     }
@@ -4567,9 +4628,9 @@
   ],
   "summary": {
     "itemCount": 133,
-    "manualItemCount": 123,
+    "manualItemCount": 133,
     "generatedItemCount": 124,
-    "generatedOnlyItemCount": 10,
+    "generatedOnlyItemCount": 0,
     "componentCount": 16,
     "publicApiTypeCount": 108
   }

@@ -86,6 +86,13 @@ public static class DocumentModelToNotionConverter
             case Dm.ImageBlockContent image:
                 AppendImage(result, pageId, order, image, block, warnings);
                 break;
+            case Dm.CodeBlockContent code:
+                result.Add(CreateBlock(pageId, null, BlockType.Code, order, new Nm.CodeBlockContent
+                {
+                    Language = code.Language ?? string.Empty,
+                    Code = code.Code
+                }));
+                break;
             case Dm.PageBreakBlockContent:
                 result.Add(CreateBlock(pageId, null, BlockType.Divider, order, new Nm.DividerBlockContent()));
                 break;
@@ -132,6 +139,20 @@ public static class DocumentModelToNotionConverter
         Dm.ListBlockContent list)
     {
         var html = RenderInlines(list.Inlines);
+
+        // Preferred encoding: the checkbox is model state.
+        if (list.IsChecked is { } state)
+        {
+            result.Add(CreateBlock(pageId, null, BlockType.TodoItem, order, new Nm.TodoBlockContent
+            {
+                IsChecked = state,
+                Html = html
+            }));
+            return;
+        }
+
+        // Legacy encoding: the checkbox travelled as a literal "[x] " prefix inside the text.
+        // Documents built by 2.0.x callers still arrive this way.
         var plain = DocumentModelText.GetInlineText(list.Inlines).TrimStart();
         if (TryReadTaskPrefix(plain, out var isChecked, out var remaining))
         {
@@ -161,7 +182,8 @@ public static class DocumentModelToNotionConverter
         var tableBlock = CreateBlock(pageId, null, BlockType.Table, order, new Nm.TableBlockContent
         {
             ColumnCount = columnCount,
-            HasHeaderRow = rows.FirstOrDefault()?.Cells.Any(cell => cell.IsHeader) == true
+            HasHeaderRow = rows.FirstOrDefault()?.Cells.Any(cell => cell.IsHeader) == true,
+            ColumnAlignments = NormalizeAlignments(table.ColumnAlignments, columnCount)
         });
         result.Add(tableBlock);
 
@@ -172,6 +194,31 @@ public static class DocumentModelToNotionConverter
                 Cells = rows[rowIndex].Cells.Select(RenderCell).ToList()
             }));
         }
+    }
+
+    /// <summary>Trims or pads the alignment list so it lines up with the table's column count.</summary>
+    private static IReadOnlyList<Dm.TableColumnAlignment> NormalizeAlignments(
+        IReadOnlyList<Dm.TableColumnAlignment> alignments,
+        int columnCount)
+    {
+        if (columnCount == 0 || alignments.Count == 0)
+        {
+            return [];
+        }
+
+        if (alignments.Count == columnCount)
+        {
+            return [.. alignments];
+        }
+
+        if (alignments.Count > columnCount)
+        {
+            return [.. alignments.Take(columnCount)];
+        }
+
+        var normalized = new List<Dm.TableColumnAlignment>(alignments);
+        normalized.AddRange(Enumerable.Repeat(Dm.TableColumnAlignment.None, columnCount - alignments.Count));
+        return normalized;
     }
 
     private static void AppendImage(
@@ -229,6 +276,7 @@ public static class DocumentModelToNotionConverter
             Dm.ListBlockContent list => RenderInlines(list.Inlines),
             Dm.QuoteBlockContent quote => RenderInlines(quote.Inlines),
             Dm.ImageBlockContent image => WebUtility.HtmlEncode(FirstNonEmpty(image.Caption, image.AltText, image.Url, image.AssetId)),
+            Dm.CodeBlockContent code => code.Code,
             Dm.PageBreakBlockContent => string.Empty,
             _ => WebUtility.HtmlEncode(DocumentModelText.GetBlockText(block))
         };

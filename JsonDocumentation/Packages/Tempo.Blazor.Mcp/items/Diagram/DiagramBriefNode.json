@@ -1,0 +1,47 @@
+{
+  "kind": "Record",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "One node of a DiagramBriefPage: which stencil it uses, its label, and its position and size on the canvas.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramBriefNode",
+  "members": [
+    {
+      "name": "Id",
+      "type": "string",
+      "description": "The node's id."
+    },
+    {
+      "name": "StencilId",
+      "type": "string",
+      "description": "Id of the stencil the node renders."
+    },
+    {
+      "name": "Label",
+      "type": "string?",
+      "description": "The node's label, when it has one."
+    },
+    {
+      "name": "X",
+      "type": "double",
+      "description": "Left edge in canvas pixels."
+    },
+    {
+      "name": "Y",
+      "type": "double",
+      "description": "Top edge in canvas pixels."
+    },
+    {
+      "name": "W",
+      "type": "double",
+      "description": "Width in pixels."
+    },
+    {
+      "name": "H",
+      "type": "double",
+      "description": "Height in pixels."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Configuration",
+  "namespace": "Tempo.Blazor.Configuration",
+  "description": "Extension methods for registering Tempo.Blazor wireframe editor services.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Configuration/WireframeServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeServiceCollectionExtensions",
+  "members": [
+    {
+      "name": "AddTempoBlazorWireframe",
+      "type": "IServiceCollection AddTempoBlazorWireframe(this IServiceCollection services)",
+      "description": "Registers the services required by the wireframe editor component group."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Register the services in Program.cs",
+      "code": "builder.Services.AddTempoBlazorWireframe();"
+    }
+  ]
+}

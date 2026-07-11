@@ -15,19 +15,19 @@
       "name": "OnContentChanged",
       "type": "EventCallback<ContentByLabelBlockContent>",
       "isRequired": false,
-      "description": "Whether editing controls are hidden."
+      "description": "Raised after the block configuration changes."
     },
     {
       "name": "OnFocused",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised after the block configuration changes."
+      "description": "Raised when the block receives focus."
     },
     {
       "name": "ReadOnly",
       "type": "bool",
       "isRequired": false,
-      "description": "Saved Content-by-Label block configuration."
+      "description": "Whether editing controls are hidden."
     }
   ],
   "subcategory": "Blocks / Special"

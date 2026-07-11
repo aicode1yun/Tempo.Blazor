@@ -21,104 +21,104 @@
       "name": "CancelText",
       "type": "string?",
       "isRequired": false,
-      "description": "Optional apply button text."
+      "description": "Optional cancel button text."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Placeholder text shown when no color is selected."
+      "description": "Additional CSS class."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Optional cancel button text."
+      "description": "Disables the color picker."
     },
     {
       "name": "Format",
       "type": "ColorFormat",
       "isRequired": false,
       "default": "ColorFormat.Hex",
-      "description": "Fires when the dropdown open state changes."
+      "description": "Output color format. Defaults to hex."
     },
     {
       "name": "OpenChanged",
       "type": "EventCallback<bool>",
       "isRequired": false,
-      "description": "Fires when the color value changes."
+      "description": "Fires when the dropdown open state changes."
     },
     {
       "name": "PaletteColors",
       "type": "IReadOnlyList<string>?",
       "isRequired": false,
-      "description": "Shows the preset color palette."
+      "description": "Predefined colors to display in the palette."
     },
     {
       "name": "PaletteColumns",
       "type": "int",
       "isRequired": false,
       "default": "8",
-      "description": "Predefined colors to display in the palette."
+      "description": "Number of columns in the palette grid."
     },
     {
       "name": "Placeholder",
       "type": "string?",
       "isRequired": false,
-      "description": "Disables the color picker."
+      "description": "Placeholder text shown when no color is selected."
     },
     {
       "name": "ShowAlpha",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Output color format. Defaults to hex."
+      "description": "Shows alpha channel controls."
     },
     {
       "name": "ShowApplyButton",
       "type": "bool",
       "isRequired": false,
-      "description": "Shows the clear color command."
+      "description": "When true, the dropdown shows an Apply button and only closes when the user explicitly clicks it. Changing the color inside the picker does not close the dropdown."
     },
     {
       "name": "ShowCancelButton",
       "type": "bool",
       "isRequired": false,
-      "description": "When true, the dropdown shows an Apply button and only closes when the user explicitly clicks it. Changing the color inside the picker does not close the dropdown."
+      "description": "Shows a cancel button next to Apply when <see cref=\"ShowApplyButton\"/> is true."
     },
     {
       "name": "ShowClearButton",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Number of columns in the palette grid."
+      "description": "Shows the clear color command."
     },
     {
       "name": "ShowGradient",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Shows alpha channel controls."
+      "description": "Shows the gradient color area."
     },
     {
       "name": "ShowHexInput",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Shows the gradient color area."
+      "description": "Shows the hex color input."
     },
     {
       "name": "ShowPalette",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Shows the hex color input."
+      "description": "Shows the preset color palette."
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "The current color value."
+      "description": "Fires when the color value changes."
     }
   ]
 }

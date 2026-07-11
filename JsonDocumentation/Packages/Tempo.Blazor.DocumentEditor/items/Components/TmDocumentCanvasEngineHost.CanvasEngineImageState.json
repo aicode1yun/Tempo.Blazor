@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "description": "Selected canvas image state exposed to the editor properties panel.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmDocumentCanvasEngineHost.CanvasEngineImageState"
+}

@@ -20,61 +20,62 @@
     {
       "name": "OnContentSaved",
       "type": "EventCallback<string>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Fired on blur when header HTML has changed. Arg = new HTML."
     },
     {
       "name": "OnDeleteRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fired when Enter is pressed on a non-empty header. Arg = HTML after the split point."
+      "description": "Fired when Backspace is pressed on an empty header."
     },
     {
       "name": "OnEnterSplit",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fired on blur when header HTML has changed. Arg = new HTML."
+      "description": "Fired when Enter is pressed on a non-empty header. Arg = HTML after the split point."
     },
     {
       "name": "OnFocused",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fired when a markdown or conversion shortcut is detected. Special value \"paragraph\" means the user pressed Enter on an empty header."
+      "description": "Fired when the header editable receives focus."
     },
     {
       "name": "OnMentionMenu",
       "type": "EventCallback<(string BlockId, double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when '/' is typed. Args = (blockId, top, left) caret coords."
+      "description": "Fired when '@' is typed. Args = (blockId, top, left) caret coords."
     },
     {
       "name": "OnOpenChanged",
       "type": "EventCallback<(bool IsOpen, string? Html)>",
       "isRequired": false,
-      "description": "Fired when the header editable receives focus."
+      "description": "Fired when the open/closed state changes. Arg = new IsOpen value."
     },
     {
       "name": "OnPageLinkMenu",
       "type": "EventCallback<(string BlockId, double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when '@' is typed. Args = (blockId, top, left) caret coords."
+      "description": "Fired when '[[' is typed. Args = (blockId, top, left) caret coords."
     },
     {
       "name": "OnSlashMenu",
       "type": "EventCallback<(string BlockId, double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when the open/closed state changes. Arg = new IsOpen value."
+      "description": "Fired when '/' is typed. Args = (blockId, top, left) caret coords."
     },
     {
       "name": "OnTokenMenu",
       "type": "EventCallback<(string BlockId, double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when '[[' is typed. Args = (blockId, top, left) caret coords."
+      "description": "Fired when '{{' token syntax is typed. Args = (blockId, top, left) caret coords."
     },
     {
       "name": "OnTypeConvert",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fired when Backspace is pressed on an empty header."
+      "description": "Fired when a markdown or conversion shortcut is detected. Special value \"paragraph\" means the user pressed Enter on an empty header."
     }
   ],
   "subcategory": "Blocks / Lists"

@@ -1,0 +1,33 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+  "description": "Groups multiple ISpreadsheetCommand instances into a single undoable unit. Execute() runs them in insertion order; Undo() reverses them. Hand the batch to SpreadsheetCommandManager.Execute so one Ctrl+Z reverts the whole group.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/BatchCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "BatchCommand",
+  "members": [
+    {
+      "name": "Add",
+      "type": "void Add(ISpreadsheetCommand command)",
+      "description": "Appends a command to the batch."
+    },
+    {
+      "name": "Execute",
+      "type": "void Execute()",
+      "description": "Runs every command in insertion order."
+    },
+    {
+      "name": "Undo",
+      "type": "void Undo()",
+      "description": "Undoes every command in reverse order."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use BatchCommand",
+      "code": "var batch = new BatchCommand();\nbatch.Add(new SetCellValueCommand(sheet, \"A1\", 10, newFormula: null));\nbatch.Add(new SetCellValueCommand(sheet, \"A2\", 20, newFormula: null));\n\n// a single Ctrl+Z reverts both cells\ncommandManager.Execute(batch);"
+    }
+  ]
+}

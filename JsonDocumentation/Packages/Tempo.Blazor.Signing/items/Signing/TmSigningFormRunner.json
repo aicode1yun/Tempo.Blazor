@@ -16,118 +16,118 @@
       "type": "TimeSpan",
       "isRequired": false,
       "default": "TimeSpan.FromMilliseconds(600)",
-      "description": "Callback invoked with a resolved localization snapshot for audit storage."
+      "description": "Delay before autosave is invoked after a value change."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Optional selector for a fixed complete target that the mobile panel must avoid."
+      "description": "Additional CSS classes for the root element."
     },
     {
       "name": "Culture",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback invoked when all required fields are complete and the signer completes the form."
+      "description": "Culture used to render the signing layer."
     },
     {
       "name": "CultureChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Culture used to render the signing layer."
+      "description": "Callback invoked when the signing culture changes."
     },
     {
       "name": "FallbackCulture",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback invoked when the signing culture changes."
+      "description": "Fallback culture used when field translations are missing."
     },
     {
       "name": "Fields",
       "type": "IReadOnlyList<SigningField>",
       "isRequired": false,
       "default": "[]",
-      "description": "Document pages shown during signing."
+      "description": "Signing fields available to the signer."
     },
     {
       "name": "IsCompleting",
       "type": "bool",
       "isRequired": false,
-      "description": "Whether navigation and inputs are currently blocked by an external operation."
+      "description": "Whether the complete action is currently running."
     },
     {
       "name": "IsLoading",
       "type": "bool",
       "isRequired": false,
-      "description": "Delay before autosave is invoked after a value change."
+      "description": "Whether navigation and inputs are currently blocked by an external operation."
     },
     {
       "name": "MobileCompleteTargetSelector",
       "type": "string?",
       "isRequired": false,
-      "description": "Initial presentation mode for the mobile bottom panel."
+      "description": "Optional selector for a fixed complete target that the mobile panel must avoid."
     },
     {
       "name": "MobilePanelMode",
       "type": "TmSigningFormRunnerMobilePanelMode",
       "isRequired": false,
       "default": "TmSigningFormRunnerMobilePanelMode.Expanded",
-      "description": "Whether the complete action is currently running."
+      "description": "Initial presentation mode for the mobile bottom panel."
     },
     {
       "name": "OnAutoSave",
       "type": "EventCallback<IReadOnlyDictionary<string, object?>>",
       "isRequired": false,
-      "description": "Callback invoked when the current step is submitted by moving forward."
+      "description": "Callback invoked after debounced autosave."
     },
     {
       "name": "OnComplete",
       "type": "EventCallback<IReadOnlyDictionary<string, object?>>",
       "isRequired": false,
-      "description": "Callback invoked after debounced autosave."
+      "description": "Callback invoked when all required fields are complete and the signer completes the form."
     },
     {
       "name": "OnLocalizationSnapshotChanged",
       "type": "EventCallback<SigningSubmissionLocalizationSnapshot>",
       "isRequired": false,
-      "description": "Whether the runner should show a language selector when multiple cultures are available."
+      "description": "Callback invoked with a resolved localization snapshot for audit storage."
     },
     {
       "name": "OnStepSubmit",
       "type": "EventCallback<SigningStepItem>",
       "isRequired": false,
-      "description": "Optional signer role filter."
+      "description": "Callback invoked when the current step is submitted by moving forward."
     },
     {
       "name": "ShowLanguageSelector",
       "type": "bool",
       "isRequired": false,
-      "description": "Supported cultures offered by the language selector."
+      "description": "Whether the runner should show a language selector when multiple cultures are available."
     },
     {
       "name": "SubmitterUuid",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback invoked whenever field values change."
+      "description": "Optional signer role filter."
     },
     {
       "name": "SupportedCultures",
       "type": "IReadOnlyList<string>",
       "isRequired": false,
       "default": "[]",
-      "description": "Fallback culture used when field translations are missing."
+      "description": "Supported cultures offered by the language selector."
     },
     {
       "name": "Values",
       "type": "IReadOnlyDictionary<string, object?>",
       "isRequired": true,
-      "description": "Signing fields available to the signer."
+      "description": "Current field values keyed by field UUID."
     },
     {
       "name": "ValuesChanged",
       "type": "EventCallback<IReadOnlyDictionary<string, object?>>",
       "isRequired": false,
-      "description": "Current field values keyed by field UUID."
+      "description": "Callback invoked whenever field values change."
     }
   ]
 }

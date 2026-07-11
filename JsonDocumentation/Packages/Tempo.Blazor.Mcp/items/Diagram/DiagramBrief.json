@@ -1,0 +1,43 @@
+{
+  "kind": "Record",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "A deterministic, serialisable summary of a whole diagram document, produced by DiagramImplementationBrief.Build. It is the shape an MCP agent reads to reason about a diagram without loading the editor.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramImplementationBrief.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramBrief",
+  "members": [
+    {
+      "name": "Id",
+      "type": "string",
+      "description": "The document's id."
+    },
+    {
+      "name": "Title",
+      "type": "string",
+      "description": "The document's title."
+    },
+    {
+      "name": "ActivePageIndex",
+      "type": "int",
+      "description": "Index of the page that is currently active."
+    },
+    {
+      "name": "Pages",
+      "type": "IReadOnlyList<DiagramBriefPage>",
+      "description": "One brief per page, in document order."
+    },
+    {
+      "name": "StencilsUsed",
+      "type": "IReadOnlyList<DiagramBriefStencilUsage>",
+      "description": "How often each stencil is used across the whole document."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Summarise a diagram for an agent",
+      "code": "var brief = DiagramImplementationBrief.Build(document);\n\nforeach (var page in brief.Pages)\n{\n    Console.WriteLine($\"{page.Name}: {page.Nodes.Count} nodes, {page.Edges.Count} edges\");\n}"
+    }
+  ]
+}

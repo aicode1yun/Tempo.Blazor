@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "description": "Content control at the current selection, computed by the engine over the focused block only (perf plan N2) so the popover never needs the full-document marshal.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmDocumentCanvasEngineHost.CanvasEngineContentControlState"
+}

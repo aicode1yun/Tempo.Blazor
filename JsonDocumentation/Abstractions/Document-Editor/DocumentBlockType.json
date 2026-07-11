@@ -2,9 +2,63 @@
   "kind": "Enum",
   "category": "Document Editor",
   "namespace": "Tempo.Blazor.DocumentEditor.Models",
-  "description": "Block type used by the document editor JSON model.",
+  "description": "The kind of a DocumentBlock. Determines which DocumentBlockContent subclass the block's Content carries, and how the Markdown, HTML, DOCX and Notion converters render it.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentBlocks.cs",
   "documentationStatus": "generated",
-  "itemName": "DocumentBlockType"
+  "itemName": "DocumentBlockType",
+  "values": [
+    {
+      "name": "Paragraph",
+      "value": "0",
+      "description": "Ordinary text. Content is ParagraphBlockContent."
+    },
+    {
+      "name": "Heading",
+      "value": "1",
+      "description": "Heading of level 1-6. Content is HeadingBlockContent."
+    },
+    {
+      "name": "List",
+      "value": "2",
+      "description": "One list item, ordered or bulleted. A GFM task item sets ListBlockContent.IsChecked. Content is ListBlockContent."
+    },
+    {
+      "name": "Quote",
+      "value": "3",
+      "description": "Block quote. Content is QuoteBlockContent."
+    },
+    {
+      "name": "Table",
+      "value": "4",
+      "description": "Table with per-column alignment. Content is TableBlockContent."
+    },
+    {
+      "name": "Image",
+      "value": "5",
+      "description": "Standalone image. Content is ImageBlockContent."
+    },
+    {
+      "name": "PageBreak",
+      "value": "6",
+      "description": "Page break. Exports as a Markdown thematic break (---) and maps to a Notion Divider."
+    },
+    {
+      "name": "ContentControl",
+      "value": "7",
+      "description": "Structured document tag (Word content control). Content is ContentControlBlockContent."
+    },
+    {
+      "name": "Code",
+      "value": "8",
+      "description": "Preformatted code. Its text is never parsed for inline markup. Content is CodeBlockContent."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Dispatch on the block type",
+      "language": "csharp",
+      "code": "foreach (var block in document.Blocks.OrderBy(b => b.Order))\n{\n    var text = block.Type switch\n    {\n        DocumentBlockType.Code      => ((CodeBlockContent)block.Content!).Code,\n        DocumentBlockType.Paragraph => Render(((ParagraphBlockContent)block.Content!).Inlines),\n        DocumentBlockType.PageBreak => \"---\",\n        _                           => string.Empty\n    };\n}"
+    }
+  ]
 }

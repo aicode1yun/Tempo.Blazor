@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
-  "description": "Converts an ordered list of objects into a Markdown string. Inline HTML attributes in block content (bold, italic, code, links…) are mapped to standard CommonMark / GFM syntax.",
+  "description": "Converts an ordered list of IPageBlock objects into a Markdown string. Inline HTML in block content (bold, italic, code, links…) is mapped back to CommonMark / GFM syntax. A BlockType.Table block is rendered together with its child TableRow blocks: the separator row reproduces TableBlockContent.ColumnAlignments (:---, :---:, ---:), short rows are padded to the column count, and pipes inside cells are escaped. Legacy pages that stored consecutive TableRow blocks without a parent Table block are still exported correctly.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionMarkdownExporter.cs",
   "documentationStatus": "generated",
@@ -36,5 +36,15 @@
       ]
     }
   ],
-  "itemName": "NotionMarkdownExporter"
+  "itemName": "NotionMarkdownExporter",
+  "examples": [
+    {
+      "title": "Export page blocks to Markdown",
+      "code": "var blocks   = await BlockProvider.GetBlocksAsync(pageId.ToString());\nvar markdown = NotionMarkdownExporter.Export(blocks, pageTitle: page.Title);"
+    },
+    {
+      "title": "Alignment survives the round-trip",
+      "code": "var blocks   = NotionMarkdownImporter.Import(\"a | b\\n:--- | ---:\\n1 | 2\", pageId);\nvar markdown = NotionMarkdownExporter.Export(blocks);\n\n// | a | b |\n// | :--- | ---: |\n// | 1 | 2 |"
+    }
+  ]
 }

@@ -1,0 +1,56 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Node kinds of a parsed stencil expression tree.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilExpression.StencilExpressionNodeKind",
+  "members": [
+    {
+      "name": "Literal",
+      "description": "A constant string, number, bool or null."
+    },
+    {
+      "name": "Property",
+      "description": "A bare identifier that reads a prop from StencilEvalContext.Props."
+    },
+    {
+      "name": "SizeWidth",
+      "description": "The built-in size.w."
+    },
+    {
+      "name": "SizeHeight",
+      "description": "The built-in size.h."
+    },
+    {
+      "name": "RepeatIndex",
+      "description": "The built-in repeat.index."
+    },
+    {
+      "name": "Unary",
+      "description": "A unary operator applied to one operand."
+    },
+    {
+      "name": "Binary",
+      "description": "A binary operator applied to two operands."
+    },
+    {
+      "name": "Coalesce",
+      "description": "The ?? null-coalescing operator."
+    },
+    {
+      "name": "Conditional",
+      "description": "A ternary condition ? then : else."
+    },
+    {
+      "name": "Map",
+      "description": "A value lookup against an inline map."
+    },
+    {
+      "name": "Token",
+      "description": "A token(key, fallback) lookup resolved through StencilTokenResolver."
+    }
+  ]
+}

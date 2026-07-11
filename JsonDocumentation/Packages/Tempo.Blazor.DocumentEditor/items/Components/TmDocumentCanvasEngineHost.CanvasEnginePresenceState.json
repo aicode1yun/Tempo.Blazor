@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "description": "Canvas presence overlay state exposed to Blazor callers.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmDocumentCanvasEngineHost.CanvasEnginePresenceState"
+}

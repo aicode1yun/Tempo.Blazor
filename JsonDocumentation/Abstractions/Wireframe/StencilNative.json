@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Native DOM fallback for stencils that do not need a render tree.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilNative.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilNative"
+}

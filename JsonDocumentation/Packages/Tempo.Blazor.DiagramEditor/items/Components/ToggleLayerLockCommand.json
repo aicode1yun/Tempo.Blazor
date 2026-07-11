@@ -1,0 +1,33 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Toggles the lock state of a layer; locked layers cannot be edited on the canvas. Undoable.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/ToggleLayerLockCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "ToggleLayerLockCommand",
+  "members": [
+    {
+      "name": "ToggleLayerLockCommand",
+      "type": "ToggleLayerLockCommand(DiagramLayer layer)",
+      "description": "Creates the command."
+    },
+    {
+      "name": "Execute",
+      "type": "void Execute()",
+      "description": "Applies the change to the document."
+    },
+    {
+      "name": "Undo",
+      "type": "void Undo()",
+      "description": "Restores the state captured before Execute() ran."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use ToggleLayerLockCommand",
+      "code": "commandStack.Push(new ToggleLayerLockCommand(layer));"
+    }
+  ]
+}

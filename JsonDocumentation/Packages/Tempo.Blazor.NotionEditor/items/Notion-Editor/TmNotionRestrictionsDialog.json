@@ -15,32 +15,32 @@
       "name": "EffectivePermission",
       "type": "PageEffectivePermissionDto?",
       "isRequired": false,
-      "description": "Provider used for loading and saving restrictions."
+      "description": "Effective permission displayed by the dialog when inherited."
     },
     {
       "name": "OnSaved",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Effective permission displayed by the dialog when inherited."
+      "description": "Raised after restrictions are saved successfully."
     },
     {
       "name": "PageId",
       "type": "Guid",
       "isRequired": false,
-      "description": "Raised when dialog visibility changes."
+      "description": "Page identifier whose restrictions are edited."
     },
     {
       "name": "Provider",
       "type": "INotionPermissionProvider?",
       "isRequired": true,
-      "description": "Page identifier whose restrictions are edited.",
+      "description": "Provider used for loading and saving restrictions.",
       "editorRequired": true
     },
     {
       "name": "VisibleChanged",
       "type": "EventCallback<bool>",
       "isRequired": false,
-      "description": "Controls whether the dialog is visible."
+      "description": "Raised when dialog visibility changes."
     }
   ],
   "subcategory": "Page"

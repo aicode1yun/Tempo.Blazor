@@ -1,0 +1,22 @@
+{
+  "kind": "Interface",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Optional file provider contract for draft asset workflows.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmDraftFileProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITmDraftFileProvider",
+  "members": [
+    {
+      "name": "DeleteDraftAsync",
+      "type": "Task DeleteDraftAsync(TmEntityRef entityRef, string assetId, CancellationToken cancellationToken = default)",
+      "description": "Deletes a draft asset that was never committed."
+    },
+    {
+      "name": "CommitDraftsAsync",
+      "type": "Task<TmFileCommitResult> CommitDraftsAsync(TmEntityRef entityRef, IReadOnlyList<string> assetIds, CancellationToken cancellationToken = default)",
+      "description": "Commits draft assets that are now referenced by the saved entity."
+    }
+  ]
+}

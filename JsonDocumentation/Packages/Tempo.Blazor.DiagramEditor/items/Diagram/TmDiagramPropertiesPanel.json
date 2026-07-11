@@ -14,7 +14,8 @@
     {
       "name": "OnEdgeManualRoutingChanged",
       "type": "EventCallback<(string EdgeId, bool Value)>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Raised when the \"Manual routing\" checkbox is toggled for an edge. The editor listens so it can seed an empty Waypoints list from the auto-router when the user flips to manual on an orthogonal-like edge — otherwise the edge would collapse to a straight line at the moment of toggle."
     }
   ]
 }

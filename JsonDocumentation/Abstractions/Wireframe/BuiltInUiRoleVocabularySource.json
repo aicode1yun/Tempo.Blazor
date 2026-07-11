@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Built-in Tempo UI role vocabulary used as the global baseline.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/BuiltInUiRoleVocabularySource.cs",
+  "documentationStatus": "generated",
+  "itemName": "BuiltInUiRoleVocabularySource"
+}

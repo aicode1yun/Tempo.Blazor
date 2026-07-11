@@ -1,0 +1,28 @@
+{
+  "kind": "Interface",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Renders wireframe pages to standalone SVG strings fully headless — no browser, no JS interop — by reusing the live component visuals through WireframePageSvg.BuildFragment. Suitable for server-side preview generation, MCP, and backfill, where no DOM is available.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeSvgRenderer.cs",
+  "documentationStatus": "generated",
+  "itemName": "IWireframeSvgRenderer",
+  "members": [
+    {
+      "name": "RenderPageAsync",
+      "type": "Task<string> RenderPageAsync(WireframePage page, WireframeComponentScope? scope = null, WireframePageSvgOptions? options = null)",
+      "description": "Renders a single page to an SVG string. Component definitions are resolved in scope (pass the app scope to resolve app-scoped custom components). Always returns a valid <svg> — an empty page yields a sized placeholder, never null."
+    },
+    {
+      "name": "RenderDocumentAsync",
+      "type": "Task<IReadOnlyList<WireframePageRender>> RenderDocumentAsync(WireframeDocument document, WireframeComponentScope? scope = null, WireframePageSvgOptions? options = null)",
+      "description": "Renders every page of the document in document order, returning one WireframePageRender per page."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Render pages server-side",
+      "code": "@* registered by AddTempoBlazorWireframe() *@\n@inject IWireframeSvgRenderer Renderer\n\nvar svg = await Renderer.RenderPageAsync(page);\n\n// or the whole document\nforeach (var render in await Renderer.RenderDocumentAsync(document))\n{\n    await File.WriteAllTextAsync($\"{render.PageId}.svg\", render.Svg);\n}"
+    }
+  ]
+}

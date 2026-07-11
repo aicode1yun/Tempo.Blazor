@@ -1,0 +1,47 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Commands",
+  "description": "Groups multiple INotionCommand instances into a single undo/redo step. Commands run in insertion order in ExecuteAsync and are reversed last-to-first in UndoAsync. NotionCommandStack builds one internally while a batch scope is open, but it can also be constructed directly and pushed as one atomic command.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Commands/BatchCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "BatchCommand",
+  "members": [
+    {
+      "name": "Description",
+      "type": "string",
+      "description": "Human-readable label for the whole batch, shown in undo/redo affordances."
+    },
+    {
+      "name": "Count",
+      "type": "int",
+      "description": "Number of commands currently in the batch."
+    },
+    {
+      "name": "Add",
+      "type": "void Add(INotionCommand command)",
+      "description": "Appends a command. The command must NOT have been executed yet."
+    },
+    {
+      "name": "ExecuteAsync",
+      "type": "Task ExecuteAsync()",
+      "description": "Runs every command in insertion order."
+    },
+    {
+      "name": "UndoAsync",
+      "type": "Task UndoAsync()",
+      "description": "Undoes every command in reverse (last-to-first) order."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Push several edits as one undo step",
+      "code": "// Any INotionCommand can join the batch — AddBlockCommand,\n// UpdateBlockContentCommand, MoveBlockCommand, DeleteBlockCommand…\nvar batch = new BatchCommand(\"Insert table row\", [\n    new AddBlockCommand(blockProvider, blocks, pageId, rowTemplate, afterBlockId),\n    new UpdateBlockContentCommand(blockProvider, blocks, tableBlockId, before, after),\n]);\n\n// PushAsync executes the batch and records it as one undo step\nawait commandStack.PushAsync(batch);\n\n// a single Ctrl+Z reverts both commands, last-to-first\nawait commandStack.UndoAsync();"
+    },
+    {
+      "title": "Build a batch incrementally",
+      "code": "var batch = new BatchCommand(\"Clear selection\");\n\nforeach (var block in selectedBlocks)\n{\n    // commands must NOT have been executed yet\n    batch.Add(new DeleteBlockCommand(blockProvider, blocks, block));\n}\n\nif (batch.Count > 0)\n{\n    await commandStack.PushAsync(batch);\n}"
+    }
+  ]
+}

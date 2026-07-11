@@ -15,43 +15,43 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the input is disabled."
+      "description": "Additional CSS classes for the root element."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Placeholder text for the prompt input."
+      "description": "Whether the input is disabled."
     },
     {
       "name": "OnCommandClick",
       "type": "EventCallback<AIPromptCommand>",
       "isRequired": false,
-      "description": "Fired when the user submits a prompt."
+      "description": "Fired when a command button is clicked."
     },
     {
       "name": "OnOutputCopy",
       "type": "EventCallback<AIPromptOutput>",
       "isRequired": false,
-      "description": "Fired when a command button is clicked."
+      "description": "Fired when the copy button is clicked."
     },
     {
       "name": "OnOutputRate",
       "type": "EventCallback<(AIPromptOutput Output, bool? Rating)>",
       "isRequired": false,
-      "description": "Fired when the copy button is clicked."
+      "description": "Fired when the user rates the output. Rating: true = positive, false = negative, null = cleared."
     },
     {
       "name": "Output",
       "type": "AIPromptOutput?",
       "isRequired": false,
-      "description": "Available quick-action commands displayed above the input."
+      "description": "The current output / response to display."
     },
     {
       "name": "Placeholder",
       "type": "string?",
       "isRequired": false,
-      "description": "The current output / response to display."
+      "description": "Placeholder text for the prompt input."
     }
   ]
 }

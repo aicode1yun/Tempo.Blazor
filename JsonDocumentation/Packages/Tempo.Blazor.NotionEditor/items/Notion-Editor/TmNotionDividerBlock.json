@@ -20,18 +20,19 @@
       "name": "OnAddAfter",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fired when the block receives focus (click or Tab)."
+      "description": "Fired when Enter is pressed — parent should add a Paragraph block below."
     },
     {
       "name": "OnDeleteRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fired when Enter is pressed — parent should add a Paragraph block below."
+      "description": "Fired when Backspace or Delete is pressed — parent should remove the block."
     },
     {
       "name": "OnFocused",
       "type": "EventCallback",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Fired when the block receives focus (click or Tab)."
     }
   ],
   "subcategory": "Blocks / Text"

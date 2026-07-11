@@ -1,0 +1,32 @@
+{
+  "kind": "Interface",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Provider contract for linking file assets to Tempo entities.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmAttachmentProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITmAttachmentProvider",
+  "members": [
+    {
+      "name": "Capabilities",
+      "type": "TmAttachmentProviderCapabilities",
+      "description": "Operations this provider supports."
+    },
+    {
+      "name": "GetForEntityAsync",
+      "type": "Task<IReadOnlyList<TmAttachment>> GetForEntityAsync(TmEntityRef entityRef, CancellationToken cancellationToken = default)",
+      "description": "Gets attachments linked to an entity."
+    },
+    {
+      "name": "AddAsync",
+      "type": "Task<TmAttachment> AddAsync(TmAttachment attachment, CancellationToken cancellationToken = default)",
+      "description": "Adds or updates an attachment link."
+    },
+    {
+      "name": "RemoveAsync",
+      "type": "Task RemoveAsync(TmEntityRef entityRef, string attachmentId, CancellationToken cancellationToken = default)",
+      "description": "Removes an attachment link from an entity."
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Shared custom field value linked to an entity.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCustomFieldValue.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmCustomFieldValue",
+  "members": [
+    {
+      "name": "DefinitionId",
+      "type": "string",
+      "description": "Identifier of the custom field definition."
+    },
+    {
+      "name": "EntityRef",
+      "type": "TmEntityRef",
+      "description": "Entity this value belongs to."
+    },
+    {
+      "name": "Value",
+      "type": "string?",
+      "description": "Serialized field value. Consumers interpret it according to the field definition type."
+    },
+    {
+      "name": "Metadata",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for consumer use."
+    }
+  ]
+}

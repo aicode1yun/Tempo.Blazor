@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "description": "Canvas comment or revision marker selection emitted from JavaScript.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmDocumentCanvasEngineHost.CanvasEngineAnnotationSelection"
+}

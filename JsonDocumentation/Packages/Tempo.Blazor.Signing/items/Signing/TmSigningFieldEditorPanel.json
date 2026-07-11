@@ -15,70 +15,70 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback invoked when the current field should be copied to all pages."
+      "description": "Additional CSS classes for the root element."
     },
     {
       "name": "CopyToAllPagesRequested",
       "type": "EventCallback<SigningField>",
       "isRequired": false,
-      "description": "Callback invoked when a radio or multiple option should be mapped to a document area."
+      "description": "Callback invoked when the current field should be copied to all pages."
     },
     {
       "name": "Culture",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the panel should prevent edits."
+      "description": "Culture used to preview localized field labels in nested editors."
     },
     {
       "name": "FallbackCulture",
       "type": "string?",
       "isRequired": false,
-      "description": "Culture used to preview localized field labels in nested editors."
+      "description": "Fallback culture used when localized labels are missing."
     },
     {
       "name": "FieldChanged",
       "type": "EventCallback<SigningField>",
       "isRequired": false,
-      "description": "Selected signing field edited by the panel."
+      "description": "Callback invoked whenever the edited field changes."
     },
     {
       "name": "Fields",
       "type": "IReadOnlyList<SigningField>",
       "isRequired": false,
       "default": "[]",
-      "description": "Callback invoked whenever the edited field changes."
+      "description": "All fields in the current signing template, used by condition and formula builders."
     },
     {
       "name": "OptionAreaMappingRequested",
       "type": "EventCallback<TmSigningFieldOptionAreaMappingEventArgs>",
       "isRequired": false,
-      "description": "Whether to show authoring controls for localized signer-facing text."
+      "description": "Callback invoked when a radio or multiple option should be mapped to a document area."
     },
     {
       "name": "ReadOnly",
       "type": "bool",
       "isRequired": false,
-      "description": "Submitter roles available for assigning the edited field."
+      "description": "Whether the panel should prevent edits."
     },
     {
       "name": "ShowLocalizationEditor",
       "type": "bool",
       "isRequired": false,
-      "description": "Cultures available for editing localized signer-facing text."
+      "description": "Whether to show authoring controls for localized signer-facing text."
     },
     {
       "name": "SubmitterRoles",
       "type": "IReadOnlyList<SigningSubmitterRole>",
       "isRequired": false,
       "default": "[]",
-      "description": "All fields in the current signing template, used by condition and formula builders."
+      "description": "Submitter roles available for assigning the edited field."
     },
     {
       "name": "SupportedCultures",
       "type": "IReadOnlyList<string>",
       "isRequired": false,
       "default": "[]",
-      "description": "Fallback culture used when localized labels are missing."
+      "description": "Cultures available for editing localized signer-facing text."
     }
   ]
 }

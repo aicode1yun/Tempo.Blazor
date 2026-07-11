@@ -2,6 +2,7 @@ using Dm = Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentFormats.Markdown;
 using Tempo.Blazor.DocumentFormats.Notion;
 using Tempo.Blazor.NotionEditor.Enums;
+using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.DocumentFormats.Tests;
@@ -137,6 +138,130 @@ public class DocumentModelToNotionConverterTests
         result.Blocks.Should().Contain(block => block.Type == BlockType.Table);
         result.Blocks.Should().Contain(block => block.Type == BlockType.Image);
     }
+
+    [Fact]
+    public void ConvertDocument_MapsColumnAlignmentsOntoNotionTableBlock()
+    {
+        var document = Dm.DocumentEditorDocument.Empty();
+        document.Blocks.Add(AlignedTableBlock());
+
+        var result = DocumentModelToNotionConverter.ConvertDocument(document, Guid.NewGuid());
+
+        var table = (TableBlockContent)result.Blocks.Single(block => block.Type == BlockType.Table).Content;
+        table.HasHeaderRow.Should().BeTrue();
+        table.ColumnAlignments.Should().Equal(
+            Dm.TableColumnAlignment.None,
+            Dm.TableColumnAlignment.Left,
+            Dm.TableColumnAlignment.Center,
+            Dm.TableColumnAlignment.Right);
+    }
+
+    [Fact]
+    public void ConvertDocument_RoundTripsColumnAlignmentsAndHeaderRowThroughNotion()
+    {
+        var pageId = Guid.NewGuid();
+        var document = Dm.DocumentEditorDocument.Empty();
+        document.Blocks.Add(AlignedTableBlock());
+        var expected = (Dm.TableBlockContent)document.Blocks[0].Content;
+
+        var notion = DocumentModelToNotionConverter.ConvertDocument(document, pageId);
+        var restored = NotionToDocumentModelConverter.ConvertBlocks(notion.Blocks);
+
+        var table = restored.Should().ContainSingle().Which.Content
+            .Should().BeOfType<Dm.TableBlockContent>().Subject;
+        table.ColumnAlignments.Should().Equal(expected.ColumnAlignments);
+        table.Rows.Should().HaveCount(2);
+        table.Rows[0].Cells.Should().OnlyContain(cell => cell.IsHeader);
+        table.Rows[1].Cells.Should().OnlyContain(cell => !cell.IsHeader);
+    }
+
+    [Fact]
+    public void ConvertDocument_TableWithoutAlignmentsKeepsAlignmentListEmpty()
+    {
+        var document = Dm.DocumentEditorDocument.Empty();
+        document.Blocks.Add(new Dm.DocumentBlock
+        {
+            Type = Dm.DocumentBlockType.Table,
+            Content = new Dm.TableBlockContent
+            {
+                Rows = [new Dm.TableRowContent { Cells = [Cell("A", true), Cell("B", true)] }]
+            }
+        });
+
+        var result = DocumentModelToNotionConverter.ConvertDocument(document, Guid.NewGuid());
+
+        var table = (TableBlockContent)result.Blocks.Single(block => block.Type == BlockType.Table).Content;
+        table.ColumnAlignments.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ConvertDocument_AlignmentListIsNormalizedToColumnCount()
+    {
+        var document = Dm.DocumentEditorDocument.Empty();
+        document.Blocks.Add(new Dm.DocumentBlock
+        {
+            Type = Dm.DocumentBlockType.Table,
+            Content = new Dm.TableBlockContent
+            {
+                // Three declared alignments, but only two columns exist.
+                ColumnAlignments = [Dm.TableColumnAlignment.Right, Dm.TableColumnAlignment.Center, Dm.TableColumnAlignment.Left],
+                Rows = [new Dm.TableRowContent { Cells = [Cell("A", true), Cell("B", true)] }]
+            }
+        });
+
+        var result = DocumentModelToNotionConverter.ConvertDocument(document, Guid.NewGuid());
+
+        var table = (TableBlockContent)result.Blocks.Single(block => block.Type == BlockType.Table).Content;
+        table.ColumnAlignments.Should().Equal(Dm.TableColumnAlignment.Right, Dm.TableColumnAlignment.Center);
+    }
+
+    [Fact]
+    public void ConvertBlocks_LegacyFlatTableRowsWithoutTableParentStillConvert()
+    {
+        var pageId = Guid.NewGuid();
+        var blocks = new List<IPageBlock>
+        {
+            LegacyRow(pageId, 0, "Name", "Status"),
+            LegacyRow(pageId, 1, "CF26", "Ready")
+        };
+
+        var restored = NotionToDocumentModelConverter.ConvertBlocks(blocks);
+
+        var table = restored.Should().ContainSingle().Which.Content
+            .Should().BeOfType<Dm.TableBlockContent>().Subject;
+        table.Rows.Should().HaveCount(2);
+        table.ColumnAlignments.Should().BeEmpty();
+    }
+
+    private static IPageBlock LegacyRow(Guid pageId, int order, params string[] cells) => new PageBlock
+    {
+        Id = Guid.NewGuid(),
+        PageId = pageId,
+        ParentBlockId = null,
+        Type = BlockType.TableRow,
+        Order = order,
+        Content = new TableRowBlockContent { Cells = cells }
+    };
+
+    private static Dm.DocumentBlock AlignedTableBlock() => new()
+    {
+        Type = Dm.DocumentBlockType.Table,
+        Content = new Dm.TableBlockContent
+        {
+            ColumnAlignments =
+            [
+                Dm.TableColumnAlignment.None,
+                Dm.TableColumnAlignment.Left,
+                Dm.TableColumnAlignment.Center,
+                Dm.TableColumnAlignment.Right
+            ],
+            Rows =
+            [
+                new Dm.TableRowContent { Cells = [Cell("Plain", true), Cell("Left", true), Cell("Center", true), Cell("Right", true)] },
+                new Dm.TableRowContent { Cells = [Cell("a", false), Cell("b", false), Cell("c", false), Cell("d", false)] }
+            ]
+        }
+    };
 
     private static Dm.DocumentEditorDocument CreateDocument()
     {

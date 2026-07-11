@@ -1,0 +1,48 @@
+{
+  "kind": "RecordStruct",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Safe value wrapper used by the stencil expression evaluator. Wraps a raw object (often a JsonElement) and exposes total, never-throwing conversions, so a malformed stencil expression degrades to a default instead of crashing the renderer.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilValue.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilValue",
+  "examples": [
+    {
+      "title": "Use StencilValue",
+      "code": "var value = evaluator.Evaluate(\"label\", context);   // a bare identifier reads a prop\n\nif (!value.IsNull)\n{\n    var label = value.AsString();\n}\n\n// conversions never throw — a malformed expression yields the default\nvar width = evaluator.Evaluate(\"size.w * 2\", context).AsDouble();   // 0 on failure"
+    }
+  ],
+  "members": [
+    {
+      "name": "Raw",
+      "type": "object?",
+      "description": "The wrapped value; may be a JsonElement, a primitive, or null."
+    },
+    {
+      "name": "Null",
+      "type": "static StencilValue Null",
+      "description": "The shared null value."
+    },
+    {
+      "name": "IsNull",
+      "type": "bool",
+      "description": "True when the value is null or a JSON null/undefined element."
+    },
+    {
+      "name": "AsString",
+      "type": "string AsString()",
+      "description": "Converts the value to a string; returns an empty string when null."
+    },
+    {
+      "name": "AsDouble",
+      "type": "double AsDouble()",
+      "description": "Converts the value to a double; returns 0 when the value is not numeric."
+    },
+    {
+      "name": "AsBool",
+      "type": "bool AsBool()",
+      "description": "Converts the value to a bool; returns false when the value is not truthy."
+    }
+  ]
+}

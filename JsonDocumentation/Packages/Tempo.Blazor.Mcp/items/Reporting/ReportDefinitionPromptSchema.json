@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Reporting",
+  "namespace": "Tempo.Blazor.Mcp.Reporting",
+  "description": "Prompt-friendly report definition schema documentation for AI tools.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportDefinitionPromptSchema.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDefinitionPromptSchema",
+  "members": [
+    {
+      "name": "ElementTypes",
+      "type": "static IReadOnlyList<ReportElementSchemaDescriptor>",
+      "description": "All report element types documented for LLM authoring."
+    },
+    {
+      "name": "Build",
+      "type": "static object Build()",
+      "description": "Returns a compact schema object intended for MCP responses and PromptHelper docs."
+    },
+    {
+      "name": "RuntimeElementDiscriminators",
+      "type": "static IReadOnlySet<string> RuntimeElementDiscriminators()",
+      "description": "All JSON discriminators declared on ReportElement."
+    }
+  ]
+}

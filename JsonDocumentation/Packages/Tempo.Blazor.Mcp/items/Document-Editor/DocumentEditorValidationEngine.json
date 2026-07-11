@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "Validates document editor snapshots before MCP write tools persist them.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorValidationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorValidationEngine"
+}

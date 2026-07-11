@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Mcp",
+  "description": "Registration helpers for the DocumentEditor MCP tools.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "TempoDocumentEditorMcp",
+  "members": [
+    {
+      "name": "ToolTypes",
+      "type": "static IReadOnlyList<Type>",
+      "description": "The DocumentEditor tool types, exposed for hosts that register tools by type."
+    },
+    {
+      "name": "AddTempoDocumentEditorMcpTools",
+      "type": "static IServiceCollection AddTempoDocumentEditorMcpTools()",
+      "description": "Registers dependencies required by the DocumentEditor MCP tools. The host must supply an IDocumentEditorProvider."
+    }
+  ]
+}

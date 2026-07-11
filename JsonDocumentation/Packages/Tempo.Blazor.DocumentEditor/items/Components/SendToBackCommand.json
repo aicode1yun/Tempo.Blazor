@@ -1,0 +1,38 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Commands",
+  "description": "Moves one positioned image below all other image objects in the document. Implements IDocumentEditorCommand, so it is asynchronous and undoable: ExecuteAsync() applies the new z-index and UndoAsync() restores the previous one. Note that Tempo.Blazor.Wireframe has a same-named command with a different signature.",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Commands/SendToBackCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "SendToBackCommand",
+  "members": [
+    {
+      "name": "SendToBackCommand",
+      "type": "SendToBackCommand(DocumentEditorDocument document, string blockId, string? description = null)",
+      "description": "Creates the command for the image block identified by blockId. The description labels the undo step and defaults to \"Send image behind text\"."
+    },
+    {
+      "name": "Description",
+      "type": "string",
+      "description": "Human-readable command description for tooltips and diagnostics."
+    },
+    {
+      "name": "ExecuteAsync",
+      "type": "Task ExecuteAsync()",
+      "description": "Applies the new z-index to the image."
+    },
+    {
+      "name": "UndoAsync",
+      "type": "Task UndoAsync()",
+      "description": "Restores the z-index captured before ExecuteAsync() ran."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use SendToBackCommand",
+      "code": "var command = new SendToBackCommand(document, imageBlockId);\nawait command.ExecuteAsync();\n\n// later\nawait command.UndoAsync();"
+    }
+  ]
+}

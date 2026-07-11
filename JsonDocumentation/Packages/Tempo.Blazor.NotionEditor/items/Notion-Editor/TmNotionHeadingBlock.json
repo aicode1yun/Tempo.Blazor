@@ -14,67 +14,68 @@
     {
       "name": "OnContentSaved",
       "type": "EventCallback<string>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Fired on blur when HTML content changed. Arg = new HTML."
     },
     {
       "name": "OnDeleteRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fired when Enter is pressed; creates a new Paragraph, not another heading. Arg = HTML fragment after the caret (may be empty)."
+      "description": "Fired when Backspace is pressed on an empty block."
     },
     {
       "name": "OnEnterSplit",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fired on blur when HTML content changed. Arg = new HTML."
+      "description": "Fired when Enter is pressed; creates a new Paragraph, not another heading. Arg = HTML fragment after the caret (may be empty)."
     },
     {
       "name": "OnFocused",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fired when a markdown shortcut is recognised (e.g. \"heading1\", \"heading2\")."
+      "description": "Fired when the element receives focus."
     },
     {
       "name": "OnIndentChange",
       "type": "EventCallback<bool>",
       "isRequired": false,
-      "description": "Fired when Backspace is pressed on an empty block."
+      "description": "Fired when Tab / Shift+Tab. Bool = shiftKey."
     },
     {
       "name": "OnMentionMenu",
       "type": "EventCallback<(double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when '/' slash command is triggered. Args = (top, left) caret coords."
+      "description": "Fired when '@' mention is triggered. Args = (top, left) caret coords."
     },
     {
       "name": "OnPageLinkMenu",
       "type": "EventCallback<(double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when '@' mention is triggered. Args = (top, left) caret coords."
+      "description": "Fired when '[[' page-link is triggered. Args = (top, left) caret coords."
     },
     {
       "name": "OnSlashMenu",
       "type": "EventCallback<(double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when the element receives focus."
+      "description": "Fired when '/' slash command is triggered. Args = (top, left) caret coords."
     },
     {
       "name": "OnToggleChanged",
       "type": "EventCallback<bool>",
       "isRequired": false,
-      "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
+      "description": "Fired when the toggle arrow is clicked. Bool = new isOpen state."
     },
     {
       "name": "OnTokenMenu",
       "type": "EventCallback<(double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when '[[' page-link is triggered. Args = (top, left) caret coords."
+      "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
     },
     {
       "name": "OnTypeConvert",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fired when Tab / Shift+Tab. Bool = shiftKey."
+      "description": "Fired when a markdown shortcut is recognised (e.g. \"heading1\", \"heading2\")."
     }
   ],
   "subcategory": "Blocks / Text"

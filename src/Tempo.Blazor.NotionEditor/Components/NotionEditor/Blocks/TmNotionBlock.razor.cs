@@ -60,9 +60,22 @@ public partial class TmNotionBlock : ComponentBase
     /// <summary>1-based ordinal for NumberedList blocks, pre-computed by TmNotionBlockList.</summary>
     [Parameter] public int NumberedListNumber { get; set; }
 
+    /// <summary>
+    /// Indent level of the list item directly above this block, or <c>null</c> when this is the
+    /// first block or the block above is not a list item. Tab may not nest deeper than one level
+    /// below it.
+    /// </summary>
+    [Parameter] public int? PreviousListIndentLevel { get; set; }
+
     [Parameter] public EventCallback OnFocused { get; set; }
 
     [Parameter] public EventCallback OnDeleted { get; set; }
+
+    /// <summary>
+    /// Raised when Backspace at the start of this block should fold it into its predecessor.
+    /// The payload is the block's current HTML.
+    /// </summary>
+    [Parameter] public EventCallback<string> OnMergeWithPrevious { get; set; }
 
     [Parameter] public EventCallback<IPageBlock> OnUpdated { get; set; }
 
@@ -456,6 +469,30 @@ public partial class TmNotionBlock : ComponentBase
         await OnUpdated.InvokeAsync(newBlock);
     }
 
+    // ── Structured paste ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Called from notion-editor.js when the clipboard carries HTML with more than one block
+    /// element. The markup is imported into real page blocks — headings stay headings, a table
+    /// stays a table — instead of being flattened into the block under the caret. Markup that
+    /// yields a single block is left to the inline paste path, so pasting a formatted word in
+    /// the middle of a sentence never splits it.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnHtmlPasted(string html)
+    {
+        if (string.IsNullOrWhiteSpace(html) || !OnInsertTemplateBlocks.HasDelegate) return;
+
+        var blocks = NotionHtmlImporter.Import(html, Block.PageId);
+        if (blocks.Count == 0) return;
+
+        // A lone paragraph belongs inside the block under the caret. Anything else — a table, a
+        // code block, a rule — has no inline form and must become a block of its own.
+        if (blocks.Count == 1 && blocks[0].Type == BlockType.Paragraph) return;
+
+        await OnInsertTemplateBlocks.InvokeAsync(blocks);
+    }
+
     // ── Template button (TmNotionTemplateButtonBlock) callbacks ──────────────
 
     private Task HandleInsertTemplateBlocksAsync(IReadOnlyList<IPageBlock> blocks) =>
@@ -834,6 +871,13 @@ public partial class TmNotionBlock : ComponentBase
             try
             {
                 var converted = await Context.BlockProvider.ConvertBlockTypeAsync(Block.Id.ToString(), BlockType.TodoItem);
+
+                // The "[x] " prefix has already been stripped by the shortcut handler; whatever
+                // the user typed after it must survive the conversion.
+                var carriedHtml = converted.Content is ITextBlockContent convertedText
+                    ? convertedText.Html
+                    : Block.Content is ITextBlockContent originalText ? originalText.Html : string.Empty;
+
                 var updated = new PageBlock
                 {
                     Id            = converted.Id,
@@ -841,7 +885,7 @@ public partial class TmNotionBlock : ComponentBase
                     ParentBlockId = converted.ParentBlockId,
                     Type          = BlockType.TodoItem,
                     Order         = converted.Order,
-                    Content       = new TodoBlockContent { Html = string.Empty, IsChecked = true },
+                    Content       = new TodoBlockContent { Html = carriedHtml, IsChecked = true },
                     CreatedAt     = converted.CreatedAt,
                     LastEditedAt  = DateTime.UtcNow
                 };
@@ -1058,7 +1102,7 @@ public partial class TmNotionBlock : ComponentBase
     private async Task HandleBulletTabAsync(bool shiftKey)
     {
         if (Block.Content is not IListBlockContent list) return;
-        var newIndent = Math.Clamp(list.IndentLevel + (shiftKey ? -1 : 1), 0, 3);
+        var newIndent = NotionListIndent.Next(list.IndentLevel, outdent: shiftKey, PreviousListIndentLevel);
         if (newIndent == list.IndentLevel) return;
         var updated = BuildBlockWithContent(Block, new ListBlockContent
         {
@@ -1123,7 +1167,7 @@ public partial class TmNotionBlock : ComponentBase
     private async Task HandleNumberedTabAsync(bool shiftKey)
     {
         if (Block.Content is not IListBlockContent list) return;
-        var newIndent = Math.Clamp(list.IndentLevel + (shiftKey ? -1 : 1), 0, 3);
+        var newIndent = NotionListIndent.Next(list.IndentLevel, outdent: shiftKey, PreviousListIndentLevel);
         if (newIndent == list.IndentLevel) return;
         var updated = BuildBlockWithContent(Block, new ListBlockContent
         {
@@ -1305,61 +1349,11 @@ public partial class TmNotionBlock : ComponentBase
     // ── Block content helpers ─────────────────────────────────────────────────
 
 
-    private static PageBlock BuildBlockWithHtml(IPageBlock src, string html)
-    {
-        var content = src.Content switch
-        {
-            IHeadingBlockContent hc => (IBlockContent)new HeadingBlockContent
-            {
-                Html = html, Level = hc.Level, IsToggleable = hc.IsToggleable,
-                BackgroundColor = hc.BackgroundColor, TextColor = hc.TextColor, Alignment = hc.Alignment
-            },
-            ICalloutBlockContent cc => new CalloutBlockContent
-            {
-                Html = html, IconEmoji = cc.IconEmoji, IconImageUrl = cc.IconImageUrl,
-                Variant = cc.Variant,
-                BackgroundColor = cc.BackgroundColor, TextColor = cc.TextColor, Alignment = cc.Alignment
-            },
-            IListBlockContent lc => new ListBlockContent
-            {
-                Html = html, IndentLevel = lc.IndentLevel,
-                BackgroundColor = lc.BackgroundColor, TextColor = lc.TextColor, Alignment = lc.Alignment
-            },
-            ITodoBlockContent tc => new TodoBlockContent
-            {
-                Html = html, IsChecked = tc.IsChecked,
-                AssigneeId = tc.AssigneeId,
-                AssigneeDisplayName = tc.AssigneeDisplayName,
-                DueDate = tc.DueDate,
-                IsOverdue = IsTodoOverdue(tc.DueDate, tc.IsChecked),
-                BackgroundColor = tc.BackgroundColor, TextColor = tc.TextColor, Alignment = tc.Alignment
-            },
-            IToggleBlockContent tg => new ToggleBlockContent
-            {
-                Html = html, IsOpen = tg.IsOpen,
-                BackgroundColor = tg.BackgroundColor, TextColor = tg.TextColor, Alignment = tg.Alignment
-            },
-            ITextBlockContent tc => new TextBlockContent
-            {
-                Html = html,
-                BackgroundColor = tc.BackgroundColor, TextColor = tc.TextColor, Alignment = tc.Alignment
-            },
-            _ => src.Content
-        };
-        return BuildBlockWithContent(src, content);
-    }
+    private static PageBlock BuildBlockWithHtml(IPageBlock src, string html) =>
+        NotionBlockContentFactory.WithHtml(src, html);
 
-    private static PageBlock BuildBlockWithContent(IPageBlock src, IBlockContent content) => new()
-    {
-        Id            = src.Id,
-        PageId        = src.PageId,
-        ParentBlockId = src.ParentBlockId,
-        Type          = src.Type,
-        Order         = src.Order,
-        Content       = content,
-        CreatedAt     = src.CreatedAt,
-        LastEditedAt  = DateTime.UtcNow
-    };
+    private static PageBlock BuildBlockWithContent(IPageBlock src, IBlockContent content) =>
+        NotionBlockContentFactory.WithContent(src, content);
 
     private static string FormatFileSize(long bytes)
     {

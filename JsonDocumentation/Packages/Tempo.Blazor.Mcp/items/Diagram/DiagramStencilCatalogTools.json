@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "MCP tools for discovering diagram/draw stencil definitions.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramStencilCatalogTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramStencilCatalogTools"
+}

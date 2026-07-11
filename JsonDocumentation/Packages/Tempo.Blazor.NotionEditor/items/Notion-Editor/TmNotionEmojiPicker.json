@@ -15,19 +15,19 @@
       "name": "OnClosed",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fired when the user clicks \"Remove icon\"."
+      "description": "Fired when the backdrop is clicked (close without action)."
     },
     {
       "name": "OnRemoved",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fired when the user clicks an emoji. Arg = the emoji character string."
+      "description": "Fired when the user clicks \"Remove icon\"."
     },
     {
       "name": "ShowRemoveButton",
       "type": "bool",
       "isRequired": false,
-      "description": "Fired when the backdrop is clicked (close without action)."
+      "description": "When true, a \"Remove icon\" button is shown in the header."
     }
   ],
   "subcategory": "Shared"

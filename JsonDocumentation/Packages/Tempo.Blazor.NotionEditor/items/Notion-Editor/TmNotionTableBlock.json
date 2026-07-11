@@ -2,7 +2,7 @@
   "itemName": "TmNotionTableBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionTableBlock Blazor component in the Notion Editor category.",
+  "description": "Editable table block. The Table block itself carries the shape (column count, header flags, per-column alignment); its rows are separate TableRow blocks loaded as children via IBlockProvider.GetChildBlocksAsync(tableId) and ordered by Order. Supports adding/deleting rows and columns, a header row and header column, cell range selection with merge/split, cell background colours, column sorting, row drag-and-drop, and undo of the last table change.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Table",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Table/TmNotionTableBlock.razor",
@@ -15,13 +15,44 @@
       "name": "Block",
       "type": "IPageBlock",
       "isRequired": true,
-      "editorRequired": true
+      "editorRequired": true,
+      "description": "The Table block. Its Id is used to load the child TableRow blocks."
+    },
+    {
+      "name": "Content",
+      "type": "ITableBlockContent?",
+      "isRequired": false,
+      "description": "Table shape: ColumnCount, HasHeaderRow, HasHeaderColumn and ColumnAlignments (per-column alignment carried over from a GFM separator row)."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Hides the toolbar, row handles and add-row/add-column affordances, and renders cells non-editable."
     },
     {
       "name": "OnUpdated",
       "type": "EventCallback<IPageBlock>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Fired when the table block itself changes (column count, header flags)."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when any cell inside the table receives focus."
     }
   ],
-  "subcategory": "Blocks / Table"
+  "subcategory": "Blocks / Table",
+  "examples": [
+    {
+      "title": "Render a table block",
+      "code": "@* Rows are fetched as child blocks of the Table block through the cascaded NotionEditorContext *@\n<TmNotionTableBlock Block=\"@_tableBlock\"\n                    Content=\"@((ITableBlockContent)_tableBlock.Content)\"\n                    OnUpdated=\"HandleTableUpdatedAsync\" />"
+    },
+    {
+      "title": "Build a table with column alignment",
+      "code": "@* Alignment survives Markdown import/export: --- | :--- | :---: | ---: *@\nvar table = new PageBlock\n{\n    Id = Guid.NewGuid(),\n    PageId = pageId,\n    Type = BlockType.Table,\n    Content = new TableBlockContent\n    {\n        ColumnCount = 3,\n        HasHeaderRow = true,\n        ColumnAlignments = [TableColumnAlignment.Left, TableColumnAlignment.Center, TableColumnAlignment.Right]\n    }\n};\n\n// each row is a child block\nvar row = new PageBlock\n{\n    Id = Guid.NewGuid(),\n    PageId = pageId,\n    ParentBlockId = table.Id,   // required — rows are children of the table\n    Type = BlockType.TableRow,\n    Order = 0,\n    Content = new TableRowBlockContent { Cells = [\"Name\", \"Status\", \"Score\"] }\n};"
+    }
+  ]
 }

@@ -15,18 +15,19 @@
       "name": "OnClosed",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user picks a mention. Args: (type, id, displayText)."
+      "description": "Raised when the user dismisses the menu."
     },
     {
       "name": "OnItemSelected",
       "type": "EventCallback<(string Type, string Id, string Display)>",
       "isRequired": false,
-      "description": "When true only the Pages tab is shown (triggered by '[[')."
+      "description": "Raised when the user picks a mention. Args: (type, id, displayText)."
     },
     {
       "name": "PagesOnly",
       "type": "bool",
-      "isRequired": false
+      "isRequired": false,
+      "description": "When true only the Pages tab is shown (triggered by '[[')."
     }
   ],
   "subcategory": "UI"

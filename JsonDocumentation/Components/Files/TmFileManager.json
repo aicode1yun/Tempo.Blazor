@@ -15,79 +15,79 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Event fired when the selection changes."
+      "description": "Additional CSS class for the wrapper element."
     },
     {
       "name": "CurrentPath",
       "type": "string?",
       "isRequired": false,
-      "description": "Data provider for file system operations."
+      "description": "Current folder path. Two-way bindable."
     },
     {
       "name": "CurrentPathChanged",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Current folder path. Two-way bindable."
+      "description": "Event fired when the current path changes."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Event fired when the view mode changes."
+      "description": "When true, disables all user interactions."
     },
     {
       "name": "OnItemOpen",
       "type": "EventCallback<FileManagerItem>",
       "isRequired": false,
-      "description": "Whether to show the Rename button. Default is true."
+      "description": "Event fired when an item is opened (double-clicked)."
     },
     {
       "name": "OnSelectionChanged",
       "type": "EventCallback<IReadOnlyList<FileManagerItem>>",
       "isRequired": false,
-      "description": "Event fired when an item is opened (double-clicked)."
+      "description": "Event fired when the selection changes."
     },
     {
       "name": "ShowDeleteButton",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether to show the Upload button. Default is true."
+      "description": "Whether to show the Delete button. Default is true."
     },
     {
       "name": "ShowFolderTree",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "When true, disables all user interactions."
+      "description": "Whether to show the folder tree sidebar. Default is true."
     },
     {
       "name": "ShowNewFolderButton",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether to show the folder tree sidebar. Default is true."
+      "description": "Whether to show the New Folder button. Default is true."
     },
     {
       "name": "ShowRenameButton",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether to show the Delete button. Default is true."
+      "description": "Whether to show the Rename button. Default is true."
     },
     {
       "name": "ShowUploadButton",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether to show the New Folder button. Default is true."
+      "description": "Whether to show the Upload button. Default is true."
     },
     {
       "name": "ViewMode",
       "type": "FileManagerViewMode",
       "isRequired": false,
       "default": "FileManagerViewMode.List",
-      "description": "Event fired when the current path changes."
+      "description": "Display mode (List or Grid). Default is <see cref=\"FileManagerViewMode.List\"/>."
     },
     {
       "name": "ViewModeChanged",

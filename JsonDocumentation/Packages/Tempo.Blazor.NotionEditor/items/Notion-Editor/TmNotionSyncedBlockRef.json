@@ -30,7 +30,8 @@
     {
       "name": "OnUnsync",
       "type": "EventCallback<IPageBlock>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Raised with the new independent block after unsync completes."
     },
     {
       "name": "ReadOnly",

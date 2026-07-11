@@ -164,13 +164,14 @@
       ]
     },
     {
+      "itemName": "ModelingServiceCollectionExtensions",
       "kind": "Class",
       "category": "Configuration",
       "namespace": "Tempo.Blazor.Configuration",
-      "description": "Extension methods for registering Tempo.Blazor modeling editor services.",
+      "description": "Extension methods for registering Tempo.Blazor modeling services.",
       "packageId": "Tempo.Blazor.Modeling",
       "sourcePath": "src/Tempo.Blazor.Modeling/Configuration/ModelingServiceCollectionExtensions.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AddTempoBlazorModeling",
@@ -185,7 +186,12 @@
           ]
         }
       ],
-      "itemName": "ModelingServiceCollectionExtensions"
+      "examples": [
+        {
+          "title": "Register the services in Program.cs",
+          "code": "builder.Services.AddTempoBlazorModeling();"
+        }
+      ]
     },
     {
       "itemName": "TmModelingDiagramPreview",
@@ -204,20 +210,20 @@
           "name": "ActiveDraggedElement",
           "type": "ModelingElementDto?",
           "isRequired": false,
-          "description": "Raised when a dragged modeling tree item is dropped onto the preview canvas."
+          "description": "Modeling element currently being dragged from the model tree."
         },
         {
           "name": "AllowNodeDrop",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Modeling element currently being dragged from the model tree."
+          "description": "When false, model tree drops are ignored without mutating the preview document."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Raised when a relationship edge is selected in the generated preview."
+          "description": "Additional CSS class applied to the preview root."
         },
         {
           "name": "Document",
@@ -229,37 +235,37 @@
           "name": "DocumentChanged",
           "type": "EventCallback<DiagramDocument>",
           "isRequired": false,
-          "description": "Generated diagram document to show in the preview. Null renders the pre-generation empty state."
+          "description": "Raised when the embedded diagram editor reports a document mutation."
         },
         {
           "name": "OnDrop",
           "type": "EventCallback<DragEventArgs>",
           "isRequired": false,
-          "description": "Raised when the user requests a fresh diagram generation from the currently loaded model."
+          "description": "Raised when a dragged modeling tree item is dropped onto the preview canvas."
         },
         {
           "name": "OnGenerateRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user requests opening the generated document in the full diagram editor."
+          "description": "Raised when the user requests a fresh diagram generation from the currently loaded model."
         },
         {
           "name": "OnNodeDropped",
           "type": "EventCallback<ModelingNodeDroppedEventArgs>",
           "isRequired": false,
-          "description": "When false, model tree drops are ignored without mutating the preview document."
+          "description": "Raised after a tree element is reused as a new diagram node."
         },
         {
           "name": "OnOpenInEditor",
           "type": "EventCallback<DiagramDocument>",
           "isRequired": false,
-          "description": "Raised when the embedded diagram editor reports a document mutation."
+          "description": "Raised when the user requests opening the generated document in the full diagram editor."
         },
         {
           "name": "OnRelationshipSelected",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Raised after a tree element is reused as a new diagram node."
+          "description": "Raised when a relationship edge is selected in the generated preview."
         }
       ]
     },
@@ -281,55 +287,55 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Callback raised when the editor viewpoint selection changes."
+          "description": "Whether model tree elements can be reused by dropping them onto the preview canvas."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback raised after a model tree element is reused as a new preview node."
+          "description": "Additional CSS class applied to the editor root."
         },
         {
           "name": "ModelLoaderOverride",
           "type": "Func<ModelingModelRequest, CancellationToken, Task<ModelingModelDto>>?",
           "isRequired": false,
-          "description": "Additional CSS class applied to the editor root."
+          "description": "Optional loader used by host pages or tests to supply a model without registering a provider."
         },
         {
           "name": "NotationKey",
           "type": "string?",
           "isRequired": false,
-          "description": "Provider key used to select the semantic model provider. Null or empty values render the empty state."
+          "description": "Optional notation key passed to the selected provider and generator."
         },
         {
           "name": "OnDiagramGenerated",
           "type": "EventCallback<DiagramDocument>",
           "isRequired": false,
-          "description": "Optional viewpoint key passed to the selected provider and used to choose the initial model view."
+          "description": "Callback raised after a model is loaded and converted into a diagram document."
         },
         {
           "name": "OnNodeDropped",
           "type": "EventCallback<ModelingNodeDroppedEventArgs>",
           "isRequired": false,
-          "description": "Whether model tree elements can be reused by dropping them onto the preview canvas."
+          "description": "Callback raised after a model tree element is reused as a new preview node."
         },
         {
           "name": "OnNotationChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Callback raised when the user opens the generated diagram in the full diagram editor."
+          "description": "Callback raised when the editor notation selection changes."
         },
         {
           "name": "OnOpenInEditor",
           "type": "EventCallback<DiagramDocument>",
           "isRequired": false,
-          "description": "Callback raised after a model is loaded and converted into a diagram document."
+          "description": "Callback raised when the user opens the generated diagram in the full diagram editor."
         },
         {
           "name": "OnViewpointChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Callback raised when the editor notation selection changes."
+          "description": "Callback raised when the editor viewpoint selection changes."
         },
         {
           "name": "ProviderKey",
@@ -341,7 +347,7 @@
           "name": "ViewpointKey",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional notation key passed to the selected provider and generator."
+          "description": "Optional viewpoint key passed to the selected provider and used to choose the initial model view."
         }
       ]
     },
@@ -362,7 +368,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Elements used to resolve relationship source and target display names."
+          "description": "Additional CSS class applied to the inspector root."
         },
         {
           "name": "Element",
@@ -375,13 +381,13 @@
           "type": "IReadOnlyList<ModelingElementDto>",
           "isRequired": false,
           "default": "[]",
-          "description": "Selected modeling relationship."
+          "description": "Elements used to resolve relationship source and target display names."
         },
         {
           "name": "Relationship",
           "type": "ModelingRelationshipDto?",
           "isRequired": false,
-          "description": "Selected modeling element. Takes precedence when both element and relationship are supplied."
+          "description": "Selected modeling relationship."
         }
       ]
     },
@@ -402,7 +408,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Raised when the user selects an issue that points to a model element or relationship."
+          "description": "Additional CSS class applied to the panel root."
         },
         {
           "name": "Issues",
@@ -415,7 +421,7 @@
           "name": "OnIssueSelected",
           "type": "EventCallback<ModelingIssueDto>",
           "isRequired": false,
-          "description": "Issues to render in severity-coded order."
+          "description": "Raised when the user selects an issue that points to a model element or relationship."
         }
       ]
     },
@@ -436,7 +442,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Raised when the user ends a drag operation from a tree node."
+          "description": "Additional CSS class applied to the tree root."
         },
         {
           "name": "Elements",
@@ -449,13 +455,13 @@
           "name": "OnElementDragEnded",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised when the user starts dragging an element node. Reserved for canvas drop support."
+          "description": "Raised when the user ends a drag operation from a tree node."
         },
         {
           "name": "OnElementDragStarted",
           "type": "EventCallback<ModelingElementDto>",
           "isRequired": false,
-          "description": "Raised when the user selects an element node."
+          "description": "Raised when the user starts dragging an element node. Reserved for canvas drop support."
         },
         {
           "name": "OnElementSelected",
@@ -473,7 +479,7 @@
           "name": "SelectedElementChanged",
           "type": "EventCallback<ModelingElementDto?>",
           "isRequired": false,
-          "description": "Currently selected element."
+          "description": "Raised when <see cref=\"SelectedElement\"/> changes."
         }
       ]
     },
@@ -494,13 +500,13 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback raised when the user requests loading the model again."
+          "description": "Additional CSS class applied to the panel root."
         },
         {
           "name": "IsLoading",
           "type": "bool",
           "isRequired": false,
-          "description": "Metadata describing the currently loaded modeling source."
+          "description": "Whether a model load is currently in progress."
         },
         {
           "name": "Metadata",
@@ -512,7 +518,7 @@
           "name": "OnLoadRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Whether a model load is currently in progress."
+          "description": "Callback raised when the user requests loading the model again."
         }
       ]
     },
@@ -533,7 +539,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Raised when the viewpoint changes."
+          "description": "Additional CSS class applied to the selector root."
         },
         {
           "name": "NotationKey",
@@ -545,19 +551,19 @@
           "name": "OnNotationChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Selected viewpoint key."
+          "description": "Raised when the notation changes."
         },
         {
           "name": "OnViewpointChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Raised when the notation changes."
+          "description": "Raised when the viewpoint changes."
         },
         {
           "name": "ViewpointKey",
           "type": "string?",
           "isRequired": false,
-          "description": "Selected notation key."
+          "description": "Selected viewpoint key."
         }
       ]
     }
@@ -565,9 +571,9 @@
   "libraryExamples": [],
   "summary": {
     "itemCount": 13,
-    "manualItemCount": 12,
+    "manualItemCount": 13,
     "generatedItemCount": 13,
-    "generatedOnlyItemCount": 1,
+    "generatedOnlyItemCount": 0,
     "componentCount": 7,
     "publicApiTypeCount": 6
   }

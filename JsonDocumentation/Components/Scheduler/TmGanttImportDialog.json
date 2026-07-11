@@ -15,19 +15,19 @@
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fires when import fails with an error message."
+      "description": "Fires when the dialog should close."
     },
     {
       "name": "OnImportCompleted",
       "type": "EventCallback<IReadOnlyList<GanttTask>>",
       "isRequired": false,
-      "description": "Whether the dialog is visible."
+      "description": "Fires when import completes successfully."
     },
     {
       "name": "OnImportError",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fires when import completes successfully."
+      "description": "Fires when import fails with an error message."
     }
   ]
 }

@@ -40,19 +40,12 @@ public static class NotionHtmlImporter
 
     private static void ParseFragment(string html, Guid pageId, List<IPageBlock> blocks, ref int order)
     {
-        // We tokenise by matching top-level block elements in document order.
-        // The regex matches one complete block element at a time.
-        var pattern = new Regex(
-            @"<(h[1-6]|p|ul|ol|li|blockquote|pre|hr|img|table|figure|div|details|article|section|header|footer|main|aside|nav)\b([^>]*)>([\s\S]*?)</\1>"
-            + @"|<hr\s*/?>|<img\b([^>]*)/?>"
-            , RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
         int pos = 0;
-        foreach (Match m in pattern.Matches(html))
+        foreach (var element in TopLevelElements(html, BlockTags))
         {
-            var tag  = m.Groups[1].Value.ToLowerInvariant();
-            var attr = (m.Groups[2].Value + m.Groups[4].Value).Trim();
-            var inner = m.Groups[3].Value;
+            var tag = element.Name;
+            var attr = element.Attributes;
+            var inner = element.Inner;
 
             switch (tag)
             {
@@ -103,7 +96,7 @@ public static class NotionHtmlImporter
                 case "img":
                     var imgUrl  = ExtractAttr(attr, "src");
                     var imgAlt  = ExtractAttr(attr, "alt");
-                    if (!string.IsNullOrWhiteSpace(imgUrl))
+                    if (NotionUrlSanitizer.IsSafe(imgUrl))
                         blocks.Add(MakeBlock(pageId, order++, BlockType.Image,
                             new ImageBlockContent { Url = imgUrl, AltText = imgAlt, Caption = imgAlt }));
                     break;
@@ -127,7 +120,7 @@ public static class NotionHtmlImporter
                     break;
             }
 
-            pos = m.Index + m.Length;
+            pos = element.End;
         }
 
         // text nodes between matched elements → paragraphs
@@ -141,18 +134,116 @@ public static class NotionHtmlImporter
         }
     }
 
+    // ── Depth-aware element scanner ───────────────────────────────────────────
+
+    private static readonly HashSet<string> BlockTags = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "h1", "h2", "h3", "h4", "h5", "h6", "p", "ul", "ol", "li", "blockquote", "pre",
+        "hr", "img", "table", "figure", "div", "details", "article", "section",
+        "header", "footer", "main", "aside", "nav"
+    };
+
+    private static readonly HashSet<string> VoidTags = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "hr", "img", "br", "input", "meta", "link", "source", "col"
+    };
+
+    private static readonly Regex AnyTagRegex = new(
+        @"<(?<close>/?)(?<name>[a-zA-Z][a-zA-Z0-9]*)(?<attrs>(?:""[^""]*""|'[^']*'|[^>""'])*?)(?<self>/?)>",
+        RegexOptions.Compiled | RegexOptions.Singleline);
+
+    private readonly record struct HtmlElement(string Name, string Attributes, string Inner, int Start, int End);
+
+    /// <summary>
+    /// Yields the elements of <paramref name="names"/> that sit at the top level of
+    /// <paramref name="html"/>, pairing each opening tag with its own closing tag by
+    /// counting nesting depth. A non-greedy regex would stop at the first closing tag
+    /// of the same name and mis-parse nested elements such as div-in-div or li-in-li.
+    /// </summary>
+    private static IEnumerable<HtmlElement> TopLevelElements(string html, HashSet<string> names)
+    {
+        var search = 0;
+        while (search < html.Length)
+        {
+            var open = AnyTagRegex.Match(html, search);
+            if (!open.Success)
+            {
+                yield break;
+            }
+
+            var name = open.Groups["name"].Value.ToLowerInvariant();
+            var isClose = open.Groups["close"].Value == "/";
+            var openEnd = open.Index + open.Length;
+
+            if (isClose || !names.Contains(name))
+            {
+                search = openEnd;
+                continue;
+            }
+
+            var attrs = open.Groups["attrs"].Value.Trim();
+
+            if (VoidTags.Contains(name) || open.Groups["self"].Value == "/")
+            {
+                yield return new HtmlElement(name, attrs, string.Empty, open.Index, openEnd);
+                search = openEnd;
+                continue;
+            }
+
+            var close = FindMatchingClose(html, name, openEnd);
+            var innerEnd = close?.Index ?? html.Length;
+            var elementEnd = close is null ? html.Length : close.Index + close.Length;
+
+            yield return new HtmlElement(name, attrs, html[openEnd..innerEnd], open.Index, elementEnd);
+            search = elementEnd;
+        }
+    }
+
+    private static Match? FindMatchingClose(string html, string name, int startIndex)
+    {
+        var depth = 1;
+        var cursor = startIndex;
+        while (cursor < html.Length)
+        {
+            var tag = AnyTagRegex.Match(html, cursor);
+            if (!tag.Success)
+            {
+                return null;
+            }
+
+            cursor = tag.Index + tag.Length;
+            if (!string.Equals(tag.Groups["name"].Value, name, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (tag.Groups["close"].Value == "/")
+            {
+                if (--depth == 0)
+                {
+                    return tag;
+                }
+            }
+            else if (tag.Groups["self"].Value != "/" && !VoidTags.Contains(name))
+            {
+                depth++;
+            }
+        }
+
+        return null;
+    }
+
     // ── List parser ───────────────────────────────────────────────────────────
+
+    private static readonly HashSet<string> ListItemTag = new(StringComparer.OrdinalIgnoreCase) { "li" };
+    private static readonly HashSet<string> NestedListTags = new(StringComparer.OrdinalIgnoreCase) { "ul", "ol" };
 
     private static void ParseList(string html, Guid pageId, List<IPageBlock> blocks,
                                    ref int order, bool numbered, int indentLevel)
     {
-        var itemPattern = new Regex(
-            @"<li\b[^>]*>([\s\S]*?)</li>",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
-        foreach (Match item in itemPattern.Matches(html))
+        foreach (var item in TopLevelElements(html, ListItemTag).ToList())
         {
-            var inner = item.Groups[1].Value;
+            var inner = item.Inner;
 
             // check for task-list checkbox
             var checkMatch = Regex.Match(inner,
@@ -168,13 +259,13 @@ public static class NotionHtmlImporter
                 continue;
             }
 
-            // check for nested list
-            var nestedUl = Regex.Match(inner, @"<ul\b[^>]*>([\s\S]*?)</ul>", RegexOptions.IgnoreCase | RegexOptions.Singleline);
-            var nestedOl = Regex.Match(inner, @"<ol\b[^>]*>([\s\S]*?)</ol>", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var nestedLists = TopLevelElements(inner, NestedListTags).ToList();
 
-            var liHtml   = inner;
-            if (nestedUl.Success) liHtml = liHtml.Replace(nestedUl.Value, string.Empty);
-            if (nestedOl.Success) liHtml = liHtml.Replace(nestedOl.Value, string.Empty);
+            var liHtml = inner;
+            foreach (var nested in nestedLists)
+            {
+                liHtml = liHtml.Replace(inner[nested.Start..nested.End], string.Empty, StringComparison.Ordinal);
+            }
 
             var liText2 = SanitizeInline(liHtml);
             if (!string.IsNullOrWhiteSpace(StripTags(liText2)))
@@ -184,9 +275,12 @@ public static class NotionHtmlImporter
                     new ListBlockContent { Html = liText2, IndentLevel = indentLevel }));
             }
 
-            // recurse into nested lists
-            if (nestedUl.Success) ParseList(nestedUl.Groups[1].Value, pageId, blocks, ref order, false, indentLevel + 1);
-            if (nestedOl.Success) ParseList(nestedOl.Groups[1].Value, pageId, blocks, ref order, true,  indentLevel + 1);
+            // recurse into nested lists, preserving document order
+            foreach (var nested in nestedLists)
+            {
+                ParseList(nested.Inner, pageId, blocks, ref order,
+                    nested.Name.Equals("ol", StringComparison.OrdinalIgnoreCase), indentLevel + 1);
+            }
         }
     }
 
@@ -234,8 +328,12 @@ public static class NotionHtmlImporter
             var alt     = ExtractAttr(imgMatch.Groups[1].Value, "alt") ?? string.Empty;
             var caption = capMatch.Success ? StripTags(capMatch.Groups[1].Value) : alt;
 
-            blocks.Add(MakeBlock(pageId, order++, BlockType.Image,
-                new ImageBlockContent { Url = url, AltText = alt, Caption = caption }));
+            if (NotionUrlSanitizer.IsSafe(url))
+            {
+                blocks.Add(MakeBlock(pageId, order++, BlockType.Image,
+                    new ImageBlockContent { Url = url, AltText = alt, Caption = caption }));
+            }
+
             return;
         }
 
@@ -247,27 +345,45 @@ public static class NotionHtmlImporter
 
     // ── Table ─────────────────────────────────────────────────────────────────
 
+    private static readonly HashSet<string> TableRowTag = new(StringComparer.OrdinalIgnoreCase) { "tr" };
+    private static readonly HashSet<string> TableCellTags = new(StringComparer.OrdinalIgnoreCase) { "td", "th" };
+
     private static void ParseTable(string inner, Guid pageId, List<IPageBlock> blocks, ref int order)
     {
-        // extract all rows from thead + tbody
-        var rowPattern = new Regex(
-            @"<tr\b[^>]*>([\s\S]*?)</tr>",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        var rows = new List<(List<string> Cells, bool IsHeader)>();
 
-        var cellPattern = new Regex(
-            @"<t[dh]\b[^>]*>([\s\S]*?)</t[dh]>",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
-        foreach (Match row in rowPattern.Matches(inner))
+        foreach (var row in TopLevelElements(inner, TableRowTag))
         {
-            var cells = cellPattern.Matches(row.Groups[1].Value)
-                .Cast<Match>()
-                .Select(c => SanitizeInline(c.Groups[1].Value))
-                .ToList();
+            var cellElements = TopLevelElements(row.Inner, TableCellTags).ToList();
+            if (cellElements.Count == 0)
+            {
+                continue;
+            }
 
-            if (cells.Count > 0)
-                blocks.Add(MakeBlock(pageId, order++, BlockType.TableRow,
-                    new TableRowBlockContent { Cells = cells }));
+            rows.Add((
+                cellElements.Select(cell => SanitizeInline(cell.Inner)).ToList(),
+                cellElements.All(cell => cell.Name.Equals("th", StringComparison.OrdinalIgnoreCase))));
+        }
+
+        if (rows.Count == 0)
+        {
+            return;
+        }
+
+        // Rows are children of the Table block, matching TmNotionTableBlock's live model.
+        var tableBlock = MakeBlock(pageId, order++, BlockType.Table, new TableBlockContent
+        {
+            ColumnCount = rows.Max(row => row.Cells.Count),
+            HasHeaderRow = rows[0].IsHeader
+        });
+        blocks.Add(tableBlock);
+
+        for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+        {
+            var rowBlock = (PageBlock)MakeBlock(pageId, rowIndex, BlockType.TableRow,
+                new TableRowBlockContent { Cells = rows[rowIndex].Cells });
+            rowBlock.ParentBlockId = tableBlock.Id;
+            blocks.Add(rowBlock);
         }
     }
 
@@ -307,8 +423,14 @@ public static class NotionHtmlImporter
 
             if (tag.Equals("a", StringComparison.OrdinalIgnoreCase))
             {
+                if (close == "/")
+                {
+                    return "</a>";
+                }
+
                 var href = ExtractAttr(attrs, "href");
-                return href != null ? $"<{close}a href=\"{HtmlAttrEncode(href)}\">" : string.Empty;
+                // An anchor with a rejected scheme keeps its text but loses the link.
+                return NotionUrlSanitizer.IsSafe(href) ? $"<a href=\"{HtmlAttrEncode(href)}\">" : "<a>";
             }
 
             if (tag.Equals("span", StringComparison.OrdinalIgnoreCase) ||
@@ -376,7 +498,11 @@ public static class NotionHtmlImporter
 
     private static string HtmlAttrEncode(string? url) =>
         string.IsNullOrEmpty(url) ? string.Empty
-            : url.Replace("\"", "&quot;").Replace("'", "&#39;");
+            : url.Replace("&", "&amp;")
+                 .Replace("<", "&lt;")
+                 .Replace(">", "&gt;")
+                 .Replace("\"", "&quot;")
+                 .Replace("'", "&#39;");
 
     // ── Factory ───────────────────────────────────────────────────────────────
 

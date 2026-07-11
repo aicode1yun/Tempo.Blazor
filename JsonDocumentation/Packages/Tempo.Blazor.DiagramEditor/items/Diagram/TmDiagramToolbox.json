@@ -15,13 +15,13 @@
       "name": "StencilDragStart",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Additional CSS class."
+      "description": "Raised when a stencil drag starts."
     },
     {
       "name": "StencilKeyboardInsert",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Raised when a stencil drag starts."
+      "description": "Raised when a focused stencil item is activated from the keyboard."
     }
   ]
 }

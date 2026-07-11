@@ -2110,7 +2110,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the input is disabled."
+          "description": "Additional CSS classes for the root element."
         },
         {
           "name": "Commands",
@@ -2123,25 +2123,25 @@
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Placeholder text for the prompt input."
+          "description": "Whether the input is disabled."
         },
         {
           "name": "OnCommandClick",
           "type": "EventCallback<AIPromptCommand>",
           "isRequired": false,
-          "description": "Fired when the user submits a prompt."
+          "description": "Fired when a command button is clicked."
         },
         {
           "name": "OnOutputCopy",
           "type": "EventCallback<AIPromptOutput>",
           "isRequired": false,
-          "description": "Fired when a command button is clicked."
+          "description": "Fired when the copy button is clicked."
         },
         {
           "name": "OnOutputRate",
           "type": "EventCallback<(AIPromptOutput Output, bool? Rating)>",
           "isRequired": false,
-          "description": "Fired when the copy button is clicked."
+          "description": "Fired when the user rates the output. Rating: true = positive, false = negative, null = cleared."
         },
         {
           "name": "OnPromptSubmit",
@@ -2153,13 +2153,13 @@
           "name": "Output",
           "type": "AIPromptOutput?",
           "isRequired": false,
-          "description": "Available quick-action commands displayed above the input."
+          "description": "The current output / response to display."
         },
         {
           "name": "Placeholder",
           "type": "string?",
           "isRequired": false,
-          "description": "The current output / response to display."
+          "description": "Placeholder text for the prompt input."
         }
       ]
     },
@@ -2858,7 +2858,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the input is disabled."
+          "description": "Additional CSS classes."
         },
         {
           "name": "CurrentUser",
@@ -2870,20 +2870,20 @@
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Placeholder for the message input."
+          "description": "Whether the input is disabled."
         },
         {
           "name": "Messages",
           "type": "IReadOnlyList<ChatMessage>",
           "isRequired": false,
           "default": "[]",
-          "description": "The currently authenticated user."
+          "description": "List of messages to display."
         },
         {
           "name": "OnAttachmentClick",
           "type": "EventCallback<ChatAttachment>",
           "isRequired": false,
-          "description": "Fired when the user sends a message."
+          "description": "Fired when an attachment is clicked."
         },
         {
           "name": "OnSendMessage",
@@ -2895,14 +2895,14 @@
           "name": "Placeholder",
           "type": "string?",
           "isRequired": false,
-          "description": "Users currently typing."
+          "description": "Placeholder for the message input."
         },
         {
           "name": "TypingUsers",
           "type": "IReadOnlyList<ChatUser>",
           "isRequired": false,
           "default": "[]",
-          "description": "List of messages to display."
+          "description": "Users currently typing."
         }
       ]
     },
@@ -6888,57 +6888,57 @@
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Function that returns the parent id, or null for root items."
+          "description": "Column definitions (TmTreeListColumn children)."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional page-size dropdown values. When null the dropdown is hidden."
+          "description": "Additional CSS class for the wrapper element."
         },
         {
           "name": "Columns",
           "type": "List<TmTreeListColumn<TItem>>?",
           "isRequired": false,
-          "description": "Column definitions (TmTreeListColumn children)."
+          "description": "Alternative column definitions provided as a list (useful when CascadingValue does not propagate)."
         },
         {
           "name": "CurrentPage",
           "type": "int",
           "isRequired": false,
           "default": "1",
-          "description": "Page size for pagination. 0 disables pagination."
+          "description": "Current page when pagination is enabled."
         },
         {
           "name": "Editable",
           "type": "bool",
           "isRequired": false,
-          "description": "Enables multi-selection via Ctrl/Shift click and drag-to-select."
+          "description": "Enables inline row editing via double-click."
         },
         {
           "name": "ExpandedIds",
           "type": "IReadOnlySet<object>?",
           "isRequired": false,
-          "description": "Alternative column definitions provided as a list (useful when CascadingValue does not propagate)."
+          "description": "Initial set of expanded item ids. Mutated by user interaction."
         },
         {
           "name": "Filter",
           "type": "Func<TItem, bool>?",
           "isRequired": false,
-          "description": "When true, sorts in descending order. Default is ascending."
+          "description": "Optional filter predicate. When set, only matching rows and their ancestors are visible."
         },
         {
           "name": "IdSelector",
           "type": "Func<TItem, object>",
           "isRequired": true,
-          "description": "Flat list of items. Each item must expose an id and a parent id."
+          "description": "Function that returns the unique id of an item."
         },
         {
           "name": "IndentSize",
           "type": "double",
           "isRequired": false,
           "default": "1.5",
-          "description": "Enables inline row editing via double-click."
+          "description": "Indent size per level in rem units. Default: 1.5."
         },
         {
           "name": "Items",
@@ -6950,19 +6950,19 @@
           "name": "MultiSelect",
           "type": "bool",
           "isRequired": false,
-          "description": "Enables row click selection."
+          "description": "Enables multi-selection via Ctrl/Shift click and drag-to-select."
         },
         {
           "name": "OnCollapse",
           "type": "EventCallback<object>",
           "isRequired": false,
-          "description": "Fires when an item is expanded."
+          "description": "Fires when an item is collapsed."
         },
         {
           "name": "OnExpand",
           "type": "EventCallback<object>",
           "isRequired": false,
-          "description": "Fires when the selection changes (multi-select mode)."
+          "description": "Fires when an item is expanded."
         },
         {
           "name": "OnPageSizeChange",
@@ -6973,7 +6973,7 @@
           "name": "OnRowEdit",
           "type": "EventCallback<TItem>",
           "isRequired": false,
-          "description": "Fires when an item is collapsed."
+          "description": "Fires when an inline edit is committed."
         },
         {
           "name": "OnRowSelect",
@@ -6991,37 +6991,37 @@
           "name": "PageSize",
           "type": "int",
           "isRequired": false,
-          "description": "Indent size per level in rem units. Default: 1.5."
+          "description": "Page size for pagination. 0 disables pagination."
         },
         {
           "name": "PageSizeOptions",
           "type": "IReadOnlyList<int>?",
           "isRequired": false,
-          "description": "Current page when pagination is enabled."
+          "description": "Optional page-size dropdown values. When null the dropdown is hidden."
         },
         {
           "name": "ParentIdSelector",
           "type": "Func<TItem, object?>",
           "isRequired": true,
-          "description": "Function that returns the unique id of an item."
+          "description": "Function that returns the parent id, or null for root items."
         },
         {
           "name": "Selectable",
           "type": "bool",
           "isRequired": false,
-          "description": "Initial set of expanded item ids. Mutated by user interaction."
+          "description": "Enables row click selection."
         },
         {
           "name": "SortBy",
           "type": "Func<TItem, object>?",
           "isRequired": false,
-          "description": "Additional CSS class for the wrapper element."
+          "description": "Optional sort key selector. When set, siblings are sorted by this value."
         },
         {
           "name": "SortDescending",
           "type": "bool",
           "isRequired": false,
-          "description": "Optional sort key selector. When set, siblings are sorted by this value."
+          "description": "When true, sorts in descending order. Default is ascending."
         }
       ]
     },
@@ -8611,25 +8611,25 @@
           "name": "AttachmentListTemplate",
           "type": "RenderFragment<AttachmentListContext<TMetadata>>?",
           "isRequired": false,
-          "description": "When true, allows one logical item to hold multiple physical file attachments."
+          "description": "Custom template for rendering the attachment list inside the detail panel or edit modal."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Event fired when the selection changes."
+          "description": "Additional CSS class for the wrapper element."
         },
         {
           "name": "CurrentPath",
           "type": "string?",
           "isRequired": false,
-          "description": "Data provider for document operations."
+          "description": "Current folder path. Two-way bindable."
         },
         {
           "name": "CurrentPathChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Current folder path. Two-way bindable."
+          "description": "Event fired when the current path changes."
         },
         {
           "name": "DataProvider",
@@ -8641,26 +8641,26 @@
           "name": "DeleteForm",
           "type": "RenderFragment<DeleteContext<TMetadata>>?",
           "isRequired": false,
-          "description": "Custom form for creating a new folder. When null, a default inline input is used."
+          "description": "Custom delete confirmation form. When null, a default <see cref=\"TmDialog\"/> is used."
         },
         {
           "name": "DetailMode",
           "type": "DocumentManagerDetailMode",
           "isRequired": false,
           "default": "DocumentManagerDetailMode.SlideIn",
-          "description": "When true, hides actions the current user is not permitted to perform."
+          "description": "How the detail panel is displayed. Default is <see cref=\"DocumentManagerDetailMode.SlideIn\"/>."
         },
         {
           "name": "DetailPanel",
           "type": "RenderFragment<DetailContext<TMetadata>>?",
           "isRequired": false,
-          "description": "Custom edit/metadata form. When null, the Edit action is unavailable."
+          "description": "Custom detail / properties panel content."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Event fired when the view mode changes."
+          "description": "When true, disables all user interactions."
         },
         {
           "name": "EditForm",
@@ -8672,119 +8672,119 @@
           "name": "ItemContextMenu",
           "type": "RenderFragment<ContextMenuContext<TMetadata>>?",
           "isRequired": false,
-          "description": "Custom detail / properties panel content."
+          "description": "Custom context menu for an item. When null, no context menu is shown."
         },
         {
           "name": "ItemMetaTemplate",
           "type": "RenderFragment<DocumentManagerItem<TMetadata>>?",
           "isRequired": false,
-          "description": "Custom context menu for an item. When null, no context menu is shown."
+          "description": "Template rendered below the item name in list/grid views (e.g. tags, metadata preview)."
         },
         {
           "name": "NewFolderForm",
           "type": "RenderFragment<NewFolderContext<TMetadata>>?",
           "isRequired": false,
-          "description": "Custom form for uploading files with metadata. When null, a simple file input is used."
+          "description": "Custom form for creating a new folder. When null, a default inline input is used."
         },
         {
           "name": "OnItemOpen",
           "type": "EventCallback<DocumentManagerItem<TMetadata>>",
           "isRequired": false,
-          "description": "Template rendered below the item name in list/grid views (e.g. tags, metadata preview)."
+          "description": "Event fired when an item is opened (double-clicked or Enter)."
         },
         {
           "name": "OnSelectionChanged",
           "type": "EventCallback<IReadOnlyList<DocumentManagerItem<TMetadata>>>",
           "isRequired": false,
-          "description": "Event fired when an item is opened (double-clicked or Enter)."
+          "description": "Event fired when the selection changes."
         },
         {
           "name": "RespectPermissions",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the Detail / Properties button. Default is true."
+          "description": "When true, hides actions the current user is not permitted to perform."
         },
         {
           "name": "ShowCopyButton",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether to show the Move button. Default is false."
+          "description": "Whether to show the Copy button. Default is false."
         },
         {
           "name": "ShowDeleteButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the Upload button. Default is true."
+          "description": "Whether to show the Delete button. Default is true."
         },
         {
           "name": "ShowDetailButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the Edit button. Default is true."
+          "description": "Whether to show the Detail / Properties button. Default is true."
         },
         {
           "name": "ShowDownloadButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the Rename button. Default is true."
+          "description": "Whether to show the Download button. Default is true."
         },
         {
           "name": "ShowEditButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the Copy button. Default is false."
+          "description": "Whether to show the Edit button. Default is true."
         },
         {
           "name": "ShowFolderTree",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true, disables all user interactions."
+          "description": "Whether to show the folder tree sidebar. Default is true."
         },
         {
           "name": "ShowMoveButton",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether to show the Download button. Default is true."
+          "description": "Whether to show the Move button. Default is false."
         },
         {
           "name": "ShowNewFolderButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the folder tree sidebar. Default is true."
+          "description": "Whether to show the New Folder button. Default is true."
         },
         {
           "name": "ShowRenameButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the Delete button. Default is true."
+          "description": "Whether to show the Rename button. Default is true."
         },
         {
           "name": "ShowUploadButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the New Folder button. Default is true."
+          "description": "Whether to show the Upload button. Default is true."
         },
         {
           "name": "UploadForm",
           "type": "RenderFragment<UploadContext<TMetadata>>?",
           "isRequired": false,
-          "description": "Custom template for rendering the attachment list inside the detail panel or edit modal."
+          "description": "Custom form for uploading files with metadata. When null, a simple file input is used."
         },
         {
           "name": "ViewMode",
           "type": "DocumentManagerViewMode",
           "isRequired": false,
           "default": "DocumentManagerViewMode.List",
-          "description": "Event fired when the current path changes."
+          "description": "Display mode (List or Grid). Default is <see cref=\"DocumentManagerViewMode.List\"/>."
         },
         {
           "name": "ViewModeChanged",
@@ -8812,20 +8812,20 @@
           "type": "DocumentOpenMode",
           "isRequired": false,
           "default": "DocumentOpenMode.Link",
-          "description": "Whether to offer the link-or-copy choice. Defaults to true."
+          "description": "Initial insert mode. Defaults to <see cref=\"DocumentOpenMode.Link\"/>."
         },
         {
           "name": "Kind",
           "type": "TempoDocumentKind",
           "isRequired": true,
-          "description": "The library to browse. Required.",
+          "description": "Which kind of documents to list.",
           "editorRequired": true
         },
         {
           "name": "OnCancelled",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Raised with the chosen document when the user confirms."
+          "description": "Raised when the user cancels."
         },
         {
           "name": "OnSelected",
@@ -8837,20 +8837,20 @@
           "name": "Open",
           "type": "bool",
           "isRequired": false,
-          "description": "Which kind of documents to list."
+          "description": "Whether the dialog is shown."
         },
         {
           "name": "OpenChanged",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Whether the dialog is shown."
+          "description": "Raised when the dialog opens or closes."
         },
         {
           "name": "PageSize",
           "type": "int",
           "isRequired": false,
           "default": "50",
-          "description": "Raised when the user cancels."
+          "description": "Page size for browsing. Defaults to 50."
         },
         {
           "name": "Provider",
@@ -8864,14 +8864,14 @@
           "type": "int",
           "isRequired": false,
           "default": "300",
-          "description": "Page size for browsing. Defaults to 50."
+          "description": "Search debounce in milliseconds. Defaults to 300; set 0 in tests."
         },
         {
           "name": "ShowModeToggle",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Raised when the dialog opens or closes."
+          "description": "Whether to offer the link-or-copy choice. Defaults to true."
         }
       ]
     },
@@ -8996,19 +8996,19 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Event fired when the selection changes."
+          "description": "Additional CSS class for the wrapper element."
         },
         {
           "name": "CurrentPath",
           "type": "string?",
           "isRequired": false,
-          "description": "Data provider for file system operations."
+          "description": "Current folder path. Two-way bindable."
         },
         {
           "name": "CurrentPathChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Current folder path. Two-way bindable."
+          "description": "Event fired when the current path changes."
         },
         {
           "name": "DataProvider",
@@ -9020,61 +9020,61 @@
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Event fired when the view mode changes."
+          "description": "When true, disables all user interactions."
         },
         {
           "name": "OnItemOpen",
           "type": "EventCallback<FileManagerItem>",
           "isRequired": false,
-          "description": "Whether to show the Rename button. Default is true."
+          "description": "Event fired when an item is opened (double-clicked)."
         },
         {
           "name": "OnSelectionChanged",
           "type": "EventCallback<IReadOnlyList<FileManagerItem>>",
           "isRequired": false,
-          "description": "Event fired when an item is opened (double-clicked)."
+          "description": "Event fired when the selection changes."
         },
         {
           "name": "ShowDeleteButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the Upload button. Default is true."
+          "description": "Whether to show the Delete button. Default is true."
         },
         {
           "name": "ShowFolderTree",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true, disables all user interactions."
+          "description": "Whether to show the folder tree sidebar. Default is true."
         },
         {
           "name": "ShowNewFolderButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the folder tree sidebar. Default is true."
+          "description": "Whether to show the New Folder button. Default is true."
         },
         {
           "name": "ShowRenameButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the Delete button. Default is true."
+          "description": "Whether to show the Rename button. Default is true."
         },
         {
           "name": "ShowUploadButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the New Folder button. Default is true."
+          "description": "Whether to show the Upload button. Default is true."
         },
         {
           "name": "ViewMode",
           "type": "FileManagerViewMode",
           "isRequired": false,
           "default": "FileManagerViewMode.List",
-          "description": "Event fired when the current path changes."
+          "description": "Display mode (List or Grid). Default is <see cref=\"FileManagerViewMode.List\"/>."
         },
         {
           "name": "ViewModeChanged",
@@ -10836,14 +10836,14 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether to show the alpha slider and input. Default true."
+          "description": "Additional CSS class."
         },
         {
           "name": "Format",
           "type": "ColorFormat",
           "isRequired": false,
           "default": "ColorFormat.Hex",
-          "description": "Event fired when the color value changes."
+          "description": "Output format. Default is <see cref=\"ColorFormat.Hex\"/>."
         },
         {
           "name": "ShowAlpha",
@@ -10862,7 +10862,7 @@
           "name": "ValueChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "The current color value (hex, rgb, or rgba)."
+          "description": "Event fired when the color value changes."
         }
       ]
     },
@@ -10883,27 +10883,27 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Shows a clear button. Default true."
+          "description": "Additional CSS class."
         },
         {
           "name": "Colors",
           "type": "IReadOnlyList<string>?",
           "isRequired": false,
-          "description": "Event fired when a color is selected."
+          "description": "Predefined colors to display. Defaults to a standard palette."
         },
         {
           "name": "Columns",
           "type": "int",
           "isRequired": false,
           "default": "8",
-          "description": "Predefined colors to display. Defaults to a standard palette."
+          "description": "Number of columns in the grid. Default 8."
         },
         {
           "name": "ShowClearButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Number of columns in the grid. Default 8."
+          "description": "Shows a clear button. Default true."
         },
         {
           "name": "Value",
@@ -10915,7 +10915,7 @@
           "name": "ValueChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "The currently selected color value."
+          "description": "Event fired when a color is selected."
         }
       ]
     },
@@ -10942,98 +10942,98 @@
           "name": "CancelText",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional apply button text."
+          "description": "Optional cancel button text."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Placeholder text shown when no color is selected."
+          "description": "Additional CSS class."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Optional cancel button text."
+          "description": "Disables the color picker."
         },
         {
           "name": "Format",
           "type": "ColorFormat",
           "isRequired": false,
           "default": "ColorFormat.Hex",
-          "description": "Fires when the dropdown open state changes."
+          "description": "Output color format. Defaults to hex."
         },
         {
           "name": "OpenChanged",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Fires when the color value changes."
+          "description": "Fires when the dropdown open state changes."
         },
         {
           "name": "PaletteColors",
           "type": "IReadOnlyList<string>?",
           "isRequired": false,
-          "description": "Shows the preset color palette."
+          "description": "Predefined colors to display in the palette."
         },
         {
           "name": "PaletteColumns",
           "type": "int",
           "isRequired": false,
           "default": "8",
-          "description": "Predefined colors to display in the palette."
+          "description": "Number of columns in the palette grid."
         },
         {
           "name": "Placeholder",
           "type": "string?",
           "isRequired": false,
-          "description": "Disables the color picker."
+          "description": "Placeholder text shown when no color is selected."
         },
         {
           "name": "ShowAlpha",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Output color format. Defaults to hex."
+          "description": "Shows alpha channel controls."
         },
         {
           "name": "ShowApplyButton",
           "type": "bool",
           "isRequired": false,
-          "description": "Shows the clear color command."
+          "description": "When true, the dropdown shows an Apply button and only closes when the user explicitly clicks it. Changing the color inside the picker does not close the dropdown."
         },
         {
           "name": "ShowCancelButton",
           "type": "bool",
           "isRequired": false,
-          "description": "When true, the dropdown shows an Apply button and only closes when the user explicitly clicks it. Changing the color inside the picker does not close the dropdown."
+          "description": "Shows a cancel button next to Apply when <see cref=\"ShowApplyButton\"/> is true."
         },
         {
           "name": "ShowClearButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Number of columns in the palette grid."
+          "description": "Shows the clear color command."
         },
         {
           "name": "ShowGradient",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Shows alpha channel controls."
+          "description": "Shows the gradient color area."
         },
         {
           "name": "ShowHexInput",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Shows the gradient color area."
+          "description": "Shows the hex color input."
         },
         {
           "name": "ShowPalette",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Shows the hex color input."
+          "description": "Shows the preset color palette."
         },
         {
           "name": "Value",
@@ -11045,7 +11045,7 @@
           "name": "ValueChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "The current color value."
+          "description": "Fires when the color value changes."
         }
       ]
     },
@@ -11422,27 +11422,27 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether to show the clear button in the palette. Default true."
+          "description": "Additional CSS class."
         },
         {
           "name": "Format",
           "type": "ColorFormat",
           "isRequired": false,
           "default": "ColorFormat.Hex",
-          "description": "Event fired when the color value changes."
+          "description": "Output format. Default is <see cref=\"ColorFormat.Hex\"/>."
         },
         {
           "name": "PaletteColors",
           "type": "IReadOnlyList<string>?",
           "isRequired": false,
-          "description": "Whether to show the color palette. Default true."
+          "description": "Predefined colors to display in the palette."
         },
         {
           "name": "PaletteColumns",
           "type": "int",
           "isRequired": false,
           "default": "8",
-          "description": "Predefined colors to display in the palette."
+          "description": "Number of columns in the palette grid. Default 8."
         },
         {
           "name": "ShowAlpha",
@@ -11456,35 +11456,35 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the preview row. Default true."
+          "description": "Whether to show the clear button in the palette. Default true."
         },
         {
           "name": "ShowGradient",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the alpha channel. Default true."
+          "description": "Whether to show the gradient color area. Default true."
         },
         {
           "name": "ShowHexInput",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the gradient color area. Default true."
+          "description": "Whether to show the hex color input. Default true."
         },
         {
           "name": "ShowPalette",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to show the hex color input. Default true."
+          "description": "Whether to show the color palette. Default true."
         },
         {
           "name": "ShowPreview",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Number of columns in the palette grid. Default 8."
+          "description": "Whether to show the preview row. Default true."
         },
         {
           "name": "Value",
@@ -11496,7 +11496,7 @@
           "name": "ValueChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "The current color value."
+          "description": "Event fired when the color value changes."
         }
       ]
     },
@@ -11631,7 +11631,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Disables the component."
+          "description": "Additional CSS class."
         },
         {
           "name": "Columns",
@@ -11645,45 +11645,45 @@
           "type": "IReadOnlyList<TItem>",
           "isRequired": false,
           "default": "[]",
-          "description": "Fires when the selection changes."
+          "description": "Data source for the dropdown grid."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether to show a clear button. Default is true."
+          "description": "Disables the component."
         },
         {
           "name": "Filterable",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Placeholder shown when no value is selected."
+          "description": "Whether the user can filter the dropdown list. Default is true."
         },
         {
           "name": "FilterPlaceholder",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the user can filter the dropdown list. Default is true."
+          "description": "Placeholder for the filter input."
         },
         {
           "name": "Placeholder",
           "type": "string?",
           "isRequired": false,
-          "description": "Expression that returns the display text for the trigger when an item is selected."
+          "description": "Placeholder shown when no value is selected."
         },
         {
           "name": "ShowClearButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Placeholder for the filter input."
+          "description": "Whether to show a clear button. Default is true."
         },
         {
           "name": "TextField",
           "type": "Func<TItem, string>",
           "isRequired": true,
-          "description": "Expression that returns the value for a given item. Required for selection matching."
+          "description": "Expression that returns the display text for the trigger when an item is selected."
         },
         {
           "name": "Value",
@@ -11695,13 +11695,13 @@
           "name": "ValueChanged",
           "type": "EventCallback<TValue?>",
           "isRequired": false,
-          "description": "Selected value."
+          "description": "Fires when the selection changes."
         },
         {
           "name": "ValueField",
           "type": "Func<TItem, TValue>",
           "isRequired": true,
-          "description": "Data source for the dropdown grid."
+          "description": "Expression that returns the value for a given item. Required for selection matching."
         }
       ]
     },
@@ -12818,7 +12818,7 @@
           "name": "BackgroundColor",
           "type": "string?",
           "isRequired": false,
-          "description": "Stroke width in pixels. Default is 2."
+          "description": "Background color of the canvas. When null, the canvas is transparent."
         },
         {
           "name": "Changed",
@@ -12830,7 +12830,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether to show the clear button. Default is true."
+          "description": "Additional CSS class for the wrapper element."
         },
         {
           "name": "Confirmed",
@@ -12842,7 +12842,7 @@
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Canvas height in pixels. Default is 200."
+          "description": "When true, the canvas is read-only and the clear button is hidden."
         },
         {
           "name": "ExportFormat",
@@ -12856,7 +12856,7 @@
           "type": "int",
           "isRequired": false,
           "default": "200",
-          "description": "Canvas width in pixels. Default is 400."
+          "description": "Canvas height in pixels. Default is 200."
         },
         {
           "name": "Initials",
@@ -12918,7 +12918,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true, the canvas is read-only and the clear button is hidden."
+          "description": "Whether to show the clear button. Default is true."
         },
         {
           "name": "ShowConfirmButton",
@@ -12943,14 +12943,14 @@
           "type": "string",
           "isRequired": false,
           "default": "\"#000000\"",
-          "description": "Event fired when the signature value changes."
+          "description": "Stroke color. Default is #000000."
         },
         {
           "name": "StrokeWidth",
           "type": "double",
           "isRequired": false,
           "default": "2",
-          "description": "Stroke color. Default is #000000."
+          "description": "Stroke width in pixels. Default is 2."
         },
         {
           "name": "TypedFont",
@@ -12969,14 +12969,14 @@
           "name": "ValueChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "The current signature value as an SVG data URL or raw SVG markup."
+          "description": "Event fired when the signature value changes."
         },
         {
           "name": "Width",
           "type": "int",
           "isRequired": false,
           "default": "400",
-          "description": "Background color of the canvas. When null, the canvas is transparent."
+          "description": "Canvas width in pixels. Default is 400."
         }
       ]
     },
@@ -12997,139 +12997,139 @@
           "name": "BackgroundColor",
           "type": "string?",
           "isRequired": false,
-          "description": "Canvas height used for SVG export."
+          "description": "Optional SVG background color."
         },
         {
           "name": "Changed",
           "type": "EventCallback<TmSignatureCaptureChangedEventArgs>",
           "isRequired": false,
-          "description": "Callback invoked when the captured signature value changes."
+          "description": "Callback invoked when the signature value or signing metadata changes."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when QR/mobile signing is requested."
+          "description": "Additional CSS classes for the root element."
         },
         {
           "name": "Confirmed",
           "type": "EventCallback<TmSignatureCaptureChangedEventArgs>",
           "isRequired": false,
-          "description": "Whether to show an explicit confirmation button for the current signature."
+          "description": "Callback invoked when the current signature is explicitly confirmed."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the signature is required."
+          "description": "Whether the component is disabled."
         },
         {
           "name": "ExportFormat",
           "type": "TmSignatureCaptureExportFormat",
           "isRequired": false,
           "default": "TmSignatureCaptureExportFormat.Svg",
-          "description": "Capture modes shown in the mode selector."
+          "description": "Export format used when drawing signatures. Defaults to SVG."
         },
         {
           "name": "Height",
           "type": "int",
           "isRequired": false,
           "default": "180",
-          "description": "Canvas width used for SVG export."
+          "description": "Canvas height used for SVG export."
         },
         {
           "name": "Initials",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the component is disabled."
+          "description": "Whether typed mode should collect initials instead of a full signature."
         },
         {
           "name": "Mode",
           "type": "TmSignatureCaptureMode",
           "isRequired": false,
           "default": "TmSignatureCaptureMode.Draw",
-          "description": "Callback invoked when the signature value or signing metadata changes."
+          "description": "Current capture mode. Defaults to draw mode."
         },
         {
           "name": "ModeChanged",
           "type": "EventCallback<TmSignatureCaptureMode>",
           "isRequired": false,
-          "description": "Current capture mode. Defaults to draw mode."
+          "description": "Callback invoked when the active capture mode changes."
         },
         {
           "name": "Modes",
           "type": "IReadOnlyList<TmSignatureCaptureMode>?",
           "isRequired": false,
-          "description": "Callback invoked when the active capture mode changes."
+          "description": "Capture modes shown in the mode selector."
         },
         {
           "name": "OnQrSigningRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Callback invoked when the upload flow should be opened."
+          "description": "Callback invoked when QR/mobile signing is requested."
         },
         {
           "name": "OnUploadRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Previously saved signature value that can be reused."
+          "description": "Callback invoked when the upload flow should be opened."
         },
         {
           "name": "PreviousValue",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when the current signature is explicitly confirmed."
+          "description": "Previously saved signature value that can be reused."
         },
         {
           "name": "Required",
           "type": "bool",
           "isRequired": false,
-          "description": "Export format used when drawing signatures. Defaults to SVG."
+          "description": "Whether the signature is required."
         },
         {
           "name": "RequireReason",
           "type": "bool",
           "isRequired": false,
-          "description": "Optional SVG background color."
+          "description": "Whether a reason input should be shown."
         },
         {
           "name": "ShowConfirmButton",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether to show a QR/mobile signing button."
+          "description": "Whether to show an explicit confirmation button for the current signature."
         },
         {
           "name": "ShowQrSigningButton",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether to show the remember signature checkbox."
+          "description": "Whether to show a QR/mobile signing button."
         },
         {
           "name": "ShowRememberSignature",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether a reason input should be shown."
+          "description": "Whether to show the remember signature checkbox."
         },
         {
           "name": "StrokeColor",
           "type": "string",
           "isRequired": false,
           "default": "\"currentColor\"",
-          "description": "Typed signature font key. Supported values are script, serif, and sans."
+          "description": "Stroke color used for draw mode. Defaults to the current text color."
         },
         {
           "name": "StrokeWidth",
           "type": "double",
           "isRequired": false,
           "default": "2.4",
-          "description": "Stroke color used for draw mode. Defaults to the current text color."
+          "description": "Stroke width used for draw mode."
         },
         {
           "name": "TypedFont",
           "type": "string",
           "isRequired": false,
           "default": "\"script\"",
-          "description": "Whether typed mode should collect initials instead of a full signature."
+          "description": "Typed signature font key. Supported values are script, serif, and sans."
         },
         {
           "name": "Value",
@@ -13141,14 +13141,14 @@
           "name": "ValueChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Captured signature value."
+          "description": "Callback invoked when the captured signature value changes."
         },
         {
           "name": "Width",
           "type": "int",
           "isRequired": false,
           "default": "520",
-          "description": "Stroke width used for draw mode."
+          "description": "Canvas width used for SVG export."
         }
       ]
     },
@@ -13889,7 +13889,7 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Fires whenever the layout changes (dock, float, close, reorder)."
+          "description": "Additional CSS class."
         },
         {
           "name": "Items",
@@ -13901,7 +13901,7 @@
           "name": "OnLayoutChanged",
           "type": "EventCallback<DockLayout>",
           "isRequired": false,
-          "description": "Fires when a pane is docked back from floating."
+          "description": "Fires whenever the layout changes (dock, float, close, reorder)."
         },
         {
           "name": "OnPaneClose",
@@ -13913,13 +13913,13 @@
           "name": "OnPaneDock",
           "type": "EventCallback<DockPane>",
           "isRequired": false,
-          "description": "Fires when a pane is floated."
+          "description": "Fires when a pane is docked back from floating."
         },
         {
           "name": "OnPaneFloat",
           "type": "EventCallback<DockPane>",
           "isRequired": false,
-          "description": "Fires when a pane is closed."
+          "description": "Fires when a pane is floated."
         },
         {
           "name": "PaneTemplate",
@@ -13947,46 +13947,46 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether the pane can be floated."
+          "description": "Whether the pane can be closed."
         },
         {
           "name": "CanFloat",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Optional icon name."
+          "description": "Whether the pane can be floated."
         },
         {
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Floating Y position."
+          "description": "Content rendered inside the pane."
         },
         {
           "name": "FloatX",
           "type": "double",
           "isRequired": false,
           "default": "100",
-          "description": "Display order."
+          "description": "Floating X position."
         },
         {
           "name": "FloatY",
           "type": "double",
           "isRequired": false,
           "default": "100",
-          "description": "Floating X position."
+          "description": "Floating Y position."
         },
         {
           "name": "Height",
           "type": "double?",
           "isRequired": false,
-          "description": "Desired width in pixels."
+          "description": "Desired height in pixels."
         },
         {
           "name": "Icon",
           "type": "string?",
           "isRequired": false,
-          "description": "Display title."
+          "description": "Optional icon name."
         },
         {
           "name": "Id",
@@ -13999,40 +13999,40 @@
           "name": "IsActive",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the pane is visible."
+          "description": "Whether the pane is the active tab in its group."
         },
         {
           "name": "IsVisible",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether the pane can be closed."
+          "description": "Whether the pane is visible."
         },
         {
           "name": "Order",
           "type": "int",
           "isRequired": false,
-          "description": "Desired height in pixels."
+          "description": "Display order."
         },
         {
           "name": "Position",
           "type": "DockPosition",
           "isRequired": false,
           "default": "DockPosition.Center",
-          "description": "Whether the pane is the active tab in its group."
+          "description": "Current docking position."
         },
         {
           "name": "Title",
           "type": "string",
           "isRequired": false,
           "default": "\"\"",
-          "description": "Unique identifier."
+          "description": "Display title."
         },
         {
           "name": "Width",
           "type": "double?",
           "isRequired": false,
-          "description": "Current docking position."
+          "description": "Desired width in pixels."
         }
       ]
     },
@@ -14498,7 +14498,7 @@
           "name": "AdditionalCssClass",
           "type": "string?",
           "isRequired": false,
-          "description": "Event fired when collapsed state changes."
+          "description": "Additional CSS classes."
         },
         {
           "name": "ChildContent",
@@ -14510,37 +14510,37 @@
           "name": "Collapsed",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the pane can be collapsed."
+          "description": "Whether the pane is collapsed."
         },
         {
           "name": "CollapsedChanged",
           "type": "EventCallback<bool>",
           "isRequired": false,
-          "description": "Whether the pane is collapsed."
+          "description": "Event fired when collapsed state changes."
         },
         {
           "name": "Collapsible",
           "type": "bool",
           "isRequired": false,
-          "description": "The maximum size of the pane."
+          "description": "Whether the pane can be collapsed."
         },
         {
           "name": "MaxSize",
           "type": "string?",
           "isRequired": false,
-          "description": "The minimum size of the pane."
+          "description": "The maximum size of the pane."
         },
         {
           "name": "MinSize",
           "type": "string?",
           "isRequired": false,
-          "description": "The initial size of the pane (in pixels or percentage)."
+          "description": "The minimum size of the pane."
         },
         {
           "name": "Size",
           "type": "string?",
           "isRequired": false,
-          "description": "The content to render inside the pane."
+          "description": "The initial size of the pane (in pixels or percentage)."
         },
         {
           "name": "Parent",
@@ -15758,27 +15758,27 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Disables the editor."
+          "description": "Additional CSS class."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether to show the generated RRULE summary. Default is true."
+          "description": "Disables the editor."
         },
         {
           "name": "ShowSummary",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "The start date used when parsing the rule. Default is today."
+          "description": "Whether to show the generated RRULE summary. Default is true."
         },
         {
           "name": "StartDate",
           "type": "DateTime",
           "isRequired": false,
           "default": "DateTime.Today",
-          "description": "Fires when the rule changes."
+          "description": "The start date used when parsing the rule. Default is today."
         },
         {
           "name": "Value",
@@ -15790,7 +15790,7 @@
           "name": "ValueChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "The recurrence rule value (iCal RRULE string)."
+          "description": "Fires when the rule changes."
         }
       ]
     },
@@ -16145,21 +16145,21 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Filter field configurations."
+          "description": "When true, enables drag-and-drop. Default: true."
         },
         {
           "name": "AutoApplyFilters",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true, enables drag-and-drop. Default: true."
+          "description": "When true, filter changes are applied immediately without clicking Apply. Default: true."
         },
         {
           "name": "ColumnFieldKeys",
           "type": "List<string>",
           "isRequired": false,
           "default": "[]",
-          "description": "Keys of fields currently in the row area."
+          "description": "Keys of fields currently in the column area."
         },
         {
           "name": "Fields",
@@ -16173,45 +16173,45 @@
           "type": "Dictionary<string, List<object?>>",
           "isRequired": false,
           "default": "[]",
-          "description": "Value field configurations in the data area."
+          "description": "Filter field configurations."
         },
         {
           "name": "Items",
           "type": "IEnumerable<TItem>?",
           "isRequired": false,
-          "description": "All available field definitions."
+          "description": "Source data items used to compute distinct filter values."
         },
         {
           "name": "OnConfigurationChanged",
           "type": "EventCallback<PivotTableConfiguration>",
           "isRequired": false,
-          "description": "When true, shows a checkbox tree instead of the Unused zone. Default: false."
+          "description": "Fires when the user applies a new configuration."
         },
         {
           "name": "OnSortChanged",
           "type": "EventCallback<(string FieldKey, PivotSortDirection Direction, PivotSortBy SortBy)>",
           "isRequired": false,
-          "description": "Fires when the user applies a new configuration."
+          "description": "Fires when a field's sort direction or criterion changes."
         },
         {
           "name": "RowFieldKeys",
           "type": "List<string>",
           "isRequired": false,
           "default": "[]",
-          "description": "Source data items used to compute distinct filter values."
+          "description": "Keys of fields currently in the row area."
         },
         {
           "name": "ShowFieldTree",
           "type": "bool",
           "isRequired": false,
-          "description": "When true, filter changes are applied immediately without clicking Apply. Default: true."
+          "description": "When true, shows a checkbox tree instead of the Unused zone. Default: false."
         },
         {
           "name": "ValueFields",
           "type": "List<PivotValueFieldConfiguration>",
           "isRequired": false,
           "default": "[]",
-          "description": "Keys of fields currently in the column area."
+          "description": "Value field configurations in the data area."
         }
       ]
     },
@@ -16307,44 +16307,44 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true, shows a checkbox tree instead of the Unused zone in the configuration panel. Default: false."
+          "description": "When true, enables drag-and-drop in the configuration panel. Default: true."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Custom template for column dimension header cells."
+          "description": "Additional CSS class applied to the wrapper div."
         },
         {
           "name": "ColumnFieldKeys",
           "type": "List<string>",
           "isRequired": false,
           "default": "[]",
-          "description": "Keys of fields placed in the row area."
+          "description": "Keys of fields placed in the column area."
         },
         {
           "name": "ColumnHeadersWidth",
           "type": "string?",
           "isRequired": false,
-          "description": "Heading shown in the empty state when no data is available."
+          "description": "CSS width applied to column header cells (e.g. \"120px\", \"15%\")."
         },
         {
           "name": "ColumnHeaderTemplate",
           "type": "RenderFragment<PivotColumnHeaderContext>?",
           "isRequired": false,
-          "description": "Custom template for row dimension header cells."
+          "description": "Custom template for column dimension header cells."
         },
         {
           "name": "DataCellTemplate",
           "type": "RenderFragment<PivotCellContext>?",
           "isRequired": false,
-          "description": "Fires after the pivot data is refreshed or recomputed."
+          "description": "Custom template for data cells (inner matrix values)."
         },
         {
           "name": "DataProvider",
           "type": "IPivotDataProvider<TItem>?",
           "isRequired": false,
-          "description": "Source data items for in-memory pivot transformation."
+          "description": "Server-side data provider. When set, overrides Items and calls GetPivotDataAsync."
         },
         {
           "name": "DataProviderType",
@@ -16357,33 +16357,33 @@
           "name": "EmptyTitle",
           "type": "string?",
           "isRequired": false,
-          "description": "When true, shows a loading spinner instead of the table."
+          "description": "Heading shown in the empty state when no data is available."
         },
         {
           "name": "Fields",
           "type": "List<PivotField<TItem>>",
           "isRequired": false,
           "default": "[]",
-          "description": "Determines which data provider backs the pivot table. Default: Client."
+          "description": "All available field definitions for the pivot table."
         },
         {
           "name": "FilterFields",
           "type": "Dictionary<string, List<object?>>",
           "isRequired": false,
           "default": "[]",
-          "description": "Value field configurations for the data area."
+          "description": "Filter field configurations. Key = field key, Value = allowed values."
         },
         {
           "name": "Height",
           "type": "string?",
           "isRequired": false,
-          "description": "CSS width applied to row dimension header cells (e.g. \"120px\", \"15%\")."
+          "description": "CSS height applied to the wrapper div (e.g. \"400px\", \"60vh\")."
         },
         {
           "name": "IsLoading",
           "type": "bool",
           "isRequired": false,
-          "description": "When true, enables drag-and-drop in the configuration panel. Default: true."
+          "description": "When true, shows a loading spinner instead of the table."
         },
         {
           "name": "Items",
@@ -16395,71 +16395,71 @@
           "name": "OnConfigurationChanged",
           "type": "EventCallback<PivotTableConfiguration>",
           "isRequired": false,
-          "description": "CSS width applied to the wrapper div (e.g. \"100%\", \"800px\")."
+          "description": "Fires when the pivot configuration changes."
         },
         {
           "name": "OnDataChanged",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fires when the pivot configuration changes."
+          "description": "Fires after the pivot data is refreshed or recomputed."
         },
         {
           "name": "RowFieldKeys",
           "type": "List<string>",
           "isRequired": false,
           "default": "[]",
-          "description": "All available field definitions for the pivot table."
+          "description": "Keys of fields placed in the row area."
         },
         {
           "name": "RowHeadersWidth",
           "type": "string?",
           "isRequired": false,
-          "description": "CSS width applied to column header cells (e.g. \"120px\", \"15%\")."
+          "description": "CSS width applied to row dimension header cells (e.g. \"120px\", \"15%\")."
         },
         {
           "name": "RowHeaderTemplate",
           "type": "RenderFragment<PivotRowHeaderContext>?",
           "isRequired": false,
-          "description": "Custom template for data cells (inner matrix values)."
+          "description": "Custom template for row dimension header cells."
         },
         {
           "name": "ShowConfigurationPanel",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Filter field configurations. Key = field key, Value = allowed values."
+          "description": "When true, shows the configuration panel. Default: true."
         },
         {
           "name": "ShowFieldTree",
           "type": "bool",
           "isRequired": false,
-          "description": "When true, shows the filter bar. Default: true."
+          "description": "When true, shows a checkbox tree instead of the Unused zone in the configuration panel. Default: false."
         },
         {
           "name": "ShowFilterBar",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true, shows the configuration panel. Default: true."
+          "description": "When true, shows the filter bar. Default: true."
         },
         {
           "name": "ValueFields",
           "type": "List<PivotValueFieldConfiguration>",
           "isRequired": false,
           "default": "[]",
-          "description": "Keys of fields placed in the column area."
+          "description": "Value field configurations for the data area."
         },
         {
           "name": "Width",
           "type": "string?",
           "isRequired": false,
-          "description": "CSS height applied to the wrapper div (e.g. \"400px\", \"60vh\")."
+          "description": "CSS width applied to the wrapper div (e.g. \"100%\", \"800px\")."
         },
         {
           "name": "XmlaDataProvider",
           "type": "IXmlaPivotDataProvider?",
           "isRequired": false,
-          "description": "Server-side data provider. When set, overrides Items and calls GetPivotDataAsync."
+          "description": "XMLA (OLAP) data provider. Used when <see cref=\"DataProviderType\"/> is <see cref=\"PivotDataProviderType.Xmla\"/>."
         }
       ]
     },
@@ -16490,25 +16490,25 @@
           "name": "ActiveBaselineId",
           "type": "string?",
           "isRequired": false,
-          "description": "Named schedule snapshots for baseline comparison."
+          "description": "ID of the currently active baseline to compare against."
         },
         {
           "name": "ActiveTimerTaskId",
           "type": "string?",
           "isRequired": false,
-          "description": "Fires when the user creates a new virtual (placeholder) resource."
+          "description": "Task ID of the currently running stopwatch timer. Null = no active timer."
         },
         {
           "name": "AllowBulkSelect",
           "type": "bool",
           "isRequired": false,
-          "description": "When true, dep-drag handles are rendered on every task bar."
+          "description": "When true, each tree row shows a checkbox for bulk selection."
         },
         {
           "name": "AllowDependencyCreation",
           "type": "bool",
           "isRequired": false,
-          "description": "Fires when column visibility/order changes via the column toggle UI."
+          "description": "When true, dep-drag handles are rendered on every task bar."
         },
         {
           "name": "AllTasks",
@@ -16521,28 +16521,28 @@
           "name": "AutoSchedule",
           "type": "bool",
           "isRequired": false,
-          "description": "Fires when the data order changes via cascade sort."
+          "description": "When true, auto-schedules tasks based on dependencies when parameters are set."
         },
         {
           "name": "Baselines",
           "type": "IReadOnlyList<GanttBaseline>",
           "isRequired": false,
           "default": "[]",
-          "description": "When true, highlights critical-path tasks with a distinct bar color."
+          "description": "Named schedule snapshots for baseline comparison."
         },
         {
           "name": "Columns",
           "type": "IReadOnlyList<GanttColumnDefinition>",
           "isRequired": false,
           "default": "DefaultColumns",
-          "description": "Working schedule used to shade non-working days/hours in the timeline."
+          "description": "Column definitions for the tree grid. Defaults to all standard columns visible."
         },
         {
           "name": "CustomFields",
           "type": "IReadOnlyList<TmCustomFieldDefinition>",
           "isRequired": false,
           "default": "[]",
-          "description": "Fires after a new baseline is saved."
+          "description": "User-defined custom field definitions."
         },
         {
           "name": "Dependencies",
@@ -16569,7 +16569,7 @@
           "type": "IReadOnlyList<GanttFilter>",
           "isRequired": false,
           "default": "[]",
-          "description": "Fires when a custom field value is committed for a task. Args: (taskId, fieldId, value)."
+          "description": "Active filter set. Empty = show all tasks."
         },
         {
           "name": "History",
@@ -16595,7 +16595,7 @@
           "name": "NotificationSettings",
           "type": "TmNotificationPreferences?",
           "isRequired": false,
-          "description": "Optional real-time SignalR connection for live task updates."
+          "description": "Notification preferences for the current user."
         },
         {
           "name": "OnAttachmentRemoved",
@@ -16613,19 +16613,19 @@
           "name": "OnAutoScheduled",
           "type": "EventCallback<IReadOnlyList<TmWorkItem>>",
           "isRequired": false,
-          "description": "When true, auto-schedules tasks based on dependencies when parameters are set."
+          "description": "Fires after auto-scheduling with the updated task list."
         },
         {
           "name": "OnBaselineSaved",
           "type": "EventCallback<GanttBaseline>",
           "isRequired": false,
-          "description": "ID of the currently active baseline to compare against."
+          "description": "Fires after a new baseline is saved."
         },
         {
           "name": "OnBulkUpdate",
           "type": "EventCallback<BulkUpdateArgs>",
           "isRequired": false,
-          "description": "Current timeline zoom preset (Weeks by default)."
+          "description": "Fires when the user triggers a bulk status/property update."
         },
         {
           "name": "OnClose",
@@ -16637,7 +16637,7 @@
           "name": "OnColumnsChanged",
           "type": "EventCallback<IReadOnlyList<GanttColumnDefinition>>",
           "isRequired": false,
-          "description": "Column definitions for the tree grid. Defaults to all standard columns visible."
+          "description": "Fires when column visibility/order changes via the column toggle UI."
         },
         {
           "name": "OnCommentAdded",
@@ -16649,13 +16649,13 @@
           "name": "OnCustomFieldChanged",
           "type": "EventCallback<(string TaskId, string FieldId, string? Value)>",
           "isRequired": false,
-          "description": "User-defined custom field definitions."
+          "description": "Fires when a custom field value is committed for a task. Args: (taskId, fieldId, value)."
         },
         {
           "name": "OnDataSorted",
           "type": "EventCallback<IReadOnlyList<TmWorkItem>>",
           "isRequired": false,
-          "description": "Fires when the user triggers a bulk status/property update."
+          "description": "Fires when the data order changes via cascade sort."
         },
         {
           "name": "OnDependencyAdded",
@@ -16685,13 +16685,13 @@
           "name": "OnExportRequested",
           "type": "EventCallback<GanttExportOptions>",
           "isRequired": false,
-          "description": "Fires when the user adds/removes filters via the filter panel."
+          "description": "Fires when the user requests an export (contains selected options)."
         },
         {
           "name": "OnFiltersChanged",
           "type": "EventCallback<IReadOnlyList<GanttFilter>>",
           "isRequired": false,
-          "description": "Active filter set. Empty = show all tasks."
+          "description": "Fires when the user adds/removes filters via the filter panel."
         },
         {
           "name": "OnImport",
@@ -16703,43 +16703,43 @@
           "name": "OnImportCompleted",
           "type": "EventCallback<IReadOnlyList<TmWorkItem>>",
           "isRequired": false,
-          "description": "Fires when the user requests an export (contains selected options)."
+          "description": "Fires when an import operation completes successfully."
         },
         {
           "name": "OnImportError",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fires when an import operation completes successfully."
+          "description": "Fires when an import operation fails (contains error message)."
         },
         {
           "name": "OnNotificationTriggered",
           "type": "EventCallback<TmNotification>",
           "isRequired": false,
-          "description": "Fires when a task's status is changed from the board view."
+          "description": "Fires when a notification condition is met (assign, mention, deadline)."
         },
         {
           "name": "OnReportRun",
           "type": "EventCallback<GanttReport>",
           "isRequired": false,
-          "description": "Report definitions shown in the Reports sidebar panel."
+          "description": "Fires when the user clicks \"Run\" on a report."
         },
         {
           "name": "OnResourceCalendarChanged",
           "type": "EventCallback<IReadOnlyList<GanttResourceCalendar>>",
           "isRequired": false,
-          "description": "Resource calendars for vacation/day-off overlays in People view."
+          "description": "Fires when a resource calendar entry changes."
         },
         {
           "name": "OnRollbackRequested",
           "type": "EventCallback<TmActivityEntry>",
           "isRequired": false,
-          "description": "Fires when the user requests time-travel to the given timestamp."
+          "description": "Fires when the user requests rollback to the state before a history entry."
         },
         {
           "name": "OnStatusChanged",
           "type": "EventCallback<(string TaskId, TmWorkItemStatus NewStatus)>",
           "isRequired": false,
-          "description": "Notification preferences for the current user."
+          "description": "Fires when a task's status is changed from the board view."
         },
         {
           "name": "OnTaskReordered",
@@ -16756,13 +16756,13 @@
           "name": "OnTimerStarted",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Task ID of the currently running stopwatch timer. Null = no active timer."
+          "description": "Fires when the user starts the stopwatch for a task."
         },
         {
           "name": "OnTimerStopped",
           "type": "EventCallback<(string TaskId, GanttTimeLogEntry Entry)>",
           "isRequired": false,
-          "description": "Fires when the user starts the stopwatch for a task."
+          "description": "Fires when the user stops the stopwatch for a task, providing the completed log entry."
         },
         {
           "name": "OnTimeTravelRequested",
@@ -16774,13 +16774,13 @@
           "name": "OnViewSettingsChanged",
           "type": "EventCallback<GanttViewSettings>",
           "isRequired": false,
-          "description": "View display settings (today marker, days off, density, theme…)."
+          "description": "Fires when the user changes a view setting via the built-in dropdown."
         },
         {
           "name": "OnVirtualResourceAdded",
           "type": "EventCallback<TmWorkItemAssignee>",
           "isRequired": false,
-          "description": "Fires when a resource calendar entry changes."
+          "description": "Fires when the user creates a new virtual (placeholder) resource."
         },
         {
           "name": "Projects",
@@ -16792,46 +16792,46 @@
           "name": "RealtimeConnection",
           "type": "IGanttRealtimeConnection?",
           "isRequired": false,
-          "description": "Whether workload is displayed in hours or as a percentage of capacity."
+          "description": "Optional real-time SignalR connection for live task updates."
         },
         {
           "name": "Reports",
           "type": "IReadOnlyList<GanttReport>",
           "isRequired": false,
           "default": "[]",
-          "description": "When true (default), the left sidebar navigation is visible."
+          "description": "Report definitions shown in the Reports sidebar panel."
         },
         {
           "name": "ResourceCalendars",
           "type": "IReadOnlyList<GanttResourceCalendar>",
           "isRequired": false,
           "default": "[]",
-          "description": "Fires when a notification condition is met (assign, mention, deadline)."
+          "description": "Resource calendars for vacation/day-off overlays in People view."
         },
         {
           "name": "ShowCriticalPath",
           "type": "bool",
           "isRequired": false,
-          "description": "Fires after auto-scheduling with the updated task list."
+          "description": "When true, highlights critical-path tasks with a distinct bar color."
         },
         {
           "name": "ShowOverdueHighlight",
           "type": "bool",
           "isRequired": false,
-          "description": "When true, each tree row shows a checkbox for bulk selection."
+          "description": "When true, overdue tasks (End in past, not done) are highlighted."
         },
         {
           "name": "ShowSidebar",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Fires when the user stops the stopwatch for a task, providing the completed log entry."
+          "description": "When true (default), the left sidebar navigation is visible."
         },
         {
           "name": "ShowWorkloadPanel",
           "type": "bool",
           "isRequired": false,
-          "description": "Fires when the user requests rollback to the state before a history entry."
+          "description": "When true, shows the workload panel below the Gantt timeline."
         },
         {
           "name": "SourceColumns",
@@ -16856,7 +16856,7 @@
           "name": "WorkingSchedule",
           "type": "WorkingSchedule",
           "isRequired": true,
-          "description": "Fires when the user changes a view setting via the built-in dropdown."
+          "description": "Working schedule used to shade non-working days/hours in the timeline."
         },
         {
           "name": "WorkItemSource",
@@ -16869,14 +16869,14 @@
           "type": "WorkloadDisplayMode",
           "isRequired": false,
           "default": "WorkloadDisplayMode.Hours",
-          "description": "When true, shows the workload panel below the Gantt timeline."
+          "description": "Whether workload is displayed in hours or as a percentage of capacity."
         },
         {
           "name": "ZoomPreset",
           "type": "GanttZoomPreset",
           "isRequired": false,
           "default": "GanttZoomPreset.Weeks",
-          "description": "When true, overdue tasks (End in past, not done) are highlighted."
+          "description": "Current timeline zoom preset (Weeks by default)."
         },
         {
           "name": "Class",
@@ -16909,13 +16909,13 @@
           "name": "OnClose",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fires when the user confirms export with the chosen options."
+          "description": "Fires when the dialog should close."
         },
         {
           "name": "OnExport",
           "type": "EventCallback<GanttExportOptions>",
           "isRequired": false,
-          "description": "Whether the dialog is visible."
+          "description": "Fires when the user confirms export with the chosen options."
         }
       ]
     },
@@ -16968,19 +16968,19 @@
           "name": "OnClose",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fires when the user requests rollback to a specific history entry."
+          "description": "Fires when the drawer should close."
         },
         {
           "name": "OnRollbackRequested",
           "type": "EventCallback<TmActivityEntry>",
           "isRequired": false,
-          "description": "Fires when the user requests time-travel to a specific timestamp."
+          "description": "Fires when the user requests rollback to a specific history entry."
         },
         {
           "name": "OnTimeTravelRequested",
           "type": "EventCallback<DateTime>",
           "isRequired": false,
-          "description": "Whether the drawer is visible."
+          "description": "Fires when the user requests time-travel to a specific timestamp."
         }
       ]
     },
@@ -17007,19 +17007,19 @@
           "name": "OnClose",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fires when import fails with an error message."
+          "description": "Fires when the dialog should close."
         },
         {
           "name": "OnImportCompleted",
           "type": "EventCallback<IReadOnlyList<TmWorkItem>>",
           "isRequired": false,
-          "description": "Whether the dialog is visible."
+          "description": "Fires when import completes successfully."
         },
         {
           "name": "OnImportError",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fires when import completes successfully."
+          "description": "Fires when import fails with an error message."
         }
       ]
     },
@@ -17040,19 +17040,19 @@
           "name": "IsOpen",
           "type": "bool",
           "isRequired": false,
-          "description": "Source column names from the imported file."
+          "description": "Whether the dialog is visible."
         },
         {
           "name": "OnClose",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fires when the user confirms the mapping."
+          "description": "Fires when the dialog should close."
         },
         {
           "name": "OnImport",
           "type": "EventCallback<IReadOnlyList<GanttColumnMapping>>",
           "isRequired": false,
-          "description": "Whether the dialog is visible."
+          "description": "Fires when the user confirms the mapping."
         },
         {
           "name": "SourceColumns",
@@ -17127,81 +17127,81 @@
           "name": "ActiveTimerTaskId",
           "type": "string?",
           "isRequired": false,
-          "description": "Fires when the user closes the panel via the close button."
+          "description": "Id of the task whose timer is currently running. Null if none."
         },
         {
           "name": "AllTasks",
           "type": "IReadOnlyList<TmWorkItem>",
           "isRequired": false,
           "default": "[]",
-          "description": "The task being edited."
+          "description": "All tasks for parent selection."
         },
         {
           "name": "Dependencies",
           "type": "IReadOnlyList<GanttDependency>",
           "isRequired": false,
           "default": "[]",
-          "description": "All tasks for parent selection."
+          "description": "Existing dependencies."
         },
         {
           "name": "OnAttachmentRemoved",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fires when the user selects a file to attach."
+          "description": "Fires when the user removes an attachment (by attachment Id)."
         },
         {
           "name": "OnAttachmentUpload",
           "type": "EventCallback<IBrowserFile>",
           "isRequired": false,
-          "description": "Fires when the description textarea changes (live)."
+          "description": "Fires when the user selects a file to attach."
         },
         {
           "name": "OnClose",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Fires when the user submits a new comment."
+          "description": "Fires when the user closes the panel via the close button."
         },
         {
           "name": "OnCommentAdded",
           "type": "EventCallback<TmCommentEntry>",
           "isRequired": false,
-          "description": "Fires when the user removes an attachment (by attachment Id)."
+          "description": "Fires when the user submits a new comment."
         },
         {
           "name": "OnDependencyAdded",
           "type": "EventCallback<GanttDependency>",
           "isRequired": false,
-          "description": "Fires when the task is saved with valid data."
+          "description": "Fires when a new dependency is added."
         },
         {
           "name": "OnDependencyRemoved",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fires when a new dependency is added."
+          "description": "Fires when a dependency is removed (by its Id)."
         },
         {
           "name": "OnDescriptionChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Fires when a dependency is removed (by its Id)."
+          "description": "Fires when the description textarea changes (live)."
         },
         {
           "name": "OnTaskUpdated",
           "type": "EventCallback<TmWorkItem>",
           "isRequired": false,
-          "description": "Existing dependencies."
+          "description": "Fires when the task is saved with valid data."
         },
         {
           "name": "OnTimerStarted",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Id of the task whose timer is currently running. Null if none."
+          "description": "Fires when the user starts the timer for this task (arg = taskId)."
         },
         {
           "name": "OnTimerStopped",
           "type": "EventCallback<(string TaskId, GanttTimeLogEntry Entry)>",
           "isRequired": false,
-          "description": "Fires when the user starts the timer for this task (arg = taskId)."
+          "description": "Fires when the user stops the timer (arg = taskId + completed log entry)."
         },
         {
           "name": "Task",

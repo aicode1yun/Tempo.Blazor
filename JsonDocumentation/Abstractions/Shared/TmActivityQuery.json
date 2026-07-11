@@ -1,0 +1,67 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Query options for resolving activity entries from an ITmActivityProvider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmActivityQuery.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmActivityQuery",
+  "members": [
+    {
+      "name": "EntityRef",
+      "type": "TmEntityRef?",
+      "description": "Optional exact entity reference filter."
+    },
+    {
+      "name": "EntityType",
+      "type": "string?",
+      "description": "Optional entity type filter."
+    },
+    {
+      "name": "EntityId",
+      "type": "string?",
+      "description": "Optional entity id filter."
+    },
+    {
+      "name": "ActorId",
+      "type": "string?",
+      "description": "Optional exact actor id filter."
+    },
+    {
+      "name": "SearchText",
+      "type": "string?",
+      "description": "Optional free-text filter matched against actor id, display name, and summary."
+    },
+    {
+      "name": "Action",
+      "type": "string?",
+      "description": "Optional action key filter."
+    },
+    {
+      "name": "CorrelationId",
+      "type": "string?",
+      "description": "Optional correlation id filter."
+    },
+    {
+      "name": "From",
+      "type": "DateTimeOffset?",
+      "description": "Inclusive lower timestamp bound."
+    },
+    {
+      "name": "To",
+      "type": "DateTimeOffset?",
+      "description": "Inclusive upper timestamp bound."
+    },
+    {
+      "name": "Skip",
+      "type": "int",
+      "description": "Number of matching entries to skip."
+    },
+    {
+      "name": "Take",
+      "type": "int",
+      "description": "Maximum number of matching entries to return."
+    }
+  ]
+}
