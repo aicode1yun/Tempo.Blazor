@@ -18,7 +18,7 @@
     justify-content: center;
     width: 100%;
     height: 100%;
-    color: var(--tm-color-neutral-400, #9ca3af);
+    color: var(--tm-text-tertiary);
     font-size: var(--tm-text-xs, 0.75rem);
 }
 
@@ -46,11 +46,4 @@
 
 .tm-sparkline__area {
     transition: opacity 0.2s ease;
-}
-
-/* ── Dark mode ───────────────────────────────────────────────────────── */
-
-[data-theme="dark"] .tm-sparkline__empty,
-.tm-dark .tm-sparkline__empty {
-    color: var(--tm-color-neutral-500, #6b7280);
 }

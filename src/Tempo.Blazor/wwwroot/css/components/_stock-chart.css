@@ -1,4 +1,4 @@
-/* ── TmStockChart ────────────────────────────────────────────────────── */
+﻿/* ── TmStockChart ────────────────────────────────────────────────────── */
 
 .tm-stock-chart {
     width: 100%;
@@ -8,7 +8,7 @@
     justify-content: center;
     background: var(--tm-color-surface, #ffffff);
     border-radius: var(--tm-radius-lg, 0.5rem);
-    border: 1px solid var(--tm-color-neutral-200, #e5e7eb);
+    border: 1px solid var(--tm-border-color);
     overflow: hidden;
 }
 
@@ -22,18 +22,18 @@
     justify-content: center;
     width: 100%;
     height: 100%;
-    color: var(--tm-color-neutral-500, #6b7280);
+    color: var(--tm-text-secondary);
     font-size: var(--tm-text-sm, 0.875rem);
 }
 
 .tm-stock-chart__grid-line {
-    stroke: var(--tm-color-neutral-200, #e5e7eb);
+    stroke: var(--tm-border-color);
     stroke-width: 1;
     stroke-dasharray: 4, 4;
 }
 
 .tm-stock-chart__axis-label {
-    fill: var(--tm-color-neutral-500, #6b7280);
+    fill: var(--tm-text-secondary);
     font-size: 11px;
     font-family: var(--tm-font-sans, ui-sans-serif, system-ui, sans-serif);
 }
@@ -47,7 +47,7 @@
 }
 
 .tm-stock-chart__wick {
-    stroke: var(--tm-color-neutral-500, #6b7280);
+    stroke: var(--tm-text-secondary);
     stroke-width: 1;
 }
 
@@ -109,17 +109,6 @@
 [data-theme="dark"] .tm-stock-chart,
 .tm-dark .tm-stock-chart {
     background: var(--tm-color-surface-dark, #1f2937);
-    border-color: var(--tm-color-neutral-700, #374151);
-}
-
-[data-theme="dark"] .tm-stock-chart__grid-line,
-.tm-dark .tm-stock-chart__grid-line {
-    stroke: var(--tm-color-neutral-700, #374151);
-}
-
-[data-theme="dark"] .tm-stock-chart__axis-label,
-.tm-dark .tm-stock-chart__axis-label {
-    fill: var(--tm-color-neutral-400, #9ca3af);
 }
 
 @media (prefers-reduced-motion: reduce) {

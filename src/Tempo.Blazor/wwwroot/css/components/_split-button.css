@@ -57,8 +57,8 @@
     min-width: 10rem;
     padding: 0.25rem;
     margin-top: 0.25rem;
-    background-color: #fff;
-    border: 1px solid var(--tm-color-neutral-200);
+    background-color: var(--tm-bg-surface);
+    border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-lg);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06);
     animation: tm-fade-in 0.12s ease;
@@ -77,7 +77,7 @@
 .tm-split-button--primary .tm-split-button__primary,
 .tm-split-button--primary .tm-split-button__toggle {
     background-color: var(--tm-color-primary-600);
-    color: #fff;
+    color: var(--tm-color-white);
 }
 
 .tm-split-button--primary .tm-split-button__primary:hover:not(:disabled),
@@ -90,14 +90,14 @@
    ═══════════════════════════════════════════════════════ */
 .tm-split-button--secondary .tm-split-button__primary,
 .tm-split-button--secondary .tm-split-button__toggle {
-    background-color: var(--tm-color-neutral-100);
-    color: var(--tm-color-neutral-700);
-    border-left-color: var(--tm-color-neutral-300);
+    background-color: var(--tm-bg-muted);
+    color: var(--tm-text-primary);
+    border-left-color: var(--tm-border-color);
 }
 
 .tm-split-button--secondary .tm-split-button__primary:hover:not(:disabled),
 .tm-split-button--secondary .tm-split-button__toggle:hover:not(:disabled) {
-    background-color: var(--tm-color-neutral-200);
+    background-color: var(--tm-bg-muted);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -106,7 +106,7 @@
 .tm-split-button--danger .tm-split-button__primary,
 .tm-split-button--danger .tm-split-button__toggle {
     background-color: var(--tm-color-danger-600, #dc2626);
-    color: #fff;
+    color: var(--tm-color-white);
 }
 
 .tm-split-button--danger .tm-split-button__primary:hover:not(:disabled),
@@ -146,23 +146,5 @@
    ═══════════════════════════════════════════════════════ */
 [data-theme="dark"] .tm-split-button__dropdown,
 .tm-dark .tm-split-button__dropdown {
-    background-color: var(--tm-color-neutral-800);
-    border-color: var(--tm-color-neutral-700);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-}
-
-[data-theme="dark"] .tm-split-button--secondary .tm-split-button__primary,
-[data-theme="dark"] .tm-split-button--secondary .tm-split-button__toggle,
-.tm-dark .tm-split-button--secondary .tm-split-button__primary,
-.tm-dark .tm-split-button--secondary .tm-split-button__toggle {
-    background-color: var(--tm-color-neutral-700);
-    color: var(--tm-color-neutral-200);
-    border-left-color: var(--tm-color-neutral-600);
-}
-
-[data-theme="dark"] .tm-split-button--secondary .tm-split-button__primary:hover:not(:disabled),
-[data-theme="dark"] .tm-split-button--secondary .tm-split-button__toggle:hover:not(:disabled),
-.tm-dark .tm-split-button--secondary .tm-split-button__primary:hover:not(:disabled),
-.tm-dark .tm-split-button--secondary .tm-split-button__toggle:hover:not(:disabled) {
-    background-color: var(--tm-color-neutral-600);
 }

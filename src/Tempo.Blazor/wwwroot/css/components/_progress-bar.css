@@ -15,7 +15,7 @@
     display: flex;
     overflow: hidden;
     border-radius: 9999px;
-    background-color: var(--tm-color-neutral-200);
+    background-color: var(--tm-bg-muted);
 }
 
 /* ── Fill ──────────────────────────────────────────────── */
@@ -30,7 +30,7 @@
 .tm-progress-bar__label {
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--tm-color-neutral-600);
+    color: var(--tm-text-secondary);
     white-space: nowrap;
     min-width: 2.5rem;
     text-align: right;
@@ -55,15 +55,15 @@
    Variants
    ═══════════════════════════════════════════════════════ */
 .tm-progress-bar--success .tm-progress-bar__fill {
-    background-color: #22c55e;
+    background-color: var(--tm-color-success);
 }
 
 .tm-progress-bar--warning .tm-progress-bar__fill {
-    background-color: #f59e0b;
+    background-color: var(--tm-color-warning);
 }
 
 .tm-progress-bar--error .tm-progress-bar__fill {
-    background-color: #ef4444;
+    background-color: var(--tm-color-danger);
 }
 
 .tm-progress-bar--gradient .tm-progress-bar__fill {
@@ -127,19 +127,6 @@
 
 .tm-progress-bar__segment:only-child {
     border-radius: 9999px;
-}
-
-/* ═══════════════════════════════════════════════════════
-   Dark mode
-   ═══════════════════════════════════════════════════════ */
-[data-theme="dark"] .tm-progress-bar__track,
-.tm-dark .tm-progress-bar__track {
-    background-color: var(--tm-color-neutral-700);
-}
-
-[data-theme="dark"] .tm-progress-bar__label,
-.tm-dark .tm-progress-bar__label {
-    color: var(--tm-color-neutral-400);
 }
 
 /* ═══════════════════════════════════════════════════════

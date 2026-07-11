@@ -20,8 +20,8 @@
     z-index: var(--tm-z-dropdown, 1020);
     min-width: 10rem;
     padding: 0.25rem;
-    background-color: #fff;
-    border: 1px solid var(--tm-color-neutral-200);
+    background-color: var(--tm-bg-surface);
+    border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-lg);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06);
     animation: tm-fade-in 0.12s ease;
@@ -37,7 +37,7 @@
     padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
     line-height: 1.25rem;
-    color: var(--tm-color-neutral-700);
+    color: var(--tm-text-primary);
     background: transparent;
     border: none;
     border-radius: var(--tm-radius-md);
@@ -47,8 +47,8 @@
 }
 
 .tm-context-menu__item:hover:not(.tm-context-menu__item--disabled) {
-    background-color: var(--tm-color-neutral-100);
-    color: var(--tm-color-neutral-900);
+    background-color: var(--tm-color-surface-hover);
+    color: var(--tm-text-primary);
 }
 
 .tm-context-menu__item:focus-visible {
@@ -58,19 +58,19 @@
 
 /* Disabled */
 .tm-context-menu__item--disabled {
-    color: var(--tm-color-neutral-400);
+    color: var(--tm-text-tertiary);
     cursor: not-allowed;
     opacity: 0.6;
 }
 
 /* Danger */
 .tm-context-menu__item--danger {
-    color: var(--tm-color-danger-600, #dc2626);
+    color: var(--tm-color-danger);
 }
 
 .tm-context-menu__item--danger:hover:not(.tm-context-menu__item--disabled) {
-    background-color: #fef2f2;
-    color: var(--tm-color-danger-700, #b91c1c);
+    background-color: var(--tm-color-danger-subtle);
+    color: var(--tm-color-danger-hover);
 }
 
 /* ── Icon & Label ──────────────────────────────────────── */
@@ -78,7 +78,7 @@
     display: inline-flex;
     align-items: center;
     flex-shrink: 0;
-    color: var(--tm-color-neutral-500);
+    color: var(--tm-text-secondary);
 }
 
 .tm-context-menu__item--danger .tm-context-menu__item-icon {
@@ -93,47 +93,15 @@
 .tm-context-menu__divider {
     height: 1px;
     margin: 0.25rem 0.5rem;
-    background-color: var(--tm-color-neutral-200);
+    background-color: var(--tm-border-color);
 }
 
 /* ═══════════════════════════════════════════════════════
    Dark mode
    ═══════════════════════════════════════════════════════ */
+/* Only the shadow needs a dark variant — the danger colour and the subtle danger background
+   already flip themselves in tokens-dark.css. */
 [data-theme="dark"] .tm-context-menu,
 .tm-dark .tm-context-menu {
-    background-color: var(--tm-color-neutral-800);
-    border-color: var(--tm-color-neutral-700);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-}
-
-[data-theme="dark"] .tm-context-menu__item,
-.tm-dark .tm-context-menu__item {
-    color: var(--tm-color-neutral-300);
-}
-
-[data-theme="dark"] .tm-context-menu__item:hover:not(.tm-context-menu__item--disabled),
-.tm-dark .tm-context-menu__item:hover:not(.tm-context-menu__item--disabled) {
-    background-color: var(--tm-color-neutral-700);
-    color: var(--tm-color-neutral-100);
-}
-
-[data-theme="dark"] .tm-context-menu__item--danger,
-.tm-dark .tm-context-menu__item--danger {
-    color: #fca5a5;
-}
-
-[data-theme="dark"] .tm-context-menu__item--danger:hover:not(.tm-context-menu__item--disabled),
-.tm-dark .tm-context-menu__item--danger:hover:not(.tm-context-menu__item--disabled) {
-    background-color: rgba(239, 68, 68, 0.15);
-    color: #fca5a5;
-}
-
-[data-theme="dark"] .tm-context-menu__item-icon,
-.tm-dark .tm-context-menu__item-icon {
-    color: var(--tm-color-neutral-500);
-}
-
-[data-theme="dark"] .tm-context-menu__divider,
-.tm-dark .tm-context-menu__divider {
-    background-color: var(--tm-color-neutral-700);
 }

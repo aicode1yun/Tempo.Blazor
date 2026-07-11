@@ -17,9 +17,9 @@
     justify-content: center;
     min-height: 150px;
     padding: var(--tm-spacing-6, 1.5rem);
-    border: 2px dashed var(--tm-color-neutral-300, #d1d5db);
+    border: 2px dashed var(--tm-border-color);
     border-radius: var(--tm-radius-lg, 0.75rem);
-    background-color: var(--tm-color-neutral-50, #f9fafb);
+    background-color: var(--tm-bg-muted);
     cursor: pointer;
     transition: border-color 0.2s ease, background-color 0.2s ease;
 }
@@ -66,13 +66,13 @@
 
 .tm-file-drop-zone__hint {
     font-size: var(--tm-font-size-sm, 0.875rem);
-    color: var(--tm-color-neutral-600, #4b5563);
+    color: var(--tm-text-secondary);
     font-weight: 500;
 }
 
 .tm-file-drop-zone__or {
     font-size: 0.75rem;
-    color: var(--tm-color-neutral-400, #9ca3af);
+    color: var(--tm-text-tertiary);
 }
 
 .tm-file-drop-zone__browse {
@@ -106,8 +106,8 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-3, 0.75rem);
-    background-color: white;
-    border: 1px solid var(--tm-color-neutral-200, #e5e7eb);
+    background-color: var(--tm-bg-surface);
+    border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-md, 0.5rem);
 }
 
@@ -132,13 +132,13 @@
 .tm-file-drop-zone__file-name {
     font-size: var(--tm-font-size-sm, 0.875rem);
     font-weight: 500;
-    color: var(--tm-color-neutral-700, #374151);
+    color: var(--tm-text-primary);
     word-break: break-all;
 }
 
 .tm-file-drop-zone__file-size {
     font-size: 0.75rem;
-    color: var(--tm-color-neutral-400, #9ca3af);
+    color: var(--tm-text-tertiary);
 }
 
 .tm-file-drop-zone__file-remove {
@@ -151,7 +151,7 @@
     background: none;
     border: none;
     border-radius: var(--tm-radius-sm, 0.25rem);
-    color: var(--tm-color-neutral-400, #9ca3af);
+    color: var(--tm-text-tertiary);
     font-size: 1.25rem;
     cursor: pointer;
     transition: color 0.15s ease, background-color 0.15s ease;
@@ -159,15 +159,7 @@
 
 .tm-file-drop-zone__file-remove:hover {
     color: var(--tm-color-danger-600, #dc2626);
-    background-color: #fef2f2;
-}
-
-/* ── Dark mode ── */
-
-[data-theme="dark"] .tm-file-drop-zone__area,
-.tm-dark .tm-file-drop-zone__area {
-    background-color: var(--tm-color-neutral-800, #1f2937);
-    border-color: var(--tm-color-neutral-600, #4b5563);
+    background-color: var(--tm-color-danger-subtle);
 }
 
 [data-theme="dark"] .tm-file-drop-zone__area:hover,
@@ -180,22 +172,6 @@
 .tm-dark .tm-file-drop-zone__area--drag-over {
     border-color: var(--tm-color-primary-500, #3b82f6);
     background-color: rgba(59, 130, 246, 0.12);
-}
-
-[data-theme="dark"] .tm-file-drop-zone__hint,
-.tm-dark .tm-file-drop-zone__hint {
-    color: var(--tm-color-neutral-300, #d1d5db);
-}
-
-[data-theme="dark"] .tm-file-drop-zone__file-item,
-.tm-dark .tm-file-drop-zone__file-item {
-    background-color: var(--tm-color-neutral-800, #1f2937);
-    border-color: var(--tm-color-neutral-700, #374151);
-}
-
-[data-theme="dark"] .tm-file-drop-zone__file-name,
-.tm-dark .tm-file-drop-zone__file-name {
-    color: var(--tm-color-neutral-200, #e5e7eb);
 }
 
 [data-theme="dark"] .tm-file-drop-zone__file-remove:hover,

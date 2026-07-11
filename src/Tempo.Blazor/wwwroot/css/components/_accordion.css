@@ -3,14 +3,14 @@
    ═══════════════════════════════════════════════════════ */
 
 .tm-accordion {
-    border: 1px solid var(--tm-color-neutral-200);
+    border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-lg);
     overflow: hidden;
 }
 
 /* ── Item ──────────────────────────────────────────────── */
 .tm-accordion-item {
-    border-bottom: 1px solid var(--tm-color-neutral-200);
+    border-bottom: 1px solid var(--tm-border-color);
 }
 
 .tm-accordion-item:last-child {
@@ -26,7 +26,7 @@
     padding: 0.875rem 1rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--tm-color-neutral-900);
+    color: var(--tm-text-primary);
     background-color: transparent;
     border: none;
     cursor: pointer;
@@ -35,7 +35,7 @@
 }
 
 .tm-accordion-item__header:hover {
-    background-color: var(--tm-color-neutral-50);
+    background-color: var(--tm-color-surface-hover);
 }
 
 .tm-accordion-item__header:focus-visible {
@@ -59,13 +59,13 @@
     display: block;
     font-size: 0.75rem;
     font-weight: 400;
-    color: var(--tm-color-neutral-500);
+    color: var(--tm-text-secondary);
     margin-top: 0.125rem;
 }
 
 .tm-accordion-item__icon {
     display: inline-flex;
-    color: var(--tm-color-neutral-500);
+    color: var(--tm-text-secondary);
 }
 
 /* ── Chevron ───────────────────────────────────────────── */
@@ -73,7 +73,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--tm-color-neutral-400);
+    color: var(--tm-text-tertiary);
     transition: transform 0.2s ease;
     flex-shrink: 0;
 }
@@ -86,7 +86,7 @@
 .tm-accordion-item__body {
     padding: 0 1rem 1rem;
     font-size: 0.875rem;
-    color: var(--tm-color-neutral-600);
+    color: var(--tm-text-secondary);
     animation: tm-accordion-expand 0.2s ease;
 }
 
@@ -109,34 +109,6 @@
 
 .tm-accordion-item--disabled .tm-accordion-item__header:hover {
     background-color: transparent;
-}
-
-/* ═══════════════════════════════════════════════════════
-   Dark mode
-   ═══════════════════════════════════════════════════════ */
-[data-theme="dark"] .tm-accordion,
-.tm-dark .tm-accordion {
-    border-color: var(--tm-color-neutral-700);
-}
-
-[data-theme="dark"] .tm-accordion-item,
-.tm-dark .tm-accordion-item {
-    border-color: var(--tm-color-neutral-700);
-}
-
-[data-theme="dark"] .tm-accordion-item__header,
-.tm-dark .tm-accordion-item__header {
-    color: var(--tm-color-neutral-100);
-}
-
-[data-theme="dark"] .tm-accordion-item__header:hover,
-.tm-dark .tm-accordion-item__header:hover {
-    background-color: var(--tm-color-neutral-800);
-}
-
-[data-theme="dark"] .tm-accordion-item__body,
-.tm-dark .tm-accordion-item__body {
-    color: var(--tm-color-neutral-400);
 }
 
 /* ═══════════════════════════════════════════════════════

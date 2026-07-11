@@ -30,9 +30,9 @@
     width: 100%;
     padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
-    color: var(--tm-color-neutral-900);
+    color: var(--tm-text-primary);
     background-color: var(--tm-color-surface, #fff);
-    border: 1px solid var(--tm-color-neutral-300);
+    border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-md);
     outline: none;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -54,7 +54,7 @@
 .tm-dynamic-form__textarea:disabled,
 .tm-dynamic-form__select:disabled {
     opacity: 0.6;
-    background-color: var(--tm-color-neutral-100);
+    background-color: var(--tm-bg-muted);
     cursor: not-allowed;
 }
 
@@ -64,7 +64,7 @@
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
-    color: var(--tm-color-neutral-700);
+    color: var(--tm-text-primary);
     cursor: pointer;
 }
 
@@ -82,7 +82,7 @@
 /* ── Help text ─────────────────────────────────────────── */
 .tm-dynamic-form__help {
     font-size: 0.75rem;
-    color: var(--tm-color-neutral-500);
+    color: var(--tm-text-secondary);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -93,32 +93,4 @@
     .tm-dynamic-form--3col {
         grid-template-columns: 1fr;
     }
-}
-
-/* ═══════════════════════════════════════════════════════
-   Dark mode
-   ═══════════════════════════════════════════════════════ */
-[data-theme="dark"] .tm-dynamic-form__input,
-[data-theme="dark"] .tm-dynamic-form__textarea,
-[data-theme="dark"] .tm-dynamic-form__select,
-.tm-dark .tm-dynamic-form__input,
-.tm-dark .tm-dynamic-form__textarea,
-.tm-dark .tm-dynamic-form__select {
-    background-color: var(--tm-color-neutral-800);
-    border-color: var(--tm-color-neutral-600);
-    color: var(--tm-color-neutral-100);
-}
-
-[data-theme="dark"] .tm-dynamic-form__checkbox-label,
-.tm-dark .tm-dynamic-form__checkbox-label {
-    color: var(--tm-color-neutral-300);
-}
-
-[data-theme="dark"] .tm-dynamic-form__input:disabled,
-[data-theme="dark"] .tm-dynamic-form__textarea:disabled,
-[data-theme="dark"] .tm-dynamic-form__select:disabled,
-.tm-dark .tm-dynamic-form__input:disabled,
-.tm-dark .tm-dynamic-form__textarea:disabled,
-.tm-dark .tm-dynamic-form__select:disabled {
-    background-color: var(--tm-color-neutral-900);
 }

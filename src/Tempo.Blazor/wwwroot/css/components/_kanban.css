@@ -17,15 +17,15 @@
     min-width: 280px;
     display: flex;
     flex-direction: column;
-    background-color: var(--tm-color-neutral-50, #f9fafb);
+    background-color: var(--tm-bg-muted);
     border-radius: var(--tm-radius-lg, 0.75rem);
-    border: 1px solid var(--tm-color-neutral-200, #e5e7eb);
+    border: 1px solid var(--tm-border-color);
     max-height: 600px;
 }
 
 .tm-kanban__column--over-limit {
     border-color: var(--tm-color-danger-300, #fca5a5);
-    background-color: #fef2f2;
+    background-color: var(--tm-color-danger-subtle);
 }
 
 /* ── Header ── */
@@ -35,7 +35,7 @@
     align-items: center;
     gap: var(--tm-spacing-2, 0.5rem);
     padding: var(--tm-spacing-3, 0.75rem);
-    border-bottom: 1px solid var(--tm-color-neutral-200, #e5e7eb);
+    border-bottom: 1px solid var(--tm-border-color);
 }
 
 .tm-kanban__header-color {
@@ -48,15 +48,15 @@
 .tm-kanban__header-title {
     font-size: var(--tm-font-size-sm, 0.875rem);
     font-weight: 600;
-    color: var(--tm-color-neutral-700, #374151);
+    color: var(--tm-text-primary);
     flex: 1;
 }
 
 .tm-kanban__count {
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--tm-color-neutral-500, #6b7280);
-    background-color: var(--tm-color-neutral-200, #e5e7eb);
+    color: var(--tm-text-secondary);
+    background-color: var(--tm-bg-muted);
     padding: 0 6px;
     border-radius: 9999px;
     min-width: 20px;
@@ -65,7 +65,7 @@
 
 .tm-kanban__wip-limit {
     font-size: 0.7rem;
-    color: var(--tm-color-neutral-400, #9ca3af);
+    color: var(--tm-text-tertiary);
 }
 
 /* ── Cards container ── */
@@ -83,13 +83,13 @@
 
 .tm-kanban__card {
     padding: var(--tm-spacing-3, 0.75rem);
-    background-color: white;
-    border: 1px solid var(--tm-color-neutral-200, #e5e7eb);
+    background-color: var(--tm-bg-surface);
+    border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-md, 0.5rem);
     cursor: grab;
     transition: box-shadow 0.15s ease, border-color 0.15s ease;
     font-size: var(--tm-font-size-sm, 0.875rem);
-    color: var(--tm-color-neutral-700, #374151);
+    color: var(--tm-text-primary);
 }
 
 .tm-kanban__card:hover {
@@ -126,7 +126,7 @@
 .tm-kanban__swimlane {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--tm-color-neutral-200, #e5e7eb);
+    border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-lg, 0.75rem);
     overflow: hidden;
 }
@@ -136,8 +136,8 @@
     align-items: center;
     gap: var(--tm-spacing-2, 0.5rem);
     padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-3, 0.75rem);
-    background-color: var(--tm-color-neutral-100, #f3f4f6);
-    border-bottom: 1px solid var(--tm-color-neutral-200, #e5e7eb);
+    background-color: var(--tm-bg-muted);
+    border-bottom: 1px solid var(--tm-border-color);
     position: sticky;
     left: 0;
 }
@@ -152,7 +152,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--tm-color-neutral-500, #6b7280);
+    color: var(--tm-text-secondary);
     flex-shrink: 0;
 }
 
@@ -181,15 +181,15 @@
 .tm-kanban__swimlane-title {
     font-size: var(--tm-font-size-sm, 0.875rem);
     font-weight: 600;
-    color: var(--tm-color-neutral-700, #374151);
+    color: var(--tm-text-primary);
     flex: 1;
 }
 
 .tm-kanban__swimlane-count {
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--tm-color-neutral-500, #6b7280);
-    background-color: var(--tm-color-neutral-200, #e5e7eb);
+    color: var(--tm-text-secondary);
+    background-color: var(--tm-bg-muted);
     padding: 0 6px;
     border-radius: 9999px;
     min-width: 20px;
@@ -205,7 +205,7 @@
 .tm-kanban__column--lane-cell {
     max-height: none;
     min-height: 60px;
-    background-color: var(--tm-color-neutral-50, #f9fafb);
+    background-color: var(--tm-bg-muted);
 }
 
 /* ── Drop indicator (in-column reorder / drop position) ── */
@@ -232,19 +232,11 @@
     align-items: center;
     justify-content: center;
     padding: var(--tm-spacing-6, 1.5rem);
-    color: var(--tm-color-neutral-400, #9ca3af);
+    color: var(--tm-text-tertiary);
     font-size: var(--tm-font-size-sm, 0.875rem);
-    border: 2px dashed var(--tm-color-neutral-200, #e5e7eb);
+    border: 2px dashed var(--tm-border-color);
     border-radius: var(--tm-radius-md, 0.5rem);
     min-height: 80px;
-}
-
-/* ── Dark mode ── */
-
-[data-theme="dark"] .tm-kanban__column,
-.tm-dark .tm-kanban__column {
-    background-color: var(--tm-color-neutral-900, #111827);
-    border-color: var(--tm-color-neutral-700, #374151);
 }
 
 [data-theme="dark"] .tm-kanban__column--over-limit,
@@ -253,78 +245,15 @@
     background-color: rgba(239, 68, 68, 0.1);
 }
 
-[data-theme="dark"] .tm-kanban__header,
-.tm-dark .tm-kanban__header {
-    border-bottom-color: var(--tm-color-neutral-700, #374151);
-}
-
-[data-theme="dark"] .tm-kanban__header-title,
-.tm-dark .tm-kanban__header-title {
-    color: var(--tm-color-neutral-200, #e5e7eb);
-}
-
-[data-theme="dark"] .tm-kanban__count,
-.tm-dark .tm-kanban__count {
-    background-color: var(--tm-color-neutral-700, #374151);
-    color: var(--tm-color-neutral-300, #d1d5db);
-}
-
-[data-theme="dark"] .tm-kanban__card,
-.tm-dark .tm-kanban__card {
-    background-color: var(--tm-color-neutral-800, #1f2937);
-    border-color: var(--tm-color-neutral-700, #374151);
-    color: var(--tm-color-neutral-300, #d1d5db);
-}
-
 [data-theme="dark"] .tm-kanban__card:hover,
 .tm-dark .tm-kanban__card:hover {
     border-color: var(--tm-color-primary-500, #3b82f6);
-}
-
-[data-theme="dark"] .tm-kanban__empty,
-.tm-dark .tm-kanban__empty {
-    color: var(--tm-color-neutral-600, #4b5563);
-    border-color: var(--tm-color-neutral-700, #374151);
 }
 
 [data-theme="dark"] .tm-kanban__drop-indicator,
 .tm-dark .tm-kanban__drop-indicator {
     background-color: var(--tm-color-primary-400, #60a5fa);
     box-shadow: 0 0 0 1px var(--tm-color-primary-700, #1d4ed8);
-}
-
-/* ── Dark mode: swimlanes ── */
-
-[data-theme="dark"] .tm-kanban__swimlane,
-.tm-dark .tm-kanban__swimlane {
-    border-color: var(--tm-color-neutral-700, #374151);
-}
-
-[data-theme="dark"] .tm-kanban__swimlane-header,
-.tm-dark .tm-kanban__swimlane-header {
-    background-color: var(--tm-color-neutral-800, #1f2937);
-    border-bottom-color: var(--tm-color-neutral-700, #374151);
-}
-
-[data-theme="dark"] .tm-kanban__swimlane-title,
-.tm-dark .tm-kanban__swimlane-title {
-    color: var(--tm-color-neutral-200, #e5e7eb);
-}
-
-[data-theme="dark"] .tm-kanban__swimlane-count,
-.tm-dark .tm-kanban__swimlane-count {
-    background-color: var(--tm-color-neutral-700, #374151);
-    color: var(--tm-color-neutral-300, #d1d5db);
-}
-
-[data-theme="dark"] .tm-kanban__swimlane-toggle,
-.tm-dark .tm-kanban__swimlane-toggle {
-    color: var(--tm-color-neutral-400, #9ca3af);
-}
-
-[data-theme="dark"] .tm-kanban__column--lane-cell,
-.tm-dark .tm-kanban__column--lane-cell {
-    background-color: var(--tm-color-neutral-900, #111827);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -33,14 +33,14 @@
 /* ── Filled variant ────────────────────────────────────── */
 .tm-chip--filled {
     background-color: var(--tm-chip-color, var(--tm-color-primary-600));
-    color: #fff;
+    color: var(--tm-color-white);
 }
 
 /* ── Outlined variant ──────────────────────────────────── */
 .tm-chip--outlined {
     background-color: transparent;
-    border: 1px solid var(--tm-chip-color, var(--tm-color-neutral-300));
-    color: var(--tm-chip-color, var(--tm-color-neutral-700));
+    border: 1px solid var(--tm-chip-color, var(--tm-border-color));
+    color: var(--tm-chip-color, var(--tm-text-primary));
 }
 
 /* ── Clickable ─────────────────────────────────────────── */
@@ -100,12 +100,6 @@
 .tm-dark .tm-chip--soft {
     background-color: rgba(var(--tm-color-primary-500-rgb, 59, 130, 246), 0.2);
     color: var(--tm-color-primary-300);
-}
-
-[data-theme="dark"] .tm-chip--outlined,
-.tm-dark .tm-chip--outlined {
-    border-color: var(--tm-color-neutral-600);
-    color: var(--tm-color-neutral-300);
 }
 
 [data-theme="dark"] .tm-chip__remove:hover,

@@ -10,18 +10,18 @@
     border: none;
     border-radius: var(--tm-radius-md);
     background-color: transparent;
-    color: var(--tm-color-neutral-500);
+    color: var(--tm-text-secondary);
     cursor: pointer;
     transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .tm-copy-button:hover {
-    color: var(--tm-color-neutral-700);
-    background-color: var(--tm-color-neutral-100);
+    color: var(--tm-text-primary);
+    background-color: var(--tm-color-surface-hover);
 }
 
 .tm-copy-button:active {
-    background-color: var(--tm-color-neutral-200);
+    background-color: var(--tm-bg-muted);
 }
 
 .tm-copy-button:focus-visible {
@@ -36,20 +36,6 @@
 
 .tm-copy-button--copied:hover {
     color: var(--tm-color-success-700);
-}
-
-/* ═══════════════════════════════════════════════════════
-   Dark mode
-   ═══════════════════════════════════════════════════════ */
-[data-theme="dark"] .tm-copy-button,
-.tm-dark .tm-copy-button {
-    color: var(--tm-color-neutral-400);
-}
-
-[data-theme="dark"] .tm-copy-button:hover,
-.tm-dark .tm-copy-button:hover {
-    color: var(--tm-color-neutral-200);
-    background-color: var(--tm-color-neutral-700);
 }
 
 [data-theme="dark"] .tm-copy-button--copied,

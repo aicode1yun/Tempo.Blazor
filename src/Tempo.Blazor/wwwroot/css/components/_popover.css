@@ -18,7 +18,7 @@
     min-width: 200px;
     padding: 0.75rem 1rem;
     background-color: var(--tm-color-surface, #fff);
-    border: 1px solid var(--tm-color-neutral-200);
+    border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-lg);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     opacity: 0;
@@ -39,7 +39,7 @@
     width: 10px;
     height: 10px;
     background-color: var(--tm-color-surface, #fff);
-    border: 1px solid var(--tm-color-neutral-200);
+    border: 1px solid var(--tm-border-color);
     transform: rotate(45deg);
 }
 
@@ -124,15 +124,7 @@
    ═══════════════════════════════════════════════════════ */
 [data-theme="dark"] .tm-popover__body,
 .tm-dark .tm-popover__body {
-    background-color: var(--tm-color-neutral-800);
-    border-color: var(--tm-color-neutral-700);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-
-[data-theme="dark"] .tm-popover__arrow,
-.tm-dark .tm-popover__arrow {
-    background-color: var(--tm-color-neutral-800);
-    border-color: var(--tm-color-neutral-700);
 }
 
 /* ═══════════════════════════════════════════════════════
