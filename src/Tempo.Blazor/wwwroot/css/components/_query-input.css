@@ -1,0 +1,231 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmQueryInput — JQL-style query input with autocomplete + error underlines
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-query-input {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-spacing-1, 0.25rem);
+    width: 100%;
+}
+
+.tm-query-input__label {
+    font-size: var(--tm-font-size-sm, 0.875rem);
+    font-weight: 500;
+    color: var(--tm-color-neutral-700, #374151);
+}
+
+.tm-query-input__field {
+    position: relative;
+}
+
+/* ── Shared text metrics: the overlay mirror MUST match the input exactly ── */
+
+.tm-query-input__input,
+.tm-query-input__overlay {
+    font-family: inherit;
+    font-size: var(--tm-font-size-sm, 0.875rem);
+    line-height: 1.5;
+    letter-spacing: normal;
+    padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-3, 0.75rem);
+    white-space: pre;
+    box-sizing: border-box;
+}
+
+.tm-query-input--mono .tm-query-input__input,
+.tm-query-input--mono .tm-query-input__overlay {
+    font-family: var(--tm-font-mono, ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace);
+}
+
+.tm-query-input__input {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    background-color: transparent;
+    color: var(--tm-color-neutral-900, #111827);
+    border: 1px solid var(--tm-color-neutral-300, #d1d5db);
+    border-radius: var(--tm-radius-md, 0.5rem);
+    outline: none;
+    overflow-x: auto;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tm-query-input__input:focus {
+    border-color: var(--tm-color-primary-500, #3b82f6);
+    box-shadow: 0 0 0 3px var(--tm-color-primary-100, #dbeafe);
+}
+
+.tm-query-input__input[aria-invalid="true"] {
+    border-color: var(--tm-color-danger-400, #f87171);
+}
+
+.tm-query-input__input::placeholder {
+    color: var(--tm-color-neutral-400, #9ca3af);
+}
+
+/* ── Error-underline overlay (behind the input, transparent glyphs) ── */
+
+.tm-query-input__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    color: transparent;
+    pointer-events: none;
+    overflow: hidden;
+    border: 1px solid transparent; /* match input border box so text aligns */
+}
+
+.tm-query-input__error {
+    color: transparent;
+    text-decoration-line: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: var(--tm-color-danger-500, #ef4444);
+    text-decoration-skip-ink: none;
+    text-underline-offset: 2px;
+}
+
+/* ── Suggestion dropdown ── */
+
+.tm-query-input__dropdown {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    margin: 0;
+    padding: var(--tm-spacing-1, 0.25rem);
+    list-style: none;
+    max-height: 280px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid var(--tm-color-neutral-200, #e5e7eb);
+    border-radius: var(--tm-radius-md, 0.5rem);
+    box-shadow: var(--tm-shadow-lg, 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1));
+}
+
+.tm-query-input__status {
+    padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-3, 0.75rem);
+    font-size: var(--tm-font-size-sm, 0.875rem);
+    color: var(--tm-color-neutral-500, #6b7280);
+}
+
+.tm-query-input__status--error {
+    color: var(--tm-color-danger-600, #dc2626);
+}
+
+.tm-query-input__option {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-spacing-2, 0.5rem);
+    padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-2, 0.5rem);
+    border-radius: var(--tm-radius-sm, 0.375rem);
+    cursor: pointer;
+    font-size: var(--tm-font-size-sm, 0.875rem);
+    color: var(--tm-color-neutral-800, #1f2937);
+    transition: background-color 0.1s ease;
+}
+
+.tm-query-input__option:hover,
+.tm-query-input__option--selected {
+    background-color: var(--tm-color-primary-50, #eff6ff);
+}
+
+.tm-query-input__option-text {
+    flex: 1;
+    font-family: var(--tm-font-mono, ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace);
+}
+
+.tm-query-input__option-desc {
+    font-size: 0.75rem;
+    color: var(--tm-color-neutral-500, #6b7280);
+    flex-shrink: 0;
+    max-width: 55%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Kind icons (CSS-driven glyphs so no hardcoded UI text) ── */
+
+.tm-query-input__kind {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    border-radius: var(--tm-radius-sm, 0.375rem);
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: var(--tm-font-mono, ui-monospace, monospace);
+    color: white;
+}
+
+.tm-query-input__kind--field::before    { content: "F"; }
+.tm-query-input__kind--operator::before { content: "="; }
+.tm-query-input__kind--value::before    { content: "V"; }
+.tm-query-input__kind--function::before { content: "\0192"; } /* ƒ */
+.tm-query-input__kind--keyword::before  { content: "K"; }
+
+.tm-query-input__kind--field    { background-color: var(--tm-color-primary-500, #3b82f6); }
+.tm-query-input__kind--operator { background-color: var(--tm-color-neutral-500, #6b7280); }
+.tm-query-input__kind--value    { background-color: var(--tm-color-success-500, #10b981); }
+.tm-query-input__kind--function { background-color: var(--tm-color-warning-500, #f59e0b); }
+.tm-query-input__kind--keyword  { background-color: var(--tm-color-secondary-500, #8b5cf6); }
+
+/* ── Disabled ── */
+
+.tm-query-input--disabled .tm-query-input__input {
+    background-color: var(--tm-color-neutral-100, #f3f4f6);
+    color: var(--tm-color-neutral-400, #9ca3af);
+    cursor: not-allowed;
+}
+
+/* ── Dark mode ── */
+
+[data-theme="dark"] .tm-query-input__label,
+.tm-dark .tm-query-input__label {
+    color: var(--tm-color-neutral-200, #e5e7eb);
+}
+
+[data-theme="dark"] .tm-query-input__input,
+.tm-dark .tm-query-input__input {
+    color: var(--tm-color-neutral-100, #f3f4f6);
+    border-color: var(--tm-color-neutral-700, #374151);
+}
+
+[data-theme="dark"] .tm-query-input__input:focus,
+.tm-dark .tm-query-input__input:focus {
+    border-color: var(--tm-color-primary-500, #3b82f6);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+[data-theme="dark"] .tm-query-input__dropdown,
+.tm-dark .tm-query-input__dropdown {
+    background-color: var(--tm-color-neutral-800, #1f2937);
+    border-color: var(--tm-color-neutral-700, #374151);
+}
+
+[data-theme="dark"] .tm-query-input__option,
+.tm-dark .tm-query-input__option {
+    color: var(--tm-color-neutral-200, #e5e7eb);
+}
+
+[data-theme="dark"] .tm-query-input__option:hover,
+[data-theme="dark"] .tm-query-input__option--selected,
+.tm-dark .tm-query-input__option:hover,
+.tm-dark .tm-query-input__option--selected {
+    background-color: var(--tm-color-neutral-700, #374151);
+}
+
+[data-theme="dark"] .tm-query-input--disabled .tm-query-input__input,
+.tm-dark .tm-query-input--disabled .tm-query-input__input {
+    background-color: var(--tm-color-neutral-900, #111827);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tm-query-input__input,
+    .tm-query-input__option {
+        transition: none;
+    }
+}

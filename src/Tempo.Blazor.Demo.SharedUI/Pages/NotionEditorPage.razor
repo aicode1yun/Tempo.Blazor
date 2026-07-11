@@ -137,6 +137,46 @@
     }
 </section>
 
+<!-- ═══ Single page (work item description) ═══════════════════════════════════ -->
+<section class="demo-section mb-6" data-testid="notion-single-page-demo">
+    <div class="mb-3">
+        <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200">Single page (work item description)</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <code>SinglePageMode="true"</code> turns the editor into a self-contained field: no sidebar, no navigation,
+            no tasks/blog/analytics panels. Combined with an <code>AllowedBlockTypes</code> whitelist it becomes a rich-text
+            description surface — multi-page blocks (child pages, linked pages/databases, breadcrumbs) are removed from the
+            slash menu. Following a link raises <code>OnPageNavigationRequested</code> so the host decides where it opens.
+        </p>
+    </div>
+
+    @if (_singlePageNavMessage is not null)
+    {
+        <div class="mb-3 px-4 py-2 rounded text-sm bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-200"
+             data-testid="notion-single-page-nav-message">
+            @_singlePageNavMessage
+        </div>
+    }
+
+    @if (_currentPage != null)
+    {
+        <div style="height: 420px; border: 1px solid var(--slate-200); border-radius: 8px; overflow: hidden; background: white;">
+            <TmNotionEditor DataProvider="@DataProvider"
+                            BlockProvider="@BlockProvider"
+                            MentionProvider="@MentionProvider"
+                            FileProvider="@FileProvider"
+                            TokenProvider="@TokenProvider"
+                            AllowedBlockTypes="@_singlePageAllowedBlocks"
+                            SinglePageMode="true"
+                            InitialPageId="@_currentPage.Id.ToString()"
+                            OnPageNavigationRequested="@HandleSinglePageNavigationRequested"
+                            Class="h-full" />
+        </div>
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            Allowed blocks: paragraph, headings, lists, to-dos, quote, callout, code, divider, image, table.
+        </p>
+    }
+</section>
+
 <!-- ═══ Features checklist — Phase 1 ══════════════════════════════════════════ -->
 <section class="demo-section mb-6">
     <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Phase 1 Features</h3>
@@ -864,6 +904,30 @@
     private bool _statusIsError = false;
     private bool _isLoading = true;
     private int _editorRefreshKey;
+
+    // ── Single-page mode demo ────────────────────────────────────────────────
+
+    private string? _singlePageNavMessage;
+
+    private static readonly IReadOnlySet<BlockType> _singlePageAllowedBlocks = new HashSet<BlockType>
+    {
+        BlockType.Paragraph,
+        BlockType.Heading1,
+        BlockType.Heading2,
+        BlockType.Heading3,
+        BlockType.BulletList,
+        BlockType.NumberedList,
+        BlockType.TodoItem,
+        BlockType.Quote,
+        BlockType.Callout,
+        BlockType.Code,
+        BlockType.Divider,
+        BlockType.Image,
+        BlockType.Table
+    };
+
+    private void HandleSinglePageNavigationRequested(string pageId)
+        => _singlePageNavMessage = $"Host asked to open page '{pageId}' elsewhere (single-page editor stays put).";
 
     private static readonly string[] E2ESeedMethods =
     [

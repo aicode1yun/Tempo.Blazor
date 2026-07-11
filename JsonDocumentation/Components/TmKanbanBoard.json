@@ -2,7 +2,7 @@
   "itemName": "TmKanbanBoard",
   "kind": "Component",
   "category": "Data Display",
-  "description": "Generic drag-and-drop Kanban board with typed items, configurable columns with optional color and WIP limits, custom card templates, and events for card moves and clicks.",
+  "description": "Generic drag-and-drop Kanban board with typed items, configurable columns with optional color and WIP limits, optional horizontal swimlanes, custom card/column/swimlane templates, cross-column and cross-lane moves, in-column reordering with a visual drop indicator, and events for card moves and clicks.",
   "requiredImports": [
     "@using Tempo.Blazor.Components.DataDisplay"
   ],
@@ -11,7 +11,13 @@
       "name": "OnItemMoved",
       "type": "EventCallback<KanbanMoveEvent<TItem>>",
       "isRequired": false,
-      "description": "Fires when a card is dragged to a different column."
+      "description": "Fires when a card is dragged to a different column or swimlane. The event carries the target position (TargetIndex / TargetBeforeItem) and, when swimlanes are enabled, FromSwimlane / ToSwimlane."
+    },
+    {
+      "name": "OnItemReordered",
+      "type": "EventCallback<KanbanMoveEvent<TItem>>",
+      "isRequired": false,
+      "description": "Fires when a card is dropped within the same cell (same column and, if enabled, same swimlane) to change its position. When no handler is attached, same-cell drops are a no-op."
     },
     {
       "name": "OnCardClick",
@@ -20,16 +26,40 @@
       "description": "Fires when a card is clicked."
     },
     {
+      "name": "SwimlaneSelector",
+      "type": "Func<TItem, string?>?",
+      "isRequired": false,
+      "description": "Groups cards into horizontal swimlanes. Returning null places an item in the trailing \"no value\" lane. When null the board renders without swimlanes (classic layout)."
+    },
+    {
+      "name": "Swimlanes",
+      "type": "IReadOnlyList<KanbanSwimlane>?",
+      "isRequired": false,
+      "description": "Explicit swimlane definitions (order and titles). When null the lanes are derived from SwimlaneSelector in order of first appearance."
+    },
+    {
+      "name": "SwimlaneHeaderTemplate",
+      "type": "RenderFragment<KanbanSwimlane>?",
+      "isRequired": false,
+      "description": "Custom swimlane header template."
+    },
+    {
+      "name": "SwimlanesCollapsible",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether swimlanes can be collapsed/expanded via a toggle. Defaults to true."
+    },
+    {
       "name": "ColumnHeaderTemplate",
       "type": "RenderFragment<KanbanColumn>?",
       "isRequired": false,
-      "description": "Custom column header template."
+      "description": "Custom column header template. When supplied it replaces the default header content (title/count/WIP badge)."
     },
     {
       "name": "EmptyColumnTemplate",
       "type": "RenderFragment?",
       "isRequired": false,
-      "description": "Template for empty columns."
+      "description": "Template rendered inside an empty column/cell in place of the default \"no items\" text."
     },
     {
       "name": "Class",
@@ -56,12 +86,33 @@
     "tm-kanban__wip-limit",
     "tm-kanban__cards",
     "tm-kanban__card",
-    "tm-kanban__empty"
+    "tm-kanban__drop-indicator",
+    "tm-kanban__empty",
+    "tm-kanban--swimlanes",
+    "tm-kanban__column-headers",
+    "tm-kanban__column--header-only",
+    "tm-kanban__column--lane-cell",
+    "tm-kanban__swimlane",
+    "tm-kanban__swimlane--collapsed",
+    "tm-kanban__swimlane-header",
+    "tm-kanban__swimlane-toggle",
+    "tm-kanban__swimlane-color",
+    "tm-kanban__swimlane-title",
+    "tm-kanban__swimlane-count",
+    "tm-kanban__swimlane-body"
   ],
   "examples": [
     {
       "title": "Kanban board with task cards",
       "code": "<TmKanbanBoard TItem=\"TaskItem\"\n               Items=\"@tasks\"\n               Columns=\"@columns\"\n               ColumnSelector=\"t => t.Status\"\n               OnItemMoved=\"HandleTaskMoved\"\n               OnCardClick=\"HandleCardClick\">\n    <CardTemplate Context=\"task\">\n        <div>\n            <strong>@task.Title</strong>\n            <p>@task.Assignee</p>\n        </div>\n    </CardTemplate>\n</TmKanbanBoard>"
+    },
+    {
+      "title": "Reorderable board persisting position",
+      "code": "<TmKanbanBoard TItem=\"TaskItem\"\n               Items=\"@tasks\"\n               Columns=\"@columns\"\n               ColumnSelector=\"t => t.Status\"\n               CardTemplate=\"RenderCard\"\n               OnItemMoved=\"HandleMove\"\n               OnItemReordered=\"HandleMove\" />\n\n@code {\n    void HandleMove(KanbanMoveEvent<TaskItem> e)\n    {\n        var moved = e.Item with { Status = e.ToColumn };\n        tasks.RemoveAll(t => t.Id == e.Item.Id);\n        var at = e.TargetBeforeItem is not null\n            ? tasks.FindIndex(t => t.Id == e.TargetBeforeItem.Id)\n            : tasks.Count;\n        tasks.Insert(at < 0 ? tasks.Count : at, moved);\n    }\n}"
+    },
+    {
+      "title": "Swimlanes grouped by assignee",
+      "code": "<TmKanbanBoard TItem=\"TaskItem\"\n               Items=\"@tasks\"\n               Columns=\"@columns\"\n               ColumnSelector=\"t => t.Status\"\n               SwimlaneSelector=\"t => string.IsNullOrEmpty(t.Assignee) ? null : t.Assignee\"\n               CardTemplate=\"RenderCard\"\n               OnItemMoved=\"HandleMove\"\n               OnItemReordered=\"HandleReorder\" />\n\n@code {\n    // e.ToSwimlane is the target assignee (null = unassigned / \"no value\" lane)\n    void HandleMove(KanbanMoveEvent<TaskItem> e)\n        => Apply(e, e.Item with { Status = e.ToColumn, Assignee = e.ToSwimlane ?? \"\" });\n}"
     }
   ]
 }

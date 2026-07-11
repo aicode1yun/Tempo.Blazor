@@ -2,7 +2,7 @@
   "kind": "Record",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.DataDisplay",
-  "description": "Event fired when a card is moved between columns.",
+  "description": "Event fired when a card is moved between columns/swimlanes or reordered within a cell. Carries TargetIndex/TargetBeforeItem (drop position) and FromSwimlane/ToSwimlane when swimlanes are enabled.",
   "packageId": "Tempo.Blazor",
   "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/KanbanModels.cs",
   "documentationStatus": "generated",

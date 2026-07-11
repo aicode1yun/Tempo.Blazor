@@ -716,6 +716,12 @@
           "description": "Raised when a block type is converted (e.g. via slash menu or toolbar). Nested components such as column blocks subscribe to keep their local child cache in sync with the remote store."
         },
         {
+          "name": "HasDeniedBlockTypes",
+          "kind": "Field",
+          "type": "bool",
+          "description": "True when restricts at least one block type."
+        },
+        {
           "name": "IsBlockTypeAllowed",
           "kind": "Method",
           "type": "bool",
@@ -844,6 +850,12 @@
           "name": "DataProvider",
           "kind": "Property",
           "type": "INotionDataProvider"
+        },
+        {
+          "name": "DeniedBlockTypes",
+          "kind": "Property",
+          "type": "IReadOnlySet<BlockType>?",
+          "description": "Block types that must never be created/converted-to regardless of . Used by single-page mode to hide multi-page blocks (child pages, linked pages/databases, etc.). When null, nothing extra is denied."
         },
         {
           "name": "DiagramDocumentProvider",
@@ -4004,6 +4016,12 @@
           "description": "Raised whenever the active page changes."
         },
         {
+          "name": "OnPageNavigationRequested",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised in SinglePageMode when navigation to a page other than InitialPageId is requested (e.g. clicking a link). The host decides where it opens; the editor stays on the initial page. Arg = requested page ID."
+        },
+        {
           "name": "OnTrashRequested",
           "type": "EventCallback",
           "isRequired": false,
@@ -4021,6 +4039,12 @@
           "isRequired": false,
           "default": "true",
           "description": "Show the left navigation sidebar."
+        },
+        {
+          "name": "SinglePageMode",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Renders the editor as a self-contained single-page surface (e.g. a work-item description field). Always hides the sidebar (ignoring ShowSidebar); disables in-editor navigation, breadcrumbs/back, space selector, template gallery, child-page creation and the tasks/blog/analytics/audit panels; removes multi-page blocks (child page, linked page/database, include page, children display, content-by-label, breadcrumb) from the slash and Turn Into menus; and delegates navigation to other pages to OnPageNavigationRequested. Requires InitialPageId."
         },
         {
           "name": "TokenProvider",
@@ -4191,6 +4215,10 @@
         {
           "title": "Restrict to a subset of block types",
           "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    private static readonly IReadOnlySet<BlockType> AllowedTypes = new HashSet<BlockType>\n    {\n        BlockType.Paragraph,\n        BlockType.Heading1,\n        BlockType.Heading2,\n        BlockType.BulletList,\n        BlockType.NumberedList,\n        BlockType.TodoItem,\n    };\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                AllowedBlockTypes=\"@AllowedTypes\"\n                InitialPageId=\"@_pageId\" />"
+        },
+        {
+          "title": "Single-page mode — embed one page as a work-item description field",
+          "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    // Rich-text description blocks only — multi-page blocks are removed automatically in SinglePageMode.\n    private static readonly IReadOnlySet<BlockType> DescriptionBlocks = new HashSet<BlockType>\n    {\n        BlockType.Paragraph, BlockType.Heading1, BlockType.Heading2, BlockType.Heading3,\n        BlockType.BulletList, BlockType.NumberedList, BlockType.TodoItem,\n        BlockType.Quote, BlockType.Callout, BlockType.Code, BlockType.Divider, BlockType.Image, BlockType.Table\n    };\n\n    void OpenElsewhere(string pageId) { /* host opens the linked page in a dialog / new tab */ }\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                SinglePageMode=\"true\"\n                InitialPageId=\"@WorkItem.DescriptionPageId\"\n                AllowedBlockTypes=\"@DescriptionBlocks\"\n                OnPageNavigationRequested=\"OpenElsewhere\" />"
         }
       ]
     },

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "Kind of a query suggestion (Field, Operator, Value, Function, Keyword) — drives the icon shown in the TmQueryInput dropdown.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/QueryInputModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "QuerySuggestionKind"
+}

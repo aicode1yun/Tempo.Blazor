@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "A single autocomplete suggestion for TmQueryInput (Text, InsertText, Kind, Description).",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/QueryInputModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "QuerySuggestion"
+}

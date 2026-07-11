@@ -1,0 +1,143 @@
+@page "/query-input"
+@using System.Text.RegularExpressions
+@using Tempo.Blazor.Components.Inputs
+
+<PageTitle>Query Input – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Query Input</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        JQL/TQL-style query field: monospace input with caret-aware autocomplete, inline error underlines and a submit event.
+    </p>
+</div>
+
+<section class="demo-section" data-testid="query-input-demo">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">TQL query</h2>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        Type a query — suggestions adapt to the caret position (field → operator → value → <code>AND</code>/<code>OR</code>).
+        Use ↑/↓ to navigate, Enter/Tab to accept, Esc to close. Invalid <code>status</code>/<code>priority</code>/<code>type</code>
+        values are underlined; press Enter with the dropdown closed to submit.
+    </p>
+
+    <TmQueryInput Value="@_query"
+                  ValueChanged="OnQueryValueChanged"
+                  Label="Filter test cases"
+                  Placeholder="e.g. status = Active AND priority IN (High, Critical)"
+                  SuggestionsProvider="SuggestAsync"
+                  Errors="_errors"
+                  OnSubmit="HandleSubmit"
+                  data-testid="tql-query-input" />
+
+    @if (_submitted is not null)
+    {
+        <p class="mt-4 text-sm text-slate-600 dark:text-slate-400">
+            Submitted: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">@_submitted</code>
+        </p>
+    }
+
+    <div class="mt-4 grid gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <div><strong>Fields:</strong> @string.Join(", ", Fields)</div>
+        <div><strong>Operators:</strong> @string.Join(", ", Operators)</div>
+        <div><strong>Keywords:</strong> @string.Join(", ", Keywords)</div>
+    </div>
+</section>
+
+@code {
+    private string? _query;
+    private string? _submitted;
+    private IReadOnlyList<QueryErrorSpan> _errors = [];
+
+    private static readonly string[] Fields =
+        ["status", "priority", "type", "assignee", "layer", "tag", "created", "updated"];
+
+    private static readonly string[] Operators = ["=", "!=", "IN", "NOT IN", "~", ">=", "<="];
+    private static readonly string[] Keywords = ["AND", "OR", "ORDER BY"];
+    private static readonly string[] Functions = ["currentUser()", "now()", "startOfWeek()"];
+
+    private static readonly Dictionary<string, string[]> FieldValues = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["status"] = ["Active", "Draft", "Closed", "Archived"],
+        ["priority"] = ["Low", "Medium", "High", "Critical"],
+        ["type"] = ["Bug", "Feature", "Task", "Epic"],
+    };
+
+    private static bool IsDelimiter(char c) => char.IsWhiteSpace(c) || c is '(' or ')' or ',';
+
+    private Task<IReadOnlyList<QuerySuggestion>> SuggestAsync(QuerySuggestionRequest request)
+    {
+        var text = request.Text;
+        var caret = Math.Clamp(request.CaretPosition, 0, text.Length);
+        var upToCaret = text[..caret];
+
+        // Current partial token being typed (from the last delimiter to the caret).
+        var tokenStart = caret;
+        while (tokenStart > 0 && !IsDelimiter(upToCaret[tokenStart - 1])) tokenStart--;
+        var partial = upToCaret[tokenStart..];
+
+        var prior = upToCaret[..tokenStart];
+        var tokens = prior.Split([' ', '\t', '(', ')', ','], StringSplitOptions.RemoveEmptyEntries);
+        var last = tokens.Length > 0 ? tokens[^1] : string.Empty;
+
+        IEnumerable<QuerySuggestion> candidates;
+
+        if (last.Length == 0 || IsKeyword(last))
+        {
+            candidates = Fields.Select(f => new QuerySuggestion(f, f, QuerySuggestionKind.Field, "field"));
+        }
+        else if (IsField(last))
+        {
+            candidates = Operators.Select(o => new QuerySuggestion(o, o, QuerySuggestionKind.Operator));
+        }
+        else if (IsOperator(last))
+        {
+            var field = tokens.Length >= 2 ? tokens[^2] : null;
+            var values = field is not null && FieldValues.TryGetValue(field, out var v)
+                ? v.Select(val => new QuerySuggestion(val, val, QuerySuggestionKind.Value, field))
+                : [];
+            candidates = values.Concat(Functions.Select(f => new QuerySuggestion(f, f, QuerySuggestionKind.Function)));
+        }
+        else
+        {
+            // After a value / closing paren → keywords.
+            candidates = Keywords.Select(k => new QuerySuggestion(k, k, QuerySuggestionKind.Keyword));
+        }
+
+        var result = candidates
+            .Where(s => string.IsNullOrEmpty(partial) || s.Text.StartsWith(partial, StringComparison.OrdinalIgnoreCase))
+            .Take(12)
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<QuerySuggestion>>(result);
+    }
+
+    private static bool IsField(string t) => Fields.Contains(t, StringComparer.OrdinalIgnoreCase);
+    private static bool IsOperator(string t) => Operators.Contains(t, StringComparer.OrdinalIgnoreCase);
+    private static bool IsKeyword(string t) => t.Equals("AND", StringComparison.OrdinalIgnoreCase) || t.Equals("OR", StringComparison.OrdinalIgnoreCase);
+
+    // Recompute error underlines whenever the query changes.
+    private void OnQueryValueChanged(string? value)
+    {
+        _query = value;
+        _errors = Validate(_query ?? string.Empty);
+    }
+
+    private static IReadOnlyList<QueryErrorSpan> Validate(string query)
+    {
+        var errors = new List<QueryErrorSpan>();
+        foreach (Match m in Regex.Matches(query, @"\b(status|priority|type)\s*(?:=|!=|~)\s*([A-Za-z]+)", RegexOptions.IgnoreCase))
+        {
+            var field = m.Groups[1].Value;
+            var valueGroup = m.Groups[2];
+            if (FieldValues.TryGetValue(field, out var allowed) &&
+                !allowed.Contains(valueGroup.Value, StringComparer.OrdinalIgnoreCase))
+            {
+                errors.Add(new QueryErrorSpan(valueGroup.Index, valueGroup.Length,
+                    $"Unknown {field.ToLowerInvariant()} value '{valueGroup.Value}'"));
+            }
+        }
+        return errors;
+    }
+
+    private void HandleSubmit(string query) => _submitted = query;
+}

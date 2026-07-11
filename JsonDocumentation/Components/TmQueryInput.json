@@ -1,0 +1,104 @@
+{
+  "itemName": "TmQueryInput",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "JQL/TQL-style query input: a monospace text field with caret-aware autocomplete (field/operator/value/function/keyword suggestions), inline wavy error underlines with tooltips, keyboard navigation, and a submit event. Pure Blazor except a tiny optional caret helper script; falls back to end-of-text tracking when the script is absent.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "requiredScript": "_content/Tempo.Blazor/js/query-input.js",
+  "parameters": [
+    {
+      "name": "Value",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Current query text. Supports @bind-Value."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Fires when the query text changes."
+    },
+    {
+      "name": "SuggestionsProvider",
+      "type": "Func<QuerySuggestionRequest, Task<IReadOnlyList<QuerySuggestion>>>?",
+      "isRequired": false,
+      "description": "Supplies autocomplete suggestions for the current text and caret position. When null, no dropdown is shown."
+    },
+    {
+      "name": "Errors",
+      "type": "IReadOnlyList<QueryErrorSpan>?",
+      "isRequired": false,
+      "description": "Error ranges to underline in the text (with a tooltip). Also drives aria-invalid."
+    },
+    {
+      "name": "OnSubmit",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fires when Enter is pressed while the suggestion dropdown is not open."
+    },
+    {
+      "name": "DebounceMs",
+      "type": "int",
+      "isRequired": false,
+      "default": "200",
+      "description": "Debounce (ms) before querying SuggestionsProvider."
+    },
+    {
+      "name": "Placeholder",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Placeholder text. When null, falls back to the localized default."
+    },
+    {
+      "name": "Label",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional label rendered above the input."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Disables the input and suppresses suggestions."
+    },
+    {
+      "name": "Monospace",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Render with a monospace font."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class on the root element."
+    }
+  ],
+  "cssClasses": [
+    "tm-query-input",
+    "tm-query-input--mono",
+    "tm-query-input--disabled",
+    "tm-query-input__label",
+    "tm-query-input__field",
+    "tm-query-input__overlay",
+    "tm-query-input__error",
+    "tm-query-input__input",
+    "tm-query-input__dropdown",
+    "tm-query-input__status",
+    "tm-query-input__status--error",
+    "tm-query-input__option",
+    "tm-query-input__option--selected",
+    "tm-query-input__option-text",
+    "tm-query-input__option-desc",
+    "tm-query-input__kind"
+  ],
+  "examples": [
+    {
+      "title": "TQL query field with autocomplete, error underlines and submit",
+      "code": "<TmQueryInput @bind-Value=\"_query\"\n              Label=\"Filter\"\n              Placeholder=\"status = Active AND priority IN (High, Critical)\"\n              SuggestionsProvider=\"SuggestAsync\"\n              Errors=\"_errors\"\n              OnSubmit=\"RunQuery\" />\n\n@code {\n    string? _query;\n    IReadOnlyList<QueryErrorSpan> _errors = [];\n\n    Task<IReadOnlyList<QuerySuggestion>> SuggestAsync(QuerySuggestionRequest req)\n        => Task.FromResult<IReadOnlyList<QuerySuggestion>>(\n            [ new QuerySuggestion(\"status\", \"status\", QuerySuggestionKind.Field),\n              new QuerySuggestion(\"priority\", \"priority\", QuerySuggestionKind.Field) ]);\n\n    void RunQuery(string q) { /* execute the query */ }\n}"
+    }
+  ]
+}

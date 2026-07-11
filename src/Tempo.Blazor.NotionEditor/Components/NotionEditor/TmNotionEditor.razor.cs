@@ -84,6 +84,24 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     /// <summary>Show the left navigation sidebar.</summary>
     [Parameter] public bool ShowSidebar { get; set; } = true;
 
+    /// <summary>
+    /// Renders the editor as a self-contained single-page surface (e.g. a work-item description field).
+    /// When <see langword="true"/>: the sidebar is always hidden (ignoring <see cref="ShowSidebar"/>);
+    /// the in-editor navigation stack, breadcrumbs/back button, space selector, template gallery, child-page
+    /// creation and the tasks/blog/analytics/audit panels are unavailable; multi-page blocks
+    /// (<see cref="SinglePageDeniedBlockTypes"/>) are removed from the slash and Turn-Into menus; and any
+    /// request to open a <em>different</em> page raises <see cref="OnPageNavigationRequested"/> instead of navigating.
+    /// Requires <see cref="InitialPageId"/> to be set.
+    /// </summary>
+    [Parameter] public bool SinglePageMode { get; set; }
+
+    /// <summary>
+    /// Raised in <see cref="SinglePageMode"/> when something requests navigation to a page other than
+    /// <see cref="InitialPageId"/> (e.g. clicking a link/child-page). The host decides what to do
+    /// (open it elsewhere, in a dialog, etc.); the editor itself stays on the initial page.
+    /// </summary>
+    [Parameter] public EventCallback<string> OnPageNavigationRequested { get; set; }
+
     /// <summary>Prevents all editing interactions.</summary>
     [Parameter] public bool ReadOnly { get; set; }
 
@@ -143,14 +161,36 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     private PageEffectivePermissionDto? _effectivePermission;
     private TmCurrentUserState?        _resolvedCurrentUser;
 
+    /// <summary>
+    /// Multi-page block types that are removed from the slash and Turn-Into menus while
+    /// <see cref="SinglePageMode"/> is active. Existing blocks of these types still render.
+    /// </summary>
+    public static readonly IReadOnlySet<BlockType> SinglePageDeniedBlockTypes = new HashSet<BlockType>
+    {
+        BlockType.ChildPage,
+        BlockType.LinkedPage,
+        BlockType.LinkedDatabase,
+        BlockType.IncludePage,
+        BlockType.ChildrenDisplay,
+        BlockType.ContentByLabel,
+        BlockType.Breadcrumb
+    };
+
     // ── Computed ─────────────────────────────────────────────────────────────
 
     private string _editorModifiers => string.Concat(
         _currentPage?.IsFullWidth == true ? " tm-notion-editor--full-width" : string.Empty,
         IsEffectivelyReadOnly              ? " tm-notion-editor--locked"     : string.Empty,
+        SinglePageMode                     ? " tm-notion-editor--single-page" : string.Empty,
         _viewMode == NotionEditorViewMode.Reading ? " tm-notion-editor--reading" : string.Empty,
         _viewMode == NotionEditorViewMode.Presentation ? " tm-notion-editor--presentation" : string.Empty
     ).TrimStart();
+
+    /// <summary>Whether the navigation sidebar and its affordances should be shown.</summary>
+    private bool EffectiveShowSidebar => ShowSidebar && !SinglePageMode;
+
+    /// <summary>True when SinglePageMode is enabled but no page was configured to display.</summary>
+    private bool HasSinglePageConfigError => SinglePageMode && string.IsNullOrWhiteSpace(InitialPageId);
 
     private bool IsReadOnlyViewMode => _viewMode is NotionEditorViewMode.Reading or NotionEditorViewMode.Presentation;
     private bool IsPermissionRestricted => _effectivePermission is { Mode: not PageRestrictionMode.Open };
@@ -209,7 +249,7 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
             await InitializeResponsiveSidebarAsync();
             await InitScrollListenerAsync();
 
-            if (InitialPageId is not null)
+            if (InitialPageId is not null && !HasSinglePageConfigError)
             {
                 await NavigateToPageAsync(InitialPageId);
             }
@@ -224,6 +264,13 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     /// </summary>
     public async Task NavigateToPageAsync(string pageId)
     {
+        // In single-page mode the editor never leaves the initial page — hand the request to the host.
+        if (SinglePageMode && !string.IsNullOrEmpty(InitialPageId) && pageId != InitialPageId)
+        {
+            await OnPageNavigationRequested.InvokeAsync(pageId);
+            return;
+        }
+
         if (_isLoading || pageId == _currentPageId) return;
 
         _isLoading  = true;
@@ -273,7 +320,7 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
 
     private async Task NavigateBackAsync()
     {
-        if (_navStack.Count <= 1) return;
+        if (SinglePageMode || _navStack.Count <= 1) return;
         _navStack.Pop();
         var prevId = _navStack.Peek();
         _navStack.Pop();
@@ -296,7 +343,7 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
 
     private async Task InitializeResponsiveSidebarAsync()
     {
-        if (!ShowSidebar)
+        if (!EffectiveShowSidebar)
             return;
 
         try
@@ -710,11 +757,12 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
         MediaLibraryProvider        = MediaLibraryProvider,
         TokenProvider               = TokenProvider,
         AllowedBlockTypes           = AllowedBlockTypes,
+        DeniedBlockTypes            = SinglePageMode ? SinglePageDeniedBlockTypes : null,
         NavigateTo                  = pageId => NavigateToPageAsync(pageId),
         SelectedSpaceId             = _selectedSpaceId,
-        SelectSpace                 = HandleSpaceSelectedAsync,
-        CurrentPageMovedToSpace     = HandleCurrentPageMovedToSpaceAsync,
-        OpenTemplateGallery         = OpenTemplateGalleryAsync
+        SelectSpace                 = SinglePageMode ? null : HandleSpaceSelectedAsync,
+        CurrentPageMovedToSpace     = SinglePageMode ? null : HandleCurrentPageMovedToSpaceAsync,
+        OpenTemplateGallery         = SinglePageMode ? null : OpenTemplateGalleryAsync
     };
 
     // ── Dispose ──────────────────────────────────────────────────────────────

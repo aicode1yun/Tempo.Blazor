@@ -1,0 +1,261 @@
+using Bunit;
+using FluentAssertions;
+using Microsoft.AspNetCore.Components.Web;
+using Tempo.Blazor.Components.Inputs;
+using Tempo.Blazor.Tests.Localization;
+
+namespace Tempo.Blazor.Tests.Components.Inputs;
+
+/// <summary>TDD tests for TmQueryInput — JQL-style query input with autocomplete and error underlining.</summary>
+public class TmQueryInputTests : LocalizationTestBase
+{
+    private static Func<QuerySuggestionRequest, Task<IReadOnlyList<QuerySuggestion>>> Provider(params QuerySuggestion[] items)
+        => _ => Task.FromResult<IReadOnlyList<QuerySuggestion>>(items);
+
+    private static readonly QuerySuggestion[] Sample =
+    [
+        new("status", "status", QuerySuggestionKind.Field, "Work item status"),
+        new("priority", "priority", QuerySuggestionKind.Field),
+    ];
+
+    // ── Rendering ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void QueryInput_Renders_Input()
+    {
+        var cut = RenderComponent<TmQueryInput>();
+        cut.Find(".tm-query-input__input").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void QueryInput_Monospace_ByDefault()
+    {
+        var cut = RenderComponent<TmQueryInput>();
+        cut.Find(".tm-query-input").ClassList.Should().Contain("tm-query-input--mono");
+    }
+
+    [Fact]
+    public void QueryInput_Monospace_False_NoModifier()
+    {
+        var cut = RenderComponent<TmQueryInput>(p => p.Add(c => c.Monospace, false));
+        cut.Find(".tm-query-input").ClassList.Should().NotContain("tm-query-input--mono");
+    }
+
+    [Fact]
+    public void QueryInput_Label_Rendered_WhenProvided()
+    {
+        var cut = RenderComponent<TmQueryInput>(p => p.Add(c => c.Label, "TQL query"));
+        cut.Find(".tm-query-input__label").TextContent.Should().Be("TQL query");
+    }
+
+    [Fact]
+    public void QueryInput_Disabled_SetsDisabledAttribute()
+    {
+        var cut = RenderComponent<TmQueryInput>(p => p.Add(c => c.Disabled, true));
+        cut.Find(".tm-query-input__input").HasAttribute("disabled").Should().BeTrue();
+        cut.Find(".tm-query-input").ClassList.Should().Contain("tm-query-input--disabled");
+    }
+
+    [Fact]
+    public void QueryInput_AriaAutocomplete_IsList()
+    {
+        var cut = RenderComponent<TmQueryInput>();
+        cut.Find(".tm-query-input__input").GetAttribute("aria-autocomplete").Should().Be("list");
+    }
+
+    // ── Value / ValueChanged ────────────────────────────────────────────────────
+
+    [Fact]
+    public void QueryInput_Input_FiresValueChanged()
+    {
+        string? changed = null;
+        var cut = RenderComponent<TmQueryInput>(p => p
+            .Add(c => c.ValueChanged, v => changed = v));
+
+        cut.Find(".tm-query-input__input").Input("status = Active");
+
+        changed.Should().Be("status = Active");
+    }
+
+    // ── Suggestions ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void QueryInput_Suggestions_RenderInListbox()
+    {
+        var cut = RenderComponent<TmQueryInput>(p => p
+            .Add(c => c.DebounceMs, 0)
+            .Add(c => c.SuggestionsProvider, Provider(Sample)));
+
+        cut.Find(".tm-query-input__input").Input("st");
+
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("[role='listbox']").Should().NotBeNull();
+            cut.FindAll(".tm-query-input__option").Count.Should().Be(2);
+        });
+    }
+
+    [Fact]
+    public void QueryInput_Debounce_QueriesProviderAfterDelay()
+    {
+        var calls = 0;
+        var cut = RenderComponent<TmQueryInput>(p => p
+            .Add(c => c.DebounceMs, 60)
+            .Add(c => c.SuggestionsProvider, _ =>
+            {
+                calls++;
+                return Task.FromResult<IReadOnlyList<QuerySuggestion>>(Sample);
+            }));
+
+        cut.Find(".tm-query-input__input").Input("st");
+
+        calls.Should().Be(0); // not queried synchronously — debounced
+        cut.WaitForAssertion(() => calls.Should().Be(1), TimeSpan.FromSeconds(2));
+    }
+
+    [Fact]
+    public void QueryInput_AcceptSuggestion_InsertsInsertTextAtCaret()
+    {
+        // Caret is read via JS interop — mock it to point at the end of "status = Hi".
+        JSInterop.Setup<int>("tmQueryInput.getCaret", _ => true).SetResult(11);
+        string? changed = null;
+
+        var cut = RenderComponent<TmQueryInput>(p => p
+            .Add(c => c.DebounceMs, 0)
+            .Add(c => c.SuggestionsProvider, Provider(new QuerySuggestion("High", "High", QuerySuggestionKind.Value)))
+            .Add(c => c.ValueChanged, v => changed = v));
+
+        cut.Find(".tm-query-input__input").Input("status = Hi");
+        cut.WaitForAssertion(() => cut.FindAll(".tm-query-input__option").Count.Should().Be(1));
+
+        cut.Find(".tm-query-input__option").Click();
+
+        changed.Should().NotBeNull();
+        changed!.Should().Contain("status = High"); // "Hi" partial token replaced with the InsertText
+    }
+
+    [Fact]
+    public void QueryInput_KeyboardNav_ArrowDown_Then_Enter_AcceptsSecond()
+    {
+        JSInterop.Setup<int>("tmQueryInput.getCaret", _ => true).SetResult(0);
+        string? changed = null;
+
+        var cut = RenderComponent<TmQueryInput>(p => p
+            .Add(c => c.DebounceMs, 0)
+            .Add(c => c.SuggestionsProvider, Provider(Sample))
+            .Add(c => c.ValueChanged, v => changed = v));
+
+        var input = cut.Find(".tm-query-input__input");
+        input.Input("");
+        cut.WaitForAssertion(() => cut.FindAll(".tm-query-input__option").Count.Should().Be(2));
+
+        cut.Find(".tm-query-input__input").KeyDown(new KeyboardEventArgs { Key = "ArrowDown" }); // move 0 -> 1
+        cut.Find(".tm-query-input__input").KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+        changed.Should().NotBeNull();
+        changed!.Should().Contain("priority"); // second suggestion accepted
+    }
+
+    [Fact]
+    public void QueryInput_Escape_ClosesDropdown()
+    {
+        var cut = RenderComponent<TmQueryInput>(p => p
+            .Add(c => c.DebounceMs, 0)
+            .Add(c => c.SuggestionsProvider, Provider(Sample)));
+
+        cut.Find(".tm-query-input__input").Input("st");
+        cut.WaitForAssertion(() => cut.FindAll("[role='listbox']").Should().HaveCount(1));
+
+        cut.Find(".tm-query-input__input").KeyDown(new KeyboardEventArgs { Key = "Escape" });
+
+        cut.FindAll("[role='listbox']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void QueryInput_Enter_WhenClosed_FiresOnSubmit()
+    {
+        string? submitted = null;
+        var cut = RenderComponent<TmQueryInput>(p => p
+            .Add(c => c.OnSubmit, v => submitted = v)
+            .Add(c => c.ValueChanged, _ => { }));
+
+        cut.Find(".tm-query-input__input").Input("status = Active");
+        cut.Find(".tm-query-input__input").KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+        submitted.Should().Be("status = Active");
+    }
+
+    // ── Error spans ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void QueryInput_ErrorSpans_Render_WithTooltip()
+    {
+        var cut = RenderComponent<TmQueryInput>(p => p
+            .Add(c => c.Value, "status = Bogus")
+            .Add(c => c.Errors, new List<QueryErrorSpan> { new(9, 5, "Unknown value 'Bogus'") }));
+
+        var error = cut.Find(".tm-query-input__error");
+        error.TextContent.Should().Be("Bogus");
+        error.GetAttribute("title").Should().Be("Unknown value 'Bogus'");
+    }
+
+    [Fact]
+    public void QueryInput_AriaInvalid_WhenErrors()
+    {
+        var cut = RenderComponent<TmQueryInput>(p => p
+            .Add(c => c.Value, "status = Bogus")
+            .Add(c => c.Errors, new List<QueryErrorSpan> { new(9, 5, "bad") }));
+
+        cut.Find(".tm-query-input__input").GetAttribute("aria-invalid").Should().Be("true");
+    }
+
+    [Fact]
+    public void QueryInput_NoErrors_AriaInvalidFalse()
+    {
+        var cut = RenderComponent<TmQueryInput>(p => p.Add(c => c.Value, "status = Active"));
+        cut.Find(".tm-query-input__input").GetAttribute("aria-invalid").Should().Be("false");
+    }
+
+    // ── Dropdown states ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public void QueryInput_EmptyState_ShownWhenNoSuggestions()
+    {
+        var cut = RenderComponent<TmQueryInput>(p => p
+            .Add(c => c.DebounceMs, 0)
+            .Add(c => c.SuggestionsProvider, Provider())); // empty result
+
+        cut.Find(".tm-query-input__input").Input("zzz");
+
+        cut.WaitForAssertion(() =>
+            cut.Find(".tm-query-input__status").TextContent.Should().Be("No suggestions"));
+    }
+
+    [Fact]
+    public void QueryInput_ErrorState_ShownWhenProviderThrows()
+    {
+        var cut = RenderComponent<TmQueryInput>(p => p
+            .Add(c => c.DebounceMs, 0)
+            .Add(c => c.SuggestionsProvider, _ => throw new InvalidOperationException("boom")));
+
+        cut.Find(".tm-query-input__input").Input("st");
+
+        cut.WaitForAssertion(() =>
+            cut.Find(".tm-query-input__status--error").TextContent.Should().Be("Suggestions unavailable"));
+    }
+
+    [Fact]
+    public void QueryInput_Disabled_DoesNotQuerySuggestions()
+    {
+        var calls = 0;
+        var cut = RenderComponent<TmQueryInput>(p => p
+            .Add(c => c.Disabled, true)
+            .Add(c => c.DebounceMs, 0)
+            .Add(c => c.SuggestionsProvider, _ => { calls++; return Task.FromResult<IReadOnlyList<QuerySuggestion>>(Sample); }));
+
+        cut.Find(".tm-query-input__input").Input("st");
+
+        calls.Should().Be(0);
+        cut.FindAll("[role='listbox']").Should().BeEmpty();
+    }
+}
