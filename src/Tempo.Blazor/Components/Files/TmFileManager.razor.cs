@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Abstractions.Interfaces;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Abstractions.Shared;
 
 namespace Tempo.Blazor.Components.Files;
 
@@ -26,6 +27,7 @@ public partial class TmFileManager
     private bool _shouldFocusRenameInput;
     private bool _showDeleteDialog;
     private readonly List<FileManagerItem> _itemsToDelete = [];
+    private readonly List<TmUploadItem> _uploads = [];
 
     // ── Keyboard navigation state ────────────────────────────────
     private int _focusedIndex = -1;   // index of the keyboard-focused item
@@ -54,6 +56,15 @@ public partial class TmFileManager
 
     /// <summary>When true, disables all user interactions.</summary>
     [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Maximum size of a single upload in bytes. Default 100 MB. Also caps the browser read stream.</summary>
+    [Parameter] public long MaxUploadSize { get; set; } = 100L * 1024 * 1024;
+
+    /// <summary>Optional scan hook run after each upload; a <see cref="FileScanStatus.Blocked"/> result marks the file unavailable.</summary>
+    [Parameter] public IFileScanHook? ScanHook { get; set; }
+
+    /// <summary>Fires for each chunk progress update during a chunked upload.</summary>
+    [Parameter] public EventCallback<TmUploadProgress> OnUploadProgress { get; set; }
 
     /// <summary>Whether to show the folder tree sidebar. Default is <c>true</c>.</summary>
     [Parameter] public bool ShowFolderTree { get; set; } = true;
@@ -145,7 +156,7 @@ public partial class TmFileManager
         {
             await NavigateTo(item.Path);
         }
-        else
+        else if (item.IsScanAvailable)
         {
             await OnItemOpen.InvokeAsync(item);
         }
@@ -471,20 +482,169 @@ public partial class TmFileManager
     {
         if (Disabled || DataProvider is null) return;
 
+        var browserFiles = e.GetMultipleFiles(int.MaxValue);
+
+        // Chunked path: upload each file individually through the provider's chunk sink.
+        if (DataProvider is ITmChunkedFileProvider chunked
+            && (DataProvider is not ITmCapabilityProvider<TmFileProviderCapabilities> cap
+                || cap.Capabilities.HasFlag(TmFileProviderCapabilities.ChunkUpload)))
+        {
+            foreach (var file in browserFiles)
+            {
+                var item = new TmUploadItem
+                {
+                    FileName = file.Name,
+                    TotalBytes = file.Size,
+                    Source = file,
+                    ResumeAction = it => ChunkUploadAsync(chunked, it)
+                };
+                _uploads.Add(item);
+                await ChunkUploadAsync(chunked, item);
+            }
+            await LoadDataAsync();
+            return;
+        }
+
+        // Fallback: whole-stream batch upload (cap raised to MaxUploadSize).
         var files = new List<FileUploadInfo>();
-        foreach (var file in e.GetMultipleFiles())
+        foreach (var file in browserFiles)
         {
             files.Add(new FileUploadInfo
             {
                 FileName = file.Name,
                 Size = file.Size,
                 ContentType = file.ContentType,
-                Stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024) // 10 MB limit
+                Stream = file.OpenReadStream(maxAllowedSize: MaxUploadSize)
             });
         }
 
         await DataProvider.UploadAsync(_currentPath, files);
         await LoadDataAsync();
+    }
+
+    private async Task ChunkUploadAsync(ITmChunkedFileProvider chunked, TmUploadItem item)
+    {
+        if (item.Source is null) return;
+        var file = item.Source;
+
+        item.State = TmUploadState.Uploading;
+        item.Message = null;
+        item.Cts?.Dispose();
+        item.Cts = new CancellationTokenSource();
+        var token = item.Cts.Token;
+        StateHasChanged();
+
+        var progress = new Progress<TmUploadProgress>(p =>
+        {
+            item.Apply(p);
+            OnUploadProgress.InvokeAsync(p);
+            StateHasChanged();
+        });
+
+        TmFileUploadResult result;
+        try
+        {
+            result = await TmChunkedUploader.UploadBrowserFileAsync(
+                file,
+                chunked.UploadChunkAsync,
+                MaxUploadSize,
+                new TmChunkedUploadRequest
+                {
+                    FileName = file.Name,
+                    ContentType = file.ContentType,
+                    TotalSizeBytes = file.Size,
+                    Purpose = "file-manager",
+                    Metadata = new Dictionary<string, object> { ["folderPath"] = _currentPath },
+                    ResumeFromChunkIndex = item.NextChunkIndex,
+                    UploadSessionId = item.SessionId
+                },
+                progress,
+                token);
+        }
+        catch (OperationCanceledException)
+        {
+            item.State = TmUploadState.Cancelled;
+            StateHasChanged();
+            return;
+        }
+        catch (Exception ex)
+        {
+            item.State = TmUploadState.Failed;
+            item.Message = ex.Message;
+            StateHasChanged();
+            return;
+        }
+
+        if (!result.Success)
+        {
+            item.State = TmUploadState.Failed;
+            item.Message = result.ErrorMessage;
+            StateHasChanged();
+            return;
+        }
+
+        var status = await ScanUploadAsync(item, file, result);
+        item.State = status is FileScanStatus.Blocked ? TmUploadState.Blocked : TmUploadState.Completed;
+        await LoadDataAsync();
+        ApplyScanStatus(file.Name, status, item.Message);
+        StateHasChanged();
+    }
+
+    private async Task<FileScanStatus> ScanUploadAsync(TmUploadItem item, IBrowserFile file, TmFileUploadResult result)
+    {
+        if (ScanHook is null) return FileScanStatus.NotScanned;
+
+        item.State = TmUploadState.Scanning;
+        StateHasChanged();
+
+        var scan = await ScanHook.ScanAsync(new FileScanRequest
+        {
+            FileName = file.Name,
+            ContentType = file.ContentType,
+            SizeBytes = file.Size,
+            AssetId = result.AssetId,
+            Purpose = "file-manager"
+        });
+
+        if (scan.Status is FileScanStatus.Blocked)
+        {
+            item.Message = scan.Message ?? scan.ThreatName;
+        }
+        return scan.Status;
+    }
+
+    private void ApplyScanStatus(string fileName, FileScanStatus status, string? message)
+    {
+        if (status is FileScanStatus.NotScanned) return;
+        var uploaded = _items.LastOrDefault(i => !i.IsDirectory && i.Name == fileName);
+        if (uploaded is not null)
+        {
+            uploaded.ScanStatus = status;
+            uploaded.ScanMessage = message;
+        }
+    }
+
+    private async Task CancelUploadAsync(TmUploadItem item)
+    {
+        if (item.Cts is not null)
+        {
+            await item.Cts.CancelAsync();
+        }
+        item.State = TmUploadState.Cancelled;
+    }
+
+    private async Task ResumeUploadAsync(TmUploadItem item)
+    {
+        if (item.ResumeAction is not null)
+        {
+            await item.ResumeAction(item);
+        }
+    }
+
+    private void DismissUpload(TmUploadItem item)
+    {
+        item.Cts?.Dispose();
+        _uploads.Remove(item);
     }
 
     // ── Helpers ──────────────────────────────────────────────────

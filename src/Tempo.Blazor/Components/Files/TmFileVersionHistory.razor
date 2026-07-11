@@ -1,0 +1,184 @@
+@namespace Tempo.Blazor.Components.Files
+@using Tempo.Blazor.Abstractions.Interfaces
+@using Tempo.Blazor.Abstractions.Shared
+
+<div class="tm-file-versions" data-testid="tm-file-versions">
+    <div class="tm-file-versions__header">
+        <span class="tm-file-versions__title">@Loc["TmFileVersion_Title"]</span>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="tm-file-versions__loading" role="status">@Loc["TmFileVersion_Loading"]</div>
+    }
+    else if (_versions.Count == 0)
+    {
+        <div class="tm-file-versions__empty" data-testid="version-empty">@Loc["TmFileVersion_Empty"]</div>
+    }
+    else
+    {
+        <ul class="tm-file-versions__list" role="list">
+            @foreach (var version in _versions)
+            {
+                var v = version;
+                <li class="tm-file-versions__item @(v.IsCurrent ? "tm-file-versions__item--current" : "")"
+                    data-testid="version-item"
+                    data-version="@v.VersionNumber">
+                    <div class="tm-file-versions__item-main">
+                        <span class="tm-file-versions__num">v@(v.VersionNumber)</span>
+                        <span class="tm-file-versions__name" title="@v.FileName">@v.FileName</span>
+                        @if (v.IsCurrent)
+                        {
+                            <span class="tm-file-versions__badge" data-testid="version-current">@Loc["TmFileVersion_Current"]</span>
+                        }
+                    </div>
+                    <div class="tm-file-versions__item-meta">
+                        <span>@FormatSize(v.SizeBytes)</span>
+                        <span>· @v.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                        @if (!string.IsNullOrEmpty(v.CreatedBy?.DisplayName))
+                        {
+                            <span>· @v.CreatedBy!.DisplayName</span>
+                        }
+                        @if (!string.IsNullOrEmpty(v.Comment))
+                        {
+                            <span class="tm-file-versions__comment">— @v.Comment</span>
+                        }
+                    </div>
+                    <div class="tm-file-versions__item-actions">
+                        @if (!v.IsCurrent)
+                        {
+                            <button type="button"
+                                    class="tm-file-versions__action tm-file-versions__action--compare"
+                                    data-testid="version-compare"
+                                    @onclick="() => CompareWithCurrentAsync(v)">
+                                @Loc["TmFileVersion_Compare"]
+                            </button>
+                            <button type="button"
+                                    class="tm-file-versions__action tm-file-versions__action--restore"
+                                    data-testid="version-restore"
+                                    @onclick="() => RestoreAsync(v)">
+                                @Loc["TmFileVersion_Restore"]
+                            </button>
+                        }
+                    </div>
+                </li>
+            }
+        </ul>
+
+        @if (_diff is not null)
+        {
+            <div class="tm-file-versions__diff" data-testid="version-diff">
+                <div class="tm-file-versions__diff-head">
+                    <span class="tm-file-versions__diff-title">
+                        @string.Format(Loc["TmFileVersion_DiffTitle"], _diffFromVersion, _diffToVersion)
+                    </span>
+                    <span class="tm-file-versions__diff-stats">
+                        <span class="tm-file-versions__diff-added" data-testid="diff-added">+@_diff.AddedLines</span>
+                        <span class="tm-file-versions__diff-removed" data-testid="diff-removed">−@_diff.RemovedLines</span>
+                        <span class="tm-file-versions__diff-size">@FormatDelta(_diff.SizeDelta)</span>
+                    </span>
+                    <button type="button"
+                            class="tm-file-versions__diff-close"
+                            aria-label="@Loc["Tm_Close"]"
+                            @onclick="() => _diff = null">×</button>
+                </div>
+                @if (_diff.IsTextDiff && _diff.Lines.Count > 0)
+                {
+                    <pre class="tm-file-versions__diff-body"><code>@foreach (var line in _diff.Lines)
+{<span class="tm-file-versions__diff-line tm-file-versions__diff-line--@LineClass(line.Kind)">@LinePrefix(line.Kind)@line.Text
+</span>}</code></pre>
+                }
+                else
+                {
+                    <div class="tm-file-versions__diff-binary" data-testid="diff-binary">@Loc["TmFileVersion_BinaryDiff"]</div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>Identifier of the item whose versions are shown.</summary>
+    [Parameter] public string? ItemId { get; set; }
+
+    /// <summary>Versioning hook that supplies the history, diffs, and restore.</summary>
+    [Parameter] public IFileVersioningHook? Hook { get; set; }
+
+    /// <summary>Raised after a version is restored so the host can refresh its listing.</summary>
+    [Parameter] public EventCallback<TmFileVersion> OnRestored { get; set; }
+
+    private List<TmFileVersion> _versions = [];
+    private bool _loading;
+    private TmFileVersionDiff? _diff;
+    private int _diffFromVersion;
+    private int _diffToVersion;
+    private string? _loadedItemId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Hook is null || string.IsNullOrEmpty(ItemId)) return;
+        if (ItemId == _loadedItemId) return;
+        _loadedItemId = ItemId;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (Hook is null || string.IsNullOrEmpty(ItemId)) return;
+        _loading = true;
+        _diff = null;
+        StateHasChanged();
+        _versions = [.. await Hook.GetVersionsAsync(ItemId)];
+        _loading = false;
+    }
+
+    private async Task RestoreAsync(TmFileVersion version)
+    {
+        if (Hook is null || string.IsNullOrEmpty(ItemId)) return;
+        var restored = await Hook.RestoreVersionAsync(ItemId, version.VersionId);
+        await LoadAsync();
+        await OnRestored.InvokeAsync(restored);
+    }
+
+    private async Task CompareWithCurrentAsync(TmFileVersion version)
+    {
+        if (Hook is null || string.IsNullOrEmpty(ItemId)) return;
+        var current = _versions.FirstOrDefault(v => v.IsCurrent) ?? _versions.FirstOrDefault();
+        if (current is null) return;
+        _diffFromVersion = version.VersionNumber;
+        _diffToVersion = current.VersionNumber;
+        _diff = await Hook.DiffAsync(ItemId, version.VersionId, current.VersionId);
+    }
+
+    private static string LineClass(TmFileVersionDiffKind kind) => kind switch
+    {
+        TmFileVersionDiffKind.Added => "added",
+        TmFileVersionDiffKind.Removed => "removed",
+        _ => "unchanged"
+    };
+
+    private static string LinePrefix(TmFileVersionDiffKind kind) => kind switch
+    {
+        TmFileVersionDiffKind.Added => "+ ",
+        TmFileVersionDiffKind.Removed => "− ",
+        _ => "  "
+    };
+
+    private string FormatDelta(long delta)
+    {
+        var sign = delta > 0 ? "+" : delta < 0 ? "−" : "±";
+        return $"{sign}{FormatSize(Math.Abs(delta))}";
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        const long KB = 1024, MB = KB * 1024, GB = MB * 1024;
+        return bytes switch
+        {
+            >= GB => $"{bytes / (double)GB:F2} GB",
+            >= MB => $"{bytes / (double)MB:F2} MB",
+            >= KB => $"{bytes / (double)KB:F1} KB",
+            _ => $"{bytes} B"
+        };
+    }
+}

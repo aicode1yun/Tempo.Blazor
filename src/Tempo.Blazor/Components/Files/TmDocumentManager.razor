@@ -2,6 +2,7 @@
 @typeparam TMetadata where TMetadata : class
 @using Tempo.Blazor.Abstractions.Interfaces
 @using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Abstractions.Shared
 @inject ITmLocalizer Loc
 
 <div class="tm-file-manager tm-document-manager @(Disabled ? "tm-file-manager--disabled" : "") @Class"
@@ -91,6 +92,13 @@
                 <button type="button" class="tm-file-manager__toolbar-button" @onclick="() => ShowDetailAsync(_selectedItems[0])">
                     <TmIcon Name="info" />
                     <span>@Loc["TmFileManager_Detail"]</span>
+                </button>
+            }
+            @if (ShowVersionHistory && !Disabled && VersioningHook is not null && CanShowVersionHistory())
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" data-testid="version-history-button" @onclick="() => OpenVersionHistory(_selectedItems[0])">
+                    <TmIcon Name="clock" />
+                    <span>@Loc["TmFileVersion_Title"]</span>
                 </button>
             }
         </div>
@@ -198,6 +206,18 @@
                                     </span>
                                 }
                             </div>
+                            @if (!item.IsDirectory && item.ScanStatus is FileScanStatus.Blocked)
+                            {
+                                <span class="tm-file-scan-badge tm-file-scan-badge--blocked"
+                                      data-testid="file-scan-blocked"
+                                      title="@(item.ScanMessage ?? Loc["TmFileScan_Blocked"])">@Loc["TmFileScan_Blocked"]</span>
+                            }
+                            else if (!item.IsDirectory && item.ScanStatus is FileScanStatus.Pending)
+                            {
+                                <span class="tm-file-scan-badge tm-file-scan-badge--pending"
+                                      data-testid="file-scan-pending"
+                                      title="@Loc["TmFileScan_Pending"]">@Loc["TmFileScan_Pending"]</span>
+                            }
                             @if (_viewMode == DocumentManagerViewMode.List && !item.IsDirectory)
                             {
                                 <span class="tm-file-manager__item-size">@FormatSize(item.Size)</span>
@@ -208,6 +228,31 @@
             }
         </div>
     </div>
+
+    <TmFileUploadProgress Uploads="_uploads"
+                          OnCancel="CancelUploadAsync"
+                          OnResume="ResumeUploadAsync"
+                          OnDismiss="DismissUpload" />
+
+    <!-- Version History Overlay -->
+    @if (_showVersionHistory && VersioningHook is not null && _versionHistoryItem is not null)
+    {
+        <div class="tm-document-manager__overlay" @onclick="CloseVersionHistory">
+            <div class="tm-document-manager__modal tm-document-manager__modal--wide" @onclick:stopPropagation>
+                <div class="tm-document-manager__modal-header">
+                    <span class="tm-document-manager__modal-title">@_versionHistoryItem.Name</span>
+                    <button type="button" class="tm-document-manager__modal-close" data-testid="version-history-close" @onclick="CloseVersionHistory">
+                        <TmIcon Name="x" />
+                    </button>
+                </div>
+                <div class="tm-document-manager__modal-body">
+                    <TmFileVersionHistory ItemId="@_versionHistoryItem.Id"
+                                          Hook="VersioningHook"
+                                          OnRestored="OnVersionRestoredAsync" />
+                </div>
+            </div>
+        </div>
+    }
 
     <!-- Default Delete Confirmation Dialog -->
     <TmDialog Type="DialogType.Confirm"

@@ -1,3 +1,5 @@
+using Tempo.Blazor.Abstractions.Shared;
+
 namespace Tempo.Blazor.Abstractions.Models;
 
 /// <summary>
@@ -31,4 +33,15 @@ public sealed class FileManagerItem
 
     /// <summary>Icon name override. When null, the file manager chooses based on extension.</summary>
     public string? IconName { get; set; }
+
+    /// <summary>Anti-virus / content scan state. When <see cref="FileScanStatus.Blocked"/> or
+    /// <see cref="FileScanStatus.Pending"/>, the item is shown as unavailable and downloads are suppressed.</summary>
+    public FileScanStatus ScanStatus { get; set; } = FileScanStatus.NotScanned;
+
+    /// <summary>Optional human-readable detail about the scan outcome.</summary>
+    public string? ScanMessage { get; set; }
+
+    /// <summary>True when the scan state permits the viewer to access the file content.</summary>
+    public bool IsScanAvailable
+        => ScanStatus is FileScanStatus.NotScanned or FileScanStatus.Clean;
 }
