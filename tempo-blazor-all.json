@@ -11299,6 +11299,196 @@
           ]
         },
         {
+          "itemName": "TmDecimalInput",
+          "kind": "Component",
+          "category": "Inputs",
+          "namespace": "Tempo.Blazor.Components.Inputs",
+          "description": "Culture-aware decimal input. Accepts both comma and dot as the decimal separator, cleans pasted text (currency symbols, units, thousands separators), formats the value on blur for the chosen culture, rounds to DecimalPlaces, supports Min/Max/Step with +/- steppers and ArrowUp/ArrowDown keys, offers a percent mode (the model keeps the fraction while the field shows the percentage), and reports DataAnnotations validation messages when used inside an EditForm.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmDecimalInput.razor",
+          "documentationStatus": "merged",
+          "requiredImports": [
+            "@using Tempo.Blazor.Components.Inputs"
+          ],
+          "parameters": [
+            {
+              "name": "AutoComplete",
+              "type": "string?",
+              "isRequired": false,
+              "description": "HTML autocomplete attribute. Common values: \"on\", \"off\"."
+            },
+            {
+              "name": "Class",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Additional CSS class(es) applied to the wrapper."
+            },
+            {
+              "name": "Culture",
+              "type": "CultureInfo?",
+              "isRequired": false,
+              "description": "Culture used for parsing and formatting. Defaults to CultureInfo.CurrentCulture."
+            },
+            {
+              "name": "DecimalPlaces",
+              "type": "int",
+              "isRequired": false,
+              "default": "2",
+              "description": "Number of fractional digits used for display and for rounding the committed value (clamped to 0-28)."
+            },
+            {
+              "name": "Disabled",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Disable the input."
+            },
+            {
+              "name": "Error",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Error message. When set, it wins over any validation message coming from the surrounding EditContext, replaces the help text and marks the field invalid."
+            },
+            {
+              "name": "HelpText",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Help text rendered below the input."
+            },
+            {
+              "name": "Id",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Explicit id of the input element. When omitted, a unique id is generated so the label stays associated."
+            },
+            {
+              "name": "Label",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Field label."
+            },
+            {
+              "name": "Max",
+              "type": "decimal?",
+              "isRequired": false,
+              "description": "Largest allowed value, on the displayed scale (in percent mode, Min=\"0\" ... Max=\"100\" means 0-100 %)."
+            },
+            {
+              "name": "Min",
+              "type": "decimal?",
+              "isRequired": false,
+              "description": "Smallest allowed value, on the displayed scale (in percent mode, Min=\"0\" ... Max=\"100\" means 0-100 %)."
+            },
+            {
+              "name": "Percent",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Percent mode: Value holds the fraction (0.15) while the input shows and accepts the percentage (15). Min, Max and Step also work on the percentage scale, and a \"%\" suffix is added unless Suffix says otherwise."
+            },
+            {
+              "name": "Placeholder",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Placeholder text shown while the input is empty."
+            },
+            {
+              "name": "Prefix",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Prefix text rendered before the input (e.g. \"EUR\")."
+            },
+            {
+              "name": "ReadOnly",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Render the input as read-only."
+            },
+            {
+              "name": "ShowButtons",
+              "type": "bool",
+              "isRequired": false,
+              "default": "true",
+              "description": "Show the +/- stepper buttons."
+            },
+            {
+              "name": "Step",
+              "type": "decimal",
+              "isRequired": false,
+              "default": "1m",
+              "description": "Amount added or removed by the steppers and the arrow keys, on the displayed scale (in percent mode, one percentage point)."
+            },
+            {
+              "name": "Suffix",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Suffix text rendered after the input (e.g. \"/ pc\")."
+            },
+            {
+              "name": "UseGrouping",
+              "type": "bool",
+              "isRequired": false,
+              "default": "true",
+              "description": "Show thousands separators while the field is not being edited."
+            },
+            {
+              "name": "Value",
+              "type": "decimal?",
+              "isRequired": false,
+              "description": "Current decimal value. null when the input is empty or holds unparsable text."
+            },
+            {
+              "name": "ValueChanged",
+              "type": "EventCallback<decimal?>",
+              "isRequired": false,
+              "description": "Fires when the committed value changes (on change/blur, not on every keystroke)."
+            },
+            {
+              "name": "ValueExpression",
+              "type": "Expression<Func<decimal?>>?",
+              "isRequired": false,
+              "description": "Expression identifying the bound model field. Blazor supplies it automatically when you use @bind-Value; it links the input to DataAnnotationsValidator messages inside an EditForm."
+            }
+          ],
+          "cssClasses": [
+            "tm-input-wrapper",
+            "tm-decimal-input",
+            "tm-decimal-input--error",
+            "tm-decimal-input__control",
+            "tm-decimal-input__control--disabled",
+            "tm-decimal-input__control--readonly",
+            "tm-decimal-input__control--error",
+            "tm-decimal-input__input",
+            "tm-decimal-input__increment",
+            "tm-decimal-input__decrement",
+            "tm-decimal-input__prefix",
+            "tm-decimal-input__suffix",
+            "tm-input-label",
+            "tm-input-error-message",
+            "tm-input-help-text"
+          ],
+          "examples": [
+            {
+              "title": "Basic decimal input",
+              "code": "<TmDecimalInput @bind-Value=\"amount\" Label=\"Amount\" Placeholder=\"0.00\" />"
+            },
+            {
+              "title": "Czech formatting with a currency prefix",
+              "code": "<TmDecimalInput @bind-Value=\"amount\"\n                Label=\"Cena\"\n                Culture=\"@CultureInfo.GetCultureInfo(\"cs-CZ\")\"\n                Prefix=\"Kc\"\n                ShowButtons=\"false\" />"
+            },
+            {
+              "title": "Range with steppers",
+              "code": "<TmDecimalInput @bind-Value=\"rating\" Label=\"Rating\" Min=\"0\" Max=\"10\" Step=\"0.5m\" DecimalPlaces=\"1\" />"
+            },
+            {
+              "title": "Percent mode (model keeps the fraction)",
+              "code": "<TmDecimalInput @bind-Value=\"vatRate\" Label=\"VAT rate\" Percent=\"true\" Min=\"0\" Max=\"100\" Step=\"1\" />\n@* vatRate = 0.21m is shown as 21,00 % *@"
+            },
+            {
+              "title": "Inside an EditForm with DataAnnotations",
+              "code": "<EditForm Model=\"model\">\n    <DataAnnotationsValidator />\n    <TmDecimalInput @bind-Value=\"model.UnitPrice\" Label=\"Unit price\" Prefix=\"Kc\" />\n</EditForm>"
+            }
+          ]
+        },
+        {
           "itemName": "TmEntityPicker",
           "kind": "Component",
           "category": "Inputs",
@@ -20535,6 +20725,10 @@
           "kind": "Css"
         },
         {
+          "path": "src/Tempo.Blazor/wwwroot/css/components/_decimal-input.css",
+          "kind": "Css"
+        },
+        {
           "path": "src/Tempo.Blazor/wwwroot/css/components/_dock-manager.css",
           "kind": "Css"
         },
@@ -20988,11 +21182,11 @@
         }
       ],
       "summary": {
-        "itemCount": 294,
-        "manualItemCount": 294,
-        "generatedItemCount": 286,
+        "itemCount": 295,
+        "manualItemCount": 295,
+        "generatedItemCount": 287,
         "generatedOnlyItemCount": 0,
-        "componentCount": 177,
+        "componentCount": 178,
         "publicApiTypeCount": 109
       }
     },
@@ -21063,6 +21257,30 @@
       },
       "items": [
         {
+          "itemName": "PdfTextSelection",
+          "kind": "Record",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Files",
+          "description": "Describes a text selection captured from the PDF text layer: the selected text, the one-based page it belongs to, and the normalized highlight rectangles covering it.",
+          "packageId": "Tempo.Blazor.PdfViewer",
+          "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/PdfTextSelection.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "IsValid",
+              "kind": "Field",
+              "type": "bool",
+              "description": "Returns true when the selection has text and at least one valid rectangle."
+            },
+            {
+              "name": "ToAnchor",
+              "kind": "Method",
+              "type": "DocumentCommentAnchor",
+              "description": "Builds a text range anchor from this selection."
+            }
+          ]
+        },
+        {
           "itemName": "PdfViewMode",
           "kind": "Enum",
           "category": "Components",
@@ -21103,6 +21321,171 @@
           ]
         },
         {
+          "itemName": "TmPdfAnnotationLayer",
+          "kind": "Component",
+          "category": "Files",
+          "namespace": "Tempo.Blazor.Components.Files",
+          "description": "Overlay that renders PDF annotation highlights and margin markers over the current page. Used internally by TmPdfViewer when annotations are enabled, reusing the shared document comment models.",
+          "packageId": "Tempo.Blazor.PdfViewer",
+          "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotationLayer.razor",
+          "documentationStatus": "merged",
+          "requiredImports": [
+            "@using Tempo.Blazor.Components.Files"
+          ],
+          "parameters": [
+            {
+              "name": "CurrentUserId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Current user id used for mention styling."
+            },
+            {
+              "name": "Disabled",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether marker interaction is disabled."
+            },
+            {
+              "name": "DraftAnchor",
+              "type": "DocumentCommentAnchor?",
+              "isRequired": false,
+              "description": "Current draft anchor for a pending, not-yet-saved annotation."
+            },
+            {
+              "name": "OnThreadSelected",
+              "type": "EventCallback<string>",
+              "isRequired": false,
+              "description": "Callback invoked when a thread marker or highlight is selected."
+            },
+            {
+              "name": "PageNumber",
+              "type": "int",
+              "isRequired": false,
+              "default": "1",
+              "description": "One-based current page number."
+            },
+            {
+              "name": "SelectedThreadId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Selected thread id."
+            },
+            {
+              "name": "ShowResolved",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether resolved threads should be rendered."
+            },
+            {
+              "name": "Threads",
+              "type": "IReadOnlyList<DocumentCommentThread>",
+              "isRequired": false,
+              "default": "[]",
+              "description": "Annotation threads available to render."
+            }
+          ]
+        },
+        {
+          "itemName": "TmPdfAnnotationThreadPanel",
+          "kind": "Component",
+          "category": "Files",
+          "namespace": "Tempo.Blazor.Components.Files",
+          "description": "Side panel listing PDF annotation threads with per-thread comment detail, reply, resolve/reopen, delete, a resolved filter, and a composer for commenting on the current text selection. Used internally by TmPdfViewer when annotations are enabled.",
+          "packageId": "Tempo.Blazor.PdfViewer",
+          "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotationThreadPanel.razor",
+          "documentationStatus": "merged",
+          "requiredImports": [
+            "@using Tempo.Blazor.Components.Files"
+          ],
+          "parameters": [
+            {
+              "name": "CurrentUserId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Current user id used for mention styling."
+            },
+            {
+              "name": "Disabled",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether panel interaction is disabled."
+            },
+            {
+              "name": "OnCreateThreadRequested",
+              "type": "EventCallback<string>",
+              "isRequired": false,
+              "description": "Callback invoked with the body of a new thread requested from the pending selection."
+            },
+            {
+              "name": "OnDeleteRequested",
+              "type": "EventCallback<DocumentCommentDeleteRequest>",
+              "isRequired": false,
+              "description": "Callback invoked when deleting a comment is requested."
+            },
+            {
+              "name": "OnReopenRequested",
+              "type": "EventCallback<string>",
+              "isRequired": false,
+              "description": "Callback invoked when reopening a thread is requested."
+            },
+            {
+              "name": "OnReplyRequested",
+              "type": "EventCallback<DocumentCommentReplyRequest>",
+              "isRequired": false,
+              "description": "Callback invoked when a reply is requested."
+            },
+            {
+              "name": "OnResolveRequested",
+              "type": "EventCallback<string>",
+              "isRequired": false,
+              "description": "Callback invoked when resolving a thread is requested."
+            },
+            {
+              "name": "OnSelectionDismissed",
+              "type": "EventCallback",
+              "isRequired": false,
+              "description": "Callback invoked when the pending selection is dismissed."
+            },
+            {
+              "name": "PendingSelection",
+              "type": "PdfTextSelection?",
+              "isRequired": false,
+              "description": "Pending text selection awaiting a new comment, when present."
+            },
+            {
+              "name": "SelectedThreadId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Selected thread id."
+            },
+            {
+              "name": "SelectedThreadIdChanged",
+              "type": "EventCallback<string?>",
+              "isRequired": false,
+              "description": "Callback invoked when the selected thread id changes."
+            },
+            {
+              "name": "ShowResolved",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether resolved threads are shown."
+            },
+            {
+              "name": "ShowResolvedChanged",
+              "type": "EventCallback<bool>",
+              "isRequired": false,
+              "description": "Callback invoked when the resolved filter toggles."
+            },
+            {
+              "name": "Threads",
+              "type": "IReadOnlyList<DocumentCommentThread>",
+              "isRequired": false,
+              "default": "[]",
+              "description": "Annotation threads to render."
+            }
+          ]
+        },
+        {
           "itemName": "TmPdfViewer",
           "kind": "Component",
           "category": "Files",
@@ -21129,16 +21512,58 @@
               "description": "Whether to allow downloading the PDF. Default is true."
             },
             {
+              "name": "AnnotationProvider",
+              "type": "IPdfAnnotationProvider?",
+              "isRequired": false,
+              "description": "Provider used to load and persist annotation threads when is true. When omitted, an in-memory provider keeps annotations for the current session."
+            },
+            {
+              "name": "Annotations",
+              "type": "IReadOnlyList<DocumentCommentThread>?",
+              "isRequired": false,
+              "description": "Optional seed threads used when no is supplied."
+            },
+            {
+              "name": "AnnotationsChanged",
+              "type": "EventCallback<IReadOnlyList<DocumentCommentThread>>",
+              "isRequired": false,
+              "description": "Callback invoked when the loaded annotation set changes."
+            },
+            {
               "name": "Class",
               "type": "string?",
               "isRequired": false,
               "description": "Callback when the view mode changes."
             },
             {
+              "name": "CurrentUser",
+              "type": "DocumentCommentUser?",
+              "isRequired": false,
+              "description": "Author applied to annotations created by the current viewer."
+            },
+            {
+              "name": "DocumentId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Stable document identifier used by the annotation provider. Falls back to ."
+            },
+            {
+              "name": "EnableAnnotations",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether the annotation layer and comments panel are enabled. Default is false."
+            },
+            {
               "name": "Height",
               "type": "string?",
               "isRequired": false,
               "description": "Additional CSS classes for the root element."
+            },
+            {
+              "name": "OnTextSelected",
+              "type": "EventCallback<PdfTextSelection>",
+              "isRequired": false,
+              "description": "Callback invoked when text is selected in the viewer text layer."
             },
             {
               "name": "Page",
@@ -21165,6 +21590,12 @@
               "type": "EventCallback<double>",
               "isRequired": false,
               "description": "Current zoom scale. Supports two-way binding."
+            },
+            {
+              "name": "ShowResolvedAnnotations",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether resolved annotation threads are shown by default. Default is false."
             },
             {
               "name": "ShowSearch",
@@ -21235,12 +21666,12 @@
         }
       ],
       "summary": {
-        "itemCount": 3,
-        "manualItemCount": 3,
-        "generatedItemCount": 3,
+        "itemCount": 6,
+        "manualItemCount": 6,
+        "generatedItemCount": 6,
         "generatedOnlyItemCount": 0,
-        "componentCount": 1,
-        "publicApiTypeCount": 2
+        "componentCount": 3,
+        "publicApiTypeCount": 3
       }
     },
     {
@@ -66655,6 +67086,16 @@
           "documentationStatus": "merged"
         },
         {
+          "itemName": "DocumentCommentFactory",
+          "kind": "Class",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Abstractions.Models",
+          "description": "Builds document comment threads and entries from create and reply requests.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentCommentFactory.cs",
+          "documentationStatus": "merged"
+        },
+        {
           "itemName": "DocumentCommentGeometryHelper",
           "kind": "Class",
           "category": "Models",
@@ -66677,6 +67118,18 @@
               ]
             },
             {
+              "name": "ToBadgeStyle",
+              "kind": "Method",
+              "type": "string",
+              "description": "Returns a CSS style positioning a marker badge at the trailing edge of an anchor.",
+              "parameters": [
+                {
+                  "name": "anchor",
+                  "type": "DocumentCommentAnchor"
+                }
+              ]
+            },
+            {
               "name": "ToPointStyle",
               "kind": "Method",
               "type": "string",
@@ -66685,6 +67138,18 @@
                 {
                   "name": "anchor",
                   "type": "DocumentCommentAnchor"
+                }
+              ]
+            },
+            {
+              "name": "ToRectStyle",
+              "kind": "Method",
+              "type": "string",
+              "description": "Returns a CSS style for a single normalized highlight rectangle of a text range anchor.",
+              "parameters": [
+                {
+                  "name": "rect",
+                  "type": "DocumentCommentRect"
                 }
               ]
             }
@@ -66780,6 +67245,16 @@
           "category": "Models",
           "namespace": "Tempo.Blazor.Abstractions.Models",
           "description": "Payload emitted when a comment reaction is toggled.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentComments.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "DocumentCommentRect",
+          "kind": "Class",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Abstractions.Models",
+          "description": "Normalized rectangle on a document page, expressed as fractions of the page size. Used for text range highlight geometry.",
           "packageId": "Tempo.Blazor.Abstractions",
           "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentComments.cs",
           "documentationStatus": "merged"
@@ -68441,6 +68916,26 @@
           "description": "Factory methods and built-in implementations of IImageUrlResolver.",
           "packageId": "Tempo.Blazor.Abstractions",
           "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ImageUrlResolvers.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "InMemoryPdfAnnotationProvider",
+          "kind": "Class",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Abstractions.Models",
+          "description": "In-memory IPdfAnnotationProvider that keeps annotation threads per document for the lifetime of the instance. Suitable for demos, tests, and prototypes.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryPdfAnnotationProvider.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "IPdfAnnotationProvider",
+          "kind": "Interface",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Abstractions.Models",
+          "description": "Persistence contract for PDF viewer annotations (comment threads anchored to page points, areas, or text ranges). Implementations load, create, reply to, edit, delete, resolve, and reopen threads for a document.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/IPdfAnnotationProvider.cs",
           "documentationStatus": "merged"
         },
         {
@@ -70540,6 +71035,16 @@
           "description": "Represents a single property change with old and new values.",
           "packageId": "Tempo.Blazor.Abstractions",
           "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmChangeInfo.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "TmCommentProviderPdfAnnotationAdapter",
+          "kind": "Class",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Abstractions.Models",
+          "description": "Adapts the shared ITmCommentProvider to the PDF viewer IPdfAnnotationProvider contract, translating between the document-viewer comment models and the shared comment models via DocumentViewerCommentBridge.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmCommentProviderPdfAnnotationAdapter.cs",
           "documentationStatus": "merged"
         },
         {
@@ -87263,12 +87768,12 @@
       ],
       "libraryExamples": [],
       "summary": {
-        "itemCount": 1276,
-        "manualItemCount": 1276,
-        "generatedItemCount": 1259,
+        "itemCount": 1281,
+        "manualItemCount": 1281,
+        "generatedItemCount": 1264,
         "generatedOnlyItemCount": 0,
         "componentCount": 0,
-        "publicApiTypeCount": 1259
+        "publicApiTypeCount": 1264
       }
     },
     {
@@ -99646,10 +100151,10 @@
   ],
   "summary": {
     "packageCount": 22,
-    "itemCount": 2809,
-    "manualItemCount": 2809,
+    "itemCount": 2818,
+    "manualItemCount": 2818,
     "generatedOnlyItemCount": 0,
-    "componentCount": 441,
-    "publicApiTypeCount": 2314
+    "componentCount": 444,
+    "publicApiTypeCount": 2320
   }
 }

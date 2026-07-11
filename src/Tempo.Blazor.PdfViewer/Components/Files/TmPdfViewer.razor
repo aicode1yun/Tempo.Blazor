@@ -105,6 +105,18 @@
                     </button>
                 }
 
+                @if (EnableAnnotations)
+                {
+                    <div class="tm-pdf-viewer__separator" aria-hidden="true"></div>
+                    <button class="tm-pdf-viewer__btn @(_annotationsPanelVisible ? "tm-pdf-viewer__btn--active" : "")"
+                            type="button"
+                            aria-label="@Loc["TmPdfViewer_ToggleAnnotations"]"
+                            data-testid="pdf-annotations-toggle"
+                            @onclick="ToggleAnnotationsPanelAsync">
+                        <TmIcon Name="message-square" Size="IconSize.Sm" />
+                    </button>
+                }
+
                 <div class="tm-pdf-viewer__file-actions">
                     <a class="tm-pdf-viewer__link"
                        href="@Url"
@@ -136,18 +148,34 @@
                 <input type="text"
                        class="tm-pdf-viewer__search-input"
                        placeholder="@Loc["Tm_Search"]..."
+                       data-testid="pdf-search-input"
                        @bind="_searchQuery"
                        @bind:event="oninput"
                        @onkeyup="HandleSearchKeyUpAsync" />
                 @if (_searchTotalMatches > 0)
                 {
-                    <span class="tm-pdf-viewer__search-count">@_searchCurrentMatch/@_searchTotalMatches</span>
+                    <span class="tm-pdf-viewer__search-count" data-testid="pdf-search-count">@Loc["TmPdfViewer_SearchResults", _searchCurrentMatch, _searchTotalMatches]</span>
+                    <button class="tm-pdf-viewer__btn"
+                            type="button"
+                            aria-label="@Loc["TmPdfViewer_PreviousMatch"]"
+                            data-testid="pdf-search-prev"
+                            @onclick="PreviousMatchAsync">
+                        <TmIcon Name="chevron-up" Size="IconSize.Sm" />
+                    </button>
+                    <button class="tm-pdf-viewer__btn"
+                            type="button"
+                            aria-label="@Loc["TmPdfViewer_NextMatch"]"
+                            data-testid="pdf-search-next"
+                            @onclick="NextMatchAsync">
+                        <TmIcon Name="chevron-down" Size="IconSize.Sm" />
+                    </button>
                 }
                 @if (!string.IsNullOrEmpty(_searchQuery))
                 {
                     <button class="tm-pdf-viewer__btn"
                             type="button"
                             aria-label="@Loc["Tm_Clear"]"
+                            data-testid="pdf-search-clear"
                             @onclick="ClearSearchAsync">
                         <TmIcon Name="x" Size="IconSize.Sm" />
                     </button>
@@ -172,9 +200,27 @@
                     <div class="tm-pdf-viewer__canvas-wrap">
                         <canvas @ref="_canvasRef" class="tm-pdf-viewer__canvas"></canvas>
 
-                        @if (ShowTextLayer)
+                        @if (ShowTextLayer || EnableAnnotations)
                         {
                             <div @ref="_textLayerRef" class="tm-pdf-viewer__text-layer"></div>
+                        }
+
+                        @if (ShowSearch)
+                        {
+                            <div @ref="_searchLayerRef" class="tm-pdf-viewer__search-layer" aria-hidden="true"></div>
+                        }
+
+                        @if (EnableAnnotations)
+                        {
+                            <div @ref="_annotationOverlayRef" class="tm-pdf-viewer__annotation-overlay">
+                                <TmPdfAnnotationLayer Threads="_threads"
+                                                      PageNumber="_currentPage"
+                                                      SelectedThreadId="@_selectedThreadId"
+                                                      CurrentUserId="@(CurrentUser?.UserId)"
+                                                      ShowResolved="_showResolvedAnnotations"
+                                                      DraftAnchor="_pendingSelection?.ToAnchor()"
+                                                      OnThreadSelected="SelectThreadAsync" />
+                            </div>
                         }
                     </div>
                 }
@@ -185,6 +231,23 @@
                        type="application/pdf"
                        class="tm-pdf-viewer__embed"
                        title="@Loc["TmPdfViewer_Open"]" />
+            }
+
+            @if (EnableAnnotations && !_useFallback && _annotationsPanelVisible)
+            {
+                <TmPdfAnnotationThreadPanel Threads="_threads"
+                                            SelectedThreadId="@_selectedThreadId"
+                                            SelectedThreadIdChanged="SelectThreadAsync"
+                                            CurrentUserId="@(CurrentUser?.UserId)"
+                                            ShowResolved="_showResolvedAnnotations"
+                                            ShowResolvedChanged="SetShowResolvedAnnotationsAsync"
+                                            PendingSelection="_pendingSelection"
+                                            OnCreateThreadRequested="CreateThreadFromSelectionAsync"
+                                            OnReplyRequested="ReplyToThreadAsync"
+                                            OnResolveRequested="ResolveThreadAsync"
+                                            OnReopenRequested="ReopenThreadAsync"
+                                            OnDeleteRequested="DeleteCommentAsync"
+                                            OnSelectionDismissed="DismissSelectionAsync" />
             }
         </div>
     }

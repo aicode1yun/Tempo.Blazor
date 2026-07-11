@@ -1,12 +1,13 @@
 @page "/pdf-viewer"
 @using Tempo.Blazor.Components.Files
+@using Tempo.Blazor.Abstractions.Models
 <PageTitle>PDF Viewer – Tempo.Blazor</PageTitle>
 
 <!-- Page Header -->
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">PDF Viewer</h1>
     <p class="text-slate-600 dark:text-slate-400">
-        A reusable PDF viewer powered by PDF.js v5. Supports page navigation, zoom, rotation, thumbnails, search, text layer, and continuous scroll.
+        A reusable PDF viewer powered by PDF.js v5. Supports page navigation, zoom, rotation, thumbnails, search with highlight and next/previous navigation, a selectable text layer, text-range annotations with comment threads, and continuous scroll.
     </p>
 </div>
 
@@ -56,13 +57,42 @@
 
     <div class="showcase-card">
         <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-            Full-text search across all pages with match counter.
+            Full-text search across all pages. Every occurrence is highlighted, the active match is emphasized and scrolled into view, and the up/down buttons (or Enter / Shift+Enter) step through matches with a live counter.
         </p>
         <TmPdfViewer Url="@_demoPdfUrl"
                      ShowToolbar="true"
                      ShowSearch="true"
                      AllowDownload="true"
                      Height="500px" />
+    </div>
+</section>
+
+<!-- Annotations -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Annotations &amp; Comments</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Collaboration</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Select text in the document to highlight it and start a comment thread. Threads appear as margin markers and in the side panel, where you can reply, resolve, reopen, and delete. Comments persist through the pluggable <code>IPdfAnnotationProvider</code> — this demo uses an in-memory provider seeded with one thread.
+        </p>
+        @if (_lastSelection is not null)
+        {
+            <p class="text-xs text-indigo-600 dark:text-indigo-300 mb-2" data-testid="pdf-demo-selection">
+                Last selection on page @_lastSelection.Page: &ldquo;@_lastSelection.Text&rdquo;
+            </p>
+        }
+        <TmPdfViewer Url="@_demoPdfUrl"
+                     DocumentId="demo-annotated-pdf"
+                     ShowToolbar="true"
+                     EnableAnnotations="true"
+                     AnnotationProvider="_annotationProvider"
+                     CurrentUser="_currentUser"
+                     OnTextSelected="OnDemoTextSelected"
+                     AllowDownload="true"
+                     Height="600px" />
     </div>
 </section>
 
@@ -133,14 +163,17 @@
 
     <div class="showcase-card">
         <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-            Thumbnails, search, text layer, rotation, and view mode toggle enabled simultaneously.
+            Thumbnails, search, text layer, annotations, rotation, and view mode toggle enabled simultaneously.
         </p>
         <TmPdfViewer Url="@_demoPdfUrl"
+                     DocumentId="demo-full-pdf"
                      ShowToolbar="true"
                      ShowThumbnails="true"
                      ShowSearch="true"
                      ShowTextLayer="true"
                      ShowViewModeToggle="true"
+                     EnableAnnotations="true"
+                     CurrentUser="_currentUser"
                      AllowRotation="true"
                      AllowDownload="true"
                      Height="600px" />
@@ -149,4 +182,44 @@
 
 @code {
     private const string _demoPdfUrl = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
+
+    private readonly DocumentCommentUser _currentUser = new()
+    {
+        UserId = "demo-user",
+        DisplayName = "Demo User"
+    };
+
+    private readonly InMemoryPdfAnnotationProvider _annotationProvider = new(
+        new Dictionary<string, IReadOnlyList<DocumentCommentThread>>
+        {
+            ["demo-annotated-pdf"] =
+            [
+                new DocumentCommentThread
+                {
+                    Id = "seed-thread",
+                    Anchor = DocumentCommentAnchor.TextRange(1,
+                        [DocumentCommentRect.Create(0.18, 0.30, 0.30, 0.018)],
+                        "trace-based just-in-time"),
+                    Comments =
+                    [
+                        new DocumentComment
+                        {
+                            Id = "seed-comment",
+                            AuthorId = "reviewer",
+                            AuthorName = "Reviewer",
+                            Body = "Great summary of the tracing approach — worth expanding here.",
+                            CanEdit = false,
+                            CanDelete = false
+                        }
+                    ]
+                }
+            ]
+        });
+
+    private PdfTextSelection? _lastSelection;
+
+    private void OnDemoTextSelected(PdfTextSelection selection)
+    {
+        _lastSelection = selection;
+    }
 }

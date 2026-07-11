@@ -1959,10 +1959,12 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             DefaultWidth = 360, DefaultHeight = 460,
             Props =
             [
-                P("fileName",    "File Name",    PropType.String, "document.pdf", cat: "Content"),
-                P("pageCount",   "Page Count",   PropType.Int,    12,             cat: "Content"),
-                P("currentPage", "Current Page", PropType.Int,    1,              cat: "State"),
-                P("showToolbar", "Show Toolbar", PropType.Bool,   true,           cat: "Appearance"),
+                P("fileName",          "File Name",          PropType.String, "document.pdf", cat: "Content"),
+                P("pageCount",         "Page Count",         PropType.Int,    12,             cat: "Content"),
+                P("currentPage",       "Current Page",       PropType.Int,    1,              cat: "State"),
+                P("showToolbar",       "Show Toolbar",       PropType.Bool,   true,           cat: "Appearance"),
+                P("showSearch",        "Show Search",        PropType.Bool,   false,          cat: "Appearance"),
+                P("enableAnnotations", "Enable Annotations", PropType.Bool,   false,          cat: "Appearance"),
             ]
         };
 

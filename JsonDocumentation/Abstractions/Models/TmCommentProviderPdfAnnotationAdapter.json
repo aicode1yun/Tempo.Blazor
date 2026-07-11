@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Adapts the shared ITmCommentProvider to the PDF viewer IPdfAnnotationProvider contract, translating between the document-viewer comment models and the shared comment models via DocumentViewerCommentBridge.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmCommentProviderPdfAnnotationAdapter.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmCommentProviderPdfAnnotationAdapter"
+}

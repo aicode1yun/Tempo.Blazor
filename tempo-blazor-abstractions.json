@@ -12163,6 +12163,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentCommentFactory",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Builds document comment threads and entries from create and reply requests.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentCommentFactory.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentCommentGeometryHelper",
       "kind": "Class",
       "category": "Models",
@@ -12185,6 +12195,18 @@
           ]
         },
         {
+          "name": "ToBadgeStyle",
+          "kind": "Method",
+          "type": "string",
+          "description": "Returns a CSS style positioning a marker badge at the trailing edge of an anchor.",
+          "parameters": [
+            {
+              "name": "anchor",
+              "type": "DocumentCommentAnchor"
+            }
+          ]
+        },
+        {
           "name": "ToPointStyle",
           "kind": "Method",
           "type": "string",
@@ -12193,6 +12215,18 @@
             {
               "name": "anchor",
               "type": "DocumentCommentAnchor"
+            }
+          ]
+        },
+        {
+          "name": "ToRectStyle",
+          "kind": "Method",
+          "type": "string",
+          "description": "Returns a CSS style for a single normalized highlight rectangle of a text range anchor.",
+          "parameters": [
+            {
+              "name": "rect",
+              "type": "DocumentCommentRect"
             }
           ]
         }
@@ -12288,6 +12322,16 @@
       "category": "Models",
       "namespace": "Tempo.Blazor.Abstractions.Models",
       "description": "Payload emitted when a comment reaction is toggled.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentComments.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentCommentRect",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Normalized rectangle on a document page, expressed as fractions of the page size. Used for text range highlight geometry.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentComments.cs",
       "documentationStatus": "merged"
@@ -13949,6 +13993,26 @@
       "description": "Factory methods and built-in implementations of IImageUrlResolver.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ImageUrlResolvers.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "InMemoryPdfAnnotationProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IPdfAnnotationProvider that keeps annotation threads per document for the lifetime of the instance. Suitable for demos, tests, and prototypes.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryPdfAnnotationProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IPdfAnnotationProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Persistence contract for PDF viewer annotations (comment threads anchored to page points, areas, or text ranges). Implementations load, create, reply to, edit, delete, resolve, and reopen threads for a document.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/IPdfAnnotationProvider.cs",
       "documentationStatus": "merged"
     },
     {
@@ -16048,6 +16112,16 @@
       "description": "Represents a single property change with old and new values.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmChangeInfo.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmCommentProviderPdfAnnotationAdapter",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Adapts the shared ITmCommentProvider to the PDF viewer IPdfAnnotationProvider contract, translating between the document-viewer comment models and the shared comment models via DocumentViewerCommentBridge.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmCommentProviderPdfAnnotationAdapter.cs",
       "documentationStatus": "merged"
     },
     {
@@ -32771,11 +32845,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1276,
-    "manualItemCount": 1276,
-    "generatedItemCount": 1259,
+    "itemCount": 1281,
+    "manualItemCount": 1281,
+    "generatedItemCount": 1264,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1259
+    "publicApiTypeCount": 1264
   }
 }

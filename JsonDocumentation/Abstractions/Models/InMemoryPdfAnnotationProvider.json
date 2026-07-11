@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "In-memory IPdfAnnotationProvider that keeps annotation threads per document for the lifetime of the instance. Suitable for demos, tests, and prototypes.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryPdfAnnotationProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "InMemoryPdfAnnotationProvider"
+}

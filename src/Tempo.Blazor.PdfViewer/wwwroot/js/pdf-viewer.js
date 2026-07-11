@@ -81,6 +81,7 @@ window.tmPdfViewer = (function () {
         const state = _docs.get(canvasEl);
         if (!state || !textLayerEl) return;
         try {
+            const pdfjs = await _ensureLib();
             const page = await state.pdfDoc.getPage(pageNum);
             const viewport = page.getViewport({ scale, rotation: rotation ?? state.rotation });
             const textContent = await page.getTextContent();
@@ -90,7 +91,7 @@ window.tmPdfViewer = (function () {
             textLayerEl.style.height = viewport.height + 'px';
 
             for (const item of textContent.items) {
-                const tx = window.pdfjsLib?.Util.transform(viewport.transform, item.transform);
+                const tx = pdfjs.Util.transform(viewport.transform, item.transform);
                 const fontHeight = Math.hypot(tx[0], tx[1]);
                 const fontWidth = Math.hypot(tx[2], tx[3]);
                 const div = document.createElement('div');
@@ -169,29 +170,202 @@ window.tmPdfViewer = (function () {
         });
     }
 
-    async function search(canvasEl, query, dotNetRef) {
+    // ── Text selection ──────────────────────────────────────────────────────
+
+    function enableSelection(canvasEl, textLayerEl, dotNetRef) {
+        if (!canvasEl || !textLayerEl) return;
         const state = _docs.get(canvasEl);
-        if (!state || !query) {
-            dotNetRef.invokeMethodAsync('OnSearchResults', 0, 0).catch(console.error);
+        if (state) state.dotNetRef = dotNetRef;
+        if (textLayerEl.dataset.tmSelectionBound === '1') return;
+        textLayerEl.dataset.tmSelectionBound = '1';
+
+        document.addEventListener('mouseup', () => {
+            // Always read the live state so a later document (Url) change — which replaces
+            // the dotNet reference without rebinding this listener — is honoured.
+            const doc = _docs.get(canvasEl);
+            if (!doc || !doc.dotNetRef) return;
+
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+            const anchor = sel.anchorNode;
+            if (!anchor || !textLayerEl.contains(anchor)) return;
+
+            const canvasRect = canvasEl.getBoundingClientRect();
+            if (canvasRect.width < 1 || canvasRect.height < 1) return;
+
+            const flat = [];
+            const range = sel.getRangeAt(0);
+            for (const r of range.getClientRects()) {
+                if (r.width < 1 || r.height < 1) continue;
+                const x = _clamp01((r.left - canvasRect.left) / canvasRect.width);
+                const y = _clamp01((r.top - canvasRect.top) / canvasRect.height);
+                const w = _clamp01(r.width / canvasRect.width);
+                const h = _clamp01(r.height / canvasRect.height);
+                flat.push(x, y, w, h);
+            }
+            if (flat.length === 0) return;
+
+            doc.dotNetRef.invokeMethodAsync('OnTextSelectionChanged', sel.toString(), doc.currentPage, flat).catch(() => { });
+        });
+    }
+
+    // ── Overlay positioning ──────────────────────────────────────────────────
+
+    function syncOverlay(canvasEl, overlayEl) {
+        if (!canvasEl || !overlayEl) return;
+        overlayEl.style.left = canvasEl.offsetLeft + 'px';
+        overlayEl.style.top = canvasEl.offsetTop + 'px';
+        overlayEl.style.width = canvasEl.offsetWidth + 'px';
+        overlayEl.style.height = canvasEl.offsetHeight + 'px';
+    }
+
+    // ── Search ────────────────────────────────────────────────────────────────
+
+    async function search(canvasEl, searchLayerEl, query, dotNetRef) {
+        const state = _docs.get(canvasEl);
+        if (!state) return;
+        state.searchLayerEl = searchLayerEl;
+        state.dotNetRef = dotNetRef ?? state.dotNetRef;
+
+        if (!query) {
+            clearSearch(canvasEl, searchLayerEl);
+            dotNetRef.invokeMethodAsync('OnSearchResults', 0, []).catch(() => { });
             return;
         }
-        const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-        let totalMatches = 0;
-        const matchesPerPage = [];
+
+        state.searchQuery = query;
+        const q = query.toLowerCase();
+        const matches = [];
+        const perPage = [];
         try {
-            for (let i = 1; i <= state.pdfDoc.numPages; i++) {
-                const page = await state.pdfDoc.getPage(i);
+            const pdfjs = await _ensureLib();
+            for (let p = 1; p <= state.pdfDoc.numPages; p++) {
+                const page = await state.pdfDoc.getPage(p);
+                const viewport = page.getViewport({ scale: 1 });
+                const pw = viewport.width;
+                const ph = viewport.height;
                 const textContent = await page.getTextContent();
-                const pageText = textContent.items.map(item => item.str).join(' ');
-                const pageMatches = (pageText.match(regex) || []).length;
-                matchesPerPage.push(pageMatches);
-                totalMatches += pageMatches;
+                let count = 0;
+
+                for (const item of textContent.items) {
+                    const str = item.str;
+                    if (!str) continue;
+                    const lower = str.toLowerCase();
+                    if (lower.indexOf(q) === -1) continue;
+
+                    const tx = pdfjs.Util.transform(viewport.transform, item.transform);
+                    const fontHeight = Math.hypot(tx[2], tx[3]) || item.height || 0;
+                    const left = tx[4];
+                    const top = tx[5] - fontHeight;
+                    const widthPx = item.width || (Math.hypot(tx[0], tx[1]) * str.length);
+                    const charWidth = widthPx / Math.max(str.length, 1);
+
+                    let from = 0;
+                    let idx;
+                    while ((idx = lower.indexOf(q, from)) !== -1) {
+                        matches.push({
+                            page: p,
+                            x: _clamp01((left + idx * charWidth) / pw),
+                            y: _clamp01(top / ph),
+                            w: _clamp01((q.length * charWidth) / pw),
+                            h: _clamp01(fontHeight / ph)
+                        });
+                        count++;
+                        from = idx + q.length;
+                    }
+                }
+                perPage.push(count);
             }
-            dotNetRef.invokeMethodAsync('OnSearchResults', totalMatches, matchesPerPage).catch(console.error);
         } catch (err) {
             console.error('tmPdfViewer.search', err);
-            dotNetRef.invokeMethodAsync('OnSearchResults', 0, []).catch(console.error);
         }
+
+        state.searchMatches = matches;
+        state.searchActive = matches.length ? 0 : -1;
+        dotNetRef.invokeMethodAsync('OnSearchResults', matches.length, perPage).catch(() => { });
+
+        if (matches.length) {
+            await _activateMatch(canvasEl, searchLayerEl);
+        } else {
+            _drawSearchHighlights(canvasEl, searchLayerEl, state.currentPage);
+        }
+    }
+
+    async function searchNext(canvasEl, searchLayerEl) {
+        const state = _docs.get(canvasEl);
+        if (!state || !state.searchMatches || !state.searchMatches.length) return;
+        state.searchActive = (state.searchActive + 1) % state.searchMatches.length;
+        await _activateMatch(canvasEl, searchLayerEl);
+    }
+
+    async function searchPrev(canvasEl, searchLayerEl) {
+        const state = _docs.get(canvasEl);
+        if (!state || !state.searchMatches || !state.searchMatches.length) return;
+        const n = state.searchMatches.length;
+        state.searchActive = (state.searchActive - 1 + n) % n;
+        await _activateMatch(canvasEl, searchLayerEl);
+    }
+
+    function redrawSearch(canvasEl, searchLayerEl, pageNum) {
+        _drawSearchHighlights(canvasEl, searchLayerEl, pageNum);
+    }
+
+    function clearSearch(canvasEl, searchLayerEl) {
+        const state = _docs.get(canvasEl);
+        if (state) {
+            state.searchMatches = [];
+            state.searchActive = -1;
+            state.searchQuery = null;
+        }
+        if (searchLayerEl) searchLayerEl.innerHTML = '';
+    }
+
+    async function _activateMatch(canvasEl, searchLayerEl) {
+        const state = _docs.get(canvasEl);
+        if (!state || !state.searchMatches || state.searchActive < 0) return;
+        const match = state.searchMatches[state.searchActive];
+        if (match.page !== state.currentPage) {
+            await renderPage(canvasEl, match.page, state.scale, state.rotation);
+        }
+        _drawSearchHighlights(canvasEl, searchLayerEl, match.page);
+        _scrollToActive(searchLayerEl);
+        if (state.dotNetRef) {
+            state.dotNetRef.invokeMethodAsync('OnSearchActiveChanged', state.searchActive + 1, match.page).catch(() => { });
+        }
+    }
+
+    function _drawSearchHighlights(canvasEl, searchLayerEl, pageNum) {
+        if (!searchLayerEl) return;
+        syncOverlay(canvasEl, searchLayerEl);
+        searchLayerEl.innerHTML = '';
+        const state = _docs.get(canvasEl);
+        if (!state || !state.searchMatches) return;
+
+        state.searchMatches.forEach((match, i) => {
+            if (match.page !== pageNum) return;
+            const div = document.createElement('div');
+            const isActive = i === state.searchActive;
+            div.className = 'tm-pdf-search-highlight' + (isActive ? ' tm-pdf-search-highlight--active' : '');
+            div.style.left = (match.x * 100) + '%';
+            div.style.top = (match.y * 100) + '%';
+            div.style.width = (match.w * 100) + '%';
+            div.style.height = (match.h * 100) + '%';
+            if (isActive) div.dataset.active = '1';
+            searchLayerEl.appendChild(div);
+        });
+    }
+
+    function _scrollToActive(searchLayerEl) {
+        if (!searchLayerEl) return;
+        const active = searchLayerEl.querySelector('[data-active="1"]');
+        if (active && typeof active.scrollIntoView === 'function') {
+            active.scrollIntoView({ block: 'center', inline: 'center' });
+        }
+    }
+
+    function _clamp01(value) {
+        if (!Number.isFinite(value)) return 0;
+        return Math.min(Math.max(value, 0), 1);
     }
 
     async function renderAllPages(containerEl, canvasEl, scale, rotation) {
@@ -245,7 +419,13 @@ window.tmPdfViewer = (function () {
         renderTextLayer,
         renderThumbnails,
         highlightThumbnail,
+        enableSelection,
+        syncOverlay,
         search,
+        searchNext,
+        searchPrev,
+        redrawSearch,
+        clearSearch,
         renderAllPages,
         destroy
     };

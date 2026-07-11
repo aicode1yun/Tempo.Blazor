@@ -65,6 +65,30 @@
   },
   "items": [
     {
+      "itemName": "PdfTextSelection",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Describes a text selection captured from the PDF text layer: the selected text, the one-based page it belongs to, and the normalized highlight rectangles covering it.",
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/PdfTextSelection.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "IsValid",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Returns true when the selection has text and at least one valid rectangle."
+        },
+        {
+          "name": "ToAnchor",
+          "kind": "Method",
+          "type": "DocumentCommentAnchor",
+          "description": "Builds a text range anchor from this selection."
+        }
+      ]
+    },
+    {
       "itemName": "PdfViewMode",
       "kind": "Enum",
       "category": "Components",
@@ -105,6 +129,171 @@
       ]
     },
     {
+      "itemName": "TmPdfAnnotationLayer",
+      "kind": "Component",
+      "category": "Files",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Overlay that renders PDF annotation highlights and margin markers over the current page. Used internally by TmPdfViewer when annotations are enabled, reusing the shared document comment models.",
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotationLayer.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Files"
+      ],
+      "parameters": [
+        {
+          "name": "CurrentUserId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Current user id used for mention styling."
+        },
+        {
+          "name": "Disabled",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether marker interaction is disabled."
+        },
+        {
+          "name": "DraftAnchor",
+          "type": "DocumentCommentAnchor?",
+          "isRequired": false,
+          "description": "Current draft anchor for a pending, not-yet-saved annotation."
+        },
+        {
+          "name": "OnThreadSelected",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Callback invoked when a thread marker or highlight is selected."
+        },
+        {
+          "name": "PageNumber",
+          "type": "int",
+          "isRequired": false,
+          "default": "1",
+          "description": "One-based current page number."
+        },
+        {
+          "name": "SelectedThreadId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Selected thread id."
+        },
+        {
+          "name": "ShowResolved",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether resolved threads should be rendered."
+        },
+        {
+          "name": "Threads",
+          "type": "IReadOnlyList<DocumentCommentThread>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Annotation threads available to render."
+        }
+      ]
+    },
+    {
+      "itemName": "TmPdfAnnotationThreadPanel",
+      "kind": "Component",
+      "category": "Files",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Side panel listing PDF annotation threads with per-thread comment detail, reply, resolve/reopen, delete, a resolved filter, and a composer for commenting on the current text selection. Used internally by TmPdfViewer when annotations are enabled.",
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotationThreadPanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Files"
+      ],
+      "parameters": [
+        {
+          "name": "CurrentUserId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Current user id used for mention styling."
+        },
+        {
+          "name": "Disabled",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether panel interaction is disabled."
+        },
+        {
+          "name": "OnCreateThreadRequested",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Callback invoked with the body of a new thread requested from the pending selection."
+        },
+        {
+          "name": "OnDeleteRequested",
+          "type": "EventCallback<DocumentCommentDeleteRequest>",
+          "isRequired": false,
+          "description": "Callback invoked when deleting a comment is requested."
+        },
+        {
+          "name": "OnReopenRequested",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Callback invoked when reopening a thread is requested."
+        },
+        {
+          "name": "OnReplyRequested",
+          "type": "EventCallback<DocumentCommentReplyRequest>",
+          "isRequired": false,
+          "description": "Callback invoked when a reply is requested."
+        },
+        {
+          "name": "OnResolveRequested",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Callback invoked when resolving a thread is requested."
+        },
+        {
+          "name": "OnSelectionDismissed",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Callback invoked when the pending selection is dismissed."
+        },
+        {
+          "name": "PendingSelection",
+          "type": "PdfTextSelection?",
+          "isRequired": false,
+          "description": "Pending text selection awaiting a new comment, when present."
+        },
+        {
+          "name": "SelectedThreadId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Selected thread id."
+        },
+        {
+          "name": "SelectedThreadIdChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Callback invoked when the selected thread id changes."
+        },
+        {
+          "name": "ShowResolved",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether resolved threads are shown."
+        },
+        {
+          "name": "ShowResolvedChanged",
+          "type": "EventCallback<bool>",
+          "isRequired": false,
+          "description": "Callback invoked when the resolved filter toggles."
+        },
+        {
+          "name": "Threads",
+          "type": "IReadOnlyList<DocumentCommentThread>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Annotation threads to render."
+        }
+      ]
+    },
+    {
       "itemName": "TmPdfViewer",
       "kind": "Component",
       "category": "Files",
@@ -131,16 +320,58 @@
           "description": "Whether to allow downloading the PDF. Default is true."
         },
         {
+          "name": "AnnotationProvider",
+          "type": "IPdfAnnotationProvider?",
+          "isRequired": false,
+          "description": "Provider used to load and persist annotation threads when is true. When omitted, an in-memory provider keeps annotations for the current session."
+        },
+        {
+          "name": "Annotations",
+          "type": "IReadOnlyList<DocumentCommentThread>?",
+          "isRequired": false,
+          "description": "Optional seed threads used when no is supplied."
+        },
+        {
+          "name": "AnnotationsChanged",
+          "type": "EventCallback<IReadOnlyList<DocumentCommentThread>>",
+          "isRequired": false,
+          "description": "Callback invoked when the loaded annotation set changes."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
           "description": "Callback when the view mode changes."
         },
         {
+          "name": "CurrentUser",
+          "type": "DocumentCommentUser?",
+          "isRequired": false,
+          "description": "Author applied to annotations created by the current viewer."
+        },
+        {
+          "name": "DocumentId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Stable document identifier used by the annotation provider. Falls back to ."
+        },
+        {
+          "name": "EnableAnnotations",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the annotation layer and comments panel are enabled. Default is false."
+        },
+        {
           "name": "Height",
           "type": "string?",
           "isRequired": false,
           "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "OnTextSelected",
+          "type": "EventCallback<PdfTextSelection>",
+          "isRequired": false,
+          "description": "Callback invoked when text is selected in the viewer text layer."
         },
         {
           "name": "Page",
@@ -167,6 +398,12 @@
           "type": "EventCallback<double>",
           "isRequired": false,
           "description": "Current zoom scale. Supports two-way binding."
+        },
+        {
+          "name": "ShowResolvedAnnotations",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether resolved annotation threads are shown by default. Default is false."
         },
         {
           "name": "ShowSearch",
@@ -237,11 +474,11 @@
     }
   ],
   "summary": {
-    "itemCount": 3,
-    "manualItemCount": 3,
-    "generatedItemCount": 3,
+    "itemCount": 6,
+    "manualItemCount": 6,
+    "generatedItemCount": 6,
     "generatedOnlyItemCount": 0,
-    "componentCount": 1,
-    "publicApiTypeCount": 2
+    "componentCount": 3,
+    "publicApiTypeCount": 3
   }
 }
