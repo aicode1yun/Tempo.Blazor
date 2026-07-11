@@ -718,6 +718,8 @@
   "TmDatePicker_Placeholder": "Select date",
   "TmDatePicker_PreviousMonth": "Previous month",
   "TmDatePicker_Today": "Today",
+  "TmDecimalInput_Decrease": "Decrease",
+  "TmDecimalInput_Increase": "Increase",
   "TmDateRangePicker_Clear": "Clear",
   "TmDateRangePicker_Done": "Done",
   "TmDateRangePicker_From": "From",

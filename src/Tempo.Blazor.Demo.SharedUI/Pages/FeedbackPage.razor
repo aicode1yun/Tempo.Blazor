@@ -711,7 +711,7 @@
 </section>
 
 <!-- Number Input -->
-<section class="demo-section">
+<section class="demo-section" data-testid="number-input-section">
     <div class="flex items-center space-x-2 mb-4">
         <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Number Input</h2>
         <span class="px-2 py-0.5 text-xs font-medium bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 rounded-full">+/- Buttons</span>
@@ -729,6 +729,10 @@
                            Label="Duration" Suffix="days" Min="0" Max="365" />
 
             <TmNumberInput Value="5" Label="Without buttons" ShowButtons="false" Placeholder="Enter number" />
+
+            <div data-testid="number-input-error">
+                <TmNumberInput Value="0" Label="With error" Error="Quantity must be at least 1." />
+            </div>
         </div>
     </div>
 </section>

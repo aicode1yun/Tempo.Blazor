@@ -288,6 +288,8 @@
   "TmDatePicker_Placeholder": "Sélectionner une date",
   "TmDatePicker_PreviousMonth": "Mois précédent",
   "TmDatePicker_Today": "Aujourd'hui",
+  "TmDecimalInput_Decrease": "Diminuer",
+  "TmDecimalInput_Increase": "Augmenter",
   "TmDateRangePicker_Clear": "Effacer",
   "TmDateRangePicker_Done": "Terminé",
   "TmDateRangePicker_From": "Du",

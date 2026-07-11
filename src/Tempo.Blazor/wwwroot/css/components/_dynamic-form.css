@@ -75,7 +75,7 @@
 
 /* ── Required star ─────────────────────────────────────── */
 .tm-dynamic-form__required {
-    color: var(--tm-color-error-500);
+    color: var(--tm-color-danger);
     margin-left: 0.125rem;
 }
 
