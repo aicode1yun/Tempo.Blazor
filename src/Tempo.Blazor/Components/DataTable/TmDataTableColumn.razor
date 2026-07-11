@@ -43,6 +43,12 @@
     /// <summary>Minimum column width CSS value.</summary>
     [Parameter] public string? MinWidth { get; set; }
 
+    /// <summary>Whether the user can drag-resize this column. Default false.</summary>
+    [Parameter] public bool Resizable { get; set; }
+
+    /// <summary>Default pin state (left/right/none). User pin changes override this at runtime. Default None.</summary>
+    [Parameter] public ColumnPin Pinned { get; set; } = ColumnPin.None;
+
     /// <summary>Horizontal text alignment in cells.</summary>
     [Parameter] public ColumnAlign Align { get; set; } = ColumnAlign.Left;
 

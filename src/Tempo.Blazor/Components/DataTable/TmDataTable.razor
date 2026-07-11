@@ -139,13 +139,13 @@
                         @foreach (var col in _visibleColumns)
                         {
                             <th class="@GetHeaderClass(col)"
-                                style="@GetHeaderStyle(col)"
+                                style="@GetColumnStyle(col)"
                                 data-sortable="@col.Sortable.ToString().ToLower()"
                                 draggable="@(col.Groupable ? "true" : "false")"
                                 aria-sort="@GetAriaSortValue(col)"
                                 @ondragstart="() => OnColumnDragStart(col.Key)"
                                 @ondragend="OnColumnDragEnd"
-                                @onclick="() => SortByAsync(col)">
+                                @onclick="e => SortByAsync(col, e.ShiftKey)">
                                 @if (col.HeaderTemplate is not null)
                                 {
                                     @col.HeaderTemplate
@@ -157,6 +157,29 @@
                                 @if (col.Sortable)
                                 {
                                     <span class="tm-sort-icon @GetSortIconClass(col)" aria-hidden="true"></span>
+                                    @if (_sortDescriptors.Count > 1 && GetColumnSortIndex(col.Key) >= 0)
+                                    {
+                                        <span class="tm-sort-order" aria-hidden="true">@(GetColumnSortIndex(col.Key) + 1)</span>
+                                    }
+                                }
+                                @if (ShowColumnMenu)
+                                {
+                                    <button type="button"
+                                            class="tm-col-pin-btn @(GetPin(col) != ColumnPin.None ? "tm-col-pin-btn--active" : "")"
+                                            title="@Loc["TmDataTable_PinColumn"]"
+                                            aria-label="@Loc["TmDataTable_PinColumn"]"
+                                            data-testid="pin-@col.Key"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => CyclePinAsync(col)">
+                                        <span aria-hidden="true">@GetPinGlyph(col)</span>
+                                    </button>
+                                }
+                                @if (col.Resizable)
+                                {
+                                    <span class="tm-col-resize-handle"
+                                          data-testid="resize-@col.Key"
+                                          @onpointerdown:stopPropagation="true"
+                                          @onpointerdown="e => StartColumnResizeAsync(col, e)"></span>
                                 }
                             </th>
                         }
@@ -239,7 +262,7 @@
                             }
                             @foreach (var col in _visibleColumns)
                             {
-                                <td class="@GetCellClass(col)" style="@GetCellStyle(col)">
+                                <td class="@GetCellClass(col)" style="@GetColumnStyle(col)">
                                     @if (col.CellTemplate is not null)
                                     {
                                         @col.CellTemplate(rowItem)
@@ -274,7 +297,7 @@
                             }
                             @foreach (var col in _visibleColumns)
                             {
-                                <td class="@GetCellClass(col)" style="@GetCellStyle(col)">
+                                <td class="@GetCellClass(col)" style="@GetColumnStyle(col)">
                                     @if (col.CellTemplate is not null)
                                     {
                                         @col.CellTemplate(rowItem)
