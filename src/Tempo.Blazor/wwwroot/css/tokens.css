@@ -23,6 +23,8 @@
   --tm-color-primary-active:   var(--tm-color-primary-700);
   --tm-color-primary-subtle:   var(--tm-color-primary-50);
   --tm-color-primary-text:     var(--tm-color-primary-800);
+  /* RGB channels of --tm-color-primary-500, for rgba() alpha compositing. */
+  --tm-color-primary-500-rgb:  59, 130, 246;
 
   /* Secondary (gray) */
   --tm-color-secondary:        #6b7280;
@@ -111,8 +113,12 @@
   --tm-line-height-relaxed:    1.75;
 
   /* ── Spacing ────────────────────────────────────────────────── */
+  --tm-space-0-5: 0.125rem; /* 2px */
   --tm-space-1:  0.25rem;   /* 4px */
+  --tm-space-1-5: 0.375rem; /* 6px */
   --tm-space-2:  0.5rem;    /* 8px */
+  --tm-space-2-5: 0.625rem; /* 10px */
+  --tm-space-3-5: 0.875rem; /* 14px */
   --tm-space-3:  0.75rem;   /* 12px */
   --tm-space-4:  1rem;      /* 16px */
   --tm-space-5:  1.25rem;   /* 20px */

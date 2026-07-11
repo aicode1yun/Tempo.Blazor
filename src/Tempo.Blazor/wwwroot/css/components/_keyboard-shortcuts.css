@@ -51,7 +51,7 @@
 }
 
 .tm-keyboard-shortcuts-close:hover {
-    background: var(--tm-bg-hover, #f1f5f9);
+    background: var(--tm-color-surface-hover, #f1f5f9);
     color: var(--tm-text-primary, #0f172a);
 }
 

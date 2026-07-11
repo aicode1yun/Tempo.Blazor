@@ -4,9 +4,9 @@
 
 .tm-kanban {
     display: flex;
-    gap: var(--tm-spacing-4, 1rem);
+    gap: var(--tm-space-4, 1rem);
     overflow-x: auto;
-    padding-bottom: var(--tm-spacing-2, 0.5rem);
+    padding-bottom: var(--tm-space-2, 0.5rem);
     min-height: 200px;
 }
 
@@ -24,7 +24,7 @@
 }
 
 .tm-kanban__column--over-limit {
-    border-color: var(--tm-color-danger-300, #fca5a5);
+    border-color: var(--tm-color-danger-soft-border);
     background-color: var(--tm-color-danger-subtle);
 }
 
@@ -33,8 +33,8 @@
 .tm-kanban__header {
     display: flex;
     align-items: center;
-    gap: var(--tm-spacing-2, 0.5rem);
-    padding: var(--tm-spacing-3, 0.75rem);
+    gap: var(--tm-space-2, 0.5rem);
+    padding: var(--tm-space-3, 0.75rem);
     border-bottom: 1px solid var(--tm-border-color);
 }
 
@@ -73,16 +73,16 @@
 .tm-kanban__cards {
     flex: 1;
     overflow-y: auto;
-    padding: var(--tm-spacing-2, 0.5rem);
+    padding: var(--tm-space-2, 0.5rem);
     display: flex;
     flex-direction: column;
-    gap: var(--tm-spacing-2, 0.5rem);
+    gap: var(--tm-space-2, 0.5rem);
 }
 
 /* ── Card ── */
 
 .tm-kanban__card {
-    padding: var(--tm-spacing-3, 0.75rem);
+    padding: var(--tm-space-3, 0.75rem);
     background-color: var(--tm-bg-surface);
     border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-md, 0.5rem);
@@ -106,12 +106,12 @@
 .tm-kanban--swimlanes {
     flex-direction: column;
     align-items: stretch;
-    gap: var(--tm-spacing-3, 0.75rem);
+    gap: var(--tm-space-3, 0.75rem);
 }
 
 .tm-kanban__column-headers {
     display: flex;
-    gap: var(--tm-spacing-4, 1rem);
+    gap: var(--tm-space-4, 1rem);
     position: sticky;
     top: 0;
     z-index: 2;
@@ -134,8 +134,8 @@
 .tm-kanban__swimlane-header {
     display: flex;
     align-items: center;
-    gap: var(--tm-spacing-2, 0.5rem);
-    padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-3, 0.75rem);
+    gap: var(--tm-space-2, 0.5rem);
+    padding: var(--tm-space-2, 0.5rem) var(--tm-space-3, 0.75rem);
     background-color: var(--tm-bg-muted);
     border-bottom: 1px solid var(--tm-border-color);
     position: sticky;
@@ -198,8 +198,8 @@
 
 .tm-kanban__swimlane-body {
     display: flex;
-    gap: var(--tm-spacing-4, 1rem);
-    padding: var(--tm-spacing-2, 0.5rem);
+    gap: var(--tm-space-4, 1rem);
+    padding: var(--tm-space-2, 0.5rem);
 }
 
 .tm-kanban__column--lane-cell {
@@ -231,7 +231,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--tm-spacing-6, 1.5rem);
+    padding: var(--tm-space-6, 1.5rem);
     color: var(--tm-text-tertiary);
     font-size: var(--tm-font-size-sm, 0.875rem);
     border: 2px dashed var(--tm-border-color);
@@ -241,7 +241,6 @@
 
 [data-theme="dark"] .tm-kanban__column--over-limit,
 .tm-dark .tm-kanban__column--over-limit {
-    border-color: var(--tm-color-danger-700, #b91c1c);
     background-color: rgba(239, 68, 68, 0.1);
 }
 

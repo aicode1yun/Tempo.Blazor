@@ -6,7 +6,7 @@
 .tm-drawer__overlay {
     position: fixed;
     inset: 0;
-    z-index: var(--tm-z-modal-overlay, 1040);
+    z-index: var(--tm-z-overlay, 1040);
     background-color: rgba(0, 0, 0, 0.5);
     animation: tm-fade-in 0.2s ease;
 }

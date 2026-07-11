@@ -6,7 +6,7 @@
 }
 .tm-form-section-header--collapsible { cursor: pointer; user-select: none; }
 .tm-form-section-header--collapsible:hover .tm-form-section-title { color: var(--tm-color-primary); }
-.tm-form-section-title  { font-size: var(--tm-font-size-base); font-weight: var(--tm-font-weight-semibold); margin: 0; }
+.tm-form-section-title  { font-size: var(--tm-font-size-md); font-weight: var(--tm-font-weight-semibold); margin: 0; }
 .tm-form-section-desc   { font-size: var(--tm-font-size-sm); color: var(--tm-text-secondary); margin: 0 0 var(--tm-space-3); }
 .tm-form-section-toggle { font-size: var(--tm-font-size-xs); color: var(--tm-text-tertiary); }
 .tm-form-section-body   { display: flex; flex-direction: column; gap: var(--tm-space-4); }

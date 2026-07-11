@@ -137,18 +137,14 @@ public class DesignTokenDefinitionTests
     }
 
     [Fact]
-    public void ComponentStylesheets_DoNotGrowTheUndeclaredTokenDebt()
+    public void ComponentStylesheets_HaveNoUndeclaredTokenDebt()
     {
-        // Remaining debt outside the migrated components: 70 aliases that were never declared
-        // (--tm-spacing-* vs --tm-space-*, --tm-bg-hover, --tm-color-danger-600, the rich-editor
-        // colour ramps, …), spread over this many (file, token) pairs. Tracked here so the number
-        // can only go down, never up.
-        const int KnownUndeclaredTokenUsages = 170;
-
+        // The alias debt (--tm-spacing-* vs --tm-space-*, --tm-bg-hover, --tm-color-danger-600,
+        // the rich-editor colour ramps, …) has been retired: every component token now resolves.
         var offenders = PhantomTokenUsages();
 
-        offenders.Count.Should().BeLessThanOrEqualTo(KnownUndeclaredTokenUsages,
-            "no component may introduce a new token that is not declared in tokens.css/tokens-dark.css; "
-            + $"currently undeclared: {string.Join(", ", offenders.Take(5))}…");
+        offenders.Should().BeEmpty(
+            "every component must style itself with tokens declared in tokens.css/tokens-dark.css "
+            + "(or a component-local custom property)");
     }
 }

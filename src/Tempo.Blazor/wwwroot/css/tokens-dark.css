@@ -27,6 +27,7 @@
   --tm-color-primary-hover:  var(--tm-color-primary-300);
   --tm-color-primary-text:   var(--tm-color-primary-300);
   --tm-color-primary-subtle: rgba(59, 130, 246, 0.15);
+  --tm-color-primary-500-rgb: 96, 165, 250;
 
   /* Semantic colors — brighter on dark */
   --tm-color-success:        #4ade80;

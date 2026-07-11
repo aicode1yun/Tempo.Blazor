@@ -15,7 +15,7 @@
 .tm-calendar-view__day-cell {
     position: relative;
     min-height: 80px;
-    padding: var(--tm-spacing-1, 0.25rem);
+    padding: var(--tm-space-1, 0.25rem);
     border: 1px solid var(--tm-border-color);
     display: flex;
     flex-direction: column;

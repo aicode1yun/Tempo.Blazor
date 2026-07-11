@@ -6,7 +6,7 @@
 
 .tm-wf-designer {
     display: flex;
-    gap: var(--tm-spacing-2, 0.5rem);
+    gap: var(--tm-space-2, 0.5rem);
     width: 100%;
     min-height: 400px;
 }
@@ -107,8 +107,8 @@
     flex: 0 0 160px;
     display: flex;
     flex-direction: column;
-    gap: var(--tm-spacing-2, 0.5rem);
-    padding: var(--tm-spacing-3, 0.75rem);
+    gap: var(--tm-space-2, 0.5rem);
+    padding: var(--tm-space-3, 0.75rem);
     background-color: var(--tm-bg-muted);
     border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-lg, 0.75rem);
@@ -118,13 +118,13 @@
     font-size: var(--tm-font-size-sm, 0.875rem);
     font-weight: 600;
     color: var(--tm-text-primary);
-    margin-bottom: var(--tm-spacing-1, 0.25rem);
+    margin-bottom: var(--tm-space-1, 0.25rem);
 }
 
 .tm-wf-toolbox__section {
     display: flex;
     flex-direction: column;
-    gap: var(--tm-spacing-1, 0.25rem);
+    gap: var(--tm-space-1, 0.25rem);
 }
 
 .tm-wf-toolbox__section-title {
@@ -133,14 +133,14 @@
     color: var(--tm-text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-top: var(--tm-spacing-2, 0.5rem);
+    margin-top: var(--tm-space-2, 0.5rem);
 }
 
 .tm-wf-toolbox__btn {
     display: flex;
     align-items: center;
-    gap: var(--tm-spacing-2, 0.5rem);
-    padding: var(--tm-spacing-2, 0.5rem);
+    gap: var(--tm-space-2, 0.5rem);
+    padding: var(--tm-space-2, 0.5rem);
     background: var(--tm-bg-surface);
     border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-md, 0.5rem);
@@ -161,12 +161,12 @@
 }
 
 .tm-wf-toolbox__btn--danger {
-    color: var(--tm-color-danger-600, #dc2626);
+    color: var(--tm-color-danger-text);
 }
 
 .tm-wf-toolbox__btn--danger:hover {
     background-color: var(--tm-color-danger-subtle);
-    border-color: var(--tm-color-danger-300, #fca5a5);
+    border-color: var(--tm-color-danger-soft-border);
 }
 
 .tm-wf-toolbox__btn-icon {
@@ -195,7 +195,7 @@
 .tm-wf-toolbox__divider {
     height: 1px;
     background-color: var(--tm-border-color);
-    margin: var(--tm-spacing-1, 0.25rem) 0;
+    margin: var(--tm-space-1, 0.25rem) 0;
 }
 
 /* ── Properties panel ── */
@@ -215,7 +215,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--tm-spacing-3, 0.75rem);
+    padding: var(--tm-space-3, 0.75rem);
     border-bottom: 1px solid var(--tm-border-color);
     background-color: var(--tm-bg-surface);
 }
@@ -243,16 +243,16 @@
 .tm-wf-properties__body {
     flex: 1;
     overflow-y: auto;
-    padding: var(--tm-spacing-3, 0.75rem);
+    padding: var(--tm-space-3, 0.75rem);
     display: flex;
     flex-direction: column;
-    gap: var(--tm-spacing-3, 0.75rem);
+    gap: var(--tm-space-3, 0.75rem);
 }
 
 .tm-wf-properties__field {
     display: flex;
     flex-direction: column;
-    gap: var(--tm-spacing-1, 0.25rem);
+    gap: var(--tm-space-1, 0.25rem);
 }
 
 .tm-wf-properties__label {
@@ -263,8 +263,8 @@
 
 .tm-wf-properties__footer {
     display: flex;
-    gap: var(--tm-spacing-2, 0.5rem);
-    padding: var(--tm-spacing-3, 0.75rem);
+    gap: var(--tm-space-2, 0.5rem);
+    padding: var(--tm-space-3, 0.75rem);
     border-top: 1px solid var(--tm-border-color);
     background-color: var(--tm-bg-surface);
 }
@@ -298,7 +298,7 @@
 
 .tm-wf-type-group {
     display: flex;
-    gap: var(--tm-spacing-2, 0.5rem);
+    gap: var(--tm-space-2, 0.5rem);
 }
 
 .tm-wf-type-option {
@@ -319,9 +319,9 @@
 .tm-wf-zoom-controls {
     display: flex;
     align-items: center;
-    gap: var(--tm-spacing-1, 0.25rem);
+    gap: var(--tm-space-1, 0.25rem);
     margin-top: auto;
-    padding-top: var(--tm-spacing-2, 0.5rem);
+    padding-top: var(--tm-space-2, 0.5rem);
     border-top: 1px solid var(--tm-border-color);
 }
 
@@ -367,9 +367,9 @@
 .tm-wf-context-menu__item {
     display: flex;
     align-items: center;
-    gap: var(--tm-spacing-2, 0.5rem);
+    gap: var(--tm-space-2, 0.5rem);
     width: 100%;
-    padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-3, 0.75rem);
+    padding: var(--tm-space-2, 0.5rem) var(--tm-space-3, 0.75rem);
     background: none;
     border: none;
     font-size: var(--tm-font-size-sm, 0.875rem);
@@ -383,7 +383,7 @@
 }
 
 .tm-wf-context-menu__item--danger {
-    color: var(--tm-color-danger-600, #dc2626);
+    color: var(--tm-color-danger-text);
 }
 
 .tm-wf-context-menu__item--danger:hover {
@@ -405,7 +405,7 @@
 
 .tm-wf-properties__input {
     width: 100%;
-    padding: var(--tm-spacing-2, 0.5rem);
+    padding: var(--tm-space-2, 0.5rem);
     font-size: var(--tm-font-size-sm, 0.875rem);
     border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-md, 0.5rem);
@@ -427,10 +427,10 @@
 .tm-wf-properties__from-to {
     display: flex;
     align-items: center;
-    gap: var(--tm-spacing-2, 0.5rem);
+    gap: var(--tm-space-2, 0.5rem);
     font-size: var(--tm-font-size-sm, 0.875rem);
     color: var(--tm-text-secondary);
-    padding: var(--tm-spacing-2, 0.5rem);
+    padding: var(--tm-space-2, 0.5rem);
     background-color: var(--tm-bg-muted);
     border-radius: var(--tm-radius-md, 0.5rem);
 }
@@ -441,7 +441,7 @@
 
 .tm-wf-properties__save {
     flex: 1;
-    padding: var(--tm-spacing-2, 0.5rem) var(--tm-spacing-3, 0.75rem);
+    padding: var(--tm-space-2, 0.5rem) var(--tm-space-3, 0.75rem);
     background-color: var(--tm-color-primary-500, #3b82f6);
     color: var(--tm-color-white);
     border: none;
@@ -459,8 +459,8 @@
 
 .tm-wf-minimap {
     position: absolute;
-    bottom: var(--tm-spacing-3, 0.75rem);
-    right: var(--tm-spacing-3, 0.75rem);
+    bottom: var(--tm-space-3, 0.75rem);
+    right: var(--tm-space-3, 0.75rem);
     width: 180px;
     height: 120px;
     background-color: rgba(255, 255, 255, 0.92);
@@ -511,11 +511,6 @@
 [data-theme="dark"] .tm-wf-minimap,
 .tm-dark .tm-wf-minimap {
     background-color: rgba(17, 24, 39, 0.92);
-}
-
-[data-theme="dark"] .tm-wf-context-menu__item--danger,
-.tm-dark .tm-wf-context-menu__item--danger {
-    color: var(--tm-color-danger-400, #f87171);
 }
 
 [data-theme="dark"] .tm-wf-context-menu__item--danger:hover,

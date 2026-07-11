@@ -72,7 +72,7 @@
   border: 1px solid var(--tm-border-color);
   border-radius: var(--tm-radius-md);
   box-shadow: var(--tm-shadow-lg);
-  z-index: var(--tm-z-index-dropdown, 1000);
+  z-index: var(--tm-z-dropdown, 1000);
 }
 
 .tm-menu__item:hover > .tm-menu__submenu {

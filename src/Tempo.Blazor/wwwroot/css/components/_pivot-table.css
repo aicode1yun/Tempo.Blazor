@@ -391,7 +391,7 @@
 }
 
 .tm-pivot-corner {
-  background-color: var(--tm-bg-surface-tertiary);
+  background-color: var(--tm-bg-surface-secondary);
 }
 
 .tm-pivot-col-header {

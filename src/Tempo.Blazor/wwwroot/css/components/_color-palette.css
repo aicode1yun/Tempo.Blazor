@@ -55,5 +55,5 @@
 }
 
 .tm-color-palette-clear:hover {
-    background: var(--tm-bg-hover);
+    background: var(--tm-color-surface-hover);
 }

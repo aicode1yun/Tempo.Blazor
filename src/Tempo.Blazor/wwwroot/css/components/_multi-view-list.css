@@ -156,7 +156,7 @@
 .tm-mvl-card-footer {
   margin-top: var(--tm-space-3);
   padding-top: var(--tm-space-2);
-  border-top: 1px solid var(--tm-border-color-subtle, var(--tm-border-color));
+  border-top: 1px solid var(--tm-color-border-subtle, var(--tm-border-color));
 }
 .tm-mvl-card-date {
   font-size: var(--tm-font-size-xs);
@@ -238,7 +238,7 @@
   gap: var(--tm-space-1);
   padding: var(--tm-space-1) var(--tm-space-3);
   border: 1px solid var(--tm-border-color, #d1d5db);
-  border-radius: var(--tm-radius, 0.375rem);
+  border-radius: var(--tm-radius-md, 0.375rem);
   background: var(--tm-surface, white);
   color: var(--tm-text-secondary, #6b7280);
   font-size: var(--tm-font-size-sm, 0.875rem);
@@ -258,7 +258,7 @@
   margin-top: var(--tm-space-1);
   padding: var(--tm-space-2);
   border: 1px solid var(--tm-border-color, #d1d5db);
-  border-radius: var(--tm-radius, 0.375rem);
+  border-radius: var(--tm-radius-md, 0.375rem);
   background: var(--tm-surface, white);
   box-shadow: var(--tm-shadow-lg, 0 10px 15px -3px rgba(0,0,0,0.1));
 }
@@ -268,7 +268,7 @@
   align-items: center;
   gap: var(--tm-space-2);
   padding: var(--tm-space-1) var(--tm-space-2);
-  border-radius: var(--tm-radius, 0.375rem);
+  border-radius: var(--tm-radius-md, 0.375rem);
   cursor: pointer;
   font-size: var(--tm-font-size-sm, 0.875rem);
 }
@@ -289,7 +289,7 @@
   gap: var(--tm-space-2);
   padding: var(--tm-space-2) var(--tm-space-3);
   background: var(--tm-surface-secondary, #f9fafb);
-  border-radius: var(--tm-radius, 0.375rem);
+  border-radius: var(--tm-radius-md, 0.375rem);
   margin-bottom: var(--tm-space-2);
   font-weight: 600;
 }
@@ -312,7 +312,7 @@
   height: 1.5rem;
   padding: 0;
   border: none;
-  border-radius: var(--tm-radius, 0.375rem);
+  border-radius: var(--tm-radius-md, 0.375rem);
   background: transparent;
   color: var(--tm-text-secondary, #6b7280);
   cursor: pointer;
@@ -320,7 +320,7 @@
 }
 
 .tm-mvl-group-toggle:hover {
-  background: var(--tm-surface-tertiary, #e5e7eb);
+  background: var(--tm-bg-surface-secondary, #e5e7eb);
 }
 
 .tm-mvl-group-label {

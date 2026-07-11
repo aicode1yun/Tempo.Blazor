@@ -31,14 +31,9 @@
 
 /* ── Copied state ──────────────────────────────────────── */
 .tm-copy-button--copied {
-    color: var(--tm-color-success-600);
+    color: var(--tm-color-success-text);
 }
 
 .tm-copy-button--copied:hover {
-    color: var(--tm-color-success-700);
-}
-
-[data-theme="dark"] .tm-copy-button--copied,
-.tm-dark .tm-copy-button--copied {
-    color: var(--tm-color-success-400);
+    color: var(--tm-color-success-text);
 }

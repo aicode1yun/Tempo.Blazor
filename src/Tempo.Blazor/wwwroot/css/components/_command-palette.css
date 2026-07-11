@@ -37,7 +37,7 @@
   background: var(--tm-bg-surface);
   cursor: pointer;
 }
-.tm-command-palette-close:hover { color: var(--tm-text-primary); background: var(--tm-bg-subtle); }
+.tm-command-palette-close:hover { color: var(--tm-text-primary); background: var(--tm-bg-surface-secondary); }
 .tm-command-palette-input {
   flex: 1;
   font-family: var(--tm-font-sans);

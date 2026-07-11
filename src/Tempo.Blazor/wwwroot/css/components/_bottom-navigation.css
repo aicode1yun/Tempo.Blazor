@@ -9,7 +9,7 @@
   height: 4rem;
   background-color: var(--tm-bg-surface);
   border-top: 1px solid var(--tm-border-color);
-  z-index: var(--tm-z-index-fixed, 1030);
+  z-index: var(--tm-z-sticky, 1030);
   padding-bottom: env(safe-area-inset-bottom);
 }
 

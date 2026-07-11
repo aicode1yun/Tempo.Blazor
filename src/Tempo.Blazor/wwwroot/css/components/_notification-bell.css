@@ -60,7 +60,7 @@
     width: 360px;
     max-width: calc(100vw - 2rem);
     background: var(--tm-bg-surface);
-    border: 1px solid var(--tm-border);
+    border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-lg);
     box-shadow: var(--tm-shadow-lg);
     z-index: var(--tm-z-dropdown, 1000);
@@ -74,7 +74,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--tm-border);
+    border-bottom: 1px solid var(--tm-border-color);
     gap: 0.5rem;
 }
 
@@ -170,7 +170,7 @@
 
 .tm-notification-bell__time {
     font-size: 0.75rem;
-    color: var(--tm-text-muted);
+    color: var(--tm-text-secondary);
 }
 
 .tm-notification-bell__dot {
@@ -186,7 +186,7 @@
     padding: 2rem 1rem;
     text-align: center;
     font-size: 0.875rem;
-    color: var(--tm-text-muted);
+    color: var(--tm-text-secondary);
 }
 
 /* Dark mode */
