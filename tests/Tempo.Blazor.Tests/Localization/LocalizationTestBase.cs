@@ -239,6 +239,7 @@ public abstract class LocalizationTestBase : TestContext
         ["TmNotionBlock_InsertExisting"]        = "Insert existing…",
         ["TmNotionBlock_DocumentNotFound"]      = "Document not found",
         ["TmNotionBlock_RemoveBlock"]           = "Remove",
+        ["TmNotionEditor_SinglePageRequiresInitialPage"] = "Single-page mode requires an InitialPageId to display.",
 
         // Shared
         ["Tm_Loading"]          = "Loading...",
@@ -506,6 +507,12 @@ public abstract class LocalizationTestBase : TestContext
         // TmButton
         ["TmButton_Loading"] = "Loading",
 
+        // TmQueryInput
+        ["TmQueryInput_Placeholder"]   = "Type a query…",
+        ["TmQueryInput_Loading"]       = "Loading…",
+        ["TmQueryInput_NoSuggestions"] = "No suggestions",
+        ["TmQueryInput_Error"]         = "Suggestions unavailable",
+
         // TmSearchInput
         ["TmSearchInput_Placeholder"] = "Search...",
         ["TmSearchInput_Clear"]       = "Clear search",
@@ -769,6 +776,11 @@ public abstract class LocalizationTestBase : TestContext
 
         // TmInlineEdit
         ["TmInlineEdit_Placeholder"] = "Click to edit",
+
+        // TmKanbanBoard
+        ["TmKanbanBoard_Empty"] = "No items",
+        ["TmKanban_NoSwimlane"] = "No value",
+        ["TmKanban_ToggleSwimlane"] = "Toggle swimlane",
 
         // TmRichEditor - Tokens
         ["TmRichEditor_Token"]          = "Insert variable",
@@ -3475,6 +3487,12 @@ public abstract class LocalizationTestBase : TestContext
 
         // TmButton
         ["TmButton_Loading"] = "Načítání",
+
+        // TmQueryInput
+        ["TmQueryInput_Placeholder"]   = "Zadejte dotaz…",
+        ["TmQueryInput_Loading"]       = "Načítání…",
+        ["TmQueryInput_NoSuggestions"] = "Žádné návrhy",
+        ["TmQueryInput_Error"]         = "Návrhy nedostupné",
 
         // TmSearchInput
         ["TmSearchInput_Placeholder"] = "Hledat...",

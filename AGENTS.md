@@ -289,15 +289,19 @@ Uses `Microsoft.AspNetCore.Mvc.Testing` for integration testing.
 ## Localization
 
 ### Resource Files
-**Location**: `src/Tempo.Blazor/Resources/`
-- `TmResources.resx` – English (default)
-- `TmResources.cs.resx` – Czech
+**Location**: `src/Tempo.Blazor/Resources/` — three embedded JSON files (flat `"Key": "Value"` maps):
+- `TmResources.json` – English (default)
+- `TmResources.cs.json` – Czech
+- `TmResources.fr.json` – French
+
+> Note: these replaced the old `.resx` files; there are no `.resx` resources anymore.
 
 ### Adding New Keys
-1. Add to `TmResources.resx` (English)
-2. Add to `TmResources.cs.resx` (Czech)
-3. Use in component: `@Loc["KeyName"]`
-4. Add to `MockTmLocalizer` in `LocalizationTestBase.cs` for tests
+1. Add the key to `TmResources.json` (English)
+2. Add the key to `TmResources.cs.json` (Czech)
+3. Add the key to `TmResources.fr.json` (French)
+4. Use in a component: `@Loc["KeyName"]` (`ITmLocalizer Loc` is injected globally via `_Imports.razor`)
+5. Add the key to `MockTmLocalizer` in `tests/Tempo.Blazor.Tests/Localization/LocalizationTestBase.cs` (English map in `BuildEnglishLocalizer`, Czech map in `BuildCzechLocalizer`) so component tests resolve it
 
 ### Consuming Application Setup
 ```csharp

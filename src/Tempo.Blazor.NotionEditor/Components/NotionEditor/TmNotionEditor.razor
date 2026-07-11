@@ -17,7 +17,7 @@
     <CascadingValue Value="_context" IsFixed="false">
 
         @* ── Sidebar ───────────────────────────────────────────────────────── *@
-        @if (ShowSidebar && !IsReadOnlyViewMode && !HasNoAccess)
+        @if (EffectiveShowSidebar && !IsReadOnlyViewMode && !HasNoAccess)
         {
             <aside class="tm-notion-sidebar @(_sidebarVisible ? "tm-notion-sidebar--visible" : "tm-notion-sidebar--hidden")"
                    aria-label="@Loc["TmNotionEditor_SidebarLabel"]"
@@ -42,7 +42,7 @@
             <header class="tm-notion-topbar @(_topbarScrolled ? "tm-notion-topbar--scrolled" : "")"
                     role="banner">
 
-                @if (ShowSidebar && !IsReadOnlyViewMode)
+                @if (EffectiveShowSidebar && !IsReadOnlyViewMode)
                 {
                     <button class="tm-notion-sidebar-toggle"
                             type="button"
@@ -57,7 +57,7 @@
                     </button>
                 }
 
-                @if (_navStack.Count > 1)
+                @if (!SinglePageMode && _navStack.Count > 1)
                 {
                     <button class="tm-notion-topbar__back"
                             type="button"
@@ -121,7 +121,7 @@
                                          UserId="@EffectiveCurrentUserId" />
                 }
 
-                @if (_context.AuditProvider is not null && !IsReadOnlyViewMode)
+                @if (_context.AuditProvider is not null && !IsReadOnlyViewMode && !SinglePageMode)
                 {
                     <button class="tm-notion-topbar__tool"
                             type="button"
@@ -150,7 +150,7 @@
                     </svg>
                 </button>
 
-                @if (_context.BlogProvider is not null && !IsReadOnlyViewMode)
+                @if (_context.BlogProvider is not null && !IsReadOnlyViewMode && !SinglePageMode)
                 {
                     <button class="tm-notion-topbar__tool"
                             type="button"
@@ -166,7 +166,7 @@
                     </button>
                 }
 
-                @if (_context.AnalyticsProvider is not null && !IsReadOnlyViewMode)
+                @if (_context.AnalyticsProvider is not null && !IsReadOnlyViewMode && !SinglePageMode)
                 {
                     <button class="tm-notion-topbar__tool"
                             type="button"
@@ -205,7 +205,7 @@
                     </button>
                 }
 
-                @if (_context.WorkItemSource is not null && !IsReadOnlyViewMode)
+                @if (_context.WorkItemSource is not null && !IsReadOnlyViewMode && !SinglePageMode)
                 {
                     <button class="tm-notion-topbar__tasks"
                             type="button"
@@ -298,7 +298,21 @@
             }
 
             @* ── Page content area ────────────────────────────────────────── *@
-            @if (_isLoading)
+            @if (HasSinglePageConfigError)
+            {
+                <div class="tm-notion-load-error" role="alert" data-testid="notion-single-page-config-error">
+                    <svg class="tm-notion-load-error__icon" width="24" height="24" viewBox="0 0 24 24"
+                         fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M12 7v5M12 16h.01" stroke="currentColor" stroke-width="1.5"
+                              stroke-linecap="round"/>
+                    </svg>
+                    <span class="tm-notion-load-error__message">
+                        @Loc["TmNotionEditor_SinglePageRequiresInitialPage"]
+                    </span>
+                </div>
+            }
+            else if (_isLoading)
             {
                 <div class="tm-notion-loading" role="status" aria-label="@Loc["TmNotionEditor_Loading"]" aria-busy="true">
                     <div class="tm-notion-skeleton tm-notion-skeleton--title"></div>
@@ -366,10 +380,13 @@
         @* ── Page Search (Ctrl+P / Cmd+P) ──────────────────────────────────── *@
         <TmNotionPageSearch />
 
-        <TmNotionTemplateGallery Visible="_templateGalleryOpen"
-                                 TemplateProvider="_context.TemplateProvider"
-                                 OnTemplateSelected="HandleTemplateSelectedAsync"
-                                 OnClosed="CloseTemplateGallery" />
+        @if (!SinglePageMode)
+        {
+            <TmNotionTemplateGallery Visible="_templateGalleryOpen"
+                                     TemplateProvider="_context.TemplateProvider"
+                                     OnTemplateSelected="HandleTemplateSelectedAsync"
+                                     OnClosed="CloseTemplateGallery" />
+        }
 
         <TmNotionShortcutsPanel Visible="_shortcutsVisible"
                                 VisibleChanged="HandleShortcutsVisibleChangedAsync" />

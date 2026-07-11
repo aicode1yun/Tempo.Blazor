@@ -198,6 +198,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmTextArea"] = ["text-area"],
             ["TmNumberInput"] = ["number-input"],
             ["TmSearchInput"] = ["search-input"],
+            ["TmQueryInput"] = ["text-input", "search-input"],
             ["TmCurrencyInput"] = ["currency-input"],
             ["TmCheckbox"] = ["checkbox"],
             ["TmRadio"] = ["radio"],
@@ -447,6 +448,19 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("required",    "Required",    PropType.Bool,   false,            cat: "Behavior"),
                 P("disabled",    "Disabled",    PropType.Bool,   false,            cat: "Behavior"),
                 P("readOnly",    "Read Only",   PropType.Bool,   false,            cat: "Behavior"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmQueryInput", Category = "Inputs", DisplayName = "Query Input",
+            DefaultWidth = 320, DefaultHeight = 56,
+            Props =
+            [
+                P("label",       "Label",       PropType.String, "",                cat: "Content"),
+                P("placeholder", "Placeholder", PropType.String, "Type a query...", cat: "Content"),
+                P("monospace",   "Monospace",   PropType.Bool,   true,              cat: "Behavior"),
+                P("disabled",    "Disabled",    PropType.Bool,   false,             cat: "Behavior"),
             ]
         };
 

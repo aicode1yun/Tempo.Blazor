@@ -3645,6 +3645,12 @@
               "description": "Icon name for: Activity, Pulse."
             },
             {
+              "name": "ALargeSmall",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: ALargeSmall, font size."
+            },
+            {
               "name": "AlertCircle",
               "kind": "Field",
               "type": "string",
@@ -3687,6 +3693,12 @@
               "description": "Icon name for: ArrowDown."
             },
             {
+              "name": "ArrowDownToLine",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: ArrowDownToLine, spacing after paragraph."
+            },
+            {
               "name": "ArrowLeft",
               "kind": "Field",
               "type": "string",
@@ -3705,6 +3717,12 @@
               "description": "Icon name for: ArrowUp."
             },
             {
+              "name": "ArrowUpFromLine",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: ArrowUpFromLine, spacing before paragraph."
+            },
+            {
               "name": "AtSign",
               "kind": "Field",
               "type": "string",
@@ -3715,6 +3733,12 @@
               "kind": "Field",
               "type": "string",
               "description": "Icon name for: Award."
+            },
+            {
+              "name": "Ban",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: Ban, Forbidden, Restrict."
             },
             {
               "name": "BarChart2",
@@ -3741,6 +3765,18 @@
               "description": "Icon name for: BellOff, NotificationOff."
             },
             {
+              "name": "BetweenHorizontalEnd",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: BetweenHorizontalEnd, insert row after."
+            },
+            {
+              "name": "BetweenVerticalEnd",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: BetweenVerticalEnd, insert column after."
+            },
+            {
               "name": "Bold",
               "kind": "Field",
               "type": "string",
@@ -3751,6 +3787,18 @@
               "kind": "Field",
               "type": "string",
               "description": "Icon name for: Bookmark."
+            },
+            {
+              "name": "BookOpen",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: BookOpen, Bibliography."
+            },
+            {
+              "name": "BookPlus",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: BookPlus, add citation."
             },
             {
               "name": "Box",
@@ -3775,6 +3823,24 @@
               "kind": "Field",
               "type": "string",
               "description": "Icon name for: Calendar."
+            },
+            {
+              "name": "Captions",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: Captions."
+            },
+            {
+              "name": "CaseSensitive",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: CaseSensitive, change case (Aa)."
+            },
+            {
+              "name": "CaseUpper",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: CaseUpper, uppercase (AB)."
             },
             {
               "name": "Check",
@@ -3825,10 +3891,22 @@
               "description": "Icon name for: Circle."
             },
             {
+              "name": "CircleMinus",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: CircleMinus, remove."
+            },
+            {
               "name": "Clipboard",
               "kind": "Field",
               "type": "string",
               "description": "Icon name for: Clipboard."
+            },
+            {
+              "name": "ClipboardList",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: ClipboardList."
             },
             {
               "name": "Clock",
@@ -3867,6 +3945,12 @@
               "description": "Icon name for: Columns."
             },
             {
+              "name": "Columns3",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: Columns3, three columns / compare."
+            },
+            {
               "name": "Copy",
               "kind": "Field",
               "type": "string",
@@ -3895,6 +3979,12 @@
               "kind": "Field",
               "type": "string",
               "description": "Icon name for: Database."
+            },
+            {
+              "name": "DoubleStrikethrough",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: DoubleStrikethrough (custom glyph, not lucide)."
             },
             {
               "name": "Download",
@@ -3969,6 +4059,12 @@
               "description": "Icon name for: FileText, Document."
             },
             {
+              "name": "FileType",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: FileType, export typed file (PDF)."
+            },
+            {
               "name": "Film",
               "kind": "Field",
               "type": "string",
@@ -4005,6 +4101,12 @@
               "description": "Icon name for: FolderPlus, AddFolder."
             },
             {
+              "name": "GalleryHorizontalEnd",
+              "kind": "Field",
+              "type": "string",
+              "description": "Icon name for: GalleryHorizontalEnd, style gallery."
+            },
+            {
               "name": "Gem",
               "kind": "Field",
               "type": "string",
@@ -4015,108 +4117,6 @@
               "kind": "Field",
               "type": "string",
               "description": "Icon name for: GitCompare, compare."
-            },
-            {
-              "name": "Globe",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: Globe, World."
-            },
-            {
-              "name": "Grid",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: Grid, Layout."
-            },
-            {
-              "name": "GripVertical",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: GripVertical, DragHandle."
-            },
-            {
-              "name": "Hand",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: Hand, Pan."
-            },
-            {
-              "name": "HardDrive",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: HardDrive, Storage."
-            },
-            {
-              "name": "Hash",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: Hash, Number."
-            },
-            {
-              "name": "Heart",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: Heart, Like."
-            },
-            {
-              "name": "HelpCircle",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: HelpCircle, Question."
-            },
-            {
-              "name": "Home",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: Home."
-            },
-            {
-              "name": "Image",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: Image, Picture."
-            },
-            {
-              "name": "IndentDecrease",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: DecreaseIndent."
-            },
-            {
-              "name": "IndentIncrease",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: IncreaseIndent."
-            },
-            {
-              "name": "Info",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: Info, Information."
-            },
-            {
-              "name": "Italic",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: Italic."
-            },
-            {
-              "name": "Key",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: Key."
-            },
-            {
-              "name": "Layers",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: Layers."
-            },
-            {
-              "name": "Layout",
-              "kind": "Field",
-              "type": "string",
-              "description": "Icon name for: Layout."
             }
           ]
         },
@@ -4264,7 +4264,7 @@
           "kind": "Record",
           "category": "Components",
           "namespace": "Tempo.Blazor.Components.DataDisplay",
-          "description": "Event fired when a card is moved between columns.",
+          "description": "Event fired when a card is moved between columns/swimlanes or reordered within a cell. Carries TargetIndex/TargetBeforeItem (drop position) and FromSwimlane/ToSwimlane when swimlanes are enabled.",
           "packageId": "Tempo.Blazor",
           "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/KanbanModels.cs",
           "documentationStatus": "merged",
@@ -4274,6 +4274,16 @@
               "description": "Generic type parameter TItem."
             }
           ]
+        },
+        {
+          "itemName": "KanbanSwimlane",
+          "kind": "Record",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.DataDisplay",
+          "description": "Definition of a Kanban board swimlane (a horizontal grouping of cards that spans every column).",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/KanbanModels.cs",
+          "documentationStatus": "merged"
         },
         {
           "itemName": "ListViewMode",
@@ -4430,6 +4440,46 @@
           "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/QRErrorCorrectionLevel.cs",
           "documentationStatus": "generated",
           "itemName": "QRErrorCorrectionLevel"
+        },
+        {
+          "itemName": "QueryErrorSpan",
+          "kind": "Record",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Inputs",
+          "description": "An error range within the query text (Start, Length, Message) — rendered as a wavy underline with a tooltip.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Inputs/QueryInputModels.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "QuerySuggestion",
+          "kind": "Record",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Inputs",
+          "description": "A single autocomplete suggestion for TmQueryInput (Text, InsertText, Kind, Description).",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Inputs/QueryInputModels.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "QuerySuggestionKind",
+          "kind": "Enum",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Inputs",
+          "description": "Kind of a query suggestion (Field, Operator, Value, Function, Keyword) — drives the icon shown in the TmQueryInput dropdown.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Inputs/QueryInputModels.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "QuerySuggestionRequest",
+          "kind": "Record",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Inputs",
+          "description": "Request passed to a TmQueryInput SuggestionsProvider (Text and CaretPosition).",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Inputs/QueryInputModels.cs",
+          "documentationStatus": "merged"
         },
         {
           "itemName": "RadioLayout",
@@ -5544,7 +5594,7 @@
           "kind": "Component",
           "category": "Data Display",
           "namespace": "Tempo.Blazor.Components.DataDisplay",
-          "description": "Generic drag-and-drop Kanban board with typed items, configurable columns with optional color and WIP limits, custom card templates, and events for card moves and clicks.",
+          "description": "Generic drag-and-drop Kanban board with typed items, configurable columns with optional color and WIP limits, optional horizontal swimlanes, custom card/column/swimlane templates, cross-column and cross-lane moves, in-column reordering with a visual drop indicator, and events for card moves and clicks.",
           "packageId": "Tempo.Blazor",
           "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/TmKanbanBoard.razor",
           "documentationStatus": "merged",
@@ -5575,7 +5625,7 @@
               "name": "ColumnHeaderTemplate",
               "type": "RenderFragment<KanbanColumn>?",
               "isRequired": false,
-              "description": "Custom column header template."
+              "description": "Custom column header template. When supplied it replaces the default header content (title/count/WIP badge)."
             },
             {
               "name": "Columns",
@@ -5601,7 +5651,7 @@
               "name": "EmptyColumnTemplate",
               "type": "RenderFragment?",
               "isRequired": false,
-              "description": "Template for empty columns."
+              "description": "Template rendered inside an empty column/cell in place of the default \"no items\" text."
             },
             {
               "name": "Items",
@@ -5620,7 +5670,38 @@
               "name": "OnItemMoved",
               "type": "EventCallback<KanbanMoveEvent<TItem>>",
               "isRequired": false,
-              "description": "Fires when a card is dragged to a different column."
+              "description": "Fires when a card is dragged to a different column or swimlane. The event carries the target position (TargetIndex / TargetBeforeItem) and, when swimlanes are enabled, FromSwimlane / ToSwimlane."
+            },
+            {
+              "name": "OnItemReordered",
+              "type": "EventCallback<KanbanMoveEvent<TItem>>",
+              "isRequired": false,
+              "description": "Fires when a card is dropped within the same cell (same column and, if enabled, same swimlane) to change its position. When no handler is attached, same-cell drops are a no-op."
+            },
+            {
+              "name": "SwimlaneHeaderTemplate",
+              "type": "RenderFragment<KanbanSwimlane>?",
+              "isRequired": false,
+              "description": "Custom swimlane header template."
+            },
+            {
+              "name": "Swimlanes",
+              "type": "IReadOnlyList<KanbanSwimlane>?",
+              "isRequired": false,
+              "description": "Explicit swimlane definitions (order and titles). When null the lanes are derived from SwimlaneSelector in order of first appearance."
+            },
+            {
+              "name": "SwimlanesCollapsible",
+              "type": "bool",
+              "isRequired": false,
+              "default": "true",
+              "description": "Whether swimlanes can be collapsed/expanded via a toggle. Defaults to true."
+            },
+            {
+              "name": "SwimlaneSelector",
+              "type": "Func<TItem, string?>?",
+              "isRequired": false,
+              "description": "Groups cards into horizontal swimlanes. Returning null places an item in the trailing \"no value\" lane. When null the board renders without swimlanes (classic layout)."
             }
           ],
           "cssClasses": [
@@ -5635,12 +5716,33 @@
             "tm-kanban__wip-limit",
             "tm-kanban__cards",
             "tm-kanban__card",
-            "tm-kanban__empty"
+            "tm-kanban__drop-indicator",
+            "tm-kanban__empty",
+            "tm-kanban--swimlanes",
+            "tm-kanban__column-headers",
+            "tm-kanban__column--header-only",
+            "tm-kanban__column--lane-cell",
+            "tm-kanban__swimlane",
+            "tm-kanban__swimlane--collapsed",
+            "tm-kanban__swimlane-header",
+            "tm-kanban__swimlane-toggle",
+            "tm-kanban__swimlane-color",
+            "tm-kanban__swimlane-title",
+            "tm-kanban__swimlane-count",
+            "tm-kanban__swimlane-body"
           ],
           "examples": [
             {
               "title": "Kanban board with task cards",
               "code": "<TmKanbanBoard TItem=\"TaskItem\"\n               Items=\"@tasks\"\n               Columns=\"@columns\"\n               ColumnSelector=\"t => t.Status\"\n               OnItemMoved=\"HandleTaskMoved\"\n               OnCardClick=\"HandleCardClick\">\n    <CardTemplate Context=\"task\">\n        <div>\n            <strong>@task.Title</strong>\n            <p>@task.Assignee</p>\n        </div>\n    </CardTemplate>\n</TmKanbanBoard>"
+            },
+            {
+              "title": "Reorderable board persisting position",
+              "code": "<TmKanbanBoard TItem=\"TaskItem\"\n               Items=\"@tasks\"\n               Columns=\"@columns\"\n               ColumnSelector=\"t => t.Status\"\n               CardTemplate=\"RenderCard\"\n               OnItemMoved=\"HandleMove\"\n               OnItemReordered=\"HandleMove\" />\n\n@code {\n    void HandleMove(KanbanMoveEvent<TaskItem> e)\n    {\n        var moved = e.Item with { Status = e.ToColumn };\n        tasks.RemoveAll(t => t.Id == e.Item.Id);\n        var at = e.TargetBeforeItem is not null\n            ? tasks.FindIndex(t => t.Id == e.TargetBeforeItem.Id)\n            : tasks.Count;\n        tasks.Insert(at < 0 ? tasks.Count : at, moved);\n    }\n}"
+            },
+            {
+              "title": "Swimlanes grouped by assignee",
+              "code": "<TmKanbanBoard TItem=\"TaskItem\"\n               Items=\"@tasks\"\n               Columns=\"@columns\"\n               ColumnSelector=\"t => t.Status\"\n               SwimlaneSelector=\"t => string.IsNullOrEmpty(t.Assignee) ? null : t.Assignee\"\n               CardTemplate=\"RenderCard\"\n               OnItemMoved=\"HandleMove\"\n               OnItemReordered=\"HandleReorder\" />\n\n@code {\n    // e.ToSwimlane is the target assignee (null = unassigned / \"no value\" lane)\n    void HandleMove(KanbanMoveEvent<TaskItem> e)\n        => Apply(e, e.Item with { Status = e.ToColumn, Assignee = e.ToSwimlane ?? \"\" });\n}"
             }
           ]
         },
@@ -12220,6 +12322,114 @@
             {
               "title": "Password strength indicator",
               "code": "<TmTextInput @bind-Value=\"password\" Label=\"Password\" Type=\"password\" />\n<TmPasswordStrengthIndicator Password=\"@password\" />"
+            }
+          ]
+        },
+        {
+          "itemName": "TmQueryInput",
+          "kind": "Component",
+          "category": "Inputs",
+          "namespace": "Tempo.Blazor.Components.Inputs",
+          "description": "JQL/TQL-style query input: a monospace text field with caret-aware autocomplete (field/operator/value/function/keyword suggestions), inline wavy error underlines with tooltips, keyboard navigation, and a submit event. Pure Blazor except a tiny optional caret helper script; falls back to end-of-text tracking when the script is absent.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmQueryInput.razor",
+          "documentationStatus": "merged",
+          "requiredImports": [
+            "@using Tempo.Blazor.Components.Inputs"
+          ],
+          "parameters": [
+            {
+              "name": "Class",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Additional CSS class on the root element."
+            },
+            {
+              "name": "DebounceMs",
+              "type": "int",
+              "isRequired": false,
+              "default": "200",
+              "description": "Debounce (ms) before querying SuggestionsProvider."
+            },
+            {
+              "name": "Disabled",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Disables the input and suppresses suggestions."
+            },
+            {
+              "name": "Errors",
+              "type": "IReadOnlyList<QueryErrorSpan>?",
+              "isRequired": false,
+              "description": "Error ranges to underline in the text (with a tooltip). Also drives aria-invalid."
+            },
+            {
+              "name": "Label",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Optional label rendered above the input."
+            },
+            {
+              "name": "Monospace",
+              "type": "bool",
+              "isRequired": false,
+              "default": "true",
+              "description": "Render with a monospace font."
+            },
+            {
+              "name": "OnSubmit",
+              "type": "EventCallback<string>",
+              "isRequired": false,
+              "description": "Fires when Enter is pressed while the suggestion dropdown is not open."
+            },
+            {
+              "name": "Placeholder",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Placeholder text. When null, falls back to the localized default."
+            },
+            {
+              "name": "SuggestionsProvider",
+              "type": "Func<QuerySuggestionRequest, Task<IReadOnlyList<QuerySuggestion>>>?",
+              "isRequired": false,
+              "description": "Supplies autocomplete suggestions for the current text and caret position. When null, no dropdown is shown."
+            },
+            {
+              "name": "Value",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Current query text. Supports @bind-Value."
+            },
+            {
+              "name": "ValueChanged",
+              "type": "EventCallback<string?>",
+              "isRequired": false,
+              "description": "Fires when the query text changes."
+            }
+          ],
+          "requiredScript": "_content/Tempo.Blazor/js/query-input.js",
+          "cssClasses": [
+            "tm-query-input",
+            "tm-query-input--mono",
+            "tm-query-input--disabled",
+            "tm-query-input__label",
+            "tm-query-input__field",
+            "tm-query-input__overlay",
+            "tm-query-input__error",
+            "tm-query-input__input",
+            "tm-query-input__dropdown",
+            "tm-query-input__status",
+            "tm-query-input__status--error",
+            "tm-query-input__option",
+            "tm-query-input__option--selected",
+            "tm-query-input__option-text",
+            "tm-query-input__option-desc",
+            "tm-query-input__kind"
+          ],
+          "examples": [
+            {
+              "title": "TQL query field with autocomplete, error underlines and submit",
+              "code": "<TmQueryInput @bind-Value=\"_query\"\n              Label=\"Filter\"\n              Placeholder=\"status = Active AND priority IN (High, Critical)\"\n              SuggestionsProvider=\"SuggestAsync\"\n              Errors=\"_errors\"\n              OnSubmit=\"RunQuery\" />\n\n@code {\n    string? _query;\n    IReadOnlyList<QueryErrorSpan> _errors = [];\n\n    Task<IReadOnlyList<QuerySuggestion>> SuggestAsync(QuerySuggestionRequest req)\n        => Task.FromResult<IReadOnlyList<QuerySuggestion>>(\n            [ new QuerySuggestion(\"status\", \"status\", QuerySuggestionKind.Field),\n              new QuerySuggestion(\"priority\", \"priority\", QuerySuggestionKind.Field) ]);\n\n    void RunQuery(string q) { /* execute the query */ }\n}"
             }
           ]
         },
@@ -20517,6 +20727,10 @@
           "kind": "Css"
         },
         {
+          "path": "src/Tempo.Blazor/wwwroot/css/components/_query-input.css",
+          "kind": "Css"
+        },
+        {
           "path": "src/Tempo.Blazor/wwwroot/css/components/_radio-group.css",
           "kind": "Css"
         },
@@ -20741,6 +20955,10 @@
           "kind": "JavaScript"
         },
         {
+          "path": "src/Tempo.Blazor/wwwroot/js/query-input.js",
+          "kind": "JavaScript"
+        },
+        {
           "path": "src/Tempo.Blazor/wwwroot/js/reporting/reporting-painter.bundle.js",
           "kind": "JavaScript"
         },
@@ -20770,12 +20988,12 @@
         }
       ],
       "summary": {
-        "itemCount": 288,
-        "manualItemCount": 288,
-        "generatedItemCount": 280,
+        "itemCount": 294,
+        "manualItemCount": 294,
+        "generatedItemCount": 286,
         "generatedOnlyItemCount": 0,
-        "componentCount": 176,
-        "publicApiTypeCount": 104
+        "componentCount": 177,
+        "publicApiTypeCount": 109
       }
     },
     {
@@ -36091,6 +36309,12 @@
               "description": "Localization key for the item label."
             },
             {
+              "name": "Options",
+              "kind": "Property",
+              "type": "IReadOnlyList<DocumentToolbarItemOption>?",
+              "description": "Options rendered by the declarative select renderer (Fáze 17). Null for non-select items."
+            },
+            {
               "name": "Order",
               "kind": "Property",
               "type": "int",
@@ -36125,6 +36349,24 @@
           "packageId": "Tempo.Blazor.DocumentEditor",
           "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Registry/DocumentToolbarItemKind.cs",
           "documentationStatus": "merged"
+        },
+        {
+          "itemName": "DocumentToolbarItemOption",
+          "kind": "Record",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+          "description": "One selectable option of a declarative toolbar select item (Fáze 17).",
+          "packageId": "Tempo.Blazor.DocumentEditor",
+          "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Registry/DocumentToolbarItemOption.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "EffectiveLabel",
+              "kind": "Field",
+              "type": "string",
+              "description": "Label shown in the select; falls back to the raw value."
+            }
+          ]
         },
         {
           "itemName": "DocumentToolbarMenuRenderer",
@@ -41342,6 +41584,13 @@
               "description": "Grouped overflow menu items."
             },
             {
+              "name": "NoResultsLabel",
+              "type": "string",
+              "isRequired": false,
+              "default": "\"\"",
+              "description": "Message shown when the search filter yields no commands (Fáze 18)."
+            },
+            {
               "name": "OnCommandRequested",
               "type": "EventCallback<string>",
               "isRequired": false,
@@ -42058,6 +42307,10 @@
           "kind": "JavaScript"
         },
         {
+          "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/controls/block-index.mjs",
+          "kind": "JavaScript"
+        },
+        {
           "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/controls/content-control-selection.mjs",
           "kind": "JavaScript"
         },
@@ -42083,6 +42336,10 @@
         },
         {
           "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/controls/signing-field-selection.mjs",
+          "kind": "JavaScript"
+        },
+        {
+          "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/controls/__tests__/block-index.test.mjs",
           "kind": "JavaScript"
         },
         {
@@ -42219,6 +42476,10 @@
         },
         {
           "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/interop-page-image-export.test.mjs",
+          "kind": "JavaScript"
+        },
+        {
+          "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/interop-print-preview-poll.test.mjs",
           "kind": "JavaScript"
         },
         {
@@ -43932,15 +44193,23 @@
         {
           "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/runtime/watchdog.mjs",
           "kind": "JavaScript"
+        },
+        {
+          "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/toolbar/toolbar-overflow.mjs",
+          "kind": "JavaScript"
+        },
+        {
+          "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/toolbar/toolbar-overflow.test.mjs",
+          "kind": "JavaScript"
         }
       ],
       "summary": {
-        "itemCount": 220,
-        "manualItemCount": 220,
-        "generatedItemCount": 215,
+        "itemCount": 221,
+        "manualItemCount": 221,
+        "generatedItemCount": 216,
         "generatedOnlyItemCount": 0,
         "componentCount": 35,
-        "publicApiTypeCount": 180
+        "publicApiTypeCount": 181
       }
     },
     {
@@ -44661,6 +44930,12 @@
               "description": "Raised when a block type is converted (e.g. via slash menu or toolbar). Nested components such as column blocks subscribe to keep their local child cache in sync with the remote store."
             },
             {
+              "name": "HasDeniedBlockTypes",
+              "kind": "Field",
+              "type": "bool",
+              "description": "True when restricts at least one block type."
+            },
+            {
               "name": "IsBlockTypeAllowed",
               "kind": "Method",
               "type": "bool",
@@ -44789,6 +45064,12 @@
               "name": "DataProvider",
               "kind": "Property",
               "type": "INotionDataProvider"
+            },
+            {
+              "name": "DeniedBlockTypes",
+              "kind": "Property",
+              "type": "IReadOnlySet<BlockType>?",
+              "description": "Block types that must never be created/converted-to regardless of . Used by single-page mode to hide multi-page blocks (child pages, linked pages/databases, etc.). When null, nothing extra is denied."
             },
             {
               "name": "DiagramDocumentProvider",
@@ -47949,6 +48230,12 @@
               "description": "Raised whenever the active page changes."
             },
             {
+              "name": "OnPageNavigationRequested",
+              "type": "EventCallback<string>",
+              "isRequired": false,
+              "description": "Raised in SinglePageMode when navigation to a page other than InitialPageId is requested (e.g. clicking a link). The host decides where it opens; the editor stays on the initial page. Arg = requested page ID."
+            },
+            {
               "name": "OnTrashRequested",
               "type": "EventCallback",
               "isRequired": false,
@@ -47966,6 +48253,12 @@
               "isRequired": false,
               "default": "true",
               "description": "Show the left navigation sidebar."
+            },
+            {
+              "name": "SinglePageMode",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Renders the editor as a self-contained single-page surface (e.g. a work-item description field). Always hides the sidebar (ignoring ShowSidebar); disables in-editor navigation, breadcrumbs/back, space selector, template gallery, child-page creation and the tasks/blog/analytics/audit panels; removes multi-page blocks (child page, linked page/database, include page, children display, content-by-label, breadcrumb) from the slash and Turn Into menus; and delegates navigation to other pages to OnPageNavigationRequested. Requires InitialPageId."
             },
             {
               "name": "TokenProvider",
@@ -48136,6 +48429,10 @@
             {
               "title": "Restrict to a subset of block types",
               "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    private static readonly IReadOnlySet<BlockType> AllowedTypes = new HashSet<BlockType>\n    {\n        BlockType.Paragraph,\n        BlockType.Heading1,\n        BlockType.Heading2,\n        BlockType.BulletList,\n        BlockType.NumberedList,\n        BlockType.TodoItem,\n    };\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                AllowedBlockTypes=\"@AllowedTypes\"\n                InitialPageId=\"@_pageId\" />"
+            },
+            {
+              "title": "Single-page mode — embed one page as a work-item description field",
+              "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    // Rich-text description blocks only — multi-page blocks are removed automatically in SinglePageMode.\n    private static readonly IReadOnlySet<BlockType> DescriptionBlocks = new HashSet<BlockType>\n    {\n        BlockType.Paragraph, BlockType.Heading1, BlockType.Heading2, BlockType.Heading3,\n        BlockType.BulletList, BlockType.NumberedList, BlockType.TodoItem,\n        BlockType.Quote, BlockType.Callout, BlockType.Code, BlockType.Divider, BlockType.Image, BlockType.Table\n    };\n\n    void OpenElsewhere(string pageId) { /* host opens the linked page in a dialog / new tab */ }\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                SinglePageMode=\"true\"\n                InitialPageId=\"@WorkItem.DescriptionPageId\"\n                AllowedBlockTypes=\"@DescriptionBlocks\"\n                OnPageNavigationRequested=\"OpenElsewhere\" />"
             }
           ]
         },
@@ -99349,10 +99646,10 @@
   ],
   "summary": {
     "packageCount": 22,
-    "itemCount": 2802,
-    "manualItemCount": 2802,
+    "itemCount": 2809,
+    "manualItemCount": 2809,
     "generatedOnlyItemCount": 0,
-    "componentCount": 440,
-    "publicApiTypeCount": 2308
+    "componentCount": 441,
+    "publicApiTypeCount": 2314
   }
 }

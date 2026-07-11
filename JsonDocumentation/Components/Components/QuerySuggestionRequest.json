@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "Request passed to a TmQueryInput SuggestionsProvider (Text and CaretPosition).",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/QueryInputModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "QuerySuggestionRequest"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+  "description": "One selectable option of a declarative toolbar select item (Fáze 17).",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Registry/DocumentToolbarItemOption.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentToolbarItemOption"
+}

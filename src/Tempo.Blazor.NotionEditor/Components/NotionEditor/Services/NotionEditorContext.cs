@@ -106,7 +106,18 @@ public sealed class NotionEditorContext
     /// </summary>
     public IReadOnlySet<BlockType>? AllowedBlockTypes { get; init; }
 
+    /// <summary>
+    /// Block types that must never be created/converted-to regardless of <see cref="AllowedBlockTypes"/>.
+    /// Used by single-page mode to hide multi-page blocks (child pages, linked pages/databases, etc.).
+    /// When null, nothing extra is denied.
+    /// </summary>
+    public IReadOnlySet<BlockType>? DeniedBlockTypes { get; init; }
+
+    /// <summary>True when <see cref="DeniedBlockTypes"/> restricts at least one block type.</summary>
+    public bool HasDeniedBlockTypes => DeniedBlockTypes is { Count: > 0 };
+
     /// <summary>Returns true when the given block type may be created or converted to.</summary>
     public bool IsBlockTypeAllowed(BlockType type)
-        => AllowedBlockTypes is null || AllowedBlockTypes.Contains(type);
+        => (AllowedBlockTypes is null || AllowedBlockTypes.Contains(type))
+        && (DeniedBlockTypes is null || !DeniedBlockTypes.Contains(type));
 }

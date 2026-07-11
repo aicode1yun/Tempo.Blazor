@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "An error range within the query text (Start, Length, Message) — rendered as a wavy underline with a tooltip.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/QueryInputModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "QueryErrorSpan"
+}

@@ -126,27 +126,37 @@ public partial class TmNotionSlashMenu : ComponentBase
         var configured = Context?.AllowedBlockTypes;
         var hasWorkItemProvider = Context?.WorkItemProviders?.GetAll().Count > 0;
 
+        IReadOnlySet<BlockType>? result;
         if (hasWorkItemProvider)
         {
-            return configured;
+            result = configured;
         }
-
-        if (configured is null)
+        else if (configured is null)
         {
-            return SlashMenuRegistry.All
+            result = SlashMenuRegistry.All
                 .Select(i => i.Type)
                 .Where(t => t != BlockType.WorkItem)
                 .ToHashSet();
         }
-
-        if (!configured.Contains(BlockType.WorkItem))
+        else if (!configured.Contains(BlockType.WorkItem))
         {
-            return configured;
+            result = configured;
+        }
+        else
+        {
+            result = configured
+                .Where(t => t != BlockType.WorkItem)
+                .ToHashSet();
         }
 
-        return configured
-            .Where(t => t != BlockType.WorkItem)
-            .ToHashSet();
+        // Single enforcement point: also strip context-denied block types (e.g. SinglePageMode multi-page blocks).
+        if (Context is { HasDeniedBlockTypes: true } ctx)
+        {
+            var source = result ?? SlashMenuRegistry.All.Select(i => i.Type);
+            result = source.Where(ctx.IsBlockTypeAllowed).ToHashSet();
+        }
+
+        return result;
     }
 
     // ── Keyboard navigation ───────────────────────────────────────────────────

@@ -1843,6 +1843,12 @@
           "description": "Localization key for the item label."
         },
         {
+          "name": "Options",
+          "kind": "Property",
+          "type": "IReadOnlyList<DocumentToolbarItemOption>?",
+          "description": "Options rendered by the declarative select renderer (Fáze 17). Null for non-select items."
+        },
+        {
           "name": "Order",
           "kind": "Property",
           "type": "int",
@@ -1877,6 +1883,24 @@
       "packageId": "Tempo.Blazor.DocumentEditor",
       "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Registry/DocumentToolbarItemKind.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentToolbarItemOption",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+      "description": "One selectable option of a declarative toolbar select item (Fáze 17).",
+      "packageId": "Tempo.Blazor.DocumentEditor",
+      "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Registry/DocumentToolbarItemOption.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "EffectiveLabel",
+          "kind": "Field",
+          "type": "string",
+          "description": "Label shown in the select; falls back to the raw value."
+        }
+      ]
     },
     {
       "itemName": "DocumentToolbarMenuRenderer",
@@ -7094,6 +7118,13 @@
           "description": "Grouped overflow menu items."
         },
         {
+          "name": "NoResultsLabel",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Message shown when the search filter yields no commands (Fáze 18)."
+        },
+        {
           "name": "OnCommandRequested",
           "type": "EventCallback<string>",
           "isRequired": false,
@@ -7810,6 +7841,10 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/controls/block-index.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/controls/content-control-selection.mjs",
       "kind": "JavaScript"
     },
@@ -7835,6 +7870,10 @@
     },
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/controls/signing-field-selection.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/controls/__tests__/block-index.test.mjs",
       "kind": "JavaScript"
     },
     {
@@ -7971,6 +8010,10 @@
     },
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/interop-page-image-export.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/interop-print-preview-poll.test.mjs",
       "kind": "JavaScript"
     },
     {
@@ -9684,14 +9727,22 @@
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/runtime/watchdog.mjs",
       "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/toolbar/toolbar-overflow.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/toolbar/toolbar-overflow.test.mjs",
+      "kind": "JavaScript"
     }
   ],
   "summary": {
-    "itemCount": 220,
-    "manualItemCount": 220,
-    "generatedItemCount": 215,
+    "itemCount": 221,
+    "manualItemCount": 221,
+    "generatedItemCount": 216,
     "generatedOnlyItemCount": 0,
     "componentCount": 35,
-    "publicApiTypeCount": 180
+    "publicApiTypeCount": 181
   }
 }

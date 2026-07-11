@@ -1,0 +1,412 @@
+@namespace Tempo.Blazor.Components.Inputs
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@implements IDisposable
+@inject IJSRuntime JS
+
+<div class="@RootCssClass" @attributes="AdditionalAttributes">
+
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="tm-query-input__label" for="@_inputId">@Label</label>
+    }
+
+    <div class="tm-query-input__field">
+
+        @* Error-underline overlay: a monospace-aligned mirror of the text with transparent glyphs,
+           so only the wavy underline on error ranges shows behind the real input text. No JS measurement. *@
+        <div class="tm-query-input__overlay" aria-hidden="true">
+            @foreach (var seg in BuildOverlaySegments())
+            {
+                @if (seg.Message is not null)
+                {
+                    <span class="tm-query-input__error" title="@seg.Message">@seg.Text</span>
+                }
+                else
+                {
+                    <span class="tm-query-input__overlay-text">@seg.Text</span>
+                }
+            }
+        </div>
+
+        <input type="text"
+               id="@_inputId"
+               class="tm-query-input__input"
+               @ref="_inputRef"
+               value="@Value"
+               placeholder="@(Placeholder ?? Loc["TmQueryInput_Placeholder"])"
+               disabled="@Disabled"
+               autocomplete="off"
+               autocapitalize="off"
+               autocorrect="off"
+               spellcheck="false"
+               role="combobox"
+               aria-autocomplete="list"
+               aria-expanded="@_isOpen.ToString().ToLowerInvariant()"
+               aria-controls="@_listboxId"
+               aria-activedescendant="@ActiveDescendantId"
+               aria-invalid="@HasErrors.ToString().ToLowerInvariant()"
+               @oninput="HandleInputAsync"
+               @onclick="HandleCaretChangedAsync"
+               @onkeyup="HandleCaretChangedAsync"
+               @onmouseup="HandleCaretChangedAsync"
+               @onfocus="HandleFocusAsync"
+               @onblur="HandleBlur"
+               @onkeydown="HandleKeyDownAsync" />
+
+        @if (_isOpen)
+        {
+            <ul class="tm-query-input__dropdown" role="listbox" id="@_listboxId">
+                @if (_isLoading)
+                {
+                    <li class="tm-query-input__status" role="status">@Loc["TmQueryInput_Loading"]</li>
+                }
+                else if (_hasError)
+                {
+                    <li class="tm-query-input__status tm-query-input__status--error" role="alert">@Loc["TmQueryInput_Error"]</li>
+                }
+                else if (_suggestions.Count == 0)
+                {
+                    <li class="tm-query-input__status">@Loc["TmQueryInput_NoSuggestions"]</li>
+                }
+                else
+                {
+                    @for (var i = 0; i < _suggestions.Count; i++)
+                    {
+                        var suggestion = _suggestions[i];
+                        var idx = i;
+                        <li class="tm-query-input__option@(idx == _selectedIndex ? " tm-query-input__option--selected" : "")"
+                            id="@OptionId(idx)"
+                            role="option"
+                            aria-selected="@((idx == _selectedIndex).ToString().ToLowerInvariant())"
+                            data-kind="@suggestion.Kind"
+                            @onmousedown:preventDefault="true"
+                            @onmousedown:stopPropagation="true"
+                            @onclick="@(() => AcceptSuggestionAsync(suggestion))">
+                            <span class="tm-query-input__kind tm-query-input__kind--@suggestion.Kind.ToString().ToLowerInvariant()" aria-hidden="true"></span>
+                            <span class="tm-query-input__option-text">@suggestion.Text</span>
+                            @if (!string.IsNullOrWhiteSpace(suggestion.Description))
+                            {
+                                <span class="tm-query-input__option-desc">@suggestion.Description</span>
+                            }
+                        </li>
+                    }
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>Current query text. Supports <c>@bind-Value</c>.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>Fires when the query text changes.</summary>
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>Supplies autocomplete suggestions for the current text + caret position. When null, no dropdown is shown.</summary>
+    [Parameter] public Func<QuerySuggestionRequest, Task<IReadOnlyList<QuerySuggestion>>>? SuggestionsProvider { get; set; }
+
+    /// <summary>Error ranges to underline in the text (with a tooltip). Also drives <c>aria-invalid</c>.</summary>
+    [Parameter] public IReadOnlyList<QueryErrorSpan>? Errors { get; set; }
+
+    /// <summary>Fires when Enter is pressed while the suggestion dropdown is not open.</summary>
+    [Parameter] public EventCallback<string> OnSubmit { get; set; }
+
+    /// <summary>Debounce (ms) before querying <see cref="SuggestionsProvider"/>. Defaults to 200.</summary>
+    [Parameter] public int DebounceMs { get; set; } = 200;
+
+    /// <summary>Placeholder text. When null, falls back to the localized default.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Optional label rendered above the input.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Disables the input and suppresses suggestions.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Render with a monospace font (default). Set false for a proportional font.</summary>
+    [Parameter] public bool Monospace { get; set; } = true;
+
+    /// <summary>Additional CSS class on the root element.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Additional HTML attributes applied to the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private readonly string _instanceId = Guid.NewGuid().ToString("N");
+    private string _inputId => $"tm-query-input-{_instanceId}";
+    private string _listboxId => $"tm-query-input-listbox-{_instanceId}";
+
+    private ElementReference _inputRef;
+    private bool _isOpen;
+    private bool _isLoading;
+    private bool _hasError;
+    private List<QuerySuggestion> _suggestions = [];
+    private int _selectedIndex = -1;
+    private int _caretPosition;
+    private int _requestVersion;
+    private System.Timers.Timer? _debounce;
+    private bool _disposed;
+    private bool _focusPending;
+    private int? _pendingSetCaret;
+
+    private bool HasErrors => Errors is { Count: > 0 };
+    private string? ActiveDescendantId => _isOpen && _selectedIndex >= 0 ? OptionId(_selectedIndex) : null;
+    private string OptionId(int index) => $"{_listboxId}-opt-{index}";
+
+    private string RootCssClass
+    {
+        get
+        {
+            var cls = "tm-query-input";
+            if (Monospace) cls += " tm-query-input--mono";
+            if (Disabled) cls += " tm-query-input--disabled";
+            if (!string.IsNullOrEmpty(Class)) cls += " " + Class;
+            return cls;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusPending)
+        {
+            _focusPending = false;
+            try { await _inputRef.FocusAsync(); }
+            catch (InvalidOperationException) { /* JS/element not ready (prerender/test) */ }
+        }
+
+        if (_pendingSetCaret is int pos)
+        {
+            _pendingSetCaret = null;
+            try { await JS.InvokeVoidAsync("tmQueryInput.setCaret", _inputRef, pos); }
+            catch (InvalidOperationException) { /* JS unavailable — caret best-effort */ }
+            catch (JSException) { }
+        }
+    }
+
+    private async Task HandleInputAsync(ChangeEventArgs e)
+    {
+        if (Disabled) return;
+        Value = e.Value?.ToString() ?? string.Empty;
+        await ValueChanged.InvokeAsync(Value);
+        await UpdateCaretAsync();
+        ScheduleSuggestions();
+    }
+
+    private async Task HandleFocusAsync()
+    {
+        if (Disabled) return;
+        await UpdateCaretAsync();
+        if (SuggestionsProvider is not null)
+            await LoadSuggestionsAsync();
+    }
+
+    private void HandleBlur()
+    {
+        // Option clicks preventDefault their mousedown so focus is retained; a real blur closes the dropdown.
+        CloseDropdown();
+    }
+
+    private async Task HandleCaretChangedAsync() => await UpdateCaretAsync();
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (Disabled) return;
+
+        if (_isOpen && _suggestions.Count > 0)
+        {
+            switch (e.Key)
+            {
+                case "ArrowDown":
+                    _selectedIndex = (_selectedIndex + 1) % _suggestions.Count;
+                    return;
+                case "ArrowUp":
+                    _selectedIndex = (_selectedIndex - 1 + _suggestions.Count) % _suggestions.Count;
+                    return;
+                case "Enter":
+                case "Tab":
+                    if (_selectedIndex >= 0 && _selectedIndex < _suggestions.Count)
+                    {
+                        await AcceptSuggestionAsync(_suggestions[_selectedIndex]);
+                        return;
+                    }
+                    break;
+                case "Escape":
+                    CloseDropdown();
+                    return;
+            }
+        }
+
+        switch (e.Key)
+        {
+            case "Enter":
+                CloseDropdown();
+                await OnSubmit.InvokeAsync(Value ?? string.Empty);
+                break;
+            case "Escape":
+                CloseDropdown();
+                break;
+        }
+    }
+
+    private void ScheduleSuggestions()
+    {
+        if (SuggestionsProvider is null || Disabled) return;
+
+        _debounce?.Stop();
+        _debounce?.Dispose();
+
+        if (DebounceMs <= 0)
+        {
+            _ = LoadSuggestionsAsync();
+            return;
+        }
+
+        _debounce = new System.Timers.Timer(DebounceMs) { AutoReset = false };
+        _debounce.Elapsed += async (_, _) =>
+        {
+            if (_disposed) return;
+            await InvokeAsync(LoadSuggestionsAsync);
+        };
+        _debounce.Start();
+    }
+
+    private async Task LoadSuggestionsAsync()
+    {
+        if (SuggestionsProvider is null || Disabled) return;
+
+        var version = ++_requestVersion;
+        _isLoading = true;
+        _hasError = false;
+        _isOpen = true;
+        StateHasChanged();
+
+        IReadOnlyList<QuerySuggestion> result;
+        try
+        {
+            var text = Value ?? string.Empty;
+            var caret = Math.Clamp(_caretPosition, 0, text.Length);
+            result = await SuggestionsProvider(new QuerySuggestionRequest(text, caret));
+        }
+        catch
+        {
+            if (version != _requestVersion) return;
+            _isLoading = false;
+            _hasError = true;
+            _suggestions = [];
+            _selectedIndex = -1;
+            StateHasChanged();
+            return;
+        }
+
+        if (version != _requestVersion) return;
+
+        _isLoading = false;
+        _suggestions = result.ToList();
+        _selectedIndex = _suggestions.Count > 0 ? 0 : -1;
+        _isOpen = true;
+        StateHasChanged();
+    }
+
+    private async Task AcceptSuggestionAsync(QuerySuggestion suggestion)
+    {
+        if (Disabled) return;
+
+        var text = Value ?? string.Empty;
+        var caret = Math.Clamp(_caretPosition, 0, text.Length);
+        var tokenStart = FindTokenStart(text, caret);
+
+        var before = text[..tokenStart];
+        var after = text[caret..];
+        var needsSpace = after.Length == 0 || !char.IsWhiteSpace(after[0]);
+        var suffix = needsSpace ? " " : string.Empty;
+
+        var newText = before + suggestion.InsertText + suffix + after;
+        var newCaret = before.Length + suggestion.InsertText.Length + suffix.Length;
+
+        Value = newText;
+        _caretPosition = newCaret;
+        CloseDropdown();
+        await ValueChanged.InvokeAsync(newText);
+
+        _pendingSetCaret = newCaret;
+        _focusPending = true;
+        StateHasChanged();
+    }
+
+    private async Task UpdateCaretAsync()
+    {
+        var text = Value ?? string.Empty;
+        try
+        {
+            _caretPosition = await JS.InvokeAsync<int>("tmQueryInput.getCaret", _inputRef);
+        }
+        catch (InvalidOperationException)
+        {
+            _caretPosition = text.Length; // JS unavailable (prerender/test) — fall back to end of text
+        }
+        catch (JSException)
+        {
+            _caretPosition = text.Length;
+        }
+        _caretPosition = Math.Clamp(_caretPosition, 0, text.Length);
+    }
+
+    private void CloseDropdown()
+    {
+        _requestVersion++; // invalidate any in-flight suggestion request
+        _isOpen = false;
+        _isLoading = false;
+        _hasError = false;
+        _suggestions = [];
+        _selectedIndex = -1;
+    }
+
+    private static int FindTokenStart(string text, int caret)
+    {
+        var i = Math.Clamp(caret, 0, text.Length);
+        while (i > 0 && !IsDelimiter(text[i - 1])) i--;
+        return i;
+    }
+
+    private static bool IsDelimiter(char c) => char.IsWhiteSpace(c) || c is '(' or ')' or ',';
+
+    private IReadOnlyList<OverlaySegment> BuildOverlaySegments()
+    {
+        var text = Value ?? string.Empty;
+        var segments = new List<OverlaySegment>();
+        if (Errors is null || Errors.Count == 0)
+        {
+            if (text.Length > 0) segments.Add(new OverlaySegment(text, null));
+            return segments;
+        }
+
+        var ordered = Errors
+            .Where(e => e.Length > 0 && e.Start < text.Length && e.Start + e.Length > 0)
+            .OrderBy(e => e.Start)
+            .ToList();
+
+        var pos = 0;
+        foreach (var error in ordered)
+        {
+            var start = Math.Clamp(error.Start, 0, text.Length);
+            var end = Math.Clamp(error.Start + error.Length, start, text.Length);
+            if (start < pos) continue; // skip overlapping ranges
+            if (start > pos) segments.Add(new OverlaySegment(text[pos..start], null));
+            segments.Add(new OverlaySegment(text[start..end], error.Message));
+            pos = end;
+        }
+        if (pos < text.Length) segments.Add(new OverlaySegment(text[pos..], null));
+        return segments;
+    }
+
+    private readonly record struct OverlaySegment(string Text, string? Message);
+
+    public void Dispose()
+    {
+        _disposed = true;
+        _debounce?.Stop();
+        _debounce?.Dispose();
+    }
+}

@@ -202,9 +202,9 @@ public partial class TmNotionBlockContextMenu : ComponentBase, IAsyncDisposable
     ];
 
     private IEnumerable<TurnIntoItem> AllowedTurnIntoItems =>
-        Context?.AllowedBlockTypes is null
+        Context is null
             ? _turnIntoItems
-            : _turnIntoItems.Where(i => Context.AllowedBlockTypes.Contains(i.Type));
+            : _turnIntoItems.Where(i => Context.IsBlockTypeAllowed(i.Type));
 
     private sealed record TurnIntoItem(BlockType Type, string LabelKey);
     private sealed record ColorItem(string? Value, string LabelKey);
