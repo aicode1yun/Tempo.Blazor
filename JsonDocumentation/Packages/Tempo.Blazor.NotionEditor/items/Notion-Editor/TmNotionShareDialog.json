@@ -15,20 +15,20 @@
       "name": "PageId",
       "type": "share is managed.</summary> [Parameter, EditorRequired] public Guid",
       "isRequired": true,
-      "description": "Raised when dialog visibility changes."
+      "description": "Page identifier whose public share is managed."
     },
     {
       "name": "Provider",
       "type": "shares.</summary> [Parameter] public INotionPublicShareProvider?",
       "isRequired": true,
-      "description": "Page identifier whose public share is managed.",
+      "description": "Provider used for creating, revoking, and reading public shares.",
       "editorRequired": true
     },
     {
       "name": "VisibleChanged",
       "type": "EventCallback<bool>",
       "isRequired": false,
-      "description": "Controls whether the dialog is visible."
+      "description": "Raised when dialog visibility changes."
     }
   ],
   "subcategory": "Page"

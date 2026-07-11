@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "Result of preparing a whole wireframe document for persistence.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeDocumentAuthoringEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeDocumentAuthoringResult"
+}

@@ -15,49 +15,49 @@
       "name": "MatchCount",
       "type": "int",
       "isRequired": false,
-      "description": "1-based index of the currently highlighted match (0 when none)."
+      "description": "Total number of matches for the current query."
     },
     {
       "name": "MatchIndex",
       "type": "int",
       "isRequired": false,
-      "description": "Initial search options used to seed the panel."
+      "description": "1-based index of the currently highlighted match (0 when none)."
     },
     {
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised to replace every match; carries the replacement text."
+      "description": "Raised when the panel should close."
     },
     {
       "name": "OnFindNext",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised whenever the query or any option changes; carries the full current options."
+      "description": "Raised to move to the next match."
     },
     {
       "name": "OnFindPrevious",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised to move to the next match."
+      "description": "Raised to move to the previous match."
     },
     {
       "name": "OnReplaceAllRequested",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Raised to replace the current match; carries the replacement text."
+      "description": "Raised to replace every match; carries the replacement text."
     },
     {
       "name": "OnReplaceRequested",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Raised to move to the previous match."
+      "description": "Raised to replace the current match; carries the replacement text."
     },
     {
       "name": "OnSearchRequested",
       "type": "EventCallback<SpreadsheetSearchOptions>",
       "isRequired": false,
-      "description": "Total number of matches for the current query."
+      "description": "Raised whenever the query or any option changes; carries the full current options."
     }
   ],
   "subcategory": "Dialogs"

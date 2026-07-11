@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Reporting",
+  "namespace": "Tempo.Blazor.Mcp.Reporting",
+  "description": "Fallback data provider for MCP preview smoke flows when the host has no provider.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportingMcpFallbackDataProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportingMcpFallbackDataProvider"
+}

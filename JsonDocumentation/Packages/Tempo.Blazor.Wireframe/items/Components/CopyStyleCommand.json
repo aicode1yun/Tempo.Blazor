@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+  "description": "Copies the style (Props) — and optionally the size — of a single element into the static WireframeClipboard. Unlike the other wireframe commands it does not implement IWireframeCommand and has no Undo(), because it changes no document state; execute it directly instead of pushing it onto a command stack.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/CopyStyleCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "CopyStyleCommand",
+  "members": [
+    {
+      "name": "CopyStyleCommand",
+      "type": "CopyStyleCommand(WireframeElement element, bool includeSize = false)",
+      "description": "Creates the command for the element to copy from."
+    },
+    {
+      "name": "Execute",
+      "type": "void Execute()",
+      "description": "Stores the element's style props (and size when includeSize is true) in WireframeClipboard."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use CopyStyleCommand",
+      "code": "new CopyStyleCommand(selectedElement).Execute();\n\n// copy style and size together\nnew CopyStyleCommand(selectedElement, includeSize: true).Execute();"
+    }
+  ]
+}

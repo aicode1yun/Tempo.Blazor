@@ -16,19 +16,19 @@
       "type": "IReadOnlyList<string>",
       "isRequired": false,
       "default": "[]",
-      "description": "Identifier of the page whose labels are edited."
+      "description": "Current labels assigned to the page."
     },
     {
       "name": "OnLabelsChanged",
       "type": "EventCallback<IReadOnlyList<string>>",
       "isRequired": false,
-      "description": "Whether editing controls are hidden."
+      "description": "Raised after labels are successfully persisted."
     },
     {
       "name": "ReadOnly",
       "type": "bool",
       "isRequired": false,
-      "description": "Current labels assigned to the page."
+      "description": "Whether editing controls are hidden."
     }
   ],
   "subcategory": "UI"

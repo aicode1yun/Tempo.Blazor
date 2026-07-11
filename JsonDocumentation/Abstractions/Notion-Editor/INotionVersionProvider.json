@@ -1,0 +1,32 @@
+{
+  "kind": "Interface",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Optional provider for Notion page versions, restore, and version diffs.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/INotionVersionProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "INotionVersionProvider",
+  "members": [
+    {
+      "name": "GetVersionsAsync",
+      "type": "Task<PagedResult<IPageVersion>> GetVersionsAsync(string pageId, int page, int pageSize)",
+      "description": "Gets a paged list of versions for a page."
+    },
+    {
+      "name": "GetVersionAsync",
+      "type": "Task<IPageVersion> GetVersionAsync(string pageId, string versionId)",
+      "description": "Gets a single version snapshot."
+    },
+    {
+      "name": "RestoreVersionAsync",
+      "type": "Task RestoreVersionAsync(string pageId, string versionId)",
+      "description": "Restores a page to a historical version."
+    },
+    {
+      "name": "CompareVersionsAsync",
+      "type": "Task<IEnumerable<BlockDiff>> CompareVersionsAsync(string versionId1, string versionId2)",
+      "description": "Compares two version snapshots."
+    }
+  ]
+}

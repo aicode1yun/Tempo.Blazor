@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "MCP tools for deriving implementation briefs from diagram/draw documents.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramBriefTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramBriefTools"
+}

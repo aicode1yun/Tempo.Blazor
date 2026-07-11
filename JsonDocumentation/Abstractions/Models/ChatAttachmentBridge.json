@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Conversion helpers between chat-specific attachments and shared Tempo attachments.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatAttachment.cs",
+  "documentationStatus": "generated",
+  "itemName": "ChatAttachmentBridge",
+  "members": [
+    {
+      "name": "ToTmAttachment",
+      "type": "static TmAttachment ToTmAttachment()",
+      "description": "Converts a chat attachment to a shared attachment linked to a chat message."
+    },
+    {
+      "name": "ToChatAttachment",
+      "type": "static ChatAttachment ToChatAttachment()",
+      "description": "Converts a shared attachment to a chat-specific attachment."
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "kind": "Enum",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Operations supported by an ITmNotificationService.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotificationServiceCapabilities.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmNotificationServiceCapabilities",
+  "values": [
+    {
+      "name": "None",
+      "description": "No optional operations are supported."
+    },
+    {
+      "name": "Publish",
+      "description": "Service can publish notifications."
+    },
+    {
+      "name": "Read",
+      "description": "Service can read notification lists."
+    },
+    {
+      "name": "Query",
+      "description": "Service can query notifications by filters beyond recipient and paging."
+    },
+    {
+      "name": "UnreadCount",
+      "description": "Service can return unread counts."
+    },
+    {
+      "name": "ReadState",
+      "description": "Service can mutate read state."
+    }
+  ]
+}

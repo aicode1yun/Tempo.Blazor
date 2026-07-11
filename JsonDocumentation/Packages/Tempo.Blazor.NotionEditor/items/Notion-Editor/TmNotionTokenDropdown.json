@@ -15,24 +15,25 @@
       "name": "CurrentKey",
       "type": "string?",
       "isRequired": false,
-      "description": "Raised when the user clicks \"Create token\" (optional). Arg = current search query."
+      "description": "Pre-selects the item matching this key when the dropdown opens."
     },
     {
       "name": "OnClosed",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user selects a token. Args = (Key, DisplayName, ColorClass)."
+      "description": "Raised when the user dismisses the dropdown (Escape / backdrop click)."
     },
     {
       "name": "OnCreateRequested",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Raised when the user dismisses the dropdown (Escape / backdrop click)."
+      "description": "Raised when the user clicks \"Create token\" (optional). Arg = current search query."
     },
     {
       "name": "OnItemSelected",
       "type": "EventCallback<(string Key, string DisplayName, string? ColorClass)>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Raised when the user selects a token. Args = (Key, DisplayName, ColorClass)."
     }
   ],
   "subcategory": "UI"

@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
-  "description": "Pure C# service that recognises Notion-style markdown shortcut patterns typed at the beginning of a block line. Invoke after the user presses Space or Enter. The argument must be the full plain-text content of the current block (including the trigger character that was just appended). Pattern table (most-specific first to avoid prefix collisions): PatternBlock type ### (Space)Heading3 ## (Space)Heading2 # (Space)Heading1 * (Space) or - (Space)BulletList 1. (Space)NumberedList [x] (Space)TodoItem (checked) [] (Space)TodoItem (unchecked) > (Space)Quote ``` (Enter or standalone)Code --- (Enter or standalone)Divider",
+  "description": "Pure C# service that recognises Notion-style markdown shortcut patterns typed at the beginning of a block line. Call Detect after the user presses Space or Enter, passing the full plain-text content of the current block including the trigger character. Matching is prefix-based, so the text after the trigger is returned in TextAfterTrigger. Recognised prefixes, most specific first: \"### \", \"## \", \"# \", \"- [x] \", \"- [ ] \", \"[x] \", \"[ ] \", \"[] \", \"* \", \"- \", \"> \", plus any digits followed by \". \" for a numbered list. The exact tokens \"```\" and \"---\" (Enter) become a Code block and a Divider. FromJsShortcutKey and IsCheckedTodo bridge the shortcut keys emitted by notion-editor.js to the C# type system.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/MarkdownShortcutDetector.cs",
   "documentationStatus": "generated",
@@ -44,5 +44,15 @@
       ]
     }
   ],
-  "itemName": "MarkdownShortcutDetector"
+  "itemName": "MarkdownShortcutDetector",
+  "examples": [
+    {
+      "title": "Detect a shortcut after Space",
+      "code": "var detector = new MarkdownShortcutDetector();\n\nvar result = detector.Detect(\"## \");\n// result.SuggestedType    == BlockType.Heading2\n// result.TextAfterTrigger == \"\"\n\nresult = detector.Detect(\"- [x] done\");\n// result.SuggestedType    == BlockType.TodoItem\n// result.IsChecked        == true\n// result.TextAfterTrigger == \"done\"\n\nresult = detector.Detect(\"12. \");\n// result.SuggestedType    == BlockType.NumberedList\n\ndetector.Detect(\"plain text\");   // null"
+    },
+    {
+      "title": "Bridge the JS shortcut keys",
+      "code": "[JSInvokable]\npublic async Task OnMarkdownShortcut(string shortcutKey)\n{\n    var type = MarkdownShortcutDetector.FromJsShortcutKey(shortcutKey);\n    if (type is null) return;\n\n    var isChecked = MarkdownShortcutDetector.IsCheckedTodo(shortcutKey);\n    await ConvertCurrentBlockAsync(type.Value, isChecked);\n}"
+    }
+  ]
 }

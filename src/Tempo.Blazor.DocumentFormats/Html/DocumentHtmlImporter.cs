@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Tempo.Blazor.DocumentEditor.Models;
@@ -33,7 +34,8 @@ public sealed partial class DocumentHtmlImporter
         var parsed = ParseSanitizedHtml(sanitized);
         if (parsed is null)
         {
-            document.Blocks.Add(Paragraph(Regex.Replace(sanitized, "<.*?>", string.Empty), 0));
+            var fallbackOrder = 0d;
+            AppendPlaintextFallback(document.Blocks, sanitized, ref fallbackOrder);
             return document;
         }
 
@@ -52,7 +54,7 @@ public sealed partial class DocumentHtmlImporter
 
     private static XDocument? ParseSanitizedHtml(string html)
     {
-        var normalized = VoidElementRegex().Replace(html, "<$1$2 />");
+        var normalized = VoidElementRegex().Replace(DecodeNamedEntities(html), "<$1$2 />");
         try
         {
             return XDocument.Parse("<root>" + normalized + "</root>", LoadOptions.PreserveWhitespace);
@@ -60,6 +62,57 @@ public sealed partial class DocumentHtmlImporter
         catch
         {
             return null;
+        }
+    }
+
+    /// <summary>
+    /// XML knows only five entities. Every other named entity that HTML defines — <c>&amp;nbsp;</c>,
+    /// <c>&amp;mdash;</c>, … — makes <see cref="XDocument.Parse(string)"/> throw, which used to
+    /// drop the whole document to the plaintext fallback. They are replaced by the character they
+    /// denote; the five XML entities are left alone.
+    /// </summary>
+    private static string DecodeNamedEntities(string html) =>
+        NamedEntityRegex().Replace(html, match =>
+        {
+            var name = match.Groups["name"].Value;
+            if (XmlEntities.Contains(name))
+            {
+                return match.Value;
+            }
+
+            var decoded = WebUtility.HtmlDecode(match.Value);
+            if (decoded == match.Value)
+            {
+                // Not an entity HTML knows either; leave the ampersand as a literal.
+                return decoded;
+            }
+
+            return decoded switch
+            {
+                "&" => "&amp;",
+                "<" => "&lt;",
+                ">" => "&gt;",
+                _   => decoded
+            };
+        });
+
+    private static readonly HashSet<string> XmlEntities =
+        new(StringComparer.Ordinal) { "amp", "lt", "gt", "quot", "apos" };
+
+    /// <summary>
+    /// Recovers text and paragraph boundaries from markup XML refuses to parse, e.g. an unclosed
+    /// inline tag. Splitting on the closing block tags keeps far more than the old single-paragraph
+    /// fallback, which glued the whole document into one line.
+    /// </summary>
+    private static void AppendPlaintextFallback(ICollection<DocumentBlock> blocks, string html, ref double order)
+    {
+        foreach (var chunk in BlockBoundaryRegex().Split(html))
+        {
+            var text = NormalizeText(WebUtility.HtmlDecode(TagRegex().Replace(chunk, string.Empty)));
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                blocks.Add(Paragraph(text, order++));
+            }
         }
     }
 
@@ -147,6 +200,14 @@ public sealed partial class DocumentHtmlImporter
                     Type = DocumentBlockType.Quote,
                     Order = order++,
                     Content = new QuoteBlockContent { Inlines = ReadInlines(element).ToList() }
+                });
+                break;
+            case "pre":
+                blocks.Add(new DocumentBlock
+                {
+                    Type = DocumentBlockType.Code,
+                    Order = order++,
+                    Content = ReadCode(element)
                 });
                 break;
             case "table":
@@ -308,6 +369,29 @@ public sealed partial class DocumentHtmlImporter
         };
     }
 
+    /// <summary>
+    /// Reads a <c>&lt;pre&gt;</c> block verbatim. Its text is code, so whitespace is preserved and
+    /// no inline markup is applied. A <c>class="language-x"</c> on the inner
+    /// <c>&lt;code&gt;</c> — the convention every syntax highlighter emits — names the language.
+    /// </summary>
+    private static CodeBlockContent ReadCode(XElement pre)
+    {
+        var code = pre.Elements()
+            .FirstOrDefault(child => child.Name.LocalName.Equals("code", StringComparison.OrdinalIgnoreCase));
+
+        var languageClass = code?.Attribute("class")?.Value ?? pre.Attribute("class")?.Value;
+        var language = languageClass?
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(token => token.StartsWith("language-", StringComparison.OrdinalIgnoreCase) ? token[9..] : null)
+            .FirstOrDefault(name => !string.IsNullOrEmpty(name));
+
+        return new CodeBlockContent
+        {
+            Language = string.IsNullOrWhiteSpace(language) ? null : language,
+            Code = (code ?? pre).Value.Trim('\n', '\r')
+        };
+    }
+
     private static DocumentBlock Paragraph(string text, double order)
     {
         return new DocumentBlock
@@ -373,8 +457,17 @@ public sealed partial class DocumentHtmlImporter
     [GeneratedRegex("<\\s*(script|style|iframe|object|embed)[^>]*>.*?<\\s*/\\s*\\1\\s*>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
     private static partial Regex DangerousElementRegex();
 
-    [GeneratedRegex("<(br|hr|img)([^>/]*?)>", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("<(area|base|br|col|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)([^>/]*?)>", RegexOptions.IgnoreCase)]
     private static partial Regex VoidElementRegex();
+
+    [GeneratedRegex("&(?<name>[a-zA-Z][a-zA-Z0-9]{1,31});")]
+    private static partial Regex NamedEntityRegex();
+
+    [GeneratedRegex("</\\s*(p|div|li|h[1-6]|blockquote|tr|pre)\\s*>|<\\s*br\\s*/?>", RegexOptions.IgnoreCase)]
+    private static partial Regex BlockBoundaryRegex();
+
+    [GeneratedRegex("<[^>]*>")]
+    private static partial Regex TagRegex();
 
     [GeneratedRegex("font-weight\\s*:\\s*(bold|[7-9]00)", RegexOptions.IgnoreCase)]
     private static partial Regex FontWeightRegex();

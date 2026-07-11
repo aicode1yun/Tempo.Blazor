@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Shared JsonSerializerOptions for stencil pack serialization.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilJsonOptions.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilJsonOptions"
+}

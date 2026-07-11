@@ -1,6 +1,9 @@
 @page "/notion-editor"
 @using Tempo.Blazor.Components.NotionEditor
+@using Tempo.Blazor.Components.NotionEditor.Services
+@using Tempo.Blazor.NotionEditor.Enums
 @using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.Demo.Services
 @inject ITmLocalizer Loc
 @inject Microsoft.JSInterop.IJSRuntime JS
@@ -637,7 +640,225 @@
     </div>
 </section>
 
+<section class="demo-section mt-6" data-testid="notion-markdown-table-demo">
+    <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Markdown Tables — Import, Alignment &amp; Round-Trip</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        GFM tables import as a real <code>Table</code> block with child <code>TableRow</code> blocks. Outer pipes are optional,
+        column alignment from the separator row (<code>:---</code>, <code>:---:</code>, <code>---:</code>) is preserved, and exporting
+        reproduces the same separator. Edit the Markdown below to see the parsed structure, the rendered preview, and the re-exported Markdown.
+    </p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-2">Source Markdown</h4>
+            <textarea class="w-full h-40 font-mono text-xs p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      data-testid="markdown-table-source"
+                      spellcheck="false"
+                      @bind="_tableMarkdown"
+                      @bind:event="oninput"></textarea>
+
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mt-4 mb-2">Parsed structure</h4>
+            <ul class="space-y-1 text-sm" data-testid="markdown-table-structure">
+                <li>Table blocks: <strong>@_tableBlockCount</strong></li>
+                <li>Row blocks (children): <strong>@_tableRowCount</strong></li>
+                <li>Columns: <strong>@_tableColumnCount</strong></li>
+                <li>Alignments: <strong>@_tableAlignments</strong></li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-2">Rendered preview</h4>
+            <div class="tm-notion-md-demo-preview text-sm" data-testid="markdown-table-preview">
+                @_tablePreviewHtml
+            </div>
+
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mt-4 mb-2">Re-exported Markdown (round-trip)</h4>
+            <pre class="w-full font-mono text-xs p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 overflow-x-auto"
+                 data-testid="markdown-table-roundtrip">@_tableRoundTripMarkdown</pre>
+        </div>
+    </div>
+
+    <div class="mt-4 rounded bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 p-3 text-sm">
+        <strong class="text-indigo-800 dark:text-indigo-300">Also try:</strong>
+        <span class="text-slate-700 dark:text-slate-300">
+            insert a code block in the editor above, set its language to <strong>Markdown</strong>, paste a table, then press
+            <strong>Preview</strong> in the block header. The preview renders the same table — including alignment — and
+            <strong>Edit</strong> returns to the source. Set <code>AllowMarkdownPreview="false"</code> on
+            <code>TmNotionCodeBlock</code> to hide the toggle.
+        </span>
+    </div>
+</section>
+
+<section class="demo-section mt-6" data-testid="notion-undo-redo-demo">
+    <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Undo &amp; Redo</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        Structural edits — converting a block, deleting one, duplicating one — go through the editor's command stack.
+        <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes them and <kbd>Ctrl</kbd>+<kbd>Y</kbd> redoes them. Undoing a delete restores
+        the whole subtree with its original ids, so a table comes back with its rows.
+        While the caret is inside a block you are still typing into, <kbd>Ctrl</kbd>+<kbd>Z</kbd> stays with the browser
+        and undoes the last characters — you never lose a sentence to a structural undo.
+    </p>
+
+    <table class="demo-shortcuts" data-testid="notion-undo-table">
+        <thead>
+            <tr>
+                <th scope="col">Press</th>
+                <th scope="col">What happens</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var (keys, result) in UndoBehaviours)
+            {
+                <tr>
+                    <td><code>@keys</code></td>
+                    <td>@result</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+<section class="demo-section mt-6" data-testid="notion-structured-paste-demo">
+    <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Structured Paste</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        Clipboard HTML that carries more than one block element is imported into real page blocks: headings stay headings,
+        each list item becomes its own block, and a table becomes a <code>Table</code> block with child <code>TableRow</code> blocks.
+        Markup with a single block level — a bold word, one sentence — is still pasted inline, so writing is never interrupted.
+        Named entities (<code>&amp;nbsp;</code>, <code>&amp;mdash;</code>) and unclosed void elements from Word are handled.
+    </p>
+
+    <table class="demo-shortcuts" data-testid="notion-paste-table">
+        <thead>
+            <tr>
+                <th scope="col">Clipboard contains</th>
+                <th scope="col">Result</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var (clipboard, result) in PasteBehaviours)
+            {
+                <tr>
+                    <td><code>@clipboard</code></td>
+                    <td>@result</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+<section class="demo-section mt-6" data-testid="notion-shortcuts-demo">
+    <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Live Markdown Shortcuts</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        Typing one of these triggers converts the block while keeping whatever you already wrote after it.
+        Inline patterns are applied as soon as they close. Backspace at the start of a block folds it into the one above.
+    </p>
+
+    <table class="demo-shortcuts" data-testid="notion-shortcuts-table">
+        <thead>
+            <tr>
+                <th scope="col">Type this</th>
+                <th scope="col">You get</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var (trigger, result) in MarkdownShortcuts)
+            {
+                <tr>
+                    <td><code>@trigger</code></td>
+                    <td>@result</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
 @code {
+    // ── Undo / redo cheatsheet ───────────────────────────────────────────────
+
+    private static readonly (string Keys, string Result)[] UndoBehaviours =
+    [
+        ("Ctrl+Z",       "Undo the last structural edit"),
+        ("Ctrl+Y",       "Redo it"),
+        ("Ctrl+Shift+Z", "Redo it"),
+        ("Ctrl+Z while typing", "The browser undoes the last characters instead")
+    ];
+
+    // ── Structured paste cheatsheet ──────────────────────────────────────────
+
+    private static readonly (string Clipboard, string Result)[] PasteBehaviours =
+    [
+        ("<h1>…</h1><p>…</p>",     "Heading block + paragraph block"),
+        ("<ul><li>…</li>…</ul>",   "One bulleted-list block per item"),
+        ("<table>…</table>",       "Table block with child TableRow blocks"),
+        ("<pre><code>…</code></pre>", "Code block"),
+        ("<strong>…</strong>",     "Pasted inline into the current block"),
+        ("<p>one sentence</p>",    "Pasted inline into the current block")
+    ];
+
+    // ── Live markdown shortcut cheatsheet ────────────────────────────────────
+
+    private static readonly (string Trigger, string Result)[] MarkdownShortcuts =
+    [
+        ("# ",      "Heading 1"),
+        ("## ",     "Heading 2"),
+        ("### ",    "Heading 3"),
+        ("- ",      "Bulleted list (also * and +)"),
+        ("1. ",     "Numbered list (any number works)"),
+        ("[ ] ",    "To-do (also - [ ] )"),
+        ("[x] ",    "Checked to-do (also - [x] )"),
+        ("> ",      "Quote"),
+        ("**bold**", "Bold"),
+        ("~~text~~", "Strikethrough"),
+        ("`code`",  "Inline code")
+    ];
+
+    // ── Markdown table demo ──────────────────────────────────────────────────
+
+    private const string DefaultTableMarkdown = """
+        Plain | Left | Center | Right
+        --- | :--- | :---: | ---:
+        a | b | c | d
+        e | f | g | h
+        """;
+
+    private string _tableMarkdownField = DefaultTableMarkdown;
+
+    private string _tableMarkdown
+    {
+        get => _tableMarkdownField;
+        set
+        {
+            if (_tableMarkdownField == value) return;
+            _tableMarkdownField = value;
+            RefreshTableDemo();
+        }
+    }
+
+    private int _tableBlockCount;
+    private int _tableRowCount;
+    private int _tableColumnCount;
+    private string _tableAlignments = "";
+    private MarkupString _tablePreviewHtml;
+    private string _tableRoundTripMarkdown = "";
+
+    private void RefreshTableDemo()
+    {
+        var blocks = NotionMarkdownImporter.Import(_tableMarkdownField, Guid.Empty);
+
+        var table = blocks.FirstOrDefault(block => block.Type == BlockType.Table);
+        var content = table?.Content as ITableBlockContent;
+
+        _tableBlockCount = blocks.Count(block => block.Type == BlockType.Table);
+        _tableRowCount = blocks.Count(block => block.Type == BlockType.TableRow && block.ParentBlockId is not null);
+        _tableColumnCount = content?.ColumnCount ?? 0;
+        _tableAlignments = content is null || content.ColumnAlignments.Count == 0
+            ? "—"
+            : string.Join(", ", content.ColumnAlignments);
+
+        _tablePreviewHtml = new MarkupString(NotionHtmlExporter.Export(blocks));
+        _tableRoundTripMarkdown = NotionMarkdownExporter.Export(blocks).TrimEnd();
+    }
+
     private INotionPage? _currentPage;
     private string _statusMessage = "";
     private bool _statusIsError = false;
@@ -711,6 +932,7 @@
     protected override async Task OnInitializedAsync()
     {
         ConfigureAIProvider();
+        RefreshTableDemo();
         await LoadEditorDataAsync();
     }
 

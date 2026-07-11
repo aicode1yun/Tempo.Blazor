@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Configuration",
+  "namespace": "Tempo.Blazor.Configuration",
+  "description": "Extension methods for registering Tempo.Blazor PDF viewer services.",
+  "packageId": "Tempo.Blazor.PdfViewer",
+  "sourcePath": "src/Tempo.Blazor.PdfViewer/Configuration/PdfViewerServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "PdfViewerServiceCollectionExtensions",
+  "members": [
+    {
+      "name": "AddTempoBlazorPdfViewer",
+      "type": "IServiceCollection AddTempoBlazorPdfViewer(this IServiceCollection services)",
+      "description": "Registers the services required by the PDF viewer component group. Also calls AddTempoBlazor(), so the core services do not need to be registered separately."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Register the services in Program.cs",
+      "code": "builder.Services.AddTempoBlazorPdfViewer();"
+    }
+  ]
+}

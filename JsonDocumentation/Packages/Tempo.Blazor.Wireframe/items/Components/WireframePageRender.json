@@ -1,0 +1,43 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "One rendered wireframe page: its identity and dimensions plus the standalone SVG string.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeSvgRenderer.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframePageRender",
+  "members": [
+    {
+      "name": "PageId",
+      "type": "string",
+      "description": "The page's stable id (WireframePage.Id)."
+    },
+    {
+      "name": "Name",
+      "type": "string",
+      "description": "The page's display name."
+    },
+    {
+      "name": "Width",
+      "type": "double",
+      "description": "Canvas width in pixels."
+    },
+    {
+      "name": "Height",
+      "type": "double",
+      "description": "Canvas height in pixels."
+    },
+    {
+      "name": "Svg",
+      "type": "string",
+      "description": "The rendered SVG markup for the page."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Consume a render result",
+      "code": "foreach (var render in await renderer.RenderDocumentAsync(document))\n{\n    Console.WriteLine($\"{render.Name}: {render.Width}x{render.Height}\");\n    await File.WriteAllTextAsync($\"{render.PageId}.svg\", render.Svg);\n}"
+    }
+  ]
+}

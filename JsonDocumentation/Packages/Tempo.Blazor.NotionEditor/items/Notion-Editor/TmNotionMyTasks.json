@@ -15,7 +15,7 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Current user id used by the \"my tasks\" filter."
+      "description": "Additional CSS class."
     },
     {
       "name": "CurrentUserId",
@@ -28,13 +28,13 @@
       "name": "OnClosed",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Additional CSS class."
+      "description": "Raised when the panel close button is clicked."
     },
     {
       "name": "OnNavigateToBlock",
       "type": "EventCallback<(string PageId, string BlockId)>",
       "isRequired": false,
-      "description": "Raised when the panel close button is clicked."
+      "description": "Raised when a source task is selected for navigation. Args are page id and block id."
     }
   ],
   "subcategory": "UI"

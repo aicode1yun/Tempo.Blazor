@@ -1,0 +1,27 @@
+{
+  "kind": "Record",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "One non-fatal lint finding about a wireframe element: which element it concerns, a stable machine-readable code, and a human-readable hint.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeLintWarning.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeLintWarning",
+  "members": [
+    {
+      "name": "ElementId",
+      "type": "string",
+      "description": "Id of the element the warning concerns."
+    },
+    {
+      "name": "Code",
+      "type": "string",
+      "description": "Stable machine-readable warning code."
+    },
+    {
+      "name": "Hint",
+      "type": "string",
+      "description": "Human-readable suggestion for fixing the problem."
+    }
+  ]
+}

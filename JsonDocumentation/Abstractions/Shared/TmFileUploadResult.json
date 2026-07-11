@@ -1,0 +1,67 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Result returned after a file upload or chunk upload.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileUploadResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmFileUploadResult",
+  "members": [
+    {
+      "name": "Success",
+      "type": "bool",
+      "description": "Whether the upload operation succeeded."
+    },
+    {
+      "name": "IsComplete",
+      "type": "bool",
+      "description": "True when the asset is complete. Chunk uploads may return false before the final chunk."
+    },
+    {
+      "name": "AssetId",
+      "type": "string?",
+      "description": "Provider-managed asset identifier."
+    },
+    {
+      "name": "UploadSessionId",
+      "type": "string?",
+      "description": "Upload session id for chunked uploads, when needed."
+    },
+    {
+      "name": "Url",
+      "type": "string?",
+      "description": "Download or preview URL, when immediately available."
+    },
+    {
+      "name": "FileName",
+      "type": "string?",
+      "description": "Original or display file name."
+    },
+    {
+      "name": "ContentType",
+      "type": "string?",
+      "description": "MIME content type, when known."
+    },
+    {
+      "name": "SizeBytes",
+      "type": "long?",
+      "description": "File size in bytes, when known."
+    },
+    {
+      "name": "ExpiresAt",
+      "type": "DateTimeOffset?",
+      "description": "URL expiration timestamp, when the provider returns short-lived URLs."
+    },
+    {
+      "name": "ErrorMessage",
+      "type": "string?",
+      "description": "Error message when Success is false."
+    },
+    {
+      "name": "Metadata",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for consumer use."
+    }
+  ]
+}

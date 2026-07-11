@@ -1,0 +1,37 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Basic notification preferences for assignment, mention, and deadline workflows.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotificationPreferences.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmNotificationPreferences",
+  "members": [
+    {
+      "name": "EmailOnAssign",
+      "type": "bool",
+      "description": "Whether assignment notifications should also be delivered by email."
+    },
+    {
+      "name": "EmailOnMention",
+      "type": "bool",
+      "description": "Whether mention notifications should also be delivered by email."
+    },
+    {
+      "name": "PushOnAssign",
+      "type": "bool",
+      "description": "Whether assignment notifications should be delivered as push notifications."
+    },
+    {
+      "name": "PushOnMention",
+      "type": "bool",
+      "description": "Whether mention notifications should be delivered as push notifications."
+    },
+    {
+      "name": "PushOnDeadline",
+      "type": "bool",
+      "description": "Whether deadline notifications should be delivered as push notifications."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Configuration",
+  "namespace": "Tempo.Blazor.Configuration",
+  "description": "Extension methods for registering the full Tempo.Blazor split package set.",
+  "packageId": "Tempo.Blazor.All",
+  "sourcePath": "src/Tempo.Blazor.All/Configuration/AllServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "AllServiceCollectionExtensions",
+  "members": [
+    {
+      "name": "AddTempoBlazorAll",
+      "type": "IServiceCollection AddTempoBlazorAll(this IServiceCollection services)",
+      "description": "Registers the core Tempo.Blazor services and every split feature package: PDF viewer, codes, diagram editor, wireframe, modeling, spreadsheet, Gantt XLSX, document editor, Notion editor and signing."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Register the services in Program.cs",
+      "code": "// one call instead of registering each feature package separately\nbuilder.Services.AddTempoBlazorAll();"
+    }
+  ]
+}

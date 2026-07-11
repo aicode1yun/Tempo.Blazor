@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion",
+  "namespace": "Tempo.Blazor.Mcp.Notion",
+  "description": "MCP block tools for NotionEditor.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionBlockTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionBlockTools"
+}

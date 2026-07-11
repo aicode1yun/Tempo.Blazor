@@ -47,7 +47,7 @@
             continue;
         }
 
-        <td class="tm-notion-table__cell-td @(isHdrCol ? "tm-notion-table__cell-td--header-col" : "") @(IsHeaderRow ? "tm-notion-table__cell-td--header-row" : "") @(IsSelected(colIdx) ? "tm-notion-table__cell-td--selected" : "")"
+        <td class="tm-notion-table__cell-td @(isHdrCol ? "tm-notion-table__cell-td--header-col" : "") @(IsHeaderRow ? "tm-notion-table__cell-td--header-row" : "") @(IsSelected(colIdx) ? "tm-notion-table__cell-td--selected" : "") @AlignmentClass(colIdx)"
             @key="colIdx"
             data-tm-row="@RowIndex"
             data-tm-col="@colIdx"

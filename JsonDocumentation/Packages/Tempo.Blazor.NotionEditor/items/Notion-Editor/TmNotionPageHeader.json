@@ -15,7 +15,7 @@
       "name": "OnCommentBadgeClicked",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Total unresolved comment count for the page (header badge)."
+      "description": "Fired when the comment badge in the header is clicked."
     },
     {
       "name": "OnPageUpdated",
@@ -26,7 +26,8 @@
     {
       "name": "OnTitleEnterPressed",
       "type": "EventCallback",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Fired when Enter is pressed in the title, signalling to add a new block."
     },
     {
       "name": "Page",
@@ -37,13 +38,14 @@
     {
       "name": "ShowRestrictedIndicator",
       "type": "bool",
-      "isRequired": false
+      "isRequired": false,
+      "description": "When true, displays a visible page-level restricted access indicator in the header."
     },
     {
       "name": "UnresolvedCommentCount",
       "type": "int",
       "isRequired": false,
-      "description": "Fired when Enter is pressed in the title, signalling to add a new block."
+      "description": "Total unresolved comment count for the page (header badge)."
     }
   ],
   "subcategory": "Page"

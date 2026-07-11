@@ -15,44 +15,44 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Fallback culture used when localized labels are missing."
+      "description": "Additional CSS classes for the root element."
     },
     {
       "name": "Conditions",
       "type": "IReadOnlyList<SigningFieldCondition>",
       "isRequired": false,
       "default": "[]",
-      "description": "Field identifier whose conditions are currently edited."
+      "description": "Condition rules currently assigned to the edited field."
     },
     {
       "name": "ConditionsChanged",
       "type": "EventCallback<IReadOnlyList<SigningFieldCondition>>",
       "isRequired": false,
-      "description": "Condition rules currently assigned to the edited field."
+      "description": "Callback invoked when the condition rules change."
     },
     {
       "name": "Culture",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the builder controls are disabled."
+      "description": "Culture used to resolve localized field and option labels."
     },
     {
       "name": "CurrentFieldUuid",
       "type": "string?",
       "isRequired": false,
-      "description": "All fields in the current signing template."
+      "description": "Field identifier whose conditions are currently edited."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Callback invoked when the condition rules change."
+      "description": "Whether the builder controls are disabled."
     },
     {
       "name": "FallbackCulture",
       "type": "string?",
       "isRequired": false,
-      "description": "Culture used to resolve localized field and option labels."
+      "description": "Fallback culture used when localized labels are missing."
     }
   ]
 }

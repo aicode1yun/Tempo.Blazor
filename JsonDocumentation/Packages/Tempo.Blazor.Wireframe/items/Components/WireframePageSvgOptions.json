@@ -1,0 +1,38 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Options controlling a static wireframe page → SVG render.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframePageSvg.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframePageSvgOptions",
+  "members": [
+    {
+      "name": "Default",
+      "type": "static WireframePageSvgOptions Default",
+      "description": "Shared default options (no grid, white background)."
+    },
+    {
+      "name": "ShowGrid",
+      "type": "bool",
+      "description": "When true, draws the canvas grid. Defaults to false — previews rarely want a grid."
+    },
+    {
+      "name": "ShowBackground",
+      "type": "bool",
+      "description": "When true, draws the page background rectangle. Defaults to true."
+    },
+    {
+      "name": "BackgroundFill",
+      "type": "string",
+      "description": "Background fill colour used when ShowBackground is true. Defaults to \"white\"."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Transparent preview without a grid",
+      "code": "var options = new WireframePageSvgOptions\n{\n    ShowGrid = false,\n    ShowBackground = false,\n};\n\nvar svg = await renderer.RenderPageAsync(page, options: options);"
+    }
+  ]
+}

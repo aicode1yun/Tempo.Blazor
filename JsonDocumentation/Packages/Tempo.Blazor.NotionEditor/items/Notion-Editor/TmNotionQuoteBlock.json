@@ -14,61 +14,62 @@
     {
       "name": "OnContentSaved",
       "type": "EventCallback<string>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Fired on blur when the HTML has changed. Arg = new HTML."
     },
     {
       "name": "OnDeleteRequested",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fired after Enter splits the block. Arg = HTML fragment after the split point."
+      "description": "Fired when Backspace is pressed on an empty block."
     },
     {
       "name": "OnEnterSplit",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fired on blur when the HTML has changed. Arg = new HTML."
+      "description": "Fired after Enter splits the block. Arg = HTML fragment after the split point."
     },
     {
       "name": "OnFocused",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fired when a markdown pattern is recognised. Arg = shortcut key."
+      "description": "Fired when the element receives focus."
     },
     {
       "name": "OnIndentChange",
       "type": "EventCallback<bool>",
       "isRequired": false,
-      "description": "Fired when Backspace is pressed on an empty block."
+      "description": "Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent)."
     },
     {
       "name": "OnMentionMenu",
       "type": "EventCallback<(double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when '/' is typed in a trigger position. Args = (top, left) caret coords."
+      "description": "Fired when '@' mention syntax is typed. Args = (top, left) caret coords."
     },
     {
       "name": "OnPageLinkMenu",
       "type": "EventCallback<(double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when '@' mention syntax is typed. Args = (top, left) caret coords."
+      "description": "Fired when '[[' page-link syntax is typed. Args = (top, left) caret coords."
     },
     {
       "name": "OnSlashMenu",
       "type": "EventCallback<(double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when the element receives focus."
+      "description": "Fired when '/' is typed in a trigger position. Args = (top, left) caret coords."
     },
     {
       "name": "OnTokenMenu",
       "type": "EventCallback<(double Top, double Left)>",
       "isRequired": false,
-      "description": "Fired when '[[' page-link syntax is typed. Args = (top, left) caret coords."
+      "description": "Fired when '{{' token syntax is typed. Args = (top, left) caret coords."
     },
     {
       "name": "OnTypeConvert",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent)."
+      "description": "Fired when a markdown pattern is recognised. Arg = shortcut key."
     }
   ],
   "subcategory": "Blocks / Text"

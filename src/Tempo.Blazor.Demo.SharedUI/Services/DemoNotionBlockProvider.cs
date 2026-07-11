@@ -42,6 +42,15 @@ public class DemoNotionBlockProvider : INotionBlockProvider
         return createdBlocks ?? [];
     }
 
+    public async Task RestoreBlocksAsync(IEnumerable<IPageBlock> blocks)
+    {
+        var payload = blocks.ToList();
+        if (payload.Count == 0) return;
+
+        var response = await _http.PostAsJsonAsync("/api/notion/blocks/restore", payload);
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task UpdateBlockAsync(IPageBlock block)
     {
         var response = await _http.PutAsJsonAsync($"/api/notion/blocks/{block.Id}", block);
@@ -81,9 +90,12 @@ public class DemoNotionBlockProvider : INotionBlockProvider
         return block ?? throw new Exception("Failed to duplicate block");
     }
 
-    public async Task<IPageBlock> ConvertBlockTypeAsync(string blockId, BlockType newType)
+    public Task<IPageBlock> ConvertBlockTypeAsync(string blockId, BlockType newType)
+        => ConvertBlockTypeAsync(blockId, newType, currentHtml: null);
+
+    public async Task<IPageBlock> ConvertBlockTypeAsync(string blockId, BlockType newType, string? currentHtml)
     {
-        var response = await _http.PostAsJsonAsync($"/api/notion/blocks/{blockId}/convert", new { newType });
+        var response = await _http.PostAsJsonAsync($"/api/notion/blocks/{blockId}/convert", new { newType, currentHtml });
         response.EnsureSuccessStatusCode();
         var block = await response.Content.ReadFromJsonAsync<PageBlock>();
         return block ?? throw new Exception("Failed to convert block");

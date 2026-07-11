@@ -15,81 +15,81 @@
       "name": "ActiveTimerTaskId",
       "type": "string?",
       "isRequired": false,
-      "description": "Fires when the user closes the panel via the close button."
+      "description": "Id of the task whose timer is currently running. Null if none."
     },
     {
       "name": "AllTasks",
       "type": "IReadOnlyList<GanttTask>",
       "isRequired": false,
       "default": "[]",
-      "description": "The task being edited."
+      "description": "All tasks for parent selection."
     },
     {
       "name": "Dependencies",
       "type": "IReadOnlyList<GanttDependency>",
       "isRequired": false,
       "default": "[]",
-      "description": "All tasks for parent selection."
+      "description": "Existing dependencies."
     },
     {
       "name": "OnAttachmentRemoved",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fires when the user selects a file to attach."
+      "description": "Fires when the user removes an attachment (by attachment Id)."
     },
     {
       "name": "OnAttachmentUpload",
       "type": "EventCallback<IBrowserFile>",
       "isRequired": false,
-      "description": "Fires when the description textarea changes (live)."
+      "description": "Fires when the user selects a file to attach."
     },
     {
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fires when the user submits a new comment."
+      "description": "Fires when the user closes the panel via the close button."
     },
     {
       "name": "OnCommentAdded",
       "type": "EventCallback<GanttComment>",
       "isRequired": false,
-      "description": "Fires when the user removes an attachment (by attachment Id)."
+      "description": "Fires when the user submits a new comment."
     },
     {
       "name": "OnDependencyAdded",
       "type": "EventCallback<GanttDependency>",
       "isRequired": false,
-      "description": "Fires when the task is saved with valid data."
+      "description": "Fires when a new dependency is added."
     },
     {
       "name": "OnDependencyRemoved",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fires when a new dependency is added."
+      "description": "Fires when a dependency is removed (by its Id)."
     },
     {
       "name": "OnDescriptionChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Fires when a dependency is removed (by its Id)."
+      "description": "Fires when the description textarea changes (live)."
     },
     {
       "name": "OnTaskUpdated",
       "type": "EventCallback<GanttTask>",
       "isRequired": false,
-      "description": "Existing dependencies."
+      "description": "Fires when the task is saved with valid data."
     },
     {
       "name": "OnTimerStarted",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Id of the task whose timer is currently running. Null if none."
+      "description": "Fires when the user starts the timer for this task (arg = taskId)."
     },
     {
       "name": "OnTimerStopped",
       "type": "EventCallback<(string TaskId, GanttTimeLogEntry Entry)>",
       "isRequired": false,
-      "description": "Fires when the user starts the timer for this task (arg = taskId)."
+      "description": "Fires when the user stops the timer (arg = taskId + completed log entry)."
     }
   ]
 }

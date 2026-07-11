@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
+using TableColumnAlignment = Tempo.Blazor.DocumentEditor.Models.TableColumnAlignment;
 
 namespace Tempo.Blazor.Components.NotionEditor.Services;
 
@@ -82,21 +83,30 @@ public static class NotionMarkdownImporter
                 continue;
             }
 
-            // ── GFM Table (line contains |) ────────────────────────────────────
-            if (line.Contains('|') && i + 1 < lines.Length && IsSeparatorRow(lines[i + 1]))
+            // ── GFM Table (outer pipes optional) ───────────────────────────────
+            if (ContainsUnescapedPipe(line) && i + 1 < lines.Length && IsSeparatorRow(lines[i + 1]))
             {
                 var headerCells = ParseTableRow(line);
+                var columnCount = headerCells.Count;
+                var alignments = ParseColumnAlignments(lines[i + 1], columnCount);
                 i += 2; // skip header + separator
 
-                // header row
-                blocks.Add(MakeBlock(pageId, order++, BlockType.TableRow,
-                    new TableRowBlockContent { Cells = headerCells }));
-
-                while (i < lines.Length && lines[i].Contains('|'))
+                // The rows are children of this Table block, matching TmNotionTableBlock's live model.
+                var tableBlock = MakeBlock(pageId, order++, BlockType.Table, new TableBlockContent
                 {
-                    var cells = ParseTableRow(lines[i]);
-                    blocks.Add(MakeBlock(pageId, order++, BlockType.TableRow,
-                        new TableRowBlockContent { Cells = cells }));
+                    ColumnCount = columnCount,
+                    HasHeaderRow = true,
+                    ColumnAlignments = alignments
+                });
+                blocks.Add(tableBlock);
+
+                var rowOrder = 0;
+                blocks.Add(MakeRowBlock(pageId, tableBlock.Id, rowOrder++, headerCells));
+
+                while (i < lines.Length && ContainsUnescapedPipe(lines[i]))
+                {
+                    var cells = NormalizeCells(ParseTableRow(lines[i]), columnCount);
+                    blocks.Add(MakeRowBlock(pageId, tableBlock.Id, rowOrder++, cells));
                     i++;
                 }
                 continue;
@@ -127,7 +137,7 @@ public static class NotionMarkdownImporter
 
             // ── Block image  ![alt](url) ──────────────────────────────────────
             var imgMatch = Regex.Match(line, @"^!\[([^\]]*)\]\(([^)]+)\)\s*$");
-            if (imgMatch.Success)
+            if (imgMatch.Success && NotionUrlSanitizer.IsSafe(imgMatch.Groups[2].Value))
             {
                 blocks.Add(MakeBlock(pageId, order++, BlockType.Image,
                     new ImageBlockContent
@@ -149,7 +159,8 @@ public static class NotionMarkdownImporter
                     quoteLines.Add(lines[i].Length > 2 ? lines[i][2..] : string.Empty);
                     i++;
                 }
-                var quoteHtml = InlineMarkdownToHtml(string.Join("<br>", quoteLines));
+                // Convert each line separately; joining first would encode the <br> separator.
+                var quoteHtml = string.Join("<br>", quoteLines.Select(InlineMarkdownToHtml));
                 blocks.Add(MakeBlock(pageId, order++, BlockType.Quote,
                     new TextBlockContent { Html = quoteHtml }));
                 continue;
@@ -227,22 +238,45 @@ public static class NotionMarkdownImporter
 
     // ── Inline Markdown → HTML ────────────────────────────────────────────────
 
-    /// <summary>Converts CommonMark inline elements to HTML for storage in block content.</summary>
+    /// <summary>
+    /// Converts CommonMark inline elements to HTML for storage in block content.
+    /// Everything that is not generated markup is HTML-encoded, and link/image URLs are
+    /// restricted to http, https, mailto and relative targets.
+    /// </summary>
     public static string InlineMarkdownToHtml(string text)
     {
         if (string.IsNullOrEmpty(text)) return string.Empty;
 
-        // links and images first
-        text = Regex.Replace(text,
-            @"!\[([^\]]*)\]\(([^)]+)\)",
-            m => $"<img src=\"{HtmlAttrEncode(m.Groups[2].Value)}\" alt=\"{HtmlEncode(m.Groups[1].Value)}\">",
+        // The placeholder marker must never originate from user input.
+        text = text.Replace(PlaceholderMarker, string.Empty, StringComparison.Ordinal);
+
+        var generated = new List<string>();
+
+        // Code spans first: their content must not be interpreted as markdown.
+        text = Regex.Replace(text, @"`([^`]+)`",
+            m => Stash(generated, $"<code>{HtmlEncode(m.Groups[1].Value)}</code>"),
             RegexOptions.Singleline);
 
-        text = Regex.Replace(text,
-            @"\[([^\]]+)\]\(([^)]+)\)",
-            m => $"<a href=\"{HtmlAttrEncode(m.Groups[2].Value)}\">{m.Groups[1].Value}</a>",
+        text = Regex.Replace(text, @"!\[([^\]]*)\]\(([^)]+)\)",
+            m => Stash(generated, RenderImage(m.Groups[1].Value, m.Groups[2].Value)),
             RegexOptions.Singleline);
 
+        text = Regex.Replace(text, @"\[([^\]]+)\]\(([^)]+)\)",
+            m => Stash(generated, RenderLink(m.Groups[1].Value, m.Groups[2].Value)),
+            RegexOptions.Singleline);
+
+        // Any remaining raw text is untrusted and must not survive as markup.
+        text = HtmlEncode(text);
+        text = ApplyEmphasis(text);
+
+        // line break (two trailing spaces)
+        text = Regex.Replace(text, @"  $", "<br>", RegexOptions.Multiline);
+
+        return Unstash(text, generated);
+    }
+
+    private static string ApplyEmphasis(string text)
+    {
         // bold + italic ***...***
         text = Regex.Replace(text, @"\*\*\*(.+?)\*\*\*", "<strong><em>$1</em></strong>", RegexOptions.Singleline);
         text = Regex.Replace(text, @"___(.+?)___",        "<strong><em>$1</em></strong>", RegexOptions.Singleline);
@@ -261,28 +295,157 @@ public static class NotionMarkdownImporter
         // highlight ==...==
         text = Regex.Replace(text, @"==(.+?)==", "<mark>$1</mark>", RegexOptions.Singleline);
 
-        // inline code `...`
-        text = Regex.Replace(text, @"`([^`]+)`",
-            m => $"<code>{HtmlEncode(m.Groups[1].Value)}</code>",
-            RegexOptions.Singleline);
+        return text;
+    }
 
-        // line break (two spaces or explicit \n)
-        text = Regex.Replace(text, @"  $", "<br>", RegexOptions.Multiline);
+    private static string RenderLink(string label, string url)
+    {
+        var safeLabel = ApplyEmphasis(HtmlEncode(label));
+        return NotionUrlSanitizer.IsSafe(url)
+            ? $"<a href=\"{HtmlAttrEncode(url)}\">{safeLabel}</a>"
+            : safeLabel;
+    }
+
+    private static string RenderImage(string alt, string url)
+        => NotionUrlSanitizer.IsSafe(url)
+            ? $"<img src=\"{HtmlAttrEncode(url)}\" alt=\"{HtmlEncode(alt)}\">"
+            : HtmlEncode(alt);
+
+    // ── Placeholder plumbing (keeps generated markup out of the encoder) ──────
+
+    private const string PlaceholderMarker = "\u0001";
+
+    private static string Stash(List<string> generated, string markup)
+    {
+        generated.Add(markup);
+        return $"{PlaceholderMarker}{generated.Count - 1}{PlaceholderMarker}";
+    }
+
+    private static string Unstash(string text, List<string> generated)
+    {
+        for (var index = 0; index < generated.Count; index++)
+        {
+            text = text.Replace(
+                $"{PlaceholderMarker}{index}{PlaceholderMarker}",
+                generated[index],
+                StringComparison.Ordinal);
+        }
 
         return text;
     }
 
     // ── Table helpers ─────────────────────────────────────────────────────────
 
-    private static bool IsSeparatorRow(string line) =>
-        Regex.IsMatch(line.Trim(), @"^\|?(\s*:?-+:?\s*\|)+\s*:?-+:?\s*\|?$");
+    /// <summary>
+    /// A delimiter row is a pipe-delimited line whose every cell is a run of dashes with optional
+    /// colon anchors. Requiring a pipe is what separates a single-column delimiter (<c>| --- |</c>)
+    /// from a thematic break (<c>---</c>).
+    /// </summary>
+    private static bool IsSeparatorRow(string line)
+    {
+        var trimmed = line.Trim();
+        if (!ContainsUnescapedPipe(trimmed))
+        {
+            return false;
+        }
+
+        var cells = SplitCells(trimmed);
+        return cells.Count > 0 && cells.All(cell => Regex.IsMatch(cell.Trim(), @"^:?-+:?$"));
+    }
+
+    /// <summary>Outer pipes are optional in GFM; only an unescaped pipe delimits cells.</summary>
+    private static bool ContainsUnescapedPipe(string line)
+    {
+        var escaped = false;
+        foreach (var ch in line)
+        {
+            if (escaped) { escaped = false; continue; }
+            if (ch == '\\') { escaped = true; continue; }
+            if (ch == '|') return true;
+        }
+
+        return false;
+    }
+
+    private static List<string> SplitCells(string line)
+    {
+        var trimmed = line.Trim();
+        var cells = new List<string>();
+        var current = new StringBuilder();
+        var escaped = false;
+        var endedOnDelimiter = false;
+
+        foreach (var ch in trimmed)
+        {
+            if (escaped)
+            {
+                current.Append(ch);
+                escaped = false;
+                endedOnDelimiter = false;
+                continue;
+            }
+
+            if (ch == '\\') { escaped = true; continue; }
+
+            if (ch == '|')
+            {
+                cells.Add(current.ToString());
+                current.Clear();
+                endedOnDelimiter = true;
+                continue;
+            }
+
+            current.Append(ch);
+            endedOnDelimiter = false;
+        }
+
+        cells.Add(current.ToString());
+
+        if (endedOnDelimiter && cells.Count > 1) cells.RemoveAt(cells.Count - 1);
+        if (cells.Count > 1 && trimmed.StartsWith('|')) cells.RemoveAt(0);
+
+        return cells;
+    }
 
     private static List<string> ParseTableRow(string line)
+        => SplitCells(line).Select(cell => InlineMarkdownToHtml(cell.Trim())).ToList();
+
+    private static List<TableColumnAlignment> ParseColumnAlignments(string separatorLine, int columnCount)
     {
-        var trimmed = line.Trim().Trim('|');
-        return trimmed.Split('|')
-            .Select(c => InlineMarkdownToHtml(c.Trim()))
-            .ToList();
+        var alignments = SplitCells(separatorLine).Select(ParseColumnAlignment).ToList();
+
+        if (alignments.Count > columnCount) return [.. alignments.Take(columnCount)];
+        while (alignments.Count < columnCount) alignments.Add(TableColumnAlignment.None);
+        return alignments;
+    }
+
+    private static TableColumnAlignment ParseColumnAlignment(string separatorCell)
+    {
+        var cell = separatorCell.Trim();
+        var left = cell.StartsWith(':');
+        var right = cell.EndsWith(':') && cell.Length > 1;
+
+        return (left, right) switch
+        {
+            (true, true) => TableColumnAlignment.Center,
+            (true, false) => TableColumnAlignment.Left,
+            (false, true) => TableColumnAlignment.Right,
+            _ => TableColumnAlignment.None
+        };
+    }
+
+    private static List<string> NormalizeCells(List<string> cells, int columnCount)
+    {
+        if (cells.Count > columnCount) return [.. cells.Take(columnCount)];
+        while (cells.Count < columnCount) cells.Add(string.Empty);
+        return cells;
+    }
+
+    private static IPageBlock MakeRowBlock(Guid pageId, Guid tableId, int order, List<string> cells)
+    {
+        var row = (PageBlock)MakeBlock(pageId, order, BlockType.TableRow, new TableRowBlockContent { Cells = cells });
+        row.ParentBlockId = tableId;
+        return row;
     }
 
     // ── Factory ───────────────────────────────────────────────────────────────
@@ -307,5 +470,5 @@ public static class NotionMarkdownImporter
 
     private static string HtmlAttrEncode(string? url) =>
         string.IsNullOrEmpty(url) ? string.Empty
-            : url.Replace("\"", "&quot;").Replace("'", "&#39;");
+            : HtmlEncode(url).Replace("'", "&#39;");
 }

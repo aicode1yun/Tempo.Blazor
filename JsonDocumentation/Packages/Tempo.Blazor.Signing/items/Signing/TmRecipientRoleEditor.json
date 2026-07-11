@@ -15,32 +15,32 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the editor controls are disabled."
+      "description": "Additional CSS classes for the root element."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Fields available for invite-via-field rules."
+      "description": "Whether the editor controls are disabled."
     },
     {
       "name": "Fields",
       "type": "IReadOnlyList<SigningField>",
       "isRequired": false,
       "default": "[]",
-      "description": "Whether the editor edits template roles or concrete submission recipients."
+      "description": "Fields available for invite-via-field rules."
     },
     {
       "name": "Mode",
       "type": "TmRecipientRoleEditorMode",
       "isRequired": true,
-      "description": "Callback invoked whenever roles change."
+      "description": "Whether the editor edits template roles or concrete submission recipients."
     },
     {
       "name": "RolesChanged",
       "type": "EventCallback<IReadOnlyList<SigningSubmitterRole>>",
       "isRequired": false,
-      "description": "Roles or submission recipients currently edited."
+      "description": "Callback invoked whenever roles change."
     }
   ]
 }

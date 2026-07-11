@@ -1,0 +1,17 @@
+{
+  "kind": "Interface",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Marker interface for schema sources whose schemas belong to a single application scope. Registry entries are exposed under app:{ScopeAppId}:{Type}.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/IWireframeSchemaSource.cs",
+  "documentationStatus": "generated",
+  "itemName": "IWireframeScopedSchemaSource",
+  "members": [
+    {
+      "name": "ScopeAppId",
+      "type": "string",
+      "description": "Application id used to namespace the source's custom component types."
+    }
+  ]
+}

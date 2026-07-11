@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "Normalizes whole-document authoring payloads before they are validated and saved by MCP tools.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeDocumentAuthoringEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeDocumentAuthoringEngine"
+}

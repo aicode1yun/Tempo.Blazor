@@ -1,0 +1,38 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Compiles declarative stencil pack components into wireframe component definitions. Validation problems are reported as non-fatal warnings on the result rather than as exceptions, so one bad component does not discard the whole pack.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilPackCompiler.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilPackCompiler",
+  "examples": [
+    {
+      "title": "Compile a stencil pack and inspect the diagnostics",
+      "code": "// pass the trusted renderers to the compiler, not to Compile()\nvar compiler = new StencilPackCompiler(NativeRendererRegistry.TempoBuiltIn);\n\nvar result = compiler.CompileWithDiagnostics(pack);\nforeach (var warning in result.Warnings)\n{\n    logger.LogWarning(\"stencil pack: {Warning}\", warning);\n}\n\n// or, when the warnings do not matter\nvar definitions = compiler.Compile(pack);"
+    }
+  ],
+  "members": [
+    {
+      "name": "StencilPackCompiler",
+      "type": "StencilPackCompiler()",
+      "description": "Uses a fresh, empty NativeRendererRegistry."
+    },
+    {
+      "name": "StencilPackCompiler",
+      "type": "StencilPackCompiler(NativeRendererRegistry nativeRenderers)",
+      "description": "Compiles against a specific set of trusted native renderers, e.g. NativeRendererRegistry.TempoBuiltIn."
+    },
+    {
+      "name": "CompileWithDiagnostics",
+      "type": "StencilPackCompilationResult CompileWithDiagnostics(StencilPack pack)",
+      "description": "Compiles the pack and returns the definitions together with non-fatal validation warnings."
+    },
+    {
+      "name": "Compile",
+      "type": "IEnumerable<WireframeComponentDef> Compile(StencilPack pack)",
+      "description": "Convenience overload that returns only the definitions and discards the warnings."
+    }
+  ]
+}

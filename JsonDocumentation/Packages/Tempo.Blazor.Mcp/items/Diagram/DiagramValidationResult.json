@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "The outcome of validating a diagram document.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramValidationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramValidationResult"
+}

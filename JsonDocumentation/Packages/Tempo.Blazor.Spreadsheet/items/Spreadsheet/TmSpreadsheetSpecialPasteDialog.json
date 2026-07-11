@@ -15,7 +15,7 @@
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user applies the paste."
+      "description": "Raised when the dialog is dismissed."
     }
   ],
   "subcategory": "Dialogs"

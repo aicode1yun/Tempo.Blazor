@@ -1,0 +1,24 @@
+{
+  "kind": "Enum",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "How a stencil's artwork adapts when the element is resized.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilResize.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilResize",
+  "values": [
+    {
+      "name": "Scale",
+      "description": "Scales the whole artwork uniformly with the element."
+    },
+    {
+      "name": "NineSlice",
+      "description": "Keeps the corners fixed and stretches the edges and centre, driven by the stencil's Slice definition."
+    },
+    {
+      "name": "Reflow",
+      "description": "Re-runs layout so children reflow into the new size instead of being scaled."
+    }
+  ]
+}

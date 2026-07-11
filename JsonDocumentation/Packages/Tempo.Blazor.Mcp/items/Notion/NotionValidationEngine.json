@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion",
+  "namespace": "Tempo.Blazor.Mcp.Notion",
+  "description": "Validates Notion pages and block trees for MCP write tools.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionValidationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionValidationEngine"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "MCP tools for reading and saving document editor snapshots.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorDocumentTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorDocumentTools"
+}

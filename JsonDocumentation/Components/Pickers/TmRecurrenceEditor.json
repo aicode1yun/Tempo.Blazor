@@ -15,33 +15,33 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Disables the editor."
+      "description": "Additional CSS class."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Whether to show the generated RRULE summary. Default is true."
+      "description": "Disables the editor."
     },
     {
       "name": "ShowSummary",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "The start date used when parsing the rule. Default is today."
+      "description": "Whether to show the generated RRULE summary. Default is true."
     },
     {
       "name": "StartDate",
       "type": "DateTime",
       "isRequired": false,
       "default": "DateTime.Today",
-      "description": "Fires when the rule changes."
+      "description": "The start date used when parsing the rule. Default is today."
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "The recurrence rule value (iCal RRULE string)."
+      "description": "Fires when the rule changes."
     }
   ]
 }

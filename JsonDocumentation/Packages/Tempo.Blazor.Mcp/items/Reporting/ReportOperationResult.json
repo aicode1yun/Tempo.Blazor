@@ -1,0 +1,17 @@
+{
+  "kind": "Record",
+  "category": "Reporting",
+  "namespace": "Tempo.Blazor.Mcp.Reporting",
+  "description": "Outcome of applying a granular operation batch to a report definition.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportOperationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportOperationResult",
+  "members": [
+    {
+      "name": "Apply",
+      "type": "static ReportOperationResult Apply()",
+      "description": "Applies report edit operations to a copy of ."
+    }
+  ]
+}

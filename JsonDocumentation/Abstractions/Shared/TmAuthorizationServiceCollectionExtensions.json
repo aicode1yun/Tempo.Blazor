@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Dependency injection helpers for shared authorization providers.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmAuthorizationServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmAuthorizationServiceCollectionExtensions",
+  "members": [
+    {
+      "name": "AddTmAuthorization",
+      "type": "static IServiceCollection AddTmAuthorization()",
+      "description": "Registers shared authorization services. Safe to call multiple times."
+    },
+    {
+      "name": "AddTmAuthorizationProvider",
+      "type": "static IServiceCollection AddTmAuthorizationProvider()",
+      "description": "Registers an ITmAuthorizationProvider instance."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Configuration",
+  "namespace": "Tempo.Blazor.Configuration",
+  "description": "Extension methods for registering Tempo.Blazor spreadsheet services.",
+  "packageId": "Tempo.Blazor.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor.Spreadsheet/Configuration/SpreadsheetServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetServiceCollectionExtensions",
+  "members": [
+    {
+      "name": "AddTempoBlazorSpreadsheet",
+      "type": "IServiceCollection AddTempoBlazorSpreadsheet(this IServiceCollection services)",
+      "description": "Registers the services required by the spreadsheet component group. Also calls AddTempoBlazor()."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Register the services in Program.cs",
+      "code": "builder.Services.AddTempoBlazorSpreadsheet();"
+    }
+  ]
+}

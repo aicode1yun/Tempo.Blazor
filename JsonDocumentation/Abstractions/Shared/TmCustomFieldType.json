@@ -1,0 +1,48 @@
+{
+  "kind": "Enum",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Supported shared custom field value types.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCustomFieldType.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmCustomFieldType",
+  "values": [
+    {
+      "name": "Text",
+      "description": "Single-line or short free text."
+    },
+    {
+      "name": "Number",
+      "description": "Numeric value serialized by providers using their preferred format."
+    },
+    {
+      "name": "Date",
+      "description": "Date or date-time value."
+    },
+    {
+      "name": "List",
+      "description": "Single value selected from predefined options."
+    },
+    {
+      "name": "Checkbox",
+      "description": "Boolean checkbox value."
+    },
+    {
+      "name": "Color",
+      "description": "CSS color value or design token."
+    },
+    {
+      "name": "Multiselect",
+      "description": "Multiple values selected from predefined options."
+    },
+    {
+      "name": "People",
+      "description": "One or more user references."
+    },
+    {
+      "name": "Labels",
+      "description": "One or more label/tag values."
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "kind": "Enum",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Operations supported by an ITmActivityProvider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmActivityProviderCapabilities.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmActivityProviderCapabilities",
+  "values": [
+    {
+      "name": "None",
+      "description": "No optional operations are supported."
+    },
+    {
+      "name": "Read",
+      "description": "Provider can read activity entries for a specific entity."
+    },
+    {
+      "name": "Query",
+      "description": "Provider can query activity entries across entities."
+    },
+    {
+      "name": "Append",
+      "description": "Provider can append new activity entries."
+    }
+  ]
+}

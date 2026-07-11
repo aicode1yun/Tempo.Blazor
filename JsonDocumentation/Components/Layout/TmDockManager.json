@@ -15,7 +15,7 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Fires whenever the layout changes (dock, float, close, reorder)."
+      "description": "Additional CSS class."
     },
     {
       "name": "Items",
@@ -27,7 +27,7 @@
       "name": "OnLayoutChanged",
       "type": "EventCallback<DockLayout>",
       "isRequired": false,
-      "description": "Fires when a pane is docked back from floating."
+      "description": "Fires whenever the layout changes (dock, float, close, reorder)."
     },
     {
       "name": "OnPaneClose",
@@ -39,13 +39,13 @@
       "name": "OnPaneDock",
       "type": "EventCallback<DockPane>",
       "isRequired": false,
-      "description": "Fires when a pane is floated."
+      "description": "Fires when a pane is docked back from floating."
     },
     {
       "name": "OnPaneFloat",
       "type": "EventCallback<DockPane>",
       "isRequired": false,
-      "description": "Fires when a pane is closed."
+      "description": "Fires when a pane is floated."
     },
     {
       "name": "PaneTemplate",

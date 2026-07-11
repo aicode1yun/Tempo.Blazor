@@ -16,20 +16,20 @@
       "type": "DocumentOpenMode",
       "isRequired": false,
       "default": "DocumentOpenMode.Link",
-      "description": "Whether to offer the link-or-copy choice. Defaults to true."
+      "description": "Initial insert mode. Defaults to <see cref=\"DocumentOpenMode.Link\"/>."
     },
     {
       "name": "Kind",
       "type": "TempoDocumentKind",
       "isRequired": true,
-      "description": "The library to browse. Required.",
+      "description": "Which kind of documents to list.",
       "editorRequired": true
     },
     {
       "name": "OnCancelled",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised with the chosen document when the user confirms."
+      "description": "Raised when the user cancels."
     },
     {
       "name": "OnSelected",
@@ -41,34 +41,34 @@
       "name": "Open",
       "type": "bool",
       "isRequired": false,
-      "description": "Which kind of documents to list."
+      "description": "Whether the dialog is shown."
     },
     {
       "name": "OpenChanged",
       "type": "EventCallback<bool>",
       "isRequired": false,
-      "description": "Whether the dialog is shown."
+      "description": "Raised when the dialog opens or closes."
     },
     {
       "name": "PageSize",
       "type": "int",
       "isRequired": false,
       "default": "50",
-      "description": "Raised when the user cancels."
+      "description": "Page size for browsing. Defaults to 50."
     },
     {
       "name": "SearchDebounceMs",
       "type": "int",
       "isRequired": false,
       "default": "300",
-      "description": "Page size for browsing. Defaults to 50."
+      "description": "Search debounce in milliseconds. Defaults to 300; set 0 in tests."
     },
     {
       "name": "ShowModeToggle",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Raised when the dialog opens or closes."
+      "description": "Whether to offer the link-or-copy choice. Defaults to true."
     }
   ]
 }

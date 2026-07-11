@@ -16,61 +16,61 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Callback raised when the editor viewpoint selection changes."
+      "description": "Whether model tree elements can be reused by dropping them onto the preview canvas."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Callback raised after a model tree element is reused as a new preview node."
+      "description": "Additional CSS class applied to the editor root."
     },
     {
       "name": "ModelLoaderOverride",
       "type": "Func<ModelingModelRequest, CancellationToken, Task<ModelingModelDto>>?",
       "isRequired": false,
-      "description": "Additional CSS class applied to the editor root."
+      "description": "Optional loader used by host pages or tests to supply a model without registering a provider."
     },
     {
       "name": "NotationKey",
       "type": "string?",
       "isRequired": false,
-      "description": "Provider key used to select the semantic model provider. Null or empty values render the empty state."
+      "description": "Optional notation key passed to the selected provider and generator."
     },
     {
       "name": "OnDiagramGenerated",
       "type": "EventCallback<DiagramDocument>",
       "isRequired": false,
-      "description": "Optional viewpoint key passed to the selected provider and used to choose the initial model view."
+      "description": "Callback raised after a model is loaded and converted into a diagram document."
     },
     {
       "name": "OnNodeDropped",
       "type": "EventCallback<ModelingNodeDroppedEventArgs>",
       "isRequired": false,
-      "description": "Whether model tree elements can be reused by dropping them onto the preview canvas."
+      "description": "Callback raised after a model tree element is reused as a new preview node."
     },
     {
       "name": "OnNotationChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Callback raised when the user opens the generated diagram in the full diagram editor."
+      "description": "Callback raised when the editor notation selection changes."
     },
     {
       "name": "OnOpenInEditor",
       "type": "EventCallback<DiagramDocument>",
       "isRequired": false,
-      "description": "Callback raised after a model is loaded and converted into a diagram document."
+      "description": "Callback raised when the user opens the generated diagram in the full diagram editor."
     },
     {
       "name": "OnViewpointChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Callback raised when the editor notation selection changes."
+      "description": "Callback raised when the editor viewpoint selection changes."
     },
     {
       "name": "ViewpointKey",
       "type": "string?",
       "isRequired": false,
-      "description": "Optional notation key passed to the selected provider and generator."
+      "description": "Optional viewpoint key passed to the selected provider and used to choose the initial model view."
     }
   ]
 }

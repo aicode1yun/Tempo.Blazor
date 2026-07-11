@@ -1,3 +1,5 @@
+using Tempo.Blazor.DocumentEditor.Models;
+
 namespace Tempo.Blazor.NotionEditor.Models;
 
 public class TableBlockContent : ITableBlockContent
@@ -17,4 +19,7 @@ public class TableBlockContent : ITableBlockContent
         set => HasHeaderColumn = value;
     }
     public int ColumnCount { get; set; }
+
+    /// <summary>Per-column horizontal alignment, indexed by column. Empty means no explicit alignment.</summary>
+    public IReadOnlyList<TableColumnAlignment> ColumnAlignments { get; set; } = [];
 }

@@ -15,14 +15,14 @@
       "name": "OnZoomChanged",
       "type": "EventCallback<double>",
       "isRequired": false,
-      "description": "The current zoom factor (1.0 = 100%)."
+      "description": "Called when the zoom factor changes."
     },
     {
       "name": "Zoom",
       "type": "double",
       "isRequired": false,
       "default": "1.0",
-      "description": "The aggregation result for the current selection."
+      "description": "The current zoom factor (1.0 = 100%)."
     }
   ]
 }

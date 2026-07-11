@@ -1,0 +1,16 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Resolves a token key through a fixed precedence chain: element override, document theme, pack theme, pack defaults, and finally a literal fallback. Keys are matched with StringComparer.Ordinal, so token lookups are case-sensitive.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilTokenResolver.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilTokenResolver",
+  "examples": [
+    {
+      "title": "Use StencilTokenResolver",
+      "code": "// the resolver is supplied through the evaluation context\nvar context = StencilEvalContext.Empty with { Tokens = tokenResolver };\n\n// token() is the only function a stencil expression may call;\n// the optional second argument is a literal fallback\nvar fill = evaluator.Evaluate(\"token('color.primary', '#3b82f6')\", context).AsString();\n\n// lookup order: element override → document theme → pack theme → pack defaults → fallback"
+    }
+  ]
+}

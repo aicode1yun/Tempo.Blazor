@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Authorization request for an action against a shared entity reference.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmAuthorizationRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmAuthorizationRequest",
+  "members": [
+    {
+      "name": "User",
+      "type": "TmUserRef?",
+      "description": "User requesting the action, or null for an anonymous caller."
+    },
+    {
+      "name": "GroupIds",
+      "type": "IReadOnlyList<string>",
+      "description": "Group identifiers associated with the requesting user."
+    },
+    {
+      "name": "Action",
+      "type": "string",
+      "description": "Action being requested, for example view, comment, or edit."
+    },
+    {
+      "name": "EntityRef",
+      "type": "TmEntityRef",
+      "description": "Entity targeted by the request."
+    },
+    {
+      "name": "Metadata",
+      "type": "Dictionary<string, object>?",
+      "description": "Optional provider-specific metadata."
+    },
+    {
+      "name": "Create",
+      "type": "static TmAuthorizationRequest Create()",
+      "description": "Creates a normalized authorization request."
+    }
+  ]
+}

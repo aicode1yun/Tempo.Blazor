@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Reporting",
+  "namespace": "Tempo.Blazor.Mcp.Reporting",
+  "description": "MCP validation and schema documentation tools for report definitions.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportValidationTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportValidationTools"
+}

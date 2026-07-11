@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Adds a new layer to a DiagramDocument as a single undoable step. Execute() appends the layer, Undo() removes it again.",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/AddLayerCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "AddLayerCommand",
+  "members": [
+    {
+      "name": "Execute",
+      "type": "void Execute()",
+      "description": "Appends the new layer to DiagramDocument.Layers."
+    },
+    {
+      "name": "Undo",
+      "type": "void Undo()",
+      "description": "Removes the layer that Execute() appended."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Use AddLayerCommand",
+      "code": "var command = new AddLayerCommand(diagramDocument, \"Annotations\");\n\n// Push() executes the command and records it for undo;\n// without a stack, call command.Execute() directly.\ncommandStack.Push(command);\n\nvar newLayerId = command.Layer.Id;"
+    }
+  ]
+}

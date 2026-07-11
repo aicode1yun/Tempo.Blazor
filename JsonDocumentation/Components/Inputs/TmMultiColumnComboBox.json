@@ -15,64 +15,64 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Disables the component."
+      "description": "Additional CSS class."
     },
     {
       "name": "Data",
       "type": "IReadOnlyList<TItem>",
       "isRequired": false,
       "default": "[]",
-      "description": "Fires when the selection changes."
+      "description": "Data source for the dropdown grid."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Whether to show a clear button. Default is true."
+      "description": "Disables the component."
     },
     {
       "name": "Filterable",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Placeholder shown when no value is selected."
+      "description": "Whether the user can filter the dropdown list. Default is true."
     },
     {
       "name": "FilterPlaceholder",
       "type": "string?",
       "isRequired": false,
-      "description": "Whether the user can filter the dropdown list. Default is true."
+      "description": "Placeholder for the filter input."
     },
     {
       "name": "Placeholder",
       "type": "string?",
       "isRequired": false,
-      "description": "Expression that returns the display text for the trigger when an item is selected."
+      "description": "Placeholder shown when no value is selected."
     },
     {
       "name": "ShowClearButton",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Placeholder for the filter input."
+      "description": "Whether to show a clear button. Default is true."
     },
     {
       "name": "TextField",
       "type": "Func<TItem, string>",
       "isRequired": true,
-      "description": "Expression that returns the value for a given item. Required for selection matching."
+      "description": "Expression that returns the display text for the trigger when an item is selected."
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<TValue?>",
       "isRequired": false,
-      "description": "Selected value."
+      "description": "Fires when the selection changes."
     },
     {
       "name": "ValueField",
       "type": "Func<TItem, TValue>",
       "isRequired": true,
-      "description": "Data source for the dropdown grid."
+      "description": "Expression that returns the value for a given item. Required for selection matching."
     }
   ],
   "typeParameters": [

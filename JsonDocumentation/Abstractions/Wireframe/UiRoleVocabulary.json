@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Merged, searchable UI role vocabulary backed by registered IUiRoleVocabularySource implementations.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/UiRoleVocabulary.cs",
+  "documentationStatus": "generated",
+  "itemName": "UiRoleVocabulary",
+  "members": [
+    {
+      "name": "UiRoleVocabulary",
+      "type": "public UiRoleVocabulary()",
+      "description": "Builds a deterministic vocabulary from all supplied sources."
+    },
+    {
+      "name": "GetAll",
+      "type": "IReadOnlyList<UiRoleDefinition> GetAll()",
+      "description": "Returns all roles ordered by slug."
+    },
+    {
+      "name": "Find",
+      "type": "UiRoleDefinition? Find()",
+      "description": "Finds a role by slug or synonym using case-insensitive matching."
+    }
+  ]
+}

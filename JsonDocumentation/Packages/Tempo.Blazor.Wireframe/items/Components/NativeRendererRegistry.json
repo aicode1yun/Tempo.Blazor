@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Maps trusted native stencil renderer ids to C# wireframe SVG render actions. A stencil pack may only reference renderer ids present in the registry, which is what keeps declarative packs from executing arbitrary code.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/NativeRendererRegistry.cs",
+  "documentationStatus": "generated",
+  "itemName": "NativeRendererRegistry",
+  "members": [
+    {
+      "name": "TempoBuiltIn",
+      "type": "static NativeRendererRegistry TempoBuiltIn",
+      "description": "The registry of renderers shipped with Tempo.Blazor."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Compile a pack against the trusted renderers",
+      "code": "// the registry is supplied to the compiler's constructor\nvar compiler = new StencilPackCompiler(NativeRendererRegistry.TempoBuiltIn);\nvar result   = compiler.CompileWithDiagnostics(pack);"
+    }
+  ]
+}

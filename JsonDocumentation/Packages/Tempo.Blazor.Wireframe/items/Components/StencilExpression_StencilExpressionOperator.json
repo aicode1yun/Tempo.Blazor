@@ -1,0 +1,56 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Operators allowed inside a stencil expression.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilExpression.StencilExpressionOperator",
+  "members": [
+    {
+      "name": "Add",
+      "description": "Numeric addition or string concatenation."
+    },
+    {
+      "name": "Subtract",
+      "description": "Numeric subtraction."
+    },
+    {
+      "name": "Multiply",
+      "description": "Numeric multiplication."
+    },
+    {
+      "name": "Divide",
+      "description": "Numeric division."
+    },
+    {
+      "name": "Equal",
+      "description": "Equality comparison."
+    },
+    {
+      "name": "NotEqual",
+      "description": "Inequality comparison."
+    },
+    {
+      "name": "Greater",
+      "description": "Greater-than comparison."
+    },
+    {
+      "name": "GreaterOrEqual",
+      "description": "Greater-than-or-equal comparison."
+    },
+    {
+      "name": "Less",
+      "description": "Less-than comparison."
+    },
+    {
+      "name": "LessOrEqual",
+      "description": "Less-than-or-equal comparison."
+    },
+    {
+      "name": "And",
+      "description": "Logical conjunction."
+    }
+  ]
+}

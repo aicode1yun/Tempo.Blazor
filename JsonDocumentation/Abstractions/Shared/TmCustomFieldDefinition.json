@@ -1,0 +1,62 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Shared definition for a user-defined field that can be attached to entities.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCustomFieldDefinition.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmCustomFieldDefinition",
+  "members": [
+    {
+      "name": "Id",
+      "type": "string",
+      "description": "Stable custom field identifier."
+    },
+    {
+      "name": "Name",
+      "type": "string",
+      "description": "Display name."
+    },
+    {
+      "name": "Type",
+      "type": "TmCustomFieldType",
+      "description": "Value type."
+    },
+    {
+      "name": "Options",
+      "type": "List<string>",
+      "description": "Predefined option values for list, multiselect, and label fields."
+    },
+    {
+      "name": "IsRequired",
+      "type": "bool",
+      "description": "Whether consumers should require a value before saving."
+    },
+    {
+      "name": "AppliesToEntityTypes",
+      "type": "List<string>",
+      "description": "Entity types this field applies to. Empty means all entity types."
+    },
+    {
+      "name": "SourceKey",
+      "type": "string?",
+      "description": "Optional provider/source discriminator."
+    },
+    {
+      "name": "Description",
+      "type": "string?",
+      "description": "Optional longer description."
+    },
+    {
+      "name": "Metadata",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for consumer use."
+    },
+    {
+      "name": "AppliesTo",
+      "type": "bool AppliesTo()",
+      "description": "Returns true when the definition applies to the provided entity type."
+    }
+  ]
+}

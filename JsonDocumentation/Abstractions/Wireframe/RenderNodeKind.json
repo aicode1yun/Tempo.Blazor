@@ -1,0 +1,72 @@
+{
+  "kind": "Enum",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "The shape of a single node in a stencil's declarative render tree. The kind decides which attributes of the RenderNode are meaningful.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/RenderNode.cs",
+  "documentationStatus": "generated",
+  "itemName": "RenderNodeKind",
+  "values": [
+    {
+      "name": "Group",
+      "description": "A transparent container that groups child nodes."
+    },
+    {
+      "name": "Rect",
+      "description": "A rectangle."
+    },
+    {
+      "name": "Text",
+      "description": "A run of text."
+    },
+    {
+      "name": "Line",
+      "description": "A straight line."
+    },
+    {
+      "name": "Path",
+      "description": "An arbitrary SVG path."
+    },
+    {
+      "name": "Icon",
+      "description": "A named icon."
+    },
+    {
+      "name": "Spinner",
+      "description": "A busy indicator."
+    },
+    {
+      "name": "Image",
+      "description": "A raster or vector image."
+    },
+    {
+      "name": "Svg",
+      "description": "Inline SVG markup."
+    },
+    {
+      "name": "Component",
+      "description": "Another wireframe component, rendered in place."
+    },
+    {
+      "name": "Stack",
+      "description": "Lays children out vertically."
+    },
+    {
+      "name": "Row",
+      "description": "Lays children out horizontally."
+    },
+    {
+      "name": "Grid",
+      "description": "Lays children out in a grid."
+    },
+    {
+      "name": "Repeat",
+      "description": "Repeats its child, exposing repeat.index to expressions."
+    },
+    {
+      "name": "Part",
+      "description": "A named, addressable part of the stencil."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "Projects diagram stencil providers into compact, LLM-friendly catalog shapes.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramStencilCatalog.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramStencilCatalog"
+}

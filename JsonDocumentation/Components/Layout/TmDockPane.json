@@ -16,85 +16,85 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether the pane can be floated."
+      "description": "Whether the pane can be closed."
     },
     {
       "name": "CanFloat",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Optional icon name."
+      "description": "Whether the pane can be floated."
     },
     {
       "name": "ChildContent",
       "type": "RenderFragment?",
       "isRequired": false,
-      "description": "Floating Y position."
+      "description": "Content rendered inside the pane."
     },
     {
       "name": "FloatX",
       "type": "double",
       "isRequired": false,
       "default": "100",
-      "description": "Display order."
+      "description": "Floating X position."
     },
     {
       "name": "FloatY",
       "type": "double",
       "isRequired": false,
       "default": "100",
-      "description": "Floating X position."
+      "description": "Floating Y position."
     },
     {
       "name": "Height",
       "type": "double?",
       "isRequired": false,
-      "description": "Desired width in pixels."
+      "description": "Desired height in pixels."
     },
     {
       "name": "Icon",
       "type": "string?",
       "isRequired": false,
-      "description": "Display title."
+      "description": "Optional icon name."
     },
     {
       "name": "IsActive",
       "type": "bool",
       "isRequired": false,
-      "description": "Whether the pane is visible."
+      "description": "Whether the pane is the active tab in its group."
     },
     {
       "name": "IsVisible",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether the pane can be closed."
+      "description": "Whether the pane is visible."
     },
     {
       "name": "Order",
       "type": "int",
       "isRequired": false,
-      "description": "Desired height in pixels."
+      "description": "Display order."
     },
     {
       "name": "Position",
       "type": "DockPosition",
       "isRequired": false,
       "default": "DockPosition.Center",
-      "description": "Whether the pane is the active tab in its group."
+      "description": "Current docking position."
     },
     {
       "name": "Title",
       "type": "string",
       "isRequired": false,
       "default": "\"\"",
-      "description": "Unique identifier."
+      "description": "Display title."
     },
     {
       "name": "Width",
       "type": "double?",
       "isRequired": false,
-      "description": "Current docking position."
+      "description": "Desired width in pixels."
     }
   ]
 }

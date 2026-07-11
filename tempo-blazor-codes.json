@@ -81,33 +81,95 @@
   },
   "items": [
     {
+      "itemName": "BarcodeFormat",
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.DataDisplay",
-      "description": "Supported barcode formats.",
+      "description": "Supported barcode formats. Code128 and Code39 are general-purpose linear symbologies, EAN13 and UPC are retail product codes, and QR is the 2D format.",
       "packageId": "Tempo.Blazor.Codes",
       "sourcePath": "src/Tempo.Blazor.Codes/Components/DataDisplay/BarcodeFormat.cs",
-      "documentationStatus": "generated",
-      "itemName": "BarcodeFormat"
+      "documentationStatus": "merged",
+      "values": [
+        {
+          "name": "Code128",
+          "value": "0",
+          "description": "Code 128 linear barcode."
+        },
+        {
+          "name": "Code39",
+          "value": "1",
+          "description": "Code 39 linear barcode."
+        },
+        {
+          "name": "EAN13",
+          "value": "2",
+          "description": "EAN-13 retail barcode."
+        },
+        {
+          "name": "UPC",
+          "value": "3",
+          "description": "UPC barcode."
+        },
+        {
+          "name": "QR",
+          "value": "4",
+          "description": "QR code (2D)."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Use BarcodeFormat",
+          "code": "<TmBarcode Value=\"5901234123457\"\n           Format=\"BarcodeFormat.EAN13\" />"
+        }
+      ]
     },
     {
+      "itemName": "QRErrorCorrectionLevel",
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.DataDisplay",
-      "description": "QR code error correction levels.",
+      "description": "QR code error correction levels. A higher level survives more damage or occlusion (for example a logo overlaid on the code) at the cost of encoding capacity.",
       "packageId": "Tempo.Blazor.Codes",
       "sourcePath": "src/Tempo.Blazor.Codes/Components/DataDisplay/QRErrorCorrectionLevel.cs",
-      "documentationStatus": "generated",
-      "itemName": "QRErrorCorrectionLevel"
+      "documentationStatus": "merged",
+      "values": [
+        {
+          "name": "L",
+          "value": "0",
+          "description": "Recovers 7% of data."
+        },
+        {
+          "name": "M",
+          "value": "1",
+          "description": "Recovers 15% of data."
+        },
+        {
+          "name": "Q",
+          "value": "2",
+          "description": "Recovers 25% of data."
+        },
+        {
+          "name": "H",
+          "value": "3",
+          "description": "Recovers 30% of data."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Use QRErrorCorrectionLevel",
+          "code": "<TmQRCode Value=\"https://example.test\"\n          ErrorCorrectionLevel=\"QRErrorCorrectionLevel.H\" />\n\n@* H tolerates the most damage — pick it when overlaying a logo *@"
+        }
+      ]
     },
     {
+      "itemName": "CodesServiceCollectionExtensions",
       "kind": "Class",
       "category": "Configuration",
       "namespace": "Tempo.Blazor.Configuration",
       "description": "Extension methods for registering Tempo.Blazor QR code and barcode services.",
       "packageId": "Tempo.Blazor.Codes",
       "sourcePath": "src/Tempo.Blazor.Codes/Configuration/CodesServiceCollectionExtensions.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AddTempoBlazorCodes",
@@ -122,7 +184,12 @@
           ]
         }
       ],
-      "itemName": "CodesServiceCollectionExtensions"
+      "examples": [
+        {
+          "title": "Register the services in Program.cs",
+          "code": "builder.Services.AddTempoBlazorCodes();"
+        }
+      ]
     },
     {
       "itemName": "TmBarcode",
@@ -270,9 +337,9 @@
   "libraryExamples": [],
   "summary": {
     "itemCount": 5,
-    "manualItemCount": 2,
+    "manualItemCount": 5,
     "generatedItemCount": 5,
-    "generatedOnlyItemCount": 3,
+    "generatedOnlyItemCount": 0,
     "componentCount": 2,
     "publicApiTypeCount": 3
   }

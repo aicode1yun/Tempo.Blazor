@@ -15,25 +15,25 @@
       "name": "Content",
       "type": "IChildrenDisplayBlockContent?",
       "isRequired": false,
-      "description": "Owning page block used to resolve the current page when no root page is configured."
+      "description": "Saved Children Display block configuration."
     },
     {
       "name": "OnContentChanged",
       "type": "EventCallback<ChildrenDisplayBlockContent>",
       "isRequired": false,
-      "description": "Whether editing controls are hidden."
+      "description": "Raised after the block configuration changes."
     },
     {
       "name": "OnFocused",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised after the block configuration changes."
+      "description": "Raised when the block receives focus."
     },
     {
       "name": "ReadOnly",
       "type": "bool",
       "isRequired": false,
-      "description": "Saved Children Display block configuration."
+      "description": "Whether editing controls are hidden."
     }
   ],
   "subcategory": "Blocks / Special"

@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Mcp",
+  "description": "Registration helpers for the complete Tempo.Blazor MCP toolset.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "TempoBlazorMcp",
+  "members": [
+    {
+      "name": "ToolTypes",
+      "type": "static IReadOnlyList<Type>",
+      "description": "All tool types shipped by the MCP package."
+    },
+    {
+      "name": "AddTempoBlazorMcpTools",
+      "type": "static IServiceCollection AddTempoBlazorMcpTools()",
+      "description": "Registers shared dependencies for all Tempo.Blazor MCP tools. The host still supplies the persistence providers for the domains it enables."
+    }
+  ]
+}

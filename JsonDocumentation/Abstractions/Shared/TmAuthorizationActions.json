@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Common action names used by ITmAuthorizationProvider requests.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmAuthorizationActions.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmAuthorizationActions"
+}

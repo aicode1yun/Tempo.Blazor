@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Reporting",
+  "namespace": "Tempo.Blazor.Mcp.Reporting",
+  "description": "MCP tools for reading and writing report definitions.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Reporting/ReportDefinitionTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDefinitionTools"
+}

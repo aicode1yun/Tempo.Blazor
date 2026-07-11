@@ -6,6 +6,7 @@ using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
+using TableColumnAlignment = Tempo.Blazor.DocumentEditor.Models.TableColumnAlignment;
 
 namespace Tempo.Blazor.Components.NotionEditor.Blocks.Table;
 
@@ -39,6 +40,7 @@ public partial class TmNotionTableBlock : ComponentBase
     private bool             _hasHeaderRow;
     private bool             _hasHeaderColumn;
     private int              _columnCount;
+    private IReadOnlyList<TableColumnAlignment> _columnAlignments = [];
     private int              _dragSourceIndex = -1;
     private int              _dragOverIndex   = -1;
     private ElementReference _containerRef;
@@ -53,9 +55,10 @@ public partial class TmNotionTableBlock : ComponentBase
 
     protected override void OnParametersSet()
     {
-        _hasHeaderRow    = Content?.HasHeaderRow    ?? false;
-        _hasHeaderColumn = Content?.HasHeaderColumn ?? false;
-        _columnCount     = Content?.ColumnCount     ?? 0;
+        _hasHeaderRow     = Content?.HasHeaderRow    ?? false;
+        _hasHeaderColumn  = Content?.HasHeaderColumn ?? false;
+        _columnCount      = Content?.ColumnCount     ?? 0;
+        _columnAlignments = Content?.ColumnAlignments ?? [];
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -137,6 +140,7 @@ public partial class TmNotionTableBlock : ComponentBase
         {
             await Context.BlockProvider.DeleteBlockAsync(row.Id.ToString());
             _rows.RemoveAt(rowIndex);
+            await RenumberRowsAsync();
             StateHasChanged();
         }
         catch { }
@@ -151,19 +155,12 @@ public partial class TmNotionTableBlock : ComponentBase
         for (var i = 0; i < _rows.Count; i++)
         {
             if (_rows[i].Content is not ITableRowBlockContent rc) continue;
-            var newCells = rc.Cells.ToList();
-            newCells.Add(string.Empty);
-            var updated = BuildRowBlock(_rows[i], new TableRowBlockContent { Cells = newCells });
+            var updated = BuildRowBlock(_rows[i], NotionTableEdit.AddColumn(rc));
             try { await Context.BlockProvider.UpdateBlockAsync(updated); _rows[i] = updated; }
             catch { }
         }
 
-        var updatedTable = BuildTableBlock(Block, new TableBlockContent
-        {
-            HasHeaderRow    = _hasHeaderRow,
-            HasHeaderColumn = _hasHeaderColumn,
-            ColumnCount     = newCount
-        });
+        var updatedTable = BuildTableBlock(Block, NotionTableEdit.AddColumn(CurrentTableContent()));
         try
         {
             await Context.BlockProvider.UpdateBlockAsync(updatedTable);
@@ -185,19 +182,12 @@ public partial class TmNotionTableBlock : ComponentBase
         for (var i = 0; i < _rows.Count; i++)
         {
             if (_rows[i].Content is not ITableRowBlockContent rc) continue;
-            var newCells = rc.Cells.ToList();
-            if (colIndex < newCells.Count) newCells.RemoveAt(colIndex);
-            var updated = BuildRowBlock(_rows[i], new TableRowBlockContent { Cells = newCells });
+            var updated = BuildRowBlock(_rows[i], NotionTableEdit.RemoveColumn(rc, colIndex));
             try { await Context.BlockProvider.UpdateBlockAsync(updated); _rows[i] = updated; }
             catch { }
         }
 
-        var updatedTable = BuildTableBlock(Block, new TableBlockContent
-        {
-            HasHeaderRow    = _hasHeaderRow,
-            HasHeaderColumn = _hasHeaderColumn,
-            ColumnCount     = newCount
-        });
+        var updatedTable = BuildTableBlock(Block, NotionTableEdit.RemoveColumn(CurrentTableContent(), colIndex));
         try
         {
             await Context.BlockProvider.UpdateBlockAsync(updatedTable);
@@ -635,6 +625,42 @@ public partial class TmNotionTableBlock : ComponentBase
         => Regex.Replace(html, "<.*?>", string.Empty, RegexOptions.Singleline);
 
     // ── Block builders ────────────────────────────────────────────────────────
+
+    /// <summary>The table's content as the component currently sees it, alignments included.</summary>
+    private TableBlockContent CurrentTableContent() => new()
+    {
+        HasHeaderRow     = _hasHeaderRow,
+        HasHeaderColumn  = _hasHeaderColumn,
+        ColumnCount      = _columnCount,
+        ColumnAlignments = [.. _columnAlignments]
+    };
+
+    /// <summary>
+    /// Rows are addressed by Order. After a delete the remaining rows must close the gap, otherwise
+    /// a later insert lands on a duplicate order and the rows come back in a different sequence.
+    /// </summary>
+    private async Task RenumberRowsAsync()
+    {
+        for (var i = 0; i < _rows.Count; i++)
+        {
+            if (_rows[i].Order == i) continue;
+
+            var renumbered = new PageBlock
+            {
+                Id            = _rows[i].Id,
+                PageId        = _rows[i].PageId,
+                ParentBlockId = _rows[i].ParentBlockId,
+                Type          = _rows[i].Type,
+                Order         = i,
+                Content       = _rows[i].Content,
+                CreatedAt     = _rows[i].CreatedAt,
+                LastEditedAt  = DateTime.UtcNow
+            };
+
+            try { await Context.BlockProvider.UpdateBlockAsync(renumbered); _rows[i] = renumbered; }
+            catch { }
+        }
+    }
 
     private static PageBlock BuildRowBlock(IPageBlock src, TableRowBlockContent content) => new()
     {

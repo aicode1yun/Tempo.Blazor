@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -31,6 +32,18 @@ public partial class TmNotionQuoteBlock : ComponentBase, IAsyncDisposable
 
     /// <summary>Fired when Backspace is pressed on an empty block.</summary>
     [Parameter] public EventCallback                            OnDeleteRequested { get; set; }
+
+    /// <summary>
+    /// Raised when Backspace is pressed at the start of a non-empty block. The payload is the
+    /// block's current, sanitized HTML, which the previous block absorbs before this one is deleted.
+    /// </summary>
+    [Parameter] public EventCallback<string>                    OnMergeWithPrevious { get; set; }
+
+    /// <summary>
+    /// Raised when pasted HTML carries more than one block element. The payload is the raw
+    /// clipboard HTML; the consumer turns it into page blocks.
+    /// </summary>
+    [Parameter] public EventCallback<string>                    OnStructuredPaste { get; set; }
 
     /// <summary>Fired when Tab / Shift+Tab is pressed. Bool = shiftKey (true = outdent).</summary>
     [Parameter] public EventCallback<bool>                      OnIndentChange    { get; set; }
@@ -102,7 +115,7 @@ public partial class TmNotionQuoteBlock : ComponentBase, IAsyncDisposable
             try
             {
                 await JS.InvokeVoidAsync("tmNotionEditor.initKeyboardHandler", _editableRef, _dotNetRef);
-                await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html);
+                await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, SanitizeForRender(html));
                 if (IsFocused)
                     await JS.InvokeVoidAsync("tmNotionEditor.focusAtStart", _editableRef);
             }
@@ -110,8 +123,16 @@ public partial class TmNotionQuoteBlock : ComponentBase, IAsyncDisposable
         }
         else if (!_dirty && html != _lastHtml)
         {
+            // The dirty flag only tracks `input` events. DOM surgery done elsewhere can leave
+            // unsaved edits behind, so compare the live DOM before overwriting it.
+            if (await HasUnsavedDomEditsAsync())
+            {
+                _dirty = true;
+                return;
+            }
+
             _lastHtml = html;
-            try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html); }
+            try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, SanitizeForRender(html)); }
             catch { }
         }
     }
@@ -124,7 +145,9 @@ public partial class TmNotionQuoteBlock : ComponentBase, IAsyncDisposable
         try
         {
             var html = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
-            await OnContentSaved.InvokeAsync(html);
+            var sanitized = NotionInlineHtmlSanitizer.SanitizeBlockContent(html);
+            _lastHtml = sanitized;
+            await OnContentSaved.InvokeAsync(sanitized);
         }
         catch { }
         finally
@@ -140,14 +163,43 @@ public partial class TmNotionQuoteBlock : ComponentBase, IAsyncDisposable
     [JSInvokable]
     public async Task OnEnterPressed(string beforeHtml, string afterHtml)
     {
-        _lastHtml = beforeHtml;
+        var before = NotionInlineHtmlSanitizer.SanitizeBlockContent(beforeHtml);
+        _lastHtml = before;
         _dirty    = false;
-        await OnContentSaved.InvokeAsync(beforeHtml);
-        await OnEnterSplit.InvokeAsync(afterHtml);
+
+        // Write the left-hand half back explicitly. Relying on the save producing a new Content
+        // reference would leave the source block showing the whole pre-split text whenever the
+        // provider hands the same instance back.
+        try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, before); }
+        catch { }
+
+        await OnContentSaved.InvokeAsync(before);
+        await OnEnterSplit.InvokeAsync(NotionInlineHtmlSanitizer.SanitizeBlockContent(afterHtml));
     }
 
     [JSInvokable]
     public async Task OnBackspaceOnEmpty() => await OnDeleteRequested.InvokeAsync();
+
+    /// <summary>
+    /// Called from notion-editor.js when Backspace is pressed while the caret sits before the
+    /// first character. Blocks used without a merge consumer simply keep their text.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnBackspaceAtStart(string html)
+    {
+        if (!OnMergeWithPrevious.HasDelegate) return;
+        await OnMergeWithPrevious.InvokeAsync(NotionInlineHtmlSanitizer.SanitizeBlockContent(html));
+    }
+
+    /// <summary>
+    /// Called from notion-editor.js when the clipboard HTML has several block elements. Blocks
+    /// used without a consumer fall back to the inline paste that JS already performed.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnHtmlPasted(string html)
+    {
+        if (OnStructuredPaste.HasDelegate) await OnStructuredPaste.InvokeAsync(html);
+    }
 
     [JSInvokable]
     public async Task OnTabPressed(bool shiftKey) => await OnIndentChange.InvokeAsync(shiftKey);
@@ -188,5 +240,26 @@ public partial class TmNotionQuoteBlock : ComponentBase, IAsyncDisposable
             catch { }
         }
         _dotNetRef?.Dispose();
+    }
+
+    /// <summary>
+    /// Block content is written into the DOM with innerHTML, so a stored onerror payload would run
+    /// on render. Sanitize on the way in and on the way out.
+    /// </summary>
+    private static string SanitizeForRender(string html) =>
+        NotionInlineHtmlSanitizer.SanitizeBlockContent(html);
+
+    /// <summary>True when the DOM holds edits the dirty flag never saw (JS-driven DOM surgery).</summary>
+    private async Task<bool> HasUnsavedDomEditsAsync()
+    {
+        try
+        {
+            var live = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
+            return _lastHtml is not null && live != _lastHtml;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

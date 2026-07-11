@@ -1,0 +1,32 @@
+{
+  "kind": "Interface",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Minimal provider contract for shared activity and audit entries.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmActivityProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITmActivityProvider",
+  "members": [
+    {
+      "name": "Capabilities",
+      "type": "TmActivityProviderCapabilities",
+      "description": "Operations this provider supports."
+    },
+    {
+      "name": "GetForEntityAsync",
+      "type": "Task<IReadOnlyList<TmActivityEntry>> GetForEntityAsync(TmEntityRef entityRef, CancellationToken cancellationToken = default)",
+      "description": "Gets activity entries for an entity."
+    },
+    {
+      "name": "QueryAsync",
+      "type": "Task<PagedResult<TmActivityEntry>> QueryAsync(TmActivityQuery query, CancellationToken cancellationToken = default)",
+      "description": "Queries activity entries across entities."
+    },
+    {
+      "name": "AppendAsync",
+      "type": "Task<TmActivityEntry> AppendAsync(TmActivityEntry entry, CancellationToken cancellationToken = default)",
+      "description": "Appends a new activity entry."
+    }
+  ]
+}

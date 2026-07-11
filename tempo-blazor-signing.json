@@ -493,44 +493,44 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Fallback culture used when localized labels are missing."
+          "description": "Additional CSS classes for the root element."
         },
         {
           "name": "Conditions",
           "type": "IReadOnlyList<SigningFieldCondition>",
           "isRequired": false,
           "default": "[]",
-          "description": "Field identifier whose conditions are currently edited."
+          "description": "Condition rules currently assigned to the edited field."
         },
         {
           "name": "ConditionsChanged",
           "type": "EventCallback<IReadOnlyList<SigningFieldCondition>>",
           "isRequired": false,
-          "description": "Condition rules currently assigned to the edited field."
+          "description": "Callback invoked when the condition rules change."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the builder controls are disabled."
+          "description": "Culture used to resolve localized field and option labels."
         },
         {
           "name": "CurrentFieldUuid",
           "type": "string?",
           "isRequired": false,
-          "description": "All fields in the current signing template."
+          "description": "Field identifier whose conditions are currently edited."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Callback invoked when the condition rules change."
+          "description": "Whether the builder controls are disabled."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Culture used to resolve localized field and option labels."
+          "description": "Fallback culture used when localized labels are missing."
         },
         {
           "name": "Fields",
@@ -922,88 +922,88 @@
           "name": "AllowReplyToResolved",
           "type": "bool",
           "isRequired": false,
-          "description": "Users available for comment mentions."
+          "description": "Whether replies are allowed on resolved comment threads."
         },
         {
           "name": "Alt",
           "type": "string?",
           "isRequired": false,
-          "description": "Error message shown instead of the page."
+          "description": "Optional alt text for the page image. Defaults to page label or localized page number."
         },
         {
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Optional template for replacing the rendered page image."
+          "description": "Overlay content rendered over the document page."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when draft mentioned users change."
+          "description": "Additional CSS classes for the root element."
         },
         {
           "name": "ClearCommentSelectionOnPageClick",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether comment interactions are disabled. Defaults to false."
+          "description": "Whether a plain page click clears the selected comment thread. Defaults to true."
         },
         {
           "name": "CommentMarkerTemplate",
           "type": "RenderFragment<DocumentCommentThread>?",
           "isRequired": false,
-          "description": "Whether replies are allowed on resolved comment threads."
+          "description": "Optional custom marker template for comment anchors."
         },
         {
           "name": "CommentMode",
           "type": "DocumentCommentMode",
           "isRequired": false,
           "default": "DocumentCommentMode.Browse",
-          "description": "Whether document comments are enabled for this viewer."
+          "description": "Current document comment mode. Defaults to browse mode."
         },
         {
           "name": "CommentModeChanged",
           "type": "EventCallback<DocumentCommentMode>",
           "isRequired": false,
-          "description": "Current document comment mode. Defaults to browse mode."
+          "description": "Callback invoked when the comment mode changes."
         },
         {
           "name": "CommentsEnabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Callback invoked when the page context menu is requested."
+          "description": "Whether document comments are enabled for this viewer."
         },
         {
           "name": "CommentThreadPanelTemplate",
           "type": "RenderFragment<IReadOnlyList<DocumentCommentThread>>?",
           "isRequired": false,
-          "description": "Optional custom marker template for comment anchors."
+          "description": "Optional custom panel for rendering comment threads."
         },
         {
           "name": "CommentThreads",
           "type": "IReadOnlyList<DocumentCommentThread>",
           "isRequired": false,
           "default": "[]",
-          "description": "Callback invoked when the comment mode changes."
+          "description": "Comment threads rendered over the document page."
         },
         {
           "name": "CurrentUserId",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether a plain page click clears the selected comment thread. Defaults to true."
+          "description": "Current user id used for mention and reaction indicators."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether resolved comment threads are visible. Defaults to false."
+          "description": "Whether comment interactions are disabled. Defaults to false."
         },
         {
           "name": "Error",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether to show the loading skeleton instead of the page."
+          "description": "Error message shown instead of the page."
         },
         {
           "name": "Id",
@@ -1015,151 +1015,151 @@
           "name": "IsLoading",
           "type": "bool",
           "isRequired": false,
-          "description": "Document page to render. When null, an empty state is shown."
+          "description": "Whether to show the loading skeleton instead of the page."
         },
         {
           "name": "IsOverlayInteractive",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Optional alt text for the page image. Defaults to page label or localized page number."
+          "description": "Whether overlay content should receive pointer events. Defaults to true."
         },
         {
           "name": "MaxScale",
           "type": "double",
           "isRequired": false,
           "default": "2.0",
-          "description": "Smallest allowed visual scale. Defaults to 0.5."
+          "description": "Largest allowed visual scale. Defaults to 2.0."
         },
         {
           "name": "MentionUsers",
           "type": "IReadOnlyList<DocumentCommentUser>",
           "isRequired": false,
           "default": "[]",
-          "description": "Current user id used for mention and reaction indicators."
+          "description": "Users available for comment mentions."
         },
         {
           "name": "MinScale",
           "type": "double",
           "isRequired": false,
           "default": "0.5",
-          "description": "Callback invoked when the visual scale changes."
+          "description": "Smallest allowed visual scale. Defaults to 0.5."
         },
         {
           "name": "NextPageRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Callback invoked when the previous page button is clicked."
+          "description": "Callback invoked when the next page button is clicked."
         },
         {
           "name": "OnCommentDeleteRequested",
           "type": "EventCallback<DocumentCommentDeleteRequest>",
           "isRequired": false,
-          "description": "Callback invoked when editing a document comment is requested."
+          "description": "Callback invoked when deleting a document comment is requested."
         },
         {
           "name": "OnCommentEditRequested",
           "type": "EventCallback<DocumentCommentEditRequest>",
           "isRequired": false,
-          "description": "Callback invoked when reopening a comment thread is requested."
+          "description": "Callback invoked when editing a document comment is requested."
         },
         {
           "name": "OnCommentMentionedUsersChanged",
           "type": "EventCallback<IReadOnlyList<DocumentCommentMention>>",
           "isRequired": false,
-          "description": "Callback invoked when the comment panel requests navigation to a thread page."
+          "description": "Callback invoked when draft mentioned users change."
         },
         {
           "name": "OnCommentReactionToggled",
           "type": "EventCallback<DocumentCommentReactionToggleRequest>",
           "isRequired": false,
-          "description": "Callback invoked when deleting a document comment is requested."
+          "description": "Callback invoked when toggling a document comment reaction is requested."
         },
         {
           "name": "OnCommentReopenRequested",
           "type": "EventCallback<DocumentCommentThreadStatusRequest>",
           "isRequired": false,
-          "description": "Callback invoked when resolving a comment thread is requested."
+          "description": "Callback invoked when reopening a comment thread is requested."
         },
         {
           "name": "OnCommentReplyRequested",
           "type": "EventCallback<DocumentCommentReplyRequest>",
           "isRequired": false,
-          "description": "Callback invoked when creating a new comment thread is requested."
+          "description": "Callback invoked when replying to a comment thread is requested."
         },
         {
           "name": "OnCommentResolveRequested",
           "type": "EventCallback<DocumentCommentThreadStatusRequest>",
           "isRequired": false,
-          "description": "Callback invoked when replying to a comment thread is requested."
+          "description": "Callback invoked when resolving a comment thread is requested."
         },
         {
           "name": "OnCommentThreadCreateRequested",
           "type": "EventCallback<DocumentCommentThreadCreateRequest>",
           "isRequired": false,
-          "description": "Optional custom panel for rendering comment threads."
+          "description": "Callback invoked when creating a new comment thread is requested."
         },
         {
           "name": "OnCommentThreadNavigateRequested",
           "type": "EventCallback<DocumentCommentThreadNavigateRequest>",
           "isRequired": false,
-          "description": "Callback invoked when toggling a document comment reaction is requested."
+          "description": "Callback invoked when the comment panel requests navigation to a thread page."
         },
         {
           "name": "OnPageClick",
           "type": "EventCallback<TmDocumentPageViewerPointerEventArgs>",
           "isRequired": false,
-          "description": "Overlay template rendered over the document page with page context."
+          "description": "Callback invoked when the page is clicked."
         },
         {
           "name": "OnPageContextMenu",
           "type": "EventCallback<TmDocumentPageViewerPointerEventArgs>",
           "isRequired": false,
-          "description": "Callback invoked when the page is clicked."
+          "description": "Callback invoked when the page context menu is requested."
         },
         {
           "name": "OverlayTemplate",
           "type": "RenderFragment<SigningDocumentPage>?",
           "isRequired": false,
-          "description": "Overlay content rendered over the document page."
+          "description": "Overlay template rendered over the document page with page context."
         },
         {
           "name": "Page",
           "type": "SigningDocumentPage?",
           "isRequired": false,
-          "description": "Optional id assigned to the rendered page element."
+          "description": "Document page to render. When null, an empty state is shown."
         },
         {
           "name": "PageNumber",
           "type": "int?",
           "isRequired": false,
-          "description": "Whether page navigation controls are visible when the toolbar is rendered. Defaults to false."
+          "description": "Displayed current page number for pagination controls. Defaults to the page index plus one."
         },
         {
           "name": "PageTemplate",
           "type": "RenderFragment<SigningDocumentPage>?",
           "isRequired": false,
-          "description": "Callback invoked when the next page button is clicked."
+          "description": "Optional template for replacing the rendered page image."
         },
         {
           "name": "PreventDefaultContextMenu",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether overlay content should receive pointer events. Defaults to true."
+          "description": "Whether to prevent the browser context menu on the page element. Defaults to true."
         },
         {
           "name": "PreviousPageRequested",
           "type": "EventCallback",
           "isRequired": false,
-          "description": "Total displayed page count for pagination controls."
+          "description": "Callback invoked when the previous page button is clicked."
         },
         {
           "name": "Scale",
           "type": "double",
           "isRequired": false,
           "default": "1.0",
-          "description": "Whether to prevent the browser context menu on the page element. Defaults to true."
+          "description": "Current visual scale. Values are clamped between <see cref=\"MinScale\"/> and <see cref=\"MaxScale\"/>."
         },
         {
           "name": "ScaleChanged",
@@ -1171,51 +1171,51 @@
           "name": "SelectedCommentThreadId",
           "type": "string?",
           "isRequired": false,
-          "description": "Comment threads rendered over the document page."
+          "description": "Selected comment thread id."
         },
         {
           "name": "SelectedCommentThreadIdChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Selected comment thread id."
+          "description": "Callback invoked when the selected comment thread changes."
         },
         {
           "name": "ShowPaginationControls",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether zoom controls are visible when the toolbar is rendered. Defaults to true."
+          "description": "Whether page navigation controls are visible when the toolbar is rendered. Defaults to false."
         },
         {
           "name": "ShowResolvedComments",
           "type": "bool",
           "isRequired": false,
-          "description": "Callback invoked when the selected comment thread changes."
+          "description": "Whether resolved comment threads are visible. Defaults to false."
         },
         {
           "name": "ShowToolbar",
           "type": "bool",
           "isRequired": false,
-          "description": "Callback invoked when the page view mode changes."
+          "description": "Whether to render the viewer toolbar. Defaults to false for layout compatibility."
         },
         {
           "name": "ShowZoomControls",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether to render the viewer toolbar. Defaults to false for layout compatibility."
+          "description": "Whether zoom controls are visible when the toolbar is rendered. Defaults to true."
         },
         {
           "name": "TotalPages",
           "type": "int?",
           "isRequired": false,
-          "description": "Displayed current page number for pagination controls. Defaults to the page index plus one."
+          "description": "Total displayed page count for pagination controls."
         },
         {
           "name": "ViewMode",
           "type": "DocumentPageViewMode",
           "isRequired": false,
           "default": "DocumentPageViewMode.SinglePage",
-          "description": "Callback invoked when the zoom behavior changes."
+          "description": "Current page view mode for parent tools. Defaults to <see cref=\"DocumentPageViewMode.SinglePage\"/>."
         },
         {
           "name": "ViewModeChanged",
@@ -1228,7 +1228,7 @@
           "type": "DocumentPageZoomMode",
           "isRequired": false,
           "default": "DocumentPageZoomMode.Custom",
-          "description": "Largest allowed visual scale. Defaults to 2.0."
+          "description": "Current zoom behavior. Defaults to <see cref=\"DocumentPageZoomMode.Custom\"/>."
         },
         {
           "name": "ZoomModeChanged",
@@ -1261,37 +1261,37 @@
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the builder controls are disabled."
+          "description": "Culture used to resolve field labels in the token picker."
         },
         {
           "name": "CurrentFieldUuid",
           "type": "string?",
           "isRequired": false,
-          "description": "Computed field edited by the formula builder."
+          "description": "Field identifier edited by the formula builder when <see cref=\"Field\"/> is not supplied."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Callback invoked after the edited field is updated on save."
+          "description": "Whether the builder controls are disabled."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Culture used to resolve field labels in the token picker."
+          "description": "Fallback culture used when a field label is missing for <see cref=\"Culture\"/>."
         },
         {
           "name": "Field",
           "type": "SigningField?",
           "isRequired": false,
-          "description": "All fields in the current signing template."
+          "description": "Computed field edited by the formula builder."
         },
         {
           "name": "FieldChanged",
           "type": "EventCallback<SigningField>",
           "isRequired": false,
-          "description": "Callback invoked after a valid formula is saved. The supplied value is normalized to UUID tokens."
+          "description": "Callback invoked after the edited field is updated on save."
         },
         {
           "name": "Fields",
@@ -1304,7 +1304,7 @@
           "name": "Saved",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Callback invoked when displayed formula text changes."
+          "description": "Callback invoked after a valid formula is saved. The supplied value is normalized to UUID tokens."
         },
         {
           "name": "Value",
@@ -1316,7 +1316,7 @@
           "name": "ValueChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Formula text displayed by the builder. Human-readable field tokens are accepted."
+          "description": "Callback invoked when displayed formula text changes."
         }
       ]
     },
@@ -1370,31 +1370,31 @@
           "name": "AllowedFieldTypes",
           "type": "IReadOnlyList<SigningFieldType>?",
           "isRequired": false,
-          "description": "Currently selected submitter role identifier used for new fields."
+          "description": "Field types visible in the palette. Defaults to common signing field types."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional async detector that returns fields to add to the template."
+          "description": "Additional CSS classes for the root element."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when the document zoom behavior changes."
+          "description": "Culture used to preview localized field labels."
         },
         {
           "name": "CultureChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Culture used to preview localized field labels."
+          "description": "Callback invoked when the designer preview culture changes."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Field types visible in the palette. Defaults to common signing field types."
+          "description": "Whether editing controls should be disabled."
         },
         {
           "name": "Documents",
@@ -1407,38 +1407,38 @@
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when the designer preview culture changes."
+          "description": "Fallback culture used when localized field labels are missing."
         },
         {
           "name": "Fields",
           "type": "IReadOnlyList<SigningField>",
           "isRequired": false,
           "default": "[]",
-          "description": "Document pages available for template design."
+          "description": "Current signing fields."
         },
         {
           "name": "FieldsChanged",
           "type": "EventCallback<IReadOnlyList<SigningField>>",
           "isRequired": false,
-          "description": "Current signing fields."
+          "description": "Callback invoked when the signing fields collection changes."
         },
         {
           "name": "MobileMode",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether editing controls should be disabled."
+          "description": "Whether to render a compact mobile-oriented designer layout."
         },
         {
           "name": "OnDetectFields",
           "type": "Func<Task<IReadOnlyList<SigningField>>>?",
           "isRequired": false,
-          "description": "Whether to show culture preview and localized text authoring controls."
+          "description": "Optional async detector that returns fields to add to the template."
         },
         {
           "name": "PageIndex",
           "type": "int",
           "isRequired": false,
-          "description": "Whether to render a compact mobile-oriented designer layout."
+          "description": "Current page index used when <see cref=\"ViewMode\"/> is <see cref=\"DocumentPageViewMode.SinglePage\"/>."
         },
         {
           "name": "PageIndexChanged",
@@ -1451,65 +1451,65 @@
           "type": "double",
           "isRequired": false,
           "default": "1.0",
-          "description": "Callback invoked when the page presentation mode changes."
+          "description": "Current document zoom scale shared by rendered pages."
         },
         {
           "name": "ScaleChanged",
           "type": "EventCallback<double>",
           "isRequired": false,
-          "description": "Current document zoom scale shared by rendered pages."
+          "description": "Callback invoked when the document zoom scale changes."
         },
         {
           "name": "SelectedSubmitterUuid",
           "type": "string?",
           "isRequired": false,
-          "description": "Signer roles available for assigning newly created fields."
+          "description": "Currently selected submitter role identifier used for new fields."
         },
         {
           "name": "ShowCulturePreview",
           "type": "bool",
           "isRequired": false,
-          "description": "Cultures available for previewing and authoring localized field text."
+          "description": "Whether to show culture preview and localized text authoring controls."
         },
         {
           "name": "SubmitterRoles",
           "type": "IReadOnlyList<SigningSubmitterRole>",
           "isRequired": false,
           "default": "[]",
-          "description": "Callback invoked when the signing fields collection changes."
+          "description": "Signer roles available for assigning newly created fields."
         },
         {
           "name": "SupportedCultures",
           "type": "IReadOnlyList<string>",
           "isRequired": false,
           "default": "[]",
-          "description": "Fallback culture used when localized field labels are missing."
+          "description": "Cultures available for previewing and authoring localized field text."
         },
         {
           "name": "ViewMode",
           "type": "DocumentPageViewMode",
           "isRequired": false,
           "default": "DocumentPageViewMode.SinglePage",
-          "description": "Callback invoked when the current page index changes."
+          "description": "Current page presentation mode. Defaults to single page for editing precision."
         },
         {
           "name": "ViewModeChanged",
           "type": "EventCallback<DocumentPageViewMode>",
           "isRequired": false,
-          "description": "Current page presentation mode. Defaults to single page for editing precision."
+          "description": "Callback invoked when the page presentation mode changes."
         },
         {
           "name": "ZoomMode",
           "type": "DocumentPageZoomMode",
           "isRequired": false,
           "default": "DocumentPageZoomMode.Custom",
-          "description": "Callback invoked when the document zoom scale changes."
+          "description": "Current document zoom behavior."
         },
         {
           "name": "ZoomModeChanged",
           "type": "EventCallback<DocumentPageZoomMode>",
           "isRequired": false,
-          "description": "Current document zoom behavior."
+          "description": "Callback invoked when the document zoom behavior changes."
         }
       ]
     },
@@ -1564,26 +1564,26 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the editor controls are disabled."
+          "description": "Additional CSS classes for the root element."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Fields available for invite-via-field rules."
+          "description": "Whether the editor controls are disabled."
         },
         {
           "name": "Fields",
           "type": "IReadOnlyList<SigningField>",
           "isRequired": false,
           "default": "[]",
-          "description": "Whether the editor edits template roles or concrete submission recipients."
+          "description": "Fields available for invite-via-field rules."
         },
         {
           "name": "Mode",
           "type": "TmRecipientRoleEditorMode",
           "isRequired": true,
-          "description": "Callback invoked whenever roles change."
+          "description": "Whether the editor edits template roles or concrete submission recipients."
         },
         {
           "name": "Roles",
@@ -1596,7 +1596,7 @@
           "name": "RolesChanged",
           "type": "EventCallback<IReadOnlyList<SigningSubmitterRole>>",
           "isRequired": false,
-          "description": "Roles or submission recipients currently edited."
+          "description": "Callback invoked whenever roles change."
         }
       ]
     },
@@ -1677,56 +1677,56 @@
           "name": "Accept",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether file input allows multiple files."
+          "description": "Accepted file types for upload."
         },
         {
           "name": "AllowMultiple",
           "type": "bool",
           "isRequired": false,
-          "description": "Short text describing where the field appears in the document."
+          "description": "Whether file input allows multiple files."
         },
         {
           "name": "AppearsOn",
           "type": "string?",
           "isRequired": false,
-          "description": "Generated stamp text or image identifier."
+          "description": "Short text describing where the field appears in the document."
         },
         {
           "name": "Attachments",
           "type": "IReadOnlyList<TmSigningStepAttachment>",
           "isRequired": false,
           "default": "[]",
-          "description": "Signing field represented by this step."
+          "description": "Current uploaded attachments."
         },
         {
           "name": "AttachmentsChanged",
           "type": "EventCallback<IReadOnlyList<TmSigningStepAttachment>>",
           "isRequired": false,
-          "description": "Current uploaded attachments."
+          "description": "Callback invoked when attachments change."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Fallback culture used when localized field text is missing."
+          "description": "Additional CSS classes for the shell element."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the controls are disabled."
+          "description": "Culture used to resolve localized field text."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Accepted file types for upload."
+          "description": "Whether the controls are disabled."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Culture used to resolve localized field text."
+          "description": "Fallback culture used when localized field text is missing."
         },
         {
           "name": "Field",
@@ -1738,7 +1738,7 @@
           "name": "StampValue",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when attachments change."
+          "description": "Generated stamp text or image identifier."
         }
       ]
     },
@@ -1759,37 +1759,37 @@
           "name": "AnonymousCheckbox",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the input controls are disabled."
+          "description": "Whether a single checkbox should show a generic instruction instead of the field label."
         },
         {
           "name": "AppearsOn",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when the value changes."
+          "description": "Short text describing where the field appears in the document."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Fallback culture used when localized text is missing."
+          "description": "Additional CSS classes for the shell element."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether a single checkbox should show a generic instruction instead of the field label."
+          "description": "Culture used to resolve localized field and option text."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Short text describing where the field appears in the document."
+          "description": "Whether the input controls are disabled."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Culture used to resolve localized field and option text."
+          "description": "Fallback culture used when localized text is missing."
         },
         {
           "name": "Field",
@@ -1802,19 +1802,19 @@
           "type": "IReadOnlyList<SigningField>",
           "isRequired": false,
           "default": "[]",
-          "description": "Primary signing field represented by this step."
+          "description": "Optional checkbox fields rendered as one grouped checkbox step."
         },
         {
           "name": "Value",
           "type": "object?",
           "isRequired": false,
-          "description": "Optional checkbox fields rendered as one grouped checkbox step."
+          "description": "Current value. Select/radio use string, multiple and grouped checkboxes use string arrays, checkbox uses bool."
         },
         {
           "name": "ValueChanged",
           "type": "EventCallback<object?>",
           "isRequired": false,
-          "description": "Current value. Select/radio use string, multiple and grouped checkboxes use string arrays, checkbox uses bool."
+          "description": "Callback invoked when the value changes."
         }
       ]
     },
@@ -1917,31 +1917,31 @@
           "name": "AppearsOn",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when the date value changes."
+          "description": "Short text describing where the field appears in the document."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Fallback culture used when localized field text is missing."
+          "description": "Additional CSS classes for the shell element."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether to show the button that fills today's date."
+          "description": "Culture used to resolve localized field text."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Short text describing where the field appears in the document."
+          "description": "Whether the input is disabled."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Culture used to resolve localized field text."
+          "description": "Fallback culture used when localized field text is missing."
         },
         {
           "name": "Field",
@@ -1954,19 +1954,19 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether the input is disabled."
+          "description": "Whether to show the button that fills today's date."
         },
         {
           "name": "Value",
           "type": "string?",
           "isRequired": false,
-          "description": "Signing field represented by this step."
+          "description": "Current date value formatted for the selected input type."
         },
         {
           "name": "ValueChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Current date value formatted for the selected input type."
+          "description": "Callback invoked when the date value changes."
         }
       ]
     },
@@ -1987,49 +1987,49 @@
           "name": "AnswersChanged",
           "type": "EventCallback<IReadOnlyDictionary<string, string?>>",
           "isRequired": false,
-          "description": "KBA questions to answer inline."
+          "description": "Callback invoked when KBA answers change."
         },
         {
           "name": "AppearsOn",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when payment checkout should start."
+          "description": "Short text describing where the field appears in the document."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Fallback culture used when localized field text is missing."
+          "description": "Additional CSS classes for the shell element."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the controls are disabled."
+          "description": "Culture used to resolve localized field text."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Short text describing where the field appears in the document."
+          "description": "Whether the controls are disabled."
         },
         {
           "name": "Error",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the external provider operation is loading."
+          "description": "Error message shown for the external provider operation."
         },
         {
           "name": "ExternalUrl",
           "type": "string?",
           "isRequired": false,
-          "description": "Error message shown for the external provider operation."
+          "description": "External URL for provider-hosted verification or checkout."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Culture used to resolve localized field text."
+          "description": "Fallback culture used when localized field text is missing."
         },
         {
           "name": "Field",
@@ -2041,26 +2041,26 @@
           "name": "IsLoading",
           "type": "bool",
           "isRequired": false,
-          "description": "Signing field represented by this step."
+          "description": "Whether the external provider operation is loading."
         },
         {
           "name": "OnCheckout",
           "type": "EventCallback<SigningField>",
           "isRequired": false,
-          "description": "Callback invoked when verification or KBA should start."
+          "description": "Callback invoked when payment checkout should start."
         },
         {
           "name": "OnStart",
           "type": "EventCallback<SigningField>",
           "isRequired": false,
-          "description": "Callback invoked when KBA answers change."
+          "description": "Callback invoked when verification or KBA should start."
         },
         {
           "name": "Questions",
           "type": "IReadOnlyList<string>",
           "isRequired": false,
           "default": "[]",
-          "description": "External URL for provider-hosted verification or checkout."
+          "description": "KBA questions to answer inline."
         }
       ]
     },
@@ -2081,25 +2081,25 @@
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when the current field should be copied to all pages."
+          "description": "Additional CSS classes for the root element."
         },
         {
           "name": "CopyToAllPagesRequested",
           "type": "EventCallback<SigningField>",
           "isRequired": false,
-          "description": "Callback invoked when a radio or multiple option should be mapped to a document area."
+          "description": "Callback invoked when the current field should be copied to all pages."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the panel should prevent edits."
+          "description": "Culture used to preview localized field labels in nested editors."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Culture used to preview localized field labels in nested editors."
+          "description": "Fallback culture used when localized labels are missing."
         },
         {
           "name": "Field",
@@ -2111,46 +2111,46 @@
           "name": "FieldChanged",
           "type": "EventCallback<SigningField>",
           "isRequired": false,
-          "description": "Selected signing field edited by the panel."
+          "description": "Callback invoked whenever the edited field changes."
         },
         {
           "name": "Fields",
           "type": "IReadOnlyList<SigningField>",
           "isRequired": false,
           "default": "[]",
-          "description": "Callback invoked whenever the edited field changes."
+          "description": "All fields in the current signing template, used by condition and formula builders."
         },
         {
           "name": "OptionAreaMappingRequested",
           "type": "EventCallback<TmSigningFieldOptionAreaMappingEventArgs>",
           "isRequired": false,
-          "description": "Whether to show authoring controls for localized signer-facing text."
+          "description": "Callback invoked when a radio or multiple option should be mapped to a document area."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Submitter roles available for assigning the edited field."
+          "description": "Whether the panel should prevent edits."
         },
         {
           "name": "ShowLocalizationEditor",
           "type": "bool",
           "isRequired": false,
-          "description": "Cultures available for editing localized signer-facing text."
+          "description": "Whether to show authoring controls for localized signer-facing text."
         },
         {
           "name": "SubmitterRoles",
           "type": "IReadOnlyList<SigningSubmitterRole>",
           "isRequired": false,
           "default": "[]",
-          "description": "All fields in the current signing template, used by condition and formula builders."
+          "description": "Submitter roles available for assigning the edited field."
         },
         {
           "name": "SupportedCultures",
           "type": "IReadOnlyList<string>",
           "isRequired": false,
           "default": "[]",
-          "description": "Fallback culture used when localized labels are missing."
+          "description": "Cultures available for editing localized signer-facing text."
         }
       ]
     },
@@ -2171,49 +2171,49 @@
           "name": "Area",
           "type": "SigningFieldArea?",
           "isRequired": false,
-          "description": "Signing field definition to render."
+          "description": "Normalized document area used to position the overlay."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when a resize operation should start."
+          "description": "Additional CSS classes for the root element."
         },
         {
           "name": "Completed",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the field is in an invalid state."
+          "description": "Whether the field has been completed."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the browser context menu is prevented for context menu interactions. Defaults to true."
+          "description": "Culture used to resolve localized field and option text."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the overlay should be rendered as read-only."
+          "description": "Whether the overlay should be disabled."
         },
         {
           "name": "Draggable",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the overlay should be disabled."
+          "description": "Whether a pointer down on the overlay starts a move operation."
         },
         {
           "name": "Editable",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether a pointer down on the overlay starts a move operation."
+          "description": "Whether resize handles should be shown."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Culture used to resolve localized field and option text."
+          "description": "Fallback culture used when localized text is missing."
         },
         {
           "name": "Field",
@@ -2225,68 +2225,68 @@
           "name": "Focused",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the field is currently selected."
+          "description": "Whether the field currently has focus."
         },
         {
           "name": "Invalid",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the field currently has focus."
+          "description": "Whether the field is in an invalid state."
         },
         {
           "name": "OnClick",
           "type": "EventCallback<TmSigningFieldOverlayPointerEventArgs>",
           "isRequired": false,
-          "description": "Fallback culture used when localized text is missing."
+          "description": "Callback invoked when the overlay is clicked."
         },
         {
           "name": "OnContextMenu",
           "type": "EventCallback<TmSigningFieldOverlayPointerEventArgs>",
           "isRequired": false,
-          "description": "Callback invoked when the overlay is double-clicked."
+          "description": "Callback invoked when the overlay receives a context menu interaction."
         },
         {
           "name": "OnDoubleClick",
           "type": "EventCallback<TmSigningFieldOverlayPointerEventArgs>",
           "isRequired": false,
-          "description": "Callback invoked when the overlay is clicked."
+          "description": "Callback invoked when the overlay is double-clicked."
         },
         {
           "name": "OnStartMove",
           "type": "EventCallback<TmSigningFieldOverlayPointerEventArgs>",
           "isRequired": false,
-          "description": "Callback invoked when the overlay receives a context menu interaction."
+          "description": "Callback invoked when a move operation should start."
         },
         {
           "name": "OnStartResize",
           "type": "EventCallback<TmSigningFieldOverlayResizeEventArgs>",
           "isRequired": false,
-          "description": "Callback invoked when a move operation should start."
+          "description": "Callback invoked when a resize operation should start."
         },
         {
           "name": "PreventDefaultContextMenu",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether resize handles should be shown."
+          "description": "Whether the browser context menu is prevented for context menu interactions. Defaults to true."
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether the field has been completed."
+          "description": "Whether the overlay should be rendered as read-only."
         },
         {
           "name": "Selected",
           "type": "bool",
           "isRequired": false,
-          "description": "Current field value. The expected value shape depends on the field type."
+          "description": "Whether the field is currently selected."
         },
         {
           "name": "Value",
           "type": "object?",
           "isRequired": false,
-          "description": "Normalized document area used to position the overlay."
+          "description": "Current field value. The expected value shape depends on the field type."
         }
       ]
     },
@@ -2308,87 +2308,87 @@
           "type": "TimeSpan",
           "isRequired": false,
           "default": "TimeSpan.FromMilliseconds(600)",
-          "description": "Callback invoked with a resolved localization snapshot for audit storage."
+          "description": "Delay before autosave is invoked after a value change."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional selector for a fixed complete target that the mobile panel must avoid."
+          "description": "Additional CSS classes for the root element."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when all required fields are complete and the signer completes the form."
+          "description": "Culture used to render the signing layer."
         },
         {
           "name": "CultureChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Culture used to render the signing layer."
+          "description": "Callback invoked when the signing culture changes."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when the signing culture changes."
+          "description": "Fallback culture used when field translations are missing."
         },
         {
           "name": "Fields",
           "type": "IReadOnlyList<SigningField>",
           "isRequired": false,
           "default": "[]",
-          "description": "Document pages shown during signing."
+          "description": "Signing fields available to the signer."
         },
         {
           "name": "IsCompleting",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether navigation and inputs are currently blocked by an external operation."
+          "description": "Whether the complete action is currently running."
         },
         {
           "name": "IsLoading",
           "type": "bool",
           "isRequired": false,
-          "description": "Delay before autosave is invoked after a value change."
+          "description": "Whether navigation and inputs are currently blocked by an external operation."
         },
         {
           "name": "MobileCompleteTargetSelector",
           "type": "string?",
           "isRequired": false,
-          "description": "Initial presentation mode for the mobile bottom panel."
+          "description": "Optional selector for a fixed complete target that the mobile panel must avoid."
         },
         {
           "name": "MobilePanelMode",
           "type": "TmSigningFormRunnerMobilePanelMode",
           "isRequired": false,
           "default": "TmSigningFormRunnerMobilePanelMode.Expanded",
-          "description": "Whether the complete action is currently running."
+          "description": "Initial presentation mode for the mobile bottom panel."
         },
         {
           "name": "OnAutoSave",
           "type": "EventCallback<IReadOnlyDictionary<string, object?>>",
           "isRequired": false,
-          "description": "Callback invoked when the current step is submitted by moving forward."
+          "description": "Callback invoked after debounced autosave."
         },
         {
           "name": "OnComplete",
           "type": "EventCallback<IReadOnlyDictionary<string, object?>>",
           "isRequired": false,
-          "description": "Callback invoked after debounced autosave."
+          "description": "Callback invoked when all required fields are complete and the signer completes the form."
         },
         {
           "name": "OnLocalizationSnapshotChanged",
           "type": "EventCallback<SigningSubmissionLocalizationSnapshot>",
           "isRequired": false,
-          "description": "Whether the runner should show a language selector when multiple cultures are available."
+          "description": "Callback invoked with a resolved localization snapshot for audit storage."
         },
         {
           "name": "OnStepSubmit",
           "type": "EventCallback<SigningStepItem>",
           "isRequired": false,
-          "description": "Optional signer role filter."
+          "description": "Callback invoked when the current step is submitted by moving forward."
         },
         {
           "name": "Pages",
@@ -2401,32 +2401,32 @@
           "name": "ShowLanguageSelector",
           "type": "bool",
           "isRequired": false,
-          "description": "Supported cultures offered by the language selector."
+          "description": "Whether the runner should show a language selector when multiple cultures are available."
         },
         {
           "name": "SubmitterUuid",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked whenever field values change."
+          "description": "Optional signer role filter."
         },
         {
           "name": "SupportedCultures",
           "type": "IReadOnlyList<string>",
           "isRequired": false,
           "default": "[]",
-          "description": "Fallback culture used when field translations are missing."
+          "description": "Supported cultures offered by the language selector."
         },
         {
           "name": "Values",
           "type": "IReadOnlyDictionary<string, object?>",
           "isRequired": true,
-          "description": "Signing fields available to the signer."
+          "description": "Current field values keyed by field UUID."
         },
         {
           "name": "ValuesChanged",
           "type": "EventCallback<IReadOnlyDictionary<string, object?>>",
           "isRequired": false,
-          "description": "Current field values keyed by field UUID."
+          "description": "Callback invoked whenever field values change."
         }
       ]
     },
@@ -2447,31 +2447,31 @@
           "name": "AppearsOn",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when the numeric value changes."
+          "description": "Short text describing where the field appears in the document."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Fallback culture used when localized field text is missing."
+          "description": "Additional CSS classes for the shell element."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the input is disabled."
+          "description": "Culture used to resolve localized field text."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Short text describing where the field appears in the document."
+          "description": "Whether the input is disabled."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Culture used to resolve localized field text."
+          "description": "Fallback culture used when localized field text is missing."
         },
         {
           "name": "Field",
@@ -2483,13 +2483,13 @@
           "name": "Value",
           "type": "decimal?",
           "isRequired": false,
-          "description": "Signing field represented by this step."
+          "description": "Current numeric value."
         },
         {
           "name": "ValueChanged",
           "type": "EventCallback<decimal?>",
           "isRequired": false,
-          "description": "Current numeric value."
+          "description": "Callback invoked when the numeric value changes."
         }
       ]
     },
@@ -2510,57 +2510,57 @@
           "name": "AppearsOn",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when a verification code should be sent."
+          "description": "Short text describing where the field appears in the document."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Fallback culture used when localized field text is missing."
+          "description": "Additional CSS classes for the shell element."
         },
         {
           "name": "CodeSent",
           "type": "bool",
           "isRequired": false,
-          "description": "Callback invoked when OTP code changes."
+          "description": "Whether the OTP input is already visible."
         },
         {
           "name": "CountryCode",
           "type": "string",
           "isRequired": false,
           "default": "\"+1\"",
-          "description": "Signing field represented by this step."
+          "description": "Selected country calling code."
         },
         {
           "name": "CountryCodeChanged",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Selected country calling code."
+          "description": "Callback invoked when country code changes."
         },
         {
           "name": "CountryOptions",
           "type": "IReadOnlyList<PhoneCountryOption>",
           "isRequired": false,
           "default": "DefaultCountryOptions",
-          "description": "Seconds shown in the resend countdown state."
+          "description": "Available country code options."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the controls are disabled."
+          "description": "Culture used to resolve localized field text."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Short text describing where the field appears in the document."
+          "description": "Whether the controls are disabled."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Culture used to resolve localized field text."
+          "description": "Fallback culture used when localized field text is missing."
         },
         {
           "name": "Field",
@@ -2572,50 +2572,50 @@
           "name": "OnSendCode",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Available country code options."
+          "description": "Callback invoked when a verification code should be sent."
         },
         {
           "name": "OtpCode",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when the normalized phone value changes."
+          "description": "Current OTP code."
         },
         {
           "name": "OtpCodeChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Current OTP code."
+          "description": "Callback invoked when OTP code changes."
         },
         {
           "name": "PhoneNumber",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when country code changes."
+          "description": "Local phone number."
         },
         {
           "name": "PhoneNumberChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Local phone number."
+          "description": "Callback invoked when phone number changes."
         },
         {
           "name": "ResendSeconds",
           "type": "int",
           "isRequired": false,
           "default": "30",
-          "description": "Whether the OTP input is already visible."
+          "description": "Seconds shown in the resend countdown state."
         },
         {
           "name": "Value",
           "type": "string?",
           "isRequired": false,
-          "description": "Callback invoked when phone number changes."
+          "description": "Normalized full phone number."
         },
         {
           "name": "ValueChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Normalized full phone number."
+          "description": "Callback invoked when the normalized phone value changes."
         }
       ]
     },
@@ -2636,37 +2636,37 @@
           "name": "AppearsOn",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional HTML id applied to the validation message for aria-describedby links."
+          "description": "Short text describing where the field appears in the document."
         },
         {
           "name": "ChildContent",
           "type": "RenderFragment?",
           "isRequired": false,
-          "description": "Short text describing where the field appears in the document."
+          "description": "Step body content."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Step body content."
+          "description": "Additional CSS classes for the root element."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Optional description rendered below the label."
+          "description": "Culture used to resolve field labels and descriptions."
         },
         {
           "name": "Description",
           "type": "string?",
           "isRequired": false,
-          "description": "Explicit label overriding the field title or name."
+          "description": "Optional description rendered below the label."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Culture used to resolve field labels and descriptions."
+          "description": "Fallback culture used when the requested culture is missing."
         },
         {
           "name": "Field",
@@ -2678,25 +2678,25 @@
           "name": "Label",
           "type": "string?",
           "isRequired": false,
-          "description": "Signing field represented by this step."
+          "description": "Explicit label overriding the field title or name."
         },
         {
           "name": "Required",
           "type": "bool?",
           "isRequired": false,
-          "description": "Fallback culture used when the requested culture is missing."
+          "description": "Whether the step is required. Defaults to the field requirement."
         },
         {
           "name": "ValidationMessage",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the step is required. Defaults to the field requirement."
+          "description": "Validation message shown below the step content."
         },
         {
           "name": "ValidationMessageId",
           "type": "string?",
           "isRequired": false,
-          "description": "Validation message shown below the step content."
+          "description": "Optional HTML id applied to the validation message for aria-describedby links."
         }
       ]
     },
@@ -2717,37 +2717,37 @@
           "name": "AppearsOn",
           "type": "string?",
           "isRequired": false,
-          "description": "Document area used to infer cells maxlength."
+          "description": "Short text describing where the field appears in the document."
         },
         {
           "name": "Area",
           "type": "SigningFieldArea?",
           "isRequired": false,
-          "description": "Callback invoked when the text value changes."
+          "description": "Document area used to infer cells maxlength."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Fallback culture used when localized field text is missing."
+          "description": "Additional CSS classes for the shell element."
         },
         {
           "name": "Culture",
           "type": "string?",
           "isRequired": false,
-          "description": "Whether the input is disabled."
+          "description": "Culture used to resolve localized field text."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Short text describing where the field appears in the document."
+          "description": "Whether the input is disabled."
         },
         {
           "name": "FallbackCulture",
           "type": "string?",
           "isRequired": false,
-          "description": "Culture used to resolve localized field text."
+          "description": "Fallback culture used when localized field text is missing."
         },
         {
           "name": "Field",
@@ -2759,13 +2759,13 @@
           "name": "Value",
           "type": "string?",
           "isRequired": false,
-          "description": "Signing field represented by this step."
+          "description": "Current text value."
         },
         {
           "name": "ValueChanged",
           "type": "EventCallback<string?>",
           "isRequired": false,
-          "description": "Current text value."
+          "description": "Callback invoked when the text value changes."
         }
       ]
     },

@@ -15,14 +15,14 @@
       "name": "OnApply",
       "type": "EventCallback<SpreadsheetTextToColumnsResult>",
       "isRequired": true,
-      "description": "The raw text of each source row to be split (used for the live preview).",
+      "description": "Raised when the user finishes the wizard.",
       "editorRequired": true
     },
     {
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when the user finishes the wizard."
+      "description": "Raised when the dialog is dismissed."
     }
   ],
   "subcategory": "Dialogs"

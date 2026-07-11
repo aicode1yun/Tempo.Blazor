@@ -2,9 +2,102 @@
   "kind": "Class",
   "category": "Document Editor",
   "namespace": "Tempo.Blazor.DocumentEditor.Models",
-  "description": "List block content.",
+  "description": "Content of a DocumentBlockType.List block: exactly one list item, not the whole list.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentBlocks.cs",
   "documentationStatus": "generated",
-  "itemName": "Tempo.Blazor.DocumentEditor.Models.ListBlockContent"
+  "itemName": "Tempo.Blazor.DocumentEditor.Models.ListBlockContent",
+  "members": [
+    {
+      "name": "Ordered",
+      "kind": "Property",
+      "type": "bool",
+      "description": "True for a numbered item, false for a bullet."
+    },
+    {
+      "name": "IndentLevel",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based nesting level."
+    },
+    {
+      "name": "StartNumber",
+      "kind": "Property",
+      "type": "int",
+      "description": "Starting number for an ordered item. Defaults to 1."
+    },
+    {
+      "name": "IsChecked",
+      "kind": "Property",
+      "type": "bool?",
+      "description": "Checkbox state of a GFM task item (- [ ] / - [x]). Null for an ordinary item, which has no checkbox at all. Maps to a Notion TodoItem in both directions."
+    },
+    {
+      "name": "NumberingId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional concrete numbering instance identifier (DOCX)."
+    },
+    {
+      "name": "AbstractNumberingId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional abstract numbering definition identifier (DOCX)."
+    },
+    {
+      "name": "ListStyleId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional list style identifier."
+    },
+    {
+      "name": "NumberFormat",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional numbering format override for this item level."
+    },
+    {
+      "name": "LevelText",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional numbering text template override, for example %1.%2."
+    },
+    {
+      "name": "Suffix",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional suffix after the list label: tab, space, or none."
+    },
+    {
+      "name": "LabelIndent",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Optional absolute label indent for this item, in points."
+    },
+    {
+      "name": "HangingIndent",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Optional hanging indent for this item, in points."
+    },
+    {
+      "name": "RestartNumbering",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether this item restarts numbering at its level."
+    },
+    {
+      "name": "Inlines",
+      "kind": "Property",
+      "type": "List<InlineContent>",
+      "description": "The item text. For a task item the checkbox is NOT part of the text."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Read a task list imported from Markdown",
+      "language": "csharp",
+      "code": "var document = new DocumentMarkdownImporter().Import(\"- [x] shipped\\n- todo\");\n\nvar done = (ListBlockContent)document.Blocks[0].Content!;   // IsChecked == true\nvar item = (ListBlockContent)document.Blocks[1].Content!;   // IsChecked == null\n\n// Exporting writes the checkbox back:  \"- [x] shipped\"  /  \"- todo\"\nvar markdown = new DocumentMarkdownExporter().Export(document);"
+    }
+  ]
 }

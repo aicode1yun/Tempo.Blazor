@@ -1,0 +1,43 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "itemName": "IndexedDbDocumentOfflineStore",
+  "packageId": "Tempo.Blazor.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor.DocumentEditor/Services/IndexedDbDocumentOfflineStore.cs",
+  "documentationStatus": "generated",
+  "description": "Browser IndexedDB-backed offline store for document editor drafts. Persists unsaved edits locally so they survive a reload or a lost connection, and can be replayed once the backend is reachable again. Requires a JS runtime, so it only works in an interactive (WASM or Server) render mode.",
+  "members": [
+    {
+      "name": "IndexedDbDocumentOfflineStore",
+      "type": "IndexedDbDocumentOfflineStore(IJSRuntime jsRuntime)",
+      "description": "Creates the store on top of the browser's IndexedDB via JS interop."
+    },
+    {
+      "name": "SaveDraftAsync",
+      "type": "Task SaveDraftAsync(DocumentOfflineDraft draft, CancellationToken cancellationToken = default)",
+      "description": "Writes or overwrites a draft."
+    },
+    {
+      "name": "LoadDraftAsync",
+      "type": "Task<DocumentOfflineDraft?> LoadDraftAsync(string draftId, CancellationToken cancellationToken = default)",
+      "description": "Reads a single draft, or null when it is not stored."
+    },
+    {
+      "name": "DeleteDraftAsync",
+      "type": "Task DeleteDraftAsync(string draftId, CancellationToken cancellationToken = default)",
+      "description": "Removes a draft, typically after it has been synced to the server."
+    },
+    {
+      "name": "ListPendingDraftsAsync",
+      "type": "Task<IReadOnlyList<DocumentOfflineDraft>> ListPendingDraftsAsync(CancellationToken cancellationToken = default)",
+      "description": "Lists every draft still awaiting synchronisation."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Register and flush pending drafts",
+      "code": "// Program.cs\nbuilder.Services.AddScoped<IDocumentOfflineStore, IndexedDbDocumentOfflineStore>();\n\n// when the connection comes back\nforeach (var draft in await store.ListPendingDraftsAsync())\n{\n    await api.SaveDocumentAsync(draft);\n    await store.DeleteDraftAsync(draft.Id);\n}"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Request for resolving a provider-managed asset to an access URL.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileResolveRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmFileResolveRequest",
+  "members": [
+    {
+      "name": "AssetId",
+      "type": "string",
+      "description": "Provider-managed asset identifier."
+    },
+    {
+      "name": "EntityRef",
+      "type": "TmEntityRef?",
+      "description": "Entity that owns or references the asset, when needed by the provider."
+    },
+    {
+      "name": "Purpose",
+      "type": "string?",
+      "description": "Optional purpose, such as \"document-image\" or \"notion-media\"."
+    },
+    {
+      "name": "Refresh",
+      "type": "bool",
+      "description": "True when the caller wants a fresh URL even if a cached one exists."
+    },
+    {
+      "name": "Metadata",
+      "type": "Dictionary<string, object>?",
+      "description": "Arbitrary metadata for provider use."
+    }
+  ]
+}

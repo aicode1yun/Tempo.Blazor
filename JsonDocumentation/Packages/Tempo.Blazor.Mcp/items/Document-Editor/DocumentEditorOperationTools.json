@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "MCP write tools for applying DocumentEditor operation batches.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorOperationTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorOperationTools"
+}

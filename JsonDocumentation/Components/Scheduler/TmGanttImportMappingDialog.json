@@ -15,19 +15,19 @@
       "name": "IsOpen",
       "type": "bool",
       "isRequired": false,
-      "description": "Source column names from the imported file."
+      "description": "Whether the dialog is visible."
     },
     {
       "name": "OnClose",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Fires when the user confirms the mapping."
+      "description": "Fires when the dialog should close."
     },
     {
       "name": "OnImport",
       "type": "EventCallback<IReadOnlyList<GanttColumnMapping>>",
       "isRequired": false,
-      "description": "Whether the dialog is visible."
+      "description": "Fires when the user confirms the mapping."
     }
   ]
 }

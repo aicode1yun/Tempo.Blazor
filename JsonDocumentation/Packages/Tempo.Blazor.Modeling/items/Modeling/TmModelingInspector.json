@@ -15,20 +15,20 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Elements used to resolve relationship source and target display names."
+      "description": "Additional CSS class applied to the inspector root."
     },
     {
       "name": "Elements",
       "type": "IReadOnlyList<ModelingElementDto>",
       "isRequired": false,
       "default": "[]",
-      "description": "Selected modeling relationship."
+      "description": "Elements used to resolve relationship source and target display names."
     },
     {
       "name": "Relationship",
       "type": "ModelingRelationshipDto?",
       "isRequired": false,
-      "description": "Selected modeling element. Takes precedence when both element and relationship are supplied."
+      "description": "Selected modeling relationship."
     }
   ]
 }

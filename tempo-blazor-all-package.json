@@ -48,13 +48,14 @@
   },
   "items": [
     {
+      "itemName": "AllServiceCollectionExtensions",
       "kind": "Class",
       "category": "Configuration",
       "namespace": "Tempo.Blazor.Configuration",
       "description": "Extension methods for registering the full Tempo.Blazor split package set.",
       "packageId": "Tempo.Blazor.All",
       "sourcePath": "src/Tempo.Blazor.All/Configuration/AllServiceCollectionExtensions.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AddTempoBlazorAll",
@@ -69,15 +70,20 @@
           ]
         }
       ],
-      "itemName": "AllServiceCollectionExtensions"
+      "examples": [
+        {
+          "title": "Register the services in Program.cs",
+          "code": "// one call instead of registering each feature package separately\nbuilder.Services.AddTempoBlazorAll();"
+        }
+      ]
     }
   ],
   "libraryExamples": [],
   "summary": {
     "itemCount": 1,
-    "manualItemCount": 0,
+    "manualItemCount": 1,
     "generatedItemCount": 1,
-    "generatedOnlyItemCount": 1,
+    "generatedOnlyItemCount": 0,
     "componentCount": 0,
     "publicApiTypeCount": 1
   }

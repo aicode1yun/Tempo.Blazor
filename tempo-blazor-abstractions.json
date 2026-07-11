@@ -3580,10 +3580,64 @@
       "kind": "Enum",
       "category": "Document Editor",
       "namespace": "Tempo.Blazor.DocumentEditor.Models",
-      "description": "Block type used by the document editor JSON model.",
+      "description": "The kind of a DocumentBlock. Determines which DocumentBlockContent subclass the block's Content carries, and how the Markdown, HTML, DOCX and Notion converters render it.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentBlocks.cs",
-      "documentationStatus": "merged"
+      "documentationStatus": "merged",
+      "values": [
+        {
+          "name": "Paragraph",
+          "value": "0",
+          "description": "Ordinary text. Content is ParagraphBlockContent."
+        },
+        {
+          "name": "Heading",
+          "value": "1",
+          "description": "Heading of level 1-6. Content is HeadingBlockContent."
+        },
+        {
+          "name": "List",
+          "value": "2",
+          "description": "One list item, ordered or bulleted. A GFM task item sets ListBlockContent.IsChecked. Content is ListBlockContent."
+        },
+        {
+          "name": "Quote",
+          "value": "3",
+          "description": "Block quote. Content is QuoteBlockContent."
+        },
+        {
+          "name": "Table",
+          "value": "4",
+          "description": "Table with per-column alignment. Content is TableBlockContent."
+        },
+        {
+          "name": "Image",
+          "value": "5",
+          "description": "Standalone image. Content is ImageBlockContent."
+        },
+        {
+          "name": "PageBreak",
+          "value": "6",
+          "description": "Page break. Exports as a Markdown thematic break (---) and maps to a Notion Divider."
+        },
+        {
+          "name": "ContentControl",
+          "value": "7",
+          "description": "Structured document tag (Word content control). Content is ContentControlBlockContent."
+        },
+        {
+          "name": "Code",
+          "value": "8",
+          "description": "Preformatted code. Its text is never parsed for inline markup. Content is CodeBlockContent."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Dispatch on the block type",
+          "language": "csharp",
+          "code": "foreach (var block in document.Blocks.OrderBy(b => b.Order))\n{\n    var text = block.Type switch\n    {\n        DocumentBlockType.Code      => ((CodeBlockContent)block.Content!).Code,\n        DocumentBlockType.Paragraph => Render(((ParagraphBlockContent)block.Content!).Inlines),\n        DocumentBlockType.PageBreak => \"---\",\n        _                           => string.Empty\n    };\n}"
+        }
+      ]
     },
     {
       "itemName": "DocumentCaptionMetadata",
@@ -4229,13 +4283,14 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentEditorActivityBridge",
       "kind": "Class",
       "category": "Document Editor",
       "namespace": "Tempo.Blazor.DocumentEditor.Models",
       "description": "Converts document-editor audit events to shared activity entries.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentEditorActivityBridge.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "EntityType",
@@ -4255,8 +4310,7 @@
             }
           ]
         }
-      ],
-      "itemName": "DocumentEditorActivityBridge"
+      ]
     },
     {
       "itemName": "DocumentEditorAnnouncement",
@@ -4436,6 +4490,16 @@
       "description": "Shared JSON options for document editor snapshots.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProviderContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentEditorJsonContext",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Models",
+      "description": "Source-generated System.Text.Json serializer metadata for the document editor persistence model and its provider contracts. Wired into DocumentEditorJson.Options as the first link of the resolver chain so document clones, saves and interop marshals avoid reflection-based serialization.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentEditorJsonContext.cs",
       "documentationStatus": "merged"
     },
     {
@@ -8132,6 +8196,44 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "TableColumnAlignment",
+      "kind": "Enum",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Models",
+      "description": "Horizontal alignment of a table column, as expressed by a GFM table separator row. None (---) leaves the alignment to the renderer, Left (:---), Center (:---:) and Right (---:) are explicit. Stored on TableBlockContent.ColumnAlignments and preserved across Markdown import, export and the DocumentModel/Notion converters.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentBlocks.cs",
+      "documentationStatus": "merged",
+      "values": [
+        {
+          "name": "None",
+          "value": "0",
+          "description": "No explicit alignment (---). The renderer decides; the Markdown exporter writes --- back."
+        },
+        {
+          "name": "Left",
+          "value": "1",
+          "description": "Align column content to the leading edge (:---)."
+        },
+        {
+          "name": "Center",
+          "value": "2",
+          "description": "Center column content (:---:)."
+        },
+        {
+          "name": "Right",
+          "value": "3",
+          "description": "Align column content to the trailing edge (---:)."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Alignment is read from the separator row",
+          "code": "const string markdown = \"\"\"\n    | Plain | Left | Center | Right |\n    | --- | :--- | :---: | ---: |\n    | a | b | c | d |\n    \"\"\";\n\nvar document = new DocumentMarkdownImporter().Import(markdown);\nvar table    = (TableBlockContent)document.Blocks[0].Content;\n\n// [None, Left, Center, Right]\nvar alignments = table.ColumnAlignments;\n\n// exporting reproduces the very same separator row\nvar roundTripped = new DocumentMarkdownExporter().Export(document);"
+        }
+      ]
+    },
+    {
       "itemName": "TableHorizontalAlignment",
       "kind": "Enum",
       "category": "Document Editor",
@@ -8170,6 +8272,42 @@
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentBlocks.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "Tempo.Blazor.DocumentEditor.Models.CodeBlockContent",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Models",
+      "description": "Content of a DocumentBlockType.Code block: a fenced code block in Markdown, a <pre> in HTML, a Notion Code block. The text is stored verbatim — never as inlines — so no emphasis, link or escape parsing is applied to it, and a snippet containing ** or _ round-trips unchanged.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentBlocks.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Language",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Language identifier from the opening fence (```csharp) or from a class=\"language-x\" on the inner <code>. Null when the fence carried none."
+        },
+        {
+          "name": "Code",
+          "kind": "Property",
+          "type": "string",
+          "description": "The code itself, newlines preserved. Never parsed for inline markup."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Import a fenced code block and export it back",
+          "language": "csharp",
+          "code": "var document = new DocumentMarkdownImporter().Import(\"```csharp\\nvar x = 1;\\n```\");\n\nvar code = (CodeBlockContent)document.Blocks[0].Content!;\n// code.Language == \"csharp\"\n// code.Code     == \"var x = 1;\"\n\n// The exporter grows the fence past any backtick run inside the code,\n// so a snippet that itself contains ``` still round-trips.\nvar markdown = new DocumentMarkdownExporter().Export(document);"
+        },
+        {
+          "title": "Build a code block by hand",
+          "language": "csharp",
+          "code": "var block = new DocumentBlock\n{\n    Type = DocumentBlockType.Code,\n    Order = 0,\n    Content = new CodeBlockContent\n    {\n        Language = \"json\",\n        Code = \"{ \\\"id\\\": 1 }\"\n    }\n};"
+        }
+      ]
     },
     {
       "itemName": "Tempo.Blazor.DocumentEditor.Models.DocumentComment",
@@ -8216,10 +8354,103 @@
       "kind": "Class",
       "category": "Document Editor",
       "namespace": "Tempo.Blazor.DocumentEditor.Models",
-      "description": "List block content.",
+      "description": "Content of a DocumentBlockType.List block: exactly one list item, not the whole list.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentBlocks.cs",
-      "documentationStatus": "merged"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Ordered",
+          "kind": "Property",
+          "type": "bool",
+          "description": "True for a numbered item, false for a bullet."
+        },
+        {
+          "name": "IndentLevel",
+          "kind": "Property",
+          "type": "int",
+          "description": "Zero-based nesting level."
+        },
+        {
+          "name": "StartNumber",
+          "kind": "Property",
+          "type": "int",
+          "description": "Starting number for an ordered item. Defaults to 1."
+        },
+        {
+          "name": "IsChecked",
+          "kind": "Property",
+          "type": "bool?",
+          "description": "Checkbox state of a GFM task item (- [ ] / - [x]). Null for an ordinary item, which has no checkbox at all. Maps to a Notion TodoItem in both directions."
+        },
+        {
+          "name": "NumberingId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional concrete numbering instance identifier (DOCX)."
+        },
+        {
+          "name": "AbstractNumberingId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional abstract numbering definition identifier (DOCX)."
+        },
+        {
+          "name": "ListStyleId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional list style identifier."
+        },
+        {
+          "name": "NumberFormat",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional numbering format override for this item level."
+        },
+        {
+          "name": "LevelText",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional numbering text template override, for example %1.%2."
+        },
+        {
+          "name": "Suffix",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional suffix after the list label: tab, space, or none."
+        },
+        {
+          "name": "LabelIndent",
+          "kind": "Property",
+          "type": "double?",
+          "description": "Optional absolute label indent for this item, in points."
+        },
+        {
+          "name": "HangingIndent",
+          "kind": "Property",
+          "type": "double?",
+          "description": "Optional hanging indent for this item, in points."
+        },
+        {
+          "name": "RestartNumbering",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Whether this item restarts numbering at its level."
+        },
+        {
+          "name": "Inlines",
+          "kind": "Property",
+          "type": "List<InlineContent>",
+          "description": "The item text. For a task item the checkbox is NOT part of the text."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Read a task list imported from Markdown",
+          "language": "csharp",
+          "code": "var document = new DocumentMarkdownImporter().Import(\"- [x] shipped\\n- todo\");\n\nvar done = (ListBlockContent)document.Blocks[0].Content!;   // IsChecked == true\nvar item = (ListBlockContent)document.Blocks[1].Content!;   // IsChecked == null\n\n// Exporting writes the checkbox back:  \"- [x] shipped\"  /  \"- todo\"\nvar markdown = new DocumentMarkdownExporter().Export(document);"
+        }
+      ]
     },
     {
       "itemName": "Tempo.Blazor.DocumentEditor.Models.TableBlockContent",
@@ -11325,14 +11556,26 @@
       ]
     },
     {
+      "itemName": "ChatAttachmentBridge",
       "kind": "Class",
       "category": "Models",
       "namespace": "Tempo.Blazor.Models",
       "description": "Conversion helpers between chat-specific attachments and shared Tempo attachments.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatAttachment.cs",
-      "documentationStatus": "generated",
-      "itemName": "ChatAttachmentBridge"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ToTmAttachment",
+          "type": "static TmAttachment ToTmAttachment()",
+          "description": "Converts a chat attachment to a shared attachment linked to a chat message."
+        },
+        {
+          "name": "ToChatAttachment",
+          "type": "static ChatAttachment ToChatAttachment()",
+          "description": "Converts a shared attachment to a chat-specific attachment."
+        }
+      ]
     },
     {
       "itemName": "ChatMessage",
@@ -16941,43 +17184,6 @@
       ]
     },
     {
-      "itemName": "CodeBlockContent",
-      "kind": "Class",
-      "category": "Notion Editor",
-      "namespace": "Tempo.Blazor.NotionEditor.Models",
-      "description": "Public class defined by Tempo.Blazor.Abstractions.",
-      "packageId": "Tempo.Blazor.Abstractions",
-      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/CodeBlockContent.cs",
-      "documentationStatus": "merged",
-      "members": [
-        {
-          "name": "Caption",
-          "kind": "Property",
-          "type": "string?"
-        },
-        {
-          "name": "Code",
-          "kind": "Property",
-          "type": "string"
-        },
-        {
-          "name": "Language",
-          "kind": "Property",
-          "type": "string?"
-        },
-        {
-          "name": "ShowLineNumbers",
-          "kind": "Property",
-          "type": "bool"
-        },
-        {
-          "name": "WrapLines",
-          "kind": "Property",
-          "type": "bool"
-        }
-      ]
-    },
-    {
       "itemName": "CollaboratorCursor",
       "kind": "Record",
       "category": "Notion Editor",
@@ -18587,7 +18793,7 @@
         {
           "name": "ConvertBlockTypeAsync",
           "returnType": "Task<IPageBlock>",
-          "description": "Changes a block's type while preserving its text content (e.g. Paragraph → Heading1). Returns the updated block.",
+          "description": "Changes a block's type while preserving its text content (e.g. Paragraph -> Heading1). Uses the block's stored content. Returns the updated block.",
           "parameters": [
             {
               "name": "blockId",
@@ -18597,6 +18803,27 @@
               "name": "newType",
               "type": "BlockType",
               "description": "Target block type from the BlockType enum."
+            }
+          ]
+        },
+        {
+          "name": "ConvertBlockTypeAsync",
+          "returnType": "Task<IPageBlock>",
+          "description": "Overload that converts a block using the editor's live contenteditable HTML instead of the stored content, so text typed since the last blur is not lost. This is a default interface member: providers that do not override it ignore currentHtml and fall back to the two-argument overload, so existing implementations keep working unchanged.",
+          "parameters": [
+            {
+              "name": "blockId",
+              "type": "string"
+            },
+            {
+              "name": "newType",
+              "type": "BlockType",
+              "description": "Target block type from the BlockType enum."
+            },
+            {
+              "name": "currentHtml",
+              "type": "string?",
+              "description": "The block's live editor HTML, or null to use the stored content."
             }
           ]
         },
@@ -18619,6 +18846,10 @@
         {
           "title": "Minimal API-backed implementation skeleton",
           "code": "public class ApiNotionBlockProvider : INotionBlockProvider\n{\n    private readonly HttpClient _http;\n\n    public ApiNotionBlockProvider(HttpClient http) => _http = http;\n\n    public async Task<IEnumerable<IPageBlock>> GetBlocksAsync(string pageId)\n        => await _http.GetFromJsonAsync<List<PageBlock>>($\"/api/pages/{pageId}/blocks\") ?? [];\n\n    public async Task<IPageBlock> CreateBlockAsync(string pageId, IPageBlock block, string? afterBlockId)\n    {\n        var response = await _http.PostAsJsonAsync($\"/api/pages/{pageId}/blocks?after={afterBlockId}\", block);\n        return await response.Content.ReadFromJsonAsync<PageBlock>() ?? throw new InvalidOperationException();\n    }\n\n    // ... implement remaining methods\n}"
+        },
+        {
+          "title": "Convert without losing unsaved text",
+          "code": "// the editor reads the live contenteditable value before converting\nvar liveHtml = await JS.InvokeAsync<string?>(\n    \"tmNotionEditor.getEditableHtml\", blockId);\n\nvar converted = await BlockProvider.ConvertBlockTypeAsync(\n    blockId, BlockType.Heading2, liveHtml);\n\n// providers that do not implement the overload simply ignore liveHtml"
         }
       ]
     },
@@ -19845,14 +20076,36 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "INotionVersionProvider",
       "kind": "Interface",
       "category": "Notion Editor",
       "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
       "description": "Optional provider for Notion page versions, restore, and version diffs.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/INotionVersionProvider.cs",
-      "documentationStatus": "generated",
-      "itemName": "INotionVersionProvider"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetVersionsAsync",
+          "type": "Task<PagedResult<IPageVersion>> GetVersionsAsync(string pageId, int page, int pageSize)",
+          "description": "Gets a paged list of versions for a page."
+        },
+        {
+          "name": "GetVersionAsync",
+          "type": "Task<IPageVersion> GetVersionAsync(string pageId, string versionId)",
+          "description": "Gets a single version snapshot."
+        },
+        {
+          "name": "RestoreVersionAsync",
+          "type": "Task RestoreVersionAsync(string pageId, string versionId)",
+          "description": "Restores a page to a historical version."
+        },
+        {
+          "name": "CompareVersionsAsync",
+          "type": "Task<IEnumerable<BlockDiff>> CompareVersionsAsync(string versionId1, string versionId2)",
+          "description": "Compares two version snapshots."
+        }
+      ]
     },
     {
       "itemName": "INotionWatchProvider",
@@ -22393,6 +22646,43 @@
       ]
     },
     {
+      "itemName": "Tempo.Blazor.NotionEditor.Models.CodeBlockContent",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Public class defined by Tempo.Blazor.Abstractions.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/CodeBlockContent.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Caption",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "Code",
+          "kind": "Property",
+          "type": "string"
+        },
+        {
+          "name": "Language",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "ShowLineNumbers",
+          "kind": "Property",
+          "type": "bool"
+        },
+        {
+          "name": "WrapLines",
+          "kind": "Property",
+          "type": "bool"
+        }
+      ]
+    },
+    {
       "itemName": "Tempo.Blazor.NotionEditor.Models.HeadingBlockContent",
       "kind": "Class",
       "category": "Notion Editor",
@@ -22586,6 +22876,12 @@
       "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/TableBlockContent.cs",
       "documentationStatus": "merged",
       "members": [
+        {
+          "name": "ColumnAlignments",
+          "kind": "Property",
+          "type": "IReadOnlyList<TableColumnAlignment>",
+          "description": "Per-column horizontal alignment, indexed by column. Empty means no explicit alignment."
+        },
         {
           "name": "ColumnCount",
           "kind": "Property",
@@ -23875,34 +24171,85 @@
       "documentationStatus": "manual"
     },
     {
+      "itemName": "ITmActivityProvider",
       "kind": "Interface",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Minimal provider contract for shared activity and audit entries.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmActivityProvider.cs",
-      "documentationStatus": "generated",
-      "itemName": "ITmActivityProvider"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Capabilities",
+          "type": "TmActivityProviderCapabilities",
+          "description": "Operations this provider supports."
+        },
+        {
+          "name": "GetForEntityAsync",
+          "type": "Task<IReadOnlyList<TmActivityEntry>> GetForEntityAsync(TmEntityRef entityRef, CancellationToken cancellationToken = default)",
+          "description": "Gets activity entries for an entity."
+        },
+        {
+          "name": "QueryAsync",
+          "type": "Task<PagedResult<TmActivityEntry>> QueryAsync(TmActivityQuery query, CancellationToken cancellationToken = default)",
+          "description": "Queries activity entries across entities."
+        },
+        {
+          "name": "AppendAsync",
+          "type": "Task<TmActivityEntry> AppendAsync(TmActivityEntry entry, CancellationToken cancellationToken = default)",
+          "description": "Appends a new activity entry."
+        }
+      ]
     },
     {
+      "itemName": "ITmAttachmentProvider",
       "kind": "Interface",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Provider contract for linking file assets to Tempo entities.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmAttachmentProvider.cs",
-      "documentationStatus": "generated",
-      "itemName": "ITmAttachmentProvider"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Capabilities",
+          "type": "TmAttachmentProviderCapabilities",
+          "description": "Operations this provider supports."
+        },
+        {
+          "name": "GetForEntityAsync",
+          "type": "Task<IReadOnlyList<TmAttachment>> GetForEntityAsync(TmEntityRef entityRef, CancellationToken cancellationToken = default)",
+          "description": "Gets attachments linked to an entity."
+        },
+        {
+          "name": "AddAsync",
+          "type": "Task<TmAttachment> AddAsync(TmAttachment attachment, CancellationToken cancellationToken = default)",
+          "description": "Adds or updates an attachment link."
+        },
+        {
+          "name": "RemoveAsync",
+          "type": "Task RemoveAsync(TmEntityRef entityRef, string attachmentId, CancellationToken cancellationToken = default)",
+          "description": "Removes an attachment link from an entity."
+        }
+      ]
     },
     {
+      "itemName": "ITmAuthorizationProvider",
       "kind": "Interface",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Authorizes user actions against shared Tempo entity references.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmAuthorizationProvider.cs",
-      "documentationStatus": "generated",
-      "itemName": "ITmAuthorizationProvider"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AuthorizeAsync",
+          "type": "ValueTask<TmAuthorizationResult> AuthorizeAsync(TmAuthorizationRequest request, CancellationToken cancellationToken = default)",
+          "description": "Evaluates whether the requested action is allowed."
+        }
+      ]
     },
     {
       "itemName": "ITmCapabilityProvider<TCapabilities>",
@@ -23921,14 +24268,21 @@
       ]
     },
     {
+      "itemName": "ITmChunkedFileProvider",
       "kind": "Interface",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Optional file provider contract for chunked uploads.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmChunkedFileProvider.cs",
-      "documentationStatus": "generated",
-      "itemName": "ITmChunkedFileProvider"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "UploadChunkAsync",
+          "type": "Task<TmFileUploadResult> UploadChunkAsync(TmFileChunk chunk, CancellationToken cancellationToken = default)",
+          "description": "Uploads a single chunk in a larger file upload."
+        }
+      ]
     },
     {
       "itemName": "ITmCommentProvider",
@@ -23989,34 +24343,105 @@
       ]
     },
     {
+      "itemName": "ITmDraftFileProvider",
       "kind": "Interface",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Optional file provider contract for draft asset workflows.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmDraftFileProvider.cs",
-      "documentationStatus": "generated",
-      "itemName": "ITmDraftFileProvider"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "DeleteDraftAsync",
+          "type": "Task DeleteDraftAsync(TmEntityRef entityRef, string assetId, CancellationToken cancellationToken = default)",
+          "description": "Deletes a draft asset that was never committed."
+        },
+        {
+          "name": "CommitDraftsAsync",
+          "type": "Task<TmFileCommitResult> CommitDraftsAsync(TmEntityRef entityRef, IReadOnlyList<string> assetIds, CancellationToken cancellationToken = default)",
+          "description": "Commits draft assets that are now referenced by the saved entity."
+        }
+      ]
     },
     {
+      "itemName": "ITmFileProvider",
       "kind": "Interface",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Provider contract for blob or asset storage independent of entity attachment links.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmFileProvider.cs",
-      "documentationStatus": "generated",
-      "itemName": "ITmFileProvider"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Capabilities",
+          "type": "TmFileProviderCapabilities",
+          "description": "Operations this provider supports."
+        },
+        {
+          "name": "UploadAsync",
+          "type": "Task<TmFileUploadResult> UploadAsync(TmFileUploadRequest request, Stream content, CancellationToken cancellationToken = default)",
+          "description": "Uploads a complete file stream."
+        },
+        {
+          "name": "ResolveAsync",
+          "type": "Task<TmFileResolveResult> ResolveAsync(TmFileResolveRequest request, CancellationToken cancellationToken = default)",
+          "description": "Resolves an asset id to an access URL or ticket."
+        },
+        {
+          "name": "DeleteAsync",
+          "type": "Task DeleteAsync(string assetId, CancellationToken cancellationToken = default)",
+          "description": "Deletes a provider-managed asset."
+        }
+      ]
     },
     {
+      "itemName": "ITmNotificationService",
       "kind": "Interface",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Shared service contract for persistent user notifications.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/ITmNotificationService.cs",
-      "documentationStatus": "generated",
-      "itemName": "ITmNotificationService"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "OnChanged",
+          "type": "event Action?",
+          "description": "Raised after notifications or read state change."
+        },
+        {
+          "name": "Capabilities",
+          "type": "TmNotificationServiceCapabilities",
+          "description": "Operations this service supports."
+        },
+        {
+          "name": "PublishAsync",
+          "type": "Task<TmNotification> PublishAsync(TmNotification notification, CancellationToken cancellationToken = default)",
+          "description": "Publishes a notification."
+        },
+        {
+          "name": "GetNotificationsAsync",
+          "type": "Task<IReadOnlyList<TmNotification>> GetNotificationsAsync(TmNotificationQuery query, CancellationToken cancellationToken = default)",
+          "description": "Gets notifications for a recipient."
+        },
+        {
+          "name": "GetUnreadCountAsync",
+          "type": "Task<int> GetUnreadCountAsync(string recipientUserId, CancellationToken cancellationToken = default)",
+          "description": "Gets unread notification count for a recipient."
+        },
+        {
+          "name": "MarkAsReadAsync",
+          "type": "Task MarkAsReadAsync(string notificationId, string recipientUserId, CancellationToken cancellationToken = default)",
+          "description": "Marks one notification as read."
+        },
+        {
+          "name": "MarkAllAsReadAsync",
+          "type": "Task MarkAllAsReadAsync(string recipientUserId, CancellationToken cancellationToken = default)",
+          "description": "Marks all notifications for a recipient as read."
+        }
+      ]
     },
     {
       "itemName": "ITmPeopleProvider",
@@ -24055,13 +24480,14 @@
       ]
     },
     {
+      "itemName": "TmActivityEntry",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Shared immutable activity or audit entry linked to a Tempo entity.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmActivityEntry.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Action",
@@ -24129,27 +24555,45 @@
           "type": "DateTimeOffset",
           "description": "UTC timestamp when the activity occurred."
         }
-      ],
-      "itemName": "TmActivityEntry"
+      ]
     },
     {
+      "itemName": "TmActivityProviderCapabilities",
       "kind": "Enum",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
-      "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+      "description": "Operations supported by an ITmActivityProvider.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmActivityProviderCapabilities.cs",
-      "documentationStatus": "generated",
-      "itemName": "TmActivityProviderCapabilities"
+      "documentationStatus": "merged",
+      "values": [
+        {
+          "name": "None",
+          "description": "No optional operations are supported."
+        },
+        {
+          "name": "Read",
+          "description": "Provider can read activity entries for a specific entity."
+        },
+        {
+          "name": "Query",
+          "description": "Provider can query activity entries across entities."
+        },
+        {
+          "name": "Append",
+          "description": "Provider can append new activity entries."
+        }
+      ]
     },
     {
+      "itemName": "TmActivityQuery",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
-      "description": "Query options for resolving activity entries from an .",
+      "description": "Query options for resolving activity entries from an ITmActivityProvider.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmActivityQuery.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Action",
@@ -24217,17 +24661,17 @@
           "type": "DateTimeOffset?",
           "description": "Inclusive upper timestamp bound."
         }
-      ],
-      "itemName": "TmActivityQuery"
+      ]
     },
     {
+      "itemName": "TmAttachment",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Shared file attachment linked to a Tempo entity.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmAttachment.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AssetId",
@@ -24307,27 +24751,45 @@
           "type": "string?",
           "description": "Download or preview URL, when the provider exposes one directly."
         }
-      ],
-      "itemName": "TmAttachment"
+      ]
     },
     {
+      "itemName": "TmAttachmentProviderCapabilities",
       "kind": "Enum",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
-      "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+      "description": "Operations supported by an ITmAttachmentProvider.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmAttachmentProviderCapabilities.cs",
-      "documentationStatus": "generated",
-      "itemName": "TmAttachmentProviderCapabilities"
+      "documentationStatus": "merged",
+      "values": [
+        {
+          "name": "None",
+          "description": "No optional operations are supported."
+        },
+        {
+          "name": "Read",
+          "description": "Provider can read entity attachments."
+        },
+        {
+          "name": "Add",
+          "description": "Provider can add attachment links to entities."
+        },
+        {
+          "name": "Remove",
+          "description": "Provider can remove attachment links from entities."
+        }
+      ]
     },
     {
+      "itemName": "TmAuthorizationActions",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
-      "description": "Common action names used by requests.",
+      "description": "Common action names used by ITmAuthorizationProvider requests.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmAuthorizationActions.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Comment",
@@ -24371,17 +24833,17 @@
           "type": "string",
           "description": "View or read an entity."
         }
-      ],
-      "itemName": "TmAuthorizationActions"
+      ]
     },
     {
+      "itemName": "TmAuthorizationRequest",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Authorization request for an action against a shared entity reference.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmAuthorizationRequest.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Action",
@@ -24413,17 +24875,17 @@
           "type": "TmUserRef?",
           "description": "User requesting the action, or null for an anonymous caller."
         }
-      ],
-      "itemName": "TmAuthorizationRequest"
+      ]
     },
     {
+      "itemName": "TmAuthorizationResult",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
-      "description": "Result returned by an .",
+      "description": "Result returned by an ITmAuthorizationProvider.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmAuthorizationResult.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Allow",
@@ -24469,17 +24931,17 @@
           "type": "string?",
           "description": "Optional machine-readable reason or policy code."
         }
-      ],
-      "itemName": "TmAuthorizationResult"
+      ]
     },
     {
+      "itemName": "TmAuthorizationServiceCollectionExtensions",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Dependency injection helpers for shared authorization providers.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmAuthorizationServiceCollectionExtensions.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AddTmAuthorization",
@@ -24493,8 +24955,7 @@
             }
           ]
         }
-      ],
-      "itemName": "TmAuthorizationServiceCollectionExtensions"
+      ]
     },
     {
       "itemName": "TmCommentAnchor",
@@ -25086,13 +25547,14 @@
       ]
     },
     {
+      "itemName": "TmCustomFieldDefinition",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Shared definition for a user-defined field that can be attached to entities.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCustomFieldDefinition.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AppliesTo",
@@ -25160,27 +25622,65 @@
           "type": "TmCustomFieldType",
           "description": "Value type."
         }
-      ],
-      "itemName": "TmCustomFieldDefinition"
+      ]
     },
     {
+      "itemName": "TmCustomFieldType",
       "kind": "Enum",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Supported shared custom field value types.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCustomFieldType.cs",
-      "documentationStatus": "generated",
-      "itemName": "TmCustomFieldType"
+      "documentationStatus": "merged",
+      "values": [
+        {
+          "name": "Text",
+          "description": "Single-line or short free text."
+        },
+        {
+          "name": "Number",
+          "description": "Numeric value serialized by providers using their preferred format."
+        },
+        {
+          "name": "Date",
+          "description": "Date or date-time value."
+        },
+        {
+          "name": "List",
+          "description": "Single value selected from predefined options."
+        },
+        {
+          "name": "Checkbox",
+          "description": "Boolean checkbox value."
+        },
+        {
+          "name": "Color",
+          "description": "CSS color value or design token."
+        },
+        {
+          "name": "Multiselect",
+          "description": "Multiple values selected from predefined options."
+        },
+        {
+          "name": "People",
+          "description": "One or more user references."
+        },
+        {
+          "name": "Labels",
+          "description": "One or more label/tag values."
+        }
+      ]
     },
     {
+      "itemName": "TmCustomFieldValue",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Shared custom field value linked to an entity.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCustomFieldValue.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "DefinitionId",
@@ -25206,8 +25706,7 @@
           "type": "string?",
           "description": "Serialized field value. Consumers interpret it according to the field definition type."
         }
-      ],
-      "itemName": "TmCustomFieldValue"
+      ]
     },
     {
       "itemName": "TmEntityRef",
@@ -25291,13 +25790,14 @@
       ]
     },
     {
+      "itemName": "TmFileChunk",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Single chunk in a chunked upload session.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileChunk.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "IsLast",
@@ -25365,17 +25865,17 @@
           "type": "string?",
           "description": "Upload session id from a previous chunk, when the provider requires one."
         }
-      ],
-      "itemName": "TmFileChunk"
+      ]
     },
     {
+      "itemName": "TmFileCommitResult",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Result returned after committing provider-managed draft assets.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileCommitResult.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AssetIds",
@@ -25395,27 +25895,65 @@
           "type": "bool",
           "description": "Whether the commit operation succeeded."
         }
-      ],
-      "itemName": "TmFileCommitResult"
+      ]
     },
     {
+      "itemName": "TmFileProviderCapabilities",
       "kind": "Enum",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
-      "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+      "description": "Operations supported by an ITmFileProvider.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileProviderCapabilities.cs",
-      "documentationStatus": "generated",
-      "itemName": "TmFileProviderCapabilities"
+      "documentationStatus": "merged",
+      "values": [
+        {
+          "name": "None",
+          "description": "No optional operations are supported."
+        },
+        {
+          "name": "Upload",
+          "description": "Provider can upload complete streams."
+        },
+        {
+          "name": "Resolve",
+          "description": "Provider can resolve asset ids to URLs or access tickets."
+        },
+        {
+          "name": "Delete",
+          "description": "Provider can delete assets."
+        },
+        {
+          "name": "DraftAssets",
+          "description": "Provider supports draft assets that are committed later."
+        },
+        {
+          "name": "CommitDraftAssets",
+          "description": "Provider can commit draft assets."
+        },
+        {
+          "name": "SignedUrls",
+          "description": "Provider returns short-lived or signed URLs."
+        },
+        {
+          "name": "RefreshUrls",
+          "description": "Provider can refresh short-lived URLs."
+        },
+        {
+          "name": "ChunkUpload",
+          "description": "Provider supports chunked upload."
+        }
+      ]
     },
     {
+      "itemName": "TmFileResolveRequest",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Request for resolving a provider-managed asset to an access URL.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileResolveRequest.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AssetId",
@@ -25447,17 +25985,17 @@
           "type": "bool",
           "description": "True when the caller wants a fresh URL even if a cached one exists."
         }
-      ],
-      "itemName": "TmFileResolveRequest"
+      ]
     },
     {
+      "itemName": "TmFileResolveResult",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Result returned after resolving a provider-managed asset.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileResolveResult.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AssetId",
@@ -25513,17 +26051,17 @@
           "type": "string?",
           "description": "Resolved download or preview URL."
         }
-      ],
-      "itemName": "TmFileResolveResult"
+      ]
     },
     {
+      "itemName": "TmFileUploadRequest",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Request for uploading a file stream to a provider-managed asset store.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileUploadRequest.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "ContentType",
@@ -25573,17 +26111,17 @@
           "type": "long?",
           "description": "File size in bytes, when known."
         }
-      ],
-      "itemName": "TmFileUploadRequest"
+      ]
     },
     {
+      "itemName": "TmFileUploadResult",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Result returned after a file upload or chunk upload.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileUploadResult.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "AssetId",
@@ -25651,17 +26189,17 @@
           "type": "string?",
           "description": "Download or preview URL, when immediately available."
         }
-      ],
-      "itemName": "TmFileUploadResult"
+      ]
     },
     {
+      "itemName": "TmNotification",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Shared persistent notification model for Tempo components.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotification.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "IsRead",
@@ -25753,17 +26291,17 @@
           "type": "string",
           "description": "Notification type key, for example mention or page-edited."
         }
-      ],
-      "itemName": "TmNotification"
+      ]
     },
     {
+      "itemName": "TmNotificationPreferences",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Basic notification preferences for assignment, mention, and deadline workflows.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotificationPreferences.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "EmailOnAssign",
@@ -25795,17 +26333,17 @@
           "type": "bool",
           "description": "Whether mention notifications should be delivered as push notifications."
         }
-      ],
-      "itemName": "TmNotificationPreferences"
+      ]
     },
     {
+      "itemName": "TmNotificationQuery",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Query options for resolving shared notifications.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotificationQuery.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "EntityId",
@@ -25861,37 +26399,81 @@
           "type": "string?",
           "description": "Optional notification type key filter."
         }
-      ],
-      "itemName": "TmNotificationQuery"
+      ]
     },
     {
+      "itemName": "TmNotificationServiceCapabilities",
       "kind": "Enum",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
-      "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+      "description": "Operations supported by an ITmNotificationService.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotificationServiceCapabilities.cs",
-      "documentationStatus": "generated",
-      "itemName": "TmNotificationServiceCapabilities"
+      "documentationStatus": "merged",
+      "values": [
+        {
+          "name": "None",
+          "description": "No optional operations are supported."
+        },
+        {
+          "name": "Publish",
+          "description": "Service can publish notifications."
+        },
+        {
+          "name": "Read",
+          "description": "Service can read notification lists."
+        },
+        {
+          "name": "Query",
+          "description": "Service can query notifications by filters beyond recipient and paging."
+        },
+        {
+          "name": "UnreadCount",
+          "description": "Service can return unread counts."
+        },
+        {
+          "name": "ReadState",
+          "description": "Service can mutate read state."
+        }
+      ]
     },
     {
+      "itemName": "TmNotificationSeverity",
       "kind": "Enum",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Severity level used to style a shared notification.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotificationSeverity.cs",
-      "documentationStatus": "generated",
-      "itemName": "TmNotificationSeverity"
+      "documentationStatus": "merged",
+      "values": [
+        {
+          "name": "Info",
+          "description": "Informational notification."
+        },
+        {
+          "name": "Success",
+          "description": "Successful outcome notification."
+        },
+        {
+          "name": "Warning",
+          "description": "Warning notification."
+        },
+        {
+          "name": "Error",
+          "description": "Error or failure notification."
+        }
+      ]
     },
     {
+      "itemName": "TmNotificationTypes",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Well-known notification type keys used by Tempo components.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotificationTypes.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Mention",
@@ -25965,8 +26547,7 @@
           "type": "string",
           "description": "A work item mention was created."
         }
-      ],
-      "itemName": "TmNotificationTypes"
+      ]
     },
     {
       "itemName": "TmPeopleProviderBase",
@@ -26297,13 +26878,14 @@
       ]
     },
     {
+      "itemName": "TmTag",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Shared tag definition used across Tempo components.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmTag.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "ToRef",
@@ -26353,17 +26935,17 @@
           "type": "string?",
           "description": "Optional tenant, workspace, or application scope identifier."
         }
-      ],
-      "itemName": "TmTag"
+      ]
     },
     {
+      "itemName": "TmTagRef",
       "kind": "Class",
       "category": "Shared",
       "namespace": "Tempo.Blazor.Abstractions.Shared",
       "description": "Lightweight tag snapshot embedded in shared models.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmTagRef.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "FromLabel",
@@ -26417,8 +26999,7 @@
           "type": "string?",
           "description": "Optional tenant, workspace, or application scope identifier."
         }
-      ],
-      "itemName": "TmTagRef"
+      ]
     },
     {
       "itemName": "TmUser",
@@ -29092,13 +29673,14 @@
       ]
     },
     {
+      "itemName": "BuiltInUiRoleVocabularySource",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe",
       "description": "Built-in Tempo UI role vocabulary used as the global baseline.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/BuiltInUiRoleVocabularySource.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Priority",
@@ -29115,18 +29697,34 @@
           "kind": "Method",
           "type": "IEnumerable<UiRoleDefinition>"
         }
-      ],
-      "itemName": "BuiltInUiRoleVocabularySource"
+      ]
     },
     {
+      "itemName": "IUiRoleVocabularySource",
       "kind": "Interface",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe",
-      "description": "Supplies UI role definitions to . Implement this interface to extend the built-in role vocabulary with product-specific concepts or synonyms.",
+      "description": "Supplies UI role definitions to UiRoleVocabulary. Implement this interface to extend the built-in role vocabulary with product-specific concepts or synonyms.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/IUiRoleVocabularySource.cs",
-      "documentationStatus": "generated",
-      "itemName": "IUiRoleVocabularySource"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "SourceId",
+          "type": "string",
+          "description": "Unique identifier for this vocabulary source."
+        },
+        {
+          "name": "Priority",
+          "type": "int",
+          "description": "Higher priority wins when duplicate role slugs provide display metadata. Synonyms are always merged across sources."
+        },
+        {
+          "name": "GetRoles",
+          "type": "IEnumerable<UiRoleDefinition> GetRoles()",
+          "description": "Returns all UI role definitions supplied by this source."
+        }
+      ]
     },
     {
       "itemName": "IWireframeComponentProvider",
@@ -29193,14 +29791,21 @@
       "usage": "services.AddWireframeSchemas(); // registers BuiltInComponentSchemas\nservices.AddWireframeSchemaSource<MyDbSchemaSource>(); // add custom source"
     },
     {
+      "itemName": "IWireframeScopedSchemaSource",
       "kind": "Interface",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe",
       "description": "Marker interface for schema sources whose schemas belong to a single application scope. Registry entries are exposed under app:{ScopeAppId}:{Type}.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/IWireframeSchemaSource.cs",
-      "documentationStatus": "generated",
-      "itemName": "IWireframeScopedSchemaSource"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ScopeAppId",
+          "type": "string",
+          "description": "Application id used to namespace the source's custom component types."
+        }
+      ]
     },
     {
       "itemName": "PropDef",
@@ -29273,23 +29878,24 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "RenderNode",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
       "description": "JSON render tree node used by stencil components.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/RenderNode.cs",
-      "documentationStatus": "generated",
-      "itemName": "RenderNode"
+      "documentationStatus": "merged"
     },
     {
+      "itemName": "RenderNodeConverter",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Public class defined by Tempo.Blazor.Abstractions.",
+      "description": "System.Text.Json converter that reads and writes RenderNode. A render node is a JSON object whose \"kind\" discriminates the node type; any other property becomes an attribute. The converter throws JsonException on a non-object node, so a malformed stencil pack fails at deserialisation rather than at render time. It is applied automatically through StencilJsonOptions.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/RenderNodeConverter.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Read",
@@ -29330,26 +29936,94 @@
           ]
         }
       ],
-      "itemName": "RenderNodeConverter"
+      "examples": [
+        {
+          "title": "Deserialise a stencil pack",
+          "code": "// StencilJsonOptions already registers RenderNodeConverter\nvar pack = JsonSerializer.Deserialize<StencilPack>(json, StencilJsonOptions.Default);"
+        }
+      ]
     },
     {
+      "itemName": "RenderNodeKind",
       "kind": "Enum",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+      "description": "The shape of a single node in a stencil's declarative render tree. The kind decides which attributes of the RenderNode are meaningful.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/RenderNode.cs",
-      "documentationStatus": "generated",
-      "itemName": "RenderNodeKind"
+      "documentationStatus": "merged",
+      "values": [
+        {
+          "name": "Group",
+          "description": "A transparent container that groups child nodes."
+        },
+        {
+          "name": "Rect",
+          "description": "A rectangle."
+        },
+        {
+          "name": "Text",
+          "description": "A run of text."
+        },
+        {
+          "name": "Line",
+          "description": "A straight line."
+        },
+        {
+          "name": "Path",
+          "description": "An arbitrary SVG path."
+        },
+        {
+          "name": "Icon",
+          "description": "A named icon."
+        },
+        {
+          "name": "Spinner",
+          "description": "A busy indicator."
+        },
+        {
+          "name": "Image",
+          "description": "A raster or vector image."
+        },
+        {
+          "name": "Svg",
+          "description": "Inline SVG markup."
+        },
+        {
+          "name": "Component",
+          "description": "Another wireframe component, rendered in place."
+        },
+        {
+          "name": "Stack",
+          "description": "Lays children out vertically."
+        },
+        {
+          "name": "Row",
+          "description": "Lays children out horizontally."
+        },
+        {
+          "name": "Grid",
+          "description": "Lays children out in a grid."
+        },
+        {
+          "name": "Repeat",
+          "description": "Repeats its child, exposing repeat.index to expressions."
+        },
+        {
+          "name": "Part",
+          "description": "A named, addressable part of the stencil."
+        }
+      ]
     },
     {
+      "itemName": "StencilComponent",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
       "description": "Describes one component or primitive that can be placed on a wireframe canvas.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilComponent.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Category",
@@ -29436,17 +30110,17 @@
           "kind": "Property",
           "type": "required string"
         }
-      ],
-      "itemName": "StencilComponent"
+      ]
     },
     {
+      "itemName": "StencilImpl",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
       "description": "Runtime component implementation and default parameter bindings.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilImpl.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Component",
@@ -29458,27 +30132,27 @@
           "kind": "Property",
           "type": "IReadOnlyDictionary<string, object?>"
         }
-      ],
-      "itemName": "StencilImpl"
+      ]
     },
     {
+      "itemName": "StencilJsonOptions",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Shared for stencil pack serialization.",
+      "description": "Shared JsonSerializerOptions for stencil pack serialization.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilJsonOptions.cs",
-      "documentationStatus": "generated",
-      "itemName": "StencilJsonOptions"
+      "documentationStatus": "merged"
     },
     {
+      "itemName": "StencilNative",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
       "description": "Native DOM fallback for stencils that do not need a render tree.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilNative.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "NativeType",
@@ -29490,17 +30164,17 @@
           "kind": "Property",
           "type": "IReadOnlyDictionary<string, object?>"
         }
-      ],
-      "itemName": "StencilNative"
+      ]
     },
     {
+      "itemName": "StencilPack",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
       "description": "Root document for a reusable wireframe stencil pack.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilPack.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Components",
@@ -29557,17 +30231,17 @@
           "kind": "Property",
           "type": "IReadOnlyDictionary<string, string>"
         }
-      ],
-      "itemName": "StencilPack"
+      ]
     },
     {
+      "itemName": "StencilPackSerializer",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
       "description": "Serializes and deserializes stencil packs to the canonical JSON contract.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilPackSerializer.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Deserialize",
@@ -29606,47 +30280,75 @@
             }
           ]
         }
-      ],
-      "itemName": "StencilPackSerializer"
+      ]
     },
     {
+      "itemName": "StencilPackValidationWarning",
       "kind": "Record",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
       "description": "Non-fatal validation warning produced while inspecting a stencil pack.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilPackValidator.cs",
-      "documentationStatus": "generated",
-      "itemName": "StencilPackValidationWarning"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ValidateRoles",
+          "type": "static IReadOnlyList<StencilPackValidationWarning> ValidateRoles()",
+          "description": "Validates component role references against . Unknown roles are reported as warnings so packs can be loaded before new role definitions are added to the vocabulary."
+        }
+      ]
     },
     {
+      "itemName": "StencilPackValidator",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
       "description": "Validation helpers for stencil pack metadata that should not block loading.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilPackValidator.cs",
-      "documentationStatus": "generated",
-      "itemName": "StencilPackValidator"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ValidateRoles",
+          "type": "static IReadOnlyList<StencilPackValidationWarning> ValidateRoles()",
+          "description": "Validates component role references against . Unknown roles are reported as warnings so packs can be loaded before new role definitions are added to the vocabulary."
+        }
+      ]
     },
     {
+      "itemName": "StencilResize",
       "kind": "Enum",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+      "description": "How a stencil's artwork adapts when the element is resized.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilResize.cs",
-      "documentationStatus": "generated",
-      "itemName": "StencilResize"
+      "documentationStatus": "merged",
+      "values": [
+        {
+          "name": "Scale",
+          "description": "Scales the whole artwork uniformly with the element."
+        },
+        {
+          "name": "NineSlice",
+          "description": "Keeps the corners fixed and stretches the edges and centre, driven by the stencil's Slice definition."
+        },
+        {
+          "name": "Reflow",
+          "description": "Re-runs layout so children reflow into the new size instead of being scaled."
+        }
+      ]
     },
     {
+      "itemName": "StencilSize",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
-      "description": "Public class defined by Tempo.Blazor.Abstractions.",
+      "description": "An immutable width/height pair used by stencil definitions, for example a component's default size.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilSize.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Height",
@@ -29659,16 +30361,22 @@
           "type": "double"
         }
       ],
-      "itemName": "StencilSize"
+      "examples": [
+        {
+          "title": "Declare a default size",
+          "code": "var defaultSize = new StencilSize(120, 36);"
+        }
+      ]
     },
     {
+      "itemName": "StencilSlice",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
       "description": "A named component variant with property overrides.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilSlice.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Bottom",
@@ -29690,17 +30398,17 @@
           "kind": "Property",
           "type": "double"
         }
-      ],
-      "itemName": "StencilSlice"
+      ]
     },
     {
+      "itemName": "StencilTarget",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
       "description": "Maps a stencil component to its runtime implementation.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Stencil/StencilTarget.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Framework",
@@ -29717,17 +30425,17 @@
           "kind": "Property",
           "type": "string?"
         }
-      ],
-      "itemName": "StencilTarget"
+      ]
     },
     {
+      "itemName": "UiRoleDefinition",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe",
       "description": "Library-agnostic UI role that describes a component concept such as search-input, data-table, or signature-pad.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/UiRoleDefinition.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Definition",
@@ -29753,17 +30461,17 @@
           "type": "IReadOnlyList<string>",
           "description": "Known English, Czech, legacy, and historically incorrect names for the role."
         }
-      ],
-      "itemName": "UiRoleDefinition"
+      ]
     },
     {
+      "itemName": "UiRoleVocabulary",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe",
-      "description": "Merged, searchable UI role vocabulary backed by registered implementations.",
+      "description": "Merged, searchable UI role vocabulary backed by registered IUiRoleVocabularySource implementations.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/UiRoleVocabulary.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "Find",
@@ -29803,8 +30511,7 @@
           "kind": "Method",
           "type": "UiRoleDefinition"
         }
-      ],
-      "itemName": "UiRoleVocabulary"
+      ]
     },
     {
       "itemName": "WireframeAlignment",
@@ -30036,13 +30743,14 @@
       ]
     },
     {
+      "itemName": "WireframeComponentScope",
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Components.Wireframe",
       "description": "Identifies the application-specific component scope used by wireframe registries. Scoped custom component types are namespaced as app:{appId}:{localType}.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/WireframeComponentScope.cs",
-      "documentationStatus": "generated",
+      "documentationStatus": "merged",
       "members": [
         {
           "name": "TypePrefix",
@@ -30173,8 +30881,7 @@
           "type": "string",
           "description": "Application id for this component scope."
         }
-      ],
-      "itemName": "WireframeComponentScope"
+      ]
     },
     {
       "itemName": "WireframeConnector",
@@ -32064,11 +32771,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1273,
-    "manualItemCount": 1215,
-    "generatedItemCount": 1256,
-    "generatedOnlyItemCount": 58,
+    "itemCount": 1276,
+    "manualItemCount": 1276,
+    "generatedItemCount": 1259,
+    "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1256
+    "publicApiTypeCount": 1259
   }
 }

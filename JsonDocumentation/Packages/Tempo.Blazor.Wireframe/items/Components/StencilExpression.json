@@ -1,0 +1,16 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "A parsed safe binding expression. Public parsing APIs never throw on malformed input: they return a literal-mode instance with IsMalformed set to true. The only permitted function call is token(key); any other call becomes a parse error and is handled by the same literal fallback. Parse once and hand the instance to StencilEvaluator.Evaluate to avoid re-parsing in hot render paths.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilExpression.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilExpression",
+  "examples": [
+    {
+      "title": "Parse once, evaluate many times",
+      "code": "var expression = StencilExpression.Parse(\"size.w / 2\");\n\nforeach (var element in elements)\n{\n    var half = evaluator.Evaluate(expression, ContextFor(element)).AsDouble();\n}\n\n// malformed input never throws\nvar broken = StencilExpression.Parse(\"alert(1)\");\n// broken.IsMalformed == true"
+    }
+  ]
+}

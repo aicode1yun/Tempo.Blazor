@@ -1,0 +1,53 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Stencil",
+  "description": "Immutable data available to stencil expression evaluation: the element's props, its size, the current repeat index, and the token resolver.",
+  "packageId": "Tempo.Blazor.Wireframe",
+  "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Stencil/StencilEvalContext.cs",
+  "documentationStatus": "generated",
+  "itemName": "StencilEvalContext",
+  "examples": [
+    {
+      "title": "Use StencilEvalContext",
+      "code": "var context = new StencilEvalContext(\n    Props: element.Props,        // read by bare identifier, e.g. \"label\"\n    SizeW: element.W,            // read as size.w\n    SizeH: element.H,            // read as size.h\n    RepeatIndex: 0,              // read as repeat.index\n    Tokens: tokenResolver);      // read as token('key')\n\n// render a repeated part\nfor (var i = 0; i < count; i++)\n{\n    var itemContext = context.WithRepeatIndex(i);\n    var y = evaluator.Evaluate(\"repeat.index * 24\", itemContext).AsDouble();\n}"
+    }
+  ],
+  "members": [
+    {
+      "name": "Props",
+      "type": "IReadOnlyDictionary<string, object?>",
+      "description": "The element's props, reachable as props.* inside an expression."
+    },
+    {
+      "name": "SizeW",
+      "type": "double",
+      "description": "Element width, reachable as size.w."
+    },
+    {
+      "name": "SizeH",
+      "type": "double",
+      "description": "Element height, reachable as size.h."
+    },
+    {
+      "name": "RepeatIndex",
+      "type": "int",
+      "description": "Zero-based index when the stencil part is repeated."
+    },
+    {
+      "name": "Tokens",
+      "type": "StencilTokenResolver?",
+      "description": "Resolver used for token lookups; may be null."
+    },
+    {
+      "name": "Empty",
+      "type": "static StencilEvalContext Empty",
+      "description": "An empty context with no props, zero size and no token resolver."
+    },
+    {
+      "name": "WithRepeatIndex",
+      "type": "StencilEvalContext WithRepeatIndex(int repeatIndex)",
+      "description": "Returns a copy with a different repeat index; never throws."
+    }
+  ]
+}

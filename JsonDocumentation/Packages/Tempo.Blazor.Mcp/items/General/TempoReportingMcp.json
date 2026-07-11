@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Mcp",
+  "description": "Registration helpers for the Tempo Reporting MCP tools.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "TempoReportingMcp",
+  "members": [
+    {
+      "name": "ToolTypes",
+      "type": "static IReadOnlyList<Type>",
+      "description": "The reporting tool types, exposed for hosts that register tools by type."
+    },
+    {
+      "name": "AddTempoReportingMcpTools",
+      "type": "static IServiceCollection AddTempoReportingMcpTools()",
+      "description": "Registers dependencies required by the reporting MCP tools. The host should supply an IReportDefinitionStore and may supply its own IReportDataProvider and renderer services. Fallback services support static/empty preview flows."
+    }
+  ]
+}

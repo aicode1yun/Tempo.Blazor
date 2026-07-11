@@ -1,0 +1,38 @@
+{
+  "kind": "Record",
+  "category": "Notion",
+  "namespace": "Tempo.Blazor.Mcp.Notion",
+  "description": "Describes one Notion block type for MCP consumers: which polymorphic content payload it carries and how that payload is discriminated in JSON. Produced by NotionBlockCatalog.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionBlockCatalog.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionBlockTypeSchema",
+  "members": [
+    {
+      "name": "Type",
+      "type": "BlockType",
+      "description": "The block type."
+    },
+    {
+      "name": "ContentDiscriminator",
+      "type": "string",
+      "description": "The JSON discriminator value used for this block's content."
+    },
+    {
+      "name": "ContentType",
+      "type": "string",
+      "description": "The CLR type name of the content payload."
+    },
+    {
+      "name": "Description",
+      "type": "string",
+      "description": "Human-readable description of the block type."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Discover the block catalog",
+      "code": "foreach (var schema in NotionBlockCatalog.All)\n{\n    Console.WriteLine($\"{schema.Type}: {schema.ContentType} (\\\"{schema.ContentDiscriminator}\\\")\");\n}"
+    }
+  ]
+}

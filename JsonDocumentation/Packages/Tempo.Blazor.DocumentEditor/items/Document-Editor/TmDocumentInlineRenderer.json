@@ -16,19 +16,19 @@
       "type": "string",
       "isRequired": false,
       "default": "\"\"",
-      "description": "Inline content to render."
+      "description": "Document id used by provider-backed image resolution."
     },
     {
       "name": "ImageUrlResolver",
       "type": "IDocumentImageUrlResolver?",
       "isRequired": false,
-      "description": "Document id used by provider-backed image resolution."
+      "description": "Optional resolver for provider-managed image assets."
     },
     {
       "name": "OnCommentSelected",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Optional resolver for provider-managed image assets."
+      "description": "Raised when a comment anchor inline is selected."
     }
   ]
 }

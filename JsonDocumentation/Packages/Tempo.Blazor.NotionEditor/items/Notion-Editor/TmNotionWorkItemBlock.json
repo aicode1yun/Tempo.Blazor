@@ -15,13 +15,13 @@
       "name": "OnContentChanged",
       "type": "EventCallback<WorkItemBlockContent>",
       "isRequired": false,
-      "description": "Whether editing controls are disabled."
+      "description": "Raised when provider data or block configuration changes."
     },
     {
       "name": "OnFocused",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Raised when provider data or block configuration changes."
+      "description": "Raised when the block receives focus."
     },
     {
       "name": "ReadOnly",
@@ -33,7 +33,7 @@
       "name": "WorkItemProviders",
       "type": "WorkItemProviderRegistry?",
       "isRequired": false,
-      "description": "Work-item block content."
+      "description": "Registry of available work-item sources."
     }
   ],
   "subcategory": "Blocks / Embed"

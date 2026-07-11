@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "Lints a whole wireframe document against the component schemas — for example flagging text that will overflow its element. Findings are non-fatal warnings, never exceptions, so an agent can decide what to act on.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeDocumentLinter.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeDocumentLinter",
+  "members": [
+    {
+      "name": "Lint",
+      "type": "static IReadOnlyList<WireframeLintWarning> Lint(WireframeDocument document, WireframeSchemaRegistry registry, WireframeComponentScope? scope = null)",
+      "description": "Lints every page of the document and returns all findings."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Lint a document",
+      "code": "foreach (var warning in WireframeDocumentLinter.Lint(document, schemaRegistry))\n{\n    Console.WriteLine($\"{warning.ElementId} [{warning.Code}]: {warning.Hint}\");\n}"
+    }
+  ]
+}

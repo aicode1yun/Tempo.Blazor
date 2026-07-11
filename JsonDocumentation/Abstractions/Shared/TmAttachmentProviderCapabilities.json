@@ -1,0 +1,28 @@
+{
+  "kind": "Enum",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Operations supported by an ITmAttachmentProvider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmAttachmentProviderCapabilities.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmAttachmentProviderCapabilities",
+  "values": [
+    {
+      "name": "None",
+      "description": "No optional operations are supported."
+    },
+    {
+      "name": "Read",
+      "description": "Provider can read entity attachments."
+    },
+    {
+      "name": "Add",
+      "description": "Provider can add attachment links to entities."
+    },
+    {
+      "name": "Remove",
+      "description": "Provider can remove attachment links from entities."
+    }
+  ]
+}

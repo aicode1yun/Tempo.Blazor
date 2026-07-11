@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
+using TableColumnAlignment = Tempo.Blazor.DocumentEditor.Models.TableColumnAlignment;
 
 namespace Tempo.Blazor.Components.NotionEditor.Services;
 
@@ -25,6 +26,8 @@ public static class NotionMarkdownExporter
             sb.AppendLine();
         }
 
+        var childRows = GroupChildRows(blocks);
+
         // track ordered-list counters per indent level
         var orderedCounters = new Dictionary<int, int>();
         bool tableFirstRow  = false;
@@ -32,16 +35,34 @@ public static class NotionMarkdownExporter
 
         foreach (var block in blocks)
         {
+            // rows owned by a Table block are rendered with their parent
+            if (block.Type == BlockType.TableRow && block.ParentBlockId.HasValue)
+                continue;
+
             if (block.Type != BlockType.NumberedList)
                 orderedCounters.Clear();
 
-            // reset table-first-row tracker when entering/leaving a table section
+            // reset table-first-row tracker when entering/leaving a legacy flat table section
             if (block.Type == BlockType.TableRow && prevType != BlockType.TableRow)
                 tableFirstRow = true;
 
-            var line = block.Type == BlockType.TableRow
-                ? RenderTableRow(block, tableFirstRow)
-                : RenderBlock(block, orderedCounters);
+            string line;
+            if (block.Type == BlockType.Table)
+            {
+                line = RenderTable(block, childRows.TryGetValue(block.Id, out var rows) ? rows : []);
+                if (line.Length == 0)
+                {
+                    continue;
+                }
+            }
+            else if (block.Type == BlockType.TableRow)
+            {
+                line = RenderTableRow(block, tableFirstRow);
+            }
+            else
+            {
+                line = RenderBlock(block, orderedCounters);
+            }
 
             if (block.Type == BlockType.TableRow) tableFirstRow = false;
 
@@ -60,6 +81,12 @@ public static class NotionMarkdownExporter
 
         return sb.ToString().TrimEnd() + Environment.NewLine;
     }
+
+    private static Dictionary<Guid, List<IPageBlock>> GroupChildRows(IReadOnlyList<IPageBlock> blocks)
+        => blocks
+            .Where(block => block.Type == BlockType.TableRow && block.ParentBlockId.HasValue)
+            .GroupBy(block => block.ParentBlockId!.Value)
+            .ToDictionary(group => group.Key, group => group.OrderBy(block => block.Order).ToList());
 
     // ── Block rendering ───────────────────────────────────────────────────────
 
@@ -244,8 +271,7 @@ public static class NotionMarkdownExporter
     {
         if (block.Content is not ITableRowBlockContent tr) return string.Empty;
 
-        var cells = tr.Cells.Select(c => HtmlToMarkdownInline(c).Replace("|", "\\|"));
-        var row   = $"| {string.Join(" | ", cells)} |";
+        var row = RenderCells(tr.Cells, tr.Cells.Count);
 
         if (isFirst)
         {
@@ -255,6 +281,49 @@ public static class NotionMarkdownExporter
 
         return row;
     }
+
+    /// <summary>Renders a Table block together with its child TableRow blocks.</summary>
+    private static string RenderTable(IPageBlock tableBlock, IReadOnlyList<IPageBlock> rowBlocks)
+    {
+        var rows = rowBlocks
+            .Select(row => row.Content as ITableRowBlockContent)
+            .Where(row => row is not null)
+            .Select(row => row!.Cells)
+            .ToList();
+
+        if (rows.Count == 0) return string.Empty;
+
+        var content = tableBlock.Content as ITableBlockContent;
+        var columnCount = Math.Max(rows.Max(cells => cells.Count), content?.ColumnCount ?? 0);
+        if (columnCount == 0) return string.Empty;
+
+        var alignments = content?.ColumnAlignments ?? [];
+        var lines = new List<string> { RenderCells(rows[0], columnCount) };
+
+        lines.Add($"| {string.Join(" | ", Enumerable.Range(0, columnCount).Select(column => SeparatorFor(alignments, column)))} |");
+        lines.AddRange(rows.Skip(1).Select(cells => RenderCells(cells, columnCount)));
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string RenderCells(IReadOnlyList<string> cells, int columnCount)
+    {
+        var rendered = Enumerable.Range(0, columnCount)
+            .Select(column => column < cells.Count
+                ? HtmlToMarkdownInline(cells[column]).Replace("|", "\\|")
+                : string.Empty);
+
+        return $"| {string.Join(" | ", rendered)} |";
+    }
+
+    private static string SeparatorFor(IReadOnlyList<TableColumnAlignment> alignments, int column)
+        => (column < alignments.Count ? alignments[column] : TableColumnAlignment.None) switch
+        {
+            TableColumnAlignment.Left => ":---",
+            TableColumnAlignment.Center => ":---:",
+            TableColumnAlignment.Right => "---:",
+            _ => "---"
+        };
 
     // ── Page links ────────────────────────────────────────────────────────────
 
