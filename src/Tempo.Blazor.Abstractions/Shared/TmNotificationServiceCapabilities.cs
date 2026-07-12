@@ -20,5 +20,11 @@ public enum TmNotificationServiceCapabilities
     UnreadCount = 1 << 3,
 
     /// <summary>Service can mutate read state.</summary>
-    ReadState = 1 << 4
+    ReadState = 1 << 4,
+
+    /// <summary>Service can record delivery acknowledgements (DeliveredAt), distinct from read state.</summary>
+    DeliveryAck = 1 << 5,
+
+    /// <summary>Service pushes new notifications to clients in real time (e.g. SignalR).</summary>
+    RealtimePush = 1 << 6
 }

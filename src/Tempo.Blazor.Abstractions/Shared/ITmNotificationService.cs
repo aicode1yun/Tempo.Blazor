@@ -45,4 +45,19 @@ public interface ITmNotificationService : ITmCapabilityProvider<TmNotificationSe
     Task MarkAllAsReadAsync(
         string recipientUserId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Records that a notification was delivered to the recipient's client (sets DeliveredAt),
+    /// distinct from marking it read. Optional — services advertise support via
+    /// <see cref="TmNotificationServiceCapabilities.DeliveryAck"/>. The default is a no-op so
+    /// existing implementations keep working unchanged.
+    /// </summary>
+    /// <param name="notificationId">Notification id.</param>
+    /// <param name="recipientUserId">Recipient user id.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    Task MarkAsDeliveredAsync(
+        string notificationId,
+        string recipientUserId,
+        CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
 }

@@ -30,6 +30,10 @@ public sealed class TmNotification
     /// <summary>UTC timestamp when the notification was created.</summary>
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    /// <summary>UTC timestamp when the notification was delivered to the recipient's client
+    /// (a push/realtime channel acknowledged receipt). Distinct from <see cref="ReadAt"/>.</summary>
+    public DateTimeOffset? DeliveredAt { get; set; }
+
     /// <summary>UTC timestamp when the recipient read the notification.</summary>
     public DateTimeOffset? ReadAt { get; set; }
 
@@ -47,6 +51,9 @@ public sealed class TmNotification
 
     /// <summary>Returns true when the notification has been read.</summary>
     public bool IsRead => ReadAt.HasValue;
+
+    /// <summary>Returns true when the notification has been delivered to the recipient's client.</summary>
+    public bool IsDelivered => DeliveredAt.HasValue;
 
     /// <summary>Returns the best available recipient user id.</summary>
     public string EffectiveRecipientUserId
