@@ -4,15 +4,15 @@
 @if (IsOpen)
 {
     <div class="tm-command-palette-backdrop @Class" @attributes="AdditionalAttributes">
-        <div class="tm-command-palette" role="dialog" aria-modal="true" aria-label="Command palette">
+        <div class="tm-command-palette" role="dialog" aria-modal="true" aria-label="@Loc["TmCommandPalette_Aria"]">
             <div class="tm-command-palette-header">
                 <input class="tm-command-palette-input"
                        value="@_query"
                        @oninput="e => _query = e.Value?.ToString() ?? string.Empty"
                        placeholder="Type a command…"
-                       aria-label="Search commands"
+                       aria-label="@Loc["TmCommandPalette_SearchAria"]"
                        autocomplete="off" />
-                <button class="tm-command-palette-close" aria-label="Close" @onclick="CloseAsync">×</button>
+                <button class="tm-command-palette-close" aria-label="@Loc["TmCommandPalette_Close"]" @onclick="CloseAsync">×</button>
             </div>
             <ul class="tm-command-palette-list" role="listbox">
                 @foreach (var action in FilteredActions)

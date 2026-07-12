@@ -32,10 +32,10 @@
     </div>
 
     <div class="tm-wf-zoom-controls">
-        <button class="tm-wf-zoom-btn" @onclick="ZoomIn" title="Zoom in">+</button>
-        <button class="tm-wf-zoom-btn" @onclick="ZoomOut" title="Zoom out">-</button>
+        <button class="tm-wf-zoom-btn" @onclick="ZoomIn" title="@Loc["TmWorkflowToolbox_ZoomIn"]">+</button>
+        <button class="tm-wf-zoom-btn" @onclick="ZoomOut" title="@Loc["TmWorkflowToolbox_ZoomOut"]">-</button>
         <span class="tm-wf-zoom-level">@ZoomPercent%</span>
-        <button class="tm-wf-zoom-btn" @onclick="@(() => OnFitToView.InvokeAsync())" title="Fit to view">Fit</button>
+        <button class="tm-wf-zoom-btn" @onclick="@(() => OnFitToView.InvokeAsync())" title="@Loc["TmWorkflowToolbox_FitToView"]">Fit</button>
     </div>
 </div>
 

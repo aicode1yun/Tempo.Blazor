@@ -253,7 +253,7 @@
                     <TmToolbarButton Icon="@IconNames.Minus"
                                      Tooltip="@Loc["TmDiagramEditor_ZoomOut"]"
                                      OnClick="ZoomOut" />
-                    <span class="tm-diagram-editor__zoom-label" role="status" aria-live="polite" aria-label="Zoom @_zoomLabel">@_zoomLabel</span>
+                    <span class="tm-diagram-editor__zoom-label" role="status" aria-live="polite" aria-label="@(string.Format(Loc["TmDiagramEditor_ZoomAria"], _zoomLabel))">@_zoomLabel</span>
                     <TmToolbarButton Icon="@IconNames.Plus"
                                      Tooltip="@Loc["TmDiagramEditor_ZoomIn"]"
                                      OnClick="ZoomIn" />

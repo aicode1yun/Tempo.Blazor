@@ -208,8 +208,8 @@
 
             @* Zoom *@
             <button class="tm-wd-editor__btn" aria-label="@Loc["TmWireframe_ZoomOut"]" title="@Loc["TmWireframe_ZoomOut"]" @onclick="ZoomOut">−</button>
-            <span class="tm-wd-editor__zoom-label" role="status" aria-live="polite" aria-label="Zoom @_zoomLabel">@_zoomLabel</span>
-            <button class="tm-wd-editor__btn" aria-label="Zoom in"  title="Zoom in"  @onclick="ZoomIn">+</button>
+            <span class="tm-wd-editor__zoom-label" role="status" aria-live="polite" aria-label="@(string.Format(Loc["TmWireframeEditor_ZoomAria"], _zoomLabel))">@_zoomLabel</span>
+            <button class="tm-wd-editor__btn" aria-label="@Loc["TmWireframeEditor_ZoomIn"]"  title="@Loc["TmWireframeEditor_ZoomIn"]"  @onclick="ZoomIn">+</button>
             <button class="tm-wd-editor__btn tm-wd-editor__btn--text" aria-label="@Loc["TmWireframe_FitToView"]" title="@Loc["TmWireframe_FitToView"]" @onclick="FitToView">@Loc["TmWireframe_FitToView"]</button>
 
             @* Canvas size *@
