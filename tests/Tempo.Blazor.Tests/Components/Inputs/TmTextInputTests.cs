@@ -139,4 +139,54 @@ public class TmTextInputTests : LocalizationTestBase
 
         captured.Should().Be("hello");
     }
+
+    // ── K8 accessibility ─────────────────────────────────────────
+
+    [Fact]
+    public void TmTextInput_Required_SetsAriaRequired()
+    {
+        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.Required, true));
+        cut.Find("input").GetAttribute("aria-required").Should().Be("true");
+    }
+
+    [Fact]
+    public void TmTextInput_NoValidationState_HasNoAriaInvalid()
+    {
+        var cut = RenderComponent<TmTextInput>();
+        cut.Find("input").HasAttribute("aria-invalid").Should().BeFalse();
+    }
+
+    [Fact]
+    public void TmTextInput_Error_SetsAriaInvalidAndDescribedByErrorId()
+    {
+        var cut = RenderComponent<TmTextInput>(p => p
+            .Add(c => c.Id, "email")
+            .Add(c => c.Error, "Required"));
+
+        var input = cut.Find("input");
+        input.GetAttribute("aria-invalid").Should().Be("true");
+        input.GetAttribute("aria-describedby").Should().Be("email-error");
+
+        var err = cut.Find("[data-testid='error-message']");
+        err.GetAttribute("id").Should().Be("email-error");
+        err.GetAttribute("role").Should().Be("alert");
+    }
+
+    [Fact]
+    public void TmTextInput_HelpTextOnly_DescribedByHelpId()
+    {
+        var cut = RenderComponent<TmTextInput>(p => p
+            .Add(c => c.Id, "phone")
+            .Add(c => c.HelpText, "Digits only"));
+
+        cut.Find("input").GetAttribute("aria-describedby").Should().Be("phone-help");
+        cut.Find("[data-testid='help-text']").GetAttribute("id").Should().Be("phone-help");
+    }
+
+    [Fact]
+    public void TmTextInput_IsValidFalse_SetsAriaInvalid()
+    {
+        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.IsValid, false));
+        cut.Find("input").GetAttribute("aria-invalid").Should().Be("true");
+    }
 }

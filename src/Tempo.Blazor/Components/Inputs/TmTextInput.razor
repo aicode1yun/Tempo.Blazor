@@ -20,6 +20,9 @@
                disabled="@Disabled"
                readonly="@ReadOnly"
                required="@Required"
+               aria-required="@(Required ? "true" : null)"
+               aria-invalid="@(IsInvalid ? "true" : null)"
+               aria-describedby="@DescribedBy"
                tabindex="@TabIndex"
                autofocus="@AutoFocus"
                autocomplete="@AutoComplete"
@@ -56,14 +59,14 @@
     </div>
     @if (!string.IsNullOrEmpty(Error))
     {
-        <div data-testid="error-message" class="tm-input-error-message">
+        <div id="@ErrorId" data-testid="error-message" class="tm-input-error-message" role="alert">
             <TmIcon Name="@IconNames.AlertCircle" Size="IconSize.Xs" />
             <span>@Error</span>
         </div>
     }
     @if (!string.IsNullOrEmpty(HelpText) && string.IsNullOrEmpty(Error))
     {
-        <div data-testid="help-text" class="tm-input-help-text">@HelpText</div>
+        <div id="@HelpId" data-testid="help-text" class="tm-input-help-text">@HelpText</div>
     }
 </div>
 
@@ -142,6 +145,15 @@
 
     /// <summary>Fires when the input loses focus.</summary>
     [Parameter] public EventCallback<FocusEventArgs> OnBlur { get; set; }
+
+    // ── Accessibility ────────────────────────────────────────────
+    private bool IsInvalid => IsValid == false || !string.IsNullOrEmpty(Error);
+    private string ErrorId => $"{Id}-error";
+    private string HelpId => $"{Id}-help";
+    private string? DescribedBy =>
+        !string.IsNullOrEmpty(Error) ? ErrorId
+        : !string.IsNullOrEmpty(HelpText) ? HelpId
+        : null;
 
     private string InputCssClass
     {
