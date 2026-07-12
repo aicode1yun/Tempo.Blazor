@@ -1,7 +1,8 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.DocumentEditor.Models
 
-<aside class="tm-document-revision-panel" data-testid="document-revision-panel" aria-label="@Loc["TmDocumentEditor_RevisionPanelLabel"]">
+<aside class="tm-document-revision-panel" data-testid="@TestId("document-revision-panel")" aria-label="@Loc["TmDocumentEditor_RevisionPanelLabel"]">
     <h3 class="tm-document-revision-panel__title">@Loc["TmDocumentEditor_Revisions"]</h3>
 
     @if (IsLoading)
@@ -14,10 +15,10 @@
     }
     else
     {
-        <div class="tm-document-revision-panel__toolbar" data-testid="document-revision-toolbar">
+        <div class="tm-document-revision-panel__toolbar" data-testid="@TestId("document-revision-toolbar")">
             <label>
                 <span>@Loc["TmDocumentEditor_RevisionFilterAuthor"]</span>
-                <select value="@_filterAuthorId" disabled="@IsBusy" @onchange="HandleAuthorFilterChanged" data-testid="document-revision-filter-author">
+                <select value="@_filterAuthorId" disabled="@IsBusy" @onchange="HandleAuthorFilterChanged" data-testid="@TestId("document-revision-filter-author")">
                     <option value="">@Loc["TmDocumentEditor_RevisionFilterAllAuthors"]</option>
                     @foreach (var author in RevisionAuthors)
                     {
@@ -27,7 +28,7 @@
             </label>
             <label>
                 <span>@Loc["TmDocumentEditor_RevisionFilterType"]</span>
-                <select value="@_filterType" disabled="@IsBusy" @onchange="HandleTypeFilterChanged" data-testid="document-revision-filter-type">
+                <select value="@_filterType" disabled="@IsBusy" @onchange="HandleTypeFilterChanged" data-testid="@TestId("document-revision-filter-type")">
                     <option value="">@Loc["TmDocumentEditor_RevisionFilterAllTypes"]</option>
                     @foreach (var type in RevisionTypes)
                     {
@@ -40,7 +41,7 @@
                     disabled="@(!CanBatchReview)"
                     aria-disabled="@BatchActionAriaDisabled"
                     data-review-action="accept-all"
-                    data-testid="document-revision-accept-all"
+                    data-testid="@TestId("document-revision-accept-all")"
                     @onclick="AcceptAllAsync">
                 <TmIcon Name="check" Size="IconSize.Sm" />
                 @Loc["TmDocumentEditor_AcceptAllRevisions"]
@@ -50,7 +51,7 @@
                     disabled="@(!CanBatchReview)"
                     aria-disabled="@BatchActionAriaDisabled"
                     data-review-action="reject-all"
-                    data-testid="document-revision-reject-all"
+                    data-testid="@TestId("document-revision-reject-all")"
                     @onclick="RejectAllAsync">
                 <TmIcon Name="x" Size="IconSize.Sm" />
                 @Loc["TmDocumentEditor_RejectAllRevisions"]
@@ -61,7 +62,7 @@
             @foreach (var revision in FilteredPendingRevisions)
             {
                 <li class="@GetItemClass(revision)"
-                    data-testid="document-revision-item"
+                    data-testid="@TestId("document-revision-item")"
                     data-revision-id="@revision.Id"
                     aria-current="@(string.Equals(SelectedRevisionId, revision.Id, StringComparison.Ordinal) ? "true" : "false")">
                     <button type="button"
@@ -80,7 +81,7 @@
                                 aria-label="@Loc["TmDocumentEditor_AcceptRevisionAria", GetAuthorLabel(revision)]"
                                 @onclick="() => OnAcceptRevision.InvokeAsync(revision)"
                                 data-review-action="accept"
-                                data-testid="document-revision-accept">
+                                data-testid="@TestId("document-revision-accept")">
                             <TmIcon Name="check" Size="IconSize.Sm" />
                             @Loc["TmDocumentEditor_AcceptRevision"]
                         </button>
@@ -91,7 +92,7 @@
                                 aria-label="@Loc["TmDocumentEditor_RejectRevisionAria", GetAuthorLabel(revision)]"
                                 @onclick="() => OnRejectRevision.InvokeAsync(revision)"
                                 data-review-action="reject"
-                                data-testid="document-revision-reject">
+                                data-testid="@TestId("document-revision-reject")">
                             <TmIcon Name="x" Size="IconSize.Sm" />
                             @Loc["TmDocumentEditor_RejectRevision"]
                         </button>

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
@@ -6,7 +7,7 @@ using Tempo.Blazor.NotionEditor.Enums;
 
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
-public partial class TmNotionSlashMenu : ComponentBase
+public partial class TmNotionSlashMenu : TmComponentBase
 {
     // ── DI ───────────────────────────────────────────────────────────────────
 

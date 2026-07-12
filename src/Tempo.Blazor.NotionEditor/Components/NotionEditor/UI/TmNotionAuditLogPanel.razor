@@ -1,11 +1,12 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Shared
 
-<section class="tm-notion-audit @Class" aria-label="@Loc["Notion_Audit_Title"]" data-testid="notion-audit-panel">
+<section class="tm-notion-audit @Class" aria-label="@Loc["Notion_Audit_Title"]" data-testid="@TestId("notion-audit-panel")">
     <header class="tm-notion-audit__header">
         <div class="tm-notion-audit__title-wrap">
             <h2 class="tm-notion-audit__title">@Loc["Notion_Audit_Title"]</h2>
-            <span class="tm-notion-audit__subtitle" data-testid="notion-audit-count">@Loc["Notion_Audit_Count", _result.TotalCount]</span>
+            <span class="tm-notion-audit__subtitle" data-testid="@TestId("notion-audit-count")">@Loc["Notion_Audit_Count", _result.TotalCount]</span>
         </div>
 
         <button type="button"
@@ -23,13 +24,13 @@
         <label class="tm-notion-audit__field">
             <span>@Loc["Notion_Audit_User"]</span>
             <input value="@_userFilter"
-                   data-testid="notion-audit-user-filter"
+                   data-testid="@TestId("notion-audit-user-filter")"
                    @oninput="OnUserFilterInput" />
         </label>
 
         <label class="tm-notion-audit__field">
             <span>@Loc["Notion_Audit_Action"]</span>
-            <select value="@_actionFilter" data-testid="notion-audit-action-filter" @onchange="OnActionFilterChanged">
+            <select value="@_actionFilter" data-testid="@TestId("notion-audit-action-filter")" @onchange="OnActionFilterChanged">
                 <option value="">@Loc["Notion_Audit_Action_All"]</option>
                 @foreach (var action in AvailableActions)
                 {
@@ -40,19 +41,19 @@
 
         <label class="tm-notion-audit__field">
             <span>@Loc["Notion_Audit_From"]</span>
-            <input type="date" value="@_fromFilter" data-testid="notion-audit-from-filter" @onchange="OnFromFilterChanged" />
+            <input type="date" value="@_fromFilter" data-testid="@TestId("notion-audit-from-filter")" @onchange="OnFromFilterChanged" />
         </label>
 
         <label class="tm-notion-audit__field">
             <span>@Loc["Notion_Audit_To"]</span>
-            <input type="date" value="@_toFilter" data-testid="notion-audit-to-filter" @onchange="OnToFilterChanged" />
+            <input type="date" value="@_toFilter" data-testid="@TestId("notion-audit-to-filter")" @onchange="OnToFilterChanged" />
         </label>
 
         <div class="tm-notion-audit__filter-actions">
-            <button type="button" class="tm-notion-audit__button" data-testid="notion-audit-apply" @onclick="ApplyFiltersAsync">
+            <button type="button" class="tm-notion-audit__button" data-testid="@TestId("notion-audit-apply")" @onclick="ApplyFiltersAsync">
                 @Loc["Notion_Audit_Filter"]
             </button>
-            <button type="button" class="tm-notion-audit__button tm-notion-audit__button--ghost" data-testid="notion-audit-clear" @onclick="ClearFiltersAsync">
+            <button type="button" class="tm-notion-audit__button tm-notion-audit__button--ghost" data-testid="@TestId("notion-audit-clear")" @onclick="ClearFiltersAsync">
                 @Loc["Notion_Audit_Clear"]
             </button>
         </div>
@@ -61,7 +62,7 @@
     <div class="tm-notion-audit__toolbar">
         <button type="button"
                 class="tm-notion-audit__button tm-notion-audit__button--primary"
-                data-testid="notion-audit-export"
+                data-testid="@TestId("notion-audit-export")"
                 disabled="@_isLoading"
                 @onclick="PrepareCsvExportAsync">
             @Loc["Notion_Audit_Export"]
@@ -70,7 +71,7 @@
         @if (_csvHref is not null)
         {
             <a class="tm-notion-audit__download"
-               data-testid="notion-audit-export-link"
+               data-testid="@TestId("notion-audit-export-link")"
                href="@_csvHref"
                download="@CsvFileName">
                 @Loc["Notion_Audit_DownloadReady"]
@@ -94,16 +95,16 @@
     }
     else if (_result.Items.Count == 0)
     {
-        <div class="tm-notion-audit__empty" data-testid="notion-audit-empty">
+        <div class="tm-notion-audit__empty" data-testid="@TestId("notion-audit-empty")">
             @Loc["Notion_Audit_Empty"]
         </div>
     }
     else
     {
-        <ol class="tm-notion-audit__list" data-testid="notion-audit-list">
+        <ol class="tm-notion-audit__list" data-testid="@TestId("notion-audit-list")">
             @foreach (var entry in _result.Items)
             {
-                <li class="tm-notion-audit__entry" data-testid="notion-audit-entry">
+                <li class="tm-notion-audit__entry" data-testid="@TestId("notion-audit-entry")">
                     <div class="tm-notion-audit__entry-head">
                         <span class="tm-notion-audit__action tm-notion-audit__action--@NormalizeCssToken(entry.Action)">
                             @GetActionLabel(entry.Action)
@@ -134,7 +135,7 @@
         <footer class="tm-notion-audit__pager" aria-label="@Loc["Notion_Audit_Page"]">
             <button type="button"
                     class="tm-notion-audit__icon-btn"
-                    data-testid="notion-audit-prev"
+                    data-testid="@TestId("notion-audit-prev")"
                     disabled="@(!_result.HasPreviousPage)"
                     title="@Loc["Notion_Audit_Previous"]"
                     aria-label="@Loc["Notion_Audit_Previous"]"
@@ -143,10 +144,10 @@
                     <path d="M10 3.5L5.5 8l4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </button>
-            <span data-testid="notion-audit-page">@Loc["Notion_Audit_PageStatus", _result.Page, _result.TotalPages]</span>
+            <span data-testid="@TestId("notion-audit-page")">@Loc["Notion_Audit_PageStatus", _result.Page, _result.TotalPages]</span>
             <button type="button"
                     class="tm-notion-audit__icon-btn"
-                    data-testid="notion-audit-next"
+                    data-testid="@TestId("notion-audit-next")"
                     disabled="@(!_result.HasNextPage)"
                     title="@Loc["Notion_Audit_Next"]"
                     aria-label="@Loc["Notion_Audit_Next"]"

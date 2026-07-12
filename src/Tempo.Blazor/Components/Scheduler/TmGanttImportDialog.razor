@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Scheduler
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Models
 @using Microsoft.AspNetCore.Components.Forms
 
@@ -16,7 +17,7 @@
             <div class="tm-gantt__dialog-body">
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
-                    <div class="tm-gantt-task-panel__error" data-testid="import-error">
+                    <div class="tm-gantt-task-panel__error" data-testid="@TestId("import-error")">
                         <TmIcon Name="alert-circle" />
                         <span>@_errorMessage</span>
                     </div>

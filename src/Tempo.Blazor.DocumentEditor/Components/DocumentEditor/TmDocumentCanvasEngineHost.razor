@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using System.Text.Json
 @using System.Text.Json.Serialization
 @using Microsoft.JSInterop
@@ -11,7 +12,7 @@
 
 <div @ref="_host"
      class="@HostClass"
-     data-testid="document-canvas-engine-host"
+     data-testid="@TestId("document-canvas-engine-host")"
      data-canvas-engine-ready="@(_ready ? "true" : "false")"
      data-canvas-engine-readonly="@ReadOnly.ToString().ToLowerInvariant()"
      data-canvas-engine-can-edit="@EffectiveCanEdit.ToString().ToLowerInvariant()"
@@ -25,12 +26,12 @@
      data-canvas-source-math-count="@CachedDocumentMathRunCount">
     <div @ref="_mount"
          class="tm-document-canvas-engine-host__mount"
-         data-testid="document-canvas-engine-mount">
+         data-testid="@TestId("document-canvas-engine-mount")">
         <div class="tm-document-canvas-engine-host__root"
-             data-testid="document-canvas-engine-root"
+             data-testid="@TestId("document-canvas-engine-root")"
              data-canvas-engine-owned="blazor-shell">
             <div class="tm-document-canvas-engine-host__page"
-                 data-testid="document-canvas-page"
+                 data-testid="@TestId("document-canvas-page")"
                  style="@PageStyle">
                 @foreach (var layer in CanvasLayerKinds)
                 {
@@ -43,19 +44,19 @@
             </div>
         </div>
         <div class="tm-document-canvas-engine-host__a11y"
-             data-testid="document-canvas-a11y-mirror"
+             data-testid="@TestId("document-canvas-a11y-mirror")"
              id="document-canvas-a11y-mirror"
              role="document"
              aria-label="@EffectiveAriaLabel"></div>
         <div class="tm-document-canvas-engine-host__live"
-             data-testid="document-canvas-live-region"
+             data-testid="@TestId("document-canvas-live-region")"
              id="document-canvas-live-region"
              role="status"
              aria-live="polite"
              aria-atomic="true"
              aria-label="@Loc["TmDocumentEditor_CanvasLiveRegionLabel"]"></div>
         <textarea class="tm-document-canvas-engine-host__input"
-                  data-testid="document-canvas-hidden-input"
+                  data-testid="@TestId("document-canvas-hidden-input")"
                   role="textbox"
                   aria-multiline="true"
                   aria-controls="document-canvas-a11y-mirror"

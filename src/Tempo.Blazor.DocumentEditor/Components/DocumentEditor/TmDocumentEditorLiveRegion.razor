@@ -1,10 +1,11 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 
 <div class="tm-document-editor__live-region"
      role="status"
      aria-live="@AriaLive"
      aria-atomic="true"
-     data-testid="document-editor-live-region">
+     data-testid="@TestId("document-editor-live-region")">
     @Message
 </div>
 

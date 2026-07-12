@@ -1,14 +1,15 @@
 @namespace Tempo.Blazor.Components.Scheduler
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Models
 @using System.Globalization
 
 <div class="tm-scheduler-toolbar">
     <div class="tm-scheduler-toolbar-nav">
-        <button type="button" class="tm-scheduler-toolbar-nav-btn" data-testid="scheduler-prev"
+        <button type="button" class="tm-scheduler-toolbar-nav-btn" data-testid="@TestId("scheduler-prev")"
                 aria-label="@Loc["TmScheduler_Prev"]" @onclick="OnPrev">&#8249;</button>
         <button type="button" class="tm-scheduler-toolbar-nav-btn tm-scheduler-toolbar-today-btn"
-                data-testid="scheduler-today" @onclick="OnToday">@Loc["TmScheduler_Today"]</button>
-        <button type="button" class="tm-scheduler-toolbar-nav-btn" data-testid="scheduler-next"
+                data-testid="@TestId("scheduler-today")" @onclick="OnToday">@Loc["TmScheduler_Today"]</button>
+        <button type="button" class="tm-scheduler-toolbar-nav-btn" data-testid="@TestId("scheduler-next")"
                 aria-label="@Loc["TmScheduler_Next"]" @onclick="OnNext">&#8250;</button>
     </div>
 
@@ -26,7 +27,7 @@
         @if (ShowPrint)
         {
             <button type="button" class="tm-scheduler-toolbar-print"
-                    data-testid="scheduler-print"
+                    data-testid="@TestId("scheduler-print")"
                     aria-label="@Loc["TmScheduler_Print"]"
                     title="@Loc["TmScheduler_Print"]"
                     @onclick="OnPrint">@Loc["TmScheduler_Print"]</button>

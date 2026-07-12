@@ -1,6 +1,7 @@
 @namespace Tempo.Blazor.Reporting.Components
+@inherits Tempo.Blazor.Components.TmComponentBase
 
-<section class="@CssClass" data-testid="tm-report-parameter-panel" aria-label="@Loc["TmReportViewer_Parameters"]">
+<section class="@CssClass" data-testid="@TestId("tm-report-parameter-panel")" aria-label="@Loc["TmReportViewer_Parameters"]">
     @if (VisibleParameters.Count > 0)
     {
         <div class="tm-report-parameters__grid">

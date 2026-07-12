@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Abstractions.Shared;
@@ -17,7 +18,7 @@ namespace Tempo.Blazor.Components.NotionEditor;
 /// Provides all NotionEditor providers as a <see cref="NotionEditorContext"/> cascade,
 /// manages top-level navigation, sidebar visibility, and loading state.
 /// </summary>
-public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
+public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
 {
     // ── DI ───────────────────────────────────────────────────────────────────
 

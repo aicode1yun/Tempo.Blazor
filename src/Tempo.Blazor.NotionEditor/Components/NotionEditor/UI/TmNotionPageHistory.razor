@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.NotionEditor.Enums
@@ -247,14 +248,14 @@
                     <div class="tm-nph__toolbar-actions">
                         <button class="tm-nph__toolbar-btn @(_diffViewMode == NotionDiffViewMode.Inline ? "tm-nph__toolbar-btn--active" : "")"
                                 type="button"
-                                data-testid="notion-diff-mode-inline"
+                                data-testid="@TestId("notion-diff-mode-inline")"
                                 aria-pressed="@(_diffViewMode == NotionDiffViewMode.Inline)"
                                 @onclick="() => SetDiffViewMode(NotionDiffViewMode.Inline)">
                             @Loc["TmNotionPageHistory_DiffModeInline"]
                         </button>
                         <button class="tm-nph__toolbar-btn @(_diffViewMode == NotionDiffViewMode.SideBySide ? "tm-nph__toolbar-btn--active" : "")"
                                 type="button"
-                                data-testid="notion-diff-mode-side-by-side"
+                                data-testid="@TestId("notion-diff-mode-side-by-side")"
                                 aria-pressed="@(_diffViewMode == NotionDiffViewMode.SideBySide)"
                                 @onclick="() => SetDiffViewMode(NotionDiffViewMode.SideBySide)">
                             @Loc["TmNotionPageHistory_DiffModeSideBySide"]

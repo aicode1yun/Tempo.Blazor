@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Blocks.Text
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Interfaces
 
 <div class="tm-notion-code-block @_wrapClass" data-language="@_displayLanguage">
@@ -26,7 +27,7 @@
         {
             <button class="tm-notion-code-block__preview-toggle @(_showPreview ? "tm-notion-code-block__preview-toggle--active" : "")"
                     type="button"
-                    data-testid="notion-code-preview-toggle"
+                    data-testid="@TestId("notion-code-preview-toggle")"
                     aria-pressed="@(_showPreview ? "true" : "false")"
                     aria-label="@(_showPreview ? Loc["TmNotionCodeBlock_ShowEditor"] : Loc["TmNotionCodeBlock_ShowPreview"])"
                     @onclick="TogglePreviewAsync"
@@ -61,7 +62,7 @@
     @if (_showPreview)
     {
         <div class="tm-notion-code-block__preview"
-             data-testid="notion-code-preview"
+             data-testid="@TestId("notion-code-preview")"
              role="region"
              aria-label="@Loc["TmNotionCodeBlock_PreviewLabel"]">
             @RenderMarkdownPreview()

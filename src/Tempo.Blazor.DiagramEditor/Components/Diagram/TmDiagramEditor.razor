@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Diagram
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Components.Diagram.Models
 @using Tempo.Blazor.Components.Diagram.Commands
 @using Microsoft.AspNetCore.Components.Forms
@@ -8,7 +9,7 @@
 <CascadingValue Value="ActiveCommandStack" IsFixed="false">
 
 <div class="tm-diagram-editor @Class @(ReadOnly ? "tm-diagram-editor--readonly" : "")"
-     data-testid="diagram-editor">
+     data-testid="@TestId("diagram-editor")">
 
     @* ── Page tabs ────────────────────────────────────────────────────────── *@
     <div class="tm-diagram-editor__page-tabs"

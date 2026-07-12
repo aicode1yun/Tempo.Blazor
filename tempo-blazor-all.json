@@ -73,6 +73,7 @@
           "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
         ],
         "namespaces": [
+          "Tempo.Blazor.Components",
           "Tempo.Blazor.Components.Activity",
           "Tempo.Blazor.Components.AITools",
           "Tempo.Blazor.Components.Avatars",
@@ -4829,6 +4830,30 @@
                   "type": "CancellationToken"
                 }
               ]
+            }
+          ]
+        },
+        {
+          "itemName": "TmComponentBase",
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components",
+          "description": "Shared base class for Tempo.Blazor components that standardises the data-testid convention. A component renders each of its internal test ids through the protected TestId(name) helper: when a host sets TestIdPrefix, every internal id becomes \"{prefix}-{name}\", so multiple instances of the same component on one page no longer collide; when the prefix is null the bare name is emitted, so existing E2E selectors keep working (fully backward compatible). DataTestId overrides the component's root test id and is resolved through the protected RootTestId(defaultName) helper. Inheriting this base is purely additive: both parameters are optional, default to null, and change no existing rendered output.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/TmComponentBase.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "DataTestId",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional explicit data-testid for the component's root element. When set, it overrides the component's default root test id (see RootTestId). Null keeps the component's built-in default."
+            },
+            {
+              "name": "TestIdPrefix",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional namespace applied to every internal test id the component emits via TestId(name). When set, each id becomes \"{prefix}-{name}\", letting several instances of the same component coexist on one page without colliding. Null emits bare names, preserving backward-compatible selectors."
             }
           ]
         },
@@ -22387,17 +22412,21 @@
           "kind": "JavaScript"
         },
         {
+          "path": "src/Tempo.Blazor/wwwroot/js/tm-focus-trap.js",
+          "kind": "JavaScript"
+        },
+        {
           "path": "src/Tempo.Blazor/wwwroot/js/workflow-designer.js",
           "kind": "JavaScript"
         }
       ],
       "summary": {
-        "itemCount": 316,
-        "manualItemCount": 316,
-        "generatedItemCount": 308,
+        "itemCount": 317,
+        "manualItemCount": 317,
+        "generatedItemCount": 309,
         "generatedOnlyItemCount": 0,
         "componentCount": 184,
-        "publicApiTypeCount": 124
+        "publicApiTypeCount": 125
       }
     },
     {
@@ -102721,10 +102750,10 @@
   ],
   "summary": {
     "packageCount": 23,
-    "itemCount": 2878,
-    "manualItemCount": 2878,
+    "itemCount": 2879,
+    "manualItemCount": 2879,
     "generatedOnlyItemCount": 0,
     "componentCount": 450,
-    "publicApiTypeCount": 2374
+    "publicApiTypeCount": 2375
   }
 }

@@ -1,9 +1,10 @@
 @namespace Tempo.Blazor.Components.Navigation
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
-<nav class="@RootClass" aria-label="@(Title ?? "Section navigation")" data-testid="tm-scroll-spy-nav" @attributes="AdditionalAttributes">
+<nav class="@RootClass" aria-label="@(Title ?? "Section navigation")" data-testid="@TestId("tm-scroll-spy-nav")" @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(Title) && Variant == ScrollSpyNavVariant.SideRail)
     {
         <div class="tm-scroll-spy-nav__title">@Title</div>

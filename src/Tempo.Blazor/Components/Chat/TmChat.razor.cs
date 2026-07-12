@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Tempo.Blazor.Components;
 using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Components.Chat;
@@ -7,7 +8,7 @@ namespace Tempo.Blazor.Components.Chat;
 /// <summary>
 /// A chat conversation component with message rendering, typing indicators, attachments, and send input.
 /// </summary>
-public partial class TmChat : ComponentBase
+public partial class TmChat : TmComponentBase
 {
     /// <summary>The currently authenticated user.</summary>
     [Parameter] public ChatUser CurrentUser { get; set; } = new();

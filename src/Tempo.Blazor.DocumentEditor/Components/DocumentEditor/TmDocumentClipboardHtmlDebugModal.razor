@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
 @implements IAsyncDisposable
@@ -7,7 +8,7 @@
 {
     <div @ref="_dialog"
          class="tm-document-json-debug-modal"
-         data-testid="document-clipboard-html-debug-modal"
+         data-testid="@TestId("document-clipboard-html-debug-modal")"
          role="dialog"
          aria-modal="true"
          aria-label="@Loc["TmDocumentEditor_DebugClipboardHtmlTitle"]">
@@ -18,7 +19,7 @@
                 <button type="button"
                         @ref="_closeButton"
                         class="tm-document-json-debug-modal__close"
-                        data-testid="document-clipboard-html-debug-close"
+                        data-testid="@TestId("document-clipboard-html-debug-close")"
                         title="@Loc["TmDocumentEditor_Close"]"
                         aria-label="@Loc["TmDocumentEditor_Close"]"
                         @onclick="OnClose">
@@ -26,22 +27,22 @@
                 </button>
             </header>
             <section class="tm-document-json-debug-modal__section"
-                     data-testid="document-clipboard-raw-debug">
+                     data-testid="@TestId("document-clipboard-raw-debug")">
                 <h3 class="tm-document-json-debug-modal__section-title">@Loc["TmDocumentEditor_DebugClipboardRawHtml"]</h3>
                 <pre class="tm-document-json-debug-modal__json"
-                     data-testid="document-clipboard-html-debug-content">@(RawHtml ?? Html)</pre>
+                     data-testid="@TestId("document-clipboard-html-debug-content")">@(RawHtml ?? Html)</pre>
             </section>
             <section class="tm-document-json-debug-modal__section"
-                     data-testid="document-clipboard-normalized-debug">
+                     data-testid="@TestId("document-clipboard-normalized-debug")">
                 <h3 class="tm-document-json-debug-modal__section-title">@Loc["TmDocumentEditor_DebugClipboardNormalized"]</h3>
                 <pre class="tm-document-json-debug-modal__json"
-                     data-testid="document-clipboard-normalized-debug-content">@NormalizedJson</pre>
+                     data-testid="@TestId("document-clipboard-normalized-debug-content")">@NormalizedJson</pre>
             </section>
             <section class="tm-document-json-debug-modal__section"
-                     data-testid="document-clipboard-warnings-debug">
+                     data-testid="@TestId("document-clipboard-warnings-debug")">
                 <h3 class="tm-document-json-debug-modal__section-title">@Loc["TmDocumentEditor_DebugClipboardWarnings"]</h3>
                 <pre class="tm-document-json-debug-modal__json"
-                     data-testid="document-clipboard-warnings-debug-content">@WarningsJson</pre>
+                     data-testid="@TestId("document-clipboard-warnings-debug-content")">@WarningsJson</pre>
             </section>
         </div>
     </div>

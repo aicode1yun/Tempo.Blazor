@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using System.Globalization
 @using Tempo.Blazor.DocumentEditor.Models
 @implements IDisposable
@@ -6,14 +7,14 @@
 <section class="tm-document-image-inspector"
          role="complementary"
          aria-label="@Loc["TmDocumentEditor_ImageInspectorLabel"]"
-         data-testid="document-image-inspector"
+         data-testid="@TestId("document-image-inspector")"
          data-human-testid="document-image-properties-panel">
     <header class="tm-document-image-inspector__header">
         <TmIcon Name="image" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_ImageTools"]</span>
     </header>
 
-    <details class="tm-document-image-inspector__section" data-testid="document-image-inspector-section-picture" open>
+    <details class="tm-document-image-inspector__section" data-testid="@TestId("document-image-inspector-section-picture")" open>
         <summary>
             <TmIcon Name="image" Size="IconSize.Xs" />
             <span>@Loc["TmDocumentEditor_ImageSectionPicture"]</span>
@@ -25,7 +26,7 @@
                     <span>@Loc["TmDocumentEditor_ImageUrl"]</span>
                     <input value="@_linkInput"
                            placeholder="https://"
-                           data-testid="document-image-inspector-link"
+                           data-testid="@TestId("document-image-inspector-link")"
                            @oninput="HandleLinkInputAsync"
                            @onchange="HandleLinkChangedAsync" />
                 </label>
@@ -33,7 +34,7 @@
             else
             {
                 <div class="tm-document-image-inspector__asset"
-                     data-testid="document-image-inspector-asset-info">
+                     data-testid="@TestId("document-image-inspector-asset-info")">
                     <span>@ImageSourceLabel</span>
                     <strong>@ImageSourceValue</strong>
                 </div>
@@ -43,7 +44,7 @@
                 <span>@Loc["TmDocumentEditor_ImageToggleCaption"]</span>
                 <input type="checkbox"
                        checked="@HasCaption"
-                       data-testid="document-image-inspector-caption-toggle"
+                       data-testid="@TestId("document-image-inspector-caption-toggle")"
                        @onchange="HandleCaptionToggleChangedAsync" />
             </label>
 
@@ -51,7 +52,7 @@
                 <span>@Loc["TmDocumentEditor_ImageCaption"]</span>
                 <input value="@_captionInput"
                        placeholder="@Loc["TmDocumentEditor_ImageCaption"]"
-                       data-testid="document-image-inspector-caption"
+                       data-testid="@TestId("document-image-inspector-caption")"
                        data-human-testid="document-image-caption-input"
                        @oninput="HandleCaptionInputAsync"
                        @onchange="HandleCaptionChangedAsync" />
@@ -59,7 +60,7 @@
         </div>
     </details>
 
-    <details class="tm-document-image-inspector__section" data-testid="document-image-inspector-section-size" open>
+    <details class="tm-document-image-inspector__section" data-testid="@TestId("document-image-inspector-section-size")" open>
         <summary>
             <TmIcon Name="crop" Size="IconSize.Xs" />
             <span>@Loc["TmDocumentEditor_ImageSectionSizeRotation"]</span>
@@ -72,7 +73,7 @@
                            min="1"
                            step="1"
                            value="@_widthInput"
-                           data-testid="document-image-inspector-width"
+                           data-testid="@TestId("document-image-inspector-width")"
                            data-human-testid="document-image-width-input"
                            @oninput="HandleWidthInputAsync"
                            @onchange="HandleWidthChangedAsync" />
@@ -83,7 +84,7 @@
                            min="1"
                            step="1"
                            value="@_heightInput"
-                           data-testid="document-image-inspector-height"
+                           data-testid="@TestId("document-image-inspector-height")"
                            data-human-testid="document-image-height-input"
                            @oninput="HandleHeightInputAsync"
                            @onchange="HandleHeightChangedAsync" />
@@ -93,26 +94,26 @@
                 <span>@Loc["TmDocumentEditor_ImageRotation"]</span>
                 <input type="number"
                        value="@RotationValue"
-                       data-testid="document-image-inspector-rotation"
+                       data-testid="@TestId("document-image-inspector-rotation")"
                        readonly />
             </label>
             <label class="tm-document-image-inspector__field tm-document-image-inspector__checkbox">
                 <span>@Loc["TmDocumentEditor_ImageLockAspectRatio"]</span>
                 <input type="checkbox"
                        checked="@LockAspectRatio"
-                       data-testid="document-image-inspector-lock-aspect"
+                       data-testid="@TestId("document-image-inspector-lock-aspect")"
                        @onchange="HandleLockAspectRatioChangedAsync" />
             </label>
             <button type="button"
                     class="tm-document-image-inspector__command"
-                    data-testid="document-image-inspector-reset-size"
+                    data-testid="@TestId("document-image-inspector-reset-size")"
                     @onclick="HandleResetSizeAsync">
                 @Loc["TmDocumentEditor_ImageResetSize"]
             </button>
         </div>
     </details>
 
-    <details class="tm-document-image-inspector__section" data-testid="document-image-inspector-section-wrap" open>
+    <details class="tm-document-image-inspector__section" data-testid="@TestId("document-image-inspector-section-wrap")" open>
         <summary>
             <TmIcon Name="align-left" Size="IconSize.Xs" />
             <span>@Loc["TmDocumentEditor_ImageSectionWrapping"]</span>
@@ -122,7 +123,7 @@
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.Inline)"
                         aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Inline)"
-                        data-testid="document-image-inspector-wrap-inline"
+                        data-testid="@TestId("document-image-inspector-wrap-inline")"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="Inline"
                         title="@Loc["TmDocumentEditor_ImageWrapInline"]"
@@ -133,7 +134,7 @@
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.Square)"
                         aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Square)"
-                        data-testid="document-image-inspector-wrap-square"
+                        data-testid="@TestId("document-image-inspector-wrap-square")"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="Square"
                         title="@Loc["TmDocumentEditor_ImageWrapSquare"]"
@@ -144,7 +145,7 @@
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.Tight)"
                         aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Tight)"
-                        data-testid="document-image-inspector-wrap-tight"
+                        data-testid="@TestId("document-image-inspector-wrap-tight")"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="Tight"
                         title="@Loc["TmDocumentEditor_ImageWrapTight"]"
@@ -155,7 +156,7 @@
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.Through)"
                         aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Through)"
-                        data-testid="document-image-inspector-wrap-through"
+                        data-testid="@TestId("document-image-inspector-wrap-through")"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="Through"
                         title="@Loc["TmDocumentEditor_ImageWrapThrough"]"
@@ -166,7 +167,7 @@
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.TopBottom)"
                         aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.TopBottom)"
-                        data-testid="document-image-inspector-wrap-top-bottom"
+                        data-testid="@TestId("document-image-inspector-wrap-top-bottom")"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="TopBottom"
                         title="@Loc["TmDocumentEditor_ImageWrapTopBottom"]"
@@ -177,7 +178,7 @@
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.BehindText)"
                         aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.BehindText)"
-                        data-testid="document-image-inspector-wrap-behind"
+                        data-testid="@TestId("document-image-inspector-wrap-behind")"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="BehindText"
                         title="@Loc["TmDocumentEditor_ImageWrapBehindText"]"
@@ -188,7 +189,7 @@
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.InFrontOfText)"
                         aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.InFrontOfText)"
-                        data-testid="document-image-inspector-wrap-in-front"
+                        data-testid="@TestId("document-image-inspector-wrap-in-front")"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="InFrontOfText"
                         title="@Loc["TmDocumentEditor_ImageWrapInFrontOfText"]"
@@ -200,7 +201,7 @@
         </div>
     </details>
 
-    <details class="tm-document-image-inspector__section" data-testid="document-image-inspector-section-position" open>
+    <details class="tm-document-image-inspector__section" data-testid="@TestId("document-image-inspector-section-position")" open>
         <summary>
             <TmIcon Name="move" Size="IconSize.Xs" />
             <span>@Loc["TmDocumentEditor_ImageSectionPosition"]</span>
@@ -210,7 +211,7 @@
                 <button type="button"
                         class="@AlignmentButtonClass(DocumentImageAlignment.Start)"
                         aria-pressed="@AriaPressed(CurrentAlignment == DocumentImageAlignment.Start)"
-                        data-testid="document-image-inspector-align-start"
+                        data-testid="@TestId("document-image-inspector-align-start")"
                         title="@Loc["TmDocumentEditor_ImageAlignStart"]"
                         @onclick="() => AlignmentChanged.InvokeAsync(DocumentImageAlignment.Start)">
                     <TmIcon Name="@AlignmentIcon(DocumentImageAlignment.Start)" Size="IconSize.Xs" />
@@ -219,7 +220,7 @@
                 <button type="button"
                         class="@AlignmentButtonClass(DocumentImageAlignment.Center)"
                         aria-pressed="@AriaPressed(CurrentAlignment == DocumentImageAlignment.Center)"
-                        data-testid="document-image-inspector-align-center"
+                        data-testid="@TestId("document-image-inspector-align-center")"
                         title="@Loc["TmDocumentEditor_ImageAlignCenter"]"
                         @onclick="() => AlignmentChanged.InvokeAsync(DocumentImageAlignment.Center)">
                     <TmIcon Name="@AlignmentIcon(DocumentImageAlignment.Center)" Size="IconSize.Xs" />
@@ -228,7 +229,7 @@
                 <button type="button"
                         class="@AlignmentButtonClass(DocumentImageAlignment.End)"
                         aria-pressed="@AriaPressed(CurrentAlignment == DocumentImageAlignment.End)"
-                        data-testid="document-image-inspector-align-end"
+                        data-testid="@TestId("document-image-inspector-align-end")"
                         title="@Loc["TmDocumentEditor_ImageAlignEnd"]"
                         @onclick="() => AlignmentChanged.InvokeAsync(DocumentImageAlignment.End)">
                     <TmIcon Name="@AlignmentIcon(DocumentImageAlignment.End)" Size="IconSize.Xs" />
@@ -241,7 +242,7 @@
                     <input type="number"
                            step="1"
                            value="@_xInput"
-                           data-testid="document-image-inspector-position-x"
+                           data-testid="@TestId("document-image-inspector-position-x")"
                            @oninput="HandlePositionXInputAsync"
                            @onchange="HandlePositionXChangedAsync" />
                 </label>
@@ -250,13 +251,13 @@
                     <input type="number"
                            step="1"
                            value="@_yInput"
-                           data-testid="document-image-inspector-position-y"
+                           data-testid="@TestId("document-image-inspector-position-y")"
                            @oninput="HandlePositionYInputAsync"
                            @onchange="HandlePositionYChangedAsync" />
                 </label>
             </div>
             <div class="tm-document-image-inspector__asset"
-                 data-testid="document-image-inspector-anchor-paragraph">
+                 data-testid="@TestId("document-image-inspector-anchor-paragraph")">
                 <span>@Loc["TmDocumentEditor_ImageAnchorParagraph"]</span>
                 <strong>@AnchorParagraphLabel</strong>
             </div>
@@ -264,13 +265,13 @@
                 <span>@Loc["TmDocumentEditor_ImageLockAnchor"]</span>
                 <input type="checkbox"
                        checked="@IsAnchorLocked"
-                       data-testid="document-image-inspector-lock-anchor"
+                       data-testid="@TestId("document-image-inspector-lock-anchor")"
                        @onchange="HandleLockAnchorChangedAsync" />
             </label>
         </div>
     </details>
 
-    <details class="tm-document-image-inspector__section" data-testid="document-image-inspector-section-order">
+    <details class="tm-document-image-inspector__section" data-testid="@TestId("document-image-inspector-section-order")">
         <summary>
             <TmIcon Name="layers" Size="IconSize.Xs" />
             <span>@Loc["TmDocumentEditor_ImageSectionOrder"]</span>
@@ -279,13 +280,13 @@
             <div class="tm-document-image-inspector__group" role="toolbar" aria-label="@Loc["TmDocumentEditor_ImageSectionOrder"]">
                 <button type="button"
                         class="tm-document-image-inspector__swatch"
-                        data-testid="document-image-inspector-bring-forward"
+                        data-testid="@TestId("document-image-inspector-bring-forward")"
                         @onclick="() => BringForward.InvokeAsync()">
                     @Loc["TmDocumentEditor_ImageBringForward"]
                 </button>
                 <button type="button"
                         class="tm-document-image-inspector__swatch"
-                        data-testid="document-image-inspector-send-backward"
+                        data-testid="@TestId("document-image-inspector-send-backward")"
                         @onclick="() => SendBackward.InvokeAsync()">
                     @Loc["TmDocumentEditor_ImageSendBackward"]
                 </button>
@@ -293,7 +294,7 @@
         </div>
     </details>
 
-    <details class="tm-document-image-inspector__section" data-testid="document-image-inspector-section-accessibility" open>
+    <details class="tm-document-image-inspector__section" data-testid="@TestId("document-image-inspector-section-accessibility")" open>
         <summary>
             <TmIcon Name="settings" Size="IconSize.Xs" />
             <span>@Loc["TmDocumentEditor_ImageSectionAccessibility"]</span>
@@ -303,7 +304,7 @@
                 <span>@Loc["TmDocumentEditor_ImageAltText"]</span>
                 <input value="@_altInput"
                        disabled="@IsDecorative"
-                       data-testid="document-image-inspector-alt"
+                       data-testid="@TestId("document-image-inspector-alt")"
                        data-human-testid="document-image-alt-input"
                        @oninput="HandleAltTextInputAsync"
                        @onchange="HandleAltTextChangedAsync" />
@@ -312,14 +313,14 @@
                 <span>@Loc["TmDocumentEditor_ImageDecorative"]</span>
                 <input type="checkbox"
                        checked="@IsDecorative"
-                       data-testid="document-image-inspector-decorative"
+                       data-testid="@TestId("document-image-inspector-decorative")"
                        @onchange="HandleDecorativeChangedAsync" />
             </label>
             @if (IsDecorative)
             {
                 <div class="tm-document-image-inspector__hint"
                      role="status"
-                     data-testid="document-image-inspector-decorative-hint">
+                     data-testid="@TestId("document-image-inspector-decorative-hint")">
                     @Loc["TmDocumentEditor_ImageDecorativeHint"]
                 </div>
             }
@@ -327,7 +328,7 @@
             {
                 <div class="tm-document-image-inspector__warning"
                      role="status"
-                     data-testid="document-image-inspector-alt-warning">
+                     data-testid="@TestId("document-image-inspector-alt-warning")">
                     @Loc["TmDocumentEditor_ImageAltMissing"]
                 </div>
             }

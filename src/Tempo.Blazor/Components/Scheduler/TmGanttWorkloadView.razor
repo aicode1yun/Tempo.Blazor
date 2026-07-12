@@ -1,7 +1,8 @@
 @namespace Tempo.Blazor.Components.Scheduler
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Models
 
-<div class="tm-gantt__workload" data-testid="gantt-workload-view">
+<div class="tm-gantt__workload" data-testid="@TestId("gantt-workload-view")">
     @{
         var allEntries = WorkloadCalculator.Calculate(Tasks, WorkingSchedule);
         var assigneeIds = allEntries.Select(e => e.AssigneeId).Distinct().OrderBy(x => x).ToList();

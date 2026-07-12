@@ -1,10 +1,11 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Microsoft.AspNetCore.Components.Web
 
 @if (IsOpen)
 {
     <aside class="tm-document-side-panel"
-           data-testid="document-side-panel"
+           data-testid="@TestId("document-side-panel")"
            data-panel-layout="docked-tabs"
            data-active-tab="@GetTabDataValue(EffectiveActiveTab)"
            data-visible-panel-count="1"
@@ -23,7 +24,7 @@
                             role="tab"
                             aria-selected="@GetTabSelected(DocumentSidePanelTab.Comments)"
                             aria-controls="@PanelId"
-                            data-testid="document-side-panel-tab-comments"
+                            data-testid="@TestId("document-side-panel-tab-comments")"
                             @onclick="() => SelectTabAsync(DocumentSidePanelTab.Comments)">
                         <TmIcon Name="message-square" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_Comments"]</span>
@@ -42,7 +43,7 @@
                             role="tab"
                             aria-selected="@GetTabSelected(DocumentSidePanelTab.Revisions)"
                             aria-controls="@PanelId"
-                            data-testid="document-side-panel-tab-revisions"
+                            data-testid="@TestId("document-side-panel-tab-revisions")"
                             @onclick="() => SelectTabAsync(DocumentSidePanelTab.Revisions)">
                         <TmIcon Name="file-diff" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_Revisions"]</span>
@@ -61,7 +62,7 @@
                             role="tab"
                             aria-selected="@GetTabSelected(DocumentSidePanelTab.Versions)"
                             aria-controls="@PanelId"
-                            data-testid="document-side-panel-tab-versions"
+                            data-testid="@TestId("document-side-panel-tab-versions")"
                             @onclick="() => SelectTabAsync(DocumentSidePanelTab.Versions)">
                         <TmIcon Name="clock" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_Versions"]</span>
@@ -80,7 +81,7 @@
                             role="tab"
                             aria-selected="@GetTabSelected(DocumentSidePanelTab.Properties)"
                             aria-controls="@PanelId"
-                            data-testid="document-side-panel-tab-properties"
+                            data-testid="@TestId("document-side-panel-tab-properties")"
                             @onclick="() => SelectTabAsync(DocumentSidePanelTab.Properties)">
                         <TmIcon Name="settings" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_Properties"]</span>
@@ -95,7 +96,7 @@
                             role="tab"
                             aria-selected="@GetTabSelected(DocumentSidePanelTab.Outline)"
                             aria-controls="@PanelId"
-                            data-testid="document-side-panel-tab-outline"
+                            data-testid="@TestId("document-side-panel-tab-outline")"
                             @onclick="() => SelectTabAsync(DocumentSidePanelTab.Outline)">
                         <TmIcon Name="list" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_Outline"]</span>
@@ -110,7 +111,7 @@
                             role="tab"
                             aria-selected="@GetTabSelected(DocumentSidePanelTab.Pages)"
                             aria-controls="@PanelId"
-                            data-testid="document-side-panel-tab-pages"
+                            data-testid="@TestId("document-side-panel-tab-pages")"
                             @onclick="() => SelectTabAsync(DocumentSidePanelTab.Pages)">
                         <TmIcon Name="files" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_Pages"]</span>
@@ -121,7 +122,7 @@
                     class="tm-document-side-panel__close"
                     title="@Loc["TmDocumentEditor_CloseSidePanel"]"
                     aria-label="@Loc["TmDocumentEditor_CloseSidePanel"]"
-                    data-testid="document-side-panel-close"
+                    data-testid="@TestId("document-side-panel-close")"
                     @onclick="OnClose">
                 <TmIcon Name="x" Size="IconSize.Sm" />
             </button>
@@ -133,7 +134,7 @@
                  aria-labelledby="@GetTabId(EffectiveActiveTab)"
                  data-active-tab="@GetTabDataValue(EffectiveActiveTab)"
                  data-visible-panel-count="1"
-                 data-testid="document-side-panel-body">
+                 data-testid="@TestId("document-side-panel-body")">
             @GetActiveContent()
         </section>
     </aside>
@@ -144,7 +145,7 @@ else if (ShowEdgeToggle)
             class="tm-document-side-panel__edge-toggle"
             title="@Loc["TmDocumentEditor_OpenSidePanel"]"
             aria-label="@Loc["TmDocumentEditor_OpenSidePanel"]"
-            data-testid="document-side-panel-edge-toggle"
+            data-testid="@TestId("document-side-panel-edge-toggle")"
             @onclick="OnOpen">
         <TmIcon Name="sidebar" Size="IconSize.Sm" />
     </button>

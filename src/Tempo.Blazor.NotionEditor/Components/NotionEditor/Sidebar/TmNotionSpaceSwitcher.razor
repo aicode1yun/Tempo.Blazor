@@ -1,9 +1,10 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Sidebar
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Enums
 @using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.NotionEditor.Models
 
-<section class="tm-ns-space" data-testid="notion-space-switcher" aria-label="@Loc["Notion_Space_Switch"]">
+<section class="tm-ns-space" data-testid="@TestId("notion-space-switcher")" aria-label="@Loc["Notion_Space_Switch"]">
     @if (_isLoading)
     {
         <div class="tm-ns-space__loading" aria-busy="true" aria-live="polite">
@@ -21,7 +22,7 @@
     else
     {
         <button class="tm-ns-space__current"
-                data-testid="notion-space-current"
+                data-testid="@TestId("notion-space-current")"
                 type="button"
                 aria-expanded="@_listOpen.ToString().ToLowerInvariant()"
                 aria-controls="@_listId"
@@ -62,7 +63,7 @@
         @if (SpaceProvider is not null)
         {
             <button class="tm-ns-space__overview-toggle"
-                    data-testid="notion-space-overview-toggle"
+                    data-testid="@TestId("notion-space-overview-toggle")"
                     type="button"
                     aria-expanded="@_overviewOpen.ToString().ToLowerInvariant()"
                     @onclick="ToggleOverviewAsync">
@@ -75,7 +76,7 @@
 
         @if (_overviewOpen)
         {
-            <div class="tm-ns-space__overview" data-testid="notion-space-overview" role="region" aria-label="@Loc["Notion_Space_Overview"]">
+            <div class="tm-ns-space__overview" data-testid="@TestId("notion-space-overview")" role="region" aria-label="@Loc["Notion_Space_Overview"]">
                 @foreach (var space in _spaces)
                 {
                     var pages = GetOverviewPages(space.Id);

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
@@ -7,7 +8,7 @@ using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
-public partial class TmNotionPageHistory : ComponentBase, IAsyncDisposable
+public partial class TmNotionPageHistory : TmComponentBase, IAsyncDisposable
 {
     private enum HistoryView { Empty, Preview, Diff }
 

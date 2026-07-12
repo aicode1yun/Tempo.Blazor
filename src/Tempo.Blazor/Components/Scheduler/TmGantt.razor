@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Scheduler
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Models
 @using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.Models
@@ -10,14 +11,14 @@
     <!-- Toolbar -->
     <div class="tm-gantt__toolbar">
         <div class="tm-gantt__toolbar-group">
-            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Primary" OnClick="AddTaskAsync" Title="@Loc["TmGantt_AddTask"]" data-testid="gantt-add-task">
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Primary" OnClick="AddTaskAsync" Title="@Loc["TmGantt_AddTask"]" data-testid="@TestId("gantt-add-task")">
                 <TmIcon Name="plus" />
             </TmButton>
             <span class="tm-gantt__toolbar-divider"></span>
-            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="ExpandAllAsync" Title="@Loc["TmGantt_ExpandAll"]" data-testid="gantt-expand-all">
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="ExpandAllAsync" Title="@Loc["TmGantt_ExpandAll"]" data-testid="@TestId("gantt-expand-all")">
                 <TmIcon Name="chevrons-down" Size="IconSize.Sm" />
             </TmButton>
-            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="CollapseAllAsync" Title="@Loc["TmGantt_CollapseAll"]" data-testid="gantt-collapse-all">
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="CollapseAllAsync" Title="@Loc["TmGantt_CollapseAll"]" data-testid="@TestId("gantt-collapse-all")">
                 <TmIcon Name="chevrons-up" Size="IconSize.Sm" />
             </TmButton>
             <span class="tm-gantt__toolbar-divider"></span>
@@ -34,22 +35,22 @@
         <div class="tm-gantt__toolbar-group">
             <!-- Cascade sort -->
             <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="CascadeSortAsync"
-                      Title="@Loc["TmGantt_CascadeSort"]" data-testid="gantt-cascade-sort">
+                      Title="@Loc["TmGantt_CascadeSort"]" data-testid="@TestId("gantt-cascade-sort")">
                 <TmIcon Name="list-ordered" Size="IconSize.Sm" />
             </TmButton>
             <span class="tm-gantt__toolbar-divider"></span>
             <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="FitToScreenAsync" Title="@Loc["TmGantt_FitToScreen"]">
                 <TmIcon Name="maximize-2" />
             </TmButton>
-            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="ZoomOutAsync" data-testid="gantt-zoom-out">
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="ZoomOutAsync" data-testid="@TestId("gantt-zoom-out")">
                 <TmIcon Name="zoom-out" />
             </TmButton>
             <!-- Zoom slider -->
-            <input type="range" class="tm-gantt__zoom-slider" data-testid="gantt-zoom-slider"
+            <input type="range" class="tm-gantt__zoom-slider" data-testid="@TestId("gantt-zoom-slider")"
                    min="50" max="200" step="25" value="@_zoomLevel"
                    @onchange="e => { _zoomLevel = int.Parse(e.Value!.ToString()!); RefreshVisibleData(); }" />
             <span class="tm-gantt__zoom-level">@(_zoomLevel)%</span>
-            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="ZoomInAsync" data-testid="gantt-zoom-in">
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="ZoomInAsync" data-testid="@TestId("gantt-zoom-in")">
                 <TmIcon Name="zoom-in" />
             </TmButton>
             <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="() => ShowTaskPanel = !ShowTaskPanel" Title="@Loc["TmGantt_ToggleTaskPanel"]">
@@ -58,30 +59,30 @@
             <!-- Filter button -->
             <TmButton Size="ButtonSize.Sm" Variant="@(_filterPanelOpen ? ButtonVariant.Primary : ButtonVariant.Ghost)"
                       OnClick="ToggleFilterPanel" Title="@Loc["TmGantt_Filter"]"
-                      data-testid="gantt-filter-btn">
+                      data-testid="@TestId("gantt-filter-btn")">
                 <TmIcon Name="filter" Size="IconSize.Sm" />
             </TmButton>
             <!-- Export button -->
             <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost"
                       OnClick="ToggleExportDialog" Title="@Loc["TmGantt_Export"]"
-                      data-testid="gantt-export-btn">
+                      data-testid="@TestId("gantt-export-btn")">
                 <TmIcon Name="download" Size="IconSize.Sm" />
             </TmButton>
             <!-- Import button -->
             <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost"
                       OnClick="ToggleImportDialog" Title="@Loc["TmGantt_Import"]"
-                      data-testid="gantt-import-btn">
+                      data-testid="@TestId("gantt-import-btn")">
                 <TmIcon Name="upload" Size="IconSize.Sm" />
             </TmButton>
             <!-- History button -->
             <TmButton Size="ButtonSize.Sm" Variant="@(_historyDrawerOpen ? ButtonVariant.Primary : ButtonVariant.Ghost)"
                       OnClick="ToggleHistoryDrawer" Title="@Loc["TmGantt_History"]"
-                      data-testid="gantt-history-btn">
+                      data-testid="@TestId("gantt-history-btn")">
                 <TmIcon Name="clock" Size="IconSize.Sm" />
             </TmButton>
             <!-- View Settings -->
             <div class="tm-gantt__view-settings-wrapper">
-                <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="ToggleViewSettings" Title="@Loc["TmGantt_ViewSettings"]" data-testid="gantt-view-settings-btn">
+                <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="ToggleViewSettings" Title="@Loc["TmGantt_ViewSettings"]" data-testid="@TestId("gantt-view-settings-btn")">
                     <TmIcon Name="settings" Size="IconSize.Sm" />
                 </TmButton>
                 @if (_viewSettingsOpen)
@@ -89,19 +90,19 @@
                     <div class="tm-gantt__view-settings-overlay" @onclick="ToggleViewSettings"></div>
                     <div class="tm-gantt__view-settings-menu" @onclick:stopPropagation>
                         <label class="tm-gantt__view-settings-item">
-                            <input type="checkbox" data-testid="vset-show-today"
+                            <input type="checkbox" data-testid="@TestId("vset-show-today")"
                                    checked="@ViewSettings.ShowTodayMarker"
                                    @onchange="e => SetShowTodayMarker((bool)e.Value!)" />
                             <span>@Loc["TmGantt_ShowTodayMarker"]</span>
                         </label>
                         <label class="tm-gantt__view-settings-item">
-                            <input type="checkbox" data-testid="vset-show-daysoff"
+                            <input type="checkbox" data-testid="@TestId("vset-show-daysoff")"
                                    checked="@ViewSettings.ShowDaysOff"
                                    @onchange="e => SetShowDaysOff((bool)e.Value!)" />
                             <span>@Loc["TmGantt_ShowDaysOff"]</span>
                         </label>
                         <label class="tm-gantt__view-settings-item">
-                            <input type="checkbox" data-testid="vset-show-closed"
+                            <input type="checkbox" data-testid="@TestId("vset-show-closed")"
                                    checked="@ViewSettings.ShowClosedTasks"
                                    @onchange="e => SetShowClosedTasks((bool)e.Value!)" />
                             <span>@Loc["TmGantt_ShowClosedTasks"]</span>
@@ -167,7 +168,7 @@
                 {
                     <div class="tm-gantt__view-settings-divider"></div>
                     <div class="tm-gantt__view-settings-label">@Loc["TmGantt_Notifications"]</div>
-                    <div class="tm-gantt__notification-settings" data-testid="notification-settings-section">
+                    <div class="tm-gantt__notification-settings" data-testid="@TestId("notification-settings-section")">
                         <label class="tm-gantt__view-settings-item">
                             <input type="checkbox"
                                    checked="@NotificationSettings.EmailOnAssign"
@@ -207,7 +208,7 @@
     <!-- Filter Panel -->
     @if (_filterPanelOpen)
     {
-        <div class="tm-gantt__filter-panel" data-testid="gantt-filter-panel">
+        <div class="tm-gantt__filter-panel" data-testid="@TestId("gantt-filter-panel")">
             <TmGanttFilterPanel
                 Filters="_activeFilters.ToList()"
                 OnFiltersChanged="async filters => await ApplyFiltersAsync(filters)"
@@ -220,33 +221,33 @@
 
     @if (ShowSidebar)
     {
-        <nav class="tm-gantt__sidebar" data-testid="gantt-sidebar">
+        <nav class="tm-gantt__sidebar" data-testid="@TestId("gantt-sidebar")">
             <button type="button" class="tm-gantt__sidebar-btn @(_activeSidebarPanel == GanttSidebarPanel.Tasks ? "tm-gantt__sidebar-btn--active" : "")"
-                    data-testid="sidebar-btn-tasks"
+                    data-testid="@TestId("sidebar-btn-tasks")"
                     title="@Loc["TmGantt_SidebarTasks"]"
                     @onclick="() => ToggleSidebarPanel(GanttSidebarPanel.Tasks)">
                 <TmIcon Name="list" Size="IconSize.Sm" />
             </button>
             <button type="button" class="tm-gantt__sidebar-btn @(_activeSidebarPanel == GanttSidebarPanel.Workload ? "tm-gantt__sidebar-btn--active" : "")"
-                    data-testid="sidebar-btn-workload"
+                    data-testid="@TestId("sidebar-btn-workload")"
                     title="@Loc["TmGantt_SidebarWorkload"]"
                     @onclick="() => ToggleSidebarPanel(GanttSidebarPanel.Workload)">
                 <TmIcon Name="users" Size="IconSize.Sm" />
             </button>
             <button type="button" class="tm-gantt__sidebar-btn @(_activeSidebarPanel == GanttSidebarPanel.History ? "tm-gantt__sidebar-btn--active" : "")"
-                    data-testid="sidebar-btn-history"
+                    data-testid="@TestId("sidebar-btn-history")"
                     title="@Loc["TmGantt_SidebarHistory"]"
                     @onclick="() => ToggleSidebarPanel(GanttSidebarPanel.History)">
                 <TmIcon Name="clock" Size="IconSize.Sm" />
             </button>
             <button type="button" class="tm-gantt__sidebar-btn @(_activeSidebarPanel == GanttSidebarPanel.Notifications ? "tm-gantt__sidebar-btn--active" : "")"
-                    data-testid="sidebar-btn-notifications"
+                    data-testid="@TestId("sidebar-btn-notifications")"
                     title="@Loc["TmGantt_SidebarNotifications"]"
                     @onclick="() => ToggleSidebarPanel(GanttSidebarPanel.Notifications)">
                 <TmIcon Name="bell" Size="IconSize.Sm" />
             </button>
             <button type="button" class="tm-gantt__sidebar-btn @(_activeSidebarPanel == GanttSidebarPanel.Reports ? "tm-gantt__sidebar-btn--active" : "")"
-                    data-testid="sidebar-btn-reports"
+                    data-testid="@TestId("sidebar-btn-reports")"
                     title="@Loc["TmGantt_SidebarReports"]"
                     @onclick="() => ToggleSidebarPanel(GanttSidebarPanel.Reports)">
                 <TmIcon Name="bar-chart-2" Size="IconSize.Sm" />
@@ -262,7 +263,7 @@
     }
     else if (_activeSidebarPanel == GanttSidebarPanel.Tasks)
     {
-        <div class="tm-gantt__sidebar-drawer" data-testid="sidebar-panel-tasks">
+        <div class="tm-gantt__sidebar-drawer" data-testid="@TestId("sidebar-panel-tasks")">
             <div class="tm-gantt__sidebar-drawer-header">
                 <span class="tm-gantt__sidebar-drawer-title">@Loc["TmGantt_SidebarTasks"]</span>
             </div>
@@ -280,7 +281,7 @@
     }
     else if (_activeSidebarPanel == GanttSidebarPanel.Workload)
     {
-        <div class="tm-gantt__sidebar-drawer" data-testid="sidebar-panel-workload">
+        <div class="tm-gantt__sidebar-drawer" data-testid="@TestId("sidebar-panel-workload")">
             <div class="tm-gantt__sidebar-drawer-header">
                 <span class="tm-gantt__sidebar-drawer-title">@Loc["TmGantt_SidebarWorkload"]</span>
             </div>
@@ -310,7 +311,7 @@
     }
     else if (_activeSidebarPanel == GanttSidebarPanel.History)
     {
-        <div class="tm-gantt__sidebar-drawer" data-testid="sidebar-panel-history">
+        <div class="tm-gantt__sidebar-drawer" data-testid="@TestId("sidebar-panel-history")">
             <div class="tm-gantt__sidebar-drawer-header">
                 <span class="tm-gantt__sidebar-drawer-title">@Loc["TmGantt_SidebarHistory"]</span>
             </div>
@@ -332,12 +333,12 @@
     }
     else if (_activeSidebarPanel == GanttSidebarPanel.Notifications && NotificationSettings is not null)
     {
-        <div class="tm-gantt__sidebar-drawer" data-testid="sidebar-panel-notifications">
+        <div class="tm-gantt__sidebar-drawer" data-testid="@TestId("sidebar-panel-notifications")">
             <div class="tm-gantt__sidebar-drawer-header">
                 <span class="tm-gantt__sidebar-drawer-title">@Loc["TmGantt_SidebarNotifications"]</span>
             </div>
             <div class="tm-gantt__sidebar-drawer-body">
-                <div class="tm-gantt__notification-settings" data-testid="notification-settings-section">
+                <div class="tm-gantt__notification-settings" data-testid="@TestId("notification-settings-section")">
                     <label class="tm-gantt__view-settings-item">
                         <input type="checkbox" checked="@NotificationSettings.EmailOnAssign"
                                @onchange="e => UpdateNotification(s => s.EmailOnAssign = (bool)(e.Value ?? false))" />
@@ -376,7 +377,7 @@
     }
     else if (View == GanttView.Calendar)
     {
-        <div class="tm-gantt__calendar-view" data-testid="gantt-calendar-view">
+        <div class="tm-gantt__calendar-view" data-testid="@TestId("gantt-calendar-view")">
             <div class="tm-gantt__calendar-inner">
                 @{
                     var calEvents = Data.Select(t => new TmScheduleEvent
@@ -407,7 +408,7 @@
             new KanbanColumn(nameof(TmWorkItemStatus.Done),        Loc[$"GanttStatus_{TmWorkItemStatus.Done}"],        "#dcfce7"),
             new KanbanColumn(nameof(TmWorkItemStatus.Closed),      Loc[$"GanttStatus_{TmWorkItemStatus.Closed}"],      "#f3f4f6"),
         };
-        <div class="tm-gantt__board-view" data-testid="gantt-board-view">
+        <div class="tm-gantt__board-view" data-testid="@TestId("gantt-board-view")">
             <TmKanbanBoard TItem="TmWorkItem"
                            Columns="kanbanColumns"
                            Items="Data"
@@ -436,7 +437,7 @@
     else if (View == GanttView.Dashboard)
     {
         <div class="tm-gantt__dashboard-view">
-            <div class="tm-gantt__dashboard-widget" data-testid="dashboard-widget-status">
+            <div class="tm-gantt__dashboard-widget" data-testid="@TestId("dashboard-widget-status")">
                 <h4>@Loc["TmGantt_DashboardStatus"]</h4>
                 @{ var byStatus = Data.GroupBy(t => t.Status).ToList(); }
                 @foreach (var g in byStatus)
@@ -447,12 +448,12 @@
                     </div>
                 }
             </div>
-            <div class="tm-gantt__dashboard-widget" data-testid="dashboard-widget-time">
+            <div class="tm-gantt__dashboard-widget" data-testid="@TestId("dashboard-widget-time")">
                 <h4>@Loc["TmGantt_DashboardTime"]</h4>
                 @{ var totalLogged = Data.Sum(t => GanttHelper.CalculateTotalLoggedHours(t.TimeLog)); }
                 <div class="tm-gantt__dashboard-stat"><strong>@totalLogged.ToString("F1")h</strong></div>
             </div>
-            <div class="tm-gantt__dashboard-widget" data-testid="dashboard-widget-milestones">
+            <div class="tm-gantt__dashboard-widget" data-testid="@TestId("dashboard-widget-milestones")">
                 <h4>@Loc["TmGantt_DashboardMilestones"]</h4>
                 @foreach (var m in Data.Where(t => t.IsMilestone))
                 {
@@ -462,7 +463,7 @@
                     </div>
                 }
             </div>
-            <div class="tm-gantt__dashboard-widget" data-testid="dashboard-widget-budget">
+            <div class="tm-gantt__dashboard-widget" data-testid="@TestId("dashboard-widget-budget")">
                 <h4>@Loc["TmGantt_DashboardBudget"]</h4>
                 @{ var totalBudget = Data.Sum(t => t.BudgetHours ?? 0); var totalCost = Data.Sum(t => t.ActualCost ?? 0); }
                 <div class="tm-gantt__dashboard-stat"><span>@totalBudget.ToString("F0")h</span></div>
@@ -472,7 +473,7 @@
     }
     else if (View == GanttView.People)
     {
-        <div class="tm-gantt__people-view" data-testid="gantt-people-view">
+        <div class="tm-gantt__people-view" data-testid="@TestId("gantt-people-view")">
             @{
                 var peopleIds = GetPeopleViewAssigneeIds();
                 var tsStart = GanttHelper.GetTimeRange(Data).Item1;
@@ -533,7 +534,7 @@
     <!-- Main area: Tree + Timeline (also List view: tree only) -->
     <div class="tm-gantt__main @(View == GanttView.List ? "tm-gantt__main--list-view" : "")">
         <!-- Left: Task Tree -->
-        <div class="tm-gantt__tree" data-testid="gantt-tree">
+        <div class="tm-gantt__tree" data-testid="@TestId("gantt-tree")">
             <div class="tm-gantt__tree-header">
                 @if (AllowBulkSelect)
                 {
@@ -564,10 +565,10 @@
                     else if (col.Key == GanttColumnKey.Progress)
                     {
                         <span class="tm-gantt__tree-header-cell tm-gantt__tree-header-cell--narrow"
-                              data-testid="col-header-progress">
+                              data-testid="@TestId("col-header-progress")">
                             %
                             <input type="checkbox" class="tm-gantt__col-toggle" checked
-                                   data-testid="col-toggle-progress"
+                                   data-testid="@TestId("col-toggle-progress")"
                                    @onchange="e => ToggleColumnVisibilityAsync(GanttColumnKey.Progress, (bool)e.Value!)" />
                         </span>
                     }
@@ -575,14 +576,14 @@
                 @foreach (var cf in CustomFields)
                 {
                     <span class="tm-gantt__tree-header-cell tm-gantt__custom-field-header"
-                          data-testid="custom-col-header-@cf.Id">@cf.Name</span>
+                          data-testid="@TestId($"custom-col-header-{cf.Id}")">@cf.Name</span>
                 }
             </div>
             <div class="tm-gantt__tree-body" @ref="_treeBodyRef" @onscroll="OnTreeScroll">
                 @foreach (var node in _visibleNodes)
                 {
                     <div class="tm-gantt__tree-row @GetRowClass(node) @GetDragClass(node)"
-                         data-testid="tree-row-@node.Task.Id"
+                         data-testid="@TestId($"tree-row-{node.Task.Id}")"
                          draggable="true"
                          @onclick="() => SelectTaskAsync(node.Task)"
                          @oncontextmenu="e => ShowContextMenu(e, node.Task)"
@@ -596,7 +597,7 @@
                         @if (AllowBulkSelect)
                         {
                             <span class="tm-gantt__tree-cell tm-gantt__tree-cell--checkbox" @onclick:stopPropagation>
-                                <input type="checkbox" data-testid="bulk-select-@node.Task.Id"
+                                <input type="checkbox" data-testid="@TestId($"bulk-select-{node.Task.Id}")"
                                        checked="@_selectedTaskIds.Contains(node.Task.Id)"
                                        @onchange="e => ToggleBulkSelect(node.Task.Id, (bool)e.Value!)" />
                             </span>
@@ -607,7 +608,7 @@
                             @if (col.Key == GanttColumnKey.WBS)
                             {
                                 <span class="tm-gantt__tree-cell tm-gantt__tree-cell--wbs"
-                                      data-testid="wbs-number">@node.WbsNumber</span>
+                                      data-testid="@TestId("wbs-number")">@node.WbsNumber</span>
                             }
                             else if (col.Key == GanttColumnKey.Title)
                             {
@@ -630,13 +631,13 @@
                                         <TmIcon Name="diamond" Class="tm-gantt__milestone-icon" />
                                     }
                                     <span class="tm-gantt__priority-icon @GetPriorityIconClass(node.Task.Priority)"
-                                          data-testid="priority-icon"
+                                          data-testid="@TestId("priority-icon")"
                                           title="@Loc[$"GanttPriority_{node.Task.Priority}"]"></span>
 
                                     @if (_inlineEditTaskId == node.Task.Id && _inlineEditColumn == GanttColumnKey.Title)
                                     {
                                         <input class="tm-gantt__inline-edit"
-                                               data-testid="inline-edit-input"
+                                               data-testid="@TestId("inline-edit-input")"
                                                value="@_inlineEditValue"
                                                @onclick:stopPropagation
                                                @onchange="e => _inlineEditValue = e.Value?.ToString() ?? string.Empty"
@@ -646,7 +647,7 @@
                                     else
                                     {
                                         <span class="tm-gantt__task-title"
-                                              data-testid="tree-cell-title-@node.Task.Id"
+                                              data-testid="@TestId($"tree-cell-title-{node.Task.Id}")"
                                               @ondblclick:stopPropagation
                                               @ondblclick="() => StartInlineEdit(node.Task.Id, GanttColumnKey.Title, node.Task.Title)">
                                             @node.Task.Title
@@ -654,7 +655,7 @@
                                         @if (node.Task.Attachments.Count > 0)
                                         {
                                             <span class="tm-gantt__inline-badge tm-gantt__inline-badge--attachment"
-                                                  data-testid="attachment-count-@node.Task.Id"
+                                                  data-testid="@TestId($"attachment-count-{node.Task.Id}")"
                                                   title="@node.Task.Attachments.Count @Loc["GanttTask_Attachments"]">
                                                 <TmIcon Name="paperclip" Size="IconSize.Xs" />
                                                 @node.Task.Attachments.Count
@@ -663,7 +664,7 @@
                                         @if (node.Task.Comments.Count > 0)
                                         {
                                             <span class="tm-gantt__inline-badge tm-gantt__inline-badge--comment"
-                                                  data-testid="comment-count-@node.Task.Id"
+                                                  data-testid="@TestId($"comment-count-{node.Task.Id}")"
                                                   title="@node.Task.Comments.Count @Loc["GanttTask_Comments"]">
                                                 <TmIcon Name="message-circle" Size="IconSize.Xs" />
                                                 @node.Task.Comments.Count
@@ -689,7 +690,7 @@
                             {
                                 <span class="tm-gantt__tree-cell tm-gantt__tree-cell--status">
                                     <span class="tm-gantt__status-badge @GetStatusBadgeClass(node.Task.Status)"
-                                          data-testid="status-badge">
+                                          data-testid="@TestId("status-badge")">
                                         @Loc[$"GanttStatus_{node.Task.Status}"]
                                     </span>
                                 </span>
@@ -704,7 +705,7 @@
                                                           ?.Tasks.FirstOrDefault(t => t.TaskId == node.Task.Id);
                                         var devDays = bt is not null ? (int)(node.Task.Start - bt.Start).TotalDays : 0;
                                         <span class="tm-gantt__deviation-badge @(devDays > 0 ? "tm-gantt__deviation-badge--late" : "tm-gantt__deviation-badge--early")"
-                                              data-testid="deviation-badge-@node.Task.Id"
+                                              data-testid="@TestId($"deviation-badge-{node.Task.Id}")"
                                               title="@Loc["TmGantt_BaselineDeviation"]">
                                             @(devDays > 0 ? "+" : "")@devDays d
                                         </span>
@@ -732,7 +733,7 @@
                             @if (_inlineEditTaskId == node.Task.Id && _inlineEditCustomFieldId == cf.Id)
                             {
                                 <span class="tm-gantt__tree-cell tm-gantt__custom-field-cell">
-                                    <input class="tm-gantt__inline-edit" data-testid="inline-edit-input"
+                                    <input class="tm-gantt__inline-edit" data-testid="@TestId("inline-edit-input")"
                                            value="@_inlineEditValue"
                                            @onclick:stopPropagation
                                            @oninput="e => _inlineEditValue = e.Value?.ToString() ?? string.Empty"
@@ -744,7 +745,7 @@
                             else
                             {
                                 <span class="tm-gantt__tree-cell tm-gantt__custom-field-cell"
-                                      data-testid="custom-cell-@(cf.Id)-@(node.Task.Id)"
+                                      data-testid="@TestId($"custom-cell-{cf.Id}-{node.Task.Id}")"
                                       @ondblclick:stopPropagation
                                       @ondblclick="() => StartCustomFieldInlineEdit(node.Task.Id, cf.Id, cfVal ?? string.Empty)">
                                     @cfVal
@@ -762,17 +763,17 @@
                     <span class="tm-gantt__bulk-toolbar-count">@_selectedTaskIds.Count @Loc["TmGantt_BulkSelected"]</span>
                     <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost"
                               OnClick="() => ExecuteBulkStatusUpdateAsync(TmWorkItemStatus.Done)"
-                              data-testid="bulk-status-done">
+                              data-testid="@TestId("bulk-status-done")">
                         @Loc["TmGantt_BulkMarkDone"]
                     </TmButton>
                     <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost"
                               OnClick="() => ExecuteBulkStatusUpdateAsync(TmWorkItemStatus.InProgress)"
-                              data-testid="bulk-status-inprogress">
+                              data-testid="@TestId("bulk-status-inprogress")">
                         @Loc["TmGantt_BulkMarkInProgress"]
                     </TmButton>
                     <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost"
                               OnClick="() => { _selectedTaskIds = []; }"
-                              data-testid="bulk-clear">
+                              data-testid="@TestId("bulk-clear")">
                         <TmIcon Name="x" Size="IconSize.Sm" />
                     </TmButton>
                 </div>
@@ -783,7 +784,7 @@
         @if (View != GanttView.List)
         {
         <div class="tm-gantt__timeline @(_isPanning ? "tm-gantt__timeline--panning" : "")"
-             data-testid="gantt-timeline"
+             data-testid="@TestId("gantt-timeline")"
              @ref="_timelineContainerRef"
              @onmousedown="OnTimelineMouseDown"
              @onmousemove="OnTimelineMouseMove"
@@ -822,7 +823,7 @@
                         @foreach (var rect in _nonWorkingRects)
                         {
                             <div class="tm-gantt__nonworking-overlay"
-                                 data-testid="nonworking-overlay"
+                                 data-testid="@TestId("nonworking-overlay")"
                                  style="left: @(F(rect.Offset))px; width: @(F(rect.Width))px"></div>
                         }
                     }
@@ -839,7 +840,7 @@
                     @if (ViewSettings.ShowTodayMarker)
                     {
                         <div class="tm-gantt__today-marker"
-                             data-testid="today-marker"
+                             data-testid="@TestId("today-marker")"
                              style="left: @(F(_todayOffset))px"
                              title="@Loc["TmGantt_Today"]"></div>
                     }
@@ -848,7 +849,7 @@
                     @if (ZoomPreset == GanttZoomPreset.Hours)
                     {
                         <div class="tm-gantt__current-time-marker"
-                             data-testid="current-time-marker"
+                             data-testid="@TestId("current-time-marker")"
                              style="left: @(F(_currentTimeOffset))px"></div>
                     }
 
@@ -858,7 +859,7 @@
                         {
                             <line x1="@F(dep.X1)" y1="@F(dep.Y1)" x2="@F(dep.X2)" y2="@F(dep.Y2)"
                                   class="@GetDepLineClass(dep)"
-                                  data-testid="dep-line-@dep.DependencyId"
+                                  data-testid="@TestId($"dep-line-{dep.DependencyId}")"
                                   @onclick:stopPropagation
                                   @onclick="() => SelectDependency(dep.DependencyId)" />
                             <polygon points="@GetArrowPoints(dep.X2, dep.Y2)"
@@ -876,7 +877,7 @@
                         @foreach (var bar in _taskBars.Where(b => b.BaselineLeft.HasValue))
                         {
                             <div class="tm-gantt__bar tm-gantt__bar--baseline"
-                                 data-testid="ghost-bar-@bar.Task.Id"
+                                 data-testid="@TestId($"ghost-bar-{bar.Task.Id}")"
                                  style="left: @(F(bar.BaselineLeft!.Value))px; width: @(F(bar.BaselineWidth!.Value))px; top: @(F(bar.Top))px;"></div>
                         }
                     }
@@ -898,7 +899,7 @@
                             else
                             {
                                 <div class="tm-gantt__bar @GetBarClass(bar)"
-                                     data-testid="task-bar-@bar.Task.Id"
+                                     data-testid="@TestId($"task-bar-{bar.Task.Id}")"
                                      style="left: @(F(bar.Left))px; width: @(F(bar.Width))px; @GetBarColorStyle(bar)"
                                      title="@bar.Task.Title (@bar.Task.PercentComplete%)"
                                      @onclick="() => SelectTaskAsync(bar.Task)"
@@ -961,7 +962,7 @@
                                     }
 
                                     <!-- Hover tooltip -->
-                                    <div class="tm-gantt__bar-tooltip" data-testid="bar-tooltip">
+                                    <div class="tm-gantt__bar-tooltip" data-testid="@TestId("bar-tooltip")">
                                         <div class="tm-gantt__bar-tooltip-title">@bar.Task.Title</div>
                                         <div class="tm-gantt__bar-tooltip-row">
                                             <span>@Loc["TmGantt_TooltipStart"]:</span>
@@ -979,7 +980,7 @@
                                     <!-- Deadline exceeded marker -->
                                     @if (bar.IsDeadlineExceeded)
                                     {
-                                        <span class="tm-gantt__bar-deadline" data-testid="deadline-marker" title="@Loc["GanttTask_DeadlineExceeded"]">
+                                        <span class="tm-gantt__bar-deadline" data-testid="@TestId("deadline-marker")" title="@Loc["GanttTask_DeadlineExceeded"]">
                                             <TmIcon Name="flame" Size="IconSize.Sm" />
                                         </span>
                                     }

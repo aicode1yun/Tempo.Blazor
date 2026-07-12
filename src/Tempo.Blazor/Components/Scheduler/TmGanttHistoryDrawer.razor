@@ -1,9 +1,10 @@
 @namespace Tempo.Blazor.Components.Scheduler
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Shared
 
 @if (IsOpen)
 {
-    <div class="tm-gantt__history-drawer" data-testid="gantt-history-drawer">
+    <div class="tm-gantt__history-drawer" data-testid="@TestId("gantt-history-drawer")">
         <div class="tm-gantt__history-drawer-header">
             <span class="tm-gantt__history-drawer-title">@Loc["TmGantt_History"]</span>
             <button type="button" class="tm-gantt__dialog-close" @onclick="OnClose">
@@ -23,7 +24,7 @@
                 <ul class="tm-gantt__history-list">
                     @foreach (var entry in History.OrderByDescending(e => e.Timestamp))
                     {
-                        <li class="tm-gantt__history-entry" data-testid="history-entry-@entry.Id">
+                        <li class="tm-gantt__history-entry" data-testid="@TestId($"history-entry-{entry.Id}")">
                             <div class="tm-gantt__history-entry-header">
                                 <span class="tm-gantt__history-entry-type">@GetChangeTypeLabel(entry.Action)</span>
                                 <span class="tm-gantt__history-entry-author">@(entry.Actor?.DisplayName ?? entry.Actor?.Id ?? "")</span>

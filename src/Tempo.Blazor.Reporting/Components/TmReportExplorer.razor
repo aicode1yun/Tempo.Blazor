@@ -1,14 +1,15 @@
 @namespace Tempo.Blazor.Reporting.Components
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using System.Globalization
 @using Tempo.Blazor.Reporting.Models
 
-<div class="@CssClass" data-testid="tm-report-explorer" @attributes="AdditionalAttributes">
+<div class="@CssClass" data-testid="@TestId("tm-report-explorer")" @attributes="AdditionalAttributes">
     <aside class="tm-report-explorer__folders" aria-label="@Loc["TmReportExplorer_Folders"]">
         <div class="tm-report-explorer__folders-title">
             <TmIcon Name="@IconNames.FolderOpen" Size="IconSize.Sm" />
             <span>@Loc["TmReportExplorer_Folders"]</span>
         </div>
-        <div class="tm-report-explorer__folder-tree" data-testid="tm-report-folder-tree">
+        <div class="tm-report-explorer__folder-tree" data-testid="@TestId("tm-report-folder-tree")">
             @if (RootFolder is not null)
             {
                 @foreach (var folder in FlattenFolders(RootFolder))
@@ -37,7 +38,7 @@
                 <TmIcon Name="@IconNames.Search" Size="IconSize.Sm" />
                 <span class="tm-report-explorer__visually-hidden">@Loc["TmReportExplorer_Search"]</span>
                 <input type="search"
-                       data-testid="tm-report-explorer-search"
+                       data-testid="@TestId("tm-report-explorer-search")"
                        placeholder="@Loc["TmReportExplorer_SearchPlaceholder"]"
                        value="@_searchText"
                        @oninput="HandleSearchInputAsync" />
@@ -59,8 +60,8 @@
 
         @if (AllowFolderManagement)
         {
-            <div class="tm-report-explorer__folder-create" data-testid="tm-report-folder-create">
-                <input data-testid="tm-report-new-folder-name"
+            <div class="tm-report-explorer__folder-create" data-testid="@TestId("tm-report-folder-create")">
+                <input data-testid="@TestId("tm-report-new-folder-name")"
                        class="tm-report-explorer__folder-input"
                        placeholder="@Loc["TmReportExplorer_NewFolderPlaceholder"]"
                        value="@_newFolderName"
@@ -78,7 +79,7 @@
 
         @if (FilteredReports.Count == 0)
         {
-            <div class="tm-report-explorer__empty" data-testid="tm-report-explorer-empty">
+            <div class="tm-report-explorer__empty" data-testid="@TestId("tm-report-explorer-empty")">
                 <TmIcon Name="@IconNames.SearchX" Size="IconSize.Md" />
                 <strong>@Loc["TmReportExplorer_EmptyTitle"]</strong>
                 <span>@Loc["TmReportExplorer_EmptyDescription"]</span>
@@ -86,7 +87,7 @@
         }
         else if (_viewMode == ReportExplorerViewMode.List)
         {
-            <div class="tm-report-explorer__list" data-testid="tm-report-explorer-list">
+            <div class="tm-report-explorer__list" data-testid="@TestId("tm-report-explorer-list")">
                 @foreach (var report in FilteredReports)
                 {
                     @RenderReportRow(report)
@@ -95,7 +96,7 @@
         }
         else
         {
-            <div class="tm-report-explorer__grid" data-testid="tm-report-explorer-grid">
+            <div class="tm-report-explorer__grid" data-testid="@TestId("tm-report-explorer-grid")">
                 @foreach (var report in FilteredReports)
                 {
                     @RenderReportCard(report)

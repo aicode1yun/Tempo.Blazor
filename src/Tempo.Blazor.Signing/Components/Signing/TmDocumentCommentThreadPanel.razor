@@ -1,9 +1,10 @@
 @namespace Tempo.Blazor.Components.Signing
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Models
 
 <aside class="@RootClass"
        aria-label="@Loc["TmDocumentComments_PanelLabel"]"
-       data-testid="document-comments-panel"
+       data-testid="@TestId("document-comments-panel")"
        tabindex="0"
        @onkeydown="HandlePanelKeyDownAsync">
     <header class="tm-document-comments-panel__header">

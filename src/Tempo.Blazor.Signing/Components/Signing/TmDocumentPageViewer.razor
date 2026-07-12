@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Signing
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Models
 
 <div @attributes="AdditionalAttributes"
@@ -207,7 +208,7 @@
                     {
                         @if (_draftAnchor is not null)
                         {
-                            <section class="tm-document-page-viewer__draft-panel" data-testid="document-comment-draft">
+                            <section class="tm-document-page-viewer__draft-panel" data-testid="@TestId("document-comment-draft")">
                                 <header class="tm-document-page-viewer__draft-header">
                                     <span>@Loc["TmDocumentComments_NewThread"]</span>
                                     <button type="button"

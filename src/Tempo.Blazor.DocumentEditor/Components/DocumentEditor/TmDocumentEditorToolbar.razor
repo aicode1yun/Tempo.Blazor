@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using System.Globalization
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Web
@@ -15,7 +16,7 @@
         role="toolbar"
         aria-label="@Loc["TmDocumentEditor_ToolbarLabel"]"
         hidden="@(ToolbarMode == DocumentToolbarMode.DistractionFree)"
-        data-testid="document-toolbar"
+        data-testid="@TestId("document-toolbar")"
         data-keyboard-mode="@_keyboardMode.ToString().ToLowerInvariant()"
         data-toolbar-mode="@ToolbarMode.ToString()"
         data-active-ribbon-tab="@ActiveRibbonTabDataValue"
@@ -26,7 +27,7 @@
         <button type="button"
                 class="tm-document-editor__toolbar-floating-backdrop"
                 aria-label="@Loc["TmDocumentEditor_Close"]"
-                data-testid="document-toolbar-floating-backdrop"
+                data-testid="@TestId("document-toolbar-floating-backdrop")"
                 @onclick="CloseToolbarFloatingUi"
                 @oncontextmenu:preventDefault="true"
                 @oncontextmenu="CloseToolbarFloatingUi">
@@ -49,7 +50,7 @@
                 @onmousedown:preventDefault="true"
                 data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.Home)"
                 data-active="@GetRibbonTabSelected(DocumentRibbonTab.Home)"
-                data-testid="document-ribbon-tab-home">@Loc["TmDocumentEditor_TabHome"]</button>
+                data-testid="@TestId("document-ribbon-tab-home")">@Loc["TmDocumentEditor_TabHome"]</button>
         <button type="button"
                 @ref="_insertTab"
                 class="@GetRibbonTabClass(DocumentRibbonTab.Insert)"
@@ -65,7 +66,7 @@
                 @onmousedown:preventDefault="true"
                 data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.Insert)"
                 data-active="@GetRibbonTabSelected(DocumentRibbonTab.Insert)"
-                data-testid="document-ribbon-tab-insert">@Loc["TmDocumentEditor_TabInsert"]</button>
+                data-testid="@TestId("document-ribbon-tab-insert")">@Loc["TmDocumentEditor_TabInsert"]</button>
         <button type="button"
                 @ref="_mathTab"
                 class="@GetRibbonTabClass(DocumentRibbonTab.Math)"
@@ -81,7 +82,7 @@
                 @onmousedown:preventDefault="true"
                 data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.Math)"
                 data-active="@GetRibbonTabSelected(DocumentRibbonTab.Math)"
-                data-testid="document-ribbon-tab-math">@Loc["TmDocumentEditor_TabMath"]</button>
+                data-testid="@TestId("document-ribbon-tab-math")">@Loc["TmDocumentEditor_TabMath"]</button>
         <button type="button"
                 @ref="_layoutTab"
                 class="@GetRibbonTabClass(DocumentRibbonTab.Layout)"
@@ -97,7 +98,7 @@
                 @onmousedown:preventDefault="true"
                 data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.Layout)"
                 data-active="@GetRibbonTabSelected(DocumentRibbonTab.Layout)"
-                data-testid="document-ribbon-tab-layout">@Loc["TmDocumentEditor_TabLayout"]</button>
+                data-testid="@TestId("document-ribbon-tab-layout")">@Loc["TmDocumentEditor_TabLayout"]</button>
         <button type="button"
                 @ref="_referencesTab"
                 class="@GetRibbonTabClass(DocumentRibbonTab.References)"
@@ -113,7 +114,7 @@
                 @onmousedown:preventDefault="true"
                 data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.References)"
                 data-active="@GetRibbonTabSelected(DocumentRibbonTab.References)"
-                data-testid="document-ribbon-tab-references">@Loc["TmDocumentEditor_TabReferences"]</button>
+                data-testid="@TestId("document-ribbon-tab-references")">@Loc["TmDocumentEditor_TabReferences"]</button>
         <button type="button"
                 @ref="_reviewTab"
                 class="@GetRibbonTabClass(DocumentRibbonTab.Review)"
@@ -129,7 +130,7 @@
                 @onmousedown:preventDefault="true"
                 data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.Review)"
                 data-active="@GetRibbonTabSelected(DocumentRibbonTab.Review)"
-                data-testid="document-ribbon-tab-review">@Loc["TmDocumentEditor_TabReview"]</button>
+                data-testid="@TestId("document-ribbon-tab-review")">@Loc["TmDocumentEditor_TabReview"]</button>
         <button type="button"
                 @ref="_viewTab"
                 class="@GetRibbonTabClass(DocumentRibbonTab.View)"
@@ -145,7 +146,7 @@
                 @onmousedown:preventDefault="true"
                 data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.View)"
                 data-active="@GetRibbonTabSelected(DocumentRibbonTab.View)"
-                data-testid="document-ribbon-tab-view">@Loc["TmDocumentEditor_TabView"]</button>
+                data-testid="@TestId("document-ribbon-tab-view")">@Loc["TmDocumentEditor_TabView"]</button>
         @if (IsHeaderFooterMode)
         {
             <button type="button"
@@ -163,7 +164,7 @@
                     @onmousedown:preventDefault="true"
                     data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.HeaderFooter)"
                     data-active="@GetRibbonTabSelected(DocumentRibbonTab.HeaderFooter)"
-                    data-testid="document-ribbon-tab-header-footer">@Loc["TmDocumentEditor_TabHeaderFooter"]</button>
+                    data-testid="@TestId("document-ribbon-tab-header-footer")">@Loc["TmDocumentEditor_TabHeaderFooter"]</button>
         }
     </div>
 
@@ -178,7 +179,7 @@
                 aria-disabled="@AriaDisabled(!CanExecuteSave)"
                 @onclick='() => ExecuteToolbarCommandAsync("save", OnSave, !ReadOnly && !IsSaving)'
                 data-command="save"
-                data-testid="document-save">
+                data-testid="@TestId("document-save")">
             <TmIcon Name="save" Size="IconSize.Sm" />
             <span>@Loc["TmDocumentEditor_Save"]</span>
         </button>
@@ -190,7 +191,7 @@
                 aria-disabled="@AriaDisabled(!CanExecuteUndo)"
                 @onclick='() => ExecuteToolbarCommandAsync("undo", OnUndo, !ReadOnly && CanUndo)'
                 data-command="undo"
-                data-testid="document-undo">
+                data-testid="@TestId("document-undo")">
             <TmIcon Name="undo-2" Size="IconSize.Sm" />
             <span>@Loc["TmDocumentEditor_Undo"]</span>
         </button>
@@ -202,7 +203,7 @@
                 aria-disabled="@AriaDisabled(!CanExecuteRedo)"
                 @onclick='() => ExecuteToolbarCommandAsync("redo", OnRedo, !ReadOnly && CanRedo)'
                 data-command="redo"
-                data-testid="document-redo">
+                data-testid="@TestId("document-redo")">
             <TmIcon Name="redo-2" Size="IconSize.Sm" />
             <span>@Loc["TmDocumentEditor_Redo"]</span>
         </button>
@@ -211,7 +212,7 @@
          class="tm-document-editor__ribbon-groups"
          role="tabpanel"
          aria-labelledby="@GetRibbonTabId(_activeRibbonTab)"
-         data-testid="document-ribbon-panel"
+         data-testid="@TestId("document-ribbon-panel")"
          data-active-ribbon-tab="@ActiveRibbonTabDataValue"
          @ref="_ribbonGroupsRef">
         @if (_activeRibbonTab == DocumentRibbonTab.Home)
@@ -226,7 +227,7 @@
                                     @onchange="HandleBlockStyleChangedAsync"
                                     aria-label="@Loc["TmDocumentEditor_BlockStyle"]"
                                     data-command="blockStyle"
-                                    data-testid="document-block-style">
+                                    data-testid="@TestId("document-block-style")">
                                 @if (IsCurrentBlockStyleCustom)
                                 {
                                     <option value="@CurrentBlockStyle">@ResolveCurrentStyleName()</option>
@@ -252,7 +253,7 @@
                                     aria-expanded="@_styleGalleryOpen.ToString().ToLowerInvariant()"
                                     @onclick="ToggleStyleGallery"
                                     data-command="styleGallery"
-                                    data-testid="document-style-gallery-toggle">
+                                    data-testid="@TestId("document-style-gallery-toggle")">
                                 <TmIcon Name="gallery-horizontal-end" Size="IconSize.Sm" />
                                 <span>@Loc["TmDocumentEditor_StyleGallery"]</span>
                             </button>
@@ -261,7 +262,7 @@
                                 <section class="tm-document-style-gallery"
                                          role="dialog"
                                          aria-label="@Loc["TmDocumentEditor_StyleGallery"]"
-                                         data-testid="document-style-gallery"
+                                         data-testid="@TestId("document-style-gallery")"
                                          tabindex="-1"
                                          @ref="_styleGallery"
                                          @onkeydown="HandleStyleGalleryKeyDown"
@@ -289,7 +290,7 @@
                                                step="1"
                                                value="@_styleFontSizeValue"
                                                @oninput="HandleStyleFontSizeInput"
-                                               data-testid="document-style-font-size" />
+                                               data-testid="@TestId("document-style-font-size")" />
                                     </label>
                                     <label class="tm-document-style-gallery__field">
                                         <span>@Loc["TmDocumentEditor_StyleName"]</span>
@@ -297,7 +298,7 @@
                                                value="@_styleNameValue"
                                                @oninput="HandleStyleNameInput"
                                                aria-label="@Loc["TmDocumentEditor_StyleName"]"
-                                               data-testid="document-style-name" />
+                                               data-testid="@TestId("document-style-name")" />
                                     </label>
                                     <label class="tm-document-style-gallery__field">
                                         <span>@Loc["TmDocumentEditor_StyleRenameName"]</span>
@@ -305,7 +306,7 @@
                                                value="@_styleRenameValue"
                                                @oninput="HandleStyleRenameInput"
                                                aria-label="@Loc["TmDocumentEditor_StyleRenameName"]"
-                                               data-testid="document-style-rename-name" />
+                                               data-testid="@TestId("document-style-rename-name")" />
                                     </label>
                                     <div class="tm-document-style-gallery__actions" role="group" aria-label="@Loc["TmDocumentEditor_StyleActions"]">
                                         <button type="button"
@@ -313,7 +314,7 @@
                                                 disabled="@ReadOnly"
                                                 @onclick="ModifyCurrentStyleAsync"
                                                 data-command="modifyStyle"
-                                                data-testid="document-style-modify">
+                                                data-testid="@TestId("document-style-modify")">
                                             <TmIcon Name="wand-sparkles" Size="IconSize.Sm" />
                                             <span>@Loc["TmDocumentEditor_ModifyStyle"]</span>
                                         </button>
@@ -322,7 +323,7 @@
                                                 disabled="@(ReadOnly || string.IsNullOrWhiteSpace(_styleNameValue))"
                                                 @onclick="CreateStyleFromSelectionAsync"
                                                 data-command="createStyleFromSelection"
-                                                data-testid="document-style-create">
+                                                data-testid="@TestId("document-style-create")">
                                             <TmIcon Name="plus" Size="IconSize.Sm" />
                                             <span>@Loc["TmDocumentEditor_CreateStyle"]</span>
                                         </button>
@@ -331,7 +332,7 @@
                                                 disabled="@(ReadOnly || string.IsNullOrWhiteSpace(_styleRenameValue))"
                                                 @onclick="RenameCurrentStyleAsync"
                                                 data-command="renameStyle"
-                                                data-testid="document-style-rename">
+                                                data-testid="@TestId("document-style-rename")">
                                             <TmIcon Name="pencil" Size="IconSize.Sm" />
                                             <span>@Loc["TmDocumentEditor_RenameStyle"]</span>
                                         </button>
@@ -340,7 +341,7 @@
                                                 disabled="@(ReadOnly || IsCurrentStyleBuiltIn)"
                                                 @onclick="DeleteCurrentStyleAsync"
                                                 data-command="deleteStyle"
-                                                data-testid="document-style-delete">
+                                                data-testid="@TestId("document-style-delete")">
                                             <TmIcon Name="trash-2" Size="IconSize.Sm" />
                                             <span>@Loc["TmDocumentEditor_DeleteStyle"]</span>
                                         </button>
@@ -349,7 +350,7 @@
                                                 disabled="@ReadOnly"
                                                 @onclick="ResetStyleFormattingAsync"
                                                 data-command="resetStyleFormatting"
-                                                data-testid="document-style-reset-formatting">
+                                                data-testid="@TestId("document-style-reset-formatting")">
                                             <TmIcon Name="eraser" Size="IconSize.Sm" />
                                             <span>@Loc["TmDocumentEditor_ResetStyleFormatting"]</span>
                                         </button>
@@ -368,7 +369,7 @@
                             aria-label="@Loc["TmDocumentEditor_FontFamily"]"
                             aria-disabled="@AriaDisabled(!IsCommandEnabled("fontFamily"))"
                             @onchange="HandleFontFamilyChangedAsync"
-                            data-testid="document-font-family">
+                            data-testid="@TestId("document-font-family")">
                         <option value="">@Loc["TmDocumentEditor_FontFamilyDefault"]</option>
                         @foreach (var font in FontFamilies)
                         {
@@ -384,7 +385,7 @@
                             aria-label="@Loc["TmDocumentEditor_FontSize"]"
                             aria-disabled="@AriaDisabled(!IsCommandEnabled("fontSize"))"
                             @onchange="HandleFontSizeChangedAsync"
-                            data-testid="document-font-size">
+                            data-testid="@TestId("document-font-size")">
                         @if (FontSizeMixed)
                         {
                             <option value="">@Loc["TmDocumentEditor_MixedFormatting"]</option>
@@ -406,7 +407,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="bold"
-                        data-testid="document-bold">
+                        data-testid="@TestId("document-bold")">
                     <TmIcon Name="bold" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Bold"]</span>
                 </button>
@@ -421,7 +422,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="italic"
-                        data-testid="document-italic">
+                        data-testid="@TestId("document-italic")">
                     <TmIcon Name="italic" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Italic"]</span>
                 </button>
@@ -436,7 +437,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="underline"
-                        data-testid="document-underline">
+                        data-testid="@TestId("document-underline")">
                     <TmIcon Name="underline" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Underline"]</span>
                 </button>
@@ -451,7 +452,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="strikethrough"
-                        data-testid="document-strikethrough">
+                        data-testid="@TestId("document-strikethrough")">
                     <TmIcon Name="strikethrough" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Strikethrough"]</span>
                 </button>
@@ -469,7 +470,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="superscript"
-                        data-testid="document-superscript">
+                        data-testid="@TestId("document-superscript")">
                     <TmIcon Name="superscript" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Superscript"]</span>
                 </button>
@@ -484,7 +485,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="subscript"
-                        data-testid="document-subscript">
+                        data-testid="@TestId("document-subscript")">
                     <TmIcon Name="subscript" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Subscript"]</span>
                 </button>
@@ -499,7 +500,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="smallCaps"
-                        data-testid="document-small-caps">
+                        data-testid="@TestId("document-small-caps")">
                     <TmIcon Name="case-sensitive" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_SmallCaps"]</span>
                 </button>
@@ -514,7 +515,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="allCaps"
-                        data-testid="document-all-caps">
+                        data-testid="@TestId("document-all-caps")">
                     <TmIcon Name="case-upper" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_AllCaps"]</span>
                 </button>
@@ -529,7 +530,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="doubleStrikethrough"
-                        data-testid="document-double-strikethrough">
+                        data-testid="@TestId("document-double-strikethrough")">
                     <TmIcon Name="double-strikethrough" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_DoubleStrikethrough"]</span>
                 </button>
@@ -543,7 +544,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="decreaseFontSize"
-                        data-testid="document-decrease-font-size">
+                        data-testid="@TestId("document-decrease-font-size")">
                     <TmIcon Name="minus" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_DecreaseFontSize"]</span>
                 </button>
@@ -557,7 +558,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="increaseFontSize"
-                        data-testid="document-increase-font-size">
+                        data-testid="@TestId("document-increase-font-size")">
                     <TmIcon Name="plus" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_IncreaseFontSize"]</span>
                 </button>
@@ -574,7 +575,7 @@
                             aria-disabled="@AriaDisabled(!IsCommandEnabled("changeCase"))"
                             @onchange="HandleChangeCaseChangedAsync"
                             data-command="changeCase"
-                            data-testid="document-change-case">
+                            data-testid="@TestId("document-change-case")">
                         <option value="">@Loc["TmDocumentEditor_ChangeCase"]</option>
                         <option value="sentenceCase">@Loc["TmDocumentEditor_CaseSentence"]</option>
                         <option value="lowercase">@Loc["TmDocumentEditor_CaseLowercase"]</option>
@@ -594,7 +595,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="link"
-                        data-testid="document-link">
+                        data-testid="@TestId("document-link")">
                     <TmIcon Name="link" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Link"]</span>
                 </button>
@@ -607,7 +608,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="clearFormatting"
-                        data-testid="document-clear-formatting">
+                        data-testid="@TestId("document-clear-formatting")">
                     <TmIcon Name="eraser" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ClearFormatting"]</span>
                 </button>
@@ -630,7 +631,7 @@
                                    ApplyText="@Loc["TmDocumentEditor_ApplyColor"]"
                                    CancelText="@Loc["TmDocumentEditor_CancelColor"]"
                                    Class="@GetTempoColorPickerClass(TextColorMixed)"
-                                   data-testid="document-font-color-trigger" />
+                                   data-testid="@TestId("document-font-color-trigger")" />
                 </div>
                 <div class="tm-document-editor__ribbon-color-picker"
                      title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_HighlightColor"]))">
@@ -651,7 +652,7 @@
                                    ApplyText="@Loc["TmDocumentEditor_ApplyColor"]"
                                    CancelText="@Loc["TmDocumentEditor_CancelColor"]"
                                    Class="@GetTempoColorPickerClass(HighlightColorMixed)"
-                                   data-testid="document-highlight-color-trigger" />
+                                   data-testid="@TestId("document-highlight-color-trigger")" />
                 </div>
             </section>
 
@@ -664,7 +665,7 @@
                         aria-disabled="@AriaDisabled(!IsCommandEnabled("paragraphAlignment"))"
                         @onclick="() => HandleParagraphAlignmentClickedAsync(DocumentTextAlignment.Left)"
                         data-command="alignLeft"
-                        data-testid="document-align-left">
+                        data-testid="@TestId("document-align-left")">
                     <TmIcon Name="align-left" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_AlignLeft"]</span>
                 </button>
@@ -676,7 +677,7 @@
                         aria-disabled="@AriaDisabled(!IsCommandEnabled("paragraphAlignment"))"
                         @onclick="() => HandleParagraphAlignmentClickedAsync(DocumentTextAlignment.Center)"
                         data-command="alignCenter"
-                        data-testid="document-align-center">
+                        data-testid="@TestId("document-align-center")">
                     <TmIcon Name="align-center" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_AlignCenter"]</span>
                 </button>
@@ -688,7 +689,7 @@
                         aria-disabled="@AriaDisabled(!IsCommandEnabled("paragraphAlignment"))"
                         @onclick="() => HandleParagraphAlignmentClickedAsync(DocumentTextAlignment.Right)"
                         data-command="alignRight"
-                        data-testid="document-align-right">
+                        data-testid="@TestId("document-align-right")">
                     <TmIcon Name="align-right" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_AlignRight"]</span>
                 </button>
@@ -700,7 +701,7 @@
                         aria-disabled="@AriaDisabled(!IsCommandEnabled("paragraphAlignment"))"
                         @onclick="() => HandleParagraphAlignmentClickedAsync(DocumentTextAlignment.Justify)"
                         data-command="alignJustify"
-                        data-testid="document-align-justify">
+                        data-testid="@TestId("document-align-justify")">
                     <TmIcon Name="align-justify" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_AlignJustify"]</span>
                 </button>
@@ -713,7 +714,7 @@
                             aria-label="@Loc["TmDocumentEditor_LineSpacing"]"
                             aria-disabled="@AriaDisabled(!IsCommandEnabled("lineSpacing"))"
                             @onchange="HandleLineSpacingChangedAsync"
-                            data-testid="document-line-spacing">
+                            data-testid="@TestId("document-line-spacing")">
                         @foreach (var spacing in LineSpacingOptions)
                         {
                             <option value="@spacing.ToString("0.##", CultureInfo.InvariantCulture)">@spacing.ToString("0.##", CultureInfo.InvariantCulture)</option>
@@ -728,7 +729,7 @@
                             aria-label="@Loc["TmDocumentEditor_SpacingBefore"]"
                             aria-disabled="@AriaDisabled(!IsCommandEnabled("lineSpacing"))"
                             @onchange="HandleSpacingBeforeChangedAsync"
-                            data-testid="document-spacing-before">
+                            data-testid="@TestId("document-spacing-before")">
                         @if (SpacingBeforeMixed)
                         {
                             <option value="">@Loc["TmDocumentEditor_MixedFormatting"]</option>
@@ -747,7 +748,7 @@
                             aria-label="@Loc["TmDocumentEditor_SpacingAfter"]"
                             aria-disabled="@AriaDisabled(!IsCommandEnabled("lineSpacing"))"
                             @onchange="HandleSpacingAfterChangedAsync"
-                            data-testid="document-spacing-after">
+                            data-testid="@TestId("document-spacing-after")">
                         @if (SpacingAfterMixed)
                         {
                             <option value="">@Loc["TmDocumentEditor_MixedFormatting"]</option>
@@ -764,7 +765,7 @@
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_DecreaseIndent"]))"
                         @onclick="OnDecreaseIndent"
                         data-command="decreaseIndent"
-                        data-testid="document-decrease-indent">
+                        data-testid="@TestId("document-decrease-indent")">
                     <TmIcon Name="indent-decrease" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_DecreaseIndent"]</span>
                 </button>
@@ -774,7 +775,7 @@
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_IncreaseIndent"]))"
                         @onclick="OnIncreaseIndent"
                         data-command="increaseIndent"
-                        data-testid="document-increase-indent">
+                        data-testid="@TestId("document-increase-indent")">
                     <TmIcon Name="indent-increase" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_IncreaseIndent"]</span>
                 </button>
@@ -788,7 +789,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="bulletList"
-                        data-testid="document-bullet-list">
+                        data-testid="@TestId("document-bullet-list")">
                     <TmIcon Name="list" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_BulletedList"]</span>
                 </button>
@@ -802,7 +803,7 @@
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
                         data-command="numberedList"
-                        data-testid="document-numbered-list">
+                        data-testid="@TestId("document-numbered-list")">
                     <TmIcon Name="list-ordered" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_NumberedList"]</span>
                 </button>
@@ -818,7 +819,7 @@
                             disabled="@(!IsCommandEnabled("insertMenu"))"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_Insert"]))"
                             @onclick='() => ExecuteToolbarCommandAsync("insertMenu", OnToggleInsert)'
-                            data-testid="document-insert-menu">
+                            data-testid="@TestId("document-insert-menu")">
                         <TmIcon Name="plus" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_Insert"]</span>
                     </button>
@@ -835,7 +836,7 @@
                                     @onpointerdown:preventDefault="true"
                                     @onmousedown:preventDefault="true"
                                     data-command="insertTable"
-                                    data-testid="document-toolbar-table">
+                                    data-testid="@TestId("document-toolbar-table")">
                                 <TmIcon Name="table" Size="IconSize.Sm" />
                                 <span>@Loc["TmDocumentEditor_InsertTable"]</span>
                             </button>
@@ -859,7 +860,7 @@
                                     aria-expanded="@_imageInsertMenuOpen.ToString().ToLowerInvariant()"
                                     @onclick="ToggleImageInsertMenu"
                                     data-command="insertImage"
-                                    data-testid="document-toolbar-image">
+                                    data-testid="@TestId("document-toolbar-image")">
                                 <TmIcon Name="image" Size="IconSize.Sm" />
                                 <span>@Loc["TmDocumentEditor_InsertImage"]</span>
                             </button>
@@ -870,10 +871,10 @@
                                      aria-label="@Loc["TmDocumentEditor_ImageInsertMenu"]"
                                      @onclick:stopPropagation="true"
                                      @onpointerdown:stopPropagation="true"
-                                     data-testid="document-image-insert-menu">
+                                     data-testid="@TestId("document-image-insert-menu")">
                                     <button type="button"
                                             role="menuitem"
-                                            data-testid="document-image-insert-url"
+                                            data-testid="@TestId("document-image-insert-url")"
                                             @onclick="InsertImageFromUrlAsync">
                                         <TmIcon Name="link" Size="IconSize.Sm" />
                                         <span>@Loc["TmDocumentEditor_ImageInsertUrl"]</span>
@@ -882,7 +883,7 @@
                                             role="menuitem"
                                             disabled="@(!CanUploadImages)"
                                             title="@(CanUploadImages ? Loc["TmDocumentEditor_UploadImage"] : Loc["TmDocumentEditor_ImageProviderMissing"])"
-                                            data-testid="document-image-insert-upload"
+                                            data-testid="@TestId("document-image-insert-upload")"
                                             @onclick="InsertImageFromUploadAsync">
                                         <TmIcon Name="upload" Size="IconSize.Sm" />
                                         <span>@Loc["TmDocumentEditor_UploadImage"]</span>
@@ -892,7 +893,7 @@
                                         <button type="button"
                                                 role="menuitem"
                                                 title="@Loc["TmDocumentEditor_ImageInsertAsset"]"
-                                                data-testid="document-image-insert-asset"
+                                                data-testid="@TestId("document-image-insert-asset")"
                                                 @onclick="InsertImageFromAssetAsync">
                                             <TmIcon Name="images" Size="IconSize.Sm" />
                                             <span>@Loc["TmDocumentEditor_ImageInsertAsset"]</span>
@@ -917,7 +918,7 @@
                                 aria-expanded="@_equationMenuOpen.ToString().ToLowerInvariant()"
                                 @onclick="ToggleEquationMenu"
                                 data-command="insertEquation"
-                                data-testid="document-toolbar-equation">
+                                data-testid="@TestId("document-toolbar-equation")">
                             <TmIcon Name="sigma" Size="IconSize.Sm" />
                             <span>@Loc["TmDocumentEditor_InsertEquation"]</span>
                         </button>
@@ -930,7 +931,7 @@
                                      @ref="_equationMenu"
                                      @onkeydown="HandleEquationMenuKeyDown"
                                      @onkeydown:stopPropagation="true"
-                                     data-testid="document-equation-menu">
+                                     data-testid="@TestId("document-equation-menu")">
                                 <div class="tm-document-equation-menu__group" role="group" aria-label="@Loc["TmDocumentEditor_EquationStructures"]">
                                     @foreach (var item in EquationStructurePaletteItems)
                                     {
@@ -976,7 +977,7 @@
                                 @onpointerdown:preventDefault="true"
                                 @onmousedown:preventDefault="true"
                                 data-command="insertSymbol"
-                                data-testid="document-toolbar-symbol">
+                                data-testid="@TestId("document-toolbar-symbol")">
                             <TmIcon Name="omega" Size="IconSize.Sm" />
                             <span>@Loc["TmDocumentEditor_InsertSymbol"]</span>
                         </button>
@@ -989,7 +990,7 @@
                                      @ref="_symbolMenu"
                                      @onkeydown="HandleSymbolMenuKeyDown"
                                      @onkeydown:stopPropagation="true"
-                                     data-testid="document-symbol-menu">
+                                     data-testid="@TestId("document-symbol-menu")">
                                 <div class="tm-document-symbol-menu__group" role="group" aria-label="@Loc["TmDocumentEditor_SymbolCharacters"]">
                                     @foreach (var item in SymbolPaletteItems)
                                     {
@@ -1027,7 +1028,7 @@
                             @onmousedown:preventDefault="true"
                             @onclick='() => ExecuteToolbarCommandAsync("insertPageBreak", OnInsertPageBreak)'
                             data-command="insertPageBreak"
-                            data-testid="document-insert-page-break">
+                            data-testid="@TestId("document-insert-page-break")">
                         <TmIcon Name="between-horizontal-start" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_PageBreak"]</span>
                     </button>
@@ -1037,7 +1038,7 @@
             {
                 <section class="tm-document-editor__ribbon-group"
                          aria-label="@Loc["TmDocumentEditor_GroupSigning"]"
-                         data-testid="document-signing-group">
+                         data-testid="@TestId("document-signing-group")">
                     <button class="tm-document-editor__ribbon-button"
                             type="button"
                             disabled="@(!IsCommandEnabled("insertSigningField"))"
@@ -1045,7 +1046,7 @@
                             @onmousedown:preventDefault="true"
                             @onclick='() => ExecuteToolbarCommandAsync("insertSigningField", OnInsertSigningField)'
                             data-command="insertSigningField"
-                            data-testid="document-insert-signing-field">
+                            data-testid="@TestId("document-insert-signing-field")">
                         <TmIcon Name="signature" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_InsertSigningField"]</span>
                     </button>
@@ -1064,7 +1065,7 @@
                             aria-expanded="@_pageLayoutInspectorOpen.ToString().ToLowerInvariant()"
                             @onclick="TogglePageLayoutInspector"
                             data-command="pageLayout"
-                            data-testid="document-page-layout">
+                            data-testid="@TestId("document-page-layout")">
                         <TmIcon Name="panel-top" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_PageLayout"]</span>
                     </button>
@@ -1073,14 +1074,14 @@
                         <section class="tm-document-page-layout-inspector"
                                  role="dialog"
                                  aria-label="@Loc["TmDocumentEditor_PageLayout"]"
-                                 data-testid="document-page-layout-inspector"
+                                 data-testid="@TestId("document-page-layout-inspector")"
                                  tabindex="-1"
                                  @ref="_pageLayoutInspector"
                                  @onkeydown="HandlePageLayoutInspectorKeyDown"
                                  @onkeydown:stopPropagation="true"
                                  @onclick:stopPropagation="true">
                             <div class="tm-document-page-layout-inspector__preview"
-                                 data-testid="document-page-layout-preview"
+                                 data-testid="@TestId("document-page-layout-preview")"
                                  data-orientation="@(EffectivePageSettings.Landscape ? "landscape" : "portrait")">
                                 <span></span>
                             </div>
@@ -1088,7 +1089,7 @@
                                 <span>@Loc["TmDocumentEditor_PageSize"]</span>
                                 <select value="@EffectivePageSettings.Size.Name"
                                         @oninput="HandlePageSizeChangedAsync"
-                                        data-testid="document-page-size">
+                                        data-testid="@TestId("document-page-size")">
                                     <option value="A4">A4</option>
                                     <option value="Letter">Letter</option>
                                 </select>
@@ -1101,14 +1102,14 @@
                                             class="@GetPageOrientationButtonClass(false)"
                                             aria-pressed="@((!EffectivePageSettings.Landscape).ToString().ToLowerInvariant())"
                                             @onclick="() => SetPageOrientationAsync(false)"
-                                            data-testid="document-page-orientation-portrait">
+                                            data-testid="@TestId("document-page-orientation-portrait")">
                                         @Loc["TmDocumentEditor_OrientationPortrait"]
                                     </button>
                                     <button type="button"
                                             class="@GetPageOrientationButtonClass(true)"
                                             aria-pressed="@(EffectivePageSettings.Landscape.ToString().ToLowerInvariant())"
                                             @onclick="() => SetPageOrientationAsync(true)"
-                                            data-testid="document-page-orientation-landscape">
+                                            data-testid="@TestId("document-page-orientation-landscape")">
                                         @Loc["TmDocumentEditor_OrientationLandscape"]
                                     </button>
                                 </span>
@@ -1117,7 +1118,7 @@
                                 <span>@Loc["TmDocumentEditor_MarginsPreset"]</span>
                                 <select value="@CurrentMarginPreset"
                                         @oninput="HandleMarginPresetChangedAsync"
-                                        data-testid="document-margin-preset">
+                                        data-testid="@TestId("document-margin-preset")">
                                     <option value="Normal">@Loc["TmDocumentEditor_MarginsNormal"]</option>
                                     <option value="Narrow">@Loc["TmDocumentEditor_MarginsNarrow"]</option>
                                     <option value="Wide">@Loc["TmDocumentEditor_MarginsWide"]</option>
@@ -1127,27 +1128,27 @@
                             <div class="tm-document-page-layout-inspector__grid">
                                 <label>
                                     <span>@Loc["TmDocumentEditor_MarginTop"]</span>
-                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.Margins.Top)" @oninput='args => HandleMarginChangedAsync("Top", args)' data-testid="document-margin-top" />
+                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.Margins.Top)" @oninput='args => HandleMarginChangedAsync("Top", args)' data-testid="@TestId("document-margin-top")" />
                                 </label>
                                 <label>
                                     <span>@Loc["TmDocumentEditor_MarginRight"]</span>
-                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.Margins.Right)" @oninput='args => HandleMarginChangedAsync("Right", args)' data-testid="document-margin-right" />
+                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.Margins.Right)" @oninput='args => HandleMarginChangedAsync("Right", args)' data-testid="@TestId("document-margin-right")" />
                                 </label>
                                 <label>
                                     <span>@Loc["TmDocumentEditor_MarginBottom"]</span>
-                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.Margins.Bottom)" @oninput='args => HandleMarginChangedAsync("Bottom", args)' data-testid="document-margin-bottom" />
+                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.Margins.Bottom)" @oninput='args => HandleMarginChangedAsync("Bottom", args)' data-testid="@TestId("document-margin-bottom")" />
                                 </label>
                                 <label>
                                     <span>@Loc["TmDocumentEditor_MarginLeft"]</span>
-                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.Margins.Left)" @oninput='args => HandleMarginChangedAsync("Left", args)' data-testid="document-margin-left" />
+                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.Margins.Left)" @oninput='args => HandleMarginChangedAsync("Left", args)' data-testid="@TestId("document-margin-left")" />
                                 </label>
                                 <label>
                                     <span>@Loc["TmDocumentEditor_HeaderDistance"]</span>
-                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.HeaderDistanceFromTop)" @oninput="HandleHeaderDistanceChangedAsync" data-testid="document-header-distance" />
+                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.HeaderDistanceFromTop)" @oninput="HandleHeaderDistanceChangedAsync" data-testid="@TestId("document-header-distance")" />
                                 </label>
                                 <label>
                                     <span>@Loc["TmDocumentEditor_FooterDistance"]</span>
-                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.FooterDistanceFromBottom)" @oninput="HandleFooterDistanceChangedAsync" data-testid="document-footer-distance" />
+                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.FooterDistanceFromBottom)" @oninput="HandleFooterDistanceChangedAsync" data-testid="@TestId("document-footer-distance")" />
                                 </label>
                             </div>
                             <fieldset class="tm-document-page-layout-inspector__section">
@@ -1157,7 +1158,7 @@
                                         <span>@Loc["TmDocumentEditor_ColumnCount"]</span>
                                         <select value="@EffectiveSectionColumns.Count.ToString(CultureInfo.InvariantCulture)"
                                                 @oninput="HandleColumnCountChangedAsync"
-                                                data-testid="document-column-count">
+                                                data-testid="@TestId("document-column-count")">
                                             <option value="1">@Loc["TmDocumentEditor_ColumnsOne"]</option>
                                             <option value="2">@Loc["TmDocumentEditor_ColumnsTwo"]</option>
                                             <option value="3">@Loc["TmDocumentEditor_ColumnsThree"]</option>
@@ -1165,13 +1166,13 @@
                                     </label>
                                     <label>
                                         <span>@Loc["TmDocumentEditor_ColumnSpacing"]</span>
-                                        <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectiveSectionColumns.Spacing)" @oninput="HandleColumnSpacingChangedAsync" data-testid="document-column-spacing" />
+                                        <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectiveSectionColumns.Spacing)" @oninput="HandleColumnSpacingChangedAsync" data-testid="@TestId("document-column-spacing")" />
                                     </label>
                                     <label class="tm-document-page-layout-inspector__check">
                                         <input type="checkbox"
                                                checked="@EffectiveSectionColumns.SeparatorLine"
                                                @onchange="HandleColumnSeparatorChangedAsync"
-                                               data-testid="document-column-separator" />
+                                               data-testid="@TestId("document-column-separator")" />
                                         <span>@Loc["TmDocumentEditor_ColumnSeparator"]</span>
                                     </label>
                                 </div>
@@ -1182,27 +1183,27 @@
                                     <input type="checkbox"
                                            checked="@EffectiveLineNumbering.Enabled"
                                            @onchange="HandleLineNumberingEnabledChangedAsync"
-                                           data-testid="document-line-numbering-enabled" />
+                                           data-testid="@TestId("document-line-numbering-enabled")" />
                                     <span>@Loc["TmDocumentEditor_LineNumbersEnabled"]</span>
                                 </label>
                                 <div class="tm-document-page-layout-inspector__grid">
                                     <label>
                                         <span>@Loc["TmDocumentEditor_LineNumbersStartAt"]</span>
-                                        <input type="number" min="1" max="9999" step="1" value="@EffectiveLineNumbering.StartAt.ToString(CultureInfo.InvariantCulture)" @oninput="HandleLineNumberingStartChangedAsync" data-testid="document-line-numbering-start" />
+                                        <input type="number" min="1" max="9999" step="1" value="@EffectiveLineNumbering.StartAt.ToString(CultureInfo.InvariantCulture)" @oninput="HandleLineNumberingStartChangedAsync" data-testid="@TestId("document-line-numbering-start")" />
                                     </label>
                                     <label>
                                         <span>@Loc["TmDocumentEditor_LineNumbersIncrement"]</span>
-                                        <input type="number" min="1" max="100" step="1" value="@EffectiveLineNumbering.Increment.ToString(CultureInfo.InvariantCulture)" @oninput="HandleLineNumberingIncrementChangedAsync" data-testid="document-line-numbering-increment" />
+                                        <input type="number" min="1" max="100" step="1" value="@EffectiveLineNumbering.Increment.ToString(CultureInfo.InvariantCulture)" @oninput="HandleLineNumberingIncrementChangedAsync" data-testid="@TestId("document-line-numbering-increment")" />
                                     </label>
                                     <label>
                                         <span>@Loc["TmDocumentEditor_LineNumbersDistance"]</span>
-                                        <input type="number" min="0" max="72" step="3" value="@FormatPoints(EffectiveLineNumbering.DistanceFromText)" @oninput="HandleLineNumberingDistanceChangedAsync" data-testid="document-line-numbering-distance" />
+                                        <input type="number" min="0" max="72" step="3" value="@FormatPoints(EffectiveLineNumbering.DistanceFromText)" @oninput="HandleLineNumberingDistanceChangedAsync" data-testid="@TestId("document-line-numbering-distance")" />
                                     </label>
                                     <label>
                                         <span>@Loc["TmDocumentEditor_LineNumbersRestart"]</span>
                                         <select value="@EffectiveLineNumbering.Restart.ToString()"
                                                 @oninput="HandleLineNumberingRestartChangedAsync"
-                                                data-testid="document-line-numbering-restart">
+                                                data-testid="@TestId("document-line-numbering-restart")">
                                             <option value="@DocumentLineNumberingRestart.Continuous.ToString()">@Loc["TmDocumentEditor_LineNumbersRestartContinuous"]</option>
                                             <option value="@DocumentLineNumberingRestart.Page.ToString()">@Loc["TmDocumentEditor_LineNumbersRestartPage"]</option>
                                             <option value="@DocumentLineNumberingRestart.Section.ToString()">@Loc["TmDocumentEditor_LineNumbersRestartSection"]</option>
@@ -1220,7 +1221,7 @@
                         aria-pressed="@DifferentFirstPage.ToString().ToLowerInvariant()"
                         @onclick="ToggleDifferentFirstPageAsync"
                         data-command="differentFirstPage"
-                        data-testid="document-different-first-page">
+                        data-testid="@TestId("document-different-first-page")">
                     <TmIcon Name="panel-top" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_DifferentFirstPage"]</span>
                 </button>
@@ -1231,7 +1232,7 @@
                         aria-pressed="@DifferentOddAndEvenPages.ToString().ToLowerInvariant()"
                         @onclick="ToggleDifferentOddEvenAsync"
                         data-command="differentOddEven"
-                        data-testid="document-different-odd-even">
+                        data-testid="@TestId("document-different-odd-even")">
                     <TmIcon Name="layout" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_DifferentOddEven"]</span>
                 </button>
@@ -1248,7 +1249,7 @@
                         @onmousedown:preventDefault="true"
                         @onclick='() => ExecuteToolbarCommandAsync("insertFootnote", OnInsertFootnote)'
                         data-command="insertFootnote"
-                        data-testid="document-insert-footnote">
+                        data-testid="@TestId("document-insert-footnote")">
                     <TmIcon Name="list-plus" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_InsertFootnote"]</span>
                 </button>
@@ -1260,7 +1261,7 @@
                         @onmousedown:preventDefault="true"
                         @onclick='() => ExecuteToolbarCommandAsync("insertEndnote", OnInsertEndnote)'
                         data-command="insertEndnote"
-                        data-testid="document-insert-endnote">
+                        data-testid="@TestId("document-insert-endnote")">
                     <TmIcon Name="list-end" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_InsertEndnote"]</span>
                 </button>
@@ -1272,7 +1273,7 @@
                         @onmousedown:preventDefault="true"
                         @onclick='() => ExecuteToolbarCommandAsync("insertTableOfContents", OnInsertTableOfContents)'
                         data-command="insertTableOfContents"
-                        data-testid="document-insert-toc">
+                        data-testid="@TestId("document-insert-toc")">
                     <TmIcon Name="list" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_TableOfContents"]</span>
                 </button>
@@ -1286,7 +1287,7 @@
                             @onmousedown:preventDefault="true"
                             @onclick='() => ExecuteToolbarCommandAsync("insertCaption", OnInsertCaption)'
                             data-command="insertCaption"
-                            data-testid="document-insert-caption">
+                            data-testid="@TestId("document-insert-caption")">
                         <TmIcon Name="captions" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_InsertCaption"]</span>
                     </button>
@@ -1298,7 +1299,7 @@
                             @onmousedown:preventDefault="true"
                             @onclick='() => ExecuteToolbarCommandAsync("insertCrossReference", OnInsertCrossReference)'
                             data-command="insertCrossReference"
-                            data-testid="document-insert-cross-reference">
+                            data-testid="@TestId("document-insert-cross-reference")">
                         <TmIcon Name="scan-line" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_CrossReference"]</span>
                     </button>
@@ -1310,7 +1311,7 @@
                             @onmousedown:preventDefault="true"
                             @onclick='() => ExecuteToolbarCommandAsync("insertTableOfFigures", OnInsertTableOfFigures)'
                             data-command="insertTableOfFigures"
-                            data-testid="document-insert-table-of-figures">
+                            data-testid="@TestId("document-insert-table-of-figures")">
                         <TmIcon Name="list-tree" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_TableOfFigures"]</span>
                     </button>
@@ -1322,7 +1323,7 @@
                             @onmousedown:preventDefault="true"
                             @onclick='() => ExecuteToolbarCommandAsync("insertBibliography", OnInsertBibliography)'
                             data-command="insertBibliography"
-                            data-testid="document-insert-bibliography">
+                            data-testid="@TestId("document-insert-bibliography")">
                         <TmIcon Name="book-open" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_Bibliography"]</span>
                     </button>
@@ -1334,7 +1335,7 @@
                             @onmousedown:preventDefault="true"
                             @onclick='() => ExecuteToolbarCommandAsync("updateAllFields", OnUpdateFields)'
                             data-command="updateAllFields"
-                            data-testid="document-update-fields">
+                            data-testid="@TestId("document-update-fields")">
                         <TmIcon Name="refresh-ccw" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_UpdateFields"]</span>
                     </button>
@@ -1349,7 +1350,7 @@
                     aria-label="@Loc["TmDocumentEditor_ExportPdfAria"]"
                     @onclick='() => ExecuteToolbarCommandAsync("exportPdf", OnExportPdf, CanExportPdf && !IsExportingPdf)'
                     data-command="exportPdf"
-                    data-testid="document-export-pdf">
+                    data-testid="@TestId("document-export-pdf")">
                     <TmIcon Name="file-down" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ExportPdf"]</span>
                 </button>
@@ -1360,7 +1361,7 @@
                         aria-label="@Loc["TmDocumentEditor_ImportDocxAria"]"
                         @onclick="ToggleDocxImportPanel"
                         data-command="importDocx"
-                        data-testid="document-import-docx-label">
+                        data-testid="@TestId("document-import-docx-label")">
                     <TmIcon Name="upload" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ImportDocx"]</span>
                 </button>
@@ -1371,7 +1372,7 @@
                         aria-label="@Loc["TmDocumentEditor_ExportDocxAria"]"
                         @onclick='() => ExecuteToolbarCommandAsync("exportDocx", OnExportDocx, CanExportDocx && !IsExportingDocx)'
                         data-command="exportDocx"
-                        data-testid="document-export-docx">
+                        data-testid="@TestId("document-export-docx")">
                     <TmIcon Name="file-down" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ExportDocx"]</span>
                 </button>
@@ -1391,7 +1392,7 @@
                         data-command="trackChanges"
                         data-toggle="true"
                         data-state="@TrackChangesState"
-                        data-testid="document-track-changes">
+                        data-testid="@TestId("document-track-changes")">
                     <TmIcon Name="file-diff" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_TrackChanges"]</span>
                 </button>
@@ -1402,7 +1403,7 @@
                             value="@ReviewDisplayMode"
                             aria-disabled="@AriaDisabled(!IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges) || !IsCommandEnabled("reviewDisplayMode", fallback: true))"
                             @onchange="HandleReviewDisplayModeChanged"
-                            data-testid="document-review-display-mode">
+                            data-testid="@TestId("document-review-display-mode")">
                         <option value="@DocumentReviewDisplayMode.AllMarkup">@Loc["TmDocumentEditor_ReviewModeAllMarkup"]</option>
                         <option value="@DocumentReviewDisplayMode.SimpleMarkup">@Loc["TmDocumentEditor_ReviewModeSimpleMarkup"]</option>
                         <option value="@DocumentReviewDisplayMode.NoMarkup">@Loc["TmDocumentEditor_ReviewModeNoMarkup"]</option>
@@ -1415,7 +1416,7 @@
                         title="@(GetCommandTitle(Loc["TmDocumentEditor_AddComment"], CanComment, Loc["TmDocumentEditor_CommandDisabledUnavailable"]))"
                         @onclick='() => ExecuteToolbarCommandAsync("addComment", OnAddComment, CanComment)'
                         data-command="addComment"
-                        data-testid="document-add-comment">
+                        data-testid="@TestId("document-add-comment")">
                     <TmIcon Name="message-square" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_AddComment"]</span>
                 </button>
@@ -1425,7 +1426,7 @@
                         title="@Loc["TmDocumentEditor_OpenComments"]"
                         @onclick='() => IsFeatureEnabled(DocumentEditorFeatureNames.Comments) ? ExecuteToolbarCommandAsync("openComments", OnOpenComments, IsFeatureEnabled(DocumentEditorFeatureNames.Comments)) : Task.CompletedTask'
                         data-command="openComments"
-                        data-testid="document-open-comments">
+                        data-testid="@TestId("document-open-comments")">
                     <TmIcon Name="message-square" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Comments"]</span>
                 </button>
@@ -1435,7 +1436,7 @@
                         title="@Loc["TmDocumentEditor_OpenRevisions"]"
                         @onclick='() => IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges) ? ExecuteToolbarCommandAsync("openRevisions", OnOpenRevisions, IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges)) : Task.CompletedTask'
                         data-command="openRevisions"
-                        data-testid="document-open-revisions">
+                        data-testid="@TestId("document-open-revisions")">
                     <TmIcon Name="file-diff" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Revisions"]</span>
                 </button>
@@ -1446,7 +1447,7 @@
                         aria-label="@(GetCommandTitle(Loc["TmDocumentEditor_CompareDocuments"], CanCompareDocuments, Loc["TmDocumentEditor_CommandDisabledUnavailable"]))"
                         @onclick='() => ExecuteToolbarCommandAsync("compareDocuments", OnCompareDocuments, CanCompareDocuments)'
                         data-command="compareDocuments"
-                        data-testid="document-compare-open">
+                        data-testid="@TestId("document-compare-open")">
                     <TmIcon Name="git-compare" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_CompareDocuments"]</span>
                 </button>
@@ -1456,7 +1457,7 @@
                         title="@Loc["TmDocumentEditor_ProtectDocument"]"
                         aria-pressed="@IsDocumentProtected.ToString().ToLowerInvariant()"
                         @onclick='() => ExecuteToolbarCommandAsync("protectDocument", OnProtectDocument)'
-                        data-testid="document-protect-document"
+                        data-testid="@TestId("document-protect-document")"
                         data-command="protectDocument">
                     <TmIcon Name="lock" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ProtectDocument"]</span>
@@ -1466,7 +1467,7 @@
                         disabled="@(!IsCommandEnabled("markEditableRegion"))"
                         title="@Loc["TmDocumentEditor_MarkEditableRegion"]"
                         @onclick='() => ExecuteToolbarCommandAsync("markEditableRegion", OnMarkEditableRegion)'
-                        data-testid="document-mark-editable-region"
+                        data-testid="@TestId("document-mark-editable-region")"
                         data-command="markEditableRegion">
                     <TmIcon Name="pencil" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_MarkEditableRegion"]</span>
@@ -1482,7 +1483,7 @@
                         aria-pressed="@ShowRuler.ToString().ToLowerInvariant()"
                         @onclick="ToggleRulerAsync"
                         data-command="showRuler"
-                        data-testid="document-toggle-ruler">
+                        data-testid="@TestId("document-toggle-ruler")">
                     <TmIcon Name="ruler" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Ruler"]</span>
                 </button>
@@ -1491,7 +1492,7 @@
                         title="@Loc["TmDocumentEditor_ZoomOut"]"
                         aria-label="@Loc["TmDocumentEditor_ZoomOut"]"
                         @onclick="ZoomOutAsync"
-                        data-testid="document-zoom-out">
+                        data-testid="@TestId("document-zoom-out")">
                     <TmIcon Name="minus" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ZoomOut"]</span>
                 </button>
@@ -1500,7 +1501,7 @@
                         title="@Loc["TmDocumentEditor_Zoom100"]"
                         aria-label="@Loc["TmDocumentEditor_Zoom100"]"
                         @onclick="ZoomTo100Async"
-                        data-testid="document-zoom-100">
+                        data-testid="@TestId("document-zoom-100")">
                     <TmIcon Name="scan-line" Size="IconSize.Sm" />
                     <span>@ZoomPercent%</span>
                 </button>
@@ -1509,7 +1510,7 @@
                         title="@Loc["TmDocumentEditor_ZoomIn"]"
                         aria-label="@Loc["TmDocumentEditor_ZoomIn"]"
                         @onclick="ZoomInAsync"
-                        data-testid="document-zoom-in">
+                        data-testid="@TestId("document-zoom-in")">
                     <TmIcon Name="plus" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ZoomIn"]</span>
                 </button>
@@ -1519,7 +1520,7 @@
                         aria-pressed="@ZoomPageWidth.ToString().ToLowerInvariant()"
                         @onclick="ZoomToPageWidthAsync"
                         data-command="zoomPageWidth"
-                        data-testid="document-zoom-page-width">
+                        data-testid="@TestId("document-zoom-page-width")">
                     <TmIcon Name="maximize-2" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ZoomPageWidth"]</span>
                 </button>
@@ -1529,7 +1530,7 @@
                         title="@Loc["TmDocumentEditor_ShowBlocks"]"
                         aria-pressed="@ShowBlocks.ToString().ToLowerInvariant()"
                         @onclick="OnShowBlocksToggle"
-                        data-testid="document-show-blocks"
+                        data-testid="@TestId("document-show-blocks")"
                         data-command="showBlocks">
                     <TmIcon Name="layout-panel-top" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ShowBlocks"]</span>
@@ -1540,7 +1541,7 @@
                         title="@Loc["TmDocumentEditor_NonPrintingCharacters"]"
                         aria-pressed="@ShowNonPrintingCharacters.ToString().ToLowerInvariant()"
                         @onclick="OnToggleNonPrintingCharacters"
-                        data-testid="document-toggle-nonprinting"
+                        data-testid="@TestId("document-toggle-nonprinting")"
                         data-command="toggleNonPrintingCharacters">
                     <TmIcon Name="pilcrow" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_NonPrintingCharacters"]</span>
@@ -1551,7 +1552,7 @@
                         title="@Loc["TmDocumentEditor_Fullscreen"]"
                         aria-pressed="@IsFullscreen.ToString().ToLowerInvariant()"
                         @onclick="OnFullscreenToggle"
-                        data-testid="document-fullscreen"
+                        data-testid="@TestId("document-fullscreen")"
                         data-command="fullscreen">
                     <TmIcon Name="maximize" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Fullscreen"]</span>
@@ -1564,7 +1565,7 @@
                             title="@Loc["TmDocumentEditor_PrintPreview"]"
                             aria-pressed="@PrintPreviewActive.ToString().ToLowerInvariant()"
                             @onclick='() => ExecuteToolbarCommandAsync("openPrintPreview", OnOpenPrintPreview)'
-                            data-testid="document-open-print-preview"
+                            data-testid="@TestId("document-open-print-preview")"
                             data-command="openPrintPreview">
                         <TmIcon Name="printer" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_PrintPreview"]</span>
@@ -1575,7 +1576,7 @@
                             title="@Loc["TmDocumentEditor_PrintDocumentAria"]"
                             aria-label="@Loc["TmDocumentEditor_PrintDocumentAria"]"
                             @onclick='() => ExecuteToolbarCommandAsync("printDocument", OnPrintDocument)'
-                            data-testid="document-print-document"
+                            data-testid="@TestId("document-print-document")"
                             data-command="printDocument">
                         <TmIcon Name="printer" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_PrintDocument"]</span>
@@ -1587,7 +1588,7 @@
                             type="button"
                             title="@Loc["TmDocumentEditor_ViewDocumentJson"]"
                             @onclick="OnViewDocumentJson"
-                            data-testid="document-view-json"
+                            data-testid="@TestId("document-view-json")"
                             data-command="viewDocumentJson">
                         <TmIcon Name="code" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_ViewDocumentJson"]</span>
@@ -1596,7 +1597,7 @@
                             type="button"
                             title="@Loc["TmDocumentEditor_ViewClipboardHtml"]"
                             @onclick="OnViewClipboardHtml"
-                            data-testid="document-view-clipboard-html"
+                            data-testid="@TestId("document-view-clipboard-html")"
                             data-command="viewClipboardHtml">
                         <TmIcon Name="clipboard" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_ViewClipboardHtml"]</span>
@@ -1610,7 +1611,7 @@
                         disabled="@(!CanPreviewTemplate)"
                         title="@(GetCommandTitle(Loc["TmDocumentEditor_TemplatePreview"], CanPreviewTemplate, Loc["TmDocumentEditor_CommandDisabledUnavailable"]))"
                         @onclick="OnToggleTemplatePreview"
-                        data-testid="document-template-preview">
+                        data-testid="@TestId("document-template-preview")">
                     <TmIcon Name="eye" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_TemplatePreview"]</span>
                 </button>
@@ -1619,13 +1620,13 @@
                         title="@Loc["TmDocumentEditor_OpenVersions"]"
                         @onclick='() => ExecuteToolbarCommandAsync("openVersions", OnOpenVersions)'
                         data-command="openVersions"
-                        data-testid="document-open-versions">
+                        data-testid="@TestId("document-open-versions")">
                     <TmIcon Name="clock" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Versions"]</span>
                 </button>
                 @if (!string.IsNullOrWhiteSpace(TemplatePreviewMessage))
                 {
-                    <span class="tm-document-editor__template-preview-message" data-testid="document-template-preview-message">
+                    <span class="tm-document-editor__template-preview-message" data-testid="@TestId("document-template-preview-message")">
                         @TemplatePreviewMessage
                     </span>
                 }
@@ -1635,7 +1636,7 @@
         {
             <section class="tm-document-editor__ribbon-group tm-document-editor__ribbon-group--scope" aria-label="@Loc["TmDocumentEditor_HeaderFooterScope"]">
                 <span class="tm-document-header-footer-scope"
-                      data-testid="document-header-footer-scope-label">
+                      data-testid="@TestId("document-header-footer-scope-label")">
                     <TmIcon Name="map-pin" Size="IconSize.Sm" />
                     <span>@(string.IsNullOrWhiteSpace(ActiveHeaderFooterScopeLabel) ? Loc["TmDocumentEditor_HeaderFooterScopePrimary"] : ActiveHeaderFooterScopeLabel)</span>
                 </span>
@@ -1651,7 +1652,7 @@
                         aria-pressed="@DifferentFirstPage.ToString().ToLowerInvariant()"
                         @onclick="ToggleDifferentFirstPageAsync"
                         data-command="differentFirstPage"
-                        data-testid="document-header-footer-different-first-page">
+                        data-testid="@TestId("document-header-footer-different-first-page")">
                     <TmIcon Name="panel-top" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_DifferentFirstPage"]</span>
                 </button>
@@ -1662,7 +1663,7 @@
                         aria-pressed="@DifferentOddAndEvenPages.ToString().ToLowerInvariant()"
                         @onclick="ToggleDifferentOddEvenAsync"
                         data-command="differentOddEven"
-                        data-testid="document-header-footer-different-odd-even">
+                        data-testid="@TestId("document-header-footer-different-odd-even")">
                     <TmIcon Name="layout" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_DifferentOddEven"]</span>
                 </button>
@@ -1678,7 +1679,7 @@
                             @onclick="ToggleHeaderFooterFieldMenu"
                             @onmousedown:preventDefault="true"
                             data-command="insertField"
-                            data-testid="document-header-footer-insert-field-menu">
+                            data-testid="@TestId("document-header-footer-insert-field-menu")">
                         <TmIcon Name="braces" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_InsertField"]</span>
                     </button>
@@ -1687,33 +1688,33 @@
                         <div class="tm-document-header-footer-menu"
                              role="menu"
                              aria-label="@Loc["TmDocumentEditor_InsertField"]"
-                             data-testid="document-header-footer-field-menu"
+                             data-testid="@TestId("document-header-footer-field-menu")"
                              tabindex="-1"
                              @ref="_headerFooterFieldMenu"
                              @onkeydown="HandleHeaderFooterMenuKeyDown"
                              @onkeydown:stopPropagation="true"
                              @onclick:stopPropagation="true">
-                            <button type="button" role="menuitem" data-testid="document-header-footer-menu-page-number" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertPageNumber)">
+                            <button type="button" role="menuitem" data-testid="@TestId("document-header-footer-menu-page-number")" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertPageNumber)">
                                 <TmIcon Name="hash" Size="IconSize.Sm" />
                                 <span>@Loc["TmDocumentEditor_PageNumber"]</span>
                             </button>
-                            <button type="button" role="menuitem" data-testid="document-header-footer-menu-page-count" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertPageCount)">
+                            <button type="button" role="menuitem" data-testid="@TestId("document-header-footer-menu-page-count")" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertPageCount)">
                                 <TmIcon Name="files" Size="IconSize.Sm" />
                                 <span>@Loc["TmDocumentEditor_TotalPages"]</span>
                             </button>
-                            <button type="button" role="menuitem" data-testid="document-header-footer-menu-page-x-of-y" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertPageXOfY)">
+                            <button type="button" role="menuitem" data-testid="@TestId("document-header-footer-menu-page-x-of-y")" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertPageXOfY)">
                                 <TmIcon Name="file-stack" Size="IconSize.Sm" />
                                 <span>@Loc["TmDocumentEditor_PageXOfY"]</span>
                             </button>
-                            <button type="button" role="menuitem" data-testid="document-header-footer-menu-date" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertDateField)">
+                            <button type="button" role="menuitem" data-testid="@TestId("document-header-footer-menu-date")" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertDateField)">
                                 <TmIcon Name="calendar-days" Size="IconSize.Sm" />
                                 <span>@Loc["TmDocumentEditor_FieldDate"]</span>
                             </button>
-                            <button type="button" role="menuitem" data-testid="document-header-footer-menu-title" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertDocumentTitleField)">
+                            <button type="button" role="menuitem" data-testid="@TestId("document-header-footer-menu-title")" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertDocumentTitleField)">
                                 <TmIcon Name="file-text" Size="IconSize.Sm" />
                                 <span>@Loc["TmDocumentEditor_DocumentTitle"]</span>
                             </button>
-                            <button type="button" role="menuitem" data-testid="document-header-footer-menu-author" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertAuthorField)">
+                            <button type="button" role="menuitem" data-testid="@TestId("document-header-footer-menu-author")" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertAuthorField)">
                                 <TmIcon Name="user" Size="IconSize.Sm" />
                                 <span>@Loc["TmDocumentEditor_Author"]</span>
                             </button>
@@ -1730,7 +1731,7 @@
                             @onclick="ToggleHeaderFooterPresetMenu"
                             @onmousedown:preventDefault="true"
                             data-command="headerFooterPresets"
-                            data-testid="document-header-footer-preset-menu">
+                            data-testid="@TestId("document-header-footer-preset-menu")">
                         <TmIcon Name="layout-template" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_HeaderFooterPresets"]</span>
                     </button>
@@ -1739,25 +1740,25 @@
                         <div class="tm-document-header-footer-menu tm-document-header-footer-menu--presets"
                              role="menu"
                              aria-label="@Loc["TmDocumentEditor_HeaderFooterPresets"]"
-                             data-testid="document-header-footer-presets-menu"
+                             data-testid="@TestId("document-header-footer-presets-menu")"
                              tabindex="-1"
                              @ref="_headerFooterPresetMenu"
                              @onkeydown="HandleHeaderFooterMenuKeyDown"
                              @onkeydown:stopPropagation="true"
                              @onclick:stopPropagation="true">
-                            <button type="button" role="menuitem" data-testid="document-header-footer-preset-page-number-right-footer" @onclick='() => ApplyHeaderFooterPresetFromMenuAsync("footer-page-number-right")'>
+                            <button type="button" role="menuitem" data-testid="@TestId("document-header-footer-preset-page-number-right-footer")" @onclick='() => ApplyHeaderFooterPresetFromMenuAsync("footer-page-number-right")'>
                                 <span class="tm-document-header-footer-menu__preview tm-document-header-footer-menu__preview--right"></span>
                                 <span>@Loc["TmDocumentEditor_PresetPageNumberRightFooter"]</span>
                             </button>
-                            <button type="button" role="menuitem" data-testid="document-header-footer-preset-page-number-center-footer" @onclick='() => ApplyHeaderFooterPresetFromMenuAsync("footer-page-number-center")'>
+                            <button type="button" role="menuitem" data-testid="@TestId("document-header-footer-preset-page-number-center-footer")" @onclick='() => ApplyHeaderFooterPresetFromMenuAsync("footer-page-number-center")'>
                                 <span class="tm-document-header-footer-menu__preview tm-document-header-footer-menu__preview--center"></span>
                                 <span>@Loc["TmDocumentEditor_PresetPageNumberCenterFooter"]</span>
                             </button>
-                            <button type="button" role="menuitem" data-testid="document-header-footer-preset-title-page-header" @onclick='() => ApplyHeaderFooterPresetFromMenuAsync("header-title-page-number")'>
+                            <button type="button" role="menuitem" data-testid="@TestId("document-header-footer-preset-title-page-header")" @onclick='() => ApplyHeaderFooterPresetFromMenuAsync("header-title-page-number")'>
                                 <span class="tm-document-header-footer-menu__preview tm-document-header-footer-menu__preview--split"></span>
                                 <span>@Loc["TmDocumentEditor_PresetTitlePageHeader"]</span>
                             </button>
-                            <button type="button" role="menuitem" data-testid="document-header-footer-preset-page-x-of-y-right-footer" @onclick='() => ApplyHeaderFooterPresetFromMenuAsync("footer-page-x-of-y-right")'>
+                            <button type="button" role="menuitem" data-testid="@TestId("document-header-footer-preset-page-x-of-y-right-footer")" @onclick='() => ApplyHeaderFooterPresetFromMenuAsync("footer-page-x-of-y-right")'>
                                 <span class="tm-document-header-footer-menu__preview tm-document-header-footer-menu__preview--right"></span>
                                 <span>@Loc["TmDocumentEditor_PresetPageXOfYRightFooter"]</span>
                             </button>
@@ -1771,7 +1772,7 @@
                         @onmousedown:preventDefault="true"
                         @onclick="OnInsertPageNumber"
                         data-command="insertPageNumber"
-                        data-testid="document-header-footer-insert-page-number">
+                        data-testid="@TestId("document-header-footer-insert-page-number")">
                     <TmIcon Name="hash" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_PageNumber"]</span>
                 </button>
@@ -1782,7 +1783,7 @@
                         @onmousedown:preventDefault="true"
                         @onclick="OnInsertPageCount"
                         data-command="insertPageCount"
-                        data-testid="document-header-footer-insert-page-count">
+                        data-testid="@TestId("document-header-footer-insert-page-count")">
                     <TmIcon Name="files" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_TotalPages"]</span>
                 </button>
@@ -1793,7 +1794,7 @@
                         @onmousedown:preventDefault="true"
                         @onclick="OnInsertPageXOfY"
                         data-command="insertPageXOfY"
-                        data-testid="document-header-footer-insert-page-x-of-y">
+                        data-testid="@TestId("document-header-footer-insert-page-x-of-y")">
                     <TmIcon Name="file-stack" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_PageXOfY"]</span>
                 </button>
@@ -1804,7 +1805,7 @@
                         @onmousedown:preventDefault="true"
                         @onclick="OnInsertDateField"
                         data-command="insertDateField"
-                        data-testid="document-header-footer-insert-date">
+                        data-testid="@TestId("document-header-footer-insert-date")">
                     <TmIcon Name="calendar-days" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_FieldDate"]</span>
                 </button>
@@ -1815,7 +1816,7 @@
                         @onmousedown:preventDefault="true"
                         @onclick="OnInsertDocumentTitleField"
                         data-command="insertDocumentTitleField"
-                        data-testid="document-header-footer-insert-title">
+                        data-testid="@TestId("document-header-footer-insert-title")">
                     <TmIcon Name="file-text" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_DocumentTitle"]</span>
                 </button>
@@ -1826,7 +1827,7 @@
                         title="@Loc["TmDocumentEditor_CloseHeaderFooter"]"
                         @onclick="OnCloseHeaderFooter"
                         data-command="closeHeaderFooter"
-                        data-testid="document-close-header-footer">
+                        data-testid="@TestId("document-close-header-footer")">
                     <TmIcon Name="x" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_CloseHeaderFooter"]</span>
                 </button>
@@ -1855,7 +1856,7 @@
                  role="dialog"
                  aria-modal="false"
                  aria-label="@Loc["TmDocumentEditor_Link"]"
-                 data-testid="document-link-dialog"
+                 data-testid="@TestId("document-link-dialog")"
                  @onkeydown="HandleLinkDialogKeyDown"
                  @onkeydown:stopPropagation="true">
             <label>
@@ -1863,20 +1864,20 @@
                 <input @ref="_linkUrlInput"
                        value="@_pendingLinkUrl"
                        @oninput="args => _pendingLinkUrl = args.Value?.ToString()"
-                       data-testid="document-link-url" />
+                       data-testid="@TestId("document-link-url")" />
             </label>
             <label>
                 <span>@Loc["TmDocumentEditor_LinkTitle"]</span>
-                <input value="@_pendingLinkTitle" @oninput="args => _pendingLinkTitle = args.Value?.ToString()" data-testid="document-link-title" />
+                <input value="@_pendingLinkTitle" @oninput="args => _pendingLinkTitle = args.Value?.ToString()" data-testid="@TestId("document-link-title")" />
             </label>
             @if (!string.IsNullOrWhiteSpace(_linkError))
             {
-                <span class="tm-document-editor__link-error" role="alert" data-testid="document-link-error">@_linkError</span>
+                <span class="tm-document-editor__link-error" role="alert" data-testid="@TestId("document-link-error")">@_linkError</span>
             }
-            <button type="button" @onclick="ApplyLinkAsync" data-testid="document-apply-link">@Loc["TmDocumentEditor_ApplyLink"]</button>
+            <button type="button" @onclick="ApplyLinkAsync" data-testid="@TestId("document-apply-link")">@Loc["TmDocumentEditor_ApplyLink"]</button>
             @if (!string.IsNullOrWhiteSpace(_pendingLinkUrl) && OnLinkRemoved.HasDelegate)
             {
-                <button type="button" @onclick="RemoveLinkAsync" data-testid="document-remove-link">@Loc["TmDocumentEditor_RemoveLink"]</button>
+                <button type="button" @onclick="RemoveLinkAsync" data-testid="@TestId("document-remove-link")">@Loc["TmDocumentEditor_RemoveLink"]</button>
             }
             <button type="button" @onclick="CloseLinkDialog">@Loc["TmDocumentEditor_Cancel"]</button>
         </section>
@@ -1885,7 +1886,7 @@
     {
         <section class="tm-document-editor__format-import-panel"
                  aria-label="@Loc["TmDocumentEditor_FormatImportPanelLabel"]"
-                 data-testid="document-import-docx-panel">
+                 data-testid="@TestId("document-import-docx-panel")">
             <TmFileDropZone Multiple="false"
                             MaxFileCount="1"
                             Accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -2378,6 +2379,8 @@
         hash.Add(ShowRuler); hash.Add(ZoomPercent); hash.Add(ZoomPageWidth); hash.Add(CanUploadImages);
         hash.Add(CanBrowseImageAssets); hash.Add(ShowEquationTools); hash.Add(ShowSymbolTools); hash.Add(ShowBlockStyle);
         hash.Add(CurrentBlockStyle); hash.Add(ShowStyleManagement); hash.Add(ShowAdvancedCharacterFormatting);
+        // Inherited from TmComponentBase — both feed rendered data-testid attribute values.
+        hash.Add(DataTestId); hash.Add(TestIdPrefix);
         // Reference parameters by identity (parent hands stable references) + registry version.
         hash.Add(CommandRegistry?.Version ?? -1);
         hash.Add(ReferenceHash(FontFamilies)); hash.Add(ReferenceHash(DisabledFeatures));

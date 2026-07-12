@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.Components.NotionEditor.Services
@@ -125,7 +126,7 @@
                 {
                     <button class="tm-notion-topbar__tool"
                             type="button"
-                            data-testid="notion-audit-open"
+                            data-testid="@TestId("notion-audit-open")"
                             aria-label="@Loc["Notion_Audit_Title"]"
                             title="@Loc["Notion_Audit_Title"]"
                             aria-pressed="@_auditPanelOpen.ToString().ToLowerInvariant()"
@@ -154,7 +155,7 @@
                 {
                     <button class="tm-notion-topbar__tool"
                             type="button"
-                            data-testid="notion-blog-open"
+                            data-testid="@TestId("notion-blog-open")"
                             aria-label="@Loc["Notion_Blog_Title"]"
                             title="@Loc["Notion_Blog_Title"]"
                             aria-pressed="@_blogPanelOpen.ToString().ToLowerInvariant()"
@@ -170,7 +171,7 @@
                 {
                     <button class="tm-notion-topbar__tool"
                             type="button"
-                            data-testid="notion-analytics-open"
+                            data-testid="@TestId("notion-analytics-open")"
                             aria-label="@Loc["Notion_Analytics_Title"]"
                             title="@Loc["Notion_Analytics_Title"]"
                             aria-pressed="@_analyticsPanelOpen.ToString().ToLowerInvariant()"
@@ -300,7 +301,7 @@
             @* ── Page content area ────────────────────────────────────────── *@
             @if (HasSinglePageConfigError)
             {
-                <div class="tm-notion-load-error" role="alert" data-testid="notion-single-page-config-error">
+                <div class="tm-notion-load-error" role="alert" data-testid="@TestId("notion-single-page-config-error")">
                     <svg class="tm-notion-load-error__icon" width="24" height="24" viewBox="0 0 24 24"
                          fill="none" aria-hidden="true">
                         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>

@@ -1,14 +1,15 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.DocumentEditor.Models
 
-<aside class="tm-document-editor__version-panel" aria-label="@Loc["TmDocumentEditor_VersionsLabel"]" data-testid="document-version-panel">
+<aside class="tm-document-editor__version-panel" aria-label="@Loc["TmDocumentEditor_VersionsLabel"]" data-testid="@TestId("document-version-panel")">
     <header class="tm-document-version-panel__header">
         <h3>@Loc["TmDocumentEditor_Versions"]</h3>
         <button type="button"
                 class="tm-document-version-panel__icon-button"
                 title="@Loc["TmDocumentEditor_CloseVersionPanel"]"
                 @onclick="OnClose"
-                data-testid="document-version-panel-close">
+                data-testid="@TestId("document-version-panel-close")">
             <TmIcon Name="x" Size="IconSize.Sm" />
         </button>
     </header>
@@ -17,24 +18,24 @@
             class="tm-document-version-panel__create"
             disabled="@ReadOnly"
             @onclick="OnCreateVersion"
-            data-testid="document-version-create-open">
+            data-testid="@TestId("document-version-create-open")">
         <TmIcon Name="git-commit" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_CreateVersion"]</span>
     </button>
 
     @if (!string.IsNullOrWhiteSpace(StatusMessage))
     {
-        <div class="tm-document-version-panel__status" data-testid="document-version-status">@StatusMessage</div>
+        <div class="tm-document-version-panel__status" data-testid="@TestId("document-version-status")">@StatusMessage</div>
     }
 
     @if (PreviewVersion is not null)
     {
-        <section class="tm-document-version-panel__preview" data-testid="document-version-preview-state">
+        <section class="tm-document-version-panel__preview" data-testid="@TestId("document-version-preview-state")">
             <span>@Loc["TmDocumentEditor_PreviewingVersion", GetVersionTitle(PreviewVersion)]</span>
-            <button type="button" @onclick="OnReturnToCurrent" data-testid="document-version-current">
+            <button type="button" @onclick="OnReturnToCurrent" data-testid="@TestId("document-version-current")">
                 @Loc["TmDocumentEditor_ReturnToCurrentVersion"]
             </button>
-            <button type="button" @onclick="OpenRestoreConfirm" data-testid="document-version-restore">
+            <button type="button" @onclick="OpenRestoreConfirm" data-testid="@TestId("document-version-restore")">
                 @Loc["TmDocumentEditor_RestoreVersion"]
             </button>
         </section>
@@ -42,9 +43,9 @@
 
     @if (_restoreConfirmOpen && PreviewVersion is not null)
     {
-        <section class="tm-document-version-panel__confirm" data-testid="document-version-restore-confirm">
+        <section class="tm-document-version-panel__confirm" data-testid="@TestId("document-version-restore-confirm")">
             <span>@Loc["TmDocumentEditor_RestoreVersionConfirm"]</span>
-            <button type="button" @onclick="ConfirmRestoreAsync" data-testid="document-version-restore-confirm-button">
+            <button type="button" @onclick="ConfirmRestoreAsync" data-testid="@TestId("document-version-restore-confirm-button")">
                 @Loc["TmDocumentEditor_RestoreVersion"]
             </button>
             <button type="button" @onclick="CloseRestoreConfirm">@Loc["TmDocumentEditor_Cancel"]</button>
@@ -53,22 +54,22 @@
 
     @if (IsLoading)
     {
-        <div class="tm-document-version-panel__empty" data-testid="document-version-loading">@Loc["TmDocumentEditor_LoadingVersions"]</div>
+        <div class="tm-document-version-panel__empty" data-testid="@TestId("document-version-loading")">@Loc["TmDocumentEditor_LoadingVersions"]</div>
     }
     else if (OrderedVersions.Count == 0)
     {
-        <div class="tm-document-version-panel__empty" data-testid="document-version-empty">@Loc["TmDocumentEditor_NoVersions"]</div>
+        <div class="tm-document-version-panel__empty" data-testid="@TestId("document-version-empty")">@Loc["TmDocumentEditor_NoVersions"]</div>
     }
     else
     {
-        <ol class="tm-document-version-panel__list" data-testid="document-version-list">
+        <ol class="tm-document-version-panel__list" data-testid="@TestId("document-version-list")">
             @foreach (var version in OrderedVersions)
             {
                 <li>
                     <button type="button"
                             class="tm-document-version-panel__item @(PreviewVersion?.Id == version.Id ? "tm-document-version-panel__item--active" : null)"
                             @onclick="() => SelectVersionAsync(version)"
-                            data-testid="document-version-item">
+                            data-testid="@TestId("document-version-item")">
                         <span class="tm-document-version-panel__item-title">@GetVersionTitle(version)</span>
                         <span class="tm-document-version-panel__item-meta">@GetVersionMeta(version)</span>
                         @if (!string.IsNullOrWhiteSpace(version.Description))
@@ -80,13 +81,13 @@
                         <button type="button"
                                 class="@GetDiffButtonClass(version, true)"
                                 @onclick="() => SelectDiffBase(version)"
-                                data-testid="document-version-diff-base">
+                                data-testid="@TestId("document-version-diff-base")">
                             @Loc["TmDocumentEditor_DiffBase"]
                         </button>
                         <button type="button"
                                 class="@GetDiffButtonClass(version, false)"
                                 @onclick="() => SelectDiffCompare(version)"
-                                data-testid="document-version-diff-compare">
+                                data-testid="@TestId("document-version-diff-compare")">
                             @Loc["TmDocumentEditor_DiffCompare"]
                         </button>
                     </div>

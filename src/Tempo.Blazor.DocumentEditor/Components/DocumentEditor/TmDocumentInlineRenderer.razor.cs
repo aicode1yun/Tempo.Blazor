@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using System.Globalization;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
@@ -6,7 +7,7 @@ using Tempo.Blazor.DocumentEditor.Models;
 namespace Tempo.Blazor.Components.DocumentEditor;
 
 /// <summary>Renders a single inline content run from the document editor model.</summary>
-public partial class TmDocumentInlineRenderer : ComponentBase
+public partial class TmDocumentInlineRenderer : TmComponentBase
 {
     private string? _resolvedDrawingImageUrl;
     private string? _resolvedDrawingAssetId;

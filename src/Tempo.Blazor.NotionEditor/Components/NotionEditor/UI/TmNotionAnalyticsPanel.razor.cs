@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -7,7 +8,7 @@ using Tempo.Blazor.NotionEditor.Models;
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
 /// <summary>Analytics summary panel for the active Notion space and page.</summary>
-public partial class TmNotionAnalyticsPanel : ComponentBase
+public partial class TmNotionAnalyticsPanel : TmComponentBase
 {
     private const int SparklineWidth = 220;
     private const int SparklineHeight = 64;

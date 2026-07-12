@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.NotionEditor.Interfaces;
 
 namespace Tempo.Blazor.Components.NotionEditor.Sidebar;
 
-public partial class TmNotionPageTreeItem : ComponentBase
+public partial class TmNotionPageTreeItem : TmComponentBase
 {
     // ── DI ────────────────────────────────────────────────────────────────────
 

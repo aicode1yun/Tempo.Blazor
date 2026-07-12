@@ -1,4 +1,5 @@
-﻿@namespace Tempo.Blazor.Components.Files
+@namespace Tempo.Blazor.Components.Files
+@inherits Tempo.Blazor.Components.TmComponentBase
 @typeparam TMetadata where TMetadata : class
 @using Tempo.Blazor.Abstractions.Interfaces
 @using Tempo.Blazor.Abstractions.Models
@@ -96,7 +97,7 @@
             }
             @if (ShowVersionHistory && !Disabled && VersioningHook is not null && CanShowVersionHistory())
             {
-                <button type="button" class="tm-file-manager__toolbar-button" data-testid="version-history-button" @onclick="() => OpenVersionHistory(_selectedItems[0])">
+                <button type="button" class="tm-file-manager__toolbar-button" data-testid="@TestId("version-history-button")" @onclick="() => OpenVersionHistory(_selectedItems[0])">
                     <TmIcon Name="clock" />
                     <span>@Loc["TmFileVersion_Title"]</span>
                 </button>
@@ -209,13 +210,13 @@
                             @if (!item.IsDirectory && item.ScanStatus is FileScanStatus.Blocked)
                             {
                                 <span class="tm-file-scan-badge tm-file-scan-badge--blocked"
-                                      data-testid="file-scan-blocked"
+                                      data-testid="@TestId("file-scan-blocked")"
                                       title="@(item.ScanMessage ?? Loc["TmFileScan_Blocked"])">@Loc["TmFileScan_Blocked"]</span>
                             }
                             else if (!item.IsDirectory && item.ScanStatus is FileScanStatus.Pending)
                             {
                                 <span class="tm-file-scan-badge tm-file-scan-badge--pending"
-                                      data-testid="file-scan-pending"
+                                      data-testid="@TestId("file-scan-pending")"
                                       title="@Loc["TmFileScan_Pending"]">@Loc["TmFileScan_Pending"]</span>
                             }
                             @if (_viewMode == DocumentManagerViewMode.List && !item.IsDirectory)
@@ -241,7 +242,7 @@
             <div class="tm-document-manager__modal tm-document-manager__modal--wide" @onclick:stopPropagation>
                 <div class="tm-document-manager__modal-header">
                     <span class="tm-document-manager__modal-title">@_versionHistoryItem.Name</span>
-                    <button type="button" class="tm-document-manager__modal-close" data-testid="version-history-close" @onclick="CloseVersionHistory">
+                    <button type="button" class="tm-document-manager__modal-close" data-testid="@TestId("version-history-close")" @onclick="CloseVersionHistory">
                         <TmIcon Name="x" />
                     </button>
                 </div>

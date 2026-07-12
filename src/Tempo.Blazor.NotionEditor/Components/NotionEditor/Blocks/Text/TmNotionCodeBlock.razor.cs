@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Models;
@@ -10,7 +11,7 @@ namespace Tempo.Blazor.Components.NotionEditor.Blocks.Text;
 /// Uses a dedicated JS keyboard handler (initCodeKeyboardHandler) that handles Tab/Shift+Tab
 /// indentation and Backspace-on-empty — Tab does NOT move focus like other text blocks.
 /// </summary>
-public partial class TmNotionCodeBlock : ComponentBase, IAsyncDisposable
+public partial class TmNotionCodeBlock : TmComponentBase, IAsyncDisposable
 {
     // ── DI ───────────────────────────────────────────────────────────────────
 

@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Dashboard
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Components.Forms
 @using Tempo.Blazor.Interfaces
 @using Tempo.Blazor.Models
@@ -59,7 +60,7 @@
         <div class="tm-dashboard-toolbar-right">
             @if (_isEditMode)
             {
-                <button type="button" class="tm-btn tm-btn-primary" data-testid="dashboard-add-widget" @onclick="OpenWidgetSelector">
+                <button type="button" class="tm-btn tm-btn-primary" data-testid="@TestId("dashboard-add-widget")" @onclick="OpenWidgetSelector">
                     <TmIcon Name="plus" Size="IconSize.Sm" />
                     <span>@Loc["TmDashboard_AddWidget"]</span>
                 </button>
@@ -139,7 +140,7 @@
                 }
                 
                 <button type="button" class="tm-btn tm-btn-secondary"
-                        data-testid="dashboard-edit"
+                        data-testid="@TestId("dashboard-edit")"
                         @onclick="() => EnterEditMode()"
                         title="@Loc["TmDashboard_Edit"]">
                     <TmIcon Name="edit" Size="IconSize.Sm" />

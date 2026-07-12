@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Inputs
+@inherits Tempo.Blazor.Components.TmComponentBase
 
 <div class="tm-input-wrapper @Class">
     @if (!string.IsNullOrEmpty(Label))
@@ -20,7 +21,7 @@
               @oninput="HandleOnInput">@Value</textarea>
     @if (!string.IsNullOrEmpty(Error))
     {
-        <div id="@ErrorId" data-testid="error-message" class="tm-input-error-message" role="alert">@Error</div>
+        <div id="@ErrorId" data-testid="@TestId("error-message")" class="tm-input-error-message" role="alert">@Error</div>
     }
 </div>
 

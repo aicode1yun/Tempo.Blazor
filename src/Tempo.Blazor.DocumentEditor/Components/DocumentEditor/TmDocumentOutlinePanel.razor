@@ -1,23 +1,24 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.DocumentEditor.Services
 
-<aside class="tm-document-outline-panel" data-testid="document-outline-panel" aria-label="@Loc["TmDocumentEditor_Outline"]">
+<aside class="tm-document-outline-panel" data-testid="@TestId("document-outline-panel")" aria-label="@Loc["TmDocumentEditor_Outline"]">
     @if (Outline is null || Outline.Count == 0)
     {
-        <p class="tm-document-outline-panel__empty" data-testid="document-outline-empty">
+        <p class="tm-document-outline-panel__empty" data-testid="@TestId("document-outline-empty")">
             @Loc["TmDocumentEditor_OutlineEmpty"]
         </p>
     }
     else
     {
         <div class="tm-document-outline-panel__minimap"
-             data-testid="document-outline-minimap"
+             data-testid="@TestId("document-outline-minimap")"
              aria-label="@Loc["TmDocumentEditor_Outline"]">
             @foreach (var item in Outline)
             {
                 <button type="button"
                         class="@GetMinimapMarkerClass(item)"
-                        data-testid="document-outline-minimap-marker"
+                        data-testid="@TestId("document-outline-minimap-marker")"
                         data-block-id="@item.BlockId"
                         aria-current="@(IsActive(item) ? "location" : null)"
                         @onclick="() => OnNavigateToBlock.InvokeAsync(item.BlockId)">
@@ -28,7 +29,7 @@
             @foreach (var item in Outline)
             {
                 <li class="tm-document-outline-panel__item tm-document-outline-panel__item--level-@item.Level"
-                    data-testid="document-outline-item"
+                    data-testid="@TestId("document-outline-item")"
                     data-level="@item.Level"
                     data-block-id="@item.BlockId"
                     data-active="@IsActive(item).ToString().ToLowerInvariant()">

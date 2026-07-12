@@ -1,7 +1,8 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Components.Activity
 
-<div class="tm-document-token-menu" data-testid="document-token-menu">
+<div class="tm-document-token-menu" data-testid="@TestId("document-token-menu")">
     <TokenAutocomplete IsVisible="@IsVisible"
                        Tokens="@Tokens"
                        Query="@Query"

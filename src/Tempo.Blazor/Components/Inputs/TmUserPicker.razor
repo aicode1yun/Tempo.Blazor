@@ -1,10 +1,11 @@
 @namespace Tempo.Blazor.Components.Inputs
+@inherits Tempo.Blazor.Components.TmComponentBase
 @typeparam TUser
 @using Microsoft.AspNetCore.Components.Web
 @using Tempo.Blazor.Components.Avatars
 @implements IDisposable
 
-<div class="tm-user-picker @(Disabled ? "tm-user-picker--disabled" : "")" data-testid="tm-user-picker" @attributes="AdditionalAttributes">
+<div class="tm-user-picker @(Disabled ? "tm-user-picker--disabled" : "")" data-testid="@TestId("tm-user-picker")" @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(Label))
     {
         <label class="tm-input-label">@Label</label>
@@ -26,13 +27,13 @@
             @if (!Disabled)
             {
                 <button type="button" class="tm-user-picker__clear" @onclick="HandleClearAsync"
-                        aria-label="@ClearLabel" data-testid="tm-user-picker-clear">&times;</button>
+                        aria-label="@ClearLabel" data-testid="@TestId("tm-user-picker-clear")">&times;</button>
             }
         </div>
     }
     else if (_resolveState == TmPickerFetchState.Transient)
     {
-        <div class="tm-user-picker__transient" role="alert" aria-live="polite" data-testid="tm-user-picker-resolve-transient">
+        <div class="tm-user-picker__transient" role="alert" aria-live="polite" data-testid="@TestId("tm-user-picker-resolve-transient")">
             @if (TransientErrorTemplate is not null)
             {
                 @TransientErrorTemplate(RetryResolveAsync)
@@ -41,7 +42,7 @@
             {
                 <span>@TransientErrorText</span>
                 <button type="button" class="tm-user-picker__retry" @onclick="RetryResolveAsync"
-                        data-testid="tm-user-picker-resolve-retry">@RetryText</button>
+                        data-testid="@TestId("tm-user-picker-resolve-retry")">@RetryText</button>
             }
         </div>
     }
@@ -56,18 +57,18 @@
                    role="combobox"
                    aria-expanded="@(_showResults ? "true" : "false")"
                    aria-autocomplete="list"
-                   data-testid="tm-user-picker-input"
+                   data-testid="@TestId("tm-user-picker-input")"
                    @oninput="HandleSearchInputAsync"
                    @onkeydown="HandleKeyDownAsync"
                    @onblur="HandleBlur" />
 
             @if (_loading)
             {
-                <div class="tm-user-picker__loading" data-testid="tm-user-picker-loading">@LoadingText</div>
+                <div class="tm-user-picker__loading" data-testid="@TestId("tm-user-picker-loading")">@LoadingText</div>
             }
             else if (_showResults && _searchState == TmPickerFetchState.Transient)
             {
-                <div class="tm-user-picker__transient" role="alert" aria-live="polite" data-testid="tm-user-picker-search-transient">
+                <div class="tm-user-picker__transient" role="alert" aria-live="polite" data-testid="@TestId("tm-user-picker-search-transient")">
                     @if (TransientErrorTemplate is not null)
                     {
                         @TransientErrorTemplate(RetrySearchAsync)
@@ -76,19 +77,19 @@
                     {
                         <span>@TransientErrorText</span>
                         <button type="button" class="tm-user-picker__retry" @onclick="RetrySearchAsync"
-                                data-testid="tm-user-picker-search-retry">@RetryText</button>
+                                data-testid="@TestId("tm-user-picker-search-retry")">@RetryText</button>
                     }
                 </div>
             }
             else if (_showResults && _results.Count > 0)
             {
-                <ul class="tm-user-picker__results" role="listbox" data-testid="tm-user-picker-results">
+                <ul class="tm-user-picker__results" role="listbox" data-testid="@TestId("tm-user-picker-results")">
                     @for (var i = 0; i < _results.Count; i++)
                     {
                         var user = _results[i];
                         var active = i == _highlightedIndex;
                         <li class="tm-user-picker__result-item @(active ? "tm-user-picker__result-item--active" : null)"
-                            role="option" aria-selected="@(active ? "true" : "false")" data-testid="tm-user-picker-result-item"
+                            role="option" aria-selected="@(active ? "true" : "false")" data-testid="@TestId("tm-user-picker-result-item")"
                             @onpointerdown="() => HandleSelectAsync(user)" @onpointerdown:preventDefault="true">
                             @if (ItemTemplate is not null)
                             {
@@ -112,7 +113,7 @@
                 }
                 else
                 {
-                    <div class="tm-user-picker__no-results" data-testid="tm-user-picker-no-results">@NoResultsText</div>
+                    <div class="tm-user-picker__no-results" data-testid="@TestId("tm-user-picker-no-results")">@NoResultsText</div>
                 }
             }
         </div>

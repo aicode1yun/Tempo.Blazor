@@ -1,11 +1,12 @@
 @namespace Tempo.Blazor.Components.Diagram
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using System.Globalization
 @using System.Linq
 @using Tempo.Blazor.Components.Diagram.Models
 @using Tempo.Blazor.Components.Diagram.Commands
 
 <div class="tm-diagram-canvas @Class @(IsOnlyEdgeSelected() ? "tm-diagram-canvas--edge-selected" : null)"
-     data-testid="diagram-canvas"
+     data-testid="@TestId("diagram-canvas")"
      tabindex="0"
      @ref="_containerRef"
      @onmousemove="OnCanvasMouseMove"

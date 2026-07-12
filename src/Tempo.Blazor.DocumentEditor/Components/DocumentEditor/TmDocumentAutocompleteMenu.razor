@@ -1,18 +1,19 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.DocumentEditor.Models
 @using Microsoft.AspNetCore.Components.Web
 
 @if (IsVisible)
 {
     <div class="tm-document-autocomplete-menu"
-         data-testid="document-autocomplete-menu"
+         data-testid="@TestId("document-autocomplete-menu")"
          role="listbox"
          aria-busy="@IsLoading.ToString().ToLowerInvariant()"
          @onkeydown="HandleKeyDownAsync">
         @if (!string.IsNullOrWhiteSpace(ErrorMessage))
         {
             <div class="tm-document-autocomplete-menu__message tm-document-autocomplete-menu__message--error"
-                 data-testid="document-autocomplete-error"
+                 data-testid="@TestId("document-autocomplete-error")"
                  role="alert">
                 @ErrorMessage
             </div>
@@ -20,14 +21,14 @@
         else if (IsLoading)
         {
             <div class="tm-document-autocomplete-menu__message"
-                 data-testid="document-autocomplete-loading">
+                 data-testid="@TestId("document-autocomplete-loading")">
                 @ResolvedLoadingText
             </div>
         }
         else if (Items.Count == 0)
         {
             <div class="tm-document-autocomplete-menu__message"
-                 data-testid="document-autocomplete-empty">
+                 data-testid="@TestId("document-autocomplete-empty")">
                 @ResolvedEmptyText
             </div>
         }
@@ -40,7 +41,7 @@
                 var selected = index == HighlightedIndex;
                 <button type="button"
                         class="@ItemClass(selected, item)"
-                        data-testid="document-autocomplete-item"
+                        data-testid="@TestId("document-autocomplete-item")"
                         role="option"
                         aria-selected="@selected.ToString().ToLowerInvariant()"
                         @onclick="() => SelectItemAsync(item)">

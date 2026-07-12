@@ -1,9 +1,10 @@
 @namespace Tempo.Blazor.Components.Diagram
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Components.Diagram.Models
 @using Tempo.Blazor.Components.Diagram.Stencils
 @inject DiagramStencilRegistry StencilRegistry
 
-<div class="tm-diagram-toolbox @Class" data-testid="diagram-toolbox" data-collapsed="@_collapsed" @ref="_containerRef">
+<div class="tm-diagram-toolbox @Class" data-testid="@TestId("diagram-toolbox")" data-collapsed="@_collapsed" @ref="_containerRef">
     <button type="button" class="tm-diagram-toolbox__toggle" @onclick="ToggleCollapse"
             aria-label="@Loc["TmDiagramToolbox_Toggle"]" title="@Loc["TmDiagramToolbox_Toggle"]">
         <TmIcon Name="@(_collapsed ? IconNames.ChevronRight : IconNames.ChevronLeft)" />

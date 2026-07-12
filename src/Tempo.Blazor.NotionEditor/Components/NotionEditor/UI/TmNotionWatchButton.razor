@@ -1,13 +1,14 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Components.Icons
 @using Tempo.Blazor.NotionEditor.Interfaces
 
 @if (Provider is not null && !string.IsNullOrWhiteSpace(PageId) && !string.IsNullOrWhiteSpace(UserId))
 {
-    <div class="tm-notion-watch @(_watching ? "tm-notion-watch--active" : "")" data-testid="notion-watch-button">
+    <div class="tm-notion-watch @(_watching ? "tm-notion-watch--active" : "")" data-testid="@TestId("notion-watch-button")">
         <button type="button"
                 class="tm-notion-watch__toggle"
-                data-testid="notion-watch-toggle"
+                data-testid="@TestId("notion-watch-toggle")"
                 aria-pressed="@_watching"
                 aria-label="@ToggleLabel"
                 title="@ToggleLabel"
@@ -21,7 +22,7 @@
         {
             <label class="tm-notion-watch__children" title="@Loc["Notion_Watch_IncludeChildren"]">
                 <input type="checkbox"
-                       data-testid="notion-watch-include-children"
+                       data-testid="@TestId("notion-watch-include-children")"
                        checked="@_includeChildren"
                        disabled="@_busy"
                        @onchange="ToggleIncludeChildrenAsync" />

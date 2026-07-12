@@ -1,18 +1,19 @@
 @namespace Tempo.Blazor.Components.Files
+@inherits Tempo.Blazor.Components.TmComponentBase
 
 @if (Uploads is { Count: > 0 })
 {
-    <ul class="tm-upload-progress" data-testid="tm-upload-progress" role="list">
+    <ul class="tm-upload-progress" data-testid="@TestId("tm-upload-progress")" role="list">
         @foreach (var upload in Uploads)
         {
             var item = upload;
             <li class="tm-upload-progress__item tm-upload-progress__item--@StateModifier(item.State)"
-                data-testid="upload-item"
+                data-testid="@TestId("upload-item")"
                 data-state="@item.State.ToString().ToLowerInvariant()"
                 role="listitem">
                 <div class="tm-upload-progress__head">
                     <span class="tm-upload-progress__name" title="@item.FileName">@item.FileName</span>
-                    <span class="tm-upload-progress__status" data-testid="upload-status">@StateLabel(item)</span>
+                    <span class="tm-upload-progress__status" data-testid="@TestId("upload-status")">@StateLabel(item)</span>
                 </div>
 
                 <div class="tm-upload-progress__track"
@@ -25,7 +26,7 @@
                 </div>
 
                 <div class="tm-upload-progress__foot">
-                    <span class="tm-upload-progress__pct" data-testid="upload-percent">@item.Percent%</span>
+                    <span class="tm-upload-progress__pct" data-testid="@TestId("upload-percent")">@item.Percent%</span>
                     @if (!string.IsNullOrEmpty(item.Message))
                     {
                         <span class="tm-upload-progress__msg">@item.Message</span>
@@ -35,7 +36,7 @@
                         {
                             <button type="button"
                                     class="tm-upload-progress__action tm-upload-progress__action--cancel"
-                                    data-testid="upload-cancel"
+                                    data-testid="@TestId("upload-cancel")"
                                     @onclick="() => OnCancel.InvokeAsync(item)">
                                 @Loc["TmUpload_Cancel"]
                             </button>
@@ -44,7 +45,7 @@
                         {
                             <button type="button"
                                     class="tm-upload-progress__action tm-upload-progress__action--resume"
-                                    data-testid="upload-resume"
+                                    data-testid="@TestId("upload-resume")"
                                     @onclick="() => OnResume.InvokeAsync(item)">
                                 @Loc["TmUpload_Resume"]
                             </button>
@@ -53,7 +54,7 @@
                         {
                             <button type="button"
                                     class="tm-upload-progress__action tm-upload-progress__action--dismiss"
-                                    data-testid="upload-dismiss"
+                                    data-testid="@TestId("upload-dismiss")"
                                     aria-label="@Loc["TmUpload_Dismiss"]"
                                     @onclick="() => OnDismiss.InvokeAsync(item)">
                                 ×

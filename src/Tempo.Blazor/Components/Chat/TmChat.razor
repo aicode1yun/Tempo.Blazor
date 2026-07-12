@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Chat
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Models
 
 <div class="tm-chat @Class" @attributes="AdditionalAttributes">
@@ -56,12 +57,12 @@
     <!-- Thread panel -->
     @if (EnableThreads && ActiveThreadRoot is { } threadRoot)
     {
-        <aside class="tm-chat__thread-panel" data-testid="chat-thread-panel">
+        <aside class="tm-chat__thread-panel" data-testid="@TestId("chat-thread-panel")">
             <div class="tm-chat__thread-header">
                 <span class="tm-chat__thread-title">@Loc["TmChat_ThreadTitle"]</span>
                 <button type="button"
                         class="tm-chat__thread-close"
-                        data-testid="chat-thread-close"
+                        data-testid="@TestId("chat-thread-close")"
                         aria-label="@Loc["TmChat_ThreadClose"]"
                         @onclick="CloseThreadAsync">
                     <TmIcon Name="x" Size="IconSize.Sm" />
@@ -80,7 +81,7 @@
             <div class="tm-chat__thread-input-area">
                 <textarea class="tm-chat__input tm-chat__thread-input"
                           rows="1"
-                          data-testid="chat-thread-input"
+                          data-testid="@TestId("chat-thread-input")"
                           placeholder="@Loc["TmChat_ReplyPlaceholder"]"
                           disabled="@Disabled"
                           @bind="_threadInput"
@@ -88,7 +89,7 @@
                           @onkeydown="HandleThreadKeyDownAsync"></textarea>
                 <button type="button"
                         class="tm-chat__send-btn"
-                        data-testid="chat-thread-send"
+                        data-testid="@TestId("chat-thread-send")"
                         disabled="@(Disabled || string.IsNullOrWhiteSpace(_threadInput))"
                         aria-label="@Loc["TmChat_Send"]"
                         @onclick="SendThreadReplyAsync">
@@ -141,13 +142,13 @@
                     <span class="tm-chat__message-time">@FormatTimestamp(message.Timestamp)</span>
                     @if (message.IsEdited && !message.IsDeleted)
                     {
-                        <span class="tm-chat__edited" data-testid="chat-edited-@message.Id">@Loc["TmChat_Edited"]</span>
+                        <span class="tm-chat__edited" data-testid="@TestId($"chat-edited-{message.Id}")">@Loc["TmChat_Edited"]</span>
                     }
                 </div>
 
                 @if (message.IsDeleted)
                 {
-                    <div class="tm-chat__text tm-chat__text--deleted" data-testid="chat-deleted-@message.Id">
+                    <div class="tm-chat__text tm-chat__text--deleted" data-testid="@TestId($"chat-deleted-{message.Id}")">
                         <TmIcon Name="slash" Size="IconSize.Sm" />
                         <span>@Loc["TmChat_Deleted"]</span>
                     </div>
@@ -157,13 +158,13 @@
                     <div class="tm-chat__edit">
                         <textarea class="tm-chat__input tm-chat__edit-input"
                                   rows="1"
-                                  data-testid="chat-edit-input"
+                                  data-testid="@TestId("chat-edit-input")"
                                   @bind="_editText"
                                   @bind:event="oninput"
                                   @onkeydown="HandleEditKeyDownAsync"></textarea>
                         <div class="tm-chat__edit-actions">
-                            <button type="button" class="tm-chat__edit-save" data-testid="chat-edit-save" @onclick="CommitEditAsync">@Loc["TmChat_Save"]</button>
-                            <button type="button" class="tm-chat__edit-cancel" data-testid="chat-edit-cancel" @onclick="CancelEdit">@Loc["TmChat_Cancel"]</button>
+                            <button type="button" class="tm-chat__edit-save" data-testid="@TestId("chat-edit-save")" @onclick="CommitEditAsync">@Loc["TmChat_Save"]</button>
+                            <button type="button" class="tm-chat__edit-cancel" data-testid="@TestId("chat-edit-cancel")" @onclick="CancelEdit">@Loc["TmChat_Cancel"]</button>
                         </div>
                     </div>
                 }
@@ -214,7 +215,7 @@
                             var r = reaction;
                             <button type="button"
                                     class="@GetReactionChipClass(r)"
-                                    data-testid="chat-reaction-@message.Id"
+                                    data-testid="@TestId($"chat-reaction-{message.Id}")"
                                     data-emoji="@r.Emoji"
                                     @onclick="() => ToggleReactionAsync(message.Id, r.Emoji)">
                                 <span class="tm-chat__reaction-emoji">@r.Emoji</span>
@@ -228,7 +229,7 @@
                 {
                     <button type="button"
                             class="tm-chat__thread-badge"
-                            data-testid="chat-thread-open-@message.Id"
+                            data-testid="@TestId($"chat-thread-open-{message.Id}")"
                             @onclick="() => OpenThreadAsync(message)">
                         <TmIcon Name="message-circle" Size="IconSize.Sm" />
                         <span>@string.Format(Loc["TmChat_ReplyCount"], ReplyCountOf(message))</span>
@@ -237,7 +238,7 @@
 
                 @if (ShowReadReceipts && IsCurrentUser(message.Author) && !message.IsDeleted && OtherReaders(message).Count > 0)
                 {
-                    <div class="tm-chat__receipts" data-testid="chat-receipts-@message.Id" title="@GetReceiptsText(message)">
+                    <div class="tm-chat__receipts" data-testid="@TestId($"chat-receipts-{message.Id}")" title="@GetReceiptsText(message)">
                         <TmIcon Name="check-check" Size="IconSize.Sm" />
                         <span class="tm-chat__receipts-text">@GetReceiptsText(message)</span>
                     </div>
@@ -248,28 +249,28 @@
                     <div class="tm-chat__actions">
                         @if (CanReact)
                         {
-                            <button type="button" class="tm-chat__action" data-testid="chat-react-@message.Id"
+                            <button type="button" class="tm-chat__action" data-testid="@TestId($"chat-react-{message.Id}")"
                                     aria-label="@Loc["TmChat_React"]" @onclick="() => TogglePicker(message.Id)">
                                 <TmIcon Name="smile" Size="IconSize.Sm" />
                             </button>
                         }
                         @if (!inThread && CanReplyInThread)
                         {
-                            <button type="button" class="tm-chat__action" data-testid="chat-reply-@message.Id"
+                            <button type="button" class="tm-chat__action" data-testid="@TestId($"chat-reply-{message.Id}")"
                                     aria-label="@Loc["TmChat_Reply"]" @onclick="() => OpenThreadAsync(message)">
                                 <TmIcon Name="message-circle" Size="IconSize.Sm" />
                             </button>
                         }
                         @if (CanEditMessage(message))
                         {
-                            <button type="button" class="tm-chat__action" data-testid="chat-edit-@message.Id"
+                            <button type="button" class="tm-chat__action" data-testid="@TestId($"chat-edit-{message.Id}")"
                                     aria-label="@Loc["TmChat_Edit"]" @onclick="() => StartEdit(message)">
                                 <TmIcon Name="pencil" Size="IconSize.Sm" />
                             </button>
                         }
                         @if (CanDeleteMessage(message))
                         {
-                            <button type="button" class="tm-chat__action tm-chat__action--danger" data-testid="chat-delete-@message.Id"
+                            <button type="button" class="tm-chat__action tm-chat__action--danger" data-testid="@TestId($"chat-delete-{message.Id}")"
                                     aria-label="@Loc["TmChat_Delete"]" @onclick="() => DeleteAsync(message)">
                                 <TmIcon Name="trash" Size="IconSize.Sm" />
                             </button>
@@ -278,12 +279,12 @@
 
                     @if (_pickerForId == message.Id)
                     {
-                        <div class="tm-chat__emoji-picker" data-testid="chat-emoji-picker">
+                        <div class="tm-chat__emoji-picker" data-testid="@TestId("chat-emoji-picker")">
                             @for (var i = 0; i < ReactionEmojis.Count; i++)
                             {
                                 var emoji = ReactionEmojis[i];
                                 var idx = i;
-                                <button type="button" class="tm-chat__emoji" data-testid="chat-emoji-@message.Id-@idx"
+                                <button type="button" class="tm-chat__emoji" data-testid="@TestId($"chat-emoji-{message.Id}-{idx}")"
                                         @onclick="() => ToggleReactionAsync(message.Id, emoji)">@emoji</button>
                             }
                         </div>

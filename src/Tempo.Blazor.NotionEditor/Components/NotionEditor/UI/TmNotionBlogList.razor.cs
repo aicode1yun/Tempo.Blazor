@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -6,7 +7,7 @@ using Tempo.Blazor.NotionEditor.Models;
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
 /// <summary>Chronological blog list and post reader for a Notion space.</summary>
-public partial class TmNotionBlogList : ComponentBase
+public partial class TmNotionBlogList : TmComponentBase
 {
     /// <summary>Blog provider used to query and mutate posts.</summary>
     [Parameter, EditorRequired] public INotionBlogProvider BlogProvider { get; set; } = default!;

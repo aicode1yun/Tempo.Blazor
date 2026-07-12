@@ -18,7 +18,7 @@ public enum PdfViewMode
 /// A reusable PDF viewer component powered by PDF.js v5.
 /// Supports page navigation, zoom, rotation, text layer, thumbnails, search, and continuous scroll.
 /// </summary>
-public partial class TmPdfViewer : ComponentBase, IAsyncDisposable
+public partial class TmPdfViewer : TmComponentBase, IAsyncDisposable
 {
     // ── DI ───────────────────────────────────────────────────────────────────
 

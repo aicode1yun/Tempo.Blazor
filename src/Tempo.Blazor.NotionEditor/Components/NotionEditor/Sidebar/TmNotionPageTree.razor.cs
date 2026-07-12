@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Interfaces;
 
 namespace Tempo.Blazor.Components.NotionEditor.Sidebar;
 
-public partial class TmNotionPageTree : ComponentBase
+public partial class TmNotionPageTree : TmComponentBase
 {
     internal enum BulkAction
     {

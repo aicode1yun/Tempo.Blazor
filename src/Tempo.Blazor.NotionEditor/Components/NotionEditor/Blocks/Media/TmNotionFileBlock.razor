@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Blocks.Media
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.Components.NotionEditor.UI
 
@@ -35,7 +36,7 @@
                 @if (Context?.FileProvider != null)
                 {
                     <div class="tm-notion-drop-overlay @(_isDragging ? "tm-notion-drop-overlay--active" : "")"
-                         data-testid="drop-overlay"
+                         data-testid="@TestId("drop-overlay")"
                          aria-hidden="true">
                         <span>@Loc["TmNotionFileBlock_DropToUpload"]</span>
                     </div>

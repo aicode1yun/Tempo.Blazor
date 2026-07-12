@@ -1,9 +1,10 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.DocumentEditor.Models
 
 <aside class="tm-document-editor__comment-rail"
-       data-testid="document-comment-rail"
+       data-testid="@TestId("document-comment-rail")"
        aria-label="@Loc["TmDocumentEditor_CommentsLabel"]">
     <header class="tm-document-comment-rail__header">
         <div>
@@ -13,7 +14,7 @@
         @if (CanComment)
         {
             <button type="button"
-                    data-testid="document-comment-new"
+                    data-testid="@TestId("document-comment-new")"
                     disabled="@(!CanStartComment || IsBusy)"
                     @onclick="OnBeginComment">
                 @Loc["TmDocumentEditor_NewComment"]
@@ -21,13 +22,13 @@
         }
     </header>
 
-    <div class="tm-document-comment-rail__controls" data-testid="document-comment-controls">
+    <div class="tm-document-comment-rail__controls" data-testid="@TestId("document-comment-controls")">
         <label class="tm-document-comment-rail__field">
             <span>@Loc["TmDocumentEditor_CommentFilter"]</span>
             <select value="@Filter"
                     disabled="@IsBusy"
                     @onchange="HandleFilterChangedAsync"
-                    data-testid="document-comment-filter">
+                    data-testid="@TestId("document-comment-filter")">
                 <option value="@DocumentCommentFilter.All">@Loc["TmDocumentEditor_CommentFilterAll"]</option>
                 <option value="@DocumentCommentFilter.Open">@Loc["TmDocumentEditor_CommentFilterOpen"]</option>
                 <option value="@DocumentCommentFilter.Resolved">@Loc["TmDocumentEditor_CommentFilterResolved"]</option>
@@ -39,7 +40,7 @@
             <select value="@SortMode"
                     disabled="@IsBusy"
                     @onchange="HandleSortChangedAsync"
-                    data-testid="document-comment-sort">
+                    data-testid="@TestId("document-comment-sort")">
                 <option value="@DocumentCommentSortMode.Position">@Loc["TmDocumentEditor_CommentSortPosition"]</option>
                 <option value="@DocumentCommentSortMode.Time">@Loc["TmDocumentEditor_CommentSortTime"]</option>
             </select>
@@ -48,14 +49,14 @@
 
     @if (!string.IsNullOrWhiteSpace(StatusMessage))
     {
-        <div class="tm-document-comment-rail__status" data-testid="document-comment-status-message">
+        <div class="tm-document-comment-rail__status" data-testid="@TestId("document-comment-status-message")">
             @StatusMessage
         </div>
     }
 
     @if (IsLoading)
     {
-        <div class="tm-document-comment-rail__loading" data-testid="document-comment-loading">
+        <div class="tm-document-comment-rail__loading" data-testid="@TestId("document-comment-loading")">
             @Loc["TmDocumentEditor_LoadingComments"]
         </div>
     }
@@ -63,7 +64,7 @@
     {
         @if (ComposerOpen && DraftAnchor is not null)
         {
-            <section class="tm-document-comment-rail__composer" data-testid="document-comment-new-composer">
+            <section class="tm-document-comment-rail__composer" data-testid="@TestId("document-comment-new-composer")">
                 <span class="tm-document-comment-rail__anchor">@GetAnchorLabel(DraftAnchor)</span>
                 <TmDocumentCommentComposer CanComment="@CanComment"
                                            IsBusy="@IsBusy"
@@ -77,13 +78,13 @@
 
         @if (VisibleComments.Count == 0)
         {
-            <div class="tm-document-comment-rail__empty" data-testid="document-comment-empty">
+            <div class="tm-document-comment-rail__empty" data-testid="@TestId("document-comment-empty")">
                 @Loc["TmDocumentEditor_NoComments"]
             </div>
         }
         else
         {
-            <div class="tm-document-comment-rail__list" data-testid="document-comment-list">
+            <div class="tm-document-comment-rail__list" data-testid="@TestId("document-comment-list")">
                 @foreach (var comment in VisibleComments)
                 {
                     <TmDocumentCommentThread Comment="@comment"

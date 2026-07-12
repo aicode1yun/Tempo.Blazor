@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Models;
@@ -8,7 +9,7 @@ using Tempo.Blazor.Models;
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
 /// <summary>Filterable audit log panel for Notion workspace actions.</summary>
-public partial class TmNotionAuditLogPanel : ComponentBase
+public partial class TmNotionAuditLogPanel : TmComponentBase
 {
     private static readonly IReadOnlyList<string> AvailableActions = ["create", "edit", "delete", "move", "restrict"];
     private const int DefaultPageSize = 10;

@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @using Tempo.Blazor.Components.DocumentEditor.Registry
@@ -7,13 +8,13 @@
 
 @if (IsOpen && VisibleCommands.Count > 0)
 {
-    <div class="tm-command-palette-backdrop tm-document-command-palette" data-testid="document-command-palette">
+    <div class="tm-command-palette-backdrop tm-document-command-palette" data-testid="@TestId("document-command-palette")">
         <div @ref="_dialog"
              class="tm-command-palette"
              role="dialog"
              aria-modal="true"
              aria-label="@Loc["TmCommandPalette_Placeholder"]"
-             data-testid="document-command-palette-dialog">
+             data-testid="@TestId("document-command-palette-dialog")">
             <div class="tm-command-palette-header">
                 <input class="tm-command-palette-input"
                        @ref="_searchInput"
@@ -24,12 +25,12 @@
                        placeholder="@Loc["TmCommandPalette_Placeholder"]"
                        aria-label="@Loc["TmCommandPalette_Placeholder"]"
                        autocomplete="off"
-                       data-testid="document-command-palette-search" />
+                       data-testid="@TestId("document-command-palette-search")" />
                 <button class="tm-command-palette-close"
                         type="button"
                         aria-label="@Loc["TmDocumentEditor_FindClose"]"
                         @onclick="CloseAsync"
-                        data-testid="document-command-palette-close">
+                        data-testid="@TestId("document-command-palette-close")">
                     <TmIcon Name="x" Size="IconSize.Sm" />
                 </button>
             </div>
@@ -46,7 +47,7 @@
                         id="@GetOptionId(index)"
                         aria-selected="@selected.ToString().ToLowerInvariant()"
                         data-command="@command.Name"
-                        data-testid="document-command-palette-item">
+                        data-testid="@TestId("document-command-palette-item")">
                         <button type="button"
                                 disabled="@(!command.IsEnabled)"
                                 tabindex="@(selected ? "0" : "-1")"
@@ -68,7 +69,7 @@
                             }
                             @if (!command.IsEnabled)
                             {
-                                <span class="tm-command-palette-description" data-testid="document-command-palette-disabled-reason">
+                                <span class="tm-command-palette-description" data-testid="@TestId("document-command-palette-disabled-reason")">
                                     @GetDisabledReason(command)
                                 </span>
                             }
@@ -78,7 +79,7 @@
             </ul>
             @if (!FilteredCommands.Any())
             {
-                <div class="tm-command-palette-empty" data-testid="document-command-palette-empty">
+                <div class="tm-command-palette-empty" data-testid="@TestId("document-command-palette-empty")">
                     @Loc["TmCommandPalette_NoResults"]
                 </div>
             }

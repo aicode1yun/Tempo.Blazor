@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
 /// <summary>Read-only blog post detail that reuses the Notion block renderer.</summary>
-public partial class TmNotionBlogPost : ComponentBase
+public partial class TmNotionBlogPost : TmComponentBase
 {
     /// <summary>Blog post to render.</summary>
     [Parameter, EditorRequired] public NotionBlogPostDto Post { get; set; } = default!;

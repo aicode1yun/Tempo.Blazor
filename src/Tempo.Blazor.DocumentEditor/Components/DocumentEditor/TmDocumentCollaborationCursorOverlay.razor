@@ -1,17 +1,18 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.DocumentEditor.Models
 
 @if (Cursors.Count > 0)
 {
     <div class="tm-document-cursors"
          aria-label="@Loc["TmDocumentEditor_CollaborationCursorsLabel"]"
-         data-testid="document-collaboration-cursors">
+         data-testid="@TestId("document-collaboration-cursors")">
         @foreach (var cursor in Cursors)
         {
             <span class="tm-document-cursor"
                   style="@GetCursorStyle(cursor)"
                   data-block-id="@cursor.BlockId"
-                  data-testid="document-collaboration-cursor">
+                  data-testid="@TestId("document-collaboration-cursor")">
                 <span class="tm-document-cursor__bar"></span>
                 <span class="tm-document-cursor__label">@GetLabel(cursor)</span>
             </span>

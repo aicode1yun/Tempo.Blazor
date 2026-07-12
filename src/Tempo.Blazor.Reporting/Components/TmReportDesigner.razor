@@ -1,9 +1,10 @@
 @namespace Tempo.Blazor.Reporting.Components
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using System.Globalization
 @using Tempo.Blazor.Reporting.Models
 @using Tempo.Reporting.Abstractions.Definitions
 
-<div class="@CssClass" data-testid="tm-report-designer" @attributes="AdditionalAttributes">
+<div class="@CssClass" data-testid="@TestId("tm-report-designer")" @attributes="AdditionalAttributes">
     <header class="tm-report-designer__topbar">
         <div>
             <p class="tm-report-designer__eyebrow">@Loc["TmReportDesigner_Label"]</p>
@@ -12,17 +13,17 @@
         <div class="tm-report-designer__topbar-actions">
             <label class="tm-report-designer__select-field">
                 <span>@Loc["TmReportDesigner_Zoom"]</span>
-                <select data-testid="tm-designer-zoom" value="@_zoomPercent" @onchange="HandleZoomChanged">
+                <select data-testid="@TestId("tm-designer-zoom")" value="@_zoomPercent" @onchange="HandleZoomChanged">
                     <option value="75">75%</option>
                     <option value="100">100%</option>
                     <option value="125">125%</option>
                     <option value="150">150%</option>
                 </select>
             </label>
-            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.Undo2" AriaLabel="@Loc["TmReportDesigner_Undo"]" Disabled="@(!_undoStack.Any())" data-testid="tm-designer-undo" OnClick="Undo" />
-            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.Redo2" AriaLabel="@Loc["TmReportDesigner_Redo"]" Disabled="@(!_redoStack.Any())" data-testid="tm-designer-redo" OnClick="Redo" />
-            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.Copy" AriaLabel="@Loc["TmReportDesigner_Copy"]" Disabled="@(_selectedElementIds.Count == 0)" data-testid="tm-designer-copy" OnClick="CopySelected" />
-            <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@IconNames.Settings" data-testid="tm-designer-page-setup-toggle" OnClick="TogglePageSetup">
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.Undo2" AriaLabel="@Loc["TmReportDesigner_Undo"]" Disabled="@(!_undoStack.Any())" data-testid="@TestId("tm-designer-undo")" OnClick="Undo" />
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.Redo2" AriaLabel="@Loc["TmReportDesigner_Redo"]" Disabled="@(!_redoStack.Any())" data-testid="@TestId("tm-designer-redo")" OnClick="Redo" />
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.Copy" AriaLabel="@Loc["TmReportDesigner_Copy"]" Disabled="@(_selectedElementIds.Count == 0)" data-testid="@TestId("tm-designer-copy")" OnClick="CopySelected" />
+            <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@IconNames.Settings" data-testid="@TestId("tm-designer-page-setup-toggle")" OnClick="TogglePageSetup">
                 @Loc["TmReportDesigner_PageSetup"]
             </TmButton>
         </div>
@@ -44,22 +45,22 @@
 
     @if (_pageSetupOpen)
     {
-        <section class="tm-report-designer__page-setup" data-testid="tm-designer-page-setup">
+        <section class="tm-report-designer__page-setup" data-testid="@TestId("tm-designer-page-setup")">
             <label>
                 <span>@Loc["TmReportDesigner_PageWidth"]</span>
-                <input data-testid="tm-designer-page-width" type="number" value="@_definition.PageSetup.PageSize.Width.ToString(CultureInfo.InvariantCulture)" @onchange="HandlePageWidthChanged" />
+                <input data-testid="@TestId("tm-designer-page-width")" type="number" value="@_definition.PageSetup.PageSize.Width.ToString(CultureInfo.InvariantCulture)" @onchange="HandlePageWidthChanged" />
             </label>
             <label>
                 <span>@Loc["TmReportDesigner_PageHeight"]</span>
-                <input data-testid="tm-designer-page-height" type="number" value="@_definition.PageSetup.PageSize.Height.ToString(CultureInfo.InvariantCulture)" @onchange="HandlePageHeightChanged" />
+                <input data-testid="@TestId("tm-designer-page-height")" type="number" value="@_definition.PageSetup.PageSize.Height.ToString(CultureInfo.InvariantCulture)" @onchange="HandlePageHeightChanged" />
             </label>
             <label>
                 <span>@Loc["TmReportDesigner_Margins"]</span>
-                <input data-testid="tm-designer-page-margin" type="number" value="@_definition.PageSetup.Margins.Left.ToString(CultureInfo.InvariantCulture)" @onchange="HandleMarginChanged" />
+                <input data-testid="@TestId("tm-designer-page-margin")" type="number" value="@_definition.PageSetup.Margins.Left.ToString(CultureInfo.InvariantCulture)" @onchange="HandleMarginChanged" />
             </label>
             <label>
                 <span>@Loc["TmReportDesigner_Orientation"]</span>
-                <select data-testid="tm-designer-page-orientation" value="@_definition.PageSetup.Orientation.ToString()" @onchange="HandleOrientationChanged">
+                <select data-testid="@TestId("tm-designer-page-orientation")" value="@_definition.PageSetup.Orientation.ToString()" @onchange="HandleOrientationChanged">
                     <option value="Portrait">@Loc["TmReportDesigner_Portrait"]</option>
                     <option value="Landscape">@Loc["TmReportDesigner_Landscape"]</option>
                 </select>
@@ -70,25 +71,25 @@
     <div class="tm-report-designer__body">
         @if (_activeTab == "design")
         {
-            <aside class="tm-report-designer__palette" data-testid="tm-designer-palette">
+            <aside class="tm-report-designer__palette" data-testid="@TestId("tm-designer-palette")">
                 <h3>@Loc["TmReportDesigner_Palette"]</h3>
-                <button type="button" data-testid="tm-designer-add-textbox" @onclick="AddTextBox">
+                <button type="button" data-testid="@TestId("tm-designer-add-textbox")" @onclick="AddTextBox">
                     <TmIcon Name="@IconNames.FileText" Size="IconSize.Sm" />
                     <span>@Loc["TmReportDesigner_TextBox"]</span>
                 </button>
-                <button type="button" data-testid="tm-designer-add-image" @onclick="AddImage">
+                <button type="button" data-testid="@TestId("tm-designer-add-image")" @onclick="AddImage">
                     <TmIcon Name="@IconNames.Image" Size="IconSize.Sm" />
                     <span>@Loc["TmReportDesigner_Image"]</span>
                 </button>
-                <button type="button" data-testid="tm-designer-add-shape" @onclick="AddShape">
+                <button type="button" data-testid="@TestId("tm-designer-add-shape")" @onclick="AddShape">
                     <TmIcon Name="@IconNames.Square" Size="IconSize.Sm" />
                     <span>@Loc["TmReportDesigner_Shape"]</span>
                 </button>
-                <button type="button" data-testid="tm-designer-add-table" @onclick="AddTable">
+                <button type="button" data-testid="@TestId("tm-designer-add-table")" @onclick="AddTable">
                     <TmIcon Name="@IconNames.Table" Size="IconSize.Sm" />
                     <span>@Loc["TmReportDesigner_Table"]</span>
                 </button>
-                <button type="button" data-testid="tm-designer-add-chart" @onclick="AddChart">
+                <button type="button" data-testid="@TestId("tm-designer-add-chart")" @onclick="AddChart">
                     <TmIcon Name="@IconNames.BarChart2" Size="IconSize.Sm" />
                     <span>@Loc["TmReportDesigner_Chart"]</span>
                 </button>
@@ -157,10 +158,10 @@
     private RenderFragment RenderCanvas()
         => @<main class="tm-report-designer__canvas-shell">
             <div class="tm-report-designer__ruler tm-report-designer__ruler--top"></div>
-            <div class="tm-report-designer__canvas-scroll" data-testid="tm-designer-canvas-scroll">
+            <div class="tm-report-designer__canvas-scroll" data-testid="@TestId("tm-designer-canvas-scroll")">
                 <div class="tm-report-designer__page"
                      style="@PageStyle"
-                     data-testid="tm-designer-canvas">
+                     data-testid="@TestId("tm-designer-canvas")">
                     @foreach (var band in DesignerBands())
                     {
                         <section class="tm-report-designer__band"
@@ -203,7 +204,7 @@
         </button>;
 
     private RenderFragment RenderProperties()
-        => @<aside class="tm-report-designer__properties" data-testid="tm-designer-properties">
+        => @<aside class="tm-report-designer__properties" data-testid="@TestId("tm-designer-properties")">
             <h3>@Loc["TmReportDesigner_Properties"]</h3>
             @if (SelectedElement is null)
             {
@@ -232,28 +233,28 @@
                 {
                     <label>
                         <span>@Loc["TmReportDesigner_Text"]</span>
-                        <input data-testid="tm-designer-property-text" value="@(text.Text ?? text.Expression ?? string.Empty)" @onchange="HandleTextPropertyChanged" />
+                        <input data-testid="@TestId("tm-designer-property-text")" value="@(text.Text ?? text.Expression ?? string.Empty)" @onchange="HandleTextPropertyChanged" />
                     </label>
                 }
                 @if (SelectedElement is ReportChartElement chart)
                 {
                     @RenderChartProperties(chart)
                 }
-                <div class="tm-report-designer__validation-note" data-testid="tm-designer-property-validation">
+                <div class="tm-report-designer__validation-note" data-testid="@TestId("tm-designer-property-validation")">
                     @ValidateElement(SelectedElement)
                 </div>
             }
         </aside>;
 
     private RenderFragment RenderChartProperties(ReportChartElement chart)
-        => @<div class="tm-report-designer__chart-properties" data-testid="tm-designer-chart-properties">
+        => @<div class="tm-report-designer__chart-properties" data-testid="@TestId("tm-designer-chart-properties")">
             <label>
                 <span>@Loc["TmReportDesigner_ChartTitle"]</span>
-                <input data-testid="tm-designer-chart-title" value="@(chart.Title ?? string.Empty)" @onchange="HandleChartTitleChanged" />
+                <input data-testid="@TestId("tm-designer-chart-title")" value="@(chart.Title ?? string.Empty)" @onchange="HandleChartTitleChanged" />
             </label>
             <label>
                 <span>@Loc["TmReportDesigner_ChartType"]</span>
-                <select data-testid="tm-designer-chart-type" value="@chart.ChartType.ToString()" @onchange="HandleChartTypeChanged">
+                <select data-testid="@TestId("tm-designer-chart-type")" value="@chart.ChartType.ToString()" @onchange="HandleChartTypeChanged">
                     @foreach (var type in Enum.GetValues<ReportChartType>())
                     {
                         <option value="@type.ToString()">@ChartTypeLabel(type)</option>
@@ -262,7 +263,7 @@
             </label>
             <label>
                 <span>@Loc["TmReportDesigner_ChartDataset"]</span>
-                <select data-testid="tm-designer-chart-dataset" value="@chart.DataSetName" @onchange="HandleChartDataSetChanged">
+                <select data-testid="@TestId("tm-designer-chart-dataset")" value="@chart.DataSetName" @onchange="HandleChartDataSetChanged">
                     @foreach (var dataSet in _definition.DataSets)
                     {
                         <option value="@dataSet.Name">@dataSet.Name</option>
@@ -271,29 +272,29 @@
             </label>
             <label>
                 <span>@Loc["TmReportDesigner_ChartSeries"]</span>
-                <input data-testid="tm-designer-chart-series-name" value="@PrimarySeries(chart).Name" @onchange="HandleChartSeriesNameChanged" />
+                <input data-testid="@TestId("tm-designer-chart-series-name")" value="@PrimarySeries(chart).Name" @onchange="HandleChartSeriesNameChanged" />
             </label>
             <label>
                 <span>@Loc["TmReportDesigner_ChartCategoryExpression"]</span>
-                <input data-testid="tm-designer-chart-category-expression" value="@PrimarySeries(chart).CategoryExpression" @onchange="HandleChartCategoryExpressionChanged" />
+                <input data-testid="@TestId("tm-designer-chart-category-expression")" value="@PrimarySeries(chart).CategoryExpression" @onchange="HandleChartCategoryExpressionChanged" />
             </label>
             <label>
                 <span>@Loc["TmReportDesigner_ChartValueExpression"]</span>
-                <input data-testid="tm-designer-chart-value-expression" value="@PrimarySeries(chart).ValueExpression" @onchange="HandleChartValueExpressionChanged" />
+                <input data-testid="@TestId("tm-designer-chart-value-expression")" value="@PrimarySeries(chart).ValueExpression" @onchange="HandleChartValueExpressionChanged" />
             </label>
             <label>
                 <span>@Loc["TmReportDesigner_ChartColor"]</span>
-                <input data-testid="tm-designer-chart-color" type="color" value="@(PrimarySeries(chart).Color ?? DefaultChartPalette[0])" @onchange="HandleChartColorChanged" />
+                <input data-testid="@TestId("tm-designer-chart-color")" type="color" value="@(PrimarySeries(chart).Color ?? DefaultChartPalette[0])" @onchange="HandleChartColorChanged" />
             </label>
             <label class="tm-report-designer__checkbox">
-                <input data-testid="tm-designer-chart-legend" type="checkbox" checked="@chart.ShowLegend" @onchange="HandleChartLegendChanged" />
+                <input data-testid="@TestId("tm-designer-chart-legend")" type="checkbox" checked="@chart.ShowLegend" @onchange="HandleChartLegendChanged" />
                 <span>@Loc["TmReportDesigner_ChartLegend"]</span>
             </label>
             @RenderChartPreview(chart)
         </div>;
 
     private RenderFragment RenderChartPreview(ReportChartElement chart)
-        => @<div class="tm-report-designer__chart-preview" data-testid="tm-designer-chart-preview">
+        => @<div class="tm-report-designer__chart-preview" data-testid="@TestId("tm-designer-chart-preview")">
             <svg viewBox="0 0 160 96" role="img" aria-label="@Loc["TmReportDesigner_ChartPreview"]">
                 @if (chart.ChartType is ReportChartType.Pie or ReportChartType.Donut)
                 {
@@ -332,7 +333,7 @@
         </div>;
 
     private RenderFragment RenderDataPanel()
-        => @<section class="tm-report-designer__data" data-testid="tm-designer-data-panel">
+        => @<section class="tm-report-designer__data" data-testid="@TestId("tm-designer-data-panel")">
             <div class="tm-report-designer__data-column">
                 <h3>@Loc["TmReportDesigner_FieldList"]</h3>
                 @foreach (var dataSet in _definition.DataSets)
@@ -383,9 +384,9 @@
                 <h3>@Loc["TmReportDesigner_ExpressionEditor"]</h3>
                 <label>
                     <span>@Loc["TmReportDesigner_Expression"]</span>
-                    <input data-testid="tm-designer-expression-input" value="@_expressionDraft" @onchange="HandleExpressionDraftChanged" />
+                    <input data-testid="@TestId("tm-designer-expression-input")" value="@_expressionDraft" @onchange="HandleExpressionDraftChanged" />
                 </label>
-                <div class="tm-report-designer__completion-list" data-testid="tm-designer-completions">
+                <div class="tm-report-designer__completion-list" data-testid="@TestId("tm-designer-completions")">
                     @foreach (var completion in ExpressionCompletions())
                     {
                         <button type="button" @onclick="() => ApplyCompletion(completion)">@completion</button>
@@ -393,14 +394,14 @@
                 </div>
                 @if (!string.IsNullOrWhiteSpace(_expressionError))
                 {
-                    <div class="tm-report-designer__expression-error" data-testid="tm-designer-expression-error">@_expressionError</div>
+                    <div class="tm-report-designer__expression-error" data-testid="@TestId("tm-designer-expression-error")">@_expressionError</div>
                 }
             </div>
         </section>;
 
     private RenderFragment RenderPreviewPanel()
-        => @<section class="tm-report-designer__preview-panel" data-testid="tm-designer-preview-panel">
-            <div class="tm-report-designer__preview" data-testid="tm-designer-preview">
+        => @<section class="tm-report-designer__preview-panel" data-testid="@TestId("tm-designer-preview-panel")">
+            <div class="tm-report-designer__preview" data-testid="@TestId("tm-designer-preview")">
                 <div class="tm-report-designer__preview-page">
                     <h3>@_definition.Name</h3>
                     @foreach (var band in DesignerBands())
@@ -415,7 +416,7 @@
                     }
                 </div>
             </div>
-            <aside class="tm-report-designer__validation-panel" data-testid="tm-designer-validation-panel">
+            <aside class="tm-report-designer__validation-panel" data-testid="@TestId("tm-designer-validation-panel")">
                 <h3>@Loc["TmReportDesigner_Validation"]</h3>
                 @foreach (var message in ValidateDefinition())
                 {
@@ -425,10 +426,10 @@
             <aside class="tm-report-designer__save-panel">
                 <h3>@Loc["TmReportDesigner_Revisions"]</h3>
                 <p>@Loc["TmReportDesigner_CurrentRevision", _revision]</p>
-                <TmButton Variant="ButtonVariant.Secondary" Icon="@IconNames.Save" data-testid="tm-designer-save-draft" OnClick="SaveDraft">
+                <TmButton Variant="ButtonVariant.Secondary" Icon="@IconNames.Save" data-testid="@TestId("tm-designer-save-draft")" OnClick="SaveDraft">
                     @Loc["TmReportDesigner_SaveDraft"]
                 </TmButton>
-                <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Upload" data-testid="tm-designer-publish" OnClick="Publish">
+                <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Upload" data-testid="@TestId("tm-designer-publish")" OnClick="Publish">
                     @Loc["TmReportDesigner_Publish"]
                 </TmButton>
             </aside>

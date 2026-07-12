@@ -1,14 +1,15 @@
 @using Tempo.Blazor.Modeling
+@inherits Tempo.Blazor.Components.TmComponentBase
 
 <section class="@RootClass"
-         data-testid="modeling-inspector"
+         data-testid="@TestId("modeling-inspector")"
          data-kind="@Kind"
          data-selected-element-id="@(Element?.Id ?? string.Empty)"
          data-selected-relationship-id="@(Relationship?.Id ?? string.Empty)"
          aria-label="@Loc["TmModelingInspector_Title"]">
     @if (Element is null && Relationship is null)
     {
-        <div class="tm-modeling-inspector__empty" data-testid="modeling-inspector-empty">
+        <div class="tm-modeling-inspector__empty" data-testid="@TestId("modeling-inspector-empty")">
             <strong>@Loc["TmModelingInspector_EmptyTitle"]</strong>
             <span>@Loc["TmModelingInspector_EmptyText"]</span>
         </div>
@@ -23,7 +24,7 @@
 
         @if (Element is not null)
         {
-            <div data-testid="modeling-inspector-selected-element">
+            <div data-testid="@TestId("modeling-inspector-selected-element")">
                 @RenderSummary()
                 @RenderDescription(Element.Description)
                 @RenderGovernance(Element.Governance)
@@ -32,8 +33,8 @@
         }
         else if (Relationship is not null)
         {
-            <div data-testid="modeling-inspector-selected-relationship">
-                <div class="tm-modeling-inspector__relationship-flow" data-testid="modeling-inspector-relationship-flow">
+            <div data-testid="@TestId("modeling-inspector-selected-relationship")">
+                <div class="tm-modeling-inspector__relationship-flow" data-testid="@TestId("modeling-inspector-relationship-flow")">
                     <span>@DisplaySourceName</span>
                     <strong aria-hidden="true">→</strong>
                     <span>@DisplayTargetName</span>

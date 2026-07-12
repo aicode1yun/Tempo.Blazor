@@ -1,21 +1,22 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.DocumentEditor.Models
 
 @if (Comment is not null)
 {
     <article class="@ThreadClass"
-             data-testid="document-comment-thread"
+             data-testid="@TestId("document-comment-thread")"
              data-comment-id="@Comment.Id"
              @onclick="SelectAsync">
         <header class="tm-document-comment-thread__header">
             <button type="button"
                     class="tm-document-comment-thread__title"
-                    data-testid="document-comment-thread-select"
+                    data-testid="@TestId("document-comment-thread-select")"
                     @onclick="SelectAsync">
                 @AnchorLabel
             </button>
-            <span class="tm-document-comment-thread__status" data-testid="document-comment-status">
+            <span class="tm-document-comment-thread__status" data-testid="@TestId("document-comment-status")">
                 @(Comment.Status == DocumentCommentStatus.Resolved
                     ? Loc["TmDocumentEditor_CommentResolved"]
                     : Loc["TmDocumentEditor_CommentOpen"])
@@ -24,17 +25,17 @@
 
         @if (IsCollapsed)
         {
-            <div class="tm-document-comment-thread__collapsed" data-testid="document-comment-thread-collapsed">
+            <div class="tm-document-comment-thread__collapsed" data-testid="@TestId("document-comment-thread-collapsed")">
                 <p>@CollapsedPreview</p>
                 <div class="tm-document-comment-thread__actions">
                     <button type="button"
-                            data-testid="document-comment-expand"
+                            data-testid="@TestId("document-comment-expand")"
                             @onclick:stopPropagation="true"
                             @onclick="ExpandAsync">
                         @Loc["TmDocumentEditor_ExpandComment"]
                     </button>
                     <button type="button"
-                            data-testid="document-comment-reopen"
+                            data-testid="@TestId("document-comment-reopen")"
                             disabled="@(!CanResolve || IsBusy)"
                             @onclick:stopPropagation="true"
                             @onclick="ReopenAsync">
@@ -45,11 +46,11 @@
         }
         else
         {
-            <div class="tm-document-comment-thread__expanded" data-testid="document-comment-thread-expanded">
+            <div class="tm-document-comment-thread__expanded" data-testid="@TestId("document-comment-thread-expanded")">
                 <div class="tm-document-comment-thread__entries">
                     @foreach (var entry in Comment.Entries.OrderBy(item => item.CreatedAt))
                     {
-                        <section class="@GetEntryClass(entry)" data-testid="document-comment-entry">
+                        <section class="@GetEntryClass(entry)" data-testid="@TestId("document-comment-entry")">
                             <div class="tm-document-comment-entry__meta">
                                 <strong>@GetAuthorName(entry.Author)</strong>
                                 <time class="tm-document-comment-entry__time"
@@ -64,7 +65,7 @@
                                 {
                                     <button type="button"
                                             class="tm-document-comment-entry__edit"
-                                            data-testid="document-comment-edit"
+                                            data-testid="@TestId("document-comment-edit")"
                                             @onclick:stopPropagation="true"
                                             @onclick="() => BeginEdit(entry)">
                                         @Loc["TmDocumentEditor_EditComment"]
@@ -98,7 +99,7 @@
                     @if (Comment.Status == DocumentCommentStatus.Open)
                     {
                         <button type="button"
-                                data-testid="document-comment-resolve"
+                                data-testid="@TestId("document-comment-resolve")"
                                 disabled="@(!CanResolve || IsBusy)"
                                 @onclick="ResolveAsync">
                             @Loc["TmDocumentEditor_ResolveComment"]
@@ -107,7 +108,7 @@
                     else
                     {
                         <button type="button"
-                                data-testid="document-comment-reopen"
+                                data-testid="@TestId("document-comment-reopen")"
                                 disabled="@(!CanResolve || IsBusy)"
                                 @onclick="ReopenAsync">
                             @Loc["TmDocumentEditor_ReopenComment"]
@@ -116,7 +117,7 @@
                     @if (CanDeleteThread)
                     {
                         <button type="button"
-                                data-testid="document-comment-delete"
+                                data-testid="@TestId("document-comment-delete")"
                                 disabled="@IsBusy"
                                 @onclick:stopPropagation="true"
                                 @onclick="DeleteAsync">

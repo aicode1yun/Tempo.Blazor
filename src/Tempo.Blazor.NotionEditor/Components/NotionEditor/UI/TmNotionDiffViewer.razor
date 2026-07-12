@@ -1,9 +1,10 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Enums
 @using Tempo.Blazor.NotionEditor.Models
 
 <section class="tm-ndv tm-ndv--@ModeClass"
-         data-testid="notion-diff-viewer"
+         data-testid="@TestId("notion-diff-viewer")"
          aria-label="@Loc["TmNotionDiffViewer_Label"]">
     @if (Loading)
     {

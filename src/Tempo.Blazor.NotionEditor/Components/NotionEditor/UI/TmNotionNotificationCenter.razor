@@ -1,34 +1,35 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.Components.Icons
 @implements IDisposable
 
 <div class="tm-notification-bell tm-notion-notifications @Class @(_hasNew ? "tm-notification-bell--pulse" : "")"
-     data-testid="notion-notification-center"
+     data-testid="@TestId("notion-notification-center")"
      @attributes="AdditionalAttributes">
     <button type="button"
             class="tm-notification-bell__button tm-notion-notifications__button"
-            data-testid="notion-notification-toggle"
+            data-testid="@TestId("notion-notification-toggle")"
             aria-label="@AriaLabelText"
             title="@AriaLabelText"
             @onclick="ToggleAsync">
         <TmIcon Name="@IconNames.Bell" Size="IconSize.Sm" />
         @if (BadgeCount > 0)
         {
-            <span class="tm-notification-bell__badge" data-testid="notion-notification-badge">@BadgeCount</span>
+            <span class="tm-notification-bell__badge" data-testid="@TestId("notion-notification-badge")">@BadgeCount</span>
         }
     </button>
 
     @if (_isOpen)
     {
         <div class="tm-notification-bell__dropdown tm-notion-notifications__panel"
-             data-testid="notion-notification-panel">
+             data-testid="@TestId("notion-notification-panel")">
             <div class="tm-notification-bell__header">
                 <span class="tm-notification-bell__title">@Loc["Notion_Notifications_Title"]</span>
                 <div class="tm-notification-bell__actions">
                     <button type="button"
                             class="tm-notification-bell__filter"
-                            data-testid="notion-notification-filter"
+                            data-testid="@TestId("notion-notification-filter")"
                             @onclick="() => _showOnlyUnread = !_showOnlyUnread">
                         @(_showOnlyUnread ? Loc["TmNotificationBell_ShowAll"] : Loc["TmNotificationBell_ShowOnlyUnread"])
                     </button>
@@ -36,7 +37,7 @@
                     {
                         <button type="button"
                                 class="tm-notification-bell__mark-all"
-                                data-testid="notion-notification-mark-all"
+                                data-testid="@TestId("notion-notification-mark-all")"
                                 @onclick="MarkAllReadAsync">
                             @Loc["Notion_Notifications_MarkAllRead"]
                         </button>
@@ -55,7 +56,7 @@
                     {
                         <button type="button"
                                 class="tm-notification-bell__item tm-notion-notifications__item @(n.IsRead ? "" : "tm-notification-bell__item--unread")"
-                                data-testid="notion-notification-item"
+                                data-testid="@TestId("notion-notification-item")"
                                 @onclick="() => OnItemClickAsync(n)">
                             <span class="tm-notification-bell__avatar" aria-hidden="true">
                                 @if (!string.IsNullOrEmpty(n.Actor?.AvatarUrl))
@@ -80,7 +81,7 @@
                 }
                 else
                 {
-                    <div class="tm-notification-bell__empty" data-testid="notion-notification-empty">
+                    <div class="tm-notification-bell__empty" data-testid="@TestId("notion-notification-empty")">
                         @Loc["Notion_Notifications_Empty"]
                     </div>
                 }

@@ -1,11 +1,12 @@
 @namespace Tempo.Blazor.Components.Scheduler
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Models
 
-<div class="tm-gantt-reports-panel" data-testid="gantt-reports-panel">
+<div class="tm-gantt-reports-panel" data-testid="@TestId("gantt-reports-panel")">
     <div class="tm-gantt-reports-panel__header">
         <span class="tm-gantt-reports-panel__title">@Loc["TmGantt_Reports"]</span>
         <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Primary"
-                  data-testid="reports-new-btn"
+                  data-testid="@TestId("reports-new-btn")"
                   OnClick="() => _showNewForm = !_showNewForm">
             <TmIcon Name="plus" Size="IconSize.Xs" />
             @Loc["TmGanttReportsPanel_NewReport"]

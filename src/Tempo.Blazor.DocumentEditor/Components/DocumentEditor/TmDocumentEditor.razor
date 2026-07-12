@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Models
 @using Tempo.Blazor.Components.DocumentEditor.Features
 @using Tempo.Blazor.DocumentEditor.Models
@@ -22,14 +23,14 @@
          role="status"
          aria-live="polite"
          aria-atomic="true"
-         data-testid="document-editor-live-region">
+         data-testid="@TestId("document-editor-live-region")">
         @LiveRegionMessage
     </div>
 
     @if (Provider is null)
     {
         <div class="tm-document-editor__state tm-document-editor__error"
-             data-testid="document-editor-provider-missing">
+             data-testid="@TestId("document-editor-provider-missing")">
             <TmAlert Severity="AlertSeverity.Error"
                      Title="@Loc["TmDocumentEditor_ProviderMissingTitle"]">
                 @Loc["TmDocumentEditor_ProviderMissingMessage"]
@@ -40,7 +41,7 @@
     {
         <div class="tm-document-editor__state tm-document-editor__loading"
              aria-busy="true"
-             data-testid="document-editor-loading">
+             data-testid="@TestId("document-editor-loading")">
             <TmSkeleton Variant="SkeletonVariant.Rect" Height="40px" Width="100%" />
             <TmSkeleton Variant="SkeletonVariant.Rect" Height="520px" Width="min(100%, 760px)" />
             <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_Loading"]</span>
@@ -49,11 +50,11 @@
     else if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
         <div class="tm-document-editor__state tm-document-editor__error"
-             data-testid="document-editor-load-error">
+             data-testid="@TestId("document-editor-load-error")">
             <TmAlert Severity="AlertSeverity.Error"
                      Title="@Loc["TmDocumentEditor_LoadErrorTitle"]"
                      Actions="@RetryAction"
-                     data-testid="document-editor-load-error-alert">
+                     data-testid="@TestId("document-editor-load-error-alert")">
                 @_errorMessage
             </TmAlert>
         </div>
@@ -270,17 +271,17 @@
 
         @if (!string.IsNullOrWhiteSpace(_formatMessage) || _formatWarnings.Count > 0)
         {
-            <div class="tm-document-editor__format-banner" data-testid="document-format-message">
+            <div class="tm-document-editor__format-banner" data-testid="@TestId("document-format-message")">
                 @if (!string.IsNullOrWhiteSpace(_formatMessage))
                 {
                     <span>@_formatMessage</span>
                 }
                 @if (_formatWarnings.Count > 0)
                 {
-                    <ul class="tm-document-editor__format-warnings" data-testid="document-format-warnings">
+                    <ul class="tm-document-editor__format-warnings" data-testid="@TestId("document-format-warnings")">
                         @foreach (var warning in _formatWarnings)
                         {
-                            <li data-testid="document-format-warning">@warning.Message</li>
+                            <li data-testid="@TestId("document-format-warning")">@warning.Message</li>
                         }
                     </ul>
                 }
@@ -290,7 +291,7 @@
         @if (ShowOfflineBanner)
         {
             <div class="tm-document-editor__offline-banner"
-                 data-testid="document-offline-banner"
+                 data-testid="@TestId("document-offline-banner")"
                  data-status="@_offlineStatus">
                 <div class="tm-document-editor__offline-main">
                     <TmIcon Name="@(_offlineStatus == DocumentSyncStatus.Conflict ? "alert-triangle" : "wifi-off")" />
@@ -299,13 +300,13 @@
                 <div class="tm-document-editor__offline-actions">
                     @if (_offlineConflict is not null)
                     {
-                        <button type="button" @onclick="AcceptLocalConflictAsync" data-testid="document-offline-accept-local">
+                        <button type="button" @onclick="AcceptLocalConflictAsync" data-testid="@TestId("document-offline-accept-local")">
                             @Loc["TmDocumentEditor_OfflineAcceptLocal"]
                         </button>
-                        <button type="button" @onclick="AcceptServerConflictAsync" data-testid="document-offline-accept-server">
+                        <button type="button" @onclick="AcceptServerConflictAsync" data-testid="@TestId("document-offline-accept-server")">
                             @Loc["TmDocumentEditor_OfflineAcceptServer"]
                         </button>
-                        <button type="button" @onclick="CreateOfflineCopyAsync" data-testid="document-offline-create-copy">
+                        <button type="button" @onclick="CreateOfflineCopyAsync" data-testid="@TestId("document-offline-create-copy")">
                             @Loc["TmDocumentEditor_OfflineCreateCopy"]
                         </button>
                     }
@@ -314,10 +315,10 @@
                         <button type="button"
                                 @onclick="SyncOfflineDraftAsync"
                                 disabled="@_isSyncingOfflineDraft"
-                                data-testid="document-offline-sync">
+                                data-testid="@TestId("document-offline-sync")">
                             @Loc["TmDocumentEditor_OfflineSync"]
                         </button>
-                        <button type="button" @onclick="DiscardOfflineDraftAsync" data-testid="document-offline-discard">
+                        <button type="button" @onclick="DiscardOfflineDraftAsync" data-testid="@TestId("document-offline-discard")">
                             @Loc["TmDocumentEditor_OfflineDiscard"]
                         </button>
                     }
@@ -353,7 +354,7 @@
         {
             <section class="tm-document-editor__print-preview-actions"
                      aria-label="@Loc["TmDocumentEditor_PrintPreviewActions"]"
-                     data-testid="document-print-preview-actions">
+                     data-testid="@TestId("document-print-preview-actions")">
                 <div class="tm-document-editor__print-preview-title">
                     <TmIcon Name="printer" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_PrintPreview"]</span>
@@ -364,7 +365,7 @@
                             title="@Loc["TmDocumentEditor_PrintDocumentAria"]"
                             aria-label="@Loc["TmDocumentEditor_PrintDocumentAria"]"
                             @onclick="PrintCanvasDocumentAsync"
-                            data-testid="document-print-preview-browser-print">
+                            data-testid="@TestId("document-print-preview-browser-print")">
                         <TmIcon Name="printer" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_PrintDocument"]</span>
                     </button>
@@ -374,7 +375,7 @@
                             title="@Loc["TmDocumentEditor_PrintToPdfAria"]"
                             aria-label="@Loc["TmDocumentEditor_PrintToPdfAria"]"
                             @onclick="ExportPdfAsync"
-                            data-testid="document-print-preview-export-pdf">
+                            data-testid="@TestId("document-print-preview-export-pdf")">
                         <TmIcon Name="file-down" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_PrintToPdf"]</span>
                     </button>
@@ -383,7 +384,7 @@
                             title="@Loc["TmDocumentEditor_ClosePrintPreview"]"
                             aria-label="@Loc["TmDocumentEditor_ClosePrintPreview"]"
                             @onclick="CloseCanvasPrintPreviewAsync"
-                            data-testid="document-print-preview-close">
+                            data-testid="@TestId("document-print-preview-close")">
                         <TmIcon Name="x" Size="IconSize.Sm" />
                     </button>
                 </div>
@@ -391,7 +392,7 @@
         }
 
         <div class="@WorkspaceClass"
-             data-testid="document-editor-workspace"
+             data-testid="@TestId("document-editor-workspace")"
              data-side-panel-state="@(_sidePanelOpen ? "open" : "closed")"
              data-side-panel-layout="docked-tabs"
              data-active-side-panel-tab="@ActiveSidePanelDataValue">
@@ -432,7 +433,7 @@
                                      role="dialog"
                                      aria-modal="true"
                                      aria-label="@Loc["TmDocumentEditor_ImageInsertMenu"]"
-                                     data-testid="document-canvas-image-dialog">
+                                     data-testid="@TestId("document-canvas-image-dialog")">
                                 <header class="tm-document-editor__image-dialog-header">
                                     <h3>@Loc["TmDocumentEditor_ImageInsertUrl"]</h3>
                                     <button type="button"
@@ -449,14 +450,14 @@
                                            class="tm-input"
                                            placeholder="@Loc["TmDocumentEditor_ImageUrlPlaceholder"]"
                                            @bind="_canvasImageUrl"
-                                           data-testid="document-canvas-image-url-input" />
+                                           data-testid="@TestId("document-canvas-image-url-input")" />
                                 </label>
                                 @if (ImageProvider is not null)
                                 {
                                     <label class="tm-document-editor__field-label">
                                         <span>@Loc["TmDocumentEditor_UploadImage"]</span>
                                         <InputFile OnChange="HandleCanvasImageFileAsync"
-                                                   data-testid="document-canvas-image-upload" />
+                                                   data-testid="@TestId("document-canvas-image-upload")" />
                                     </label>
                                 }
                                 <div class="tm-document-editor__image-dialog-actions">
@@ -469,7 +470,7 @@
                                             class="tm-btn tm-btn--primary"
                                             disabled="@string.IsNullOrWhiteSpace(_canvasImageUrl)"
                                             @onclick="InsertCanvasImageFromDialogAsync"
-                                            data-testid="document-canvas-insert-image-url">
+                                            data-testid="@TestId("document-canvas-insert-image-url")">
                                         @Loc["TmDocumentEditor_InsertImage"]
                                     </button>
                                 </div>
@@ -480,7 +481,7 @@
                             <section class="tm-document-editor__content-control-popover"
                                      role="dialog"
                                      aria-label="@Loc["TmDocumentEditor_GroupSigning"]"
-                                     data-testid="document-canvas-signing-popover"
+                                     data-testid="@TestId("document-canvas-signing-popover")"
                                      data-signing-field-id="@_activeCanvasSigningField!.Uuid"
                                      @onclick:stopPropagation="true"
                                      @onpointerdown:stopPropagation="true">
@@ -499,7 +500,7 @@
                                 <div class="tm-document-editor__content-control-popover-body">
                                     @if (_activeCanvasSigningField.Repeats)
                                     {
-                                        <span class="tm-badge" data-testid="document-signing-repeats-badge">
+                                        <span class="tm-badge" data-testid="@TestId("document-signing-repeats-badge")">
                                             @Loc["TmDocumentEditor_SigningRepeatsEveryPage"]
                                         </span>
                                     }
@@ -507,13 +508,13 @@
                                         @Loc["TmDocumentEditor_SigningFieldLabel"]
                                         <input type="text"
                                                class="tm-input"
-                                               data-testid="document-signing-field-label"
+                                               data-testid="@TestId("document-signing-field-label")"
                                                value="@_activeCanvasSigningField.Label"
                                                @onchange="@(args => UpdateActiveSigningFieldAsync(label: args.Value?.ToString() ?? string.Empty))" />
                                     </label>
                                     <label class="tm-document-editor__field-checkbox">
                                         <input type="checkbox"
-                                               data-testid="document-signing-field-required"
+                                               data-testid="@TestId("document-signing-field-required")"
                                                checked="@_activeCanvasSigningField.Required"
                                                @onchange="@(args => UpdateActiveSigningFieldAsync(required: args.Value is bool b && b))" />
                                         @Loc["TmDocumentEditor_SigningFieldRequired"]
@@ -523,7 +524,7 @@
                                         <label class="tm-document-editor__field-label">
                                             @Loc["TmDocumentEditor_SigningFieldRole"]
                                             <select class="tm-input"
-                                                    data-testid="document-signing-field-role"
+                                                    data-testid="@TestId("document-signing-field-role")"
                                                     value="@_activeCanvasSigningField.SubmitterUuid"
                                                     @onchange="@(args => UpdateActiveSigningFieldAsync(submitterUuid: args.Value?.ToString() ?? string.Empty))">
                                                 @foreach (var role in SigningRoles)
@@ -541,7 +542,7 @@
                             <section class="tm-document-editor__content-control-popover"
                                      role="dialog"
                                      aria-label="@Loc["TmDocumentEditor_ContentControlPopoverLabel"]"
-                                     data-testid="document-canvas-content-control-popover"
+                                     data-testid="@TestId("document-canvas-content-control-popover")"
                                      data-control-id="@_activeCanvasContentControl.ControlId"
                                      data-control-kind="@_activeCanvasContentControl.Kind.ToString()"
                                      @onclick:stopPropagation="true"
@@ -556,7 +557,7 @@
                                             title="@Loc["TmDocumentEditor_ContentControlClose"]"
                                             aria-label="@Loc["TmDocumentEditor_ContentControlClose"]"
                                             @onclick="CloseCanvasContentControlPopoverAsync"
-                                            data-testid="document-canvas-content-control-popover-close">
+                                            data-testid="@TestId("document-canvas-content-control-popover-close")">
                                         <TmIcon Name="x" Size="IconSize.Sm" />
                                     </button>
                                 </header>
@@ -581,7 +582,7 @@
                                                value="@_activeCanvasContentControl.DateIso"
                                                disabled="@_activeCanvasContentControl.LockContent"
                                                @onchange="SetCanvasContentControlDateAsync"
-                                               data-testid="document-canvas-content-control-date" />
+                                               data-testid="@TestId("document-canvas-content-control-date")" />
                                     </label>
                                 }
                                 else if (_activeCanvasContentControl.Kind == DocumentContentControlKind.DropDown
@@ -592,7 +593,7 @@
                                         <select value="@_activeCanvasContentControl.SelectedValue"
                                                 disabled="@(_activeCanvasContentControl.LockContent || _activeCanvasContentControl.Items.Count == 0)"
                                                 @onchange="SetCanvasContentControlChoiceAsync"
-                                                data-testid="document-canvas-content-control-choice">
+                                                data-testid="@TestId("document-canvas-content-control-choice")">
                                             @if (_activeCanvasContentControl.Items.Count == 0)
                                             {
                                                 <option value="">@Loc["TmDocumentEditor_ContentControlNoChoices"]</option>
@@ -615,7 +616,7 @@
                                                    value="@_activeCanvasContentControl.Text"
                                                    disabled="@_activeCanvasContentControl.LockContent"
                                                    @onchange="SetCanvasContentControlComboTextAsync"
-                                                   data-testid="document-canvas-content-control-combo-text" />
+                                                   data-testid="@TestId("document-canvas-content-control-combo-text")" />
                                         </label>
                                     }
                                 }
@@ -627,7 +628,7 @@
                                         <select value="@_activeCanvasContentControl.AssetId"
                                                 disabled="@(_activeCanvasContentControl.LockContent || pictureAssetOptions.Count == 0)"
                                                 @onchange="SetCanvasContentControlPictureAsync"
-                                                data-testid="document-canvas-content-control-picture">
+                                                data-testid="@TestId("document-canvas-content-control-picture")">
                                             @if (pictureAssetOptions.Count == 0)
                                             {
                                                 <option value="">@Loc["TmDocumentEditor_ContentControlNoAssets"]</option>
@@ -737,7 +738,7 @@
                     {
                         @* Engine image inspector reuses the document image panel for the active object selection. *@
                         <section class="tm-document-image-properties-panel"
-                                 data-testid="document-image-properties-panel"
+                                 data-testid="@TestId("document-image-properties-panel")"
                                  data-active-object-id="@ActiveImageCommandObjectId"
                                  data-active-anchor-block-id="@ActiveImageCommandBlockId">
                             <TmDocumentImageInspector Image="coreImage"
@@ -755,7 +756,7 @@
                     else if (ActiveImageContent is { } activeImage)
                     {
                         <section class="tm-document-image-properties-panel"
-                                 data-testid="document-image-properties-panel"
+                                 data-testid="@TestId("document-image-properties-panel")"
                                  data-active-object-id="@ActiveImageInspectorObjectId"
                                  data-active-anchor-block-id="@ActiveImageInspectorBlockId">
                             <TmDocumentImageInspector Image="activeImage"
@@ -776,7 +777,7 @@
                     else if (ActiveTableContent is { } activeTable && ActiveTableCell is { } activeCell)
                     {
                         <section class="tm-document-table-selection-properties-panel"
-                                 data-testid="document-table-selection-properties-panel"
+                                 data-testid="@TestId("document-table-selection-properties-panel")"
                                  data-active-table-id="@ActiveTableBlock?.Id"
                                  data-active-cell-id="@activeCell.Id">
                             <TmDocumentTablePropertiesPanel Layout="activeTable.Layout"
@@ -787,7 +788,7 @@
                     }
                     else
                     {
-                        <section class="tm-document-properties-panel" data-testid="document-properties-panel">
+                        <section class="tm-document-properties-panel" data-testid="@TestId("document-properties-panel")">
                             <h3>@Loc["TmDocumentEditor_Properties"]</h3>
                             <dl>
                                 <div>
@@ -834,14 +835,14 @@
                                    RuntimeFailed="@_runtimeFailed" />
 
         <div class="tm-document-editor__floating-root"
-             data-testid="document-floating-root"
+             data-testid="@TestId("document-floating-root")"
              @onclick:stopPropagation="true">
             @if (_miniToolbar is { IsVisible: true } && IsObjectMiniToolbar && _canvasActiveImage is { } objectImage)
             {
                 @* B3: floating image toolbar (Word/GDocs parity) anchored above the selected object. *@
                 <div class="tm-document-editor__mini-toolbar tm-document-editor__mini-toolbar--object @(string.Equals(_miniToolbar.Placement, "above", StringComparison.Ordinal) ? "tm-document-editor__mini-toolbar--object-above" : null)"
                      style="@MiniToolbarFloatingStyle(_miniToolbar)"
-                     data-testid="document-mini-toolbar"
+                     data-testid="@TestId("document-mini-toolbar")"
                      data-human-testid="document-floating-toolbar"
                      data-mini-toolbar-mode="object"
                      @onpointerdown:preventDefault="true"
@@ -873,13 +874,13 @@
                          style="@MiniToolbarFloatingStyle(_miniToolbar)"
                          role="toolbar"
                          aria-label="@Loc["TmDocumentEditor_MiniToolbarLabel"]"
-                         data-testid="document-mini-toolbar"
+                         data-testid="@TestId("document-mini-toolbar")"
                          data-human-testid="document-floating-toolbar"
                          @onpointerdown:preventDefault="true"
                          @onpointerdown:stopPropagation="true"
                          @onclick:stopPropagation="true">
                     <button type="button"
-                            data-testid="document-mini-bold"
+                            data-testid="@TestId("document-mini-bold")"
                             aria-label="@Loc["TmDocumentEditor_Bold"]"
                             aria-pressed="@FormattingAriaPressed(_formattingState.Bold)"
                             disabled="@(!IsCommandEnabled("bold"))"
@@ -889,7 +890,7 @@
                         <TmIcon Name="bold" Size="IconSize.Sm" />
                     </button>
                     <button type="button"
-                            data-testid="document-mini-italic"
+                            data-testid="@TestId("document-mini-italic")"
                             aria-label="@Loc["TmDocumentEditor_Italic"]"
                             aria-pressed="@FormattingAriaPressed(_formattingState.Italic)"
                             disabled="@(!IsCommandEnabled("italic"))"
@@ -899,7 +900,7 @@
                         <TmIcon Name="italic" Size="IconSize.Sm" />
                     </button>
                     <button type="button"
-                            data-testid="document-mini-underline"
+                            data-testid="@TestId("document-mini-underline")"
                             aria-label="@Loc["TmDocumentEditor_Underline"]"
                             aria-pressed="@FormattingAriaPressed(_formattingState.Underline)"
                             disabled="@(!IsCommandEnabled("underline"))"
@@ -909,7 +910,7 @@
                         <TmIcon Name="underline" Size="IconSize.Sm" />
                     </button>
                     <button type="button"
-                            data-testid="document-mini-strikethrough"
+                            data-testid="@TestId("document-mini-strikethrough")"
                             aria-label="@Loc["TmDocumentEditor_Strikethrough"]"
                             aria-pressed="@FormattingAriaPressed(_formattingState.Strikethrough)"
                             disabled="@(!IsCommandEnabled("strikethrough"))"
@@ -924,7 +925,7 @@
                             @onpointerdown:stopPropagation="true"
                             @onmousedown:stopPropagation="true"
                             @onchange="HandleMiniToolbarFontSizeChangedAsync"
-                            data-testid="document-mini-font-size"
+                            data-testid="@TestId("document-mini-font-size")"
                             aria-label="@Loc["TmDocumentEditor_FontSize"]"
                             title="@Loc["TmDocumentEditor_FontSize"]">
                         @foreach (var size in BuildMiniToolbarFontSizeOptions(_formattingState.FontSize))
@@ -950,7 +951,7 @@
                                    ApplyText="@Loc["TmDocumentEditor_ApplyColor"]"
                                    CancelText="@Loc["TmDocumentEditor_CancelColor"]"
                                    Class="@GetMiniToolbarColorPickerClass(_formattingState.TextColorMixed)"
-                                   data-testid="document-mini-text-color"
+                                   data-testid="@TestId("document-mini-text-color")"
                                    aria-label="@Loc["TmDocumentEditor_TextColor"]"
                                    title="@Loc["TmDocumentEditor_TextColor"]" />
                     <TmColorPicker Value="@NormalizeMiniToolbarHighlightColor()"
@@ -971,11 +972,11 @@
                                    ApplyText="@Loc["TmDocumentEditor_ApplyColor"]"
                                    CancelText="@Loc["TmDocumentEditor_CancelColor"]"
                                    Class="@GetMiniToolbarColorPickerClass(_formattingState.HighlightColorMixed)"
-                                   data-testid="document-mini-highlight"
+                                   data-testid="@TestId("document-mini-highlight")"
                                    aria-label="@Loc["TmDocumentEditor_HighlightColor"]"
                                    title="@Loc["TmDocumentEditor_HighlightColor"]" />
                     <button type="button"
-                            data-testid="document-mini-link"
+                            data-testid="@TestId("document-mini-link")"
                             aria-label="@Loc["TmDocumentEditor_Link"]"
                             disabled="@(!IsCommandEnabled("link"))"
                             @onpointerdown:preventDefault="true"
@@ -984,7 +985,7 @@
                         <TmIcon Name="link" Size="IconSize.Sm" />
                     </button>
                     <button type="button"
-                            data-testid="document-mini-comment"
+                            data-testid="@TestId("document-mini-comment")"
                             aria-label="@Loc["TmDocumentEditor_AddComment"]"
                             disabled="@(!IsCommandEnabled("addComment", CanUseComments))"
                             @onpointerdown:preventDefault="true"
@@ -993,7 +994,7 @@
                         <TmIcon Name="message-square" Size="IconSize.Sm" />
                     </button>
                     <button type="button"
-                            data-testid="document-mini-clear-formatting"
+                            data-testid="@TestId("document-mini-clear-formatting")"
                             aria-label="@Loc["TmDocumentEditor_ClearFormatting"]"
                             title="@Loc["TmDocumentEditor_ClearFormatting"]"
                             disabled="@(!IsCommandEnabled("clearFormatting"))"
@@ -1008,7 +1009,7 @@
                     {
                         <span class="tm-document-editor__mini-separator" role="separator"></span>
                         <button type="button"
-                                data-testid="document-mini-table-row-after"
+                                data-testid="@TestId("document-mini-table-row-after")"
                                 aria-label="@Loc["TmDocumentEditor_InsertRow"]"
                                 title="@Loc["TmDocumentEditor_InsertRow"]"
                                 @onpointerdown:preventDefault="true"
@@ -1017,7 +1018,7 @@
                             <TmIcon Name="between-horizontal-end" Size="IconSize.Sm" />
                         </button>
                         <button type="button"
-                                data-testid="document-mini-table-column-after"
+                                data-testid="@TestId("document-mini-table-column-after")"
                                 aria-label="@Loc["TmDocumentEditor_InsertColumn"]"
                                 title="@Loc["TmDocumentEditor_InsertColumn"]"
                                 @onpointerdown:preventDefault="true"
@@ -1026,7 +1027,7 @@
                             <TmIcon Name="between-vertical-end" Size="IconSize.Sm" />
                         </button>
                         <button type="button"
-                                data-testid="document-mini-table-delete-row"
+                                data-testid="@TestId("document-mini-table-delete-row")"
                                 aria-label="@Loc["TmDocumentEditor_DeleteRow"]"
                                 title="@Loc["TmDocumentEditor_DeleteRow"]"
                                 @onpointerdown:preventDefault="true"
@@ -1035,7 +1036,7 @@
                             <TmIcon Name="rows-3" Size="IconSize.Sm" />
                         </button>
                         <button type="button"
-                                data-testid="document-mini-table-delete-column"
+                                data-testid="@TestId("document-mini-table-delete-column")"
                                 aria-label="@Loc["TmDocumentEditor_DeleteColumn"]"
                                 title="@Loc["TmDocumentEditor_DeleteColumn"]"
                                 @onpointerdown:preventDefault="true"
@@ -1052,7 +1053,7 @@
                 <button type="button"
                         class="tm-document-editor__floating-backdrop"
                         aria-label="@Loc["TmDocumentEditor_Close"]"
-                        data-testid="document-floating-backdrop"
+                        data-testid="@TestId("document-floating-backdrop")"
                         @onclick="CloseFloatingUi"
                         @oncontextmenu:preventDefault="true"
                         @oncontextmenu="CloseFloatingUi">
@@ -1067,7 +1068,7 @@
                          role="menu"
                          tabindex="-1"
                          aria-label="@Loc["TmDocumentEditor_TextContextMenuLabel"]"
-                         data-testid="document-text-context-menu"
+                         data-testid="@TestId("document-text-context-menu")"
                          @onpointerdown:preventDefault="true"
                          @onpointerdown:stopPropagation="true"
                          @onkeydown="HandleFloatingContextMenuKeyDownAsync"
@@ -1075,7 +1076,7 @@
                          @onclick:stopPropagation="true">
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-context-cut"
+                            data-testid="@TestId("document-context-cut")"
                             disabled="@(!CanCutTextContextSelection)"
                             aria-disabled="@((!CanCutTextContextSelection).ToString().ToLowerInvariant())"
                             @onclick="CutTextContextSelectionAsync">
@@ -1084,7 +1085,7 @@
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-context-copy"
+                            data-testid="@TestId("document-context-copy")"
                             disabled="@(!CanCopyTextContextSelection)"
                             aria-disabled="@((!CanCopyTextContextSelection).ToString().ToLowerInvariant())"
                             @onclick="CopyTextContextSelectionAsync">
@@ -1093,7 +1094,7 @@
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-context-paste"
+                            data-testid="@TestId("document-context-paste")"
                             disabled="@(!CanPasteTextContextSelection)"
                             aria-disabled="@((!CanPasteTextContextSelection).ToString().ToLowerInvariant())"
                             @onclick="PasteTextContextSelectionAsync">
@@ -1103,7 +1104,7 @@
                     <div class="tm-document-editor__context-separator" role="separator"></div>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-context-bold"
+                            data-testid="@TestId("document-context-bold")"
                             disabled="@(!IsCommandEnabled("bold"))"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_textContextMenu.Selection, "bold")'>
                         <TmIcon Name="bold" Size="IconSize.Sm" />
@@ -1111,7 +1112,7 @@
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-context-italic"
+                            data-testid="@TestId("document-context-italic")"
                             disabled="@(!IsCommandEnabled("italic"))"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_textContextMenu.Selection, "italic")'>
                         <TmIcon Name="italic" Size="IconSize.Sm" />
@@ -1119,7 +1120,7 @@
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-context-underline"
+                            data-testid="@TestId("document-context-underline")"
                             disabled="@(!IsCommandEnabled("underline"))"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_textContextMenu.Selection, "underline")'>
                         <TmIcon Name="underline" Size="IconSize.Sm" />
@@ -1127,7 +1128,7 @@
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-context-link"
+                            data-testid="@TestId("document-context-link")"
                             disabled="@(!IsCommandEnabled("link"))"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_textContextMenu.Selection, "link", new WysiwygLinkPayload { Href = "https://example.com" })'>
                         <TmIcon Name="link" Size="IconSize.Sm" />
@@ -1135,7 +1136,7 @@
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-context-comment"
+                            data-testid="@TestId("document-context-comment")"
                             disabled="@(!IsCommandEnabled("addComment", CanUseComments))"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_textContextMenu.Selection, "addComment")'>
                         <TmIcon Name="message-square" Size="IconSize.Sm" />
@@ -1143,7 +1144,7 @@
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-context-remove-link"
+                            data-testid="@TestId("document-context-remove-link")"
                             disabled="@(!IsCommandEnabled("link"))"
                             @onclick="RemoveLinkFromTextContextAsync">
                         <TmIcon Name="unlink" Size="IconSize.Sm" />
@@ -1151,7 +1152,7 @@
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-context-clear-formatting"
+                            data-testid="@TestId("document-context-clear-formatting")"
                             disabled="@(!IsCommandEnabled("clearFormatting"))"
                             @onpointerdown="ClearFormattingFromTextContextAsync"
                             @onpointerdown:preventDefault="true"
@@ -1168,7 +1169,7 @@
                             var pick = suggestion;
                             <button type="button"
                                     role="menuitem"
-                                    data-testid="document-context-spell-suggestion"
+                                    data-testid="@TestId("document-context-spell-suggestion")"
                                     disabled="@(!misspelling.CanApplyFix)"
                                     @onclick="() => ApplyTextContextSpellSuggestionAsync(pick)">
                                 <TmIcon Name="check" Size="IconSize.Sm" />
@@ -1177,21 +1178,21 @@
                         }
                         <button type="button"
                                 role="menuitem"
-                                data-testid="document-context-spell-ignore-once"
+                                data-testid="@TestId("document-context-spell-ignore-once")"
                                 @onclick='() => RunTextContextSpellCommandAsync("ignoreOnce")'>
                             <TmIcon Name="circle-minus" Size="IconSize.Sm" />
                             <span>@Loc["TmDocumentEditor_SpellIgnoreOnce"]</span>
                         </button>
                         <button type="button"
                                 role="menuitem"
-                                data-testid="document-context-spell-ignore-all"
+                                data-testid="@TestId("document-context-spell-ignore-all")"
                                 @onclick='() => RunTextContextSpellCommandAsync("ignoreAll")'>
                             <TmIcon Name="ban" Size="IconSize.Sm" />
                             <span>@Loc["TmDocumentEditor_SpellIgnoreAll"]</span>
                         </button>
                         <button type="button"
                                 role="menuitem"
-                                data-testid="document-context-spell-add-dictionary"
+                                data-testid="@TestId("document-context-spell-add-dictionary")"
                                 @onclick='() => RunTextContextSpellCommandAsync("addToDictionary")'>
                             <TmIcon Name="book-plus" Size="IconSize.Sm" />
                             <span>@Loc["TmDocumentEditor_SpellAddToDictionary"]</span>
@@ -1202,7 +1203,7 @@
                         <div class="tm-document-editor__context-separator" role="separator"></div>
                         <button type="button"
                                 role="menuitem"
-                                data-testid="document-page-break-delete"
+                                data-testid="@TestId("document-page-break-delete")"
                                 @onclick="DeletePageBreakFromContextAsync">
                             <TmIcon Name="trash-2" Size="IconSize.Sm" />
                             <span>@Loc["TmDocumentEditor_DeletePageBreak"]</span>
@@ -1217,32 +1218,32 @@
                          style="@FloatingStyle(_tableContextMenu)"
                          role="menu"
                          aria-label="@Loc["TmDocumentEditor_TableContextMenuLabel"]"
-                         data-testid="document-table-context-menu"
+                         data-testid="@TestId("document-table-context-menu")"
                          @onpointerdown:preventDefault="true">
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-table-insert-row-before"
+                            data-testid="@TestId("document-table-insert-row-before")"
                             @onclick="InsertTableRowBeforeFromContextAsync">
                         <TmIcon Name="insert-row" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_AddRowBefore"]</span>
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-table-insert-row"
+                            data-testid="@TestId("document-table-insert-row")"
                             @onclick="InsertTableRowFromContextAsync">
                         <TmIcon Name="insert-row" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_AddRowAfter"]</span>
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-table-insert-column-before"
+                            data-testid="@TestId("document-table-insert-column-before")"
                             @onclick="InsertTableColumnBeforeFromContextAsync">
                         <TmIcon Name="insert-column" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_AddColumnBefore"]</span>
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-table-insert-column"
+                            data-testid="@TestId("document-table-insert-column")"
                             @onclick="InsertTableColumnFromContextAsync">
                         <TmIcon Name="insert-column" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_AddColumnAfter"]</span>
@@ -1250,14 +1251,14 @@
                     <div class="tm-document-editor__context-separator" role="separator"></div>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-table-merge-cells"
+                            data-testid="@TestId("document-table-merge-cells")"
                             @onclick="MergeTableCellsFromContextAsync">
                         <TmIcon Name="merge" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_MergeRight"]</span>
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-table-split-cell"
+                            data-testid="@TestId("document-table-split-cell")"
                             @onclick="SplitTableCellFromContextAsync">
                         <TmIcon Name="split" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_SplitCell"]</span>
@@ -1265,7 +1266,7 @@
                     <div class="tm-document-editor__context-separator" role="separator"></div>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-table-toggle-header"
+                            data-testid="@TestId("document-table-toggle-header")"
                             @onclick="ToggleTableHeaderRowFromContextAsync">
                         <TmIcon Name="table-header" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_ToggleHeaderRow"]</span>
@@ -1273,21 +1274,21 @@
                     <div class="tm-document-editor__context-separator" role="separator"></div>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-table-delete-row"
+                            data-testid="@TestId("document-table-delete-row")"
                             @onclick="DeleteTableRowFromContextAsync">
                         <TmIcon Name="delete-row" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_DeleteRow"]</span>
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-table-delete-column"
+                            data-testid="@TestId("document-table-delete-column")"
                             @onclick="DeleteTableColumnFromContextAsync">
                         <TmIcon Name="delete-column" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_DeleteColumn"]</span>
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-table-delete-table"
+                            data-testid="@TestId("document-table-delete-table")"
                             @onclick="DeleteTableFromContextAsync">
                         <TmIcon Name="trash-2" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_DeleteTable"]</span>
@@ -1295,7 +1296,7 @@
                     <div class="tm-document-editor__context-separator" role="separator"></div>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-table-cell-properties"
+                            data-testid="@TestId("document-table-cell-properties")"
                             @onpointerdown="OpenCellPropertiesFromContextAsync"
                             @onpointerdown:preventDefault="true"
                             @onpointerdown:stopPropagation="true"
@@ -1305,7 +1306,7 @@
                     </button>
                     <button type="button"
                             role="menuitem"
-                            data-testid="document-table-table-properties"
+                            data-testid="@TestId("document-table-table-properties")"
                             @onpointerdown="OpenTablePropertiesFromContextAsync"
                             @onpointerdown:preventDefault="true"
                             @onpointerdown:stopPropagation="true"
@@ -1330,7 +1331,7 @@
 @code {
     private RenderFragment RetryAction => @<button type="button"
                                                    class="tm-document-editor__retry"
-                                                   data-testid="document-editor-retry"
+                                                   data-testid="@TestId("document-editor-retry")"
                                                    @onclick="RetryAsync">
         @Loc["TmDocumentEditor_Retry"]
     </button>;

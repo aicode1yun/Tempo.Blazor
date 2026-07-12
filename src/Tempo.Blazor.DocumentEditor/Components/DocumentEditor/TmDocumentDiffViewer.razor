@@ -1,16 +1,17 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.DocumentEditor.Models
 @using Tempo.Blazor.DocumentEditor.Services
 
-<section class="tm-document-diff" data-testid="document-diff-viewer">
+<section class="tm-document-diff" data-testid="@TestId("document-diff-viewer")">
     <header class="tm-document-diff__header">
         <h4>@Loc["TmDocumentEditor_DiffTitle"]</h4>
-        <span data-testid="document-diff-summary">@DiffSummary</span>
+        <span data-testid="@TestId("document-diff-summary")">@DiffSummary</span>
     </header>
 
     @if (SideBySide)
     {
-        <div class="tm-document-diff__side-by-side" data-testid="document-diff-side-by-side">
+        <div class="tm-document-diff__side-by-side" data-testid="@TestId("document-diff-side-by-side")">
             <article class="tm-document-diff__pane">
                 <h5>@(string.IsNullOrWhiteSpace(OldTitle) ? Loc["TmDocumentEditor_DiffOld"] : OldTitle)</h5>
                 <pre>@OldText</pre>
@@ -22,7 +23,7 @@
         </div>
     }
 
-    <div class="tm-document-diff__inline" data-testid="document-diff-inline">
+    <div class="tm-document-diff__inline" data-testid="@TestId("document-diff-inline")">
         @foreach (var segment in Diff.Segments)
         {
             <span class="@GetSegmentClass(segment.Kind)" data-diff-kind="@segment.Kind.ToString().ToLowerInvariant()">@segment.Text</span>@(" ")

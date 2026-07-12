@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Rendering
 @using Microsoft.JSInterop
@@ -14,7 +15,7 @@
          role="dialog"
          aria-modal="true"
          aria-label="@Loc["TmDocumentEditor_CompareDialogTitle"]"
-         data-testid="document-compare-dialog">
+         data-testid="@TestId("document-compare-dialog")">
     <header class="tm-document-version-dialog__header">
         <h3>@Loc["TmDocumentEditor_CompareDialogTitle"]</h3>
         <button type="button"
@@ -22,7 +23,7 @@
                 class="tm-document-version-dialog__icon-button"
                 aria-label="@Loc["TmDocumentEditor_Close"]"
                 @onclick="OnClose"
-                data-testid="document-compare-close">
+                data-testid="@TestId("document-compare-close")">
             <TmIcon Name="x" Size="IconSize.Sm" />
         </button>
     </header>
@@ -34,12 +35,12 @@
 
     @if (!string.IsNullOrWhiteSpace(_message))
     {
-        <div class="tm-document-version-dialog__error" role="status" data-testid="document-compare-message">@_message</div>
+        <div class="tm-document-version-dialog__error" role="status" data-testid="@TestId("document-compare-message")">@_message</div>
     }
 
     @if (_isComparing)
     {
-        <div class="tm-document-editor__state" aria-busy="true" data-testid="document-compare-loading">
+        <div class="tm-document-editor__state" aria-busy="true" data-testid="@TestId("document-compare-loading")">
             @Loc["TmDocumentEditor_CompareLoading"]
         </div>
     }
@@ -51,7 +52,7 @@
     }
     else
     {
-        <div class="tm-document-editor__state" data-testid="document-compare-empty">
+        <div class="tm-document-editor__state" data-testid="@TestId("document-compare-empty")">
             @Loc["TmDocumentEditor_CompareEmpty"]
         </div>
     }
@@ -60,7 +61,7 @@
         <button type="button"
                 disabled="@_isComparing"
                 @onclick="RunCompareAsync"
-                data-testid="document-compare-run">
+                data-testid="@TestId("document-compare-run")">
             @Loc["TmDocumentEditor_CompareRun"]
         </button>
         <button type="button" @onclick="OnClose">@Loc["TmDocumentEditor_Cancel"]</button>

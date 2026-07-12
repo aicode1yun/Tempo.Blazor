@@ -1,12 +1,13 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.DocumentEditor.Models
 
-<aside class="tm-document-suggestion-panel" data-testid="document-suggestion-panel" aria-label="@Loc["TmDocumentEditor_SuggestionPanelLabel"]">
+<aside class="tm-document-suggestion-panel" data-testid="@TestId("document-suggestion-panel")" aria-label="@Loc["TmDocumentEditor_SuggestionPanelLabel"]">
     <h3 class="tm-document-suggestion-panel__title">@Loc["TmDocumentEditor_Suggestions"]</h3>
 
     @if (!string.IsNullOrWhiteSpace(StatusMessage))
     {
-        <div class="tm-document-suggestion-panel__status" role="status" data-testid="document-suggestion-status">@StatusMessage</div>
+        <div class="tm-document-suggestion-panel__status" role="status" data-testid="@TestId("document-suggestion-status")">@StatusMessage</div>
     }
 
     @if (IsLoading)
@@ -15,32 +16,32 @@
     }
     else if (PendingSuggestions.Count == 0)
     {
-        <div class="tm-document-suggestion-panel__empty" data-testid="document-suggestion-empty">
+        <div class="tm-document-suggestion-panel__empty" data-testid="@TestId("document-suggestion-empty")">
             @Loc["TmDocumentEditor_SuggestionsEmpty"]
         </div>
     }
     else
     {
-        <div class="tm-document-suggestion-panel__list" data-testid="document-suggestion-list">
+        <div class="tm-document-suggestion-panel__list" data-testid="@TestId("document-suggestion-list")">
             @foreach (var suggestion in PendingSuggestions)
             {
                 <article class="tm-document-suggestion-panel__item"
                          tabindex="0"
                          data-suggestion-id="@suggestion.Id"
-                         data-testid="document-suggestion-item"
+                         data-testid="@TestId("document-suggestion-item")"
                          @onclick="() => OnSelectSuggestion.InvokeAsync(suggestion)">
                     <div class="tm-document-suggestion-panel__meta">
                         <span>@GetTypeLabel(suggestion)</span>
                         <span>@GetAuthorLabel(suggestion)</span>
                     </div>
-                    <div class="tm-document-suggestion-panel__preview" data-testid="document-suggestion-preview">
+                    <div class="tm-document-suggestion-panel__preview" data-testid="@TestId("document-suggestion-preview")">
                         @GetPreview(suggestion)
                     </div>
                     <div class="tm-document-suggestion-panel__actions">
                         <button type="button"
                                 disabled="@(IsBusy || !CanReview)"
                                 aria-label="@Loc["TmDocumentEditor_AcceptSuggestionAria", GetAuthorLabel(suggestion)]"
-                                data-testid="document-suggestion-accept"
+                                data-testid="@TestId("document-suggestion-accept")"
                                 @onclick="() => OnAcceptSuggestion.InvokeAsync(suggestion)"
                                 @onclick:stopPropagation="true">
                             @Loc["TmDocumentEditor_AcceptSuggestion"]
@@ -48,7 +49,7 @@
                         <button type="button"
                                 disabled="@(IsBusy || !CanReview)"
                                 aria-label="@Loc["TmDocumentEditor_RejectSuggestionAria", GetAuthorLabel(suggestion)]"
-                                data-testid="document-suggestion-reject"
+                                data-testid="@TestId("document-suggestion-reject")"
                                 @onclick="() => OnRejectSuggestion.InvokeAsync(suggestion)"
                                 @onclick:stopPropagation="true">
                             @Loc["TmDocumentEditor_RejectSuggestion"]

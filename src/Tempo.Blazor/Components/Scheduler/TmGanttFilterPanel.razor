@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Scheduler
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Models
 @using Tempo.Blazor.Components.Inputs
 
@@ -41,18 +42,18 @@
 
     <div class="tm-gantt__filter-panel-actions">
         <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost"
-                  OnClick="AddFilter" data-testid="filter-add">
+                  OnClick="AddFilter" data-testid="@TestId("filter-add")">
             <TmIcon Name="plus" Size="IconSize.Sm" />
             @Loc["TmGantt_AddFilter"]
         </TmButton>
         <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Primary"
-                  OnClick="ApplyAsync" data-testid="filter-apply">
+                  OnClick="ApplyAsync" data-testid="@TestId("filter-apply")">
             @Loc["TmGantt_ApplyFilters"]
         </TmButton>
         @if (_editFilters.Count > 0)
         {
             <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost"
-                      OnClick="ClearAll" data-testid="filter-clear">
+                      OnClick="ClearAll" data-testid="@TestId("filter-clear")">
                 @Loc["TmGantt_ClearFilters"]
             </TmButton>
         }

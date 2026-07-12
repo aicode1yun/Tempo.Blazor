@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Signing
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Models
 @using Tempo.Blazor.Components.Inputs
 
@@ -15,7 +16,7 @@
     }
     else
     {
-        <div class="tm-signing-form-runner__documents" data-testid="signing-runner-documents">
+        <div class="tm-signing-form-runner__documents" data-testid="@TestId("signing-runner-documents")">
             @foreach (var documentPage in Pages)
             {
                 <div class="tm-signing-form-runner__document" data-attachment-uuid="@(documentPage.AttachmentUuid)" data-page-index="@(documentPage.PageIndex)">
@@ -39,7 +40,7 @@
             }
         </div>
 
-        <aside class="tm-signing-form-runner__steps" data-testid="signing-runner-steps">
+        <aside class="tm-signing-form-runner__steps" data-testid="@TestId("signing-runner-steps")">
             @RenderStepPanel(false)
         </aside>
 

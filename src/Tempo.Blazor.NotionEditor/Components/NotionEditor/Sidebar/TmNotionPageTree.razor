@@ -1,37 +1,38 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Sidebar
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Interfaces
 
 <CascadingValue Value="this" IsFixed="true">
     @if (SelectedCount > 0)
     {
         <div class="tm-npt-bulk-toolbar"
-             data-testid="notion-page-bulk-toolbar"
+             data-testid="@TestId("notion-page-bulk-toolbar")"
              role="toolbar"
              aria-label="@Loc["TmNotionPageTree_BulkToolbar"]">
-            <span class="tm-npt-bulk-toolbar__count" data-testid="notion-page-bulk-count">
+            <span class="tm-npt-bulk-toolbar__count" data-testid="@TestId("notion-page-bulk-count")">
                 @string.Format(Loc["TmNotionPageTree_BulkSelected"], SelectedCount)
             </span>
             <button class="tm-npt-bulk-toolbar__button"
                     type="button"
-                    data-testid="notion-page-bulk-move"
+                    data-testid="@TestId("notion-page-bulk-move")"
                     @onclick="() => OpenBulkTargetPicker(BulkAction.Move)">
                 @Loc["TmNotionPageTree_MoveTo"]
             </button>
             <button class="tm-npt-bulk-toolbar__button"
                     type="button"
-                    data-testid="notion-page-bulk-copy"
+                    data-testid="@TestId("notion-page-bulk-copy")"
                     @onclick="() => OpenBulkTargetPicker(BulkAction.Copy)">
                 @Loc["TmNotionPageTree_Copy"]
             </button>
             <button class="tm-npt-bulk-toolbar__button tm-npt-bulk-toolbar__button--danger"
                     type="button"
-                    data-testid="notion-page-bulk-delete"
+                    data-testid="@TestId("notion-page-bulk-delete")"
                     @onclick="OpenBulkDeleteConfirm">
                 @Loc["TmNotionPageTree_Delete"]
             </button>
             <button class="tm-npt-bulk-toolbar__button"
                     type="button"
-                    data-testid="notion-page-bulk-clear"
+                    data-testid="@TestId("notion-page-bulk-clear")"
                     @onclick="ClearSelectionAsync">
                 @Loc["TmBulkAction_ClearSelection"]
             </button>
@@ -41,7 +42,7 @@
     @if (!string.IsNullOrWhiteSpace(_bulkError))
     {
         <div class="tm-npt-bulk-error"
-             data-testid="notion-page-bulk-error"
+             data-testid="@TestId("notion-page-bulk-error")"
              role="alert">
             @_bulkError
         </div>
@@ -63,14 +64,14 @@
             </div>
             <input class="tm-npt-bulk-panel__search"
                    type="search"
-                   data-testid="notion-page-bulk-target-search"
+                   data-testid="@TestId("notion-page-bulk-target-search")"
                    placeholder="@Loc["TmNotionPageTree_MoveToSearch"]"
                    value="@_bulkTargetQuery"
                    @oninput="OnBulkTargetSearchAsync" />
             <div class="tm-npt-bulk-panel__results">
                 <button class="tm-npt-bulk-panel__result"
                         type="button"
-                        data-testid="notion-page-bulk-target-root"
+                        data-testid="@TestId("notion-page-bulk-target-root")"
                         @onclick="() => ExecuteBulkTargetAsync(null)">
                     @Loc["TmNotionPageTree_MoveToRoot"]
                 </button>
@@ -85,7 +86,7 @@
                         var target = page;
                         <button class="tm-npt-bulk-panel__result"
                                 type="button"
-                                data-testid="notion-page-bulk-target-page"
+                                data-testid="@TestId("notion-page-bulk-target-page")"
                                 @onclick="() => ExecuteBulkTargetAsync(target)">
                             @if (!string.IsNullOrEmpty(target.IconEmoji))
                             {
@@ -113,7 +114,7 @@
                 </button>
                 <button class="tm-npt-bulk-toolbar__button tm-npt-bulk-toolbar__button--danger"
                         type="button"
-                        data-testid="notion-page-bulk-delete-confirm-button"
+                        data-testid="@TestId("notion-page-bulk-delete-confirm-button")"
                         @onclick="ExecuteBulkDeleteAsync">
                     @Loc["TmNotionPageTree_DeleteYes"]
                 </button>
