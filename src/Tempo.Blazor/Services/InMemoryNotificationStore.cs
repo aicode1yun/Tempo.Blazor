@@ -142,6 +142,24 @@ public class InMemoryNotificationStore : ITmNotificationService
         }
     }
 
+    /// <summary>Returns a distinct snapshot of recipients that currently have notifications,
+    /// preferring each recipient's <see cref="TmNotification.Recipient"/> snapshot (with email)
+    /// and falling back to a minimal ref built from the recipient id.</summary>
+    public IReadOnlyList<TmUserRef> GetKnownRecipients()
+    {
+        var result = new List<TmUserRef>();
+        foreach (var (recipientId, list) in _store)
+        {
+            TmUserRef? snapshot;
+            lock (list)
+            {
+                snapshot = list.FirstOrDefault(n => n.Recipient is not null)?.Recipient;
+            }
+            result.Add(snapshot is not null ? Clone(snapshot) : new TmUserRef { Id = recipientId });
+        }
+        return result;
+    }
+
     /// <summary>Clears all stored notifications.</summary>
     public void Reset()
     {

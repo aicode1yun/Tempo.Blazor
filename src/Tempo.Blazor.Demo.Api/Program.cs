@@ -128,6 +128,37 @@ builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp")
 builder.Services.AddSingleton<ISmtpClientFactory, MailKitSmtpClientFactory>();
 builder.Services.AddSingleton<Tempo.Blazor.EmailTemplates.Abstractions.Contracts.IEmailSender, SmtpEmailSender>();
 
+// ── Notifications: real-time SignalR backend + Web Push + daily digest ────
+builder.Services.AddSingleton<Tempo.Blazor.Services.InMemoryNotificationStore>();
+builder.Services.AddSingleton<Tempo.Blazor.Abstractions.Shared.ITmNotificationService>(sp =>
+    new SignalRNotificationBroadcaster(
+        sp.GetRequiredService<Tempo.Blazor.Services.InMemoryNotificationStore>(),
+        sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<TmNotificationHub>>()));
+builder.Services.AddSingleton<Tempo.Blazor.Abstractions.Interfaces.IPushSubscriptionStore,
+    Tempo.Blazor.Services.InMemoryPushSubscriptionStore>();
+
+// VAPID: use configured keys, otherwise generate an ephemeral pair for the demo run.
+builder.Services.Configure<WebPushOptions>(builder.Configuration.GetSection("WebPush"));
+builder.Services.PostConfigure<WebPushOptions>(o =>
+{
+    if (!o.IsConfigured)
+    {
+        var keys = WebPush.VapidHelper.GenerateVapidKeys();
+        o.PublicKey = keys.PublicKey;
+        o.PrivateKey = keys.PrivateKey;
+    }
+});
+builder.Services.AddSingleton<Tempo.Blazor.Abstractions.Interfaces.IWebPushSender, VapidWebPushSender>();
+
+builder.Services.Configure<Tempo.Blazor.Abstractions.Shared.TmNotificationDigestOptions>(
+    builder.Configuration.GetSection("NotificationDigest"));
+builder.Services.AddSingleton<Tempo.Blazor.Abstractions.Interfaces.INotificationRecipientSource,
+    DemoNotificationRecipientSource>();
+builder.Services.AddSingleton<Tempo.Blazor.Abstractions.Interfaces.INotificationDigestSender,
+    SmtpNotificationDigestSender>();
+builder.Services.AddSingleton<TmNotificationDigestService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<TmNotificationDigestService>());
+
 var app = builder.Build();
 
 app.UseCors();
@@ -157,6 +188,8 @@ app.MapEmailTemplateEndpoints();
 app.MapHub<DocumentEditorCollaborationHub>("/hubs/document-editor-collaboration");
 app.MapHub<NotionCollaborationHub>("/hubs/notion-collaboration");
 app.MapHub<TempoDocumentChangeHub>("/hubs/document-library");
+app.MapHub<TmNotificationHub>("/hubs/notifications");
+app.MapNotificationEndpoints();
 app.MapMcp("/mcp");
 
 using (var scope = app.Services.CreateScope())
