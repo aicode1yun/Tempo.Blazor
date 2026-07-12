@@ -58,6 +58,45 @@
     </div>
 </section>
 
+<!-- Filtering & Pagination (audit-scale) -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Timeline Filtering &amp; Pagination</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">K10 · Audit-scale</span>
+    </div>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        @_auditEntries.Count synthetic audit entries. The built-in search + type filter narrows the list;
+        "Load more" reveals another page. Additive params only — existing consumers pass none of these and behave unchanged.
+    </p>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+        <!-- Activity Log timeline tab: client-side filter + pagination -->
+        <div>
+            <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">TmActivityLog (client-side)</p>
+            <div class="showcase-card">
+                <TmActivityLog EntityId="audit-1"
+                               ShowComments="false"
+                               ShowAttachments="false"
+                               TimelineEntries="@_auditEntries"
+                               ShowTimelineFilterBar="true"
+                               TimelinePageSize="10" />
+            </div>
+        </div>
+
+        <!-- Standalone TmTimeline driven by an async data provider -->
+        <div>
+            <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">TmTimeline + ITimelineDataProvider</p>
+            <div class="showcase-card">
+                <TmTimeline DataProvider="@_auditProvider"
+                            ShowInternal="true"
+                            ShowFilterBar="true"
+                            EntryTypeFilterOptions="@_auditTypes"
+                            PageSize="8" />
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Rich Text Editor Simple -->
 <section class="demo-section">
     <div class="flex items-center space-x-2 mb-4">
@@ -151,6 +190,43 @@
     private IReadOnlyList<TmAttachment> _attachments = [];
     private ITmAttachmentProvider _attachmentProvider = default!;
     private ITmFileProvider _fileProvider = default!;
+
+    // K10 – synthetic audit-scale data for the filtering + pagination demo.
+    private static readonly string[] _auditTypes = ["comment", "status_change", "assignment", "attachment", "system"];
+    private static readonly IReadOnlyList<ITimelineEntry> _auditEntries = BuildAuditEntries(120);
+    private readonly ITimelineDataProvider _auditProvider = new InMemoryTimelineDataProvider(_auditEntries);
+
+    private static IReadOnlyList<ITimelineEntry> BuildAuditEntries(int count)
+    {
+        string[] authors = ["Alice Nguyen", "Bob Carter", "Carol Diaz", "Dan Ellis", "Erin Frost"];
+        string[] verbs = ["updated the status", "assigned the task", "left a comment", "uploaded a file", "closed the item", "reopened the item"];
+        var now = DateTimeOffset.Now;
+        var list = new List<ITimelineEntry>(count);
+        for (var i = 0; i < count; i++)
+        {
+            list.Add(new DemoAuditEntry(
+                Id: $"audit-{i}",
+                EntryType: _auditTypes[i % _auditTypes.Length],
+                AuthorName: authors[i % authors.Length],
+                AuthorAvatarUrl: null,
+                CreatedAt: now.AddMinutes(-i * 7),
+                HtmlContent: null,
+                PlainContent: $"{authors[i % authors.Length]} {verbs[i % verbs.Length]} (#{count - i}).",
+                IsInternal: i % 9 == 0));
+        }
+        return list;
+    }
+
+    private sealed record DemoAuditEntry(
+        string Id,
+        string EntryType,
+        string AuthorName,
+        string? AuthorAvatarUrl,
+        DateTimeOffset CreatedAt,
+        string? HtmlContent,
+        string? PlainContent,
+        bool IsInternal,
+        IReadOnlyDictionary<string, string>? Metadata = null) : ITimelineEntry;
 
     protected override async Task OnInitializedAsync()
     {

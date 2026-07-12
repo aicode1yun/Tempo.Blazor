@@ -601,6 +601,12 @@ public abstract class LocalizationTestBase : TestContext
         ["TmTimeline_HoursAgo"]    = "{0} h ago",
         ["TmTimeline_DaysAgo"]     = "{0} days ago",
         ["TmTimeline_DateFormat"]  = "MMM d, yyyy",
+        ["TmTimeline_FilterLabel"]        = "Search activity",
+        ["TmTimeline_FilterPlaceholder"]  = "Search activity...",
+        ["TmTimeline_LoadMore"]           = "Load more",
+        ["TmTimeline_ShowingCount"]       = "Showing {0} of {1}",
+        ["TmTimeline_TypeFilterAll"]      = "All types",
+        ["TmTimeline_TypeFilterLabel"]    = "Filter by type",
 
         // TmTreeView
         ["TmTreeView_Search"]    = "Search...",

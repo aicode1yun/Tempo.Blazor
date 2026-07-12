@@ -76,3 +76,82 @@
   color: var(--tm-text-tertiary);
   font-size: var(--tm-font-size-sm);
 }
+
+/* ── Filter bar + incremental pagination (K10) ──────────────────────────── */
+.tm-timeline-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tm-space-2);
+  margin-bottom: var(--tm-space-2);
+}
+
+.tm-timeline-search,
+.tm-timeline-type-filter {
+  padding: var(--tm-space-2) var(--tm-space-3);
+  font-size: var(--tm-font-size-sm);
+  color: var(--tm-text-primary);
+  background: var(--tm-bg-surface, var(--tm-bg-page));
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-md);
+  line-height: var(--tm-line-height-normal);
+}
+
+.tm-timeline-search {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.tm-timeline-search::placeholder {
+  color: var(--tm-text-tertiary);
+}
+
+.tm-timeline-search:focus-visible,
+.tm-timeline-type-filter:focus-visible {
+  outline: 2px solid var(--tm-color-primary);
+  outline-offset: 1px;
+  border-color: var(--tm-color-primary);
+}
+
+.tm-timeline-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tm-space-3);
+  flex-wrap: wrap;
+  margin-top: var(--tm-space-3);
+}
+
+.tm-timeline-count {
+  font-size: var(--tm-font-size-xs);
+  color: var(--tm-text-tertiary);
+}
+
+.tm-timeline-load-more {
+  padding: var(--tm-space-2) var(--tm-space-4);
+  font-size: var(--tm-font-size-sm);
+  font-weight: var(--tm-font-weight-medium);
+  color: var(--tm-color-primary);
+  background: transparent;
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-md);
+  cursor: pointer;
+  transition: background-color var(--tm-transition-fast, 150ms) ease,
+              border-color var(--tm-transition-fast, 150ms) ease;
+}
+
+.tm-timeline-load-more:hover {
+  background: var(--tm-color-surface-hover, var(--tm-bg-muted));
+  border-color: var(--tm-color-primary);
+}
+
+.tm-timeline-load-more:focus-visible {
+  outline: 2px solid var(--tm-color-primary);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tm-timeline-load-more {
+    transition: none;
+  }
+}
