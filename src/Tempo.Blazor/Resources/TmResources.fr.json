@@ -2733,5 +2733,12 @@
   "Tm_SelectAll": "Tout sélectionner",
   "Tm_Upload": "Importer",
   "Tm_Yes": "Oui",
-  "TmNotionBlock_TodoPlaceholder": "Tâche"
+  "TmNotionBlock_TodoPlaceholder": "Tâche",
+  "TmEntityPicker_NoResults": "Aucun résultat",
+  "TmEntityPicker_CreateNew": "Créer \"{0}\"",
+  "TmEntityPicker_Recent": "Récents",
+  "TmEntityPicker_RemoveItem": "Supprimer {0}",
+  "TmMultiColumnComboBox_CreateNew": "Créer \"{0}\"",
+  "TmMultiColumnComboBox_Recent": "Récents",
+  "TmMultiColumnComboBox_RemoveItem": "Supprimer {0}"
 }

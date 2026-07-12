@@ -11,7 +11,32 @@
          aria-expanded="@_isOpen.ToString().ToLowerInvariant()"
          aria-haspopup="grid"
          @onclick="ToggleAsync">
-        @if (Value is null || IsEmptyValue(Value))
+        @if (MultiSelect)
+        {
+            @if (SelectedValues.Count == 0)
+            {
+                <span class="tm-multi-column-combo-box__placeholder">@(Placeholder ?? Loc["TmMultiColumnComboBox_Placeholder"])</span>
+            }
+            else
+            {
+                <span class="tm-multi-column-combo-box__chips">
+                    @foreach (var chip in GetSelectedChips())
+                    {
+                        <span class="tm-multi-column-combo-box__chip">
+                            <span class="tm-multi-column-combo-box__chip-label">@chip.Text</span>
+                            <button type="button"
+                                    class="tm-multi-column-combo-box__chip-remove"
+                                    aria-label="@(string.Format(Loc["TmMultiColumnComboBox_RemoveItem"], chip.Text))"
+                                    @onclick="@(() => RemoveValueAsync(chip.Value))"
+                                    @onclick:stopPropagation="true">
+                                <TmIcon Name="x" />
+                            </button>
+                        </span>
+                    }
+                </span>
+            }
+        }
+        else if (Value is null || IsEmptyValue(Value))
         {
             <span class="tm-multi-column-combo-box__placeholder">@(Placeholder ?? Loc["TmMultiColumnComboBox_Placeholder"])</span>
         }
@@ -19,7 +44,7 @@
         {
             <span class="tm-multi-column-combo-box__value">@GetDisplayText(Value)</span>
         }
-        @if (ShowClearButton && Value is not null && !IsEmptyValue(Value))
+        @if (ShowClearButton && HasSelection)
         {
             <button type="button"
                     class="tm-multi-column-combo-box__clear"
@@ -41,6 +66,20 @@
                     <TmSearchInput Value="_filterText"
                                    ValueChanged="OnFilterChangedAsync"
                                    Placeholder="@(FilterPlaceholder ?? Loc["TmMultiColumnComboBox_FilterPlaceholder"])" />
+                </div>
+            }
+
+            @if (RecentVisible)
+            {
+                <div class="tm-multi-column-combo-box__recent">
+                    <div class="tm-multi-column-combo-box__group-label">@Loc["TmMultiColumnComboBox_Recent"]</div>
+                    @foreach (var item in _recentItems)
+                    {
+                        <div class="tm-multi-column-combo-box__recent-item @(IsItemSelected(item) ? "tm-multi-column-combo-box__recent-item--selected" : "")"
+                             @onclick="@(() => SelectItemAsync(item))">
+                            @(TextField is not null ? TextField(item) : item?.ToString())
+                        </div>
+                    }
                 </div>
             }
 
@@ -82,6 +121,13 @@
                     </tbody>
                 </table>
             </div>
+
+            @if (ShowCreateOption)
+            {
+                <div class="tm-multi-column-combo-box__create" @onclick="CreateNewAsync">
+                    @(string.Format(Loc["TmMultiColumnComboBox_CreateNew"], _filterText))
+                </div>
+            }
         </div>
     }
 </div>

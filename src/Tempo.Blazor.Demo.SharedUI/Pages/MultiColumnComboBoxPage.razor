@@ -1,5 +1,7 @@
 @page "/multi-column-combo-box"
 @using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Interfaces
+@using Tempo.Blazor.Models
 <PageTitle>Multi-Column Combo Box – Tempo.Blazor</PageTitle>
 
 <!-- Page Header -->
@@ -34,8 +36,66 @@
     }
 </section>
 
+<!-- Multi-select -->
+<section class="showcase-card mt-8">
+    <div class="mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Multi-select</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Set <code>MultiSelect="true"</code> and bind <code>SelectedValues</code>. Chosen rows become removable chips; the dropdown stays open so you can toggle several.</p>
+    </div>
+
+    <TmMultiColumnComboBox TItem="Product"
+                           TValue="int"
+                           Data="_products"
+                           ValueField="p => p.Id"
+                           TextField="p => p.Name"
+                           Columns="_columns"
+                           MultiSelect="true"
+                           SelectedValues="_selectedProductIds"
+                           SelectedValuesChanged="v => _selectedProductIds = v" />
+
+    @if (_selectedProductIds.Count > 0)
+    {
+        <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+                <span class="font-medium">Selected IDs:</span> @string.Join(", ", _selectedProductIds)
+            </p>
+        </div>
+    }
+</section>
+
+<!-- Create-new + Recent -->
+<section class="showcase-card mt-8">
+    <div class="mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Create-new &amp; Recent</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Provide an <code>IDropdownDataProvider</code> and opt in with <code>AllowCreateNew</code> / <code>ShowRecent</code>. Type a new name and pick "Create …" to add it; recent items appear at the top when the dropdown opens.</p>
+    </div>
+
+    <TmMultiColumnComboBox TItem="Product"
+                           TValue="int"
+                           Data="_creatableProducts"
+                           ValueField="p => p.Id"
+                           TextField="p => p.Name"
+                           Columns="_columns"
+                           @bind-Value="_createdProductId"
+                           AllowCreateNew="true"
+                           ShowRecent="true"
+                           DataProvider="_productProvider" />
+
+    @if (_createdProductId != 0)
+    {
+        <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+                <span class="font-medium">Selected:</span> Product ID @_createdProductId
+                – @_creatableProducts.FirstOrDefault(p => p.Id == _createdProductId)?.Name
+            </p>
+        </div>
+    }
+</section>
+
 @code {
     private int _selectedProductId;
+    private IReadOnlyList<int> _selectedProductIds = [];
+    private int _createdProductId;
 
     private readonly List<Product> _products = new()
     {
@@ -47,6 +107,17 @@
         new(6, "Bookshelf", "Furniture", 180m),
     };
 
+    private readonly List<Product> _creatableProducts = new()
+    {
+        new(1, "Laptop Pro", "Electronics", 1299m),
+        new(2, "Wireless Mouse", "Electronics", 49m),
+        new(3, "Mechanical Keyboard", "Electronics", 159m),
+    };
+
+    private ProductDropdownProvider? _productProvider;
+
+    protected override void OnInitialized() => _productProvider = new ProductDropdownProvider(_creatableProducts);
+
     private readonly List<MultiColumnComboBoxColumn<Product>> _columns = new()
     {
         new() { Title = "Product", Field = p => p.Name },
@@ -55,4 +126,25 @@
     };
 
     private record Product(int Id, string Name, string Category, decimal Price);
+
+    /// <summary>In-memory provider that supports inline create-new and recent items for the demo.</summary>
+    private sealed class ProductDropdownProvider : IDropdownDataProvider<Product>
+    {
+        private readonly List<Product> _all;
+
+        public ProductDropdownProvider(List<Product> all) => _all = all;
+
+        public Task<DropdownDataResult<Product>> GetItemsAsync(DropdownSearchRequest request, CancellationToken ct = default)
+            => Task.FromResult(DropdownDataResult<Product>.WithAllItems(_all));
+
+        public Task<Product?> CreateAsync(string text, CancellationToken ct = default)
+        {
+            var created = new Product(_all.Count == 0 ? 1 : _all.Max(p => p.Id) + 1, text, "Custom", 0m);
+            _all.Add(created);
+            return Task.FromResult<Product?>(created);
+        }
+
+        public Task<IReadOnlyList<Product>> GetRecentAsync(CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<Product>>(_all.Take(2).ToList());
+    }
 }

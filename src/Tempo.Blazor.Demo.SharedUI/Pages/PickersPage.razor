@@ -1,5 +1,6 @@
 @page "/pickers"
 @using Tempo.Blazor.Models
+@using Tempo.Blazor.Interfaces
 @using Tempo.Blazor.Components.Pickers
 @using Tempo.Blazor.Components.Files
 @using Tempo.Blazor.Components.Inputs
@@ -247,6 +248,53 @@
     </div>
 </section>
 
+<!-- Entity Picker -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Entity Picker</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Search • Multi • Create</span>
+    </div>
+
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Single-select (search)</h3>
+            <TmEntityPicker TItem="DemoUser" TValue="int"
+                            SearchProvider="SearchUsers"
+                            ValueSelector="u => u.Id"
+                            DisplaySelector="u => u.Name"
+                            Label="Assignee"
+                            Placeholder="Search people..."
+                            MinSearchLength="1"
+                            Value="_userValue"
+                            ValueChanged="v => _userValue = v" />
+            @if (_userValue != 0)
+            {
+                <p class="text-sm text-slate-500 mt-3">Selected user ID: <span class="font-medium">@_userValue</span></p>
+            }
+        </div>
+
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Multi-select + Create &amp; Recent</h3>
+            <TmEntityPicker TItem="DemoUser" TValue="int"
+                            SearchProvider="SearchUsers"
+                            ValueSelector="u => u.Id"
+                            DisplaySelector="u => u.Name"
+                            Placeholder="Add people..."
+                            MinSearchLength="1"
+                            MultiSelect="true"
+                            SelectedValues="_userSelectedValues"
+                            SelectedValuesChanged="v => _userSelectedValues = v"
+                            AllowCreateNew="true"
+                            ShowRecent="true"
+                            DataProvider="_userProvider" />
+            @if (_userSelectedValues.Count > 0)
+            {
+                <p class="text-sm text-slate-500 mt-3">Selected IDs: <span class="font-medium">@string.Join(", ", _userSelectedValues)</span></p>
+            }
+        </div>
+    </div>
+</section>
+
 <!-- Other Pickers -->
 <section class="demo-section">
     <div class="flex items-center space-x-2 mb-4">
@@ -398,6 +446,47 @@
     {
         _countriesProvider = new DropdownHttpProvider(HttpFactory, "countries");
         _attachmentProvider = new AttachmentHttpProvider(HttpFactory);
+        _userProvider = new UserDropdownProvider(_demoUsers);
+    }
+
+    // Entity Picker
+    private int _userValue;
+    private IReadOnlyList<int> _userSelectedValues = [];
+    private UserDropdownProvider? _userProvider;
+
+    private readonly List<DemoUser> _demoUsers = new()
+    {
+        new(1, "Ada Lovelace"),
+        new(2, "Alan Turing"),
+        new(3, "Grace Hopper"),
+        new(4, "Linus Torvalds"),
+        new(5, "Margaret Hamilton"),
+    };
+
+    private Task<IEnumerable<DemoUser>> SearchUsers(string query) =>
+        Task.FromResult(_demoUsers.Where(u => u.Name.Contains(query, StringComparison.OrdinalIgnoreCase)));
+
+    public sealed record DemoUser(int Id, string Name);
+
+    /// <summary>In-memory provider that supports inline create-new and recent items for the demo.</summary>
+    private sealed class UserDropdownProvider : IDropdownDataProvider<DemoUser>
+    {
+        private readonly List<DemoUser> _all;
+
+        public UserDropdownProvider(List<DemoUser> all) => _all = all;
+
+        public Task<DropdownDataResult<DemoUser>> GetItemsAsync(DropdownSearchRequest request, CancellationToken ct = default)
+            => Task.FromResult(DropdownDataResult<DemoUser>.WithAllItems(_all));
+
+        public Task<DemoUser?> CreateAsync(string text, CancellationToken ct = default)
+        {
+            var created = new DemoUser(_all.Count == 0 ? 1 : _all.Max(u => u.Id) + 1, text);
+            _all.Add(created);
+            return Task.FromResult<DemoUser?>(created);
+        }
+
+        public Task<IReadOnlyList<DemoUser>> GetRecentAsync(CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<DemoUser>>(_all.Take(3).ToList());
     }
 
     // Filter Builder

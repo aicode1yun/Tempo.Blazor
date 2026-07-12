@@ -87,9 +87,101 @@
     text-align: center;
 }
 
+.tm-entity-picker__option--selected {
+    background-color: var(--tm-color-primary-subtle);
+    color: var(--tm-color-primary);
+    font-weight: 600;
+}
+
+/* ── Multi-select chips ────────────────────────────────── */
+.tm-entity-picker__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--tm-space-1);
+    margin-bottom: var(--tm-space-2);
+}
+
+.tm-entity-picker__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tm-space-1);
+    padding: var(--tm-space-1) var(--tm-space-2);
+    font-size: var(--tm-font-size-xs);
+    color: var(--tm-color-primary-text);
+    background-color: var(--tm-color-primary-subtle);
+    border-radius: var(--tm-radius-full);
+}
+
+.tm-entity-picker__chip-label {
+    line-height: 1.2;
+}
+
+.tm-entity-picker__chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: none;
+    border-radius: var(--tm-radius-full);
+    cursor: pointer;
+    transition: color var(--tm-transition-fast);
+}
+
+.tm-entity-picker__chip-remove:hover {
+    color: var(--tm-color-danger);
+}
+
+.tm-entity-picker__chip-remove:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* ── Recent + create-new ───────────────────────────────── */
+.tm-entity-picker__group-label {
+    padding: var(--tm-space-2) var(--tm-space-3) var(--tm-space-1);
+    font-size: var(--tm-font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--tm-text-secondary);
+}
+
+.tm-entity-picker__recent {
+    border-bottom: 1px solid var(--tm-border-color);
+}
+
+.tm-entity-picker__create {
+    padding: var(--tm-space-2) var(--tm-space-3);
+    font-size: var(--tm-font-size-sm);
+    color: var(--tm-color-primary);
+    cursor: pointer;
+    border-top: 1px solid var(--tm-border-color);
+    transition: background-color var(--tm-transition-fast);
+}
+
+.tm-entity-picker__create:hover {
+    background-color: var(--tm-color-surface-hover);
+}
+
 /* ── Disabled ──────────────────────────────────────────── */
 .tm-entity-picker--disabled .tm-entity-picker__input {
     opacity: 0.6;
     background-color: var(--tm-bg-muted);
     cursor: not-allowed;
+}
+
+/* ── Reduced motion ────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .tm-entity-picker__input,
+    .tm-entity-picker__option,
+    .tm-entity-picker__create,
+    .tm-entity-picker__chip-remove {
+        transition: none;
+    }
+
+    .tm-entity-picker__dropdown {
+        animation: none;
+    }
 }

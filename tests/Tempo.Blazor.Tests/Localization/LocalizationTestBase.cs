@@ -1794,11 +1794,20 @@ public abstract class LocalizationTestBase : TestContext
         ["TmFileManager_Download"] = "Download",
         ["TmFileManager_DownloadAll"] = "Download All",
 
+        // TmEntityPicker
+        ["TmEntityPicker_NoResults"] = "No results found",
+        ["TmEntityPicker_CreateNew"] = "Create \"{0}\"",
+        ["TmEntityPicker_Recent"] = "Recent",
+        ["TmEntityPicker_RemoveItem"] = "Remove {0}",
+
         // TmMultiColumnComboBox
         ["TmMultiColumnComboBox_Placeholder"] = "Select an item...",
         ["TmMultiColumnComboBox_Clear"] = "Clear selection",
+        ["TmMultiColumnComboBox_CreateNew"] = "Create \"{0}\"",
         ["TmMultiColumnComboBox_FilterPlaceholder"] = "Search...",
         ["TmMultiColumnComboBox_NoResults"] = "No results found",
+        ["TmMultiColumnComboBox_Recent"] = "Recent",
+        ["TmMultiColumnComboBox_RemoveItem"] = "Remove {0}",
 
         // TmRecurrenceEditor
         ["TmRecurrenceEditor_Pattern"] = "Pattern",
@@ -4527,11 +4536,20 @@ public abstract class LocalizationTestBase : TestContext
         ["TmFileManager_Download"] = "Stáhnout",
         ["TmFileManager_DownloadAll"] = "Stáhnout vše",
 
+        // TmEntityPicker
+        ["TmEntityPicker_NoResults"] = "Žádné výsledky",
+        ["TmEntityPicker_CreateNew"] = "Vytvořit \"{0}\"",
+        ["TmEntityPicker_Recent"] = "Nedávné",
+        ["TmEntityPicker_RemoveItem"] = "Odebrat {0}",
+
         // TmMultiColumnComboBox
         ["TmMultiColumnComboBox_Placeholder"] = "Vyberte polozku...",
         ["TmMultiColumnComboBox_Clear"] = "Vymazat výběr",
+        ["TmMultiColumnComboBox_CreateNew"] = "Vytvořit \"{0}\"",
         ["TmMultiColumnComboBox_FilterPlaceholder"] = "Hledat...",
         ["TmMultiColumnComboBox_NoResults"] = "Žádné výsledky",
+        ["TmMultiColumnComboBox_Recent"] = "Nedávné",
+        ["TmMultiColumnComboBox_RemoveItem"] = "Odebrat {0}",
 
         // TmRecurrenceEditor
         ["TmRecurrenceEditor_Pattern"] = "Opakování",
