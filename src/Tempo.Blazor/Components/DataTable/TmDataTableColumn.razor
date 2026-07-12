@@ -43,6 +43,12 @@
     /// <summary>Minimum column width CSS value.</summary>
     [Parameter] public string? MinWidth { get; set; }
 
+    /// <summary>Whether the user can drag-resize this column. Default false.</summary>
+    [Parameter] public bool Resizable { get; set; }
+
+    /// <summary>Default pin state (left/right/none). User pin changes override this at runtime. Default None.</summary>
+    [Parameter] public ColumnPin Pinned { get; set; } = ColumnPin.None;
+
     /// <summary>Horizontal text alignment in cells.</summary>
     [Parameter] public ColumnAlign Align { get; set; } = ColumnAlign.Left;
 
@@ -51,6 +57,12 @@
 
     /// <summary>Custom header render fragment (replaces plain Title text when set).</summary>
     [Parameter] public RenderFragment? HeaderTemplate { get; set; }
+
+    /// <summary>Whether this column supports inline editing (requires TmDataTable.Editable).</summary>
+    [Parameter] public bool Editable { get; set; }
+
+    /// <summary>Template rendered for this cell when the row is in edit mode. Replaces CellTemplate/Field.</summary>
+    [Parameter] public RenderFragment<TItem>? EditTemplate { get; set; }
 
     /// <summary>Display order (lower index = further left). Columns with same order preserve declaration order.</summary>
     [Parameter] public int Order { get; set; }

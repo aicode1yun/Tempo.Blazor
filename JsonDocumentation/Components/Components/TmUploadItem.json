@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "description": "Observable state for a single tracked upload (progress, lifecycle, cancel/resume context) rendered by TmFileUploadProgress.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Files/TmUploadItem.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmUploadItem"
+}

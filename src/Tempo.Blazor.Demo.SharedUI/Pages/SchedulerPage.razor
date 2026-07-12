@@ -5,6 +5,7 @@
 @using Tempo.Blazor.Components.Icons
 @inject ToastService Toast
 @inject HttpClient Http
+@inject Microsoft.JSInterop.IJSRuntime JS
 
 <PageTitle>Scheduler – Tempo.Blazor</PageTitle>
 
@@ -13,6 +14,39 @@
     <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Scheduler</h1>
     <p class="text-slate-600 dark:text-slate-400">Full-featured calendar component with multiple views, drag & drop, and event management.</p>
 </div>
+
+<!-- Timezone, ICS export & Print -->
+<section class="demo-section" data-testid="scheduler-tz-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Timezone, ICS Export &amp; Print</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+                Events carry a timezone offset and are shown in the display timezone (DST-aware). A daily standup
+                recurs via RRULE. Export the calendar to a valid .ics file, and use the toolbar Print button.
+            </p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">K3</span>
+    </div>
+
+    <div class="showcase-card">
+        <div class="flex items-center gap-2 mb-3">
+            <label class="text-sm text-slate-600 dark:text-slate-300">Display timezone:</label>
+            <select class="tm-input" style="max-width: 240px" @bind="_displayTz" data-testid="scheduler-tz-select">
+                <option value="Europe/Prague">Europe/Prague</option>
+                <option value="America/New_York">America/New_York (UTC−5/−4)</option>
+                <option value="Asia/Tokyo">Asia/Tokyo</option>
+                <option value="UTC">UTC</option>
+            </select>
+            <button class="tm-btn-primary" data-testid="scheduler-export-ics" @onclick="ExportIcsAsync">Export .ics</button>
+        </div>
+        <div class="showcase-card" style="min-height: 480px; position: relative; overflow: hidden;">
+            <TmScheduler @bind-View="_tzView"
+                         @bind-CurrentDate="_tzDate"
+                         TimeZoneId="@_displayTz"
+                         Events="_tzEvents" />
+        </div>
+    </div>
+</section>
 
 <!-- Basic Scheduler -->
 <section class="demo-section">
@@ -219,6 +253,41 @@
 }
 
 @code {
+    // ── K3: timezone + ICS demo ──
+    private TmScheduleViewType _tzView = TmScheduleViewType.Week;
+    private DateTime _tzDate = new(2025, 6, 9);
+    private string _displayTz = "Europe/Prague";
+    private readonly IcsCalendarSerializer _ics = new();
+
+    private readonly List<TmScheduleEvent> _tzEvents =
+    [
+        new()
+        {
+            Id = "standup",
+            Title = "Daily standup (Prague 09:00)",
+            Start = new DateTimeOffset(2025, 6, 9, 9, 0, 0, TimeSpan.FromHours(2)),
+            End = new DateTimeOffset(2025, 6, 9, 9, 30, 0, TimeSpan.FromHours(2)),
+            RecurrenceRule = "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+            Color = "#6366f1"
+        },
+        new()
+        {
+            Id = "review",
+            Title = "Sprint review",
+            Start = new DateTimeOffset(2025, 6, 11, 14, 0, 0, TimeSpan.FromHours(2)),
+            End = new DateTimeOffset(2025, 6, 11, 15, 0, 0, TimeSpan.FromHours(2)),
+            Color = "#16a34a"
+        }
+    ];
+
+    private async Task ExportIcsAsync()
+    {
+        var text = _ics.Export(_tzEvents, "Tempo Scheduler Demo");
+        var base64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(text));
+        try { await JS.InvokeVoidAsync("tmDataTable.downloadFile", "calendar.ics", _ics.ContentType, base64); }
+        catch { }
+    }
+
     private TmScheduleViewType _monthView = TmScheduleViewType.Month;
     private TmScheduleViewType _interactiveView = TmScheduleViewType.Month;
     private DateTime _currentDate = DateTime.Today;

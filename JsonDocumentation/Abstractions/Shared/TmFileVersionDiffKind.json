@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Nature of a single line in a version diff: Unchanged, Added, or Removed.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersionDiff.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmFileVersionDiffKind"
+}

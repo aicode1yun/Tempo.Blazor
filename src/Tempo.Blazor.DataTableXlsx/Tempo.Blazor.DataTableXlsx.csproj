@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Tempo.Blazor</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>Tempo.Blazor.DataTableXlsx</PackageId>
+    <Version>2.3.0-preview.1</Version>
+    <Authors>ptyll</Authors>
+    <Title>Tempo.Blazor.DataTableXlsx</Title>
+    <Description>Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml.</Description>
+    <PackageTags>blazor;datatable;xlsx;excel;openxml;export</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ptyll/Tempo.Blazor</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ptyll/Tempo.Blazor</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tempo.Blazor.Abstractions\Tempo.Blazor.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Condition="Exists('..\..\README.md')" />
+  </ItemGroup>
+
+</Project>

@@ -74,7 +74,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Next_Navigation_Changes_Date()
     {
-        DateTime date = new(2025, 6, 15);
+        DateTime date = new DateTime(2025, 6, 15);
         var cut = RenderComponent<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month)
             .Add(c => c.CurrentDate, date)
@@ -88,7 +88,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Prev_Navigation_Changes_Date()
     {
-        DateTime date = new(2025, 6, 15);
+        DateTime date = new DateTime(2025, 6, 15);
         var cut = RenderComponent<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month)
             .Add(c => c.CurrentDate, date)
@@ -102,7 +102,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Today_Navigation_Returns_To_Today()
     {
-        DateTime date = new(2025, 1, 1);
+        DateTime date = new DateTime(2025, 1, 1);
         var cut = RenderComponent<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month)
             .Add(c => c.CurrentDate, date)
@@ -173,7 +173,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Day_Navigation_Changes_By_One_Day()
     {
-        DateTime date = new(2025, 6, 15);
+        DateTime date = new DateTime(2025, 6, 15);
         var cut = RenderComponent<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Day)
             .Add(c => c.CurrentDate, date)
@@ -187,7 +187,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Week_Navigation_Changes_By_Seven_Days()
     {
-        DateTime date = new(2025, 6, 15);
+        DateTime date = new DateTime(2025, 6, 15);
         var cut = RenderComponent<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Week)
             .Add(c => c.CurrentDate, date)

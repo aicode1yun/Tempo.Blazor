@@ -1,5 +1,6 @@
 @namespace Tempo.Blazor.Components.Files
 @using Tempo.Blazor.Abstractions.Shared
+@using Tempo.Blazor.Abstractions.Interfaces
 @using Microsoft.AspNetCore.Components.Forms
 
 <div class="tm-attachment-manager @Class" @attributes="AdditionalAttributes">
@@ -22,12 +23,27 @@
                         </span>
                     </div>
                     <div class="tm-attachment-actions">
-                        <button type="button"
-                                class="tm-attachment-download"
-                                aria-label="@Loc["Tm_Download"]"
-                                @onclick="async () => await DownloadAsync(att)">
-                            ↓
-                        </button>
+                        @if (att.ScanStatus is FileScanStatus.Blocked)
+                        {
+                            <span class="tm-file-scan-badge tm-file-scan-badge--blocked"
+                                  data-testid="attachment-scan-blocked"
+                                  title="@(att.ScanMessage ?? Loc["TmFileScan_Blocked"])">@Loc["TmFileScan_Blocked"]</span>
+                        }
+                        else if (att.ScanStatus is FileScanStatus.Pending)
+                        {
+                            <span class="tm-file-scan-badge tm-file-scan-badge--pending"
+                                  data-testid="attachment-scan-pending"
+                                  title="@Loc["TmFileScan_Pending"]">@Loc["TmFileScan_Pending"]</span>
+                        }
+                        else if (att.CanDownload)
+                        {
+                            <button type="button"
+                                    class="tm-attachment-download"
+                                    aria-label="@Loc["Tm_Download"]"
+                                    @onclick="async () => await DownloadAsync(att)">
+                                ↓
+                            </button>
+                        }
                         @if (att.CanDelete)
                         {
                             <button type="button"
@@ -47,12 +63,10 @@
                     Disabled="@Disabled"
                     OnFilesSelected="HandleFilesSelectedAsync" />
 
-    @if (_isUploading)
-    {
-        <div class="tm-attachment-upload-progress" role="status">
-            <span>@Loc["TmFileDropZone_Uploading"]</span>
-        </div>
-    }
+    <TmFileUploadProgress Uploads="_uploads"
+                          OnCancel="CancelUploadAsync"
+                          OnResume="ResumeUploadAsync"
+                          OnDismiss="DismissUpload" />
 </div>
 
 @code {
@@ -74,6 +88,15 @@
     /// <summary>When true, upload and delete controls are disabled.</summary>
     [Parameter] public bool Disabled { get; set; }
 
+    /// <summary>Maximum size of a single upload in bytes. Default 100 MB. Also caps the browser read stream.</summary>
+    [Parameter] public long MaxUploadSize { get; set; } = 100L * 1024 * 1024;
+
+    /// <summary>Optional scan hook run after each upload; a <see cref="FileScanStatus.Blocked"/> result marks the file unavailable.</summary>
+    [Parameter] public IFileScanHook? ScanHook { get; set; }
+
+    /// <summary>Fires for each chunk progress update during a chunked upload.</summary>
+    [Parameter] public EventCallback<TmUploadProgress> OnUploadProgress { get; set; }
+
     /// <summary>Additional CSS class for the root element.</summary>
     [Parameter] public string? Class { get; set; }
 
@@ -84,7 +107,10 @@
     [Parameter] public EventCallback<TmAttachment> OnDeleted { get; set; }
 
     private List<TmAttachment> _attachments = [];
-    private bool                  _isUploading;
+    private readonly List<TmUploadItem> _uploads = [];
+    // Scan verdicts recorded this session, re-applied after every reload so a Blocked gate
+    // survives a provider re-fetch. Keyed by asset id and "name:"+file name.
+    private readonly Dictionary<string, (FileScanStatus Status, string? Message)> _scanVerdicts = [];
 
     protected override async Task OnParametersSetAsync()
     {
@@ -92,45 +118,203 @@
         if (AttachmentProvider is not null && entityRef is not null)
         {
             _attachments = [.. await AttachmentProvider.GetForEntityAsync(entityRef)];
+            ReapplyScanVerdicts();
+        }
+    }
+
+    private void ReapplyScanVerdicts()
+    {
+        if (_scanVerdicts.Count == 0) return;
+        foreach (var att in _attachments)
+        {
+            (FileScanStatus Status, string? Message) v = default;
+            if ((!string.IsNullOrEmpty(att.AssetId) && _scanVerdicts.TryGetValue(att.AssetId!, out v))
+                || _scanVerdicts.TryGetValue(att.Id, out v)
+                || _scanVerdicts.TryGetValue("name:" + att.FileName, out v))
+            {
+                att.ScanStatus = v.Status;
+                att.ScanMessage = v.Message;
+                if (v.Status is FileScanStatus.Blocked) att.CanDownload = false;
+            }
         }
     }
 
     private async Task HandleFilesSelectedAsync(InputFileChangeEventArgs e)
     {
-        var entityRef = EffectiveEntityRef;
         var fileProvider = EffectiveFileProvider;
-        if (AttachmentProvider is null || fileProvider is null || entityRef is null) return;
+        if (AttachmentProvider is null || fileProvider is null || EffectiveEntityRef is null) return;
 
-        _isUploading = true;
+        foreach (var file in e.GetMultipleFiles(int.MaxValue))
+        {
+            var item = new TmUploadItem
+            {
+                FileName = file.Name,
+                TotalBytes = file.Size,
+                Source = file,
+                ResumeAction = it => UploadOneAsync(fileProvider, it)
+            };
+            _uploads.Add(item);
+            await UploadOneAsync(fileProvider, item);
+        }
+    }
+
+    private async Task UploadOneAsync(ITmFileProvider fileProvider, TmUploadItem item)
+    {
+        var entityRef = EffectiveEntityRef;
+        if (entityRef is null || item.Source is null) return;
+
+        var file = item.Source;
+        item.State = TmUploadState.Uploading;
+        item.Message = null;
+        item.Cts?.Dispose();
+        item.Cts = new CancellationTokenSource();
+        var token = item.Cts.Token;
         StateHasChanged();
 
+        var progress = new Progress<TmUploadProgress>(p =>
+        {
+            item.Apply(p);
+            OnUploadProgress.InvokeAsync(p);
+            StateHasChanged();
+        });
+
+        TmFileUploadResult upload;
         try
         {
-            foreach (var file in e.GetMultipleFiles())
+            if (SupportsChunking(fileProvider, out var chunked))
             {
-                await using var stream = file.OpenReadStream();
-                var upload = await fileProvider.UploadAsync(new TmFileUploadRequest
+                upload = await TmChunkedUploader.UploadBrowserFileAsync(
+                    file,
+                    chunked.UploadChunkAsync,
+                    MaxUploadSize,
+                    new TmChunkedUploadRequest
+                    {
+                        FileName = file.Name,
+                        ContentType = file.ContentType,
+                        TotalSizeBytes = file.Size,
+                        EntityRef = entityRef,
+                        Purpose = "attachment-manager",
+                        ResumeFromChunkIndex = item.NextChunkIndex,
+                        UploadSessionId = item.SessionId
+                    },
+                    progress,
+                    token);
+            }
+            else
+            {
+                await using var stream = file.OpenReadStream(MaxUploadSize, token);
+                upload = await fileProvider.UploadAsync(new TmFileUploadRequest
                 {
                     FileName = file.Name,
                     ContentType = file.ContentType,
                     SizeBytes = file.Size,
                     EntityRef = entityRef,
                     Purpose = "attachment-manager"
-                }, stream);
-
-                if (!upload.Success)
-                {
-                    continue;
-                }
-
-                var attachment = ToAttachment(upload, file, entityRef);
-                _attachments.Add(await AttachmentProvider.AddAsync(attachment));
+                }, stream, token);
+                item.Percent = 100;
+                item.BytesTransferred = file.Size;
             }
         }
-        finally
+        catch (OperationCanceledException)
         {
-            _isUploading = false;
+            item.State = TmUploadState.Cancelled;
+            StateHasChanged();
+            return;
         }
+        catch (Exception ex)
+        {
+            item.State = TmUploadState.Failed;
+            item.Message = ex.Message;
+            StateHasChanged();
+            return;
+        }
+
+        if (!upload.Success)
+        {
+            item.State = TmUploadState.Failed;
+            item.Message = upload.ErrorMessage;
+            StateHasChanged();
+            return;
+        }
+
+        var attachment = ToAttachment(upload, file, entityRef);
+        await RunScanAsync(item, attachment, entityRef);
+
+        _attachments.Add(await AttachmentProvider!.AddAsync(attachment));
+        item.State = attachment.ScanStatus is FileScanStatus.Blocked ? TmUploadState.Blocked : TmUploadState.Completed;
+        if (attachment.ScanStatus is FileScanStatus.Blocked)
+        {
+            item.Message = attachment.ScanMessage;
+        }
+        StateHasChanged();
+    }
+
+    private async Task RunScanAsync(TmUploadItem item, TmAttachment attachment, TmEntityRef entityRef)
+    {
+        if (ScanHook is null) return;
+
+        item.State = TmUploadState.Scanning;
+        attachment.ScanStatus = FileScanStatus.Pending;
+        StateHasChanged();
+
+        var result = await ScanHook.ScanAsync(new FileScanRequest
+        {
+            FileName = attachment.FileName,
+            ContentType = attachment.ContentType,
+            SizeBytes = attachment.SizeBytes,
+            AssetId = attachment.AssetId,
+            EntityRef = entityRef,
+            Purpose = attachment.Purpose
+        });
+
+        attachment.ScanStatus = result.Status;
+        attachment.ScanMessage = result.Message ?? result.ThreatName;
+        if (result.Status is FileScanStatus.Blocked)
+        {
+            attachment.CanDownload = false;
+        }
+
+        if (result.Status is not (FileScanStatus.NotScanned or FileScanStatus.Clean))
+        {
+            var value = (result.Status, result.Message ?? result.ThreatName);
+            if (!string.IsNullOrEmpty(attachment.AssetId)) _scanVerdicts[attachment.AssetId!] = value;
+            _scanVerdicts["name:" + attachment.FileName] = value;
+        }
+    }
+
+    private async Task CancelUploadAsync(TmUploadItem item)
+    {
+        if (item.Cts is not null)
+        {
+            await item.Cts.CancelAsync();
+        }
+        item.State = TmUploadState.Cancelled;
+    }
+
+    private async Task ResumeUploadAsync(TmUploadItem item)
+    {
+        if (item.ResumeAction is not null)
+        {
+            await item.ResumeAction(item);
+        }
+    }
+
+    private void DismissUpload(TmUploadItem item)
+    {
+        item.Cts?.Dispose();
+        _uploads.Remove(item);
+    }
+
+    private static bool SupportsChunking(ITmFileProvider provider, out ITmChunkedFileProvider chunked)
+    {
+        if (provider is ITmChunkedFileProvider c
+            && provider.Capabilities.HasFlag(TmFileProviderCapabilities.ChunkUpload))
+        {
+            chunked = c;
+            return true;
+        }
+        chunked = null!;
+        return false;
     }
 
     private async Task DownloadAsync(TmAttachment att)

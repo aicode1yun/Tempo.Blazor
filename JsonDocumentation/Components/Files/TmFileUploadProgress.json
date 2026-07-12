@@ -1,0 +1,13 @@
+{
+  "itemName": "TmFileUploadProgress",
+  "kind": "Component",
+  "category": "Files",
+  "description": "Renders a list of in-progress and finished uploads with progress bars and cancel / resume / dismiss actions.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "sourcePath": "src/Tempo.Blazor/Components/Files/TmFileUploadProgress.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Files"
+  ]
+}

@@ -1,0 +1,156 @@
+@namespace Tempo.Blazor.Components.Files
+@using Tempo.Blazor.Abstractions.Models
+
+<div class="tm-pdf-annotation-layer" data-testid="pdf-annotation-layer" aria-label="@Loc["TmPdfViewer_AnnotationsLayerLabel"]">
+    @foreach (var thread in VisibleThreads)
+    {
+        @if (thread.Anchor.Kind == DocumentCommentAnchorKind.TextRange)
+        {
+            @foreach (var rect in thread.Anchor.Rects)
+            {
+                <button type="button"
+                        class="@HighlightClass(thread)"
+                        style="@DocumentCommentGeometryHelper.ToRectStyle(rect)"
+                        aria-label="@MarkerLabel(thread)"
+                        data-thread-id="@thread.Id"
+                        disabled="@Disabled"
+                        @onclick:stopPropagation="true"
+                        @onclick="() => SelectAsync(thread.Id)"></button>
+            }
+        }
+        else if (thread.Anchor.Kind == DocumentCommentAnchorKind.Area)
+        {
+            <button type="button"
+                    class="@AreaClass(thread)"
+                    style="@DocumentCommentGeometryHelper.ToAreaStyle(thread.Anchor)"
+                    aria-label="@MarkerLabel(thread)"
+                    data-thread-id="@thread.Id"
+                    disabled="@Disabled"
+                    @onclick:stopPropagation="true"
+                    @onclick="() => SelectAsync(thread.Id)"></button>
+        }
+
+        <button type="button"
+                class="@MarkerClass(thread)"
+                style="@MarkerStyle(thread)"
+                aria-label="@MarkerLabel(thread)"
+                data-thread-id="@thread.Id"
+                data-testid="pdf-annotation-marker"
+                disabled="@Disabled"
+                @onclick:stopPropagation="true"
+                @onclick="() => SelectAsync(thread.Id)">
+            <span>@ThreadNumber(thread)</span>
+        </button>
+    }
+
+    @if (DraftAnchor is not null)
+    {
+        @if (DraftAnchor.Kind == DocumentCommentAnchorKind.TextRange)
+        {
+            @foreach (var rect in DraftAnchor.Rects)
+            {
+                <div class="tm-pdf-annotation-layer__highlight tm-pdf-annotation-layer__highlight--draft"
+                     style="@DocumentCommentGeometryHelper.ToRectStyle(rect)"
+                     data-testid="pdf-annotation-draft"
+                     aria-hidden="true"></div>
+            }
+        }
+        else
+        {
+            <div class="tm-pdf-annotation-layer__area tm-pdf-annotation-layer__area--draft"
+                 style="@DocumentCommentGeometryHelper.ToAreaStyle(DraftAnchor)"
+                 data-testid="pdf-annotation-draft"
+                 aria-hidden="true"></div>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>Annotation threads available to render.</summary>
+    [Parameter] public IReadOnlyList<DocumentCommentThread> Threads { get; set; } = [];
+
+    /// <summary>One-based current page number.</summary>
+    [Parameter] public int PageNumber { get; set; } = 1;
+
+    /// <summary>Selected thread id.</summary>
+    [Parameter] public string? SelectedThreadId { get; set; }
+
+    /// <summary>Current user id used for mention styling.</summary>
+    [Parameter] public string? CurrentUserId { get; set; }
+
+    /// <summary>Whether resolved threads should be rendered.</summary>
+    [Parameter] public bool ShowResolved { get; set; }
+
+    /// <summary>Current draft anchor for a pending, not-yet-saved annotation.</summary>
+    [Parameter] public DocumentCommentAnchor? DraftAnchor { get; set; }
+
+    /// <summary>Whether marker interaction is disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Callback invoked when a thread marker or highlight is selected.</summary>
+    [Parameter] public EventCallback<string> OnThreadSelected { get; set; }
+
+    private IEnumerable<DocumentCommentThread> VisibleThreads => Threads
+        .Where(thread => thread.Anchor.PageNumber == PageNumber)
+        .Where(thread => thread.Anchor.Kind is DocumentCommentAnchorKind.Point
+            or DocumentCommentAnchorKind.Area
+            or DocumentCommentAnchorKind.TextRange)
+        .Where(thread => ShowResolved || thread.Status == DocumentCommentThreadStatus.Open);
+
+    private Task SelectAsync(string threadId)
+        => Disabled ? Task.CompletedTask : OnThreadSelected.InvokeAsync(threadId);
+
+    private int ThreadNumber(DocumentCommentThread thread)
+    {
+        for (var i = 0; i < Threads.Count; i++)
+        {
+            if (ReferenceEquals(Threads[i], thread) || string.Equals(Threads[i].Id, thread.Id, StringComparison.Ordinal))
+            {
+                return i + 1;
+            }
+        }
+
+        return 1;
+    }
+
+    private string MarkerLabel(DocumentCommentThread thread)
+    {
+        var state = thread.Status == DocumentCommentThreadStatus.Resolved
+            ? Loc["TmPdfViewer_Resolved"]
+            : Loc["TmPdfViewer_StatusOpen"];
+        return Loc["TmPdfViewer_MarkerAriaLabel", ThreadNumber(thread), thread.Anchor.PageNumber, state];
+    }
+
+    private static string MarkerStyle(DocumentCommentThread thread)
+        => DocumentCommentGeometryHelper.ToBadgeStyle(thread.Anchor);
+
+    private string HighlightClass(DocumentCommentThread thread)
+        => Compose("tm-pdf-annotation-layer__highlight", thread);
+
+    private string AreaClass(DocumentCommentThread thread)
+        => Compose("tm-pdf-annotation-layer__area", thread);
+
+    private string MarkerClass(DocumentCommentThread thread)
+        => Compose("tm-pdf-annotation-layer__marker", thread);
+
+    private string Compose(string baseClass, DocumentCommentThread thread)
+    {
+        var classes = new List<string> { baseClass };
+        if (string.Equals(thread.Id, SelectedThreadId, StringComparison.Ordinal))
+        {
+            classes.Add(baseClass + "--selected");
+        }
+
+        if (thread.Status == DocumentCommentThreadStatus.Resolved)
+        {
+            classes.Add(baseClass + "--resolved");
+        }
+
+        if (DocumentCommentHelper.MentionsUser(thread, CurrentUserId))
+        {
+            classes.Add(baseClass + "--mentioned");
+        }
+
+        return string.Join(" ", classes);
+    }
+}

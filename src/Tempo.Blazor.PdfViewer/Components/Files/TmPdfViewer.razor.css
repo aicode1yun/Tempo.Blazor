@@ -167,6 +167,37 @@
     pointer-events: auto;
 }
 
+/* ── Search highlight layer (children injected by JS) ────────────────────── */
+
+.tm-pdf-viewer__search-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.tm-pdf-viewer__search-layer ::deep .tm-pdf-search-highlight {
+    position: absolute;
+    background: color-mix(in srgb, var(--tm-warning, #f59e0b) 38%, transparent);
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+.tm-pdf-viewer__search-layer ::deep .tm-pdf-search-highlight--active {
+    background: color-mix(in srgb, var(--tm-warning, #f59e0b) 68%, transparent);
+    outline: 1px solid var(--tm-warning, #f59e0b);
+}
+
+/* ── Annotation overlay (sized to canvas by JS; layer fills it) ──────────── */
+
+.tm-pdf-viewer__annotation-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
 /* ── Continuous scroll wrap ──────────────────────────────────────────────── */
 
 .tm-pdf-viewer__continuous-wrap {

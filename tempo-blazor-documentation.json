@@ -115,113 +115,95 @@
     "packages": [
       {
         "name": "Tempo.Blazor",
-        "description": "Core component library with common UI components, CSS, and JS interop. Larger optional components are distributed through feature packages.",
-        "required": true
-      },
-      {
-        "name": "Tempo.Blazor.All",
-        "description": "Compatibility package that references Tempo.Blazor plus the split feature packages and exposes AddTempoBlazorAll().",
-        "required": false
+        "description": "Comprehensive Blazor component library with 100+ components. Supports WebAssembly, Server, and InteractiveAuto render modes. Multi-targets .NET 8/9/10. Includes multilingual support (EN/CS), CSS variable theming, and dark mode. Optional FluentValidation integration is available through Tempo.Blazor.FluentValidation."
       },
       {
         "name": "Tempo.Blazor.PdfViewer",
-        "description": "Optional PDF.js powered PDF viewer component and PDF.js static web assets.",
-        "required": false
+        "description": "PDF.js powered PDF viewer component for Tempo.Blazor with thumbnails, search, text layer, rotation, zoom, and continuous scroll."
       },
       {
         "name": "Tempo.Blazor.Codes",
-        "description": "Optional QR code and barcode components backed by QRCoder and ZXing.Net.",
-        "required": false
+        "description": "QR code and barcode components for Tempo.Blazor backed by QRCoder and ZXing.Net."
       },
       {
         "name": "Tempo.Blazor.DiagramEditor",
-        "description": "Optional diagram editor components and diagram static web assets.",
-        "required": false
-      },
-      {
-        "name": "Tempo.Blazor.DocumentEditor",
-        "description": "Optional document editor components, canvas runtime, clipboard normalization, and document editor static web assets.",
-        "required": false
-      },
-      {
-        "name": "Tempo.Blazor.NotionEditor",
-        "description": "Optional Notion-style editor components, block/database UI, collaboration UI, comments, media, and Tempo embed blocks.",
-        "required": false
-      },
-      {
-        "name": "Tempo.Blazor.Signing",
-        "description": "Optional signing workflow components, PDF template designer, recipient roles, signing form runner, verification panels, and audit trail UI.",
-        "required": false
+        "description": "Diagram editor components for Tempo.Blazor, including stencil libraries, templates, import helpers, auto-layout, and diagram canvas interop."
       },
       {
         "name": "Tempo.Blazor.Wireframe",
-        "description": "Optional wireframe editor components and wireframe static web assets.",
-        "required": false
+        "description": "Wireframe editor components for Tempo.Blazor with toolbox, schema registry, canvas interop, page tabs, minimap, and export helpers."
       },
       {
         "name": "Tempo.Blazor.Modeling",
-        "description": "Optional modeling editor components built on the diagram editor package.",
-        "required": false
+        "description": "Modeling editor components for Tempo.Blazor, including BPMN, UML, ArchiMate, ERD notation profiles and diagram generation."
       },
       {
         "name": "Tempo.Blazor.Spreadsheet",
-        "description": "Optional Excel-like spreadsheet editor, XLSX import/export, and spreadsheet static web assets.",
-        "required": false
+        "description": "Excel-like spreadsheet components for Tempo.Blazor, including canvas rendering, formula editing, workbook import/export, and spreadsheet interop assets."
       },
       {
         "name": "Tempo.Blazor.GanttXlsx",
-        "description": "Optional Gantt XLSX import/export helpers backed by DocumentFormat.OpenXml.",
-        "required": false
+        "description": "Optional XLSX import and export helpers for Tempo.Blazor Gantt components, backed by DocumentFormat.OpenXml."
+      },
+      {
+        "name": "Tempo.Blazor.DataTableXlsx",
+        "description": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml."
+      },
+      {
+        "name": "Tempo.Blazor.DocumentEditor",
+        "description": "Document editor components for Tempo.Blazor, including canvas rendering, collaboration UI, clipboard normalization, and document editor interop assets."
+      },
+      {
+        "name": "Tempo.Blazor.NotionEditor",
+        "description": "Notion-style editor components for Tempo.Blazor, including pages, blocks, databases, collaboration UI, comments, media, and Tempo embed blocks."
+      },
+      {
+        "name": "Tempo.Blazor.Signing",
+        "description": "Signing workflow components for Tempo.Blazor, including PDF template design, recipient roles, signing form runner, document comments, verification panels, and audit trail UI."
+      },
+      {
+        "name": "Tempo.Blazor.All",
+        "description": "Compatibility package for Tempo.Blazor that references the core package and split feature packages for applications that want the full component suite."
       },
       {
         "name": "Tempo.Blazor.Abstractions",
-        "description": "Interfaces and models (zero UI dependencies). Safe to reference from API/service projects for shared contracts like ITmAttachmentProvider, ITmFileProvider, IDashboardProvider, etc.",
-        "required": false
+        "description": "Interfaces and models for Tempo.Blazor component library. Zero UI dependencies – safe to reference from API/service projects."
       },
       {
         "name": "Tempo.Blazor.FluentValidation",
-        "description": "Optional FluentValidation integration. Provides FluentValidationValidator component and EditContext extensions for async validation.",
-        "required": false
+        "description": "FluentValidation integration for Tempo.Blazor component library. Provides FluentValidationValidator component for EditForm and assembly scanning for validator registration."
       },
       {
         "name": "Tempo.Blazor.Collaboration",
-        "description": "Optional SignalR collaboration adapters for document editor and document library refresh workflows.",
-        "required": false
+        "description": "SignalR collaboration providers for Tempo.Blazor document editor abstractions."
       },
       {
         "name": "Tempo.Blazor.DocumentFormats",
-        "description": "Optional server-side import/export package for DOCX, ODT, HTML, Markdown, images, and Notion/document model conversion.",
-        "required": false
+        "description": "Optional server-side DOCX and ODT import/export support for TmDocumentEditor."
       },
       {
         "name": "Tempo.Blazor.EmailTemplates.Abstractions",
-        "description": "Email template document model, rendering contracts, MJML import/export, templating, DTOs, and validation.",
-        "required": false
+        "description": "Logic and contracts for the Tempo.Blazor email template editor: block model, MJML generation and import, Scriban templating sandbox, variable extraction, render pipeline, DTOs and validators. No Blazor dependency – safe to reference from API/service projects."
       },
       {
         "name": "Tempo.Blazor.EmailTemplates",
-        "description": "Visual email template editor UI components and editor-side services.",
-        "required": false
+        "description": "Drag-and-drop email template editor component (TmEmailTemplateEditor) for Tempo.Blazor. Visual MJML editor with full MJML 4 parity, bidirectional MJML import/export, Scriban variable templating and live preview. Built entirely on Tempo.Blazor components."
       },
       {
         "name": "Tempo.Blazor.Mcp",
-        "description": "MCP tools for Tempo.Blazor wireframe schemas, document operations, validation, and implementation briefs.",
-        "required": false
+        "description": "Model Context Protocol (MCP) tools for designing and editing Tempo.Blazor wireframes, diagrams, editor documents and reports with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server."
       },
       {
         "name": "Tempo.Reporting.Abstractions",
-        "description": "Report definition contracts, validation models, data provider interfaces, report server DTOs, and the typed HTTP client for remote report servers.",
-        "required": false
+        "description": "Contracts, JSON definition schema, validation models, data provider interfaces, and server DTOs for Tempo Reporting. No Blazor or ASP.NET dependency."
       },
       {
         "name": "Tempo.Reporting.Engine",
-        "description": "Server/WASM-capable reporting engine for expressions, processing, fixed-page layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives.",
-        "required": false
+        "description": "Tempo Reporting processing engine with expression evaluation, parameter resolution, layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives."
       },
       {
         "name": "Tempo.Blazor.Reporting",
-        "description": "Blazor reporting components: report viewer, parameter panel, explorer, lightweight designer, embedded sources, and remote Report Server integration.",
-        "required": false
+        "description": "Blazor reporting components for Tempo Reporting: report viewer, parameter panel, explorer, lightweight designer, embedded sources, and remote Report Server integration."
       }
     ],
     "installation": {
@@ -3237,6 +3219,44 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "CsvDataTableExporter",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DataTable",
+      "description": "Dependency-free CSV IDataTableExporter with RFC 4180 quoting and an optional UTF-8 BOM for Excel.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/DataTable/CsvDataTableExporter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ContentType",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "FileExtension",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Format",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Export",
+          "kind": "Method",
+          "type": "byte[]",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "DataTableExportData"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "itemName": "DataTableScrollMode",
       "kind": "Enum",
       "category": "Components",
@@ -4193,6 +4213,55 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IcsCalendarSerializer",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Scheduler",
+      "description": "Dependency-free iCalendar (RFC 5545) exporter/importer for scheduler events, with RRULE/EXDATE mapping, text escaping, and 75-octet line folding.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Scheduler/IcsCalendarSerializer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ContentType",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "FileExtension",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Export",
+          "kind": "Method",
+          "type": "string",
+          "parameters": [
+            {
+              "name": "events",
+              "type": "IEnumerable<TmScheduleEvent>"
+            },
+            {
+              "name": "calendarName",
+              "type": "string?",
+              "default": "null"
+            }
+          ]
+        },
+        {
+          "name": "Import",
+          "kind": "Method",
+          "type": "IReadOnlyList<TmScheduleEvent>",
+          "parameters": [
+            {
+              "name": "content",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "itemName": "InMemoryDataProvider<TItem>",
       "kind": "Class",
       "category": "Components",
@@ -4614,6 +4683,34 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "TmChunkedUploader",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Dependency-free coordinator that streams a file to a chunk sink in fixed 256 KB chunks with progress, cancellation, and resume.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Files/TmChunkedUploader.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ChunkSink",
+          "kind": "Method",
+          "type": "delegate Task<TmFileUploadResult>",
+          "description": "Delegate matching a provider's chunk-upload entry point.",
+          "parameters": [
+            {
+              "name": "chunk",
+              "type": "TmFileChunk"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "itemName": "TmSignatureCaptureChangedEventArgs",
       "kind": "Record",
       "category": "Components",
@@ -4641,6 +4738,54 @@
       "description": "Capture modes supported by .",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmSignatureCaptureMode.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmTextLineDiff",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Computes a line-by-line diff (via longest-common-subsequence) between two text versions; useful for IFileVersioningHook implementations.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Files/TmTextLineDiff.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Compute",
+          "kind": "Method",
+          "type": "IReadOnlyList<TmFileVersionDiffLine>",
+          "description": "Produces added/removed/unchanged lines describing the change from old to new text.",
+          "parameters": [
+            {
+              "name": "oldText",
+              "type": "string?"
+            },
+            {
+              "name": "newText",
+              "type": "string?"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "TmUploadItem",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Observable state for a single tracked upload (progress, lifecycle, cancel/resume context) rendered by TmFileUploadProgress.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Files/TmUploadItem.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmUploadState",
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Lifecycle state of a tracked upload: Uploading, Scanning, Completed, Failed, Cancelled, or Blocked.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Files/TmUploadItem.cs",
       "documentationStatus": "merged"
     },
     {
@@ -6430,10 +6575,22 @@
           "description": "Initial page size. Default: 25."
         },
         {
+          "name": "DetailTemplate",
+          "type": "RenderFragment<TItem>?",
+          "isRequired": false,
+          "description": "Template rendered as an expandable detail row beneath a data row."
+        },
+        {
           "name": "DisplayResolver",
           "type": "Func<string, string?, string?>?",
           "isRequired": false,
           "description": "Universal display resolver for field labels and filter values. DisplayResolver(fieldName, null) → localized field/column label (e.g., \"Status\" → \"Stav\") DisplayResolver(fieldName, rawValue) → localized value (e.g., (\"Status\",\"Active\") → \"Aktivní\") Return null to use defaults (FilterDefinition.FieldLabel, column Title, or raw value). Set once on the component — flows to ViewManager, FilterBuilder, and ColumnPicker."
+        },
+        {
+          "name": "Editable",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Enables inline row editing (double-click a row). Requires editable columns with EditTemplate."
         },
         {
           "name": "EmptyTitle",
@@ -6468,16 +6625,46 @@
           "description": "In-memory items. When set without DataProvider, client-side sort/filter/pagination applies."
         },
         {
+          "name": "LayoutChanged",
+          "type": "EventCallback<DataTableLayout>",
+          "isRequired": false,
+          "description": "Fires whenever the column layout (widths or pin state) changes."
+        },
+        {
+          "name": "LayoutStore",
+          "type": "IDataTableLayoutStore?",
+          "isRequired": false,
+          "description": "Persistence hook for per-user column layout (widths + pin state). Optional."
+        },
+        {
           "name": "OnGroupingChanged",
           "type": "EventCallback<IReadOnlyList<string>>",
           "isRequired": false,
           "description": "Fires when grouping configuration changes."
         },
         {
+          "name": "OnLoadDetail",
+          "type": "Func<TItem, Task>?",
+          "isRequired": false,
+          "description": "Invoked once, the first time a row is expanded, so the host can lazily load detail data before renders it."
+        },
+        {
           "name": "OnRowClick",
           "type": "EventCallback<TItem>",
           "isRequired": false,
           "description": "Fires when a data row is clicked."
+        },
+        {
+          "name": "OnRowCommit",
+          "type": "Func<TItem, Task<bool>>?",
+          "isRequired": false,
+          "description": "Invoked to persist a committed row edit. Return false to keep the row in edit mode (for example when a server rejected the change). When null, the edit commits locally."
+        },
+        {
+          "name": "OnRowEditCancelled",
+          "type": "EventCallback<TItem>",
+          "isRequired": false,
+          "description": "Fires when a row edit is cancelled."
         },
         {
           "name": "OnSelectionChanged",
@@ -6497,6 +6684,12 @@
           "type": "Func<TItem, IReadOnlyDictionary<string, object>?>?",
           "isRequired": false,
           "description": "Optional row-level HTML attributes applied to every data row, including non-virtualized, virtualized, and grouped leaf rows."
+        },
+        {
+          "name": "RowEditValidator",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Optional validator content rendered inside the row's cascading while editing (for example <FluentValidationValidator /> or <DataAnnotationsValidator />). Commit is blocked while the edit context is invalid."
         },
         {
           "name": "ScrollMode",
@@ -6528,6 +6721,13 @@
           "type": "RenderFragment?",
           "isRequired": false,
           "description": "Render fragment shown in the selection action bar (bulk actions)."
+        },
+        {
+          "name": "ShowColumnMenu",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether column header controls (pin toggle, resize handle) are shown. Default true."
         },
         {
           "name": "ShowColumnPicker",
@@ -6770,6 +6970,18 @@
           "description": "Additional CSS class applied to each data cell in this column."
         },
         {
+          "name": "Editable",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether this column supports inline editing (requires TmDataTable.Editable)."
+        },
+        {
+          "name": "EditTemplate",
+          "type": "RenderFragment<TItem>?",
+          "isRequired": false,
+          "description": "Template rendered for this cell when the row is in edit mode. Replaces CellTemplate/Field."
+        },
+        {
           "name": "Field",
           "type": "Func<TItem, object?>",
           "isRequired": true,
@@ -6845,10 +7057,23 @@
           "description": "Display order (lower index = further left). Columns with same order preserve declaration order."
         },
         {
+          "name": "Pinned",
+          "type": "ColumnPin",
+          "isRequired": false,
+          "default": "ColumnPin.None",
+          "description": "Default pin state (left/right/none). User pin changes override this at runtime. Default None."
+        },
+        {
           "name": "PropertyName",
           "type": "string?",
           "isRequired": false,
           "description": "Property name for sorting and filtering (e.g. \"Name\", \"CreatedAt\"). Defaults to Title when null."
+        },
+        {
+          "name": "Resizable",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the user can drag-resize this column. Default false."
         },
         {
           "name": "Sortable",
@@ -8637,10 +8862,29 @@
           "description": "Provider for uploading files and resolving asset URLs."
         },
         {
+          "name": "MaxUploadSize",
+          "type": "long",
+          "isRequired": false,
+          "default": "100L * 1024 * 1024",
+          "description": "Maximum size of a single upload in bytes. Default 100 MB. Also caps the browser read stream."
+        },
+        {
           "name": "OnDeleted",
           "type": "EventCallback<TmAttachment>",
           "isRequired": false,
           "description": "Fires when an attachment is deleted."
+        },
+        {
+          "name": "OnUploadProgress",
+          "type": "EventCallback<TmUploadProgress>",
+          "isRequired": false,
+          "description": "Fires for each chunk progress update during a chunked upload."
+        },
+        {
+          "name": "ScanHook",
+          "type": "IFileScanHook?",
+          "isRequired": false,
+          "description": "Optional scan hook run after each upload; a result marks the file unavailable."
         }
       ],
       "cssClasses": [
@@ -8783,6 +9027,13 @@
           "description": "Template rendered below the item name in list/grid views (e.g. tags, metadata preview)."
         },
         {
+          "name": "MaxUploadSize",
+          "type": "long",
+          "isRequired": false,
+          "default": "100L * 1024 * 1024",
+          "description": "Maximum size of a single upload in bytes. Default 100 MB. Also caps the browser read stream."
+        },
+        {
           "name": "NewFolderForm",
           "type": "RenderFragment<NewFolderContext<TMetadata>>?",
           "isRequired": false,
@@ -8801,11 +9052,23 @@
           "description": "Event fired when the selection changes."
         },
         {
+          "name": "OnUploadProgress",
+          "type": "EventCallback<TmUploadProgress>",
+          "isRequired": false,
+          "description": "Fires for each chunk progress update during a chunked upload."
+        },
+        {
           "name": "RespectPermissions",
           "type": "bool",
           "isRequired": false,
           "default": "true",
           "description": "When true, hides actions the current user is not permitted to perform."
+        },
+        {
+          "name": "ScanHook",
+          "type": "IFileScanHook?",
+          "isRequired": false,
+          "description": "Optional scan hook run after each upload; a result marks the item unavailable."
         },
         {
           "name": "ShowCopyButton",
@@ -8876,10 +9139,23 @@
           "description": "Whether to show the Upload button. Default is true."
         },
         {
+          "name": "ShowVersionHistory",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether to show the version-history action (requires ). Default true."
+        },
+        {
           "name": "UploadForm",
           "type": "RenderFragment<UploadContext<TMetadata>>?",
           "isRequired": false,
           "description": "Custom form for uploading files with metadata. When null, a simple file input is used."
+        },
+        {
+          "name": "VersioningHook",
+          "type": "IFileVersioningHook?",
+          "isRequired": false,
+          "description": "Optional versioning hook. When supplied and is set, a version-history action is available."
         },
         {
           "name": "ViewMode",
@@ -9125,6 +9401,13 @@
           "description": "When true, disables all user interactions."
         },
         {
+          "name": "MaxUploadSize",
+          "type": "long",
+          "isRequired": false,
+          "default": "100L * 1024 * 1024",
+          "description": "Maximum size of a single upload in bytes. Default 100 MB. Also caps the browser read stream."
+        },
+        {
           "name": "OnItemOpen",
           "type": "EventCallback<FileManagerItem>",
           "isRequired": false,
@@ -9135,6 +9418,18 @@
           "type": "EventCallback<IReadOnlyList<FileManagerItem>>",
           "isRequired": false,
           "description": "Event fired when the selection changes."
+        },
+        {
+          "name": "OnUploadProgress",
+          "type": "EventCallback<TmUploadProgress>",
+          "isRequired": false,
+          "description": "Fires for each chunk progress update during a chunked upload."
+        },
+        {
+          "name": "ScanHook",
+          "type": "IFileScanHook?",
+          "isRequired": false,
+          "description": "Optional scan hook run after each upload; a result marks the file unavailable."
         },
         {
           "name": "ShowDeleteButton",
@@ -9183,6 +9478,78 @@
           "type": "EventCallback<FileManagerViewMode>",
           "isRequired": false,
           "description": "Display mode (List or Grid). Default is ."
+        }
+      ]
+    },
+    {
+      "itemName": "TmFileUploadProgress",
+      "kind": "Component",
+      "category": "Files",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Renders a list of in-progress and finished uploads with progress bars and cancel / resume / dismiss actions.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Files/TmFileUploadProgress.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Files"
+      ],
+      "parameters": [
+        {
+          "name": "OnCancel",
+          "type": "EventCallback<TmUploadItem>",
+          "isRequired": false,
+          "description": "Invoked when the user cancels an in-flight upload."
+        },
+        {
+          "name": "OnDismiss",
+          "type": "EventCallback<TmUploadItem>",
+          "isRequired": false,
+          "description": "Invoked when the user dismisses a finished upload from the list."
+        },
+        {
+          "name": "OnResume",
+          "type": "EventCallback<TmUploadItem>",
+          "isRequired": false,
+          "description": "Invoked when the user resumes a cancelled or failed upload."
+        },
+        {
+          "name": "Uploads",
+          "type": "IReadOnlyList<TmUploadItem>?",
+          "isRequired": false,
+          "description": "Uploads to display (in-progress and recently finished)."
+        }
+      ]
+    },
+    {
+      "itemName": "TmFileVersionHistory",
+      "kind": "Component",
+      "category": "Files",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Version-history panel for a file: lists versions newest-first with a current badge, compares a version with current (line diff), and restores a prior version via IFileVersioningHook.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Files/TmFileVersionHistory.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Files"
+      ],
+      "parameters": [
+        {
+          "name": "Hook",
+          "type": "IFileVersioningHook?",
+          "isRequired": false,
+          "description": "Versioning hook that supplies the history, diffs, and restore."
+        },
+        {
+          "name": "ItemId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Identifier of the item whose versions are shown."
+        },
+        {
+          "name": "OnRestored",
+          "type": "EventCallback<TmFileVersion>",
+          "isRequired": false,
+          "description": "Raised after a version is restored so the host can refresh its listing."
         }
       ]
     },
@@ -17646,6 +18013,13 @@
       ],
       "parameters": [
         {
+          "name": "AllowPrint",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the toolbar shows a Print button (uses the browser print dialog with print CSS). Default: true."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
@@ -17762,6 +18136,12 @@
           "isRequired": false,
           "default": "30",
           "description": "Slot duration in minutes for day/week views."
+        },
+        {
+          "name": "TimeZoneId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Display timezone (IANA id such as Europe/Prague, or a Windows id). When set, event times are converted to this zone at the render boundary (DST-aware). When null, the machine-local timezone is used and non-recurring events are passed through unchanged for backward compatibility."
         },
         {
           "name": "View",
@@ -18407,6 +18787,12 @@
           "description": "Fires when the user clicks Previous."
         },
         {
+          "name": "OnPrint",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fires when the user clicks Print."
+        },
+        {
           "name": "OnToday",
           "type": "EventCallback",
           "isRequired": false,
@@ -18417,6 +18803,12 @@
           "type": "EventCallback<TmScheduleViewType>",
           "isRequired": false,
           "description": "Fires when the user clicks a view button."
+        },
+        {
+          "name": "ShowPrint",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether to show the Print button."
         },
         {
           "name": "View",
@@ -21135,6 +21527,10 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor/wwwroot/js/data-table.js",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor/wwwroot/js/file-manager.js",
       "kind": "JavaScript"
     },
@@ -21180,11 +21576,11 @@
     }
   ],
   "summary": {
-    "itemCount": 295,
-    "manualItemCount": 295,
-    "generatedItemCount": 287,
+    "itemCount": 303,
+    "manualItemCount": 303,
+    "generatedItemCount": 295,
     "generatedOnlyItemCount": 0,
-    "componentCount": 178,
-    "publicApiTypeCount": 109
+    "componentCount": 180,
+    "publicApiTypeCount": 115
   }
 }

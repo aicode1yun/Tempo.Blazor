@@ -17,7 +17,8 @@ public class InMemoryNotificationStore : ITmNotificationService
         | TmNotificationServiceCapabilities.Read
         | TmNotificationServiceCapabilities.Query
         | TmNotificationServiceCapabilities.UnreadCount
-        | TmNotificationServiceCapabilities.ReadState;
+        | TmNotificationServiceCapabilities.ReadState
+        | TmNotificationServiceCapabilities.DeliveryAck;
 
     TmNotificationServiceCapabilities ITmCapabilityProvider<TmNotificationServiceCapabilities>.Capabilities => Capabilities;
 
@@ -60,6 +61,25 @@ public class InMemoryNotificationStore : ITmNotificationService
                 {
                     n.ReadAt = DateTimeOffset.UtcNow;
                     DecrementUnread();
+                    NotifyChanged();
+                }
+            }
+        }
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task MarkAsDeliveredAsync(string notificationId, string recipientUserId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (_store.TryGetValue(recipientUserId, out var list))
+        {
+            lock (list)
+            {
+                var n = list.FirstOrDefault(x => string.Equals(x.Id, notificationId, StringComparison.OrdinalIgnoreCase));
+                if (n is not null && !n.IsDelivered)
+                {
+                    n.DeliveredAt = DateTimeOffset.UtcNow;
                     NotifyChanged();
                 }
             }
@@ -120,6 +140,24 @@ public class InMemoryNotificationStore : ITmNotificationService
         {
             return Task.FromResult(list.Count(x => !x.IsRead));
         }
+    }
+
+    /// <summary>Returns a distinct snapshot of recipients that currently have notifications,
+    /// preferring each recipient's <see cref="TmNotification.Recipient"/> snapshot (with email)
+    /// and falling back to a minimal ref built from the recipient id.</summary>
+    public IReadOnlyList<TmUserRef> GetKnownRecipients()
+    {
+        var result = new List<TmUserRef>();
+        foreach (var (recipientId, list) in _store)
+        {
+            TmUserRef? snapshot;
+            lock (list)
+            {
+                snapshot = list.FirstOrDefault(n => n.Recipient is not null)?.Recipient;
+            }
+            result.Add(snapshot is not null ? Clone(snapshot) : new TmUserRef { Id = recipientId });
+        }
+        return result;
     }
 
     /// <summary>Clears all stored notifications.</summary>
@@ -186,6 +224,7 @@ public class InMemoryNotificationStore : ITmNotificationService
         normalized.Title = normalized.Title.Trim();
         normalized.CreatedAt = normalized.CreatedAt == default ? DateTimeOffset.UtcNow : normalized.CreatedAt.ToUniversalTime();
         normalized.ReadAt = normalized.ReadAt?.ToUniversalTime();
+        normalized.DeliveredAt = normalized.DeliveredAt?.ToUniversalTime();
         return normalized;
     }
 
@@ -202,6 +241,7 @@ public class InMemoryNotificationStore : ITmNotificationService
             Severity = notification.Severity,
             CreatedAt = notification.CreatedAt,
             ReadAt = notification.ReadAt,
+            DeliveredAt = notification.DeliveredAt,
             ActionUrl = notification.ActionUrl,
             EntityRef = notification.EntityRef?.Normalize(),
             CorrelationId = notification.CorrelationId,

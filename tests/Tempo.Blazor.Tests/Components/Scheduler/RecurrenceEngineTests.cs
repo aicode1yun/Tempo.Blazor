@@ -117,12 +117,12 @@ public class RecurrenceEngineTests
         {
             Id = "r1",
             Title = "Daily Standup",
-            Start = new(2025, 6, 1, 9, 0, 0),
-            End = new(2025, 6, 1, 9, 30, 0),
+            Start = new DateTime(2025, 6, 1, 9, 0, 0),
+            End = new DateTime(2025, 6, 1, 9, 30, 0),
             RecurrenceRule = "FREQ=DAILY;INTERVAL=1"
         };
 
-        var result = RecurrenceEngine.ExpandRecurrence(source, new(2025, 6, 1), new(2025, 6, 4));
+        var result = RecurrenceEngine.ExpandRecurrence(source, new DateTime(2025, 6, 1), new DateTime(2025, 6, 4));
 
         result.Should().HaveCount(3); // June 1, 2, 3
         result[0].Start.Day.Should().Be(1);
@@ -137,12 +137,12 @@ public class RecurrenceEngineTests
         {
             Id = "r1",
             Title = "Meeting",
-            Start = new(2025, 6, 1, 14, 0, 0),
-            End = new(2025, 6, 1, 15, 30, 0),
+            Start = new DateTime(2025, 6, 1, 14, 0, 0),
+            End = new DateTime(2025, 6, 1, 15, 30, 0),
             RecurrenceRule = "FREQ=DAILY;INTERVAL=1"
         };
 
-        var result = RecurrenceEngine.ExpandRecurrence(source, new(2025, 6, 1), new(2025, 6, 3));
+        var result = RecurrenceEngine.ExpandRecurrence(source, new DateTime(2025, 6, 1), new DateTime(2025, 6, 3));
 
         result[0].Start.Hour.Should().Be(14);
         result[0].End.Hour.Should().Be(15);
@@ -156,12 +156,12 @@ public class RecurrenceEngineTests
         {
             Id = "r2",
             Title = "Sprint Planning",
-            Start = new(2025, 6, 2, 10, 0, 0), // Monday
-            End = new(2025, 6, 2, 11, 0, 0),
+            Start = new DateTime(2025, 6, 2, 10, 0, 0), // Monday
+            End = new DateTime(2025, 6, 2, 11, 0, 0),
             RecurrenceRule = "FREQ=WEEKLY;BYDAY=MO,WE,FR"
         };
 
-        var result = RecurrenceEngine.ExpandRecurrence(source, new(2025, 6, 1), new(2025, 6, 8));
+        var result = RecurrenceEngine.ExpandRecurrence(source, new DateTime(2025, 6, 1), new DateTime(2025, 6, 8));
 
         // June 2 (Mon), June 4 (Wed), June 6 (Fri) = 3 occurrences
         result.Should().HaveCount(3);
@@ -177,12 +177,12 @@ public class RecurrenceEngineTests
         {
             Id = "r3",
             Title = "Daily",
-            Start = new(2025, 6, 1, 9, 0, 0),
-            End = new(2025, 6, 1, 10, 0, 0),
+            Start = new DateTime(2025, 6, 1, 9, 0, 0),
+            End = new DateTime(2025, 6, 1, 10, 0, 0),
             RecurrenceRule = "FREQ=DAILY;COUNT=3"
         };
 
-        var result = RecurrenceEngine.ExpandRecurrence(source, new(2025, 6, 1), new(2025, 6, 30));
+        var result = RecurrenceEngine.ExpandRecurrence(source, new DateTime(2025, 6, 1), new DateTime(2025, 6, 30));
 
         result.Should().HaveCount(3); // Capped by COUNT
     }
@@ -194,12 +194,12 @@ public class RecurrenceEngineTests
         {
             Id = "r4",
             Title = "Daily",
-            Start = new(2025, 6, 1, 9, 0, 0),
-            End = new(2025, 6, 1, 10, 0, 0),
+            Start = new DateTime(2025, 6, 1, 9, 0, 0),
+            End = new DateTime(2025, 6, 1, 10, 0, 0),
             RecurrenceRule = "FREQ=DAILY;UNTIL=20250603T000000Z"
         };
 
-        var result = RecurrenceEngine.ExpandRecurrence(source, new(2025, 6, 1), new(2025, 6, 30));
+        var result = RecurrenceEngine.ExpandRecurrence(source, new DateTime(2025, 6, 1), new DateTime(2025, 6, 30));
 
         result.Should().HaveCount(3); // June 1, 2, 3
     }
@@ -211,13 +211,13 @@ public class RecurrenceEngineTests
         {
             Id = "r5",
             Title = "Daily",
-            Start = new(2025, 6, 1, 9, 0, 0),
-            End = new(2025, 6, 1, 10, 0, 0),
+            Start = new DateTime(2025, 6, 1, 9, 0, 0),
+            End = new DateTime(2025, 6, 1, 10, 0, 0),
             RecurrenceRule = "FREQ=DAILY;INTERVAL=1",
-            RecurrenceExceptions = [new(2025, 6, 2, 9, 0, 0)]
+            RecurrenceExceptions = [new DateTime(2025, 6, 2, 9, 0, 0)]
         };
 
-        var result = RecurrenceEngine.ExpandRecurrence(source, new(2025, 6, 1), new(2025, 6, 4));
+        var result = RecurrenceEngine.ExpandRecurrence(source, new DateTime(2025, 6, 1), new DateTime(2025, 6, 4));
 
         result.Should().HaveCount(2); // June 1 and June 3 (June 2 excluded)
         result.Select(e => e.Start.Day).Should().BeEquivalentTo(new[] { 1, 3 });
@@ -230,12 +230,12 @@ public class RecurrenceEngineTests
         {
             Id = "r6",
             Title = "Daily",
-            Start = new(2025, 6, 1, 9, 0, 0),
-            End = new(2025, 6, 1, 10, 0, 0),
+            Start = new DateTime(2025, 6, 1, 9, 0, 0),
+            End = new DateTime(2025, 6, 1, 10, 0, 0),
             RecurrenceRule = "FREQ=DAILY;INTERVAL=1"
         };
 
-        var result = RecurrenceEngine.ExpandRecurrence(source, new(2025, 6, 1), new(2025, 6, 4));
+        var result = RecurrenceEngine.ExpandRecurrence(source, new DateTime(2025, 6, 1), new DateTime(2025, 6, 4));
 
         result.Select(e => e.Id).Should().OnlyHaveUniqueItems();
         result[0].Id.Should().Contain("r6");
@@ -248,12 +248,12 @@ public class RecurrenceEngineTests
         {
             Id = "r7",
             Title = "Monthly Report",
-            Start = new(2025, 1, 15, 10, 0, 0),
-            End = new(2025, 1, 15, 11, 0, 0),
+            Start = new DateTime(2025, 1, 15, 10, 0, 0),
+            End = new DateTime(2025, 1, 15, 11, 0, 0),
             RecurrenceRule = "FREQ=MONTHLY;BYMONTHDAY=15"
         };
 
-        var result = RecurrenceEngine.ExpandRecurrence(source, new(2025, 6, 1), new(2025, 9, 1));
+        var result = RecurrenceEngine.ExpandRecurrence(source, new DateTime(2025, 6, 1), new DateTime(2025, 9, 1));
 
         // June 15, July 15, Aug 15 = 3 occurrences
         result.Should().HaveCount(3);
@@ -267,12 +267,12 @@ public class RecurrenceEngineTests
         {
             Id = "r8",
             Title = "Biweekly",
-            Start = new(2025, 6, 2, 9, 0, 0), // Monday
-            End = new(2025, 6, 2, 10, 0, 0),
+            Start = new DateTime(2025, 6, 2, 9, 0, 0), // Monday
+            End = new DateTime(2025, 6, 2, 10, 0, 0),
             RecurrenceRule = "FREQ=WEEKLY;INTERVAL=2"
         };
 
-        var result = RecurrenceEngine.ExpandRecurrence(source, new(2025, 6, 1), new(2025, 7, 1));
+        var result = RecurrenceEngine.ExpandRecurrence(source, new DateTime(2025, 6, 1), new DateTime(2025, 7, 1));
 
         // June 2, June 16, June 30 = 3 occurrences (every 2 weeks)
         result.Should().HaveCount(3);
@@ -288,11 +288,11 @@ public class RecurrenceEngineTests
         {
             Id = "e1",
             Title = "Regular",
-            Start = new(2025, 6, 10, 9, 0, 0),
-            End = new(2025, 6, 10, 10, 0, 0),
+            Start = new DateTime(2025, 6, 10, 9, 0, 0),
+            End = new DateTime(2025, 6, 10, 10, 0, 0),
         };
 
-        var result = RecurrenceEngine.ExpandRecurrence(source, new(2025, 6, 1), new(2025, 7, 1));
+        var result = RecurrenceEngine.ExpandRecurrence(source, new DateTime(2025, 6, 1), new DateTime(2025, 7, 1));
 
         result.Should().BeEmpty();
     }

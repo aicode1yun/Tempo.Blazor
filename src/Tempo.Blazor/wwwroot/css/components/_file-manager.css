@@ -601,3 +601,316 @@
     min-width: 160px;
     padding: var(--tm-space-1, 0.25rem);
 }
+
+/* ── K4: Chunked upload progress ─────────────────────────────── */
+.tm-upload-progress {
+    list-style: none;
+    margin: var(--tm-space-2, 0.5rem) 0 0;
+    padding: var(--tm-space-2, 0.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2, 0.5rem);
+    border-top: 1px solid var(--tm-border-color, #d1d5db);
+}
+
+.tm-upload-progress__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-1, 0.25rem);
+    padding: var(--tm-space-2, 0.5rem);
+    background: var(--tm-surface, #ffffff);
+    border: 1px solid var(--tm-border-color, #d1d5db);
+    border-radius: var(--tm-radius-md, 0.375rem);
+}
+
+.tm-upload-progress__head,
+.tm-upload-progress__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tm-space-2, 0.5rem);
+    font-size: 0.8125rem;
+}
+
+.tm-upload-progress__name {
+    font-weight: 600;
+    color: var(--tm-text-primary, #111827);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-upload-progress__status {
+    color: var(--tm-text-secondary, #6b7280);
+    white-space: nowrap;
+}
+
+.tm-upload-progress__track {
+    width: 100%;
+    height: 6px;
+    background: var(--tm-color-surface-hover, #f3f4f6);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.tm-upload-progress__bar {
+    height: 100%;
+    background: var(--tm-color-primary, #2563eb);
+    border-radius: 999px;
+    transition: width 0.2s ease;
+}
+
+.tm-upload-progress__item--failed .tm-upload-progress__bar,
+.tm-upload-progress__item--blocked .tm-upload-progress__bar {
+    background: var(--tm-color-danger, #dc2626);
+}
+
+.tm-upload-progress__item--completed .tm-upload-progress__bar {
+    background: var(--tm-color-success, #16a34a);
+}
+
+.tm-upload-progress__pct {
+    color: var(--tm-text-secondary, #6b7280);
+    font-variant-numeric: tabular-nums;
+}
+
+.tm-upload-progress__msg {
+    color: var(--tm-color-danger-text, #b91c1c);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.tm-upload-progress__actions {
+    display: flex;
+    gap: var(--tm-space-1, 0.25rem);
+    margin-left: auto;
+}
+
+.tm-upload-progress__action {
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    border: 1px solid var(--tm-border-color, #d1d5db);
+    border-radius: var(--tm-radius-sm, 0.25rem);
+    background: transparent;
+    color: var(--tm-text-primary, #111827);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.tm-upload-progress__action:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-upload-progress__action--dismiss {
+    border: none;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--tm-text-tertiary, #9ca3af);
+}
+
+/* ── K4: File scan badges ────────────────────────────────────── */
+.tm-file-scan-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 8px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.tm-file-scan-badge--blocked {
+    color: var(--tm-color-danger-text, #b91c1c);
+    background: var(--tm-color-danger-subtle, #fef2f2);
+}
+
+.tm-file-scan-badge--pending {
+    color: var(--tm-color-warning-text, #92400e);
+    background: var(--tm-color-warning-subtle, #fffbeb);
+}
+
+/* ── K4: File version history ────────────────────────────────── */
+.tm-file-versions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2, 0.5rem);
+    min-width: 0;
+}
+
+.tm-file-versions__title {
+    font-weight: 600;
+    color: var(--tm-text-primary, #111827);
+}
+
+.tm-file-versions__empty,
+.tm-file-versions__loading {
+    padding: var(--tm-space-3, 0.75rem);
+    color: var(--tm-text-secondary, #6b7280);
+    font-size: 0.875rem;
+}
+
+.tm-file-versions__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-1, 0.25rem);
+}
+
+.tm-file-versions__item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--tm-space-2, 0.5rem);
+    border: 1px solid var(--tm-border-color, #d1d5db);
+    border-radius: var(--tm-radius-md, 0.375rem);
+    background: var(--tm-surface, #ffffff);
+}
+
+.tm-file-versions__item--current {
+    border-color: var(--tm-color-primary, #2563eb);
+    background: var(--tm-color-primary-subtle, #eff6ff);
+}
+
+.tm-file-versions__item-main {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2, 0.5rem);
+}
+
+.tm-file-versions__num {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--tm-color-primary, #2563eb);
+}
+
+.tm-file-versions__name {
+    font-weight: 500;
+    color: var(--tm-text-primary, #111827);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-file-versions__badge {
+    padding: 1px 8px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-radius: 999px;
+    color: var(--tm-text-inverse, #ffffff);
+    background: var(--tm-color-primary, #2563eb);
+    margin-left: auto;
+}
+
+.tm-file-versions__item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--tm-text-secondary, #6b7280);
+}
+
+.tm-file-versions__comment {
+    font-style: italic;
+}
+
+.tm-file-versions__item-actions {
+    display: flex;
+    gap: var(--tm-space-1, 0.25rem);
+    margin-top: 2px;
+}
+
+.tm-file-versions__action {
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    border: 1px solid var(--tm-border-color, #d1d5db);
+    border-radius: var(--tm-radius-sm, 0.25rem);
+    background: transparent;
+    color: var(--tm-text-primary, #111827);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.tm-file-versions__action:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-file-versions__action--restore {
+    color: var(--tm-color-primary, #2563eb);
+    border-color: var(--tm-color-primary, #2563eb);
+}
+
+.tm-file-versions__diff {
+    border: 1px solid var(--tm-border-color, #d1d5db);
+    border-radius: var(--tm-radius-md, 0.375rem);
+    overflow: hidden;
+}
+
+.tm-file-versions__diff-head {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2, 0.5rem);
+    padding: var(--tm-space-2, 0.5rem);
+    background: var(--tm-color-surface-hover, #f3f4f6);
+    font-size: 0.8125rem;
+}
+
+.tm-file-versions__diff-title {
+    font-weight: 600;
+    color: var(--tm-text-primary, #111827);
+}
+
+.tm-file-versions__diff-stats {
+    display: flex;
+    gap: var(--tm-space-2, 0.5rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.tm-file-versions__diff-added { color: var(--tm-color-success-text, #15803d); }
+.tm-file-versions__diff-removed { color: var(--tm-color-danger-text, #b91c1c); }
+.tm-file-versions__diff-size { color: var(--tm-text-secondary, #6b7280); }
+
+.tm-file-versions__diff-close {
+    margin-left: auto;
+    border: none;
+    background: transparent;
+    font-size: 1.125rem;
+    line-height: 1;
+    color: var(--tm-text-tertiary, #9ca3af);
+    cursor: pointer;
+}
+
+.tm-file-versions__diff-body {
+    margin: 0;
+    padding: var(--tm-space-2, 0.5rem);
+    max-height: 320px;
+    overflow: auto;
+    font-family: var(--tm-font-mono, ui-monospace, monospace);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    background: var(--tm-surface, #ffffff);
+}
+
+.tm-file-versions__diff-line { display: block; white-space: pre-wrap; }
+.tm-file-versions__diff-line--added { background: var(--tm-color-success-subtle, #f0fdf4); color: var(--tm-color-success-text, #15803d); }
+.tm-file-versions__diff-line--removed { background: var(--tm-color-danger-subtle, #fef2f2); color: var(--tm-color-danger-text, #b91c1c); }
+
+.tm-file-versions__diff-binary {
+    padding: var(--tm-space-3, 0.75rem);
+    color: var(--tm-text-secondary, #6b7280);
+    font-size: 0.875rem;
+}
+
+.tm-document-manager__modal--wide { max-width: 640px; width: 92vw; }
+
+@media (prefers-reduced-motion: reduce) {
+    .tm-upload-progress__bar,
+    .tm-upload-progress__action,
+    .tm-file-versions__action { transition: none; }
+}

@@ -1,5 +1,8 @@
 @page "/data-table"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
 @using Tempo.Blazor.Components.DataTable
+@using Tempo.Blazor.Export
 @using Tempo.Blazor.Interfaces
 @using Tempo.Blazor.Models
 <PageTitle>Data Table – Tempo.Blazor</PageTitle>
@@ -9,6 +12,80 @@
     <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Data Table</h1>
     <p class="text-slate-600 dark:text-slate-400">Advanced data tables with sorting, filtering, pagination, and selection capabilities.</p>
 </div>
+
+<!-- Advanced ergonomics: pin, resize, multi-sort, master-detail, export -->
+<section class="demo-section" data-testid="dt-ergonomics-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Ergonomics — Pin, Resize, Multi-sort, Export</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">K2</span>
+    </div>
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Drag the column edges to resize, use the header pin toggle to freeze columns left/right (persisted via a layout store),
+            Shift+click headers to sort by multiple columns, expand a row for detail, and export the full filtered/sorted set to CSV or XLSX.
+        </p>
+        <div class="flex items-center gap-2 mb-3">
+            <button class="tm-btn-primary" data-testid="dt-export-csv" @onclick="ExportCsvAsync">Export CSV</button>
+            <button class="tm-btn-secondary" data-testid="dt-export-xlsx" @onclick="ExportXlsxAsync">Export XLSX</button>
+        </div>
+        <TmDataTable @ref="_ergoTable" TItem="Employee"
+                     Items="_employees"
+                     ViewContext="ergonomics-demo"
+                     LayoutStore="_layoutStore"
+                     OnLoadDetail="LoadEmployeeDetailAsync"
+                     DefaultPageSize="8">
+            <ChildContent>
+                <TmDataTableColumn TItem="Employee" Title="Name" PropertyName="Name" Field="e => e.Name"
+                                   Sortable="true" Resizable="true" Pinned="ColumnPin.Left" Width="180px" />
+                <TmDataTableColumn TItem="Employee" Title="Role" PropertyName="Role" Field="e => e.Role" Sortable="true" Resizable="true" />
+                <TmDataTableColumn TItem="Employee" Title="Dept" PropertyName="Dept" Field="e => e.Dept" Sortable="true" Resizable="true" />
+                <TmDataTableColumn TItem="Employee" Title="Score" PropertyName="Score" Field="e => e.Score" Sortable="true" Resizable="true" />
+                <TmDataTableColumn TItem="Employee" Title="Email" PropertyName="Email" Field="e => e.Email" Resizable="true" Pinned="ColumnPin.Right" Width="220px" />
+            </ChildContent>
+            <DetailTemplate Context="emp">
+                <div class="text-sm text-slate-600 dark:text-slate-300">
+                    <strong>@emp.Name</strong> — @emp.Role in @emp.Dept · score @emp.Score · @emp.Email
+                </div>
+            </DetailTemplate>
+        </TmDataTable>
+    </div>
+</section>
+
+<!-- Inline editing -->
+<section class="demo-section" data-testid="dt-inline-edit-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Inline Row Editing</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Validated</span>
+    </div>
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Double-click a row to edit it in place. The row is wrapped in a cascading EditContext with a validator
+            (<code>DataAnnotationsValidator</code> here; <code>FluentValidationValidator</code> plugs into the same
+            <code>RowEditValidator</code> slot). Commit is blocked while invalid.
+        </p>
+        <TmDataTable TItem="EditableEmployee"
+                     Items="_editableEmployees"
+                     ViewContext="inline-edit-demo"
+                     Editable="true"
+                     OnRowCommit="CommitEmployeeAsync">
+            <RowEditValidator>
+                <DataAnnotationsValidator />
+            </RowEditValidator>
+            <ChildContent>
+                <TmDataTableColumn TItem="EditableEmployee" Title="Name" Field="e => e.Name" Editable="true">
+                    <EditTemplate Context="e">
+                        <input class="tm-input" @bind="e.Name" @bind:event="oninput" />
+                    </EditTemplate>
+                </TmDataTableColumn>
+                <TmDataTableColumn TItem="EditableEmployee" Title="Score" Field="e => e.Score" Editable="true">
+                    <EditTemplate Context="e">
+                        <input class="tm-input" type="number" @bind="e.Score" @bind:event="oninput" />
+                    </EditTemplate>
+                </TmDataTableColumn>
+            </ChildContent>
+        </TmDataTable>
+    </div>
+</section>
 
 <!-- Basic Table -->
 <section class="demo-section">
@@ -524,6 +601,32 @@
     private IReadOnlyList<ActiveFilter> _activeEmployeeFilters = [];
 
     private record Employee(string Name, string Role, string Dept, int Score, string Email = "", int Id = 0, int? ManagerId = null);
+
+    // ── K2 ergonomics demo (pin/resize/multi-sort/master-detail/export) ──
+    private TmDataTable<Employee>? _ergoTable;
+    private readonly InMemoryDataTableLayoutStore _layoutStore = new();
+    private readonly CsvDataTableExporter _csvExporter = new();
+    private readonly XlsxDataTableExporter _xlsxExporter = new();
+
+    private Task ExportCsvAsync() => _ergoTable?.ExportAsync(_csvExporter, "employees.csv") ?? Task.CompletedTask;
+    private Task ExportXlsxAsync() => _ergoTable?.ExportAsync(_xlsxExporter, "employees.xlsx") ?? Task.CompletedTask;
+    private static Task LoadEmployeeDetailAsync(Employee _) => Task.CompletedTask; // demo: detail already in the row
+
+    // ── K2 inline-edit demo (mutable model + DataAnnotations) ──
+    private sealed class EditableEmployee
+    {
+        [Required] public string Name { get; set; } = "";
+        [Range(0, 100)] public int Score { get; set; }
+    }
+
+    private readonly List<EditableEmployee> _editableEmployees =
+    [
+        new() { Name = "Ada Lovelace", Score = 92 },
+        new() { Name = "Alan Turing", Score = 98 },
+        new() { Name = "Grace Hopper", Score = 95 }
+    ];
+
+    private static Task<bool> CommitEmployeeAsync(EditableEmployee _) => Task.FromResult(true);
 
     private static readonly string[] Roles = ["Admin", "User", "Manager"];
     private static readonly string[] Depts = ["Engineering", "Marketing", "Sales", "IT", "HR"];

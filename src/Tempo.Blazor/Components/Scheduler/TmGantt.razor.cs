@@ -766,7 +766,7 @@ public partial class TmGantt : IDisposable
         var updated = new TmWorkItem
         {
             Id = task.Id, Title = task.Title,
-            Start = e.Start, End = e.End,
+            Start = e.StartLocal, End = e.EndLocal,
             PercentComplete = task.PercentComplete, IsMilestone = task.IsMilestone,
             ParentId = task.ParentId, DueDate = task.DueDate,
             EstimationHours = task.EstimationHours, LoggedHours = task.LoggedHours,

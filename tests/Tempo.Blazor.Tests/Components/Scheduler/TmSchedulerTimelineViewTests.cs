@@ -67,8 +67,8 @@ public class TmSchedulerTimelineViewTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            new() { Title = "Room A Meeting", Start = new(2025, 6, 10, 10, 0, 0), End = new(2025, 6, 10, 11, 0, 0), ResourceId = "room-a" },
-            new() { Title = "Room B Meeting", Start = new(2025, 6, 10, 14, 0, 0), End = new(2025, 6, 10, 15, 0, 0), ResourceId = "room-b" },
+            new() { Title = "Room A Meeting", Start = new DateTime(2025, 6, 10, 10, 0, 0), End = new DateTime(2025, 6, 10, 11, 0, 0), ResourceId = "room-a" },
+            new() { Title = "Room B Meeting", Start = new DateTime(2025, 6, 10, 14, 0, 0), End = new DateTime(2025, 6, 10, 15, 0, 0), ResourceId = "room-b" },
         };
 
         var cut = RenderComponent<TmSchedulerTimelineView>(p => p
@@ -86,7 +86,7 @@ public class TmSchedulerTimelineViewTests : LocalizationTestBase
         TmScheduleEvent? clicked = null;
         var events = new List<TmScheduleEvent>
         {
-            new() { Title = "Meeting", Start = new(2025, 6, 10, 10, 0, 0), End = new(2025, 6, 10, 11, 0, 0), ResourceId = "room-a" },
+            new() { Title = "Meeting", Start = new DateTime(2025, 6, 10, 10, 0, 0), End = new DateTime(2025, 6, 10, 11, 0, 0), ResourceId = "room-a" },
         };
 
         var cut = RenderComponent<TmSchedulerTimelineView>(p => p
@@ -120,7 +120,7 @@ public class TmSchedulerTimelineViewTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            new() { Title = "Meeting", Start = new(2025, 6, 10, 12, 0, 0), End = new(2025, 6, 10, 14, 0, 0), ResourceId = "room-a" },
+            new() { Title = "Meeting", Start = new DateTime(2025, 6, 10, 12, 0, 0), End = new DateTime(2025, 6, 10, 14, 0, 0), ResourceId = "room-a" },
         };
 
         var cut = RenderComponent<TmSchedulerTimelineView>(p => p

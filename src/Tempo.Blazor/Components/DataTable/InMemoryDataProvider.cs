@@ -49,14 +49,36 @@ public sealed class InMemoryDataProvider<TItem> : IDataTableDataProvider<TItem>
                     acc(item)?.ToString()?.Contains(search, StringComparison.OrdinalIgnoreCase) == true));
         }
 
-        // 3. Apply sort
-        if (!string.IsNullOrEmpty(query.SortColumn)
-            && _accessors != null
-            && _accessors.TryGetValue(query.SortColumn, out var sortAccessor))
+        // 3. Apply sort (multi-column; falls back to the legacy single SortColumn/SortDescending)
+        if (_accessors != null)
         {
-            items = query.SortDescending
-                ? items.OrderByDescending(x => sortAccessor(x))
-                : items.OrderBy(x => sortAccessor(x));
+            IOrderedEnumerable<TItem>? ordered = null;
+            foreach (var descriptor in query.GetEffectiveSortDescriptors())
+            {
+                if (!_accessors.TryGetValue(descriptor.Column, out var sortAccessor))
+                {
+                    continue;
+                }
+
+                var descending = descriptor.Direction == DataTableSortDirection.Descending;
+                if (ordered is null)
+                {
+                    ordered = descending
+                        ? items.OrderByDescending(x => sortAccessor(x))
+                        : items.OrderBy(x => sortAccessor(x));
+                }
+                else
+                {
+                    ordered = descending
+                        ? ordered.ThenByDescending(x => sortAccessor(x))
+                        : ordered.ThenBy(x => sortAccessor(x));
+                }
+            }
+
+            if (ordered is not null)
+            {
+                items = ordered;
+            }
         }
 
         // 4. Materialise for count

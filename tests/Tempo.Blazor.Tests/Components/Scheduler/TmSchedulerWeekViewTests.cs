@@ -47,8 +47,8 @@ public class TmSchedulerWeekViewTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            new() { Title = "Mon Meeting", Start = new(2025, 6, 9, 10, 0, 0), End = new(2025, 6, 9, 11, 0, 0) },
-            new() { Title = "Wed Meeting", Start = new(2025, 6, 11, 14, 0, 0), End = new(2025, 6, 11, 15, 0, 0) },
+            new() { Title = "Mon Meeting", Start = new DateTime(2025, 6, 9, 10, 0, 0), End = new DateTime(2025, 6, 9, 11, 0, 0) },
+            new() { Title = "Wed Meeting", Start = new DateTime(2025, 6, 11, 14, 0, 0), End = new DateTime(2025, 6, 11, 15, 0, 0) },
         };
 
         var cut = RenderComponent<TmSchedulerWeekView>(p => p
@@ -78,7 +78,7 @@ public class TmSchedulerWeekViewTests : LocalizationTestBase
         TmScheduleEvent? clicked = null;
         var events = new List<TmScheduleEvent>
         {
-            new() { Title = "Standup", Start = new(2025, 6, 9, 9, 0, 0), End = new(2025, 6, 9, 9, 30, 0) }
+            new() { Title = "Standup", Start = new DateTime(2025, 6, 9, 9, 0, 0), End = new DateTime(2025, 6, 9, 9, 30, 0) }
         };
 
         var cut = RenderComponent<TmSchedulerWeekView>(p => p

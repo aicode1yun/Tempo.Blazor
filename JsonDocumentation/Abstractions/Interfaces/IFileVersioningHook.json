@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+  "description": "Optional hook that records and manages historical versions of a file: create-on-reupload, list history, diff two versions, and restore a prior version.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IFileVersioningHook.cs",
+  "documentationStatus": "generated",
+  "itemName": "IFileVersioningHook"
+}

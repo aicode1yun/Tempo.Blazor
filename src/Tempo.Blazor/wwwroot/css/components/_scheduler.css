@@ -175,3 +175,34 @@
 [data-theme="dark"] .tm-scheduler-context-menu-divider {
     background: var(--tm-border-color, #334155);
 }
+
+/* ── Print ─────────────────────────────────────────────────────────── */
+.tm-scheduler-toolbar-print {
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm, 4px);
+    background: transparent;
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-text-sm, 0.875rem);
+    cursor: pointer;
+}
+.tm-scheduler-toolbar-print:hover { background: var(--tm-bg-muted); color: var(--tm-text-primary); }
+
+@media print {
+    .tm-scheduler-toolbar-nav,
+    .tm-scheduler-toolbar-views { display: none !important; }
+    .tm-scheduler { border: none; box-shadow: none; }
+    .tm-scheduler-toolbar { border-bottom: 1px solid var(--tm-color-border); }
+    .tm-scheduler-toolbar-title { width: 100%; text-align: center; }
+    .tm-scheduler-month,
+    .tm-scheduler-week,
+    .tm-scheduler-timegrid,
+    .tm-scheduler-agenda { break-inside: avoid; }
+    .tm-scheduler-month-week,
+    .tm-scheduler-month-day { break-inside: avoid; }
+    .tm-scheduler-month-event,
+    .tm-scheduler-week-event {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

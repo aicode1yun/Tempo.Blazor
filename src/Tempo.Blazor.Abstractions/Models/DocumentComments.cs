@@ -12,7 +12,55 @@ public enum DocumentCommentAnchorKind
     Area,
 
     /// <summary>The whole document page.</summary>
-    Page
+    Page,
+
+    /// <summary>A selected run of text on a document page, described by one or more highlight rectangles.</summary>
+    TextRange
+}
+
+/// <summary>Normalized rectangle on a document page, expressed as fractions of the page size.</summary>
+public sealed class DocumentCommentRect
+{
+    /// <summary>Normalized horizontal position in the page, from 0 to 1.</summary>
+    public double X { get; set; }
+
+    /// <summary>Normalized vertical position in the page, from 0 to 1.</summary>
+    public double Y { get; set; }
+
+    /// <summary>Normalized width in the page, from 0 to 1.</summary>
+    public double Width { get; set; }
+
+    /// <summary>Normalized height in the page, from 0 to 1.</summary>
+    public double Height { get; set; }
+
+    /// <summary>Creates a normalized rectangle, clamping every component into the page bounds.</summary>
+    /// <param name="x">Normalized horizontal position.</param>
+    /// <param name="y">Normalized vertical position.</param>
+    /// <param name="width">Normalized width.</param>
+    /// <param name="height">Normalized height.</param>
+    public static DocumentCommentRect Create(double x, double y, double width, double height)
+    {
+        var normalizedX = Clamp01(x);
+        var normalizedY = Clamp01(y);
+        return new DocumentCommentRect
+        {
+            X = normalizedX,
+            Y = normalizedY,
+            Width = Math.Min(Clamp01(width), 1 - normalizedX),
+            Height = Math.Min(Clamp01(height), 1 - normalizedY)
+        };
+    }
+
+    /// <summary>Returns true when every component is a finite fraction inside the page bounds and the size is positive.</summary>
+    public bool IsValid
+        => IsNormalized(X) && IsNormalized(Y) && Width > 0 && Height > 0
+           && IsNormalized(Width) && IsNormalized(Height);
+
+    private static double Clamp01(double value)
+        => double.IsFinite(value) ? Math.Min(Math.Max(value, 0), 1) : 0;
+
+    private static bool IsNormalized(double value)
+        => double.IsFinite(value) && value is >= 0 and <= 1;
 }
 
 /// <summary>Status of a document comment thread.</summary>
@@ -69,6 +117,12 @@ public sealed class DocumentCommentAnchor
     /// <summary>Normalized height for area anchors, from 0 to 1.</summary>
     public double Height { get; set; }
 
+    /// <summary>Highlight rectangles for text range anchors. Empty for other anchor kinds.</summary>
+    public List<DocumentCommentRect> Rects { get; set; } = [];
+
+    /// <summary>Text captured when the anchor was created from a text selection, when available.</summary>
+    public string? HighlightedText { get; set; }
+
     /// <summary>Creates a point anchor.</summary>
     /// <param name="pageNumber">One-based page number.</param>
     /// <param name="x">Normalized horizontal position.</param>
@@ -113,6 +167,48 @@ public sealed class DocumentCommentAnchor
         {
             PageNumber = pageNumber,
             Kind = DocumentCommentAnchorKind.Page
+        };
+    }
+
+    /// <summary>Creates a text range anchor from one or more normalized highlight rectangles.</summary>
+    /// <param name="pageNumber">One-based page number.</param>
+    /// <param name="rects">Highlight rectangles covering the selected text.</param>
+    /// <param name="highlightedText">Text captured at creation time, when available.</param>
+    public static DocumentCommentAnchor TextRange(
+        int pageNumber,
+        IEnumerable<DocumentCommentRect> rects,
+        string? highlightedText = null)
+    {
+        ArgumentNullException.ThrowIfNull(rects);
+
+        var normalized = rects
+            .Select(rect => DocumentCommentRect.Create(rect.X, rect.Y, rect.Width, rect.Height))
+            .Where(rect => rect.IsValid)
+            .ToList();
+
+        // The point/area coordinates track the union bounding box so existing marker
+        // positioning keeps working for text range anchors.
+        double minX = 0, minY = 0, width = 0, height = 0;
+        if (normalized.Count > 0)
+        {
+            minX = normalized.Min(rect => rect.X);
+            minY = normalized.Min(rect => rect.Y);
+            var maxX = normalized.Max(rect => rect.X + rect.Width);
+            var maxY = normalized.Max(rect => rect.Y + rect.Height);
+            width = Math.Min(maxX - minX, 1 - minX);
+            height = Math.Min(maxY - minY, 1 - minY);
+        }
+
+        return new DocumentCommentAnchor
+        {
+            PageNumber = pageNumber < 1 ? 1 : pageNumber,
+            Kind = DocumentCommentAnchorKind.TextRange,
+            X = minX,
+            Y = minY,
+            Width = width,
+            Height = height,
+            Rects = normalized,
+            HighlightedText = string.IsNullOrWhiteSpace(highlightedText) ? null : highlightedText
         };
     }
 
@@ -320,34 +416,126 @@ public static class DocumentViewerCommentBridge
         };
     }
 
+    /// <summary>Metadata key marking a shared page-area anchor that originated from a text range selection.</summary>
+    private const string TextRangeMetadataKind = "pdfAnchorKind";
+
+    /// <summary>Metadata key holding the encoded highlight rectangles of a text range anchor.</summary>
+    private const string TextRangeMetadataRects = "pdfTextRangeRects";
+
+    private const string TextRangeKindValue = "TextRange";
+
     private static TmCommentAnchor ToTmCommentAnchor(DocumentCommentAnchor anchor)
-        => anchor.Kind switch
+    {
+        switch (anchor.Kind)
         {
-            DocumentCommentAnchorKind.Area => TmCommentAnchor.PageArea(
-                anchor.PageNumber,
-                anchor.X,
-                anchor.Y,
-                anchor.Width,
-                anchor.Height),
-            DocumentCommentAnchorKind.Page => TmCommentAnchor.Page(anchor.PageNumber),
-            _ => TmCommentAnchor.PagePoint(anchor.PageNumber, anchor.X, anchor.Y)
-        };
+            case DocumentCommentAnchorKind.TextRange:
+                var textRange = TmCommentAnchor.PageArea(
+                    anchor.PageNumber,
+                    anchor.X,
+                    anchor.Y,
+                    anchor.Width,
+                    anchor.Height);
+                textRange.HighlightedText = anchor.HighlightedText;
+                textRange.Metadata = new Dictionary<string, object>
+                {
+                    [TextRangeMetadataKind] = TextRangeKindValue,
+                    [TextRangeMetadataRects] = EncodeRects(anchor.Rects)
+                };
+                return textRange;
+            case DocumentCommentAnchorKind.Area:
+                return TmCommentAnchor.PageArea(
+                    anchor.PageNumber,
+                    anchor.X,
+                    anchor.Y,
+                    anchor.Width,
+                    anchor.Height);
+            case DocumentCommentAnchorKind.Page:
+                return TmCommentAnchor.Page(anchor.PageNumber);
+            default:
+                return TmCommentAnchor.PagePoint(anchor.PageNumber, anchor.X, anchor.Y);
+        }
+    }
 
     private static DocumentCommentAnchor ToDocumentCommentAnchor(TmCommentAnchor? anchor)
-        => anchor?.Kind switch
+    {
+        switch (anchor?.Kind)
         {
-            TmCommentAnchorKind.PageArea => DocumentCommentAnchor.Area(
-                anchor.PageNumber ?? 1,
-                anchor.X ?? 0,
-                anchor.Y ?? 0,
-                anchor.Width ?? 0,
-                anchor.Height ?? 0),
-            TmCommentAnchorKind.Page => DocumentCommentAnchor.Page(anchor.PageNumber ?? 1),
-            TmCommentAnchorKind.PagePoint => DocumentCommentAnchor.Point(
-                anchor.PageNumber ?? 1,
-                anchor.X ?? 0,
-                anchor.Y ?? 0),
-            _ => DocumentCommentAnchor.Page(anchor?.PageNumber ?? 1)
+            case TmCommentAnchorKind.PageArea when IsTextRange(anchor):
+                var rects = DecodeRects(anchor.Metadata?.GetValueOrDefault(TextRangeMetadataRects));
+                return rects.Count > 0
+                    ? DocumentCommentAnchor.TextRange(anchor.PageNumber ?? 1, rects, anchor.HighlightedText)
+                    : DocumentCommentAnchor.Area(
+                        anchor.PageNumber ?? 1,
+                        anchor.X ?? 0,
+                        anchor.Y ?? 0,
+                        anchor.Width ?? 0,
+                        anchor.Height ?? 0);
+            case TmCommentAnchorKind.PageArea:
+                return DocumentCommentAnchor.Area(
+                    anchor.PageNumber ?? 1,
+                    anchor.X ?? 0,
+                    anchor.Y ?? 0,
+                    anchor.Width ?? 0,
+                    anchor.Height ?? 0);
+            case TmCommentAnchorKind.Page:
+                return DocumentCommentAnchor.Page(anchor.PageNumber ?? 1);
+            case TmCommentAnchorKind.PagePoint:
+                return DocumentCommentAnchor.Point(
+                    anchor.PageNumber ?? 1,
+                    anchor.X ?? 0,
+                    anchor.Y ?? 0);
+            default:
+                return DocumentCommentAnchor.Page(anchor?.PageNumber ?? 1);
+        }
+    }
+
+    private static bool IsTextRange(TmCommentAnchor anchor)
+        => anchor.Metadata is not null
+           && anchor.Metadata.TryGetValue(TextRangeMetadataKind, out var kind)
+           && string.Equals(ConvertToString(kind), TextRangeKindValue, StringComparison.Ordinal);
+
+    /// <summary>Encodes normalized rectangles into a culture-invariant, JSON-round-trip-safe string.</summary>
+    public static string EncodeRects(IEnumerable<DocumentCommentRect> rects)
+        => string.Join(";", rects.Select(rect => string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"{rect.X:0.######},{rect.Y:0.######},{rect.Width:0.######},{rect.Height:0.######}")));
+
+    /// <summary>Decodes rectangles previously produced by <see cref="EncodeRects"/>.</summary>
+    public static List<DocumentCommentRect> DecodeRects(object? encoded)
+    {
+        var text = ConvertToString(encoded);
+        var result = new List<DocumentCommentRect>();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return result;
+        }
+
+        foreach (var part in text.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var components = part.Split(',');
+            if (components.Length == 4
+                && double.TryParse(components[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var x)
+                && double.TryParse(components[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var y)
+                && double.TryParse(components[2], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var w)
+                && double.TryParse(components[3], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var h))
+            {
+                var rect = DocumentCommentRect.Create(x, y, w, h);
+                if (rect.IsValid)
+                {
+                    result.Add(rect);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static string? ConvertToString(object? value)
+        => value switch
+        {
+            null => null,
+            string s => s,
+            _ => value.ToString()
         };
 
     private static TmCommentMention ToTmMention(DocumentCommentMention mention)
@@ -519,6 +707,11 @@ public static class DocumentCommentHelper
         if (!IsNormalized(anchor.X) || !IsNormalized(anchor.Y))
         {
             return false;
+        }
+
+        if (anchor.Kind == DocumentCommentAnchorKind.TextRange)
+        {
+            return anchor.Rects.Count > 0 && anchor.Rects.All(rect => rect.IsValid);
         }
 
         return anchor.Kind != DocumentCommentAnchorKind.Area

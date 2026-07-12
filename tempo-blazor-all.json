@@ -117,113 +117,95 @@
         "packages": [
           {
             "name": "Tempo.Blazor",
-            "description": "Core component library with common UI components, CSS, and JS interop. Larger optional components are distributed through feature packages.",
-            "required": true
-          },
-          {
-            "name": "Tempo.Blazor.All",
-            "description": "Compatibility package that references Tempo.Blazor plus the split feature packages and exposes AddTempoBlazorAll().",
-            "required": false
+            "description": "Comprehensive Blazor component library with 100+ components. Supports WebAssembly, Server, and InteractiveAuto render modes. Multi-targets .NET 8/9/10. Includes multilingual support (EN/CS), CSS variable theming, and dark mode. Optional FluentValidation integration is available through Tempo.Blazor.FluentValidation."
           },
           {
             "name": "Tempo.Blazor.PdfViewer",
-            "description": "Optional PDF.js powered PDF viewer component and PDF.js static web assets.",
-            "required": false
+            "description": "PDF.js powered PDF viewer component for Tempo.Blazor with thumbnails, search, text layer, rotation, zoom, and continuous scroll."
           },
           {
             "name": "Tempo.Blazor.Codes",
-            "description": "Optional QR code and barcode components backed by QRCoder and ZXing.Net.",
-            "required": false
+            "description": "QR code and barcode components for Tempo.Blazor backed by QRCoder and ZXing.Net."
           },
           {
             "name": "Tempo.Blazor.DiagramEditor",
-            "description": "Optional diagram editor components and diagram static web assets.",
-            "required": false
-          },
-          {
-            "name": "Tempo.Blazor.DocumentEditor",
-            "description": "Optional document editor components, canvas runtime, clipboard normalization, and document editor static web assets.",
-            "required": false
-          },
-          {
-            "name": "Tempo.Blazor.NotionEditor",
-            "description": "Optional Notion-style editor components, block/database UI, collaboration UI, comments, media, and Tempo embed blocks.",
-            "required": false
-          },
-          {
-            "name": "Tempo.Blazor.Signing",
-            "description": "Optional signing workflow components, PDF template designer, recipient roles, signing form runner, verification panels, and audit trail UI.",
-            "required": false
+            "description": "Diagram editor components for Tempo.Blazor, including stencil libraries, templates, import helpers, auto-layout, and diagram canvas interop."
           },
           {
             "name": "Tempo.Blazor.Wireframe",
-            "description": "Optional wireframe editor components and wireframe static web assets.",
-            "required": false
+            "description": "Wireframe editor components for Tempo.Blazor with toolbox, schema registry, canvas interop, page tabs, minimap, and export helpers."
           },
           {
             "name": "Tempo.Blazor.Modeling",
-            "description": "Optional modeling editor components built on the diagram editor package.",
-            "required": false
+            "description": "Modeling editor components for Tempo.Blazor, including BPMN, UML, ArchiMate, ERD notation profiles and diagram generation."
           },
           {
             "name": "Tempo.Blazor.Spreadsheet",
-            "description": "Optional Excel-like spreadsheet editor, XLSX import/export, and spreadsheet static web assets.",
-            "required": false
+            "description": "Excel-like spreadsheet components for Tempo.Blazor, including canvas rendering, formula editing, workbook import/export, and spreadsheet interop assets."
           },
           {
             "name": "Tempo.Blazor.GanttXlsx",
-            "description": "Optional Gantt XLSX import/export helpers backed by DocumentFormat.OpenXml.",
-            "required": false
+            "description": "Optional XLSX import and export helpers for Tempo.Blazor Gantt components, backed by DocumentFormat.OpenXml."
+          },
+          {
+            "name": "Tempo.Blazor.DataTableXlsx",
+            "description": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml."
+          },
+          {
+            "name": "Tempo.Blazor.DocumentEditor",
+            "description": "Document editor components for Tempo.Blazor, including canvas rendering, collaboration UI, clipboard normalization, and document editor interop assets."
+          },
+          {
+            "name": "Tempo.Blazor.NotionEditor",
+            "description": "Notion-style editor components for Tempo.Blazor, including pages, blocks, databases, collaboration UI, comments, media, and Tempo embed blocks."
+          },
+          {
+            "name": "Tempo.Blazor.Signing",
+            "description": "Signing workflow components for Tempo.Blazor, including PDF template design, recipient roles, signing form runner, document comments, verification panels, and audit trail UI."
+          },
+          {
+            "name": "Tempo.Blazor.All",
+            "description": "Compatibility package for Tempo.Blazor that references the core package and split feature packages for applications that want the full component suite."
           },
           {
             "name": "Tempo.Blazor.Abstractions",
-            "description": "Interfaces and models (zero UI dependencies). Safe to reference from API/service projects for shared contracts like ITmAttachmentProvider, ITmFileProvider, IDashboardProvider, etc.",
-            "required": false
+            "description": "Interfaces and models for Tempo.Blazor component library. Zero UI dependencies – safe to reference from API/service projects."
           },
           {
             "name": "Tempo.Blazor.FluentValidation",
-            "description": "Optional FluentValidation integration. Provides FluentValidationValidator component and EditContext extensions for async validation.",
-            "required": false
+            "description": "FluentValidation integration for Tempo.Blazor component library. Provides FluentValidationValidator component for EditForm and assembly scanning for validator registration."
           },
           {
             "name": "Tempo.Blazor.Collaboration",
-            "description": "Optional SignalR collaboration adapters for document editor and document library refresh workflows.",
-            "required": false
+            "description": "SignalR collaboration providers for Tempo.Blazor document editor abstractions."
           },
           {
             "name": "Tempo.Blazor.DocumentFormats",
-            "description": "Optional server-side import/export package for DOCX, ODT, HTML, Markdown, images, and Notion/document model conversion.",
-            "required": false
+            "description": "Optional server-side DOCX and ODT import/export support for TmDocumentEditor."
           },
           {
             "name": "Tempo.Blazor.EmailTemplates.Abstractions",
-            "description": "Email template document model, rendering contracts, MJML import/export, templating, DTOs, and validation.",
-            "required": false
+            "description": "Logic and contracts for the Tempo.Blazor email template editor: block model, MJML generation and import, Scriban templating sandbox, variable extraction, render pipeline, DTOs and validators. No Blazor dependency – safe to reference from API/service projects."
           },
           {
             "name": "Tempo.Blazor.EmailTemplates",
-            "description": "Visual email template editor UI components and editor-side services.",
-            "required": false
+            "description": "Drag-and-drop email template editor component (TmEmailTemplateEditor) for Tempo.Blazor. Visual MJML editor with full MJML 4 parity, bidirectional MJML import/export, Scriban variable templating and live preview. Built entirely on Tempo.Blazor components."
           },
           {
             "name": "Tempo.Blazor.Mcp",
-            "description": "MCP tools for Tempo.Blazor wireframe schemas, document operations, validation, and implementation briefs.",
-            "required": false
+            "description": "Model Context Protocol (MCP) tools for designing and editing Tempo.Blazor wireframes, diagrams, editor documents and reports with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server."
           },
           {
             "name": "Tempo.Reporting.Abstractions",
-            "description": "Report definition contracts, validation models, data provider interfaces, report server DTOs, and the typed HTTP client for remote report servers.",
-            "required": false
+            "description": "Contracts, JSON definition schema, validation models, data provider interfaces, and server DTOs for Tempo Reporting. No Blazor or ASP.NET dependency."
           },
           {
             "name": "Tempo.Reporting.Engine",
-            "description": "Server/WASM-capable reporting engine for expressions, processing, fixed-page layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives.",
-            "required": false
+            "description": "Tempo Reporting processing engine with expression evaluation, parameter resolution, layout, snapshots, PDF/PNG rendering, and CSV/XLSX export primitives."
           },
           {
             "name": "Tempo.Blazor.Reporting",
-            "description": "Blazor reporting components: report viewer, parameter panel, explorer, lightweight designer, embedded sources, and remote Report Server integration.",
-            "required": false
+            "description": "Blazor reporting components for Tempo Reporting: report viewer, parameter panel, explorer, lightweight designer, embedded sources, and remote Report Server integration."
           }
         ],
         "installation": {
@@ -3239,6 +3221,44 @@
           "documentationStatus": "merged"
         },
         {
+          "itemName": "CsvDataTableExporter",
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.DataTable",
+          "description": "Dependency-free CSV IDataTableExporter with RFC 4180 quoting and an optional UTF-8 BOM for Excel.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/DataTable/CsvDataTableExporter.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "ContentType",
+              "kind": "Field",
+              "type": "string"
+            },
+            {
+              "name": "FileExtension",
+              "kind": "Field",
+              "type": "string"
+            },
+            {
+              "name": "Format",
+              "kind": "Field",
+              "type": "string"
+            },
+            {
+              "name": "Export",
+              "kind": "Method",
+              "type": "byte[]",
+              "parameters": [
+                {
+                  "name": "data",
+                  "type": "DataTableExportData"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "itemName": "DataTableScrollMode",
           "kind": "Enum",
           "category": "Components",
@@ -4195,6 +4215,55 @@
           "documentationStatus": "merged"
         },
         {
+          "itemName": "IcsCalendarSerializer",
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Scheduler",
+          "description": "Dependency-free iCalendar (RFC 5545) exporter/importer for scheduler events, with RRULE/EXDATE mapping, text escaping, and 75-octet line folding.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Scheduler/IcsCalendarSerializer.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "ContentType",
+              "kind": "Field",
+              "type": "string"
+            },
+            {
+              "name": "FileExtension",
+              "kind": "Field",
+              "type": "string"
+            },
+            {
+              "name": "Export",
+              "kind": "Method",
+              "type": "string",
+              "parameters": [
+                {
+                  "name": "events",
+                  "type": "IEnumerable<TmScheduleEvent>"
+                },
+                {
+                  "name": "calendarName",
+                  "type": "string?",
+                  "default": "null"
+                }
+              ]
+            },
+            {
+              "name": "Import",
+              "kind": "Method",
+              "type": "IReadOnlyList<TmScheduleEvent>",
+              "parameters": [
+                {
+                  "name": "content",
+                  "type": "string"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "itemName": "InMemoryDataProvider<TItem>",
           "kind": "Class",
           "category": "Components",
@@ -4616,6 +4685,34 @@
           "documentationStatus": "merged"
         },
         {
+          "itemName": "TmChunkedUploader",
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Files",
+          "description": "Dependency-free coordinator that streams a file to a chunk sink in fixed 256 KB chunks with progress, cancellation, and resume.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Files/TmChunkedUploader.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "ChunkSink",
+              "kind": "Method",
+              "type": "delegate Task<TmFileUploadResult>",
+              "description": "Delegate matching a provider's chunk-upload entry point.",
+              "parameters": [
+                {
+                  "name": "chunk",
+                  "type": "TmFileChunk"
+                },
+                {
+                  "name": "cancellationToken",
+                  "type": "CancellationToken"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "itemName": "TmSignatureCaptureChangedEventArgs",
           "kind": "Record",
           "category": "Components",
@@ -4643,6 +4740,54 @@
           "description": "Capture modes supported by .",
           "packageId": "Tempo.Blazor",
           "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmSignatureCaptureMode.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "TmTextLineDiff",
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Files",
+          "description": "Computes a line-by-line diff (via longest-common-subsequence) between two text versions; useful for IFileVersioningHook implementations.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Files/TmTextLineDiff.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "Compute",
+              "kind": "Method",
+              "type": "IReadOnlyList<TmFileVersionDiffLine>",
+              "description": "Produces added/removed/unchanged lines describing the change from old to new text.",
+              "parameters": [
+                {
+                  "name": "oldText",
+                  "type": "string?"
+                },
+                {
+                  "name": "newText",
+                  "type": "string?"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "itemName": "TmUploadItem",
+          "kind": "Class",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Files",
+          "description": "Observable state for a single tracked upload (progress, lifecycle, cancel/resume context) rendered by TmFileUploadProgress.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Files/TmUploadItem.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "TmUploadState",
+          "kind": "Enum",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Files",
+          "description": "Lifecycle state of a tracked upload: Uploading, Scanning, Completed, Failed, Cancelled, or Blocked.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Files/TmUploadItem.cs",
           "documentationStatus": "merged"
         },
         {
@@ -6432,10 +6577,22 @@
               "description": "Initial page size. Default: 25."
             },
             {
+              "name": "DetailTemplate",
+              "type": "RenderFragment<TItem>?",
+              "isRequired": false,
+              "description": "Template rendered as an expandable detail row beneath a data row."
+            },
+            {
               "name": "DisplayResolver",
               "type": "Func<string, string?, string?>?",
               "isRequired": false,
               "description": "Universal display resolver for field labels and filter values. DisplayResolver(fieldName, null) → localized field/column label (e.g., \"Status\" → \"Stav\") DisplayResolver(fieldName, rawValue) → localized value (e.g., (\"Status\",\"Active\") → \"Aktivní\") Return null to use defaults (FilterDefinition.FieldLabel, column Title, or raw value). Set once on the component — flows to ViewManager, FilterBuilder, and ColumnPicker."
+            },
+            {
+              "name": "Editable",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Enables inline row editing (double-click a row). Requires editable columns with EditTemplate."
             },
             {
               "name": "EmptyTitle",
@@ -6470,16 +6627,46 @@
               "description": "In-memory items. When set without DataProvider, client-side sort/filter/pagination applies."
             },
             {
+              "name": "LayoutChanged",
+              "type": "EventCallback<DataTableLayout>",
+              "isRequired": false,
+              "description": "Fires whenever the column layout (widths or pin state) changes."
+            },
+            {
+              "name": "LayoutStore",
+              "type": "IDataTableLayoutStore?",
+              "isRequired": false,
+              "description": "Persistence hook for per-user column layout (widths + pin state). Optional."
+            },
+            {
               "name": "OnGroupingChanged",
               "type": "EventCallback<IReadOnlyList<string>>",
               "isRequired": false,
               "description": "Fires when grouping configuration changes."
             },
             {
+              "name": "OnLoadDetail",
+              "type": "Func<TItem, Task>?",
+              "isRequired": false,
+              "description": "Invoked once, the first time a row is expanded, so the host can lazily load detail data before renders it."
+            },
+            {
               "name": "OnRowClick",
               "type": "EventCallback<TItem>",
               "isRequired": false,
               "description": "Fires when a data row is clicked."
+            },
+            {
+              "name": "OnRowCommit",
+              "type": "Func<TItem, Task<bool>>?",
+              "isRequired": false,
+              "description": "Invoked to persist a committed row edit. Return false to keep the row in edit mode (for example when a server rejected the change). When null, the edit commits locally."
+            },
+            {
+              "name": "OnRowEditCancelled",
+              "type": "EventCallback<TItem>",
+              "isRequired": false,
+              "description": "Fires when a row edit is cancelled."
             },
             {
               "name": "OnSelectionChanged",
@@ -6499,6 +6686,12 @@
               "type": "Func<TItem, IReadOnlyDictionary<string, object>?>?",
               "isRequired": false,
               "description": "Optional row-level HTML attributes applied to every data row, including non-virtualized, virtualized, and grouped leaf rows."
+            },
+            {
+              "name": "RowEditValidator",
+              "type": "RenderFragment?",
+              "isRequired": false,
+              "description": "Optional validator content rendered inside the row's cascading while editing (for example <FluentValidationValidator /> or <DataAnnotationsValidator />). Commit is blocked while the edit context is invalid."
             },
             {
               "name": "ScrollMode",
@@ -6530,6 +6723,13 @@
               "type": "RenderFragment?",
               "isRequired": false,
               "description": "Render fragment shown in the selection action bar (bulk actions)."
+            },
+            {
+              "name": "ShowColumnMenu",
+              "type": "bool",
+              "isRequired": false,
+              "default": "true",
+              "description": "Whether column header controls (pin toggle, resize handle) are shown. Default true."
             },
             {
               "name": "ShowColumnPicker",
@@ -6772,6 +6972,18 @@
               "description": "Additional CSS class applied to each data cell in this column."
             },
             {
+              "name": "Editable",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether this column supports inline editing (requires TmDataTable.Editable)."
+            },
+            {
+              "name": "EditTemplate",
+              "type": "RenderFragment<TItem>?",
+              "isRequired": false,
+              "description": "Template rendered for this cell when the row is in edit mode. Replaces CellTemplate/Field."
+            },
+            {
               "name": "Field",
               "type": "Func<TItem, object?>",
               "isRequired": true,
@@ -6847,10 +7059,23 @@
               "description": "Display order (lower index = further left). Columns with same order preserve declaration order."
             },
             {
+              "name": "Pinned",
+              "type": "ColumnPin",
+              "isRequired": false,
+              "default": "ColumnPin.None",
+              "description": "Default pin state (left/right/none). User pin changes override this at runtime. Default None."
+            },
+            {
               "name": "PropertyName",
               "type": "string?",
               "isRequired": false,
               "description": "Property name for sorting and filtering (e.g. \"Name\", \"CreatedAt\"). Defaults to Title when null."
+            },
+            {
+              "name": "Resizable",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether the user can drag-resize this column. Default false."
             },
             {
               "name": "Sortable",
@@ -8639,10 +8864,29 @@
               "description": "Provider for uploading files and resolving asset URLs."
             },
             {
+              "name": "MaxUploadSize",
+              "type": "long",
+              "isRequired": false,
+              "default": "100L * 1024 * 1024",
+              "description": "Maximum size of a single upload in bytes. Default 100 MB. Also caps the browser read stream."
+            },
+            {
               "name": "OnDeleted",
               "type": "EventCallback<TmAttachment>",
               "isRequired": false,
               "description": "Fires when an attachment is deleted."
+            },
+            {
+              "name": "OnUploadProgress",
+              "type": "EventCallback<TmUploadProgress>",
+              "isRequired": false,
+              "description": "Fires for each chunk progress update during a chunked upload."
+            },
+            {
+              "name": "ScanHook",
+              "type": "IFileScanHook?",
+              "isRequired": false,
+              "description": "Optional scan hook run after each upload; a result marks the file unavailable."
             }
           ],
           "cssClasses": [
@@ -8785,6 +9029,13 @@
               "description": "Template rendered below the item name in list/grid views (e.g. tags, metadata preview)."
             },
             {
+              "name": "MaxUploadSize",
+              "type": "long",
+              "isRequired": false,
+              "default": "100L * 1024 * 1024",
+              "description": "Maximum size of a single upload in bytes. Default 100 MB. Also caps the browser read stream."
+            },
+            {
               "name": "NewFolderForm",
               "type": "RenderFragment<NewFolderContext<TMetadata>>?",
               "isRequired": false,
@@ -8803,11 +9054,23 @@
               "description": "Event fired when the selection changes."
             },
             {
+              "name": "OnUploadProgress",
+              "type": "EventCallback<TmUploadProgress>",
+              "isRequired": false,
+              "description": "Fires for each chunk progress update during a chunked upload."
+            },
+            {
               "name": "RespectPermissions",
               "type": "bool",
               "isRequired": false,
               "default": "true",
               "description": "When true, hides actions the current user is not permitted to perform."
+            },
+            {
+              "name": "ScanHook",
+              "type": "IFileScanHook?",
+              "isRequired": false,
+              "description": "Optional scan hook run after each upload; a result marks the item unavailable."
             },
             {
               "name": "ShowCopyButton",
@@ -8878,10 +9141,23 @@
               "description": "Whether to show the Upload button. Default is true."
             },
             {
+              "name": "ShowVersionHistory",
+              "type": "bool",
+              "isRequired": false,
+              "default": "true",
+              "description": "Whether to show the version-history action (requires ). Default true."
+            },
+            {
               "name": "UploadForm",
               "type": "RenderFragment<UploadContext<TMetadata>>?",
               "isRequired": false,
               "description": "Custom form for uploading files with metadata. When null, a simple file input is used."
+            },
+            {
+              "name": "VersioningHook",
+              "type": "IFileVersioningHook?",
+              "isRequired": false,
+              "description": "Optional versioning hook. When supplied and is set, a version-history action is available."
             },
             {
               "name": "ViewMode",
@@ -9127,6 +9403,13 @@
               "description": "When true, disables all user interactions."
             },
             {
+              "name": "MaxUploadSize",
+              "type": "long",
+              "isRequired": false,
+              "default": "100L * 1024 * 1024",
+              "description": "Maximum size of a single upload in bytes. Default 100 MB. Also caps the browser read stream."
+            },
+            {
               "name": "OnItemOpen",
               "type": "EventCallback<FileManagerItem>",
               "isRequired": false,
@@ -9137,6 +9420,18 @@
               "type": "EventCallback<IReadOnlyList<FileManagerItem>>",
               "isRequired": false,
               "description": "Event fired when the selection changes."
+            },
+            {
+              "name": "OnUploadProgress",
+              "type": "EventCallback<TmUploadProgress>",
+              "isRequired": false,
+              "description": "Fires for each chunk progress update during a chunked upload."
+            },
+            {
+              "name": "ScanHook",
+              "type": "IFileScanHook?",
+              "isRequired": false,
+              "description": "Optional scan hook run after each upload; a result marks the file unavailable."
             },
             {
               "name": "ShowDeleteButton",
@@ -9185,6 +9480,78 @@
               "type": "EventCallback<FileManagerViewMode>",
               "isRequired": false,
               "description": "Display mode (List or Grid). Default is ."
+            }
+          ]
+        },
+        {
+          "itemName": "TmFileUploadProgress",
+          "kind": "Component",
+          "category": "Files",
+          "namespace": "Tempo.Blazor.Components.Files",
+          "description": "Renders a list of in-progress and finished uploads with progress bars and cancel / resume / dismiss actions.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Files/TmFileUploadProgress.razor",
+          "documentationStatus": "merged",
+          "requiredImports": [
+            "@using Tempo.Blazor.Components.Files"
+          ],
+          "parameters": [
+            {
+              "name": "OnCancel",
+              "type": "EventCallback<TmUploadItem>",
+              "isRequired": false,
+              "description": "Invoked when the user cancels an in-flight upload."
+            },
+            {
+              "name": "OnDismiss",
+              "type": "EventCallback<TmUploadItem>",
+              "isRequired": false,
+              "description": "Invoked when the user dismisses a finished upload from the list."
+            },
+            {
+              "name": "OnResume",
+              "type": "EventCallback<TmUploadItem>",
+              "isRequired": false,
+              "description": "Invoked when the user resumes a cancelled or failed upload."
+            },
+            {
+              "name": "Uploads",
+              "type": "IReadOnlyList<TmUploadItem>?",
+              "isRequired": false,
+              "description": "Uploads to display (in-progress and recently finished)."
+            }
+          ]
+        },
+        {
+          "itemName": "TmFileVersionHistory",
+          "kind": "Component",
+          "category": "Files",
+          "namespace": "Tempo.Blazor.Components.Files",
+          "description": "Version-history panel for a file: lists versions newest-first with a current badge, compares a version with current (line diff), and restores a prior version via IFileVersioningHook.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Files/TmFileVersionHistory.razor",
+          "documentationStatus": "merged",
+          "requiredImports": [
+            "@using Tempo.Blazor.Components.Files"
+          ],
+          "parameters": [
+            {
+              "name": "Hook",
+              "type": "IFileVersioningHook?",
+              "isRequired": false,
+              "description": "Versioning hook that supplies the history, diffs, and restore."
+            },
+            {
+              "name": "ItemId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Identifier of the item whose versions are shown."
+            },
+            {
+              "name": "OnRestored",
+              "type": "EventCallback<TmFileVersion>",
+              "isRequired": false,
+              "description": "Raised after a version is restored so the host can refresh its listing."
             }
           ]
         },
@@ -11295,6 +11662,196 @@
             {
               "title": "Read-only display",
               "code": "<TmCurrencyInput Currencies=\"@_currencies\"\n    Amount=\"1500\"\n    Currency=\"EUR\"\n    ReadOnly=\"true\" />"
+            }
+          ]
+        },
+        {
+          "itemName": "TmDecimalInput",
+          "kind": "Component",
+          "category": "Inputs",
+          "namespace": "Tempo.Blazor.Components.Inputs",
+          "description": "Culture-aware decimal input. Accepts both comma and dot as the decimal separator, cleans pasted text (currency symbols, units, thousands separators), formats the value on blur for the chosen culture, rounds to DecimalPlaces, supports Min/Max/Step with +/- steppers and ArrowUp/ArrowDown keys, offers a percent mode (the model keeps the fraction while the field shows the percentage), and reports DataAnnotations validation messages when used inside an EditForm.",
+          "packageId": "Tempo.Blazor",
+          "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmDecimalInput.razor",
+          "documentationStatus": "merged",
+          "requiredImports": [
+            "@using Tempo.Blazor.Components.Inputs"
+          ],
+          "parameters": [
+            {
+              "name": "AutoComplete",
+              "type": "string?",
+              "isRequired": false,
+              "description": "HTML autocomplete attribute. Common values: \"on\", \"off\"."
+            },
+            {
+              "name": "Class",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Additional CSS class(es) applied to the wrapper."
+            },
+            {
+              "name": "Culture",
+              "type": "CultureInfo?",
+              "isRequired": false,
+              "description": "Culture used for parsing and formatting. Defaults to CultureInfo.CurrentCulture."
+            },
+            {
+              "name": "DecimalPlaces",
+              "type": "int",
+              "isRequired": false,
+              "default": "2",
+              "description": "Number of fractional digits used for display and for rounding the committed value (clamped to 0-28)."
+            },
+            {
+              "name": "Disabled",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Disable the input."
+            },
+            {
+              "name": "Error",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Error message. When set, it wins over any validation message coming from the surrounding EditContext, replaces the help text and marks the field invalid."
+            },
+            {
+              "name": "HelpText",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Help text rendered below the input."
+            },
+            {
+              "name": "Id",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Explicit id of the input element. When omitted, a unique id is generated so the label stays associated."
+            },
+            {
+              "name": "Label",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Field label."
+            },
+            {
+              "name": "Max",
+              "type": "decimal?",
+              "isRequired": false,
+              "description": "Largest allowed value, on the displayed scale (in percent mode, Min=\"0\" ... Max=\"100\" means 0-100 %)."
+            },
+            {
+              "name": "Min",
+              "type": "decimal?",
+              "isRequired": false,
+              "description": "Smallest allowed value, on the displayed scale (in percent mode, Min=\"0\" ... Max=\"100\" means 0-100 %)."
+            },
+            {
+              "name": "Percent",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Percent mode: Value holds the fraction (0.15) while the input shows and accepts the percentage (15). Min, Max and Step also work on the percentage scale, and a \"%\" suffix is added unless Suffix says otherwise."
+            },
+            {
+              "name": "Placeholder",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Placeholder text shown while the input is empty."
+            },
+            {
+              "name": "Prefix",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Prefix text rendered before the input (e.g. \"EUR\")."
+            },
+            {
+              "name": "ReadOnly",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Render the input as read-only."
+            },
+            {
+              "name": "ShowButtons",
+              "type": "bool",
+              "isRequired": false,
+              "default": "true",
+              "description": "Show the +/- stepper buttons."
+            },
+            {
+              "name": "Step",
+              "type": "decimal",
+              "isRequired": false,
+              "default": "1m",
+              "description": "Amount added or removed by the steppers and the arrow keys, on the displayed scale (in percent mode, one percentage point)."
+            },
+            {
+              "name": "Suffix",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Suffix text rendered after the input (e.g. \"/ pc\")."
+            },
+            {
+              "name": "UseGrouping",
+              "type": "bool",
+              "isRequired": false,
+              "default": "true",
+              "description": "Show thousands separators while the field is not being edited."
+            },
+            {
+              "name": "Value",
+              "type": "decimal?",
+              "isRequired": false,
+              "description": "Current decimal value. null when the input is empty or holds unparsable text."
+            },
+            {
+              "name": "ValueChanged",
+              "type": "EventCallback<decimal?>",
+              "isRequired": false,
+              "description": "Fires when the committed value changes (on change/blur, not on every keystroke)."
+            },
+            {
+              "name": "ValueExpression",
+              "type": "Expression<Func<decimal?>>?",
+              "isRequired": false,
+              "description": "Expression identifying the bound model field. Blazor supplies it automatically when you use @bind-Value; it links the input to DataAnnotationsValidator messages inside an EditForm."
+            }
+          ],
+          "cssClasses": [
+            "tm-input-wrapper",
+            "tm-decimal-input",
+            "tm-decimal-input--error",
+            "tm-decimal-input__control",
+            "tm-decimal-input__control--disabled",
+            "tm-decimal-input__control--readonly",
+            "tm-decimal-input__control--error",
+            "tm-decimal-input__input",
+            "tm-decimal-input__increment",
+            "tm-decimal-input__decrement",
+            "tm-decimal-input__prefix",
+            "tm-decimal-input__suffix",
+            "tm-input-label",
+            "tm-input-error-message",
+            "tm-input-help-text"
+          ],
+          "examples": [
+            {
+              "title": "Basic decimal input",
+              "code": "<TmDecimalInput @bind-Value=\"amount\" Label=\"Amount\" Placeholder=\"0.00\" />"
+            },
+            {
+              "title": "Czech formatting with a currency prefix",
+              "code": "<TmDecimalInput @bind-Value=\"amount\"\n                Label=\"Cena\"\n                Culture=\"@CultureInfo.GetCultureInfo(\"cs-CZ\")\"\n                Prefix=\"Kc\"\n                ShowButtons=\"false\" />"
+            },
+            {
+              "title": "Range with steppers",
+              "code": "<TmDecimalInput @bind-Value=\"rating\" Label=\"Rating\" Min=\"0\" Max=\"10\" Step=\"0.5m\" DecimalPlaces=\"1\" />"
+            },
+            {
+              "title": "Percent mode (model keeps the fraction)",
+              "code": "<TmDecimalInput @bind-Value=\"vatRate\" Label=\"VAT rate\" Percent=\"true\" Min=\"0\" Max=\"100\" Step=\"1\" />\n@* vatRate = 0.21m is shown as 21,00 % *@"
+            },
+            {
+              "title": "Inside an EditForm with DataAnnotations",
+              "code": "<EditForm Model=\"model\">\n    <DataAnnotationsValidator />\n    <TmDecimalInput @bind-Value=\"model.UnitPrice\" Label=\"Unit price\" Prefix=\"Kc\" />\n</EditForm>"
             }
           ]
         },
@@ -17458,6 +18015,13 @@
           ],
           "parameters": [
             {
+              "name": "AllowPrint",
+              "type": "bool",
+              "isRequired": false,
+              "default": "true",
+              "description": "Whether the toolbar shows a Print button (uses the browser print dialog with print CSS). Default: true."
+            },
+            {
               "name": "Class",
               "type": "string?",
               "isRequired": false,
@@ -17574,6 +18138,12 @@
               "isRequired": false,
               "default": "30",
               "description": "Slot duration in minutes for day/week views."
+            },
+            {
+              "name": "TimeZoneId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Display timezone (IANA id such as Europe/Prague, or a Windows id). When set, event times are converted to this zone at the render boundary (DST-aware). When null, the machine-local timezone is used and non-recurring events are passed through unchanged for backward compatibility."
             },
             {
               "name": "View",
@@ -18219,6 +18789,12 @@
               "description": "Fires when the user clicks Previous."
             },
             {
+              "name": "OnPrint",
+              "type": "EventCallback",
+              "isRequired": false,
+              "description": "Fires when the user clicks Print."
+            },
+            {
               "name": "OnToday",
               "type": "EventCallback",
               "isRequired": false,
@@ -18229,6 +18805,12 @@
               "type": "EventCallback<TmScheduleViewType>",
               "isRequired": false,
               "description": "Fires when the user clicks a view button."
+            },
+            {
+              "name": "ShowPrint",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether to show the Print button."
             },
             {
               "name": "View",
@@ -20535,6 +21117,10 @@
           "kind": "Css"
         },
         {
+          "path": "src/Tempo.Blazor/wwwroot/css/components/_decimal-input.css",
+          "kind": "Css"
+        },
+        {
           "path": "src/Tempo.Blazor/wwwroot/css/components/_dock-manager.css",
           "kind": "Css"
         },
@@ -20943,6 +21529,10 @@
           "kind": "JavaScript"
         },
         {
+          "path": "src/Tempo.Blazor/wwwroot/js/data-table.js",
+          "kind": "JavaScript"
+        },
+        {
           "path": "src/Tempo.Blazor/wwwroot/js/file-manager.js",
           "kind": "JavaScript"
         },
@@ -20988,12 +21578,12 @@
         }
       ],
       "summary": {
-        "itemCount": 294,
-        "manualItemCount": 294,
-        "generatedItemCount": 286,
+        "itemCount": 303,
+        "manualItemCount": 303,
+        "generatedItemCount": 295,
         "generatedOnlyItemCount": 0,
-        "componentCount": 177,
-        "publicApiTypeCount": 109
+        "componentCount": 180,
+        "publicApiTypeCount": 115
       }
     },
     {
@@ -21063,6 +21653,30 @@
       },
       "items": [
         {
+          "itemName": "PdfTextSelection",
+          "kind": "Record",
+          "category": "Components",
+          "namespace": "Tempo.Blazor.Components.Files",
+          "description": "Describes a text selection captured from the PDF text layer: the selected text, the one-based page it belongs to, and the normalized highlight rectangles covering it.",
+          "packageId": "Tempo.Blazor.PdfViewer",
+          "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/PdfTextSelection.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "IsValid",
+              "kind": "Field",
+              "type": "bool",
+              "description": "Returns true when the selection has text and at least one valid rectangle."
+            },
+            {
+              "name": "ToAnchor",
+              "kind": "Method",
+              "type": "DocumentCommentAnchor",
+              "description": "Builds a text range anchor from this selection."
+            }
+          ]
+        },
+        {
           "itemName": "PdfViewMode",
           "kind": "Enum",
           "category": "Components",
@@ -21103,6 +21717,171 @@
           ]
         },
         {
+          "itemName": "TmPdfAnnotationLayer",
+          "kind": "Component",
+          "category": "Files",
+          "namespace": "Tempo.Blazor.Components.Files",
+          "description": "Overlay that renders PDF annotation highlights and margin markers over the current page. Used internally by TmPdfViewer when annotations are enabled, reusing the shared document comment models.",
+          "packageId": "Tempo.Blazor.PdfViewer",
+          "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotationLayer.razor",
+          "documentationStatus": "merged",
+          "requiredImports": [
+            "@using Tempo.Blazor.Components.Files"
+          ],
+          "parameters": [
+            {
+              "name": "CurrentUserId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Current user id used for mention styling."
+            },
+            {
+              "name": "Disabled",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether marker interaction is disabled."
+            },
+            {
+              "name": "DraftAnchor",
+              "type": "DocumentCommentAnchor?",
+              "isRequired": false,
+              "description": "Current draft anchor for a pending, not-yet-saved annotation."
+            },
+            {
+              "name": "OnThreadSelected",
+              "type": "EventCallback<string>",
+              "isRequired": false,
+              "description": "Callback invoked when a thread marker or highlight is selected."
+            },
+            {
+              "name": "PageNumber",
+              "type": "int",
+              "isRequired": false,
+              "default": "1",
+              "description": "One-based current page number."
+            },
+            {
+              "name": "SelectedThreadId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Selected thread id."
+            },
+            {
+              "name": "ShowResolved",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether resolved threads should be rendered."
+            },
+            {
+              "name": "Threads",
+              "type": "IReadOnlyList<DocumentCommentThread>",
+              "isRequired": false,
+              "default": "[]",
+              "description": "Annotation threads available to render."
+            }
+          ]
+        },
+        {
+          "itemName": "TmPdfAnnotationThreadPanel",
+          "kind": "Component",
+          "category": "Files",
+          "namespace": "Tempo.Blazor.Components.Files",
+          "description": "Side panel listing PDF annotation threads with per-thread comment detail, reply, resolve/reopen, delete, a resolved filter, and a composer for commenting on the current text selection. Used internally by TmPdfViewer when annotations are enabled.",
+          "packageId": "Tempo.Blazor.PdfViewer",
+          "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotationThreadPanel.razor",
+          "documentationStatus": "merged",
+          "requiredImports": [
+            "@using Tempo.Blazor.Components.Files"
+          ],
+          "parameters": [
+            {
+              "name": "CurrentUserId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Current user id used for mention styling."
+            },
+            {
+              "name": "Disabled",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether panel interaction is disabled."
+            },
+            {
+              "name": "OnCreateThreadRequested",
+              "type": "EventCallback<string>",
+              "isRequired": false,
+              "description": "Callback invoked with the body of a new thread requested from the pending selection."
+            },
+            {
+              "name": "OnDeleteRequested",
+              "type": "EventCallback<DocumentCommentDeleteRequest>",
+              "isRequired": false,
+              "description": "Callback invoked when deleting a comment is requested."
+            },
+            {
+              "name": "OnReopenRequested",
+              "type": "EventCallback<string>",
+              "isRequired": false,
+              "description": "Callback invoked when reopening a thread is requested."
+            },
+            {
+              "name": "OnReplyRequested",
+              "type": "EventCallback<DocumentCommentReplyRequest>",
+              "isRequired": false,
+              "description": "Callback invoked when a reply is requested."
+            },
+            {
+              "name": "OnResolveRequested",
+              "type": "EventCallback<string>",
+              "isRequired": false,
+              "description": "Callback invoked when resolving a thread is requested."
+            },
+            {
+              "name": "OnSelectionDismissed",
+              "type": "EventCallback",
+              "isRequired": false,
+              "description": "Callback invoked when the pending selection is dismissed."
+            },
+            {
+              "name": "PendingSelection",
+              "type": "PdfTextSelection?",
+              "isRequired": false,
+              "description": "Pending text selection awaiting a new comment, when present."
+            },
+            {
+              "name": "SelectedThreadId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Selected thread id."
+            },
+            {
+              "name": "SelectedThreadIdChanged",
+              "type": "EventCallback<string?>",
+              "isRequired": false,
+              "description": "Callback invoked when the selected thread id changes."
+            },
+            {
+              "name": "ShowResolved",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether resolved threads are shown."
+            },
+            {
+              "name": "ShowResolvedChanged",
+              "type": "EventCallback<bool>",
+              "isRequired": false,
+              "description": "Callback invoked when the resolved filter toggles."
+            },
+            {
+              "name": "Threads",
+              "type": "IReadOnlyList<DocumentCommentThread>",
+              "isRequired": false,
+              "default": "[]",
+              "description": "Annotation threads to render."
+            }
+          ]
+        },
+        {
           "itemName": "TmPdfViewer",
           "kind": "Component",
           "category": "Files",
@@ -21129,16 +21908,58 @@
               "description": "Whether to allow downloading the PDF. Default is true."
             },
             {
+              "name": "AnnotationProvider",
+              "type": "IPdfAnnotationProvider?",
+              "isRequired": false,
+              "description": "Provider used to load and persist annotation threads when is true. When omitted, an in-memory provider keeps annotations for the current session."
+            },
+            {
+              "name": "Annotations",
+              "type": "IReadOnlyList<DocumentCommentThread>?",
+              "isRequired": false,
+              "description": "Optional seed threads used when no is supplied."
+            },
+            {
+              "name": "AnnotationsChanged",
+              "type": "EventCallback<IReadOnlyList<DocumentCommentThread>>",
+              "isRequired": false,
+              "description": "Callback invoked when the loaded annotation set changes."
+            },
+            {
               "name": "Class",
               "type": "string?",
               "isRequired": false,
               "description": "Callback when the view mode changes."
             },
             {
+              "name": "CurrentUser",
+              "type": "DocumentCommentUser?",
+              "isRequired": false,
+              "description": "Author applied to annotations created by the current viewer."
+            },
+            {
+              "name": "DocumentId",
+              "type": "string?",
+              "isRequired": false,
+              "description": "Stable document identifier used by the annotation provider. Falls back to ."
+            },
+            {
+              "name": "EnableAnnotations",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether the annotation layer and comments panel are enabled. Default is false."
+            },
+            {
               "name": "Height",
               "type": "string?",
               "isRequired": false,
               "description": "Additional CSS classes for the root element."
+            },
+            {
+              "name": "OnTextSelected",
+              "type": "EventCallback<PdfTextSelection>",
+              "isRequired": false,
+              "description": "Callback invoked when text is selected in the viewer text layer."
             },
             {
               "name": "Page",
@@ -21165,6 +21986,12 @@
               "type": "EventCallback<double>",
               "isRequired": false,
               "description": "Current zoom scale. Supports two-way binding."
+            },
+            {
+              "name": "ShowResolvedAnnotations",
+              "type": "bool",
+              "isRequired": false,
+              "description": "Whether resolved annotation threads are shown by default. Default is false."
             },
             {
               "name": "ShowSearch",
@@ -21235,12 +22062,12 @@
         }
       ],
       "summary": {
-        "itemCount": 3,
-        "manualItemCount": 3,
-        "generatedItemCount": 3,
+        "itemCount": 6,
+        "manualItemCount": 6,
+        "generatedItemCount": 6,
         "generatedOnlyItemCount": 0,
-        "componentCount": 1,
-        "publicApiTypeCount": 2
+        "componentCount": 3,
+        "publicApiTypeCount": 3
       }
     },
     {
@@ -34462,6 +35289,104 @@
         "generatedOnlyItemCount": 0,
         "componentCount": 0,
         "publicApiTypeCount": 3
+      }
+    },
+    {
+      "package": {
+        "packageId": "Tempo.Blazor.DataTableXlsx",
+        "title": "Tempo.Blazor.DataTableXlsx",
+        "description": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml.",
+        "authors": "ptyll",
+        "targetFrameworks": [
+          "net8.0",
+          "net9.0",
+          "net10.0"
+        ],
+        "tags": "blazor;datatable;xlsx;excel;openxml;export",
+        "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+        "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+        "installation": {
+          "nuget": [
+            "dotnet add package Tempo.Blazor.DataTableXlsx"
+          ]
+        },
+        "dependencies": [
+          {
+            "name": "DocumentFormat.OpenXml",
+            "version": "3.3.0"
+          }
+        ],
+        "projectReferences": [
+          "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
+        ],
+        "namespaces": [
+          "Tempo.Blazor.Export"
+        ]
+      },
+      "gettingStarted": {
+        "title": "Tempo.Blazor.DataTableXlsx",
+        "overview": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml.",
+        "targetFramework": "net8.0 / net9.0 / net10.0",
+        "installation": {
+          "nuget": [
+            "dotnet add package Tempo.Blazor.DataTableXlsx"
+          ]
+        },
+        "dependencies": [
+          {
+            "name": "DocumentFormat.OpenXml",
+            "version": "3.3.0"
+          }
+        ]
+      },
+      "items": [
+        {
+          "itemName": "XlsxDataTableExporter",
+          "kind": "Class",
+          "category": "General",
+          "namespace": "Tempo.Blazor.Export",
+          "description": "XLSX IDataTableExporter backed by DocumentFormat.OpenXml. Writes the header row followed by data rows into a single worksheet using inline strings.",
+          "packageId": "Tempo.Blazor.DataTableXlsx",
+          "sourcePath": "src/Tempo.Blazor.DataTableXlsx/XlsxDataTableExporter.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "ContentType",
+              "kind": "Field",
+              "type": "string"
+            },
+            {
+              "name": "FileExtension",
+              "kind": "Field",
+              "type": "string"
+            },
+            {
+              "name": "Format",
+              "kind": "Field",
+              "type": "string"
+            },
+            {
+              "name": "Export",
+              "kind": "Method",
+              "type": "byte[]",
+              "parameters": [
+                {
+                  "name": "data",
+                  "type": "DataTableExportData"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "libraryExamples": [],
+      "summary": {
+        "itemCount": 1,
+        "manualItemCount": 1,
+        "generatedItemCount": 1,
+        "generatedOnlyItemCount": 0,
+        "componentCount": 0,
+        "publicApiTypeCount": 1
       }
     },
     {
@@ -64832,6 +65757,16 @@
           ]
         },
         {
+          "itemName": "IDataTableLayoutStore",
+          "kind": "Interface",
+          "category": "Interfaces",
+          "namespace": "Tempo.Blazor.Interfaces",
+          "description": "Per-user persistence hook for a data table's column layout (widths and pin state), separate from saved views.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IDataTableLayoutStore.cs",
+          "documentationStatus": "merged"
+        },
+        {
           "itemName": "IDataTableViewProvider",
           "kind": "Interface",
           "category": "Interfaces",
@@ -64931,6 +65866,26 @@
           "description": "Contract for providing data to the component. Implementations handle file system operations, cloud storage APIs, or virtual file systems.",
           "packageId": "Tempo.Blazor.Abstractions",
           "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IFileManagerDataProvider.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "IFileScanHook",
+          "kind": "Interface",
+          "category": "Interfaces",
+          "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+          "description": "Optional hook that scans a freshly uploaded file (virus / content inspection); an upload moves Pending -> Clean/Blocked and blocked files are rendered as unavailable.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IFileScanHook.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "IFileVersioningHook",
+          "kind": "Interface",
+          "category": "Interfaces",
+          "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+          "description": "Optional hook that records and manages historical versions of a file: create-on-reupload, list history, diff two versions, and restore a prior version.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IFileVersioningHook.cs",
           "documentationStatus": "merged"
         },
         {
@@ -65188,6 +66143,26 @@
               "code": "public class ScheduleDataProvider : IScheduleDataProvider\n{\n    private readonly ICalendarService _calendar;\n\n    public async Task<IReadOnlyList<SchedulerEvent>> GetEventsAsync(\n        DateTime start, DateTime end, \n        IReadOnlyList<string>? resourceIds = null,\n        CancellationToken ct = default)\n    {\n        return await _calendar.GetEventsAsync(start, end, resourceIds, ct);\n    }\n\n    public async Task<IReadOnlyList<SchedulerResource>> GetResourcesAsync(\n        CancellationToken ct = default)\n    {\n        return await _calendar.GetResourcesAsync(ct);\n    }\n\n    public async Task<SchedulerEvent?> CreateEventAsync(\n        SchedulerEvent eventData, CancellationToken ct = default)\n    {\n        return await _calendar.CreateEventAsync(eventData, ct);\n    }\n\n    public async Task<bool> UpdateEventAsync(\n        SchedulerEvent eventData, CancellationToken ct = default)\n    {\n        return await _calendar.UpdateEventAsync(eventData, ct);\n    }\n\n    public async Task<bool> DeleteEventAsync(\n        string eventId, CancellationToken ct = default)\n    {\n        return await _calendar.DeleteEventAsync(eventId, ct);\n    }\n}"
             }
           ]
+        },
+        {
+          "itemName": "IScheduleExporter",
+          "kind": "Interface",
+          "category": "Interfaces",
+          "namespace": "Tempo.Blazor.Interfaces",
+          "description": "Serializes scheduler events into a calendar document (for example iCalendar / ICS).",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IScheduleCalendar.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "IScheduleImporter",
+          "kind": "Interface",
+          "category": "Interfaces",
+          "namespace": "Tempo.Blazor.Interfaces",
+          "description": "Parses a calendar document (for example iCalendar / ICS) into scheduler events.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IScheduleCalendar.cs",
+          "documentationStatus": "merged"
         },
         {
           "itemName": "ISelectOption<TValue>",
@@ -66223,6 +67198,16 @@
           ]
         },
         {
+          "itemName": "ColumnPin",
+          "kind": "Enum",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Models",
+          "description": "Pin state for a data table column: None, Left, or Right.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableLayout.cs",
+          "documentationStatus": "merged"
+        },
+        {
           "itemName": "ContextMenuContext<TMetadata>",
           "kind": "Class",
           "category": "Models",
@@ -66275,6 +67260,16 @@
           ]
         },
         {
+          "itemName": "DataTableExportData",
+          "kind": "Class",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Models",
+          "description": "Tabular snapshot of a data table for export: visible column headers and fully materialized rows (all pages) for the current filter/sort.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+          "documentationStatus": "merged"
+        },
+        {
           "itemName": "DataTableFilter",
           "kind": "Record",
           "category": "Models",
@@ -66282,6 +67277,16 @@
           "description": "Represents a single column filter predicate.",
           "packageId": "Tempo.Blazor.Abstractions",
           "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableQuery.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "DataTableLayout",
+          "kind": "Class",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Models",
+          "description": "Per-user, per-table column layout: pixel widths and pin state keyed by column key. Persisted through an IDataTableLayoutStore.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableLayout.cs",
           "documentationStatus": "merged"
         },
         {
@@ -66351,6 +67356,16 @@
               "code": "var query = new DataTableQuery\n{\n    Page = 1,\n    PageSize = 50,\n    SortColumn = \"LastName\",\n    SortDescending = false,\n    SearchText = \"smith\",\n    Filters = new List<FilterDefinition>\n    {\n        new() { Column = \"Status\", Operator = \"eq\", Value = \"Active\" },\n        new() { Column = \"Age\", Operator = \"gt\", Value = 18 }\n    }\n};"
             }
           ]
+        },
+        {
+          "itemName": "DataTableSortDirection",
+          "kind": "Enum",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Models",
+          "description": "Sort direction for a data table column (Ascending or Descending).",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SortDescriptor.cs",
+          "documentationStatus": "merged"
         },
         {
           "itemName": "DataTableView",
@@ -66655,6 +67670,16 @@
           "documentationStatus": "merged"
         },
         {
+          "itemName": "DocumentCommentFactory",
+          "kind": "Class",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Abstractions.Models",
+          "description": "Builds document comment threads and entries from create and reply requests.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentCommentFactory.cs",
+          "documentationStatus": "merged"
+        },
+        {
           "itemName": "DocumentCommentGeometryHelper",
           "kind": "Class",
           "category": "Models",
@@ -66677,6 +67702,18 @@
               ]
             },
             {
+              "name": "ToBadgeStyle",
+              "kind": "Method",
+              "type": "string",
+              "description": "Returns a CSS style positioning a marker badge at the trailing edge of an anchor.",
+              "parameters": [
+                {
+                  "name": "anchor",
+                  "type": "DocumentCommentAnchor"
+                }
+              ]
+            },
+            {
               "name": "ToPointStyle",
               "kind": "Method",
               "type": "string",
@@ -66685,6 +67722,18 @@
                 {
                   "name": "anchor",
                   "type": "DocumentCommentAnchor"
+                }
+              ]
+            },
+            {
+              "name": "ToRectStyle",
+              "kind": "Method",
+              "type": "string",
+              "description": "Returns a CSS style for a single normalized highlight rectangle of a text range anchor.",
+              "parameters": [
+                {
+                  "name": "rect",
+                  "type": "DocumentCommentRect"
                 }
               ]
             }
@@ -66780,6 +67829,16 @@
           "category": "Models",
           "namespace": "Tempo.Blazor.Abstractions.Models",
           "description": "Payload emitted when a comment reaction is toggled.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentComments.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "DocumentCommentRect",
+          "kind": "Class",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Abstractions.Models",
+          "description": "Normalized rectangle on a document page, expressed as fractions of the page size. Used for text range highlight geometry.",
           "packageId": "Tempo.Blazor.Abstractions",
           "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentComments.cs",
           "documentationStatus": "merged"
@@ -66967,6 +68026,18 @@
               "kind": "Property",
               "type": "DocumentManagerPermission?",
               "description": "Access permissions for the current user."
+            },
+            {
+              "name": "ScanMessage",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional human-readable detail about the scan outcome."
+            },
+            {
+              "name": "ScanStatus",
+              "kind": "Property",
+              "type": "FileScanStatus",
+              "description": "Anti-virus / content scan state for the item's primary content. When or , downloads are suppressed and the item is shown as unavailable."
             },
             {
               "name": "Size",
@@ -67587,6 +68658,18 @@
               "kind": "Property",
               "type": "required string",
               "description": "Full path of the item."
+            },
+            {
+              "name": "ScanMessage",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional human-readable detail about the scan outcome."
+            },
+            {
+              "name": "ScanStatus",
+              "kind": "Property",
+              "type": "FileScanStatus",
+              "description": "Anti-virus / content scan state. When or , the item is shown as unavailable and downloads are suppressed."
             },
             {
               "name": "Size",
@@ -68424,6 +69507,16 @@
           "documentationStatus": "merged"
         },
         {
+          "itemName": "IDataTableExporter",
+          "kind": "Interface",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Models",
+          "description": "Serializes a DataTableExportData snapshot into a downloadable document (for example CSV or XLSX).",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+          "documentationStatus": "merged"
+        },
+        {
           "itemName": "IGanttRealtimeConnection",
           "kind": "Interface",
           "category": "Models",
@@ -68441,6 +69534,84 @@
           "description": "Factory methods and built-in implementations of IImageUrlResolver.",
           "packageId": "Tempo.Blazor.Abstractions",
           "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ImageUrlResolvers.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "InMemoryDataTableLayoutStore",
+          "kind": "Class",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Models",
+          "description": "In-memory IDataTableLayoutStore keyed by table + user for the lifetime of the instance. Suitable for demos, tests, and prototypes.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryDataTableLayoutStore.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "LoadLayoutAsync",
+              "kind": "Method",
+              "type": "Task<DataTableLayout?>",
+              "parameters": [
+                {
+                  "name": "viewContext",
+                  "type": "string"
+                },
+                {
+                  "name": "userId",
+                  "type": "string?",
+                  "default": "null"
+                },
+                {
+                  "name": "ct",
+                  "type": "CancellationToken",
+                  "default": "default"
+                }
+              ]
+            },
+            {
+              "name": "SaveLayoutAsync",
+              "kind": "Method",
+              "type": "Task",
+              "parameters": [
+                {
+                  "name": "viewContext",
+                  "type": "string"
+                },
+                {
+                  "name": "layout",
+                  "type": "DataTableLayout"
+                },
+                {
+                  "name": "userId",
+                  "type": "string?",
+                  "default": "null"
+                },
+                {
+                  "name": "ct",
+                  "type": "CancellationToken",
+                  "default": "default"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "itemName": "InMemoryPdfAnnotationProvider",
+          "kind": "Class",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Abstractions.Models",
+          "description": "In-memory IPdfAnnotationProvider that keeps annotation threads per document for the lifetime of the instance. Suitable for demos, tests, and prototypes.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryPdfAnnotationProvider.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "IPdfAnnotationProvider",
+          "kind": "Interface",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Abstractions.Models",
+          "description": "Persistence contract for PDF viewer annotations (comment threads anchored to page points, areas, or text ranges). Implementations load, create, reply to, edit, delete, resolve, and reopen threads for a document.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/IPdfAnnotationProvider.cs",
           "documentationStatus": "merged"
         },
         {
@@ -70423,6 +71594,16 @@
           ]
         },
         {
+          "itemName": "SortDescriptor",
+          "kind": "Record",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Models",
+          "description": "A single sort instruction (column key + direction). In DataTableQuery.SortDescriptors the position defines precedence.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SortDescriptor.cs",
+          "documentationStatus": "merged"
+        },
+        {
           "itemName": "StockChartDataPoint",
           "kind": "Record",
           "category": "Models",
@@ -70540,6 +71721,16 @@
           "description": "Represents a single property change with old and new values.",
           "packageId": "Tempo.Blazor.Abstractions",
           "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmChangeInfo.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "TmCommentProviderPdfAnnotationAdapter",
+          "kind": "Class",
+          "category": "Models",
+          "namespace": "Tempo.Blazor.Abstractions.Models",
+          "description": "Adapts the shared ITmCommentProvider to the PDF viewer IPdfAnnotationProvider contract, translating between the document-viewer comment models and the shared comment models via DocumentViewerCommentBridge.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmCommentProviderPdfAnnotationAdapter.cs",
           "documentationStatus": "merged"
         },
         {
@@ -78663,6 +79854,177 @@
           "documentationStatus": "manual"
         },
         {
+          "itemName": "FileScanRequest",
+          "kind": "Class",
+          "category": "Shared",
+          "namespace": "Tempo.Blazor.Abstractions.Shared",
+          "description": "Describes an uploaded file (name, content type, size, asset id, entity) passed to an IFileScanHook for scanning.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileScanRequest.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "AssetId",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Provider-managed asset identifier assigned during upload, when available."
+            },
+            {
+              "name": "ContentType",
+              "kind": "Property",
+              "type": "string?",
+              "description": "MIME content type, when known."
+            },
+            {
+              "name": "EntityRef",
+              "kind": "Property",
+              "type": "TmEntityRef?",
+              "description": "Entity that owns the uploaded asset, when known."
+            },
+            {
+              "name": "FileName",
+              "kind": "Property",
+              "type": "string",
+              "description": "Original or display file name."
+            },
+            {
+              "name": "Metadata",
+              "kind": "Property",
+              "type": "Dictionary<string, object>?",
+              "description": "Arbitrary metadata carried from the upload for the scanner's use."
+            },
+            {
+              "name": "Purpose",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional purpose, matching the upload's purpose (e.g. \"document-manager\")."
+            },
+            {
+              "name": "SizeBytes",
+              "kind": "Property",
+              "type": "long",
+              "description": "File size in bytes."
+            }
+          ]
+        },
+        {
+          "itemName": "FileScanResult",
+          "kind": "Class",
+          "category": "Shared",
+          "namespace": "Tempo.Blazor.Abstractions.Shared",
+          "description": "Outcome of an IFileScanHook scan: resulting status plus optional message and detected threat name.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileScanResult.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "BlockedBy",
+              "kind": "Method",
+              "type": "FileScanResult",
+              "description": "Convenience factory for a blocked result.",
+              "parameters": [
+                {
+                  "name": "threatName",
+                  "type": "string"
+                },
+                {
+                  "name": "message",
+                  "type": "string?",
+                  "default": "null"
+                }
+              ]
+            },
+            {
+              "name": "Clean",
+              "kind": "Method",
+              "type": "FileScanResult",
+              "description": "Convenience factory for a clean result."
+            },
+            {
+              "name": "Message",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Human-readable detail (localized by the host), such as why a file was blocked."
+            },
+            {
+              "name": "Status",
+              "kind": "Property",
+              "type": "FileScanStatus",
+              "description": "Resulting scan state."
+            },
+            {
+              "name": "ThreatName",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Name of the detected threat when is ."
+            }
+          ]
+        },
+        {
+          "itemName": "FileScanStatus",
+          "kind": "Enum",
+          "category": "Shared",
+          "namespace": "Tempo.Blazor.Abstractions.Shared",
+          "description": "Anti-virus / content scan state of an uploaded file: NotScanned, Pending, Clean, Blocked, or Failed.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileScanStatus.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "FileVersionRequest",
+          "kind": "Class",
+          "category": "Shared",
+          "namespace": "Tempo.Blazor.Abstractions.Shared",
+          "description": "Describes a new version to record via IFileVersioningHook.CreateVersionAsync (item id, file name, size, asset id, author, comment).",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileVersionRequest.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "AssetId",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Provider-managed asset id for the new version's content, when available."
+            },
+            {
+              "name": "Comment",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional change comment."
+            },
+            {
+              "name": "ContentType",
+              "kind": "Property",
+              "type": "string?",
+              "description": "MIME content type, when known."
+            },
+            {
+              "name": "CreatedBy",
+              "kind": "Property",
+              "type": "TmUserRef?",
+              "description": "User creating the version, when known."
+            },
+            {
+              "name": "FileName",
+              "kind": "Property",
+              "type": "string",
+              "description": "File name for the new version."
+            },
+            {
+              "name": "ItemId",
+              "kind": "Property",
+              "type": "string",
+              "description": "Identifier of the logical item receiving a new version."
+            },
+            {
+              "name": "SizeBytes",
+              "kind": "Property",
+              "type": "long",
+              "description": "File size in bytes."
+            }
+          ]
+        },
+        {
           "itemName": "ITmActivityProvider",
           "kind": "Interface",
           "category": "Shared",
@@ -79220,6 +80582,18 @@
               "description": "Optional purpose, such as \"work-item\", \"document-manager\", \"signature\", or \"notion-media\"."
             },
             {
+              "name": "ScanMessage",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional human-readable detail about the scan outcome."
+            },
+            {
+              "name": "ScanStatus",
+              "kind": "Property",
+              "type": "FileScanStatus",
+              "description": "Anti-virus / content scan state. When or , the file should be treated as unavailable."
+            },
+            {
               "name": "SizeBytes",
               "kind": "Property",
               "type": "long",
@@ -79446,6 +80820,78 @@
                   "type": "this IServiceCollection"
                 }
               ]
+            }
+          ]
+        },
+        {
+          "itemName": "TmChunkedUploadRequest",
+          "kind": "Class",
+          "category": "Shared",
+          "namespace": "Tempo.Blazor.Abstractions.Shared",
+          "description": "Describes a chunked upload of a single file including chunk size and optional resume state (resume-from index and upload session id).",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmChunkedUploadRequest.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "DefaultChunkSizeBytes",
+              "kind": "Field",
+              "type": "int",
+              "description": "Default chunk size in bytes (256 KB)."
+            },
+            {
+              "name": "ChunkSizeBytes",
+              "kind": "Property",
+              "type": "int",
+              "description": "Chunk size in bytes. Defaults to ."
+            },
+            {
+              "name": "ContentType",
+              "kind": "Property",
+              "type": "string?",
+              "description": "MIME content type, when known."
+            },
+            {
+              "name": "EntityRef",
+              "kind": "Property",
+              "type": "TmEntityRef?",
+              "description": "Entity that will own or reference the uploaded asset."
+            },
+            {
+              "name": "FileName",
+              "kind": "Property",
+              "type": "string",
+              "description": "Original or display file name."
+            },
+            {
+              "name": "Metadata",
+              "kind": "Property",
+              "type": "Dictionary<string, object>?",
+              "description": "Arbitrary metadata forwarded to each chunk for provider use."
+            },
+            {
+              "name": "Purpose",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional purpose, such as \"document-manager\"."
+            },
+            {
+              "name": "ResumeFromChunkIndex",
+              "kind": "Property",
+              "type": "int",
+              "description": "Zero-based index of the first chunk to send. Non-zero resumes an interrupted upload."
+            },
+            {
+              "name": "TotalSizeBytes",
+              "kind": "Property",
+              "type": "long",
+              "description": "Total file size in bytes."
+            },
+            {
+              "name": "UploadSessionId",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Upload session id from a previous attempt, used when resuming."
             }
           ]
         },
@@ -80684,6 +82130,114 @@
           ]
         },
         {
+          "itemName": "TmFileVersion",
+          "kind": "Class",
+          "category": "Shared",
+          "namespace": "Tempo.Blazor.Abstractions.Shared",
+          "description": "A single historical version of a file: version number, file name, size, author, timestamp, comment, and whether it is current.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersion.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "AssetId",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Provider-managed asset id for this version's content, when available."
+            },
+            {
+              "name": "Comment",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Optional change comment."
+            },
+            {
+              "name": "ContentType",
+              "kind": "Property",
+              "type": "string?",
+              "description": "MIME content type, when known."
+            },
+            {
+              "name": "CreatedAt",
+              "kind": "Property",
+              "type": "DateTimeOffset",
+              "description": "Timestamp when this version was created."
+            },
+            {
+              "name": "CreatedBy",
+              "kind": "Property",
+              "type": "TmUserRef?",
+              "description": "User who created this version, when known."
+            },
+            {
+              "name": "FileName",
+              "kind": "Property",
+              "type": "string",
+              "description": "File name captured for this version."
+            },
+            {
+              "name": "IsCurrent",
+              "kind": "Property",
+              "type": "bool",
+              "description": "True when this is the current (latest) version of the item."
+            },
+            {
+              "name": "ItemId",
+              "kind": "Property",
+              "type": "string",
+              "description": "Identifier of the logical item this version belongs to."
+            },
+            {
+              "name": "SizeBytes",
+              "kind": "Property",
+              "type": "long",
+              "description": "File size in bytes for this version."
+            },
+            {
+              "name": "VersionId",
+              "kind": "Property",
+              "type": "string",
+              "description": "Stable version identifier."
+            },
+            {
+              "name": "VersionNumber",
+              "kind": "Property",
+              "type": "int",
+              "description": "Monotonic version number (1-based); higher is newer."
+            }
+          ]
+        },
+        {
+          "itemName": "TmFileVersionDiff",
+          "kind": "Class",
+          "category": "Shared",
+          "namespace": "Tempo.Blazor.Abstractions.Shared",
+          "description": "Result of comparing two file versions: line-by-line text diff (when applicable), size delta, and added/removed line counts.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersionDiff.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "TmFileVersionDiffKind",
+          "kind": "Enum",
+          "category": "Shared",
+          "namespace": "Tempo.Blazor.Abstractions.Shared",
+          "description": "Nature of a single line in a version diff: Unchanged, Added, or Removed.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersionDiff.cs",
+          "documentationStatus": "merged"
+        },
+        {
+          "itemName": "TmFileVersionDiffLine",
+          "kind": "Class",
+          "category": "Shared",
+          "namespace": "Tempo.Blazor.Abstractions.Shared",
+          "description": "A single line entry in a text diff between two file versions, with its kind, text, and old/new line numbers.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersionDiff.cs",
+          "documentationStatus": "merged"
+        },
+        {
           "itemName": "TmNotification",
           "kind": "Class",
           "category": "Shared",
@@ -81490,6 +83044,60 @@
               "kind": "Property",
               "type": "string?",
               "description": "Optional tenant, workspace, or application scope identifier."
+            }
+          ]
+        },
+        {
+          "itemName": "TmUploadProgress",
+          "kind": "Class",
+          "category": "Shared",
+          "namespace": "Tempo.Blazor.Abstractions.Shared",
+          "description": "Progress snapshot emitted while a chunked upload is in flight: bytes transferred, total bytes, chunk index/count, and completion percentage.",
+          "packageId": "Tempo.Blazor.Abstractions",
+          "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmUploadProgress.cs",
+          "documentationStatus": "merged",
+          "members": [
+            {
+              "name": "BytesTransferred",
+              "kind": "Property",
+              "type": "long",
+              "description": "Bytes transferred so far (sum of completed chunks)."
+            },
+            {
+              "name": "ChunkIndex",
+              "kind": "Property",
+              "type": "int",
+              "description": "Zero-based index of the most recently sent chunk."
+            },
+            {
+              "name": "FileName",
+              "kind": "Property",
+              "type": "string",
+              "description": "Original or display file name being uploaded."
+            },
+            {
+              "name": "IsComplete",
+              "kind": "Property",
+              "type": "bool",
+              "description": "True once the final chunk has been acknowledged."
+            },
+            {
+              "name": "TotalBytes",
+              "kind": "Property",
+              "type": "long",
+              "description": "Total file size in bytes."
+            },
+            {
+              "name": "TotalChunks",
+              "kind": "Property",
+              "type": "int",
+              "description": "Total number of chunks for the file."
+            },
+            {
+              "name": "UploadSessionId",
+              "kind": "Property",
+              "type": "string?",
+              "description": "Upload session id assigned by the provider, when one is used."
             }
           ]
         },
@@ -87263,12 +88871,12 @@
       ],
       "libraryExamples": [],
       "summary": {
-        "itemCount": 1276,
-        "manualItemCount": 1276,
-        "generatedItemCount": 1259,
+        "itemCount": 1303,
+        "manualItemCount": 1303,
+        "generatedItemCount": 1286,
         "generatedOnlyItemCount": 0,
         "componentCount": 0,
-        "publicApiTypeCount": 1259
+        "publicApiTypeCount": 1286
       }
     },
     {
@@ -94917,6 +96525,10 @@
             "description": "Optional XLSX import and export helpers for Tempo.Blazor Gantt components, backed by DocumentFormat.OpenXml."
           },
           {
+            "name": "Tempo.Blazor.DataTableXlsx",
+            "description": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml."
+          },
+          {
             "name": "Tempo.Blazor.DocumentEditor",
             "description": "Document editor components for Tempo.Blazor, including canvas rendering, collaboration UI, clipboard normalization, and document editor interop assets."
           },
@@ -96462,6 +98074,10 @@
           {
             "name": "Tempo.Blazor.GanttXlsx",
             "description": "Optional XLSX import and export helpers for Tempo.Blazor Gantt components, backed by DocumentFormat.OpenXml."
+          },
+          {
+            "name": "Tempo.Blazor.DataTableXlsx",
+            "description": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml."
           },
           {
             "name": "Tempo.Blazor.DocumentEditor",
@@ -98635,6 +100251,10 @@
             "description": "Optional XLSX import and export helpers for Tempo.Blazor Gantt components, backed by DocumentFormat.OpenXml."
           },
           {
+            "name": "Tempo.Blazor.DataTableXlsx",
+            "description": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml."
+          },
+          {
             "name": "Tempo.Blazor.DocumentEditor",
             "description": "Document editor components for Tempo.Blazor, including canvas rendering, collaboration UI, clipboard normalization, and document editor interop assets."
           },
@@ -99645,11 +101265,11 @@
     }
   ],
   "summary": {
-    "packageCount": 22,
-    "itemCount": 2809,
-    "manualItemCount": 2809,
+    "packageCount": 23,
+    "itemCount": 2849,
+    "manualItemCount": 2849,
     "generatedOnlyItemCount": 0,
-    "componentCount": 441,
-    "publicApiTypeCount": 2314
+    "componentCount": 446,
+    "publicApiTypeCount": 2349
   }
 }

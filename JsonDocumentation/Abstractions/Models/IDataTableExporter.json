@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Serializes a DataTableExportData snapshot into a downloadable document (for example CSV or XLSX).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDataTableExporter"
+}

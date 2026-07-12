@@ -39,8 +39,19 @@ public sealed class TmAttachment
     /// <summary>Whether the current viewer may remove this attachment link.</summary>
     public bool CanDelete { get; set; }
 
+    /// <summary>Anti-virus / content scan state. When <see cref="FileScanStatus.Blocked"/>
+    /// or <see cref="FileScanStatus.Pending"/>, the file should be treated as unavailable.</summary>
+    public FileScanStatus ScanStatus { get; set; } = FileScanStatus.NotScanned;
+
+    /// <summary>Optional human-readable detail about the scan outcome.</summary>
+    public string? ScanMessage { get; set; }
+
     /// <summary>Arbitrary metadata for consumer use.</summary>
     public Dictionary<string, object>? Metadata { get; set; }
+
+    /// <summary>True when the scan state permits the viewer to access the file content.</summary>
+    public bool IsScanAvailable
+        => ScanStatus is FileScanStatus.NotScanned or FileScanStatus.Clean;
 
     /// <summary>Returns true when the content type describes an image.</summary>
     public bool IsImage

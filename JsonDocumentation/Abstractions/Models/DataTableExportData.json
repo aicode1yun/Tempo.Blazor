@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Tabular snapshot of a data table for export: visible column headers and fully materialized rows (all pages) for the current filter/sort.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+  "documentationStatus": "generated",
+  "itemName": "DataTableExportData"
+}

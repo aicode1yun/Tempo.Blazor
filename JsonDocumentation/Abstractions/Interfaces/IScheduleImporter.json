@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Parses a calendar document (for example iCalendar / ICS) into scheduler events.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IScheduleCalendar.cs",
+  "documentationStatus": "generated",
+  "itemName": "IScheduleImporter"
+}

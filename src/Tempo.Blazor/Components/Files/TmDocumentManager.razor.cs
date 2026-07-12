@@ -74,6 +74,14 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
     private double _contextMenuY;
     private DocumentManagerItem<TMetadata>? _contextMenuItem;
 
+    // ── Upload / versioning ──────────────────────────────────────
+    private readonly List<TmUploadItem> _uploads = [];
+    private bool _showVersionHistory;
+    private DocumentManagerItem<TMetadata>? _versionHistoryItem;
+    // Scan verdicts recorded this session, re-applied after every reload so a Blocked/Pending
+    // gate survives providers that return fresh item instances. Keyed by asset id and "name:"+name.
+    private readonly Dictionary<string, (FileScanStatus Status, string? Message)> _scanVerdicts = [];
+
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
     // ── Parameters ───────────────────────────────────────────────
@@ -134,6 +142,21 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
 
     /// <summary>When <c>true</c>, allows one logical item to hold multiple physical file attachments.</summary>
     [Parameter] public bool AllowMultipleAttachments { get; set; }
+
+    /// <summary>Maximum size of a single upload in bytes. Default 100 MB. Also caps the browser read stream.</summary>
+    [Parameter] public long MaxUploadSize { get; set; } = 100L * 1024 * 1024;
+
+    /// <summary>Optional scan hook run after each upload; a <see cref="FileScanStatus.Blocked"/> result marks the item unavailable.</summary>
+    [Parameter] public IFileScanHook? ScanHook { get; set; }
+
+    /// <summary>Optional versioning hook. When supplied and <see cref="ShowVersionHistory"/> is set, a version-history action is available.</summary>
+    [Parameter] public IFileVersioningHook? VersioningHook { get; set; }
+
+    /// <summary>Whether to show the version-history action (requires <see cref="VersioningHook"/>). Default <c>true</c>.</summary>
+    [Parameter] public bool ShowVersionHistory { get; set; } = true;
+
+    /// <summary>Fires for each chunk progress update during a chunked upload.</summary>
+    [Parameter] public EventCallback<TmUploadProgress> OnUploadProgress { get; set; }
 
     /// <summary>Custom template for rendering the attachment list inside the detail panel or edit modal.</summary>
     [Parameter] public RenderFragment<AttachmentListContext<TMetadata>>? AttachmentListTemplate { get; set; }
@@ -205,8 +228,28 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
             _items = [];
         }
 
+        ReapplyScanVerdicts();
+
         _focusedIndex = _items.Count > 0 ? 0 : -1;
         _anchorIndex = _focusedIndex;
+    }
+
+    private void ReapplyScanVerdicts()
+    {
+        if (_scanVerdicts.Count == 0) return;
+        foreach (var item in _items)
+        {
+            if (item.IsDirectory) continue;
+            var attachmentAsset = item.Attachments
+                .FirstOrDefault(a => !string.IsNullOrEmpty(a.AssetId) && _scanVerdicts.ContainsKey(a.AssetId!))?.AssetId;
+            if (_scanVerdicts.TryGetValue(item.Id, out var v)
+                || (attachmentAsset is not null && _scanVerdicts.TryGetValue(attachmentAsset, out v))
+                || _scanVerdicts.TryGetValue("name:" + item.Name, out v))
+            {
+                item.ScanStatus = v.Status;
+                item.ScanMessage = v.Message;
+            }
+        }
     }
 
     // ── Permissions helpers ──────────────────────────────────────
@@ -224,7 +267,7 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         => !RespectPermissions || (item.Permissions?.CanRename ?? true);
 
     private bool CanDownload(DocumentManagerItem<TMetadata> item)
-        => !RespectPermissions || (item.Permissions?.CanDownload ?? true);
+        => item.IsScanAvailable && (!RespectPermissions || (item.Permissions?.CanDownload ?? true));
 
     private bool CanDownloadAll(DocumentManagerItem<TMetadata> item)
         => !item.IsDirectory && item.Attachments.Count > 1 && CanDownload(item);
@@ -286,7 +329,7 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         {
             await NavigateTo(item.Path);
         }
-        else
+        else if (item.IsScanAvailable)
         {
             await OnItemOpen.InvokeAsync(item);
         }
@@ -596,10 +639,19 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
 
     private Task CancelAttachmentUpload()
     {
+        DisposeStagedAttachmentStreams();
         _showAttachmentUploadForm = false;
         _attachmentTargetItem = null;
         _attachmentUploadFiles = [];
         return Task.CompletedTask;
+    }
+
+    private void DisposeStagedAttachmentStreams()
+    {
+        foreach (var f in _attachmentUploadFiles)
+        {
+            try { f.Stream.Dispose(); } catch { /* browser stream already closed */ }
+        }
     }
 
     private async Task RemoveAttachmentAsync(string attachmentId)
@@ -730,15 +782,39 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
     {
         if (Disabled || DataProvider is null) return;
 
+        var browserFiles = e.GetMultipleFiles(AllowMultipleAttachments ? int.MaxValue : 1);
+
+        // Chunked path: upload each file individually through the provider's chunk sink.
+        if (DataProvider is ITmChunkedFileProvider chunked
+            && (DataProvider is not ITmCapabilityProvider<TmFileProviderCapabilities> cap
+                || cap.Capabilities.HasFlag(TmFileProviderCapabilities.ChunkUpload)))
+        {
+            foreach (var file in browserFiles)
+            {
+                var item = new TmUploadItem
+                {
+                    FileName = file.Name,
+                    TotalBytes = file.Size,
+                    Source = file,
+                    ResumeAction = it => ChunkUploadAsync(chunked, it)
+                };
+                _uploads.Add(item);
+                await ChunkUploadAsync(chunked, item);
+            }
+            // Each ChunkUploadAsync already reloads (and re-applies scan verdicts) per file.
+            return;
+        }
+
+        // Fallback: whole-stream upload (cap raised to MaxUploadSize).
         var files = new List<FileUploadInfo>();
-        foreach (var file in e.GetMultipleFiles(AllowMultipleAttachments ? int.MaxValue : 1))
+        foreach (var file in browserFiles)
         {
             files.Add(new FileUploadInfo
             {
                 FileName = file.Name,
                 Size = file.Size,
                 ContentType = file.ContentType,
-                Stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024)
+                Stream = file.OpenReadStream(maxAllowedSize: MaxUploadSize)
             });
         }
 
@@ -746,17 +822,164 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         await LoadDataAsync();
     }
 
+    private async Task ChunkUploadAsync(ITmChunkedFileProvider chunked, TmUploadItem item)
+    {
+        if (item.Source is null) return;
+        var file = item.Source;
+
+        item.State = TmUploadState.Uploading;
+        item.Message = null;
+        item.Cts?.Dispose();
+        item.Cts = new CancellationTokenSource();
+        var token = item.Cts.Token;
+        StateHasChanged();
+
+        var progress = new Progress<TmUploadProgress>(p =>
+        {
+            item.Apply(p);
+            OnUploadProgress.InvokeAsync(p);
+            StateHasChanged();
+        });
+
+        TmFileUploadResult result;
+        try
+        {
+            result = await TmChunkedUploader.UploadBrowserFileAsync(
+                file,
+                chunked.UploadChunkAsync,
+                MaxUploadSize,
+                new TmChunkedUploadRequest
+                {
+                    FileName = file.Name,
+                    ContentType = file.ContentType,
+                    TotalSizeBytes = file.Size,
+                    Purpose = "document-manager",
+                    Metadata = new Dictionary<string, object> { ["folderPath"] = _currentPath },
+                    ResumeFromChunkIndex = item.NextChunkIndex,
+                    UploadSessionId = item.SessionId
+                },
+                progress,
+                token);
+        }
+        catch (OperationCanceledException)
+        {
+            item.State = TmUploadState.Cancelled;
+            StateHasChanged();
+            return;
+        }
+        catch (Exception ex)
+        {
+            item.State = TmUploadState.Failed;
+            item.Message = ex.Message;
+            StateHasChanged();
+            return;
+        }
+
+        if (!result.Success)
+        {
+            item.State = TmUploadState.Failed;
+            item.Message = result.ErrorMessage;
+            StateHasChanged();
+            return;
+        }
+
+        var status = await ScanUploadAsync(item, file, result);
+        item.State = status is FileScanStatus.Blocked ? TmUploadState.Blocked : TmUploadState.Completed;
+        // LoadDataAsync re-applies recorded verdicts, so the gate survives the reload.
+        await LoadDataAsync();
+        StateHasChanged();
+    }
+
+    private async Task<FileScanStatus> ScanUploadAsync(TmUploadItem item, IBrowserFile file, TmFileUploadResult result)
+    {
+        if (ScanHook is null) return FileScanStatus.NotScanned;
+
+        item.State = TmUploadState.Scanning;
+        StateHasChanged();
+
+        var scan = await ScanHook.ScanAsync(new FileScanRequest
+        {
+            FileName = file.Name,
+            ContentType = file.ContentType,
+            SizeBytes = file.Size,
+            AssetId = result.AssetId,
+            Purpose = "document-manager"
+        });
+
+        if (scan.Status is FileScanStatus.Blocked)
+        {
+            item.Message = scan.Message ?? scan.ThreatName;
+        }
+        RecordScanVerdict(result.AssetId, file.Name, scan);
+        return scan.Status;
+    }
+
+    private void RecordScanVerdict(string? assetId, string fileName, FileScanResult scan)
+    {
+        if (scan.Status is FileScanStatus.NotScanned or FileScanStatus.Clean) return;
+        var value = (scan.Status, scan.Message ?? scan.ThreatName);
+        if (!string.IsNullOrEmpty(assetId)) _scanVerdicts[assetId!] = value;
+        _scanVerdicts["name:" + fileName] = value;
+    }
+
+    private async Task CancelUploadAsync(TmUploadItem item)
+    {
+        if (item.Cts is not null)
+        {
+            await item.Cts.CancelAsync();
+        }
+        item.State = TmUploadState.Cancelled;
+    }
+
+    private async Task ResumeUploadAsync(TmUploadItem item)
+    {
+        if (item.ResumeAction is not null)
+        {
+            await item.ResumeAction(item);
+        }
+    }
+
+    private void DismissUpload(TmUploadItem item)
+    {
+        item.Cts?.Dispose();
+        _uploads.Remove(item);
+    }
+
+    // ── Version history ──────────────────────────────────────────
+
+    private bool CanShowVersionHistory()
+        => _selectedItems.Count == 1 && !_selectedItems[0].IsDirectory;
+
+    private void OpenVersionHistory(DocumentManagerItem<TMetadata> item)
+    {
+        if (VersioningHook is null || item.IsDirectory) return;
+        _versionHistoryItem = item;
+        _showVersionHistory = true;
+    }
+
+    private void CloseVersionHistory()
+    {
+        _showVersionHistory = false;
+        _versionHistoryItem = null;
+    }
+
+    private async Task OnVersionRestoredAsync(TmFileVersion version)
+    {
+        await LoadDataAsync();
+        StateHasChanged();
+    }
+
     private void HandleAttachmentFilesSelected(InputFileChangeEventArgs e)
     {
         _attachmentUploadFiles = [];
-        foreach (var file in e.GetMultipleFiles())
+        foreach (var file in e.GetMultipleFiles(int.MaxValue))
         {
             _attachmentUploadFiles.Add(new FileUploadInfo
             {
                 FileName = file.Name,
                 Size = file.Size,
                 ContentType = file.ContentType,
-                Stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024)
+                Stream = file.OpenReadStream(maxAllowedSize: MaxUploadSize)
             });
         }
     }

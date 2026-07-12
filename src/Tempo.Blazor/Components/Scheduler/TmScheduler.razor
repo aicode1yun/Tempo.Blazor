@@ -1,6 +1,7 @@
 @namespace Tempo.Blazor.Components.Scheduler
 @using Tempo.Blazor.Interfaces
 @using Tempo.Blazor.Models
+@inject Microsoft.JSInterop.IJSRuntime JS
 
 <div class="tm-scheduler @Class">
     <TmSchedulerToolbar View="@View"
@@ -8,7 +9,9 @@
                         OnViewChange="@HandleViewChange"
                         OnPrev="@NavigatePrev"
                         OnNext="@NavigateNext"
-                        OnToday="@NavigateToday" />
+                        OnToday="@NavigateToday"
+                        ShowPrint="@AllowPrint"
+                        OnPrint="@PrintAsync" />
 
     <div class="tm-scheduler-body">
         @switch (View)
@@ -160,6 +163,35 @@
     /// <summary>Additional CSS class(es).</summary>
     [Parameter] public string? Class { get; set; }
 
+    /// <summary>Whether the toolbar shows a Print button (uses the browser print dialog with print CSS). Default: true.</summary>
+    [Parameter] public bool AllowPrint { get; set; } = true;
+
+    /// <summary>Opens the browser print dialog; the scheduler's print stylesheet lays out the current view for paper.</summary>
+    public async Task PrintAsync()
+    {
+        try { await JS.InvokeVoidAsync("window.print"); }
+        catch { /* JS unavailable (e.g. tests) */ }
+    }
+
+    /// <summary>
+    /// Display timezone (IANA id such as <c>Europe/Prague</c>, or a Windows id). When set, event times
+    /// are converted to this zone at the render boundary (DST-aware). When null, the machine-local
+    /// timezone is used and non-recurring events are passed through unchanged for backward compatibility.
+    /// </summary>
+    [Parameter] public string? TimeZoneId { get; set; }
+
+    /// <summary>Resolves the effective display timezone (falls back to local when unset or invalid).</summary>
+    public TimeZoneInfo ResolveTimeZone()
+    {
+        if (!string.IsNullOrWhiteSpace(TimeZoneId)
+            && TimeZoneInfo.TryFindSystemTimeZoneById(TimeZoneId, out var tz))
+        {
+            return tz;
+        }
+
+        return TimeZoneInfo.Local;
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         await LoadEventsAsync();
@@ -168,10 +200,14 @@
     private async Task LoadEventsAsync()
     {
         var (rangeStart, rangeEnd) = GetVisibleRange();
+        var tz = ResolveTimeZone();
+        var normalize = !string.IsNullOrWhiteSpace(TimeZoneId);
 
         if (DataProvider is not null)
         {
-            _loadedEvents = await DataProvider.GetEventsAsync(new TmScheduleQuery(rangeStart, rangeEnd));
+            // The provider owns range filtering and recurrence expansion; only convert timezone here.
+            var events = await DataProvider.GetEventsAsync(new TmScheduleQuery(rangeStart, rangeEnd));
+            _loadedEvents = normalize ? events.Select(e => Normalize(e, tz)).ToList() : events;
         }
         else if (WorkItemSource is not null)
         {
@@ -182,22 +218,66 @@
                 IncludeCompleted = true,
                 Take = 1000
             });
-            _loadedEvents = result.Items
+            var mapped = result.Items
                 .Where(w => w.Start < rangeEnd && w.End > rangeStart)
-                .Select(MapToEvent)
-                .ToList();
+                .Select(MapToEvent);
+            _loadedEvents = normalize ? mapped.Select(e => Normalize(e, tz)).ToList() : mapped.ToList();
         }
         else if (Events is not null)
         {
-            _loadedEvents = Events
-                .Where(e => e.Start < rangeEnd && e.End > rangeStart)
-                .ToList();
+            _loadedEvents = ProcessEvents(Events, tz, normalize, rangeStart, rangeEnd);
         }
         else
         {
             _loadedEvents = [];
         }
     }
+
+    /// <summary>
+    /// Normalizes plain client events to the display timezone and expands recurring events into
+    /// occurrences within the visible range (the plain <see cref="Events"/> path expands recurrence).
+    /// </summary>
+    private List<TmScheduleEvent> ProcessEvents(
+        IEnumerable<TmScheduleEvent> raw, TimeZoneInfo tz, bool normalize, DateTime rangeStart, DateTime rangeEnd)
+    {
+        var result = new List<TmScheduleEvent>();
+        foreach (var e in raw)
+        {
+            if (!string.IsNullOrWhiteSpace(e.RecurrenceRule))
+            {
+                var source = normalize ? Normalize(e, tz) : e;
+                result.AddRange(RecurrenceEngine.ExpandRecurrence(source, rangeStart, rangeEnd, tz));
+            }
+            else
+            {
+                var display = normalize ? Normalize(e, tz) : e;
+                if (display.StartLocal < rangeEnd && display.EndLocal > rangeStart)
+                {
+                    result.Add(display);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static TmScheduleEvent Normalize(TmScheduleEvent e, TimeZoneInfo tz) => new()
+    {
+        Id = e.Id,
+        Title = e.Title,
+        Description = e.Description,
+        // All-day events are floating dates and must not shift across midnight on timezone conversion.
+        Start = e.AllDay ? e.Start : TimeZoneInfo.ConvertTime(e.Start, tz),
+        End = e.AllDay ? e.End : TimeZoneInfo.ConvertTime(e.End, tz),
+        AllDay = e.AllDay,
+        Color = e.Color,
+        CssClass = e.CssClass,
+        ResourceId = e.ResourceId,
+        RecurrenceRule = e.RecurrenceRule,
+        RecurrenceExceptions = e.RecurrenceExceptions,
+        IsReadOnly = e.IsReadOnly,
+        Metadata = e.Metadata
+    };
 
     private static TmScheduleEvent MapToEvent(TmWorkItem item) => new()
     {
@@ -216,8 +296,8 @@
             var item = await WorkItemSource.GetByIdAsync(e.Id);
             if (item is not null)
             {
-                item.Start = e.Start;
-                item.End = e.End;
+                item.Start = e.StartLocal;
+                item.End = e.EndLocal;
                 await WorkItemSource.UpdateAsync(item);
                 await LoadEventsAsync();
             }

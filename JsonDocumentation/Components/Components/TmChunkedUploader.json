@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "description": "Dependency-free coordinator that streams a file to a chunk sink in fixed 256 KB chunks with progress, cancellation, and resume.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Files/TmChunkedUploader.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmChunkedUploader"
+}

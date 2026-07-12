@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Outcome of an IFileScanHook scan: resulting status plus optional message and detected threat name.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileScanResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "FileScanResult"
+}

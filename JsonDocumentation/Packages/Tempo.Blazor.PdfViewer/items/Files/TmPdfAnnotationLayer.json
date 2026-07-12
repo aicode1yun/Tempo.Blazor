@@ -1,0 +1,13 @@
+{
+  "itemName": "TmPdfAnnotationLayer",
+  "kind": "Component",
+  "category": "Files",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "description": "Overlay that renders PDF annotation highlights and margin markers over the current page. Used internally by TmPdfViewer when annotations are enabled, reusing the shared document comment models.",
+  "packageId": "Tempo.Blazor.PdfViewer",
+  "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotationLayer.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Files"
+  ]
+}

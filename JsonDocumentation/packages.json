@@ -93,6 +93,15 @@
       "includeAssets": false
     },
     {
+      "packageId": "Tempo.Blazor.DataTableXlsx",
+      "sourceProject": "src/Tempo.Blazor.DataTableXlsx/Tempo.Blazor.DataTableXlsx.csproj",
+      "outputFile": "tempo-blazor-datatablexlsx.json",
+      "documentationRoots": [ "Packages/Tempo.Blazor.DataTableXlsx/items" ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "includePublicTypes": true
+    },
+    {
       "packageId": "Tempo.Blazor.DocumentEditor",
       "sourceProject": "src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj",
       "outputFile": "tempo-blazor-documenteditor.json",

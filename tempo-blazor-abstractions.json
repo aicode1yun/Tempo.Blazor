@@ -10340,6 +10340,16 @@
       ]
     },
     {
+      "itemName": "IDataTableLayoutStore",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Per-user persistence hook for a data table's column layout (widths and pin state), separate from saved views.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IDataTableLayoutStore.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IDataTableViewProvider",
       "kind": "Interface",
       "category": "Interfaces",
@@ -10439,6 +10449,26 @@
       "description": "Contract for providing data to the component. Implementations handle file system operations, cloud storage APIs, or virtual file systems.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IFileManagerDataProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IFileScanHook",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+      "description": "Optional hook that scans a freshly uploaded file (virus / content inspection); an upload moves Pending -> Clean/Blocked and blocked files are rendered as unavailable.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IFileScanHook.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IFileVersioningHook",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+      "description": "Optional hook that records and manages historical versions of a file: create-on-reupload, list history, diff two versions, and restore a prior version.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IFileVersioningHook.cs",
       "documentationStatus": "merged"
     },
     {
@@ -10696,6 +10726,26 @@
           "code": "public class ScheduleDataProvider : IScheduleDataProvider\n{\n    private readonly ICalendarService _calendar;\n\n    public async Task<IReadOnlyList<SchedulerEvent>> GetEventsAsync(\n        DateTime start, DateTime end, \n        IReadOnlyList<string>? resourceIds = null,\n        CancellationToken ct = default)\n    {\n        return await _calendar.GetEventsAsync(start, end, resourceIds, ct);\n    }\n\n    public async Task<IReadOnlyList<SchedulerResource>> GetResourcesAsync(\n        CancellationToken ct = default)\n    {\n        return await _calendar.GetResourcesAsync(ct);\n    }\n\n    public async Task<SchedulerEvent?> CreateEventAsync(\n        SchedulerEvent eventData, CancellationToken ct = default)\n    {\n        return await _calendar.CreateEventAsync(eventData, ct);\n    }\n\n    public async Task<bool> UpdateEventAsync(\n        SchedulerEvent eventData, CancellationToken ct = default)\n    {\n        return await _calendar.UpdateEventAsync(eventData, ct);\n    }\n\n    public async Task<bool> DeleteEventAsync(\n        string eventId, CancellationToken ct = default)\n    {\n        return await _calendar.DeleteEventAsync(eventId, ct);\n    }\n}"
         }
       ]
+    },
+    {
+      "itemName": "IScheduleExporter",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Serializes scheduler events into a calendar document (for example iCalendar / ICS).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IScheduleCalendar.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IScheduleImporter",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Parses a calendar document (for example iCalendar / ICS) into scheduler events.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IScheduleCalendar.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "ISelectOption<TValue>",
@@ -11731,6 +11781,16 @@
       ]
     },
     {
+      "itemName": "ColumnPin",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Pin state for a data table column: None, Left, or Right.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ContextMenuContext<TMetadata>",
       "kind": "Class",
       "category": "Models",
@@ -11783,6 +11843,16 @@
       ]
     },
     {
+      "itemName": "DataTableExportData",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Tabular snapshot of a data table for export: visible column headers and fully materialized rows (all pages) for the current filter/sort.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DataTableFilter",
       "kind": "Record",
       "category": "Models",
@@ -11790,6 +11860,16 @@
       "description": "Represents a single column filter predicate.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableQuery.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DataTableLayout",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Per-user, per-table column layout: pixel widths and pin state keyed by column key. Persisted through an IDataTableLayoutStore.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableLayout.cs",
       "documentationStatus": "merged"
     },
     {
@@ -11859,6 +11939,16 @@
           "code": "var query = new DataTableQuery\n{\n    Page = 1,\n    PageSize = 50,\n    SortColumn = \"LastName\",\n    SortDescending = false,\n    SearchText = \"smith\",\n    Filters = new List<FilterDefinition>\n    {\n        new() { Column = \"Status\", Operator = \"eq\", Value = \"Active\" },\n        new() { Column = \"Age\", Operator = \"gt\", Value = 18 }\n    }\n};"
         }
       ]
+    },
+    {
+      "itemName": "DataTableSortDirection",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Sort direction for a data table column (Ascending or Descending).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SortDescriptor.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "DataTableView",
@@ -12163,6 +12253,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentCommentFactory",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Builds document comment threads and entries from create and reply requests.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentCommentFactory.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentCommentGeometryHelper",
       "kind": "Class",
       "category": "Models",
@@ -12185,6 +12285,18 @@
           ]
         },
         {
+          "name": "ToBadgeStyle",
+          "kind": "Method",
+          "type": "string",
+          "description": "Returns a CSS style positioning a marker badge at the trailing edge of an anchor.",
+          "parameters": [
+            {
+              "name": "anchor",
+              "type": "DocumentCommentAnchor"
+            }
+          ]
+        },
+        {
           "name": "ToPointStyle",
           "kind": "Method",
           "type": "string",
@@ -12193,6 +12305,18 @@
             {
               "name": "anchor",
               "type": "DocumentCommentAnchor"
+            }
+          ]
+        },
+        {
+          "name": "ToRectStyle",
+          "kind": "Method",
+          "type": "string",
+          "description": "Returns a CSS style for a single normalized highlight rectangle of a text range anchor.",
+          "parameters": [
+            {
+              "name": "rect",
+              "type": "DocumentCommentRect"
             }
           ]
         }
@@ -12288,6 +12412,16 @@
       "category": "Models",
       "namespace": "Tempo.Blazor.Abstractions.Models",
       "description": "Payload emitted when a comment reaction is toggled.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentComments.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentCommentRect",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Normalized rectangle on a document page, expressed as fractions of the page size. Used for text range highlight geometry.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentComments.cs",
       "documentationStatus": "merged"
@@ -12475,6 +12609,18 @@
           "kind": "Property",
           "type": "DocumentManagerPermission?",
           "description": "Access permissions for the current user."
+        },
+        {
+          "name": "ScanMessage",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional human-readable detail about the scan outcome."
+        },
+        {
+          "name": "ScanStatus",
+          "kind": "Property",
+          "type": "FileScanStatus",
+          "description": "Anti-virus / content scan state for the item's primary content. When or , downloads are suppressed and the item is shown as unavailable."
         },
         {
           "name": "Size",
@@ -13095,6 +13241,18 @@
           "kind": "Property",
           "type": "required string",
           "description": "Full path of the item."
+        },
+        {
+          "name": "ScanMessage",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional human-readable detail about the scan outcome."
+        },
+        {
+          "name": "ScanStatus",
+          "kind": "Property",
+          "type": "FileScanStatus",
+          "description": "Anti-virus / content scan state. When or , the item is shown as unavailable and downloads are suppressed."
         },
         {
           "name": "Size",
@@ -13932,6 +14090,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IDataTableExporter",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Serializes a DataTableExportData snapshot into a downloadable document (for example CSV or XLSX).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IGanttRealtimeConnection",
       "kind": "Interface",
       "category": "Models",
@@ -13949,6 +14117,84 @@
       "description": "Factory methods and built-in implementations of IImageUrlResolver.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ImageUrlResolvers.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "InMemoryDataTableLayoutStore",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "In-memory IDataTableLayoutStore keyed by table + user for the lifetime of the instance. Suitable for demos, tests, and prototypes.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryDataTableLayoutStore.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "LoadLayoutAsync",
+          "kind": "Method",
+          "type": "Task<DataTableLayout?>",
+          "parameters": [
+            {
+              "name": "viewContext",
+              "type": "string"
+            },
+            {
+              "name": "userId",
+              "type": "string?",
+              "default": "null"
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "SaveLayoutAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "viewContext",
+              "type": "string"
+            },
+            {
+              "name": "layout",
+              "type": "DataTableLayout"
+            },
+            {
+              "name": "userId",
+              "type": "string?",
+              "default": "null"
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "InMemoryPdfAnnotationProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IPdfAnnotationProvider that keeps annotation threads per document for the lifetime of the instance. Suitable for demos, tests, and prototypes.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryPdfAnnotationProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IPdfAnnotationProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Persistence contract for PDF viewer annotations (comment threads anchored to page points, areas, or text ranges). Implementations load, create, reply to, edit, delete, resolve, and reopen threads for a document.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/IPdfAnnotationProvider.cs",
       "documentationStatus": "merged"
     },
     {
@@ -15931,6 +16177,16 @@
       ]
     },
     {
+      "itemName": "SortDescriptor",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "A single sort instruction (column key + direction). In DataTableQuery.SortDescriptors the position defines precedence.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SortDescriptor.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "StockChartDataPoint",
       "kind": "Record",
       "category": "Models",
@@ -16048,6 +16304,16 @@
       "description": "Represents a single property change with old and new values.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmChangeInfo.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmCommentProviderPdfAnnotationAdapter",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Adapts the shared ITmCommentProvider to the PDF viewer IPdfAnnotationProvider contract, translating between the document-viewer comment models and the shared comment models via DocumentViewerCommentBridge.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmCommentProviderPdfAnnotationAdapter.cs",
       "documentationStatus": "merged"
     },
     {
@@ -24171,6 +24437,177 @@
       "documentationStatus": "manual"
     },
     {
+      "itemName": "FileScanRequest",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Describes an uploaded file (name, content type, size, asset id, entity) passed to an IFileScanHook for scanning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileScanRequest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AssetId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Provider-managed asset identifier assigned during upload, when available."
+        },
+        {
+          "name": "ContentType",
+          "kind": "Property",
+          "type": "string?",
+          "description": "MIME content type, when known."
+        },
+        {
+          "name": "EntityRef",
+          "kind": "Property",
+          "type": "TmEntityRef?",
+          "description": "Entity that owns the uploaded asset, when known."
+        },
+        {
+          "name": "FileName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Original or display file name."
+        },
+        {
+          "name": "Metadata",
+          "kind": "Property",
+          "type": "Dictionary<string, object>?",
+          "description": "Arbitrary metadata carried from the upload for the scanner's use."
+        },
+        {
+          "name": "Purpose",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional purpose, matching the upload's purpose (e.g. \"document-manager\")."
+        },
+        {
+          "name": "SizeBytes",
+          "kind": "Property",
+          "type": "long",
+          "description": "File size in bytes."
+        }
+      ]
+    },
+    {
+      "itemName": "FileScanResult",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Outcome of an IFileScanHook scan: resulting status plus optional message and detected threat name.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileScanResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BlockedBy",
+          "kind": "Method",
+          "type": "FileScanResult",
+          "description": "Convenience factory for a blocked result.",
+          "parameters": [
+            {
+              "name": "threatName",
+              "type": "string"
+            },
+            {
+              "name": "message",
+              "type": "string?",
+              "default": "null"
+            }
+          ]
+        },
+        {
+          "name": "Clean",
+          "kind": "Method",
+          "type": "FileScanResult",
+          "description": "Convenience factory for a clean result."
+        },
+        {
+          "name": "Message",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Human-readable detail (localized by the host), such as why a file was blocked."
+        },
+        {
+          "name": "Status",
+          "kind": "Property",
+          "type": "FileScanStatus",
+          "description": "Resulting scan state."
+        },
+        {
+          "name": "ThreatName",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Name of the detected threat when is ."
+        }
+      ]
+    },
+    {
+      "itemName": "FileScanStatus",
+      "kind": "Enum",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Anti-virus / content scan state of an uploaded file: NotScanned, Pending, Clean, Blocked, or Failed.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileScanStatus.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "FileVersionRequest",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Describes a new version to record via IFileVersioningHook.CreateVersionAsync (item id, file name, size, asset id, author, comment).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileVersionRequest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AssetId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Provider-managed asset id for the new version's content, when available."
+        },
+        {
+          "name": "Comment",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional change comment."
+        },
+        {
+          "name": "ContentType",
+          "kind": "Property",
+          "type": "string?",
+          "description": "MIME content type, when known."
+        },
+        {
+          "name": "CreatedBy",
+          "kind": "Property",
+          "type": "TmUserRef?",
+          "description": "User creating the version, when known."
+        },
+        {
+          "name": "FileName",
+          "kind": "Property",
+          "type": "string",
+          "description": "File name for the new version."
+        },
+        {
+          "name": "ItemId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Identifier of the logical item receiving a new version."
+        },
+        {
+          "name": "SizeBytes",
+          "kind": "Property",
+          "type": "long",
+          "description": "File size in bytes."
+        }
+      ]
+    },
+    {
       "itemName": "ITmActivityProvider",
       "kind": "Interface",
       "category": "Shared",
@@ -24728,6 +25165,18 @@
           "description": "Optional purpose, such as \"work-item\", \"document-manager\", \"signature\", or \"notion-media\"."
         },
         {
+          "name": "ScanMessage",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional human-readable detail about the scan outcome."
+        },
+        {
+          "name": "ScanStatus",
+          "kind": "Property",
+          "type": "FileScanStatus",
+          "description": "Anti-virus / content scan state. When or , the file should be treated as unavailable."
+        },
+        {
           "name": "SizeBytes",
           "kind": "Property",
           "type": "long",
@@ -24954,6 +25403,78 @@
               "type": "this IServiceCollection"
             }
           ]
+        }
+      ]
+    },
+    {
+      "itemName": "TmChunkedUploadRequest",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Describes a chunked upload of a single file including chunk size and optional resume state (resume-from index and upload session id).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmChunkedUploadRequest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "DefaultChunkSizeBytes",
+          "kind": "Field",
+          "type": "int",
+          "description": "Default chunk size in bytes (256 KB)."
+        },
+        {
+          "name": "ChunkSizeBytes",
+          "kind": "Property",
+          "type": "int",
+          "description": "Chunk size in bytes. Defaults to ."
+        },
+        {
+          "name": "ContentType",
+          "kind": "Property",
+          "type": "string?",
+          "description": "MIME content type, when known."
+        },
+        {
+          "name": "EntityRef",
+          "kind": "Property",
+          "type": "TmEntityRef?",
+          "description": "Entity that will own or reference the uploaded asset."
+        },
+        {
+          "name": "FileName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Original or display file name."
+        },
+        {
+          "name": "Metadata",
+          "kind": "Property",
+          "type": "Dictionary<string, object>?",
+          "description": "Arbitrary metadata forwarded to each chunk for provider use."
+        },
+        {
+          "name": "Purpose",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional purpose, such as \"document-manager\"."
+        },
+        {
+          "name": "ResumeFromChunkIndex",
+          "kind": "Property",
+          "type": "int",
+          "description": "Zero-based index of the first chunk to send. Non-zero resumes an interrupted upload."
+        },
+        {
+          "name": "TotalSizeBytes",
+          "kind": "Property",
+          "type": "long",
+          "description": "Total file size in bytes."
+        },
+        {
+          "name": "UploadSessionId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Upload session id from a previous attempt, used when resuming."
         }
       ]
     },
@@ -26192,6 +26713,114 @@
       ]
     },
     {
+      "itemName": "TmFileVersion",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "A single historical version of a file: version number, file name, size, author, timestamp, comment, and whether it is current.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersion.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AssetId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Provider-managed asset id for this version's content, when available."
+        },
+        {
+          "name": "Comment",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional change comment."
+        },
+        {
+          "name": "ContentType",
+          "kind": "Property",
+          "type": "string?",
+          "description": "MIME content type, when known."
+        },
+        {
+          "name": "CreatedAt",
+          "kind": "Property",
+          "type": "DateTimeOffset",
+          "description": "Timestamp when this version was created."
+        },
+        {
+          "name": "CreatedBy",
+          "kind": "Property",
+          "type": "TmUserRef?",
+          "description": "User who created this version, when known."
+        },
+        {
+          "name": "FileName",
+          "kind": "Property",
+          "type": "string",
+          "description": "File name captured for this version."
+        },
+        {
+          "name": "IsCurrent",
+          "kind": "Property",
+          "type": "bool",
+          "description": "True when this is the current (latest) version of the item."
+        },
+        {
+          "name": "ItemId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Identifier of the logical item this version belongs to."
+        },
+        {
+          "name": "SizeBytes",
+          "kind": "Property",
+          "type": "long",
+          "description": "File size in bytes for this version."
+        },
+        {
+          "name": "VersionId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Stable version identifier."
+        },
+        {
+          "name": "VersionNumber",
+          "kind": "Property",
+          "type": "int",
+          "description": "Monotonic version number (1-based); higher is newer."
+        }
+      ]
+    },
+    {
+      "itemName": "TmFileVersionDiff",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Result of comparing two file versions: line-by-line text diff (when applicable), size delta, and added/removed line counts.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersionDiff.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmFileVersionDiffKind",
+      "kind": "Enum",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Nature of a single line in a version diff: Unchanged, Added, or Removed.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersionDiff.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmFileVersionDiffLine",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "A single line entry in a text diff between two file versions, with its kind, text, and old/new line numbers.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersionDiff.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "TmNotification",
       "kind": "Class",
       "category": "Shared",
@@ -26998,6 +27627,60 @@
           "kind": "Property",
           "type": "string?",
           "description": "Optional tenant, workspace, or application scope identifier."
+        }
+      ]
+    },
+    {
+      "itemName": "TmUploadProgress",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Progress snapshot emitted while a chunked upload is in flight: bytes transferred, total bytes, chunk index/count, and completion percentage.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmUploadProgress.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BytesTransferred",
+          "kind": "Property",
+          "type": "long",
+          "description": "Bytes transferred so far (sum of completed chunks)."
+        },
+        {
+          "name": "ChunkIndex",
+          "kind": "Property",
+          "type": "int",
+          "description": "Zero-based index of the most recently sent chunk."
+        },
+        {
+          "name": "FileName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Original or display file name being uploaded."
+        },
+        {
+          "name": "IsComplete",
+          "kind": "Property",
+          "type": "bool",
+          "description": "True once the final chunk has been acknowledged."
+        },
+        {
+          "name": "TotalBytes",
+          "kind": "Property",
+          "type": "long",
+          "description": "Total file size in bytes."
+        },
+        {
+          "name": "TotalChunks",
+          "kind": "Property",
+          "type": "int",
+          "description": "Total number of chunks for the file."
+        },
+        {
+          "name": "UploadSessionId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Upload session id assigned by the provider, when one is used."
         }
       ]
     },
@@ -32771,11 +33454,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1276,
-    "manualItemCount": 1276,
-    "generatedItemCount": 1259,
+    "itemCount": 1303,
+    "manualItemCount": 1303,
+    "generatedItemCount": 1286,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1259
+    "publicApiTypeCount": 1286
   }
 }

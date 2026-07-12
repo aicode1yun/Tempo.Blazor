@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "description": "Computes a line-by-line diff (via longest-common-subsequence) between two text versions; useful for IFileVersioningHook implementations.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Files/TmTextLineDiff.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmTextLineDiff"
+}

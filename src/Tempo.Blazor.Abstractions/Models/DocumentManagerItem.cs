@@ -50,6 +50,18 @@ public class DocumentManagerItem<TMetadata> where TMetadata : class
     /// <summary>Optional icon override (name from the icon registry).</summary>
     public string? IconName { get; set; }
 
+    /// <summary>Anti-virus / content scan state for the item's primary content. When
+    /// <see cref="FileScanStatus.Blocked"/> or <see cref="FileScanStatus.Pending"/>, downloads
+    /// are suppressed and the item is shown as unavailable.</summary>
+    public FileScanStatus ScanStatus { get; set; } = FileScanStatus.NotScanned;
+
+    /// <summary>Optional human-readable detail about the scan outcome.</summary>
+    public string? ScanMessage { get; set; }
+
+    /// <summary>True when the scan state permits the viewer to access the file content.</summary>
+    public bool IsScanAvailable
+        => ScanStatus is FileScanStatus.NotScanned or FileScanStatus.Clean;
+
     /// <summary>Optional tags or labels.</summary>
     public IReadOnlyList<string>? Tags { get; set; }
 

@@ -1,0 +1,94 @@
+@namespace Tempo.Blazor.Components.Files
+
+@if (Uploads is { Count: > 0 })
+{
+    <ul class="tm-upload-progress" data-testid="tm-upload-progress" role="list">
+        @foreach (var upload in Uploads)
+        {
+            var item = upload;
+            <li class="tm-upload-progress__item tm-upload-progress__item--@StateModifier(item.State)"
+                data-testid="upload-item"
+                data-state="@item.State.ToString().ToLowerInvariant()"
+                role="listitem">
+                <div class="tm-upload-progress__head">
+                    <span class="tm-upload-progress__name" title="@item.FileName">@item.FileName</span>
+                    <span class="tm-upload-progress__status" data-testid="upload-status">@StateLabel(item)</span>
+                </div>
+
+                <div class="tm-upload-progress__track"
+                     role="progressbar"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     aria-valuenow="@item.Percent"
+                     aria-label="@item.FileName">
+                    <div class="tm-upload-progress__bar" style="width:@(item.Percent)%"></div>
+                </div>
+
+                <div class="tm-upload-progress__foot">
+                    <span class="tm-upload-progress__pct" data-testid="upload-percent">@item.Percent%</span>
+                    @if (!string.IsNullOrEmpty(item.Message))
+                    {
+                        <span class="tm-upload-progress__msg">@item.Message</span>
+                    }
+                    <span class="tm-upload-progress__actions">
+                        @if (item.CanCancel)
+                        {
+                            <button type="button"
+                                    class="tm-upload-progress__action tm-upload-progress__action--cancel"
+                                    data-testid="upload-cancel"
+                                    @onclick="() => OnCancel.InvokeAsync(item)">
+                                @Loc["TmUpload_Cancel"]
+                            </button>
+                        }
+                        @if (item.CanResume)
+                        {
+                            <button type="button"
+                                    class="tm-upload-progress__action tm-upload-progress__action--resume"
+                                    data-testid="upload-resume"
+                                    @onclick="() => OnResume.InvokeAsync(item)">
+                                @Loc["TmUpload_Resume"]
+                            </button>
+                        }
+                        @if (item.IsFinished)
+                        {
+                            <button type="button"
+                                    class="tm-upload-progress__action tm-upload-progress__action--dismiss"
+                                    data-testid="upload-dismiss"
+                                    aria-label="@Loc["TmUpload_Dismiss"]"
+                                    @onclick="() => OnDismiss.InvokeAsync(item)">
+                                ×
+                            </button>
+                        }
+                    </span>
+                </div>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    /// <summary>Uploads to display (in-progress and recently finished).</summary>
+    [Parameter] public IReadOnlyList<TmUploadItem>? Uploads { get; set; }
+
+    /// <summary>Invoked when the user cancels an in-flight upload.</summary>
+    [Parameter] public EventCallback<TmUploadItem> OnCancel { get; set; }
+
+    /// <summary>Invoked when the user resumes a cancelled or failed upload.</summary>
+    [Parameter] public EventCallback<TmUploadItem> OnResume { get; set; }
+
+    /// <summary>Invoked when the user dismisses a finished upload from the list.</summary>
+    [Parameter] public EventCallback<TmUploadItem> OnDismiss { get; set; }
+
+    private string StateLabel(TmUploadItem item) => item.State switch
+    {
+        TmUploadState.Uploading => Loc["TmUpload_Uploading"],
+        TmUploadState.Scanning  => Loc["TmUpload_Scanning"],
+        TmUploadState.Completed => Loc["TmUpload_Completed"],
+        TmUploadState.Failed    => Loc["TmUpload_Failed"],
+        TmUploadState.Cancelled => Loc["TmUpload_Cancelled"],
+        TmUploadState.Blocked   => Loc["TmUpload_Blocked"],
+        _ => string.Empty
+    };
+
+    private static string StateModifier(TmUploadState state) => state.ToString().ToLowerInvariant();
+}

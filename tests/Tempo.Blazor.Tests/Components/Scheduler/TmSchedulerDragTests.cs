@@ -23,7 +23,7 @@ public class TmSchedulerDragTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("e1", "Meeting", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0))
+            Evt("e1", "Meeting", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0))
         };
 
         var cut = RenderComponent<TmSchedulerMonthView>(p => p
@@ -39,7 +39,7 @@ public class TmSchedulerDragTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("e1", "Meeting", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0))
+            Evt("e1", "Meeting", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0))
         };
 
         var cut = RenderComponent<TmSchedulerMonthView>(p => p
@@ -57,7 +57,7 @@ public class TmSchedulerDragTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("e1", "Meeting", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0))
+            Evt("e1", "Meeting", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0))
         };
 
         var cut = RenderComponent<TmSchedulerMonthView>(p => p
@@ -75,7 +75,7 @@ public class TmSchedulerDragTests : LocalizationTestBase
         TmScheduleEvent? changed = null;
         var events = new List<TmScheduleEvent>
         {
-            Evt("e1", "Meeting", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0))
+            Evt("e1", "Meeting", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0))
         };
 
         var cut = RenderComponent<TmSchedulerMonthView>(p => p
@@ -104,7 +104,7 @@ public class TmSchedulerDragTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("e1", "Meeting", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0))
+            Evt("e1", "Meeting", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0))
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
@@ -120,7 +120,7 @@ public class TmSchedulerDragTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("e1", "Meeting", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0))
+            Evt("e1", "Meeting", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0))
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
@@ -138,7 +138,7 @@ public class TmSchedulerDragTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("e1", "Meeting", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0))
+            Evt("e1", "Meeting", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0))
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
@@ -153,7 +153,7 @@ public class TmSchedulerDragTests : LocalizationTestBase
     {
         var events = new List<TmScheduleEvent>
         {
-            Evt("e1", "Meeting", new(2025, 6, 10, 9, 0, 0), new(2025, 6, 10, 10, 0, 0))
+            Evt("e1", "Meeting", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0))
         };
 
         var cut = RenderComponent<TmSchedulerTimeGrid>(p => p

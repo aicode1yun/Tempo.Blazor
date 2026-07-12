@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Sort direction for a data table column (Ascending or Descending).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SortDescriptor.cs",
+  "documentationStatus": "generated",
+  "itemName": "DataTableSortDirection"
+}

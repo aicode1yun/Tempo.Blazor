@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Tempo.Blazor.Components.Filters;
 using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.Models;
@@ -11,16 +13,265 @@ namespace Tempo.Blazor.Components.DataTable;
 /// A fully-featured data table component with support for sorting, filtering, pagination,
 /// selection, grouping, and view management. Supports both client-side and server-side data.
 /// </summary>
-public partial class TmDataTable<TItem>
+public partial class TmDataTable<TItem> : IDisposable
 {
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    // ── Column layout state (pin + width; runtime overrides of column defaults) ──
+    private readonly Dictionary<string, int> _columnWidths = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ColumnPin> _columnPins = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, int> _stickyLeft = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, int> _stickyRight = new(StringComparer.Ordinal);
+    private bool _layoutLoaded;
+    private DotNetObjectReference<TmDataTable<TItem>>? _dotNetRef;
+    private const int DefaultPinnedWidth = 160;
+    private const int MinColumnWidth = 60;
+
+    /// <summary>Persistence hook for per-user column layout (widths + pin state). Optional.</summary>
+    [Parameter] public IDataTableLayoutStore? LayoutStore { get; set; }
+
+    /// <summary>Fires whenever the column layout (widths or pin state) changes.</summary>
+    [Parameter] public EventCallback<DataTableLayout> LayoutChanged { get; set; }
+
+    /// <summary>Whether column header controls (pin toggle, resize handle) are shown. Default true.</summary>
+    [Parameter] public bool ShowColumnMenu { get; set; } = true;
+
+    // ── Inline edit state ─────────────────────────────────────────
+    private TItem? _editingItem;
+    private EditContext? _editContext;
+    private bool _editHasErrors;
+
+    /// <summary>Enables inline row editing (double-click a row). Requires editable columns with EditTemplate.</summary>
+    [Parameter] public bool Editable { get; set; }
+
+    /// <summary>
+    /// Invoked to persist a committed row edit. Return false to keep the row in edit mode
+    /// (for example when a server rejected the change). When null, the edit commits locally.
+    /// </summary>
+    [Parameter] public Func<TItem, Task<bool>>? OnRowCommit { get; set; }
+
+    /// <summary>Fires when a row edit is cancelled.</summary>
+    [Parameter] public EventCallback<TItem> OnRowEditCancelled { get; set; }
+
+    /// <summary>
+    /// Optional validator content rendered inside the row's cascading <see cref="EditContext"/> while
+    /// editing (for example <c>&lt;FluentValidationValidator /&gt;</c> or <c>&lt;DataAnnotationsValidator /&gt;</c>).
+    /// Commit is blocked while the edit context is invalid.
+    /// </summary>
+    [Parameter] public RenderFragment? RowEditValidator { get; set; }
+
+    private int _editingRowIndex = -1;
+    private bool AnyEditableColumn => _columns.Any(c => c.Editable);
+
+    // Editing is tracked by row index (not item value) so value-equal duplicate rows do not all
+    // enter edit mode together, and value-type TItem does not falsely match default(TItem).
+    private bool IsEditingRow(int rowIndex) => _editingRowIndex == rowIndex && _editContext is not null;
+
+    private void StartEditAt(int rowIndex, TItem item)
+    {
+        if (!Editable || !AnyEditableColumn) return;
+        _editingRowIndex = rowIndex;
+        _editingItem = item;
+        _editContext = new EditContext(item!);
+        _editHasErrors = false;
+        StateHasChanged();
+    }
+
+    /// <summary>Begins inline editing of a row (host-triggered equivalent of a double-click).</summary>
+    public void BeginRowEdit(TItem item)
+    {
+        var index = _displayedItems.FindIndex(x => EqualityComparer<TItem>.Default.Equals(x, item));
+        if (index >= 0)
+        {
+            StartEditAt(index, item);
+        }
+    }
+
+    private async Task CommitEditAsync()
+    {
+        if (_editingItem is null || _editContext is null) return;
+
+        if (!_editContext.Validate())
+        {
+            _editHasErrors = true;
+            StateHasChanged();
+            return;
+        }
+
+        var item = _editingItem;
+        var committed = OnRowCommit is null || await OnRowCommit(item);
+        if (committed)
+        {
+            _editingItem = default;
+            _editContext = null;
+            _editingRowIndex = -1;
+            _editHasErrors = false;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task CancelEditAsync()
+    {
+        var item = _editingItem;
+        _editingItem = default;
+        _editContext = null;
+        _editingRowIndex = -1;
+        _editHasErrors = false;
+        if (item is not null)
+        {
+            await OnRowEditCancelled.InvokeAsync(item);
+        }
+
+        StateHasChanged();
+    }
+
+    private Task HandleEditKeyDownAsync(KeyboardEventArgs e)
+        => e.Key switch
+        {
+            "Escape" => CancelEditAsync(),
+            "Enter" => CommitEditAsync(),
+            _ => Task.CompletedTask
+        };
+
+    // ── Master-detail expandable rows ─────────────────────────────
+    private readonly HashSet<TItem> _expandedRows = new();
+    private readonly HashSet<TItem> _detailLoaded = new();
+
+    /// <summary>Template rendered as an expandable detail row beneath a data row.</summary>
+    [Parameter] public RenderFragment<TItem>? DetailTemplate { get; set; }
+
+    /// <summary>
+    /// Invoked once, the first time a row is expanded, so the host can lazily load detail data
+    /// before <see cref="DetailTemplate"/> renders it.
+    /// </summary>
+    [Parameter] public Func<TItem, Task>? OnLoadDetail { get; set; }
+
+    private bool HasDetail => DetailTemplate is not null;
+    private bool IsRowExpanded(TItem item) => _expandedRows.Contains(item);
+
+    /// <summary>Toggles a row's expandable detail, lazily invoking <see cref="OnLoadDetail"/> on first expand.</summary>
+    public async Task ToggleRowDetailAsync(TItem item)
+    {
+        if (!_expandedRows.Add(item))
+        {
+            _expandedRows.Remove(item);
+            StateHasChanged();
+            return;
+        }
+
+        if (_detailLoaded.Add(item) && OnLoadDetail is not null)
+        {
+            await OnLoadDetail(item);
+        }
+
+        StateHasChanged();
+    }
+
+    // ── Export ────────────────────────────────────────────────────
+
+    private async Task<IReadOnlyList<TItem>> GatherAllRowsAsync()
+    {
+        if (DataProvider is not null)
+        {
+            var query = new DataTableQuery
+            {
+                Page = 1,
+                PageSize = int.MaxValue,
+                SortColumn = _sortColumn,
+                SortDescending = _sortDescending,
+                SortDescriptors = _sortDescriptors.ToList(),
+                Filters = _activeFilters.Values.ToList(),
+                SearchText = _searchText
+            };
+            var result = await DataProvider.GetDataAsync(query);
+            return result.Items;
+        }
+
+        var items = (Items ?? []).AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(_searchText))
+        {
+            var search = _searchText.Trim();
+            items = items.Where(item =>
+                _columns.Any(col => col.Field?.Invoke(item)?.ToString()
+                    ?.Contains(search, StringComparison.OrdinalIgnoreCase) == true));
+        }
+
+        foreach (var filter in _activeFilters.Values)
+        {
+            var col = _columns.FirstOrDefault(c => c.Key == filter.Column);
+            if (col?.Field is not null)
+            {
+                items = ApplyClientFilter(items, col.Field, filter);
+            }
+        }
+
+        return ApplySort(items).ToList();
+    }
+
+    /// <summary>
+    /// Materializes the full result set for the current filter/sort (all pages, paging bypassed)
+    /// as an export snapshot of the visible columns.
+    /// </summary>
+    public async Task<DataTableExportData> BuildExportDataAsync()
+    {
+        var rows = await GatherAllRowsAsync();
+        var headers = _visibleColumns.Select(c => c.Title).ToList();
+        var data = rows
+            .Select(item => (IReadOnlyList<string?>)_visibleColumns
+                .Select(c => c.Field?.Invoke(item)?.ToString())
+                .ToList())
+            .ToList();
+
+        return new DataTableExportData { Name = ViewContext, Headers = headers, Rows = data };
+    }
+
+    /// <summary>Exports the current filter/sort result set (all pages) and triggers a browser download.</summary>
+    /// <param name="exporter">Format-specific exporter (CSV, XLSX, …).</param>
+    /// <param name="fileName">Optional file name; defaults to the view context plus the exporter extension.</param>
+    public async Task ExportAsync(IDataTableExporter exporter, string? fileName = null)
+    {
+        ArgumentNullException.ThrowIfNull(exporter);
+        var data = await BuildExportDataAsync();
+        var bytes = exporter.Export(data);
+        var name = fileName ?? $"{ViewContext}.{exporter.FileExtension}";
+        try
+        {
+            await JS.InvokeVoidAsync("tmDataTable.downloadFile", name, exporter.ContentType, Convert.ToBase64String(bytes));
+        }
+        catch { /* JS unavailable (e.g. tests) */ }
+    }
     // ── Column registry ──────────────────────────────────────────
     private readonly List<TmDataTableColumn<TItem>> _columns = [];
     private readonly List<TmDataTableColumn<TItem>> _visibleColumns = [];
     private readonly HashSet<string> _hiddenColumns = new();
 
-    // ── Sort state ───────────────────────────────────────────────
-    private string? _sortColumn;
-    private bool _sortDescending;
+    // ── Sort state (multi-column; index 0 = primary) ─────────────
+    private readonly List<SortDescriptor> _sortDescriptors = [];
+    private string? _sortColumn => _sortDescriptors.Count > 0 ? _sortDescriptors[0].Column : null;
+    private bool _sortDescending => _sortDescriptors.Count > 0 && _sortDescriptors[0].Direction == DataTableSortDirection.Descending;
+
+    private SortDescriptor? GetColumnSort(string key) => _sortDescriptors.FirstOrDefault(s => s.Column == key);
+    private int GetColumnSortIndex(string key) => _sortDescriptors.FindIndex(s => s.Column == key);
+
+    private IEnumerable<TItem> ApplySort(IEnumerable<TItem> items)
+    {
+        IOrderedEnumerable<TItem>? ordered = null;
+        foreach (var descriptor in _sortDescriptors)
+        {
+            var col = _columns.FirstOrDefault(c => c.Key == descriptor.Column);
+            if (col?.Field is null) continue;
+
+            var field = col.Field;
+            var descending = descriptor.Direction == DataTableSortDirection.Descending;
+            ordered = ordered is null
+                ? (descending ? items.OrderByDescending(field) : items.OrderBy(field))
+                : (descending ? ordered.ThenByDescending(field) : ordered.ThenBy(field));
+        }
+
+        return ordered ?? items;
+    }
 
     // ── Pagination state ─────────────────────────────────────────
     private int _currentPage = 1;
@@ -219,7 +470,7 @@ public partial class TmDataTable<TItem>
 
     private bool IsAllSelected => _displayedItems.Count > 0 && _displayedItems.All(IsSelected);
     private bool IsSelected(TItem item) => _selectedItems.Contains(item);
-    private int ColSpan => Math.Max(1, (Selectable ? 1 : 0) + _visibleColumns.Count);
+    private int ColSpan => Math.Max(1, (HasDetail ? 1 : 0) + (Selectable ? 1 : 0) + _visibleColumns.Count);
     /// <summary>
     /// Attribute names the table manages itself on each &lt;tr&gt;. A consumer <see cref="RowAttributes"/>
     /// dictionary must not override these, or it would clobber row styling, selection clicks, keyboard
@@ -313,6 +564,8 @@ public partial class TmDataTable<TItem>
         _searchText = SearchText ?? string.Empty;
         _lastSearchTextParam = SearchText;
 
+        await LoadLayoutAsync();
+
         if (DataProvider is not null)
             await LoadFromProviderAsync();
         else
@@ -372,7 +625,183 @@ public partial class TmDataTable<TItem>
         _visibleColumns.Clear();
         _visibleColumns.AddRange(
             _columns.Where(c => !_hiddenColumns.Contains(c.Key))
-                    .OrderBy(c => c.Order));
+                    .OrderBy(c => GetPin(c) switch { ColumnPin.Left => 0, ColumnPin.Right => 2, _ => 1 })
+                    .ThenBy(c => c.Order));
+        RecomputeSticky();
+    }
+
+    // ── Column layout (pin + resize) ──────────────────────────────
+
+    private ColumnPin GetPin(TmDataTableColumn<TItem> col)
+        => _columnPins.TryGetValue(col.Key, out var pin) ? pin : col.Pinned;
+
+    private int? GetPixelWidth(TmDataTableColumn<TItem> col)
+    {
+        if (_columnWidths.TryGetValue(col.Key, out var w)) return w;
+        if (!string.IsNullOrEmpty(col.Width) && col.Width.EndsWith("px", StringComparison.OrdinalIgnoreCase)
+            && int.TryParse(col.Width[..^2], out var parsed))
+            return parsed;
+        return null;
+    }
+
+    private void RecomputeSticky()
+    {
+        _stickyLeft.Clear();
+        _stickyRight.Clear();
+
+        // Left-pinned columns stack from the container edge. Leading utility columns (expander,
+        // checkbox) are not sticky, so their width is not reserved — a pinned column simply sticks
+        // over them once they scroll away.
+        var leftOffset = 0;
+        foreach (var col in _visibleColumns.Where(c => GetPin(c) == ColumnPin.Left))
+        {
+            _stickyLeft[col.Key] = leftOffset;
+            leftOffset += GetPixelWidth(col) ?? DefaultPinnedWidth;
+        }
+
+        var rightOffset = 0;
+        foreach (var col in _visibleColumns.Where(c => GetPin(c) == ColumnPin.Right).Reverse())
+        {
+            _stickyRight[col.Key] = rightOffset;
+            rightOffset += GetPixelWidth(col) ?? DefaultPinnedWidth;
+        }
+    }
+
+    private string GetColumnStyle(TmDataTableColumn<TItem> col)
+    {
+        var parts = new List<string>();
+        var px = GetPixelWidth(col);
+        if (px.HasValue) parts.Add($"width:{px}px");
+        else if (!string.IsNullOrEmpty(col.Width)) parts.Add($"width:{col.Width}");
+        if (!string.IsNullOrEmpty(col.MinWidth)) parts.Add($"min-width:{col.MinWidth}");
+
+        switch (GetPin(col))
+        {
+            case ColumnPin.Left when _stickyLeft.TryGetValue(col.Key, out var l):
+                parts.Add("position:sticky");
+                parts.Add($"left:{l}px");
+                break;
+            case ColumnPin.Right when _stickyRight.TryGetValue(col.Key, out var r):
+                parts.Add("position:sticky");
+                parts.Add($"right:{r}px");
+                break;
+        }
+
+        return string.Join(";", parts);
+    }
+
+    private string GetPinClass(TmDataTableColumn<TItem> col)
+        => GetPin(col) switch
+        {
+            ColumnPin.Left => "tm-col-pinned tm-col-pinned-left",
+            ColumnPin.Right => "tm-col-pinned tm-col-pinned-right",
+            _ => string.Empty
+        };
+
+    private string GetPinGlyph(TmDataTableColumn<TItem> col)
+        => GetPin(col) switch
+        {
+            ColumnPin.Left => "⇤",   // ⇤ pinned left
+            ColumnPin.Right => "⇥",  // ⇥ pinned right
+            _ => "⤡"                 // ⤡ unpinned
+        };
+
+    /// <summary>Sets a column's pin state (left/right/none), reorders columns, and persists the layout.</summary>
+    public async Task SetColumnPinAsync(string columnKey, ColumnPin pin)
+    {
+        _columnPins[columnKey] = pin;
+        RebuildVisibleColumns();
+        await PersistLayoutAsync();
+        StateHasChanged();
+    }
+
+    private Task CyclePinAsync(TmDataTableColumn<TItem> col)
+    {
+        var next = GetPin(col) switch
+        {
+            ColumnPin.None => ColumnPin.Left,
+            ColumnPin.Left => ColumnPin.Right,
+            _ => ColumnPin.None
+        };
+        return SetColumnPinAsync(col.Key, next);
+    }
+
+    /// <summary>Sets a column's pixel width and persists the layout.</summary>
+    public async Task SetColumnWidthAsync(string columnKey, int width)
+    {
+        _columnWidths[columnKey] = Math.Max(MinColumnWidth, width);
+        RecomputeSticky();
+        await PersistLayoutAsync();
+        StateHasChanged();
+    }
+
+    private async Task StartColumnResizeAsync(TmDataTableColumn<TItem> col, PointerEventArgs e)
+    {
+        var startWidth = GetPixelWidth(col) ?? DefaultPinnedWidth;
+        _dotNetRef ??= DotNetObjectReference.Create(this);
+        try
+        {
+            await JS.InvokeVoidAsync("tmDataTable.startColumnResize", _dotNetRef, col.Key, e.ClientX, startWidth, MinColumnWidth);
+        }
+        catch { /* JS unavailable (e.g. tests) — resize is a no-op */ }
+    }
+
+    /// <summary>Receives live width updates from the JavaScript resize drag (no persistence).</summary>
+    [JSInvokable]
+    public void OnColumnResized(string columnKey, double width)
+    {
+        _columnWidths[columnKey] = Math.Max(MinColumnWidth, (int)Math.Round(width));
+        RecomputeSticky();
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Receives the resize-drag end signal from JavaScript and persists the layout.</summary>
+    [JSInvokable]
+    public Task OnColumnResizeCommitted() => PersistLayoutAsync();
+
+    private DataTableLayout CaptureLayout() => new()
+    {
+        ColumnWidths = new Dictionary<string, int>(_columnWidths, StringComparer.Ordinal),
+        ColumnPins = new Dictionary<string, ColumnPin>(_columnPins, StringComparer.Ordinal)
+    };
+
+    private async Task PersistLayoutAsync()
+    {
+        var layout = CaptureLayout();
+        if (LayoutStore is not null)
+        {
+            try { await LayoutStore.SaveLayoutAsync(ViewContext, layout, CurrentUserId); }
+            catch { /* best-effort persistence */ }
+        }
+
+        await LayoutChanged.InvokeAsync(layout);
+    }
+
+    private async Task LoadLayoutAsync()
+    {
+        if (_layoutLoaded || LayoutStore is null) return;
+        _layoutLoaded = true;
+
+        try
+        {
+            var layout = await LayoutStore.LoadLayoutAsync(ViewContext, CurrentUserId);
+            if (layout is null) return;
+
+            _columnWidths.Clear();
+            foreach (var pair in layout.ColumnWidths) _columnWidths[pair.Key] = pair.Value;
+            _columnPins.Clear();
+            foreach (var pair in layout.ColumnPins) _columnPins[pair.Key] = pair.Value;
+
+            RebuildVisibleColumns();
+        }
+        catch { /* best-effort load */ }
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
+        _dotNetRef = null;
     }
 
     private IReadOnlyList<ColumnVisibilityItem> GetColumnVisibilityItems() =>
@@ -404,17 +833,8 @@ public partial class TmDataTable<TItem>
                 items = ApplyClientFilter(items, col.Field, filter);
         }
 
-        // Sort
-        if (_sortColumn != null)
-        {
-            var sortCol = _columns.FirstOrDefault(c => c.Key == _sortColumn);
-            if (sortCol?.Field != null)
-            {
-                items = _sortDescending
-                    ? items.OrderByDescending(x => sortCol.Field(x))
-                    : items.OrderBy(x => sortCol.Field(x));
-            }
-        }
+        // Sort (multi-column)
+        items = ApplySort(items);
 
         var list = items.ToList();
         _totalCount = list.Count;
@@ -541,6 +961,7 @@ public partial class TmDataTable<TItem>
         PageSize   = _pageSize,
         SortColumn = _sortColumn,
         SortDescending = _sortDescending,
+        SortDescriptors = _sortDescriptors.ToList(),
         Filters    = _activeFilters.Values.ToList(),
         SearchText = _searchText,
         GroupByColumns = _groupByColumns.ToList(),
@@ -551,24 +972,40 @@ public partial class TmDataTable<TItem>
 
     // ── Sort ──────────────────────────────────────────────────────
 
-    private async Task SortByAsync(TmDataTableColumn<TItem> col)
+    /// <summary>
+    /// Cycles the sort state for a column. A plain click sorts by this column only (asc → desc → none).
+    /// A multi-sort click (Shift) appends or cycles this column as an additional sort key, preserving the
+    /// order in which columns were added.
+    /// </summary>
+    private async Task SortByAsync(TmDataTableColumn<TItem> col, bool multiSort)
     {
         if (!col.Sortable) return;
 
         var key = col.Key;
-        if (_sortColumn != key)
+        var index = _sortDescriptors.FindIndex(s => s.Column == key);
+
+        if (multiSort)
         {
-            _sortColumn = key;
-            _sortDescending = false;
-        }
-        else if (!_sortDescending)
-        {
-            _sortDescending = true;
+            if (index < 0)
+                _sortDescriptors.Add(new SortDescriptor(key, DataTableSortDirection.Ascending));
+            else if (_sortDescriptors[index].Direction == DataTableSortDirection.Ascending)
+                _sortDescriptors[index] = new SortDescriptor(key, DataTableSortDirection.Descending);
+            else
+                _sortDescriptors.RemoveAt(index);
         }
         else
         {
-            _sortColumn = null;
-            _sortDescending = false;
+            var wasSoleAscending = _sortDescriptors.Count == 1 && index == 0
+                && _sortDescriptors[0].Direction == DataTableSortDirection.Ascending;
+            var wasSoleDescending = _sortDescriptors.Count == 1 && index == 0
+                && _sortDescriptors[0].Direction == DataTableSortDirection.Descending;
+
+            _sortDescriptors.Clear();
+            if (wasSoleAscending)
+                _sortDescriptors.Add(new SortDescriptor(key, DataTableSortDirection.Descending));
+            else if (!wasSoleDescending)
+                _sortDescriptors.Add(new SortDescriptor(key, DataTableSortDirection.Ascending));
+            // wasSoleDescending → cleared (no sort)
         }
 
         _currentPage = 1;
@@ -728,8 +1165,9 @@ public partial class TmDataTable<TItem>
     private async Task ApplyViewAsync(DataTableView view)
     {
         _activeViewId = view.Id;
-        _sortColumn    = view.SortField;
-        _sortDescending = !view.SortAscending;
+        _sortDescriptors.Clear();
+        if (!string.IsNullOrEmpty(view.SortField))
+            _sortDescriptors.Add(new SortDescriptor(view.SortField, view.SortAscending ? DataTableSortDirection.Ascending : DataTableSortDirection.Descending));
         if (view.PageSize.HasValue) _pageSize = view.PageSize.Value;
 
         if (view.VisibleColumns.Count > 0)
@@ -935,16 +1373,7 @@ public partial class TmDataTable<TItem>
                     items = ApplyClientFilter(items, col.Field, filter);
             }
 
-            if (_sortColumn != null)
-            {
-                var sortCol = _columns.FirstOrDefault(c => c.Key == _sortColumn);
-                if (sortCol?.Field != null)
-                {
-                    items = _sortDescending
-                        ? items.OrderByDescending(x => sortCol.Field(x))
-                        : items.OrderBy(x => sortCol.Field(x));
-                }
-            }
+            items = ApplySort(items);
         }
 
         var levels = _groupByColumns.Select(key =>
@@ -1031,6 +1460,13 @@ public partial class TmDataTable<TItem>
                         builder.AddAttribute(seq++, "onclick", EventCallback.Factory.Create(this, () => HandleRowClickAsync(rowItem)));
                         builder.AddMultipleAttributes(seq++, GetRowAttributes(rowItem));
 
+                        if (HasDetail)
+                        {
+                            builder.OpenElement(seq++, "td");
+                            builder.AddAttribute(seq++, "class", "tm-col-expander");
+                            builder.CloseElement();
+                        }
+
                         if (Selectable)
                         {
                             builder.OpenElement(seq++, "td");
@@ -1047,7 +1483,7 @@ public partial class TmDataTable<TItem>
                         {
                             builder.OpenElement(seq++, "td");
                             builder.AddAttribute(seq++, "class", GetCellClass(col));
-                            builder.AddAttribute(seq++, "style", GetCellStyle(col));
+                            builder.AddAttribute(seq++, "style", GetColumnStyle(col));
                             if (col.CellTemplate is not null)
                                 builder.AddContent(seq++, col.CellTemplate(rowItem));
                             else
@@ -1159,44 +1595,40 @@ public partial class TmDataTable<TItem>
         var parts = new List<string>();
         if (col.Sortable) parts.Add("tm-col-sortable");
         if (col.Groupable) parts.Add("tm-col-groupable");
-        if (col.Key == _sortColumn)
-            parts.Add(_sortDescending ? "tm-col-sorted-desc" : "tm-col-sorted-asc");
+        var headerSort = GetColumnSort(col.Key);
+        if (headerSort is not null)
+            parts.Add(headerSort.Direction == DataTableSortDirection.Descending ? "tm-col-sorted-desc" : "tm-col-sorted-asc");
         if (col.Align == ColumnAlign.Center) parts.Add("tm-text-center");
         if (col.Align == ColumnAlign.Right) parts.Add("tm-text-right");
+        var headerPin = GetPinClass(col);
+        if (!string.IsNullOrEmpty(headerPin)) parts.Add(headerPin);
         return string.Join(" ", parts);
     }
 
-    private static string GetHeaderStyle(TmDataTableColumn<TItem> col)
-    {
-        var parts = new List<string>();
-        if (!string.IsNullOrEmpty(col.Width)) parts.Add($"width:{col.Width}");
-        if (!string.IsNullOrEmpty(col.MinWidth)) parts.Add($"min-width:{col.MinWidth}");
-        return string.Join(";", parts);
-    }
-
-    private static string GetCellClass(TmDataTableColumn<TItem> col)
+    private string GetCellClass(TmDataTableColumn<TItem> col)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(col.CssClass)) parts.Add(col.CssClass);
         if (col.Align == ColumnAlign.Center) parts.Add("tm-text-center");
         if (col.Align == ColumnAlign.Right) parts.Add("tm-text-right");
+        var cellPin = GetPinClass(col);
+        if (!string.IsNullOrEmpty(cellPin)) parts.Add(cellPin);
         return string.Join(" ", parts);
     }
 
-    private static string GetCellStyle(TmDataTableColumn<TItem> col) =>
-        !string.IsNullOrEmpty(col.Width) ? $"width:{col.Width}" : string.Empty;
-
     private string GetSortIconClass(TmDataTableColumn<TItem> col)
     {
-        if (col.Key != _sortColumn) return "tm-sort-none";
-        return _sortDescending ? "tm-sort-desc" : "tm-sort-asc";
+        var sort = GetColumnSort(col.Key);
+        if (sort is null) return "tm-sort-none";
+        return sort.Direction == DataTableSortDirection.Descending ? "tm-sort-desc" : "tm-sort-asc";
     }
 
     private string GetAriaSortValue(TmDataTableColumn<TItem> col)
     {
         if (!col.Sortable) return "none";
-        if (col.Key != _sortColumn) return "none";
-        return _sortDescending ? "descending" : "ascending";
+        var sort = GetColumnSort(col.Key);
+        if (sort is null) return "none";
+        return sort.Direction == DataTableSortDirection.Descending ? "descending" : "ascending";
     }
 
     private string GetRowClass(TItem item) => IsSelected(item) ? "tm-row-selected" : string.Empty;

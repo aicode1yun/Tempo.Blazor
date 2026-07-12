@@ -1,6 +1,7 @@
 @namespace Tempo.Blazor.Components.Files
 @using Tempo.Blazor.Abstractions.Interfaces
 @using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Abstractions.Shared
 @inject ITmLocalizer Loc
 
 <div class="tm-file-manager @(Disabled ? "tm-file-manager--disabled" : "") @Class" @attributes="AdditionalAttributes" tabindex="0" @onkeydown="HandleKeyDown">
@@ -131,6 +132,18 @@
                                 </span>
                             }
                         </div>
+                        @if (!item.IsDirectory && item.ScanStatus is FileScanStatus.Blocked)
+                        {
+                            <span class="tm-file-scan-badge tm-file-scan-badge--blocked"
+                                  data-testid="file-scan-blocked"
+                                  title="@(item.ScanMessage ?? Loc["TmFileScan_Blocked"])">@Loc["TmFileScan_Blocked"]</span>
+                        }
+                        else if (!item.IsDirectory && item.ScanStatus is FileScanStatus.Pending)
+                        {
+                            <span class="tm-file-scan-badge tm-file-scan-badge--pending"
+                                  data-testid="file-scan-pending"
+                                  title="@Loc["TmFileScan_Pending"]">@Loc["TmFileScan_Pending"]</span>
+                        }
                         @if (ViewMode == FileManagerViewMode.List && !item.IsDirectory)
                         {
                             <span class="tm-file-manager__item-size">@FormatSize(item.Size)</span>
@@ -140,6 +153,11 @@
             }
         </div>
     </div>
+
+    <TmFileUploadProgress Uploads="_uploads"
+                          OnCancel="CancelUploadAsync"
+                          OnResume="ResumeUploadAsync"
+                          OnDismiss="DismissUpload" />
 
     <!-- Delete Confirmation Dialog -->
     <TmDialog Type="DialogType.Confirm"

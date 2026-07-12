@@ -67,15 +67,17 @@ internal static class RecurrenceEngine
                     break;
 
                 case "UNTIL":
-                    if (DateTime.TryParseExact(value, "yyyyMMdd'T'HHmmss'Z'",
-                            CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var until))
-                        rule.Until = until.ToUniversalTime();
+                    rule.Until = ParseUntil(value);
                     break;
 
                 case "BYDAY":
-                    rule.ByDay = value.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                        .Where(d => DayMap.ContainsKey(d.Trim().ToUpperInvariant()))
-                        .Select(d => DayMap[d.Trim().ToUpperInvariant()])
+                    ParseByDay(value, rule);
+                    break;
+
+                case "BYSETPOS":
+                    rule.BySetPos = value.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(p => int.TryParse(p.Trim(), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var pos) ? pos : 0)
+                        .Where(p => p != 0)
                         .ToArray();
                     break;
 
@@ -96,6 +98,54 @@ internal static class RecurrenceEngine
         }
 
         return rule;
+    }
+
+    private static readonly string[] UntilFormats =
+    [
+        "yyyyMMdd'T'HHmmss'Z'",
+        "yyyyMMdd'T'HHmmss",
+        "yyyyMMdd"
+    ];
+
+    private static DateTime? ParseUntil(string value)
+    {
+        value = value.Trim();
+        var utc = value.EndsWith('Z');
+        if (DateTime.TryParseExact(value, UntilFormats, CultureInfo.InvariantCulture,
+                utc ? DateTimeStyles.AssumeUniversal : DateTimeStyles.None, out var parsed))
+        {
+            return utc ? parsed.ToUniversalTime() : parsed;
+        }
+
+        return null;
+    }
+
+    private static void ParseByDay(string value, TmRecurrenceRule rule)
+    {
+        var plain = new List<DayOfWeek>();
+        var positional = new List<(int, DayOfWeek)>();
+
+        foreach (var raw in value.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var token = raw.Trim().ToUpperInvariant();
+            if (token.Length < 2) continue;
+
+            var dayCode = token[^2..];
+            if (!DayMap.TryGetValue(dayCode, out var day)) continue;
+
+            var prefix = token[..^2];
+            if (string.IsNullOrEmpty(prefix))
+            {
+                plain.Add(day);
+            }
+            else if (int.TryParse(prefix, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var ordinal) && ordinal != 0)
+            {
+                positional.Add((ordinal, day));
+            }
+        }
+
+        rule.ByDay = plain.Count > 0 ? plain.ToArray() : null;
+        rule.ByDayPositional = positional.Count > 0 ? positional.ToArray() : null;
     }
 
     /// <summary>
@@ -127,13 +177,20 @@ internal static class RecurrenceEngine
         if (rule.Until.HasValue)
         {
             sb.Append(";UNTIL=");
-            sb.Append(rule.Until.Value.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture));
+            sb.Append(rule.Until.Value.Kind == DateTimeKind.Utc
+                ? rule.Until.Value.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture)
+                : rule.Until.Value.ToString("yyyyMMdd'T'HHmmss", CultureInfo.InvariantCulture));
         }
 
+        var byDayParts = new List<string>();
         if (rule.ByDay is { Length: > 0 })
+            byDayParts.AddRange(rule.ByDay.Select(d => ReverseDayMap[d]));
+        if (rule.ByDayPositional is { Length: > 0 })
+            byDayParts.AddRange(rule.ByDayPositional.Select(p => $"{p.Ordinal}{ReverseDayMap[p.Day]}"));
+        if (byDayParts.Count > 0)
         {
             sb.Append(";BYDAY=");
-            sb.Append(string.Join(",", rule.ByDay.Select(d => ReverseDayMap[d])));
+            sb.Append(string.Join(",", byDayParts));
         }
 
         if (rule.ByMonthDay is { Length: > 0 })
@@ -148,14 +205,23 @@ internal static class RecurrenceEngine
             sb.Append(string.Join(",", rule.ByMonth));
         }
 
+        if (rule.BySetPos is { Length: > 0 })
+        {
+            sb.Append(";BYSETPOS=");
+            sb.Append(string.Join(",", rule.BySetPos));
+        }
+
         return sb.ToString();
     }
 
     /// <summary>
     /// Expand a recurring event into individual occurrence instances within the given range.
+    /// Occurrences preserve the source wall-clock time; when a <paramref name="timeZone"/> is supplied
+    /// each occurrence is stamped with that zone's UTC offset for its own date, so recurrences stay at
+    /// the same local time across DST transitions.
     /// </summary>
     public static IReadOnlyList<TmScheduleEvent> ExpandRecurrence(
-        TmScheduleEvent source, DateTime rangeStart, DateTime rangeEnd)
+        TmScheduleEvent source, DateTime rangeStart, DateTime rangeEnd, TimeZoneInfo? timeZone = null)
     {
         if (string.IsNullOrWhiteSpace(source.RecurrenceRule))
             return [];
@@ -163,6 +229,7 @@ internal static class RecurrenceEngine
         var rule = Parse(source.RecurrenceRule);
         if (rule is null) return [];
 
+        var zone = timeZone ?? TimeZoneInfo.Local;
         var duration = source.End - source.Start;
         var exceptions = source.RecurrenceExceptions?
             .Select(d => d.Date)
@@ -170,7 +237,8 @@ internal static class RecurrenceEngine
 
         var occurrences = new List<TmScheduleEvent>();
         var count = 0;
-        var current = source.Start;
+        var seriesStart = source.Start.DateTime;
+        var current = seriesStart;
 
         while (current < rangeEnd && count < MaxExpansions)
         {
@@ -184,13 +252,14 @@ internal static class RecurrenceEngine
 
             foreach (var candidate in candidates)
             {
+                if (candidate < seriesStart) continue; // occurrences never precede DTSTART
                 if (candidate >= rangeEnd) break;
                 if (rule.Count.HasValue && occurrences.Count >= rule.Count.Value) break;
                 if (rule.Until.HasValue && candidate.Date > rule.Until.Value.Date) break;
 
                 if (candidate >= rangeStart && !exceptions.Contains(candidate.Date))
                 {
-                    occurrences.Add(CreateOccurrence(source, candidate, duration));
+                    occurrences.Add(CreateOccurrence(source, candidate, duration, zone));
                 }
 
                 count++;
@@ -220,10 +289,9 @@ internal static class RecurrenceEngine
                     foreach (var day in rule.ByDay.OrderBy(d => ((int)d + 6) % 7))
                     {
                         var offset = ((int)day + 6) % 7;
-                        var candidate = weekStart.AddDays(offset)
-                            .Add(current.TimeOfDay);
-                        if (candidate >= current.Date)
-                            candidates.Add(candidate);
+                        // All BYDAY weekdays in the week; the DTSTART guard in ExpandRecurrence
+                        // trims those before the series start (only the first week).
+                        candidates.Add(weekStart.AddDays(offset).Add(current.TimeOfDay));
                     }
                 }
                 else
@@ -233,24 +301,7 @@ internal static class RecurrenceEngine
                 break;
 
             case TmRecurrenceFrequency.Monthly:
-                if (rule.ByMonthDay is { Length: > 0 })
-                {
-                    foreach (var day in rule.ByMonthDay.OrderBy(d => d))
-                    {
-                        var daysInMonth = DateTime.DaysInMonth(current.Year, current.Month);
-                        if (day <= daysInMonth)
-                        {
-                            candidates.Add(new DateTime(current.Year, current.Month, day,
-                                current.Hour, current.Minute, current.Second));
-                        }
-                    }
-                }
-                else
-                {
-                    var dayInMonth = Math.Min(current.Day, DateTime.DaysInMonth(current.Year, current.Month));
-                    candidates.Add(new DateTime(current.Year, current.Month, dayInMonth,
-                        current.Hour, current.Minute, current.Second));
-                }
+                candidates.AddRange(MonthlyCandidates(current, current.Month, rule));
                 break;
 
             case TmRecurrenceFrequency.Yearly:
@@ -258,10 +309,12 @@ internal static class RecurrenceEngine
                 {
                     foreach (var month in rule.ByMonth.OrderBy(m => m))
                     {
-                        var dayInMonth = Math.Min(current.Day, DateTime.DaysInMonth(current.Year, month));
-                        candidates.Add(new DateTime(current.Year, month, dayInMonth,
-                            current.Hour, current.Minute, current.Second));
+                        candidates.AddRange(MonthlyCandidates(current, month, rule));
                     }
+                }
+                else if (rule.ByDayPositional is { Length: > 0 })
+                {
+                    candidates.AddRange(MonthlyCandidates(current, current.Month, rule));
                 }
                 else
                 {
@@ -270,7 +323,82 @@ internal static class RecurrenceEngine
                 break;
         }
 
+        candidates = candidates.OrderBy(c => c).ToList();
+
+        if (rule.BySetPos is { Length: > 0 } && candidates.Count > 0)
+        {
+            candidates = ApplyBySetPos(candidates, rule.BySetPos);
+        }
+
         return candidates;
+    }
+
+    private static IEnumerable<DateTime> MonthlyCandidates(DateTime current, int month, TmRecurrenceRule rule)
+    {
+        var time = new TimeOnly(current.Hour, current.Minute, current.Second);
+
+        if (rule.ByDayPositional is { Length: > 0 })
+        {
+            foreach (var (ordinal, day) in rule.ByDayPositional)
+            {
+                var dt = NthWeekdayOfMonth(current.Year, month, day, ordinal, time);
+                if (dt.HasValue) yield return dt.Value;
+            }
+        }
+        else if (rule.ByDay is { Length: > 0 })
+        {
+            // All matching weekdays in the month (typically combined with BYSETPOS).
+            var set = new HashSet<DayOfWeek>(rule.ByDay);
+            var daysInMonth = DateTime.DaysInMonth(current.Year, month);
+            for (var d = 1; d <= daysInMonth; d++)
+            {
+                var candidate = new DateTime(current.Year, month, d, time.Hour, time.Minute, time.Second);
+                if (set.Contains(candidate.DayOfWeek)) yield return candidate;
+            }
+        }
+        else if (rule.ByMonthDay is { Length: > 0 })
+        {
+            var daysInMonth = DateTime.DaysInMonth(current.Year, month);
+            foreach (var day in rule.ByMonthDay.OrderBy(d => d))
+            {
+                if (day <= daysInMonth)
+                    yield return new DateTime(current.Year, month, day, time.Hour, time.Minute, time.Second);
+            }
+        }
+        else
+        {
+            var dayInMonth = Math.Min(current.Day, DateTime.DaysInMonth(current.Year, month));
+            yield return new DateTime(current.Year, month, dayInMonth, time.Hour, time.Minute, time.Second);
+        }
+    }
+
+    private static DateTime? NthWeekdayOfMonth(int year, int month, DayOfWeek day, int ordinal, TimeOnly time)
+    {
+        var matches = new List<int>();
+        var daysInMonth = DateTime.DaysInMonth(year, month);
+        for (var d = 1; d <= daysInMonth; d++)
+        {
+            if (new DateTime(year, month, d).DayOfWeek == day) matches.Add(d);
+        }
+
+        if (matches.Count == 0) return null;
+
+        var index = ordinal > 0 ? ordinal - 1 : matches.Count + ordinal;
+        if (index < 0 || index >= matches.Count) return null;
+
+        return new DateTime(year, month, matches[index], time.Hour, time.Minute, time.Second);
+    }
+
+    private static List<DateTime> ApplyBySetPos(List<DateTime> candidates, int[] setPos)
+    {
+        var result = new List<DateTime>();
+        foreach (var pos in setPos)
+        {
+            var index = pos > 0 ? pos - 1 : candidates.Count + pos;
+            if (index >= 0 && index < candidates.Count) result.Add(candidates[index]);
+        }
+
+        return result.Distinct().OrderBy(c => c).ToList();
     }
 
     private static DateTime Advance(DateTime current, TmRecurrenceRule rule)
@@ -285,15 +413,19 @@ internal static class RecurrenceEngine
         };
     }
 
-    private static TmScheduleEvent CreateOccurrence(TmScheduleEvent source, DateTime start, TimeSpan duration)
+    private static TmScheduleEvent CreateOccurrence(TmScheduleEvent source, DateTime start, TimeSpan duration, TimeZoneInfo zone)
     {
+        var startOffset = new DateTimeOffset(
+            DateTime.SpecifyKind(start, DateTimeKind.Unspecified),
+            zone.GetUtcOffset(DateTime.SpecifyKind(start, DateTimeKind.Unspecified)));
+
         return new TmScheduleEvent
         {
             Id = $"{source.Id}_{start:yyyyMMdd}",
             Title = source.Title,
             Description = source.Description,
-            Start = start,
-            End = start + duration,
+            Start = startOffset,
+            End = startOffset + duration,
             AllDay = source.AllDay,
             Color = source.Color,
             CssClass = source.CssClass,

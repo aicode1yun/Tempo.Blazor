@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Abstractions.Models;
 
 namespace Tempo.Blazor.Components.Files;
 
@@ -77,12 +78,43 @@ public partial class TmPdfViewer : ComponentBase, IAsyncDisposable
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
+    // ── Annotation parameters ─────────────────────────────────────────────────
+
+    /// <summary>Whether the annotation layer and comments panel are enabled. Default is false.</summary>
+    [Parameter] public bool EnableAnnotations { get; set; }
+
+    /// <summary>
+    /// Provider used to load and persist annotation threads when <see cref="EnableAnnotations"/> is true.
+    /// When omitted, an in-memory provider keeps annotations for the current session.
+    /// </summary>
+    [Parameter] public IPdfAnnotationProvider? AnnotationProvider { get; set; }
+
+    /// <summary>Stable document identifier used by the annotation provider. Falls back to <see cref="Url"/>.</summary>
+    [Parameter] public string? DocumentId { get; set; }
+
+    /// <summary>Author applied to annotations created by the current viewer.</summary>
+    [Parameter] public DocumentCommentUser? CurrentUser { get; set; }
+
+    /// <summary>Whether resolved annotation threads are shown by default. Default is false.</summary>
+    [Parameter] public bool ShowResolvedAnnotations { get; set; }
+
+    /// <summary>Optional seed threads used when no <see cref="AnnotationProvider"/> is supplied.</summary>
+    [Parameter] public IReadOnlyList<DocumentCommentThread>? Annotations { get; set; }
+
+    /// <summary>Callback invoked when the loaded annotation set changes.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<DocumentCommentThread>> AnnotationsChanged { get; set; }
+
+    /// <summary>Callback invoked when text is selected in the viewer text layer.</summary>
+    [Parameter] public EventCallback<PdfTextSelection> OnTextSelected { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private ElementReference _canvasRef;
     private ElementReference _textLayerRef;
     private ElementReference _thumbnailsRef;
     private ElementReference _continuousRef;
+    private ElementReference _searchLayerRef;
+    private ElementReference _annotationOverlayRef;
     private DotNetObjectReference<TmPdfViewer>? _dotNetRef;
     private bool _pdfInitialized;
     private bool _useFallback;
@@ -99,10 +131,47 @@ public partial class TmPdfViewer : ComponentBase, IAsyncDisposable
     // Search state
     private bool _searchVisible;
     private string? _searchQuery;
+    private string? _lastSearchedQuery;
     private int _searchTotalMatches;
     private int _searchCurrentMatch;
 
+    // Annotation state
+    private bool _annotationsLoaded;
+    private bool _selectionEnabled;
+    private bool _annotationsPanelVisible = true;
+    private bool _showResolvedAnnotations;
+    private string? _selectedThreadId;
+    private PdfTextSelection? _pendingSelection;
+    private List<DocumentCommentThread> _threads = [];
+    private InMemoryPdfAnnotationProvider? _fallbackProvider;
+
     private static readonly double[] _zoomSteps = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+
+    private IPdfAnnotationProvider EffectiveAnnotationProvider
+    {
+        get
+        {
+            if (AnnotationProvider is not null)
+            {
+                return AnnotationProvider;
+            }
+
+            if (_fallbackProvider is null)
+            {
+                _fallbackProvider = Annotations is { Count: > 0 }
+                    ? new InMemoryPdfAnnotationProvider(new Dictionary<string, IReadOnlyList<DocumentCommentThread>>
+                    {
+                        [AnnotationDocumentId] = Annotations
+                    })
+                    : new InMemoryPdfAnnotationProvider();
+            }
+
+            return _fallbackProvider;
+        }
+    }
+
+    private string AnnotationDocumentId
+        => !string.IsNullOrEmpty(DocumentId) ? DocumentId : (Url ?? string.Empty);
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -122,8 +191,16 @@ public partial class TmPdfViewer : ComponentBase, IAsyncDisposable
             _totalPages = 0;
             _searchVisible = ShowSearch;
             _searchQuery = null;
+            _lastSearchedQuery = null;
             _searchTotalMatches = 0;
             _searchCurrentMatch = 0;
+            _annotationsLoaded = false;
+            _selectionEnabled = false;
+            _showResolvedAnnotations = ShowResolvedAnnotations;
+            _selectedThreadId = null;
+            _pendingSelection = null;
+            _threads = [];
+            _fallbackProvider = null;
         }
         else
         {
@@ -207,6 +284,14 @@ public partial class TmPdfViewer : ComponentBase, IAsyncDisposable
             }
             catch { }
         }
+
+        if (EnableAnnotations && !_useFallback && !_annotationsLoaded)
+        {
+            _annotationsLoaded = true;
+            await LoadAnnotationsAsync();
+            await SetupSelectionAsync();
+            await RefreshAnnotationOverlayAsync();
+        }
     }
 
     // ── JS invokable ─────────────────────────────────────────────────────────
@@ -252,6 +337,71 @@ public partial class TmPdfViewer : ComponentBase, IAsyncDisposable
         InvokeAsync(StateHasChanged);
     }
 
+    /// <summary>Receives the active search match position (1-based) and its page from JavaScript.</summary>
+    [JSInvokable]
+    public async Task OnSearchActiveChanged(int activeMatch, int pageNumber)
+    {
+        _searchCurrentMatch = activeMatch;
+        if (pageNumber >= 1 && pageNumber <= _totalPages && pageNumber != _currentPage)
+        {
+            _currentPage = pageNumber;
+            await PageChanged.InvokeAsync(_currentPage);
+            if (ShowTextLayer || EnableAnnotations)
+            {
+                try { await JS.InvokeVoidAsync("tmPdfViewer.renderTextLayer", _canvasRef, _textLayerRef, _currentPage, _scale, Rotation); }
+                catch { }
+            }
+            await RefreshAnnotationOverlayAsync();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Receives a text selection captured from the JavaScript text layer.</summary>
+    /// <param name="text">Selected text.</param>
+    /// <param name="page">One-based page the selection belongs to.</param>
+    /// <param name="rects">Flat list of normalized rectangles: x, y, width, height per rectangle.</param>
+    [JSInvokable]
+    public async Task OnTextSelectionChanged(string? text, int page, double[]? rects)
+    {
+        var normalized = BuildRects(rects);
+        if (string.IsNullOrWhiteSpace(text) || normalized.Count == 0)
+        {
+            _pendingSelection = null;
+        }
+        else
+        {
+            var pageNumber = page >= 1 ? page : _currentPage;
+            _pendingSelection = new PdfTextSelection(text!, pageNumber, normalized);
+            if (OnTextSelected.HasDelegate)
+            {
+                await OnTextSelected.InvokeAsync(_pendingSelection);
+            }
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static List<DocumentCommentRect> BuildRects(double[]? flat)
+    {
+        var result = new List<DocumentCommentRect>();
+        if (flat is null)
+        {
+            return result;
+        }
+
+        for (var i = 0; i + 3 < flat.Length; i += 4)
+        {
+            var rect = DocumentCommentRect.Create(flat[i], flat[i + 1], flat[i + 2], flat[i + 3]);
+            if (rect.IsValid)
+            {
+                result.Add(rect);
+            }
+        }
+
+        return result;
+    }
+
     // ── Navigation ────────────────────────────────────────────────────────────
 
     private async Task GoToPreviousPageAsync()
@@ -275,10 +425,12 @@ public partial class TmPdfViewer : ComponentBase, IAsyncDisposable
         try
         {
             await JS.InvokeVoidAsync("tmPdfViewer.renderPage", _canvasRef, _currentPage, _scale, Rotation);
-            if (ShowTextLayer)
+            if (ShowTextLayer || EnableAnnotations)
             {
                 await JS.InvokeVoidAsync("tmPdfViewer.renderTextLayer", _canvasRef, _textLayerRef, _currentPage, _scale, Rotation);
             }
+            await RefreshAnnotationOverlayAsync();
+            await RedrawSearchHighlightsAsync();
         }
         catch { }
     }
@@ -314,10 +466,12 @@ public partial class TmPdfViewer : ComponentBase, IAsyncDisposable
             else
             {
                 await JS.InvokeVoidAsync("tmPdfViewer.setScale", _canvasRef, _scale);
-                if (ShowTextLayer)
+                if (ShowTextLayer || EnableAnnotations)
                 {
                     await JS.InvokeVoidAsync("tmPdfViewer.renderTextLayer", _canvasRef, _textLayerRef, _currentPage, _scale, Rotation);
                 }
+                await RefreshAnnotationOverlayAsync();
+                await RedrawSearchHighlightsAsync();
             }
         }
         catch { }
@@ -372,28 +526,233 @@ public partial class TmPdfViewer : ComponentBase, IAsyncDisposable
 
     private async Task HandleSearchKeyUpAsync(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && !string.IsNullOrEmpty(_searchQuery))
+        if (e.Key != "Enter" || string.IsNullOrEmpty(_searchQuery))
+        {
+            return;
+        }
+
+        var queryChanged = !string.Equals(_searchQuery, _lastSearchedQuery, StringComparison.Ordinal);
+        if (queryChanged || _searchTotalMatches == 0)
         {
             await PerformSearchAsync();
+        }
+        else if (e.ShiftKey)
+        {
+            await PreviousMatchAsync();
+        }
+        else
+        {
+            await NextMatchAsync();
         }
     }
 
     private async Task PerformSearchAsync()
     {
-        if (string.IsNullOrEmpty(_searchQuery)) return;
+        if (string.IsNullOrEmpty(_searchQuery))
+        {
+            await ClearSearchAsync();
+            return;
+        }
+
+        _lastSearchedQuery = _searchQuery;
         try
         {
-            await JS.InvokeVoidAsync("tmPdfViewer.search", _canvasRef, _searchQuery, _dotNetRef);
+            await JS.InvokeVoidAsync("tmPdfViewer.search", _canvasRef, _searchLayerRef, _searchQuery, _dotNetRef);
         }
+        catch { }
+    }
+
+    /// <summary>Moves the search selection to the next match and scrolls it into view.</summary>
+    public async Task NextMatchAsync()
+    {
+        if (_searchTotalMatches == 0) return;
+        try { await JS.InvokeVoidAsync("tmPdfViewer.searchNext", _canvasRef, _searchLayerRef); }
+        catch { }
+    }
+
+    /// <summary>Moves the search selection to the previous match and scrolls it into view.</summary>
+    public async Task PreviousMatchAsync()
+    {
+        if (_searchTotalMatches == 0) return;
+        try { await JS.InvokeVoidAsync("tmPdfViewer.searchPrev", _canvasRef, _searchLayerRef); }
+        catch { }
+    }
+
+    private async Task RedrawSearchHighlightsAsync()
+    {
+        if (!_searchVisible || _useFallback || string.IsNullOrEmpty(_searchQuery) || _searchLayerRef.Context is null)
+        {
+            return;
+        }
+
+        try { await JS.InvokeVoidAsync("tmPdfViewer.redrawSearch", _canvasRef, _searchLayerRef, _currentPage); }
         catch { }
     }
 
     private async Task ClearSearchAsync()
     {
         _searchQuery = null;
+        _lastSearchedQuery = null;
         _searchTotalMatches = 0;
         _searchCurrentMatch = 0;
-        await PerformSearchAsync();
+        try { await JS.InvokeVoidAsync("tmPdfViewer.clearSearch", _canvasRef, _searchLayerRef); }
+        catch { }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // ── Annotations ─────────────────────────────────────────────────────────
+
+    private async Task LoadAnnotationsAsync()
+    {
+        try
+        {
+            _threads = (await EffectiveAnnotationProvider.GetThreadsAsync(AnnotationDocumentId)).ToList();
+            await AnnotationsChanged.InvokeAsync(_threads);
+        }
+        catch
+        {
+            _threads = [];
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetupSelectionAsync()
+    {
+        if (_selectionEnabled || _useFallback)
+        {
+            return;
+        }
+
+        try
+        {
+            await JS.InvokeVoidAsync("tmPdfViewer.renderTextLayer", _canvasRef, _textLayerRef, _currentPage, _scale, Rotation);
+            await JS.InvokeVoidAsync("tmPdfViewer.enableSelection", _canvasRef, _textLayerRef, _dotNetRef);
+            _selectionEnabled = true;
+        }
+        catch { }
+    }
+
+    private async Task RefreshAnnotationOverlayAsync()
+    {
+        if (!EnableAnnotations || _useFallback || _annotationOverlayRef.Context is null)
+        {
+            return;
+        }
+
+        try { await JS.InvokeVoidAsync("tmPdfViewer.syncOverlay", _canvasRef, _annotationOverlayRef); }
+        catch { }
+    }
+
+    private DocumentCommentUser ResolveAuthor()
+        => CurrentUser ?? new DocumentCommentUser
+        {
+            UserId = "anonymous",
+            DisplayName = Loc["TmPdfViewer_AnonymousUser"]
+        };
+
+    private async Task CreateThreadFromSelectionAsync(string body)
+    {
+        if (_pendingSelection is null || !_pendingSelection.IsValid || string.IsNullOrWhiteSpace(body))
+        {
+            return;
+        }
+
+        var request = new DocumentCommentThreadCreateRequest
+        {
+            Anchor = _pendingSelection.ToAnchor(),
+            Body = body
+        };
+
+        try
+        {
+            var created = await EffectiveAnnotationProvider.CreateThreadAsync(AnnotationDocumentId, request, ResolveAuthor());
+            _pendingSelection = null;
+            _selectedThreadId = created.Id;
+            await LoadAnnotationsAsync();
+            await RefreshAnnotationOverlayAsync();
+        }
+        catch { }
+    }
+
+    private async Task ReplyToThreadAsync(DocumentCommentReplyRequest request)
+    {
+        try
+        {
+            await EffectiveAnnotationProvider.ReplyAsync(AnnotationDocumentId, request, ResolveAuthor());
+            await LoadAnnotationsAsync();
+        }
+        catch { }
+    }
+
+    private async Task ResolveThreadAsync(string threadId)
+    {
+        try
+        {
+            await EffectiveAnnotationProvider.ResolveAsync(AnnotationDocumentId, threadId, ResolveAuthor());
+            await LoadAnnotationsAsync();
+            await RefreshAnnotationOverlayAsync();
+        }
+        catch { }
+    }
+
+    private async Task ReopenThreadAsync(string threadId)
+    {
+        try
+        {
+            await EffectiveAnnotationProvider.ReopenAsync(AnnotationDocumentId, threadId, ResolveAuthor());
+            await LoadAnnotationsAsync();
+            await RefreshAnnotationOverlayAsync();
+        }
+        catch { }
+    }
+
+    private async Task DeleteCommentAsync(DocumentCommentDeleteRequest request)
+    {
+        try
+        {
+            // Decide selection clearing from the pre-delete state: an in-memory provider may
+            // alias the same thread instances, so inspect the count before the mutation.
+            var target = _threads.FirstOrDefault(thread => string.Equals(thread.Id, request.ThreadId, StringComparison.Ordinal));
+            var threadWillBeRemoved = target is null || target.Comments.Count <= 1;
+
+            await EffectiveAnnotationProvider.DeleteAsync(AnnotationDocumentId, request);
+
+            if (threadWillBeRemoved && string.Equals(_selectedThreadId, request.ThreadId, StringComparison.Ordinal))
+            {
+                _selectedThreadId = null;
+            }
+
+            await LoadAnnotationsAsync();
+            await RefreshAnnotationOverlayAsync();
+        }
+        catch { }
+    }
+
+    private async Task SelectThreadAsync(string? threadId)
+    {
+        _selectedThreadId = threadId;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetShowResolvedAnnotationsAsync(bool value)
+    {
+        _showResolvedAnnotations = value;
+        await InvokeAsync(StateHasChanged);
+        await RefreshAnnotationOverlayAsync();
+    }
+
+    private async Task DismissSelectionAsync()
+    {
+        _pendingSelection = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ToggleAnnotationsPanelAsync()
+    {
+        _annotationsPanelVisible = !_annotationsPanelVisible;
+        await InvokeAsync(StateHasChanged);
+        await RefreshAnnotationOverlayAsync();
     }
 
     // ── Public API ────────────────────────────────────────────────────────────

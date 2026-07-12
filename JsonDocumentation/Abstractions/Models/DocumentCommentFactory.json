@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Builds document comment threads and entries from create and reply requests.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentCommentFactory.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentCommentFactory"
+}

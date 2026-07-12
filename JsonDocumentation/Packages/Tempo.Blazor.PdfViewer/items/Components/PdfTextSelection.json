@@ -1,0 +1,10 @@
+{
+  "itemName": "PdfTextSelection",
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "description": "Describes a text selection captured from the PDF text layer: the selected text, the one-based page it belongs to, and the normalized highlight rectangles covering it.",
+  "packageId": "Tempo.Blazor.PdfViewer",
+  "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/PdfTextSelection.cs",
+  "documentationStatus": "generated"
+}

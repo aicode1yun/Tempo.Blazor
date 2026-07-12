@@ -1,0 +1,10 @@
+{
+  "itemName": "XlsxDataTableExporter",
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Export",
+  "description": "XLSX IDataTableExporter backed by DocumentFormat.OpenXml. Writes the header row followed by data rows into a single worksheet using inline strings.",
+  "packageId": "Tempo.Blazor.DataTableXlsx",
+  "sourcePath": "src/Tempo.Blazor.DataTableXlsx/XlsxDataTableExporter.cs",
+  "documentationStatus": "generated"
+}

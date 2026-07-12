@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Per-user persistence hook for a data table's column layout (widths and pin state), separate from saved views.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IDataTableLayoutStore.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDataTableLayoutStore"
+}

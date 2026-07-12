@@ -122,8 +122,8 @@
 
         foreach (var evt in Events)
         {
-            var startDate = DateOnly.FromDateTime(evt.Start);
-            var endDate = DateOnly.FromDateTime(evt.AllDay ? evt.End.AddDays(-1) : evt.End);
+            var startDate = DateOnly.FromDateTime(evt.StartLocal);
+            var endDate = DateOnly.FromDateTime(evt.AllDay ? evt.EndLocal.AddDays(-1) : evt.EndLocal);
             if (endDate < startDate) endDate = startDate;
 
             for (var d = startDate; d <= endDate; d = d.AddDays(1))
@@ -157,9 +157,10 @@
         if (_draggedEvent is null || ReadOnly) return;
 
         var duration = _draggedEvent.End - _draggedEvent.Start;
-        var newStart = targetDate.ToDateTime(TimeOnly.FromDateTime(_draggedEvent.Start));
-        _draggedEvent.Start = newStart;
-        _draggedEvent.End = newStart + duration;
+        var offset = _draggedEvent.Start.Offset;
+        var newStart = targetDate.ToDateTime(TimeOnly.FromDateTime(_draggedEvent.StartLocal));
+        _draggedEvent.Start = new DateTimeOffset(newStart, offset);
+        _draggedEvent.End = _draggedEvent.Start + duration;
 
         await OnEventChanged.InvokeAsync(_draggedEvent);
         _draggedEvent = null;

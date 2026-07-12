@@ -11,11 +11,41 @@ public class DataTableQuery
     /// <summary>Number of items per page.</summary>
     public int PageSize { get; init; } = 25;
 
-    /// <summary>Column key (PropertyName or Title) to sort by. Null = no sort.</summary>
+    /// <summary>
+    /// Primary sort column key (PropertyName or Title). Null = no sort.
+    /// Kept for backward compatibility; mirrors the first entry of <see cref="SortDescriptors"/>.
+    /// </summary>
     public string? SortColumn { get; init; }
 
-    /// <summary>True = sort descending; false = sort ascending.</summary>
+    /// <summary>
+    /// True = primary sort descending; false = ascending.
+    /// Kept for backward compatibility; mirrors the direction of the first <see cref="SortDescriptors"/> entry.
+    /// </summary>
     public bool SortDescending { get; init; }
+
+    /// <summary>
+    /// Ordered multi-column sort instructions (index 0 = primary). Empty means fall back to
+    /// <see cref="SortColumn"/>/<see cref="SortDescending"/>. Prefer <see cref="GetEffectiveSortDescriptors"/>
+    /// which normalizes both representations.
+    /// </summary>
+    public IReadOnlyList<SortDescriptor> SortDescriptors { get; init; } = [];
+
+    /// <summary>
+    /// Returns the effective ordered sort descriptors. Uses <see cref="SortDescriptors"/> when it has
+    /// entries; otherwise falls back to a single descriptor built from <see cref="SortColumn"/>/<see cref="SortDescending"/>
+    /// (empty when no column is set). Providers should call this to support both single- and multi-column sort.
+    /// </summary>
+    public IReadOnlyList<SortDescriptor> GetEffectiveSortDescriptors()
+    {
+        if (SortDescriptors.Count > 0)
+        {
+            return SortDescriptors;
+        }
+
+        return string.IsNullOrEmpty(SortColumn)
+            ? []
+            : [new SortDescriptor(SortColumn, SortDescending ? DataTableSortDirection.Descending : DataTableSortDirection.Ascending)];
+    }
 
     /// <summary>Column filters to apply.</summary>
     public IReadOnlyList<DataTableFilter> Filters { get; init; } = [];
