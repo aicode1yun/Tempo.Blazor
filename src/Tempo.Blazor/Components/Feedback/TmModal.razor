@@ -1,6 +1,7 @@
 @namespace Tempo.Blazor.Components.Feedback
 @using Tempo.Blazor.Components.Buttons
 @using Tempo.Blazor.Components.Icons
+@implements IAsyncDisposable
 
 @if (Show)
 {
@@ -119,39 +120,68 @@
     [Parameter] public string? Class { get; set; }
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
     
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
     private ElementReference _modalElement;
     private ElementReference _overlayElement;
     private string _titleId = Guid.NewGuid().ToString("N");
     private bool _wasShown;
-    
+    private bool _shouldActivateTrap;
+    private bool _trapActive;
+
     protected override async Task OnParametersSetAsync()
     {
         if (Show && !_wasShown)
         {
             _wasShown = true;
+            _shouldActivateTrap = true;
             await OnOpen.InvokeAsync();
-            await FocusModal();
         }
-        else if (!Show)
+        else if (!Show && _wasShown)
         {
             _wasShown = false;
+            await DeactivateTrapAsync();
         }
     }
-    
-    private async Task FocusModal()
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_modalElement.Context is not null)
+        if (_shouldActivateTrap && Show)
         {
-            try
-            {
-                await _modalElement.FocusAsync();
-            }
-            catch { }
+            _shouldActivateTrap = false;
+            await ActivateTrapAsync();
         }
     }
-    
-    
-    
+
+    // Traps Tab focus inside the modal and remembers the trigger to restore on close.
+    private async Task ActivateTrapAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("tmFocusTrap.activate", _modalElement, _titleId);
+            _trapActive = true;
+        }
+        catch
+        {
+            // JS unavailable (e.g. bUnit / prerender) — fall back to focusing the modal.
+            try { await _modalElement.FocusAsync(); } catch { }
+        }
+    }
+
+    private async Task DeactivateTrapAsync()
+    {
+        if (!_trapActive) return;
+        _trapActive = false;
+        try { await JS.InvokeVoidAsync("tmFocusTrap.deactivate", _modalElement, _titleId); } catch { }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        await DeactivateTrapAsync();
+    }
+
+
     private async Task HandleOverlayClick()
     {
         if (CloseOnOverlayClick)

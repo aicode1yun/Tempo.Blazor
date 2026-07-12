@@ -35,6 +35,34 @@ public class TmModalTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Modal_HasDialogAccessibilityAttributes()
+    {
+        var cut = RenderComponent<TmModal>(p => p
+            .Add(m => m.Show, true)
+            .Add(m => m.Title, "Accessible modal"));
+
+        var modal = cut.Find(".tm-modal");
+        modal.GetAttribute("role").Should().Be("dialog");
+        modal.GetAttribute("aria-modal").Should().Be("true");
+        modal.GetAttribute("tabindex").Should().Be("-1");
+
+        var labelledBy = modal.GetAttribute("aria-labelledby");
+        labelledBy.Should().NotBeNullOrEmpty();
+        cut.Find(".tm-modal-title").GetAttribute("id").Should().Be(labelledBy);
+    }
+
+    [Fact]
+    public void Modal_OpenThenClose_FocusTrapLifecycle_DoesNotThrow()
+    {
+        var cut = RenderComponent<TmModal>(p => p
+            .Add(m => m.Show, true)
+            .Add(m => m.Title, "Trap"));
+
+        var act = () => cut.SetParametersAndRender(p => p.Add(m => m.Show, false));
+        act.Should().NotThrow();
+    }
+
+    [Fact]
     public void Modal_IsHidden_WhenShowFalse()
     {
         // Act
