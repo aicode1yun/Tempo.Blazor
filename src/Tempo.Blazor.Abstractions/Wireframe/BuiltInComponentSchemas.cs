@@ -161,6 +161,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmToolbar"] = ["toolbar"],
             ["TmToolbarButton"] = ["toolbar", "button"],
             ["TmToolbarDivider"] = ["toolbar"],
+            ["TmFormActionBar"] = ["toolbar"],
             ["TmAlert"] = ["alert"],
             ["TmModal"] = ["modal"],
             ["TmDialog"] = ["dialog"],
@@ -1550,6 +1551,20 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             Type = "TmToolbarDivider", Category = "Toolbar", DisplayName = "Toolbar Divider",
             DefaultWidth = 1, DefaultHeight = 32,
             Props = []
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmFormActionBar", Category = "Toolbar", DisplayName = "Form Action Bar",
+            DefaultWidth = 600, DefaultHeight = 56,
+            Props =
+            [
+                P("position",     "Position",       PropType.Enum, "static", cat: "Appearance",
+                    opts: ["static","stickyTop","floatingBottom"]),
+                P("showOnScroll", "Show On Scroll", PropType.Bool,  false,   cat: "Behavior"),
+                P("statusText",   "Status Text",    PropType.String, "",     cat: "Content"),
+                P("primaryLabel", "Primary Label",  PropType.String, "Save", cat: "Content"),
+            ]
         };
     }
 

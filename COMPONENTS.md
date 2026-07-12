@@ -24,7 +24,7 @@ Kompletní přehled všech komponent knihovny Tempo.Blazor, jejich parametrů, p
 16. [Grafy](#grafy) — TmChart
 17. [Tagy](#tagy) — TmTagPicker
 18. [Timeline](#timeline) — TmTimeline
-19. [Toolbar](#toolbar) — TmToolbar, TmToolbarButton, TmToolbarDivider
+19. [Toolbar](#toolbar) — TmToolbar, TmToolbarButton, TmToolbarDivider, TmFormActionBar
 20. [TreeView](#treeview) — TmTreeView
 21. [Scheduler](#scheduler) — TmScheduler
 22. [Dashboard](#dashboard) — TmDashboard
@@ -40,7 +40,7 @@ Kompletní přehled všech komponent knihovny Tempo.Blazor, jejich parametrů, p
 17. [Grafy](#grafy) — TmChart, TmStockChart, TmSparkline, TmGauge
 18. [Tagy](#tagy) — TmTagPicker
 19. [Timeline](#timeline) — TmTimeline
-20. [Toolbar](#toolbar) — TmToolbar, TmToolbarButton, TmToolbarDivider
+20. [Toolbar](#toolbar) — TmToolbar, TmToolbarButton, TmToolbarDivider, TmFormActionBar
 21. [TreeView](#treeview) — TmTreeView
 22. [Scheduler](#scheduler) — TmScheduler
 23. [Dashboard](#dashboard) — TmDashboard
@@ -4982,6 +4982,69 @@ Oddělovač v toolbaru (bez parametrů).
         <TmButton Variant="ButtonVariant.Primary" OnClick="Publish">Publikovat</TmButton>
     </Actions>
 </TmToolbar>
+```
+
+### TmFormActionBar
+
+Sticky/plovoucí panel akcí pro dlouhé formuláře. Vlevo obsah (`ChildContent`) + stav (`Status`), vpravo akce rozdělené na `DangerActions` / `SecondaryActions` / `PrimaryActions`. `ShowOnScroll` je funkční — reálný pasivní scroll listener (`TmFormActionBar.razor.js`), ne rezervovaný no-op hook.
+
+#### CSS třídy
+
+| Třída | Popis |
+|-------|-------|
+| `tm-form-action-bar` | Kořenový kontejner (`role="toolbar"`) |
+| `tm-form-action-bar--static` / `--sticky-top` / `--floating-bottom` | Varianta pozice |
+| `tm-form-action-bar--show-on-scroll` | Skryto, dokud scroll nepřekročí práh |
+| `tm-form-action-bar--visible` | Přidáno JS listenerem po překročení prahu |
+| `tm-form-action-bar__inner` | Vnitřní řádek (max-width, centrováno) |
+| `tm-form-action-bar__start` | Levá strana (obsah + stav) |
+| `tm-form-action-bar__status` | Wrapper slotu `Status` |
+| `tm-form-action-bar__end` | Pravá strana (akce) |
+| `tm-form-action-bar__danger` / `__secondary` / `__primary` | Wrappery jednotlivých slotů akcí |
+| `tm-form-action-bar__live-region` | Skrytá `aria-live="polite"` oblast pro `LiveMessage` |
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Position` | `FormActionBarPosition` | `Static` | `Static`, `StickyTop`, nebo `FloatingBottom` |
+| `ShowOnScroll` | `bool` | `false` | Funkční odhalení po scrollu přes práh (reálný listener) |
+| `PrimaryActions` | `RenderFragment?` | `null` | Primární akce (např. Uložit), zcela vpravo |
+| `SecondaryActions` | `RenderFragment?` | `null` | Sekundární akce (např. Zrušit) |
+| `DangerActions` | `RenderFragment?` | `null` | Nebezpečné akce (např. Smazat), nejvíce vlevo v clusteru akcí |
+| `Status` | `RenderFragment?` | `null` | Stav uložení/validace vedle levého obsahu |
+| `ChildContent` | `RenderFragment?` | `null` | Levý/start obsah (titulek apod.) |
+| `AriaLabel` | `string?` | `null` | Přístupný popisek toolbaru |
+| `LiveMessage` | `string?` | `null` | Volitelný polite status text pro asistivní technologie |
+| `Class` | `string?` | `null` | Další CSS třídy |
+| `TestId` | `string` | `"tm-form-action-bar"` | `data-testid` kořenového elementu |
+| `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy |
+
+#### Příklady
+
+```razor
+<TmFormActionBar Position="FormActionBarPosition.StickyTop" AriaLabel="Akce formuláře" LiveMessage="@_statusAnnouncement">
+    <span>@_documentTitle</span>
+    <Status>
+        @(_isDirty ? "Neuložené změny" : "Uloženo")
+    </Status>
+    <DangerActions>
+        <TmButton Variant="ButtonVariant.Danger" OnClick="DeleteAsync">Smazat</TmButton>
+    </DangerActions>
+    <SecondaryActions>
+        <TmButton Variant="ButtonVariant.Ghost" OnClick="CancelAsync">Zrušit</TmButton>
+    </SecondaryActions>
+    <PrimaryActions>
+        <TmButton Variant="ButtonVariant.Primary" IsLoading="@_isSaving" OnClick="SaveAsync">Uložit</TmButton>
+    </PrimaryActions>
+</TmFormActionBar>
+
+@* Plovoucí spodní panel, viditelný až po scrollu *@
+<TmFormActionBar Position="FormActionBarPosition.FloatingBottom" ShowOnScroll="true">
+    <PrimaryActions>
+        <TmButton Variant="ButtonVariant.Primary" OnClick="SaveAsync">Uložit změny</TmButton>
+    </PrimaryActions>
+</TmFormActionBar>
 ```
 
 ---

@@ -130,6 +130,13 @@
       "description": "Blocks internal router navigation while a form is dirty, showing a TmDialog confirmation, and arms a browser beforeunload prompt for tab close/refresh. Call Suppress() before a post-commit programmatic navigation so the guard does not re-prompt for work that was just saved.",
       "code": "<TmNavigationGuard @ref=\"_guard\" IsDirty=\"@_isDirty\" OnConfirmLeave=\"@(() => _isDirty = false)\" />\n\n<EditForm Model=\"@_model\" OnValidSubmit=\"SaveAndCloseAsync\">\n    <TmTextInput @bind-Value=\"_model.Name\"\n        ValueChanged=\"@(v => { _model.Name = v; _isDirty = true; })\" />\n    <TmButton Type=\"ButtonType.Submit\">Save</TmButton>\n</EditForm>\n\n@code {\n    private TmNavigationGuard? _guard;\n    private bool _isDirty;\n    private DocumentModel _model = new();\n\n    private async Task SaveAndCloseAsync()\n    {\n        await DocumentService.SaveAsync(_model);\n        _isDirty = false;\n        _guard?.Suppress();\n        Navigation.NavigateTo(\"/documents\");\n    }\n}",
       "setupNote": "The beforeunload handler caches the dirty flag client-side and never calls back into .NET during unload, so it stays reliable even when the circuit is unloading. The guard only gates navigation — it does not manage locks or working copies."
+    },
+    {
+      "title": "TmFormActionBar - Sticky save bar for a long form",
+      "category": "Toolbar",
+      "description": "A sticky-top form action bar with status, danger, secondary, and primary action slots. ShowOnScroll can additionally reveal a floating-bottom variant only once the user has scrolled.",
+      "code": "<TmFormActionBar Position=\"FormActionBarPosition.StickyTop\" AriaLabel=\"Form actions\" LiveMessage=\"@_statusAnnouncement\">\n    <span>@_documentTitle</span>\n    <Status>\n        @if (_isDirty)\n        {\n            <span>Unsaved changes</span>\n        }\n        else\n        {\n            <span>Saved</span>\n        }\n    </Status>\n    <DangerActions>\n        <TmButton Variant=\"ButtonVariant.Danger\" OnClick=\"DeleteAsync\">Delete</TmButton>\n    </DangerActions>\n    <SecondaryActions>\n        <TmButton Variant=\"ButtonVariant.Ghost\" OnClick=\"CancelAsync\">Cancel</TmButton>\n    </SecondaryActions>\n    <PrimaryActions>\n        <TmButton Variant=\"ButtonVariant.Primary\" IsLoading=\"@_isSaving\" OnClick=\"SaveAsync\">Save</TmButton>\n    </PrimaryActions>\n</TmFormActionBar>",
+      "setupNote": "ShowOnScroll registers a real passive scroll listener (via a co-located TmFormActionBar.razor.js module) that toggles a CSS class once the page scrolls past a threshold — it is not an inert reserved hook."
     }
   ]
 }
