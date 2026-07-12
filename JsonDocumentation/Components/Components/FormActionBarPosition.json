@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Toolbar",
+  "description": "Placement mode for the form action bar.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Toolbar/FormActionBarPosition.cs",
+  "documentationStatus": "generated",
+  "itemName": "FormActionBarPosition"
+}

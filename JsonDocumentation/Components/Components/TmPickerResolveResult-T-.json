@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "Result of a picker resolve invocation.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmPickerResolveResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmPickerResolveResult<T>"
+}

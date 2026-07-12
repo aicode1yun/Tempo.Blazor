@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Navigation",
+  "description": "Visual layout of the scroll-spy navigation.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Navigation/ScrollSpyNavVariant.cs",
+  "documentationStatus": "generated",
+  "itemName": "ScrollSpyNavVariant"
+}

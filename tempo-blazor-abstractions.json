@@ -11678,6 +11678,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "ChatMessageEdit",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Payload for editing a chat message's text.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatInteractions.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ChatMessageType",
       "kind": "Enum",
       "category": "Models",
@@ -11685,6 +11695,92 @@
       "description": "Direction / type of a chat message.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatMessage.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ChatReaction",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "An emoji reaction on a chat message, grouped by emoji with the reacting users.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatReaction.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Count",
+          "kind": "Field",
+          "type": "int",
+          "description": "Number of users who reacted with this emoji."
+        },
+        {
+          "name": "ReactedBy",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Returns true when is among the reacting users.",
+          "parameters": [
+            {
+              "name": "userId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Emoji",
+          "kind": "Property",
+          "type": "string",
+          "description": "The emoji (e.g. \"\uD83D\uDC4D\", \"❤️\")."
+        },
+        {
+          "name": "Users",
+          "kind": "Property",
+          "type": "IReadOnlyList<ChatUser>",
+          "description": "Users who reacted with this emoji."
+        }
+      ]
+    },
+    {
+      "itemName": "ChatReactionToggle",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Payload for toggling an emoji reaction on a chat message.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatInteractions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ChatReadReceipt",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "A per-user read receipt for a chat message: who read it and when.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatReadReceipt.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ReadAt",
+          "kind": "Property",
+          "type": "DateTimeOffset",
+          "description": "When the user read the message."
+        },
+        {
+          "name": "User",
+          "kind": "Property",
+          "type": "ChatUser?",
+          "description": "The user who read the message."
+        }
+      ]
+    },
+    {
+      "itemName": "ChatSendRequest",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Payload for sending a chat message, optionally as a threaded reply.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatInteractions.cs",
       "documentationStatus": "merged"
     },
     {
@@ -33782,11 +33878,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1312,
-    "manualItemCount": 1312,
-    "generatedItemCount": 1295,
+    "itemCount": 1317,
+    "manualItemCount": 1317,
+    "generatedItemCount": 1300,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1295
+    "publicApiTypeCount": 1300
   }
 }

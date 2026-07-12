@@ -2179,8 +2179,11 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             DefaultWidth = 320, DefaultHeight = 400,
             Props =
             [
-                P("messageCount", "Message Count", PropType.Int,  4,     cat: "Appearance"),
-                P("showInput",    "Show Input",    PropType.Bool, true,   cat: "Appearance"),
+                P("messageCount",  "Message Count",  PropType.Int,  4,    cat: "Appearance"),
+                P("showInput",     "Show Input",     PropType.Bool, true, cat: "Appearance"),
+                P("showReactions", "Show Reactions", PropType.Bool, true, cat: "Appearance"),
+                P("showThreads",   "Show Threads",   PropType.Bool, true, cat: "Appearance"),
+                P("showReceipts",  "Show Receipts",  PropType.Bool, true, cat: "Appearance"),
             ]
         };
 

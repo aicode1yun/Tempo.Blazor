@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Payload for sending a chat message, optionally as a threaded reply.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatInteractions.cs",
+  "documentationStatus": "generated",
+  "itemName": "ChatSendRequest"
+}

@@ -246,6 +246,15 @@ public partial class TmChat : ComponentBase
     private bool CanEditDelete(ChatMessage m)
         => AllowEditDelete && !m.IsDeleted && m.Type != ChatMessageType.System && IsCurrentUser(m.Author);
 
+    // Actions are only offered when their handler is actually wired, so a read-only
+    // host (e.g. the basic demo) shows no dead buttons.
+    private bool CanReact => EnableReactions && OnToggleReaction.HasDelegate;
+    private bool CanReplyInThread => EnableThreads && OnSend.HasDelegate;
+    private bool CanEditMessage(ChatMessage m) => CanEditDelete(m) && OnEditMessage.HasDelegate;
+    private bool CanDeleteMessage(ChatMessage m) => CanEditDelete(m) && OnDeleteMessage.HasDelegate;
+    private bool HasMessageActions(ChatMessage m, bool inThread)
+        => CanReact || (!inThread && CanReplyInThread) || CanEditMessage(m) || CanDeleteMessage(m);
+
     private void StartEdit(ChatMessage m)
     {
         _editingId = m.Id;

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Payload for toggling an emoji reaction on a chat message.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatInteractions.cs",
+  "documentationStatus": "generated",
+  "itemName": "ChatReactionToggle"
+}

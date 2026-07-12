@@ -29,6 +29,46 @@
     </div>
 </section>
 
+<!-- Threads, reactions & receipts (two users) -->
+<section class="demo-section" data-testid="chat-collab-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Threads, Reactions &amp; Receipts</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Collaboration</span>
+    </div>
+
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        One shared conversation seen by two users. Reply in a thread, react with emoji, edit or delete your
+        own messages, and watch per-user read receipts appear as the other side sees each message.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div data-testid="chat-pane-alice">
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Alice's view</p>
+            <div class="showcase-card" style="height: 520px;">
+                <TmChat CurrentUser="_alice"
+                        Messages="_sharedMessages"
+                        OnSend="@(r => HandleCollabSend(_alice, r))"
+                        OnEditMessage="HandleCollabEdit"
+                        OnDeleteMessage="HandleCollabDelete"
+                        OnToggleReaction="@(t => HandleCollabReaction(_alice, t))"
+                        OnMessageRead="@(id => HandleCollabRead(_alice, id))" />
+            </div>
+        </div>
+        <div data-testid="chat-pane-bob">
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Bob's view</p>
+            <div class="showcase-card" style="height: 520px;">
+                <TmChat CurrentUser="_bob"
+                        Messages="_sharedMessages"
+                        OnSend="@(r => HandleCollabSend(_bob, r))"
+                        OnEditMessage="HandleCollabEdit"
+                        OnDeleteMessage="HandleCollabDelete"
+                        OnToggleReaction="@(t => HandleCollabReaction(_bob, t))"
+                        OnMessageRead="@(id => HandleCollabRead(_bob, id))" />
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Typing Indicator -->
 <section class="demo-section">
     <div class="flex items-center space-x-2 mb-4">
@@ -106,10 +146,14 @@
 
 @code {
     private ChatUser _currentUser = default!;
+    private ChatUser _alice = default!;
     private ChatUser _bob = default!;
     private ChatUser _carol = default!;
 
     private string? _lastAttachment;
+
+    // ── Collaboration demo (shared conversation, two users) ──────────────
+    private List<ChatMessage> _sharedMessages = default!;
 
     // ── Basic demo ────────────────────────────────────────────────────────
     private List<ChatMessage> _basicMessages = default!;
@@ -132,8 +176,15 @@
     protected override void OnInitialized()
     {
         _currentUser = new("u1", "Alice", avatar: "A", isOnline: true);
+        _alice = _currentUser;
         _bob = new("u2", "Bob", avatar: "B", isOnline: true);
         _carol = new("u3", "Carol", avatar: "C", isOnline: true);
+
+        _sharedMessages = new()
+        {
+            new ChatMessage { Id = "c1", Text = "Can we ship the K6 chat update today?", Author = _bob, Timestamp = new DateTimeOffset(2026, 7, 12, 8, 10, 0, TimeSpan.Zero) },
+            new ChatMessage { Id = "c2", Text = "Yes — threads, reactions and receipts are all in.", Author = _alice, Timestamp = new DateTimeOffset(2026, 7, 12, 8, 11, 0, TimeSpan.Zero) },
+        };
 
         _basicMessages = new()
         {
@@ -183,6 +234,61 @@
     private void HandleBasicSend(string text)
     {
         _basicMessages.Add(new ChatMessage(Guid.NewGuid().ToString(), text, _currentUser, ChatMessageType.Outgoing));
+    }
+
+    // ── Collaboration handlers (shared store, mutated by either user) ─────
+    private void HandleCollabSend(ChatUser from, ChatSendRequest r)
+    {
+        _sharedMessages.Add(new ChatMessage
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Text = r.Text,
+            Author = from,
+            Timestamp = DateTimeOffset.Now,
+            ReplyToId = r.ReplyToId,
+            ThreadRootId = r.ThreadRootId
+        });
+        StateHasChanged();
+    }
+
+    private void HandleCollabEdit(ChatMessageEdit e)
+        => Replace(e.MessageId, m => m with { Text = e.NewText, EditedAt = DateTimeOffset.Now });
+
+    private void HandleCollabDelete(string id)
+        => Replace(id, m => m with { IsDeleted = true, Reactions = [] });
+
+    private void HandleCollabReaction(ChatUser from, ChatReactionToggle t)
+        => Replace(t.MessageId, m => m with { Reactions = ToggleReaction(m.Reactions, t.Emoji, from) });
+
+    private void HandleCollabRead(ChatUser reader, string id)
+        => Replace(id, m => m.ReadBy.Any(x => x.User?.Id == reader.Id)
+            ? m
+            : m with { ReadBy = [.. m.ReadBy, new ChatReadReceipt(reader, DateTimeOffset.Now)] });
+
+    private void Replace(string id, Func<ChatMessage, ChatMessage> update)
+    {
+        var i = _sharedMessages.FindIndex(m => m.Id == id);
+        if (i < 0) return;
+        var updated = update(_sharedMessages[i]);
+        if (ReferenceEquals(updated, _sharedMessages[i])) return;
+        _sharedMessages[i] = updated;
+        StateHasChanged();
+    }
+
+    private static IReadOnlyList<ChatReaction> ToggleReaction(IReadOnlyList<ChatReaction> reactions, string emoji, ChatUser user)
+    {
+        var list = reactions.ToList();
+        var idx = list.FindIndex(r => r.Emoji == emoji);
+        if (idx < 0)
+        {
+            list.Add(new ChatReaction(emoji, [user]));
+            return list;
+        }
+        var users = list[idx].Users.ToList();
+        if (users.RemoveAll(u => u.Id == user.Id) == 0) users.Add(user);
+        if (users.Count == 0) list.RemoveAt(idx);
+        else list[idx] = list[idx] with { Users = users };
+        return list;
     }
 
     private void HandleAttachmentClick(ChatAttachment attachment)

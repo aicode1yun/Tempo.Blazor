@@ -243,29 +243,32 @@
                     </div>
                 }
 
-                @if (!message.IsDeleted && _editingId != message.Id)
+                @if (!message.IsDeleted && _editingId != message.Id && HasMessageActions(message, inThread))
                 {
                     <div class="tm-chat__actions">
-                        @if (EnableReactions)
+                        @if (CanReact)
                         {
                             <button type="button" class="tm-chat__action" data-testid="chat-react-@message.Id"
                                     aria-label="@Loc["TmChat_React"]" @onclick="() => TogglePicker(message.Id)">
                                 <TmIcon Name="smile" Size="IconSize.Sm" />
                             </button>
                         }
-                        @if (!inThread && EnableThreads)
+                        @if (!inThread && CanReplyInThread)
                         {
                             <button type="button" class="tm-chat__action" data-testid="chat-reply-@message.Id"
                                     aria-label="@Loc["TmChat_Reply"]" @onclick="() => OpenThreadAsync(message)">
                                 <TmIcon Name="message-circle" Size="IconSize.Sm" />
                             </button>
                         }
-                        @if (CanEditDelete(message))
+                        @if (CanEditMessage(message))
                         {
                             <button type="button" class="tm-chat__action" data-testid="chat-edit-@message.Id"
                                     aria-label="@Loc["TmChat_Edit"]" @onclick="() => StartEdit(message)">
                                 <TmIcon Name="pencil" Size="IconSize.Sm" />
                             </button>
+                        }
+                        @if (CanDeleteMessage(message))
+                        {
                             <button type="button" class="tm-chat__action tm-chat__action--danger" data-testid="chat-delete-@message.Id"
                                     aria-label="@Loc["TmChat_Delete"]" @onclick="() => DeleteAsync(message)">
                                 <TmIcon Name="trash" Size="IconSize.Sm" />

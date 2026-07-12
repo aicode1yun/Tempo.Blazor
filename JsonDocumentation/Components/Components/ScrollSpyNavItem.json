@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Navigation",
+  "description": "A single entry in a scroll-spy navigation.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Navigation/ScrollSpyNavItem.cs",
+  "documentationStatus": "generated",
+  "itemName": "ScrollSpyNavItem"
+}

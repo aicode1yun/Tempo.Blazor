@@ -2837,6 +2837,32 @@
       ],
       "parameters": [
         {
+          "name": "ActiveThreadRootId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Id of the thread root whose reply panel is open. Two-way bindable."
+        },
+        {
+          "name": "ActiveThreadRootIdChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Fires when the open thread changes."
+        },
+        {
+          "name": "AllowEditDelete",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true, the current user can edit and delete their own messages. Default true."
+        },
+        {
+          "name": "AutoReadReceipts",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true, incoming messages fire as they render. Default true."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
@@ -2855,6 +2881,20 @@
           "description": "Whether the input is disabled."
         },
         {
+          "name": "EnableReactions",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true, messages show a reaction bar and emoji picker. Default true."
+        },
+        {
+          "name": "EnableThreads",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true, replies are grouped into a thread panel instead of shown inline. Default true."
+        },
+        {
           "name": "Messages",
           "type": "IReadOnlyList<ChatMessage>",
           "isRequired": false,
@@ -2868,16 +2908,66 @@
           "description": "Fired when an attachment is clicked."
         },
         {
+          "name": "OnDeleteMessage",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Fired when the user deletes one of their messages."
+        },
+        {
+          "name": "OnEditMessage",
+          "type": "EventCallback<ChatMessageEdit>",
+          "isRequired": false,
+          "description": "Fired when the user commits an edit to one of their messages."
+        },
+        {
+          "name": "OnMessageRead",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Fired once per incoming message when it first becomes visible, for read receipts."
+        },
+        {
+          "name": "OnReply",
+          "type": "EventCallback<ChatMessage>",
+          "isRequired": false,
+          "description": "Fired when the user opens a message's reply thread."
+        },
+        {
+          "name": "OnSend",
+          "type": "EventCallback<ChatSendRequest>",
+          "isRequired": false,
+          "description": "Fired when the user sends a message, carrying optional thread/reply context."
+        },
+        {
           "name": "OnSendMessage",
           "type": "EventCallback<string>",
           "isRequired": false,
-          "description": "Fired when the user sends a message."
+          "description": "Fired when the user sends a message (text only). Retained for backward compatibility."
+        },
+        {
+          "name": "OnToggleReaction",
+          "type": "EventCallback<ChatReactionToggle>",
+          "isRequired": false,
+          "description": "Fired when the user toggles an emoji reaction on a message."
         },
         {
           "name": "Placeholder",
           "type": "string?",
           "isRequired": false,
           "description": "Placeholder for the message input."
+        },
+        {
+          "name": "ReactionEmojis",
+          "type": "IReadOnlyList<string>",
+          "isRequired": false,
+          "default": "[\"\uD83D\uDC4D\", \"❤️\", \"\uD83D\uDE02\", \"\uD83C\uDF89\", \"\uD83D\uDE2E\", \"\uD83D\uDE22\"]",
+          "description": "Emoji offered by the reaction picker."
+        },
+        {
+          "name": "ShowReadReceipts",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true, own messages display per-user read receipts. Default true."
         },
         {
           "name": "TypingUsers",
@@ -3584,6 +3674,16 @@
       "description": "Filter input type for a TmDataTableColumn.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/DataTable/DataTableEnums.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "FormActionBarPosition",
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Toolbar",
+      "description": "Placement mode for the form action bar.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Toolbar/FormActionBarPosition.cs",
       "documentationStatus": "merged"
     },
     {
@@ -4583,6 +4683,26 @@
       ]
     },
     {
+      "itemName": "ScrollSpyNavItem",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Navigation",
+      "description": "A single entry in a scroll-spy navigation.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Navigation/ScrollSpyNavItem.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ScrollSpyNavVariant",
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Navigation",
+      "description": "Visual layout of the scroll-spy navigation.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Navigation/ScrollSpyNavVariant.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "SkeletonVariant",
       "kind": "Enum",
       "category": "Components",
@@ -4707,6 +4827,48 @@
               "type": "CancellationToken"
             }
           ]
+        }
+      ]
+    },
+    {
+      "itemName": "TmPickerFetchState",
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Inputs",
+      "description": "Outcome of a picker search or resolve fetch.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmPickerFetchState.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmPickerResolveResult<T>",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Inputs",
+      "description": "Result of a picker resolve invocation.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmPickerResolveResult.cs",
+      "documentationStatus": "merged",
+      "typeParameters": [
+        {
+          "name": "T",
+          "description": "Generic type parameter T."
+        }
+      ]
+    },
+    {
+      "itemName": "TmPickerSearchResult<T>",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Inputs",
+      "description": "Result of a picker search invocation.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmPickerSearchResult.cs",
+      "documentationStatus": "merged",
+      "typeParameters": [
+        {
+          "name": "T",
+          "description": "Generic type parameter T."
         }
       ]
     },
@@ -14509,6 +14671,199 @@
       ]
     },
     {
+      "itemName": "TmUserPicker",
+      "kind": "Component",
+      "category": "Inputs",
+      "namespace": "Tempo.Blazor.Components.Inputs",
+      "description": "Generic entity/user picker with debounced cancellable search, three-state fetch rendering (Ok / Empty / Transient), keyboard navigation, and pointer-down selection so a click registers before blur closes the dropdown. Generic over TUser — no directory/LDAP dependency. Callers supply plain async SearchProvider/ResolveProvider functions that each return an explicit TmPickerFetchState; the component never conflates a transient fetch failure with a genuine empty result, and never bakes in its own retry loop.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmUserPicker.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Inputs"
+      ],
+      "typeParameters": [
+        {
+          "name": "TUser",
+          "description": "Generic type parameter TUser."
+        }
+      ],
+      "parameters": [
+        {
+          "name": "AvatarNameSelector",
+          "type": "Func<TUser, string>?",
+          "isRequired": false,
+          "description": "Extracts the name used to derive avatar initials. Falls back to DisplaySelector when omitted."
+        },
+        {
+          "name": "AvatarSrcSelector",
+          "type": "Func<TUser, string?>?",
+          "isRequired": false,
+          "description": "Extracts an avatar image URL, if any."
+        },
+        {
+          "name": "ClearLabel",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"Clear selection\"",
+          "description": "Accessible label for the clear-selection button."
+        },
+        {
+          "name": "DebounceMs",
+          "type": "int",
+          "isRequired": false,
+          "default": "300",
+          "description": "Debounce delay in ms before a search fires."
+        },
+        {
+          "name": "Disabled",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Disables the input and hides the clear button."
+        },
+        {
+          "name": "DisplaySelector",
+          "type": "Func<TUser, string>",
+          "isRequired": true,
+          "description": "Extracts the display text from an item.",
+          "editorRequired": true
+        },
+        {
+          "name": "EmptyTemplate",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Overrides the no-results message."
+        },
+        {
+          "name": "ItemTemplate",
+          "type": "RenderFragment<TUser>?",
+          "isRequired": false,
+          "description": "Overrides rendering of a single result item. Defaults to TmAvatar + display + [login]."
+        },
+        {
+          "name": "Label",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Field label."
+        },
+        {
+          "name": "LoadingText",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"Loading...\"",
+          "description": "Text shown while a search is in flight."
+        },
+        {
+          "name": "MinChars",
+          "type": "int",
+          "isRequired": false,
+          "default": "3",
+          "description": "Minimum characters before a search fires."
+        },
+        {
+          "name": "NoResultsText",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"No results found\"",
+          "description": "Text shown when a search succeeds but finds nothing (State == Empty)."
+        },
+        {
+          "name": "Placeholder",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Search box placeholder."
+        },
+        {
+          "name": "ResolveProvider",
+          "type": "Func<string, CancellationToken, Task<TmPickerResolveResult<TUser>>>",
+          "isRequired": true,
+          "description": "Resolves Value into a full TUser for display when the value is set externally (e.g. bound from a saved record).",
+          "editorRequired": true
+        },
+        {
+          "name": "RetryText",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"Retry\"",
+          "description": "Retry button text for the transient-error state."
+        },
+        {
+          "name": "SearchProvider",
+          "type": "Func<string, CancellationToken, Task<TmPickerSearchResult<TUser>>>",
+          "isRequired": true,
+          "description": "Debounced, cancellable search. Returns items plus an explicit TmPickerFetchState; never bakes in retries — callers own that policy.",
+          "editorRequired": true
+        },
+        {
+          "name": "SelectedTemplate",
+          "type": "RenderFragment<TUser>?",
+          "isRequired": false,
+          "description": "Overrides rendering of the selected value's chip."
+        },
+        {
+          "name": "TransientErrorTemplate",
+          "type": "RenderFragment<Func<Task>>?",
+          "isRequired": false,
+          "description": "Overrides the transient-error UI. Receives a retry callback that re-invokes whichever provider (search or resolve) just failed."
+        },
+        {
+          "name": "TransientErrorText",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"Something went wrong. Please try again.\"",
+          "description": "Text shown when a search or resolve fails transiently (State == Transient)."
+        },
+        {
+          "name": "Value",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Selected user's identifying value (e.g. a login)."
+        },
+        {
+          "name": "ValueChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Fires when the selection changes; null when cleared."
+        },
+        {
+          "name": "ValueSelector",
+          "type": "Func<TUser, string>",
+          "isRequired": true,
+          "description": "Extracts the identifying value (e.g. login) from an item.",
+          "editorRequired": true
+        }
+      ],
+      "cssClasses": [
+        "tm-user-picker",
+        "tm-user-picker--disabled",
+        "tm-user-picker__selected",
+        "tm-user-picker__selected-display",
+        "tm-user-picker__selected-login",
+        "tm-user-picker__clear",
+        "tm-user-picker__search",
+        "tm-user-picker__input",
+        "tm-user-picker__results",
+        "tm-user-picker__result-item",
+        "tm-user-picker__result-item--active",
+        "tm-user-picker__result-display",
+        "tm-user-picker__result-login",
+        "tm-user-picker__loading",
+        "tm-user-picker__no-results",
+        "tm-user-picker__transient",
+        "tm-user-picker__retry"
+      ],
+      "examples": [
+        {
+          "title": "Basic user picker",
+          "code": "<TmUserPicker TUser=\"UserDto\"\n    @bind-Value=\"_ownerLogin\"\n    SearchProvider=\"SearchUsersAsync\"\n    ResolveProvider=\"ResolveUserAsync\"\n    ValueSelector=\"@(u => u.Login)\"\n    DisplaySelector=\"@(u => u.DisplayName)\"\n    Label=\"Owner\"\n    Placeholder=\"Search people...\" />\n\n@code {\n    private string? _ownerLogin;\n\n    private async Task<TmPickerSearchResult<UserDto>> SearchUsersAsync(string query, CancellationToken ct)\n    {\n        try\n        {\n            var users = await UserService.SearchAsync(query, ct);\n            return new TmPickerSearchResult<UserDto>(users, users.Count == 0 ? TmPickerFetchState.Empty : TmPickerFetchState.Ok);\n        }\n        catch (Exception) when (!ct.IsCancellationRequested)\n        {\n            return new TmPickerSearchResult<UserDto>([], TmPickerFetchState.Transient);\n        }\n    }\n\n    private async Task<TmPickerResolveResult<UserDto>> ResolveUserAsync(string login, CancellationToken ct)\n    {\n        try\n        {\n            var user = await UserService.GetByLoginAsync(login, ct);\n            return new TmPickerResolveResult<UserDto>(user, TmPickerFetchState.Ok);\n        }\n        catch (Exception) when (!ct.IsCancellationRequested)\n        {\n            return new TmPickerResolveResult<UserDto>(default, TmPickerFetchState.Transient);\n        }\n    }\n}"
+        },
+        {
+          "title": "With avatar image and a custom item template",
+          "code": "<TmUserPicker TUser=\"UserDto\"\n    @bind-Value=\"_assigneeLogin\"\n    SearchProvider=\"SearchUsersAsync\"\n    ResolveProvider=\"ResolveUserAsync\"\n    ValueSelector=\"@(u => u.Login)\"\n    DisplaySelector=\"@(u => u.DisplayName)\"\n    AvatarSrcSelector=\"@(u => u.PhotoUrl)\">\n    <ItemTemplate Context=\"user\">\n        <TmAvatar Name=\"@user.DisplayName\" Src=\"@user.PhotoUrl\" Size=\"AvatarSize.Xs\" />\n        <span>@user.DisplayName</span>\n        <TmBadge Variant=\"BadgeVariant.Secondary\">@user.Department</TmBadge>\n    </ItemTemplate>\n</TmUserPicker>"
+        }
+      ]
+    },
+    {
       "itemName": "TmBreadcrumbs",
       "kind": "Component",
       "category": "Layout",
@@ -15727,6 +16082,211 @@
         {
           "title": "Vertical menu with icons",
           "code": "<TmMenu Items=\"navItems\" Orientation=\"MenuOrientation.Vertical\" />"
+        }
+      ]
+    },
+    {
+      "itemName": "TmNavigationGuard",
+      "kind": "Component",
+      "category": "Navigation",
+      "namespace": "Tempo.Blazor.Components.Navigation",
+      "description": "Guards a form or working area against losing unsaved changes. Registers a router LocationChanging handler so internal navigation while dirty shows a TmDialog confirmation instead of navigating away silently, and optionally arms a browser beforeunload prompt for tab close/refresh. Does not manage locks or working copies itself — it only gates navigation.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Navigation/TmNavigationGuard.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Navigation"
+      ],
+      "parameters": [
+        {
+          "name": "BeforeUnloadPrompt",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true, also registers a browser beforeunload prompt for tab close/refresh. The handler reads a client-cached dirty flag synchronously and never attempts a server call from inside unload."
+        },
+        {
+          "name": "CancelText",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"Stay\"",
+          "description": "Text for the button that cancels navigation and stays on the page."
+        },
+        {
+          "name": "ConfirmLeaveText",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"Leave\"",
+          "description": "Text for the button that confirms leaving (discarding unsaved work)."
+        },
+        {
+          "name": "ConfirmMessage",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"You have unsaved changes. If you leave now, they will be lost.\"",
+          "description": "Message shown in the leave-confirmation dialog."
+        },
+        {
+          "name": "ConfirmTitle",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"Unsaved changes\"",
+          "description": "Title shown in the leave-confirmation dialog."
+        },
+        {
+          "name": "Enabled",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When false, the guard never blocks navigation or arms the browser unload prompt."
+        },
+        {
+          "name": "IsDirty",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether the host currently has unsaved work. Ignored when IsDirtyCallback is set.",
+          "default": "false"
+        },
+        {
+          "name": "IsDirtyCallback",
+          "type": "Func<bool>?",
+          "isRequired": false,
+          "description": "Optional callback evaluated on every navigation check instead of IsDirty. Useful when dirty state is derived (e.g. from a working copy) rather than tracked as a simple flag."
+        },
+        {
+          "name": "OnCancel",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised after the user cancels and stays on the page."
+        },
+        {
+          "name": "OnConfirmLeave",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised after the user confirms leaving, right before navigation is re-issued."
+        }
+      ],
+      "cssClasses": [],
+      "examples": [
+        {
+          "title": "Guard a form with a working-copy dirty flag",
+          "code": "<TmNavigationGuard IsDirty=\"@_isDirty\"\n                    OnConfirmLeave=\"@(() => _isDirty = false)\" />\n\n<EditForm Model=\"@_model\" OnValidSubmit=\"Save\">\n    <TmTextInput @bind-Value=\"_model.Name\" ValueChanged=\"@(v => { _model.Name = v; _isDirty = true; })\" />\n    <TmButton Type=\"ButtonType.Submit\">Save</TmButton>\n</EditForm>"
+        },
+        {
+          "title": "Derived dirty state via callback",
+          "code": "<TmNavigationGuard IsDirtyCallback=\"@(() => WorkingCopy.HasPendingChanges)\" />"
+        },
+        {
+          "title": "Suppress the guard for a post-commit programmatic navigation",
+          "code": "<TmNavigationGuard @ref=\"_guard\" IsDirty=\"@_isDirty\" />\n\n@code {\n    private TmNavigationGuard? _guard;\n\n    private async Task SaveAndCloseAsync()\n    {\n        await SaveAsync();\n        _isDirty = false;\n        _guard?.Suppress();\n        Navigation.NavigateTo(\"/documents\");\n    }\n}"
+        },
+        {
+          "title": "Custom confirmation text",
+          "code": "<TmNavigationGuard IsDirty=\"@_isDirty\"\n                    ConfirmTitle=\"Discard changes?\"\n                    ConfirmMessage=\"Your edits have not been saved yet.\"\n                    ConfirmLeaveText=\"Discard\"\n                    CancelText=\"Keep editing\" />"
+        }
+      ]
+    },
+    {
+      "itemName": "TmScrollSpyNav",
+      "kind": "Component",
+      "category": "Navigation",
+      "namespace": "Tempo.Blazor.Components.Navigation",
+      "description": "Sectional in-page navigation with an optional scroll-spy that tracks the active section as the user scrolls. Renders a minimal, generic item list (id + label); hosts that need badges, status dots, or required markers supply an ItemTemplate. Clicking an item always smooth-scrolls to the matching element id; EnableScrollSpy additionally keeps the active item in sync while scrolling.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Navigation/TmScrollSpyNav.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Navigation"
+      ],
+      "parameters": [
+        {
+          "name": "ActiveId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Active section id. Supports @bind-ActiveId; also updated by scroll-spy when enabled."
+        },
+        {
+          "name": "ActiveIdChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Fires whenever the active section changes, whether by click or scroll-spy."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class(es) for the root element."
+        },
+        {
+          "name": "EnableScrollSpy",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, observes section elements by id and tracks the active one on scroll via a passive scroll listener.",
+          "default": "false"
+        },
+        {
+          "name": "Items",
+          "type": "IReadOnlyList<ScrollSpyNavItem>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Sections to list. Only items with IsVisible == true render, ordered by Order."
+        },
+        {
+          "name": "ItemTemplate",
+          "type": "RenderFragment<ScrollSpyNavItem>?",
+          "isRequired": false,
+          "description": "Optional per-item render override. Falls back to the item's Label when null."
+        },
+        {
+          "name": "OnNavigate",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when a section is explicitly selected by click (not by scroll-spy)."
+        },
+        {
+          "name": "ScrollOffset",
+          "type": "int",
+          "isRequired": false,
+          "default": "120",
+          "description": "Distance from the top (px) at which a section becomes active during scroll-spy."
+        },
+        {
+          "name": "Title",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional rail heading. Rendered only in the SideRail variant."
+        },
+        {
+          "name": "Variant",
+          "type": "ScrollSpyNavVariant",
+          "isRequired": false,
+          "default": "ScrollSpyNavVariant.SideRail",
+          "description": "Layout variant: SideRail (vertical, sticky) or Breadcrumb (horizontal strip)."
+        }
+      ],
+      "cssClasses": [
+        "tm-scroll-spy-nav",
+        "tm-scroll-spy-nav--siderail",
+        "tm-scroll-spy-nav--breadcrumb",
+        "tm-scroll-spy-nav__title",
+        "tm-scroll-spy-nav__list",
+        "tm-scroll-spy-nav__item",
+        "tm-scroll-spy-nav__link",
+        "tm-scroll-spy-nav__link--active",
+        "tm-scroll-spy-nav__label"
+      ],
+      "examples": [
+        {
+          "title": "Side-rail scroll-spy navigation",
+          "code": "<TmScrollSpyNav Items=\"@_sections\" @bind-ActiveId=\"_activeSection\" EnableScrollSpy=\"true\" Title=\"On this page\" />\n\n@code {\n    private string? _activeSection;\n    private readonly IReadOnlyList<ScrollSpyNavItem> _sections =\n    [\n        new(\"overview\", \"Overview\", Order: 0),\n        new(\"pricing\", \"Pricing\", Order: 1),\n        new(\"faq\", \"FAQ\", Order: 2),\n    ];\n}"
+        },
+        {
+          "title": "Breadcrumb variant without scroll-spy",
+          "code": "<TmScrollSpyNav Items=\"@_sections\" Variant=\"ScrollSpyNavVariant.Breadcrumb\" OnNavigate=\"HandleNavigate\" />"
+        },
+        {
+          "title": "Custom item rendering with a badge",
+          "code": "<TmScrollSpyNav Items=\"@_sections\" EnableScrollSpy=\"true\">\n    <ItemTemplate Context=\"item\">\n        <span>@item.Label</span>\n        @if (_errorCounts.TryGetValue(item.Id, out var count) && count > 0)\n        {\n            <TmBadge Variant=\"BadgeVariant.Danger\">@count</TmBadge>\n        }\n    </ItemTemplate>\n</TmScrollSpyNav>"
         }
       ]
     },
@@ -20243,6 +20803,120 @@
       ]
     },
     {
+      "itemName": "TmFormActionBar",
+      "kind": "Component",
+      "category": "Toolbar",
+      "namespace": "Tempo.Blazor.Components.Toolbar",
+      "description": "Sticky/floating action bar for long forms. Groups start content and a status slot on the left with primary, secondary, and danger action slots on the right, inside a max-width-centered, responsive row. Position can be Static, StickyTop, or FloatingBottom, and ShowOnScroll arms a functional passive scroll listener that reveals the bar once the page scrolls past a threshold.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Toolbar/TmFormActionBar.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Toolbar"
+      ],
+      "parameters": [
+        {
+          "name": "AriaLabel",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Accessible toolbar label."
+        },
+        {
+          "name": "ChildContent",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Left/start content, typically a title or breadcrumb."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class(es) for the root element."
+        },
+        {
+          "name": "DangerActions",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Destructive (e.g. Delete) action buttons, rendered left-most within the action cluster."
+        },
+        {
+          "name": "LiveMessage",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional polite aria-live status text announced to assistive technology."
+        },
+        {
+          "name": "Position",
+          "type": "FormActionBarPosition",
+          "isRequired": false,
+          "default": "FormActionBarPosition.Static",
+          "description": "Placement mode: Static (normal flow), StickyTop, or FloatingBottom."
+        },
+        {
+          "name": "PrimaryActions",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Primary (e.g. Save) action buttons, rendered right-most."
+        },
+        {
+          "name": "SecondaryActions",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Secondary (e.g. Cancel) action buttons."
+        },
+        {
+          "name": "ShowOnScroll",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, the bar starts hidden and a passive scroll listener reveals it once the page has been scrolled past a threshold (and hides it again near the top). Functional, not a reserved no-op hook.",
+          "default": "false"
+        },
+        {
+          "name": "Status",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Save/validation status content shown next to the start content (e.g. \"Saved\")."
+        },
+        {
+          "name": "TestId",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"tm-form-action-bar\"",
+          "description": "data-testid for the root element."
+        }
+      ],
+      "cssClasses": [
+        "tm-form-action-bar",
+        "tm-form-action-bar--static",
+        "tm-form-action-bar--sticky-top",
+        "tm-form-action-bar--floating-bottom",
+        "tm-form-action-bar--show-on-scroll",
+        "tm-form-action-bar--visible",
+        "tm-form-action-bar__inner",
+        "tm-form-action-bar__start",
+        "tm-form-action-bar__status",
+        "tm-form-action-bar__end",
+        "tm-form-action-bar__danger",
+        "tm-form-action-bar__secondary",
+        "tm-form-action-bar__primary",
+        "tm-form-action-bar__live-region"
+      ],
+      "examples": [
+        {
+          "title": "Sticky-top form action bar with all four slots",
+          "code": "<TmFormActionBar Position=\"FormActionBarPosition.StickyTop\" AriaLabel=\"Document actions\">\n    <span>Invoice #4821</span>\n    <Status>\n        <TmIcon Name=\"check-circle\" />\n        Saved\n    </Status>\n    <DangerActions>\n        <TmButton Variant=\"ButtonVariant.Danger\" OnClick=\"Delete\">Delete</TmButton>\n    </DangerActions>\n    <SecondaryActions>\n        <TmButton Variant=\"ButtonVariant.Ghost\" OnClick=\"Cancel\">Cancel</TmButton>\n    </SecondaryActions>\n    <PrimaryActions>\n        <TmButton Variant=\"ButtonVariant.Primary\" OnClick=\"Save\">Save</TmButton>\n    </PrimaryActions>\n</TmFormActionBar>"
+        },
+        {
+          "title": "Floating-bottom bar that reveals on scroll",
+          "code": "<TmFormActionBar Position=\"FormActionBarPosition.FloatingBottom\" ShowOnScroll=\"true\">\n    <PrimaryActions>\n        <TmButton Variant=\"ButtonVariant.Primary\" OnClick=\"Save\">Save changes</TmButton>\n    </PrimaryActions>\n</TmFormActionBar>"
+        },
+        {
+          "title": "Static bar with a live status announcement",
+          "code": "<TmFormActionBar LiveMessage=\"@_statusAnnouncement\">\n    <PrimaryActions>\n        <TmButton Type=\"ButtonType.Submit\">Submit</TmButton>\n    </PrimaryActions>\n</TmFormActionBar>"
+        }
+      ]
+    },
+    {
       "itemName": "TmToolbar",
       "kind": "Component",
       "category": "Toolbar",
@@ -21067,6 +21741,34 @@
       "description": "Complete setup for Blazor Web App (.NET 8+) with InteractiveAuto rendering, supporting both Server and WebAssembly modes. Tempo.Blazor handles prerendering, double initialization, and JS interop safety automatically.",
       "code": "// ── Server Program.cs ──\nbuilder.Services.AddRazorComponents()\n    .AddInteractiveServerComponents()\n    .AddInteractiveWebAssemblyComponents();\n\nbuilder.Services.AddTempoBlazor();\n\n// ── Client (WASM) Program.cs ──\nbuilder.Services.AddTempoBlazor();\n\n// ── App.razor ──\n// <HeadOutlet @rendermode=\"InteractiveAuto\" />\n// <Routes @rendermode=\"InteractiveAuto\" />",
       "setupNote": "AddTempoBlazor() registers ITmLocalizer (Singleton), ThemeService (Scoped), and ToastService (Scoped). Call it in both Server and Client Program.cs. Components with JS interop (TmDashboard, TmRichEditor, TmWorkflowDesignerCanvas, TmScheduler) gracefully degrade during prerendering. Multi-targets .NET 8.0, 9.0, and 10.0."
+    },
+    {
+      "title": "TmNavigationGuard - Guard an edit form against unsaved-work loss",
+      "category": "Navigation",
+      "description": "Blocks internal router navigation while a form is dirty, showing a TmDialog confirmation, and arms a browser beforeunload prompt for tab close/refresh. Call Suppress() before a post-commit programmatic navigation so the guard does not re-prompt for work that was just saved.",
+      "code": "<TmNavigationGuard @ref=\"_guard\" IsDirty=\"@_isDirty\" OnConfirmLeave=\"@(() => _isDirty = false)\" />\n\n<EditForm Model=\"@_model\" OnValidSubmit=\"SaveAndCloseAsync\">\n    <TmTextInput @bind-Value=\"_model.Name\"\n        ValueChanged=\"@(v => { _model.Name = v; _isDirty = true; })\" />\n    <TmButton Type=\"ButtonType.Submit\">Save</TmButton>\n</EditForm>\n\n@code {\n    private TmNavigationGuard? _guard;\n    private bool _isDirty;\n    private DocumentModel _model = new();\n\n    private async Task SaveAndCloseAsync()\n    {\n        await DocumentService.SaveAsync(_model);\n        _isDirty = false;\n        _guard?.Suppress();\n        Navigation.NavigateTo(\"/documents\");\n    }\n}",
+      "setupNote": "The beforeunload handler caches the dirty flag client-side and never calls back into .NET during unload, so it stays reliable even when the circuit is unloading. The guard only gates navigation — it does not manage locks or working copies."
+    },
+    {
+      "title": "TmFormActionBar - Sticky save bar for a long form",
+      "category": "Toolbar",
+      "description": "A sticky-top form action bar with status, danger, secondary, and primary action slots. ShowOnScroll can additionally reveal a floating-bottom variant only once the user has scrolled.",
+      "code": "<TmFormActionBar Position=\"FormActionBarPosition.StickyTop\" AriaLabel=\"Form actions\" LiveMessage=\"@_statusAnnouncement\">\n    <span>@_documentTitle</span>\n    <Status>\n        @if (_isDirty)\n        {\n            <span>Unsaved changes</span>\n        }\n        else\n        {\n            <span>Saved</span>\n        }\n    </Status>\n    <DangerActions>\n        <TmButton Variant=\"ButtonVariant.Danger\" OnClick=\"DeleteAsync\">Delete</TmButton>\n    </DangerActions>\n    <SecondaryActions>\n        <TmButton Variant=\"ButtonVariant.Ghost\" OnClick=\"CancelAsync\">Cancel</TmButton>\n    </SecondaryActions>\n    <PrimaryActions>\n        <TmButton Variant=\"ButtonVariant.Primary\" IsLoading=\"@_isSaving\" OnClick=\"SaveAsync\">Save</TmButton>\n    </PrimaryActions>\n</TmFormActionBar>",
+      "setupNote": "ShowOnScroll registers a real passive scroll listener (via a co-located TmFormActionBar.razor.js module) that toggles a CSS class once the page scrolls past a threshold — it is not an inert reserved hook."
+    },
+    {
+      "title": "TmScrollSpyNav - Side-rail in-page navigation with scroll-spy",
+      "category": "Navigation",
+      "description": "A sticky side-rail that tracks the active in-page section while scrolling and smooth-scrolls to a section on click. Items are intentionally minimal (id + label); use ItemTemplate to add badges or status without extending the shared record type.",
+      "code": "<div style=\"display:flex; gap:2rem; align-items:flex-start;\">\n    <TmScrollSpyNav Items=\"@_sections\" @bind-ActiveId=\"_activeSection\"\n        EnableScrollSpy=\"true\" Title=\"On this page\" />\n\n    <div style=\"flex:1;\">\n        <section id=\"overview\">...</section>\n        <section id=\"pricing\">...</section>\n        <section id=\"faq\">...</section>\n    </div>\n</div>\n\n@code {\n    private string? _activeSection;\n    private readonly IReadOnlyList<ScrollSpyNavItem> _sections =\n    [\n        new(\"overview\", \"Overview\", Order: 0),\n        new(\"pricing\", \"Pricing\", Order: 1),\n        new(\"faq\", \"FAQ\", Order: 2),\n    ];\n}",
+      "setupNote": "Clicking an item always smooth-scrolls to the matching element id, independent of EnableScrollSpy. EnableScrollSpy additionally arms a passive scroll listener (TmScrollSpyNav.razor.js) that keeps ActiveId in sync while the user scrolls manually."
+    },
+    {
+      "title": "TmUserPicker - Generic picker with distinct empty vs transient-error states",
+      "category": "Inputs",
+      "description": "A generic entity picker (TUser) with debounced cancellable search and three explicit fetch states. A real network failure renders a retry-affordance error, never a silent \"no results\" message.",
+      "code": "<TmUserPicker TUser=\"UserDto\"\n    @bind-Value=\"_ownerLogin\"\n    SearchProvider=\"SearchUsersAsync\"\n    ResolveProvider=\"ResolveUserAsync\"\n    ValueSelector=\"@(u => u.Login)\"\n    DisplaySelector=\"@(u => u.DisplayName)\"\n    Label=\"Owner\"\n    MinChars=\"2\" />\n\n@code {\n    private string? _ownerLogin;\n\n    private async Task<TmPickerSearchResult<UserDto>> SearchUsersAsync(string query, CancellationToken ct)\n    {\n        try\n        {\n            var users = await UserService.SearchAsync(query, ct);\n            return new TmPickerSearchResult<UserDto>(users, users.Count == 0 ? TmPickerFetchState.Empty : TmPickerFetchState.Ok);\n        }\n        catch (Exception) when (!ct.IsCancellationRequested)\n        {\n            // A real outage — must NOT render as \"no results\".\n            return new TmPickerSearchResult<UserDto>([], TmPickerFetchState.Transient);\n        }\n    }\n\n    private async Task<TmPickerResolveResult<UserDto>> ResolveUserAsync(string login, CancellationToken ct)\n    {\n        var user = await UserService.GetByLoginAsync(login, ct);\n        return new TmPickerResolveResult<UserDto>(user, TmPickerFetchState.Ok);\n    }\n}",
+      "setupNote": "SearchProvider/ResolveProvider are plain async functions — the component does not retry internally. If a caller wants retry-with-backoff before surfacing Transient, implement that inside the provider function itself."
     }
   ],
   "assets": [
@@ -21688,11 +22390,11 @@
     }
   ],
   "summary": {
-    "itemCount": 306,
-    "manualItemCount": 306,
-    "generatedItemCount": 298,
+    "itemCount": 316,
+    "manualItemCount": 316,
+    "generatedItemCount": 308,
     "generatedOnlyItemCount": 0,
-    "componentCount": 180,
-    "publicApiTypeCount": 118
+    "componentCount": 184,
+    "publicApiTypeCount": 124
   }
 }
