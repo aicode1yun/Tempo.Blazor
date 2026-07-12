@@ -15,7 +15,11 @@ public sealed record ToastInstance
     public string Message { get; init; } = string.Empty;
     /// <summary>Optional title for the toast.</summary>
     public string? Title { get; init; }
-    /// <summary>Duration in milliseconds before auto-dismiss. Default is 5000ms.</summary>
+    /// <summary>
+    /// Duration in milliseconds before auto-dismiss. Default is 5000ms.
+    /// A value &lt;= 0 means the toast is "sticky" and will never auto-dismiss
+    /// (the caller must dismiss it manually via <see cref="ToastService.Remove"/> or <see cref="ToastService.Clear"/>).
+    /// </summary>
     public int Duration { get; init; } = 5000;
     /// <summary>Timestamp when the toast was created.</summary>
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
@@ -24,11 +28,16 @@ public sealed record ToastInstance
 /// <summary>
 /// Injectable service for showing toast notifications.
 /// Register as Scoped in DI. Use <see cref="TmToastContainer"/> in layout to render.
+/// Toasts with <see cref="ToastInstance.Duration"/> &gt; 0 auto-dismiss on a server-side
+/// timer (no JS interop required, works under any Blazor render mode). A duration of
+/// 0 (or negative) makes the toast sticky.
 /// </summary>
-public sealed class ToastService
+public sealed class ToastService : IDisposable
 {
     private readonly List<ToastInstance> _toasts = [];
+    private readonly Dictionary<string, Timer> _autoDismissTimers = [];
     private readonly object _lock = new();
+    private bool _disposed;
 
     /// <summary>Fired when a new toast is added.</summary>
     public event Action? OnChange;
@@ -59,19 +68,28 @@ public sealed class ToastService
     public void ShowInfo(string message, string? title = null, int duration = 5000)
         => Add(ToastSeverity.Info, message, title, duration);
 
-    /// <summary>Remove a toast by ID.</summary>
+    /// <summary>Remove a toast by ID. Cancels its pending auto-dismiss timer, if any. Safe to call on an already-removed id.</summary>
     public void Remove(string id)
     {
         lock (_lock)
+        {
             _toasts.RemoveAll(t => t.Id == id);
+            if (_autoDismissTimers.Remove(id, out var timer))
+                timer.Dispose();
+        }
         OnChange?.Invoke();
     }
 
-    /// <summary>Remove all toasts.</summary>
+    /// <summary>Remove all toasts and cancel any pending auto-dismiss timers.</summary>
     public void Clear()
     {
         lock (_lock)
+        {
             _toasts.Clear();
+            foreach (var timer in _autoDismissTimers.Values)
+                timer.Dispose();
+            _autoDismissTimers.Clear();
+        }
         OnChange?.Invoke();
     }
 
@@ -85,7 +103,34 @@ public sealed class ToastService
             Duration = duration
         };
         lock (_lock)
+        {
             _toasts.Add(toast);
+            if (duration > 0)
+            {
+                // Single-shot timer: fires once after `duration` ms, then never again.
+                // Its callback runs on a thread-pool thread and re-enters via Remove(id),
+                // which takes the same lock and disposes this very timer — safe per
+                // System.Threading.Timer semantics (disposing from within its own callback
+                // does not block or throw).
+                var timer = new Timer(_ => Remove(toast.Id), null, duration, Timeout.Infinite);
+                _autoDismissTimers[toast.Id] = timer;
+            }
+        }
         OnChange?.Invoke();
+    }
+
+    /// <summary>Disposes all pending auto-dismiss timers. Called automatically when the DI scope ends.</summary>
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        lock (_lock)
+        {
+            foreach (var timer in _autoDismissTimers.Values)
+                timer.Dispose();
+            _autoDismissTimers.Clear();
+            _disposed = true;
+        }
     }
 }
