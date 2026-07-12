@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Payload delivered to a browser via Web Push (title, body, url, icon, tag) and rendered by the service worker.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmWebPushPayload.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmWebPushPayload"
+}

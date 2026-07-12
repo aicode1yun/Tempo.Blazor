@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+  "description": "Sends an encrypted Web Push message to a browser subscription using VAPID.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IWebPushSender.cs",
+  "documentationStatus": "generated",
+  "itemName": "IWebPushSender"
+}

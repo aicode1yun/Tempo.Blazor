@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Builds a TmNotificationDigest from a recipient's notifications (pure, period + unread filtering, min-items threshold).",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/TmNotificationDigestBuilder.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmNotificationDigestBuilder"
+}

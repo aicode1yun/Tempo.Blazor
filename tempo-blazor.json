@@ -19255,6 +19255,12 @@
           "description": "Clears all stored notifications and unread state."
         },
         {
+          "name": "GetKnownRecipients",
+          "kind": "Method",
+          "type": "IReadOnlyList<TmUserRef>",
+          "description": "Returns a distinct snapshot of recipients that currently have notifications, preferring each recipient's snapshot (with email) and falling back to a minimal ref built from the recipient id."
+        },
+        {
           "name": "GetUnreadCountAsync",
           "kind": "Method",
           "type": "Task<int>",
@@ -19275,6 +19281,26 @@
           "kind": "Method",
           "type": "Task",
           "parameters": [
+            {
+              "name": "recipientUserId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "MarkAsDeliveredAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "notificationId",
+              "type": "string"
+            },
             {
               "name": "recipientUserId",
               "type": "string"
@@ -19327,6 +19353,72 @@
           "kind": "Method",
           "type": "void",
           "description": "Clears all stored notifications."
+        }
+      ]
+    },
+    {
+      "itemName": "InMemoryPushSubscriptionStore",
+      "kind": "Class",
+      "category": "Services",
+      "namespace": "Tempo.Blazor.Services",
+      "description": "In-memory IPushSubscriptionStore for demos and tests (upsert by endpoint, query by user).",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Services/InMemoryPushSubscriptionStore.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Count",
+          "kind": "Field",
+          "type": "int",
+          "description": "Total number of stored subscriptions (test/diagnostic helper)."
+        },
+        {
+          "name": "GetForUserAsync",
+          "kind": "Method",
+          "type": "Task<IReadOnlyList<TmPushSubscription>>",
+          "parameters": [
+            {
+              "name": "userId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "RemoveAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "endpoint",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "SaveAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "subscription",
+              "type": "TmPushSubscription"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
         }
       ]
     },
@@ -19492,6 +19584,16 @@
       ]
     },
     {
+      "itemName": "NotificationDigestRunner",
+      "kind": "Class",
+      "category": "Services",
+      "namespace": "Tempo.Blazor.Services",
+      "description": "Runs one notification-digest pass (query per recipient, build, send) with no hosting dependency; a hosted BackgroundService wraps it.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Services/NotificationDigestRunner.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "PivotEngine",
       "kind": "Class",
       "category": "Services",
@@ -19563,6 +19665,16 @@
           "description": "Toggles between light and dark theme."
         }
       ]
+    },
+    {
+      "itemName": "TmNotificationDigestBuilder",
+      "kind": "Class",
+      "category": "Services",
+      "namespace": "Tempo.Blazor.Services",
+      "description": "Builds a TmNotificationDigest from a recipient's notifications (pure, period + unread filtering, min-items threshold).",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Services/TmNotificationDigestBuilder.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "ToastInstance",
@@ -21576,11 +21688,11 @@
     }
   ],
   "summary": {
-    "itemCount": 303,
-    "manualItemCount": 303,
-    "generatedItemCount": 295,
+    "itemCount": 306,
+    "manualItemCount": 306,
+    "generatedItemCount": 298,
     "generatedOnlyItemCount": 0,
     "componentCount": 180,
-    "publicApiTypeCount": 115
+    "publicApiTypeCount": 118
   }
 }

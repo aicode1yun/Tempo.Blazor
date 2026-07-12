@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+  "description": "Supplies the set of recipients the notification digest runner should build digests for.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/INotificationRecipientSource.cs",
+  "documentationStatus": "generated",
+  "itemName": "INotificationRecipientSource"
+}

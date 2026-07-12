@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Configuration for the periodic notification digest (enabled, interval, minimum items, unread-only).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotificationDigestOptions.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmNotificationDigestOptions"
+}

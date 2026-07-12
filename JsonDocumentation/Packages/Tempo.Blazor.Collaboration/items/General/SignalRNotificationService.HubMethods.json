@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Notifications",
+  "description": "Hub method and client-event names shared by the notification client and the server hub.",
+  "packageId": "Tempo.Blazor.Collaboration",
+  "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRNotificationService.cs",
+  "documentationStatus": "generated",
+  "itemName": "SignalRNotificationService.HubMethods"
+}

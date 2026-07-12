@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Notifications",
+  "description": "SignalR-backed ITmNotificationService: joins the per-user group, receives real-time NotificationReceived/NotificationsChanged pushes, and invokes the hub for reads/writes. Dual-mode (in-process transport or hub URL/connection).",
+  "packageId": "Tempo.Blazor.Collaboration",
+  "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRNotificationService.cs",
+  "documentationStatus": "generated",
+  "itemName": "SignalRNotificationService"
+}

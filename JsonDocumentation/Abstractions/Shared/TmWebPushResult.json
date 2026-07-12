@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Outcome of a single Web Push send; IsExpired (404/410) tells the caller to prune the subscription.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmWebPushResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmWebPushResult"
+}

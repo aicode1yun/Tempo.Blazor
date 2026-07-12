@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+  "description": "Delivers a generated notification digest to a recipient (typically by email).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/INotificationDigestSender.cs",
+  "documentationStatus": "generated",
+  "itemName": "INotificationDigestSender"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+  "description": "Stores browser Web Push subscriptions per user for VAPID delivery (save/remove/get-for-user).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IPushSubscriptionStore.cs",
+  "documentationStatus": "generated",
+  "itemName": "IPushSubscriptionStore"
+}

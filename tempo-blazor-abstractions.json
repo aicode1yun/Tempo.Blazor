@@ -10608,6 +10608,36 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "INotificationDigestSender",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+      "description": "Delivers a generated notification digest to a recipient (typically by email).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/INotificationDigestSender.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "INotificationRecipientSource",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+      "description": "Supplies the set of recipients the notification digest runner should build digests for.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/INotificationRecipientSource.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IPushSubscriptionStore",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+      "description": "Stores browser Web Push subscriptions per user for VAPID delivery (save/remove/get-for-user).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IPushSubscriptionStore.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IScheduleDataProvider",
       "kind": "Interface",
       "category": "Interfaces",
@@ -10994,6 +11024,16 @@
       "description": "Represents basic user information used by TmAvatar, TmUserAvatar, and TmTopBar.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IUserInfo.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IWebPushSender",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+      "description": "Sends an encrypted Web Push message to a browser subscription using VAPID.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IWebPushSender.cs",
       "documentationStatus": "merged"
     },
     {
@@ -26831,6 +26871,12 @@
       "documentationStatus": "merged",
       "members": [
         {
+          "name": "IsDelivered",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Returns true when the notification has been delivered to the recipient's client."
+        },
+        {
           "name": "IsRead",
           "kind": "Field",
           "type": "bool",
@@ -26865,6 +26911,12 @@
           "kind": "Property",
           "type": "DateTimeOffset",
           "description": "UTC timestamp when the notification was created."
+        },
+        {
+          "name": "DeliveredAt",
+          "kind": "Property",
+          "type": "DateTimeOffset?",
+          "description": "UTC timestamp when the notification was delivered to the recipient's client (a push/realtime channel acknowledged receipt). Distinct from ."
         },
         {
           "name": "EntityRef",
@@ -26919,6 +26971,102 @@
           "kind": "Property",
           "type": "string",
           "description": "Notification type key, for example mention or page-edited."
+        }
+      ]
+    },
+    {
+      "itemName": "TmNotificationDigest",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "A per-recipient summary of notifications over a period (items + counts-by-type) for a digest email.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotificationDigest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "RecipientEmail",
+          "kind": "Field",
+          "type": "string?",
+          "description": "Best available recipient email address."
+        },
+        {
+          "name": "TotalCount",
+          "kind": "Field",
+          "type": "int",
+          "description": "Total number of notifications in the digest."
+        },
+        {
+          "name": "GeneratedAt",
+          "kind": "Property",
+          "type": "DateTimeOffset",
+          "description": "When the digest was generated."
+        },
+        {
+          "name": "Items",
+          "kind": "Property",
+          "type": "IReadOnlyList<TmNotification>",
+          "description": "Notifications included in the digest, newest first."
+        },
+        {
+          "name": "PeriodEnd",
+          "kind": "Property",
+          "type": "DateTimeOffset",
+          "description": "End of the period covered by the digest."
+        },
+        {
+          "name": "PeriodStart",
+          "kind": "Property",
+          "type": "DateTimeOffset",
+          "description": "Start of the period covered by the digest."
+        },
+        {
+          "name": "Recipient",
+          "kind": "Property",
+          "type": "TmUserRef?",
+          "description": "Recipient snapshot, when available (used for the email address / display name)."
+        },
+        {
+          "name": "RecipientUserId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Recipient user id."
+        }
+      ]
+    },
+    {
+      "itemName": "TmNotificationDigestOptions",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Configuration for the periodic notification digest (enabled, interval, minimum items, unread-only).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmNotificationDigestOptions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Enabled",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Whether the digest background service is enabled. Default true."
+        },
+        {
+          "name": "Interval",
+          "kind": "Property",
+          "type": "TimeSpan",
+          "description": "How often the digest runs. Default 24 hours."
+        },
+        {
+          "name": "MinItems",
+          "kind": "Property",
+          "type": "int",
+          "description": "Minimum number of items required before a digest is sent to a recipient. Default 1."
+        },
+        {
+          "name": "UnreadOnly",
+          "kind": "Property",
+          "type": "bool",
+          "description": "When true, the digest includes only unread notifications. Default true."
         }
       ]
     },
@@ -27317,6 +27465,54 @@
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmProviderCapabilityExtensions.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmPushSubscription",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "A browser Web Push subscription (endpoint + p256dh/auth keys) associated with a Tempo user for VAPID delivery.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmPushSubscription.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Auth",
+          "kind": "Property",
+          "type": "string",
+          "description": "Client auth secret (base64url, the auth key)."
+        },
+        {
+          "name": "CreatedAt",
+          "kind": "Property",
+          "type": "DateTimeOffset",
+          "description": "When the subscription was registered."
+        },
+        {
+          "name": "Endpoint",
+          "kind": "Property",
+          "type": "string",
+          "description": "Push service endpoint URL (unique per subscription)."
+        },
+        {
+          "name": "ExpirationTime",
+          "kind": "Property",
+          "type": "DateTimeOffset?",
+          "description": "Optional expiration time reported by the push service."
+        },
+        {
+          "name": "P256dh",
+          "kind": "Property",
+          "type": "string",
+          "description": "Client public key (base64url, the p256dh key)."
+        },
+        {
+          "name": "UserId",
+          "kind": "Property",
+          "type": "string",
+          "description": "User this subscription belongs to."
+        }
+      ]
     },
     {
       "itemName": "TmResource",
@@ -27887,6 +28083,138 @@
           "kind": "Property",
           "type": "string?",
           "description": "Optional username or mention handle."
+        }
+      ]
+    },
+    {
+      "itemName": "TmWebPushPayload",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Payload delivered to a browser via Web Push (title, body, url, icon, tag) and rendered by the service worker.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmWebPushPayload.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "FromNotification",
+          "kind": "Method",
+          "type": "TmWebPushPayload",
+          "description": "Builds a payload from a notification.",
+          "parameters": [
+            {
+              "name": "notification",
+              "type": "TmNotification"
+            }
+          ]
+        },
+        {
+          "name": "Badge",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Badge URL (monochrome) shown on some platforms."
+        },
+        {
+          "name": "Body",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Notification body text."
+        },
+        {
+          "name": "Icon",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Icon URL shown in the notification."
+        },
+        {
+          "name": "NotificationId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Correlating notification id, forwarded to the client."
+        },
+        {
+          "name": "Tag",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Grouping tag; a later push with the same tag replaces the earlier one."
+        },
+        {
+          "name": "Title",
+          "kind": "Property",
+          "type": "string",
+          "description": "Notification title."
+        },
+        {
+          "name": "Url",
+          "kind": "Property",
+          "type": "string?",
+          "description": "URL opened when the notification is clicked."
+        }
+      ]
+    },
+    {
+      "itemName": "TmWebPushResult",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Outcome of a single Web Push send; IsExpired (404/410) tells the caller to prune the subscription.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmWebPushResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "IsExpired",
+          "kind": "Field",
+          "type": "bool",
+          "description": "True when the subscription is gone (404/410) and the caller should remove it from the ."
+        },
+        {
+          "name": "Failed",
+          "kind": "Method",
+          "type": "TmWebPushResult",
+          "description": "Convenience factory for a failed result.",
+          "parameters": [
+            {
+              "name": "statusCode",
+              "type": "int"
+            },
+            {
+              "name": "error",
+              "type": "string?",
+              "default": "null"
+            }
+          ]
+        },
+        {
+          "name": "Ok",
+          "kind": "Method",
+          "type": "TmWebPushResult",
+          "description": "Convenience factory for a successful result.",
+          "parameters": [
+            {
+              "name": "statusCode",
+              "type": "int",
+              "default": "201"
+            }
+          ]
+        },
+        {
+          "name": "Error",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Error detail when is false."
+        },
+        {
+          "name": "StatusCode",
+          "kind": "Property",
+          "type": "int",
+          "description": "HTTP status code returned by the push service, when applicable."
+        },
+        {
+          "name": "Success",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Whether the push service accepted the message."
         }
       ]
     },
@@ -33454,11 +33782,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1303,
-    "manualItemCount": 1303,
-    "generatedItemCount": 1286,
+    "itemCount": 1312,
+    "manualItemCount": 1312,
+    "generatedItemCount": 1295,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1286
+    "publicApiTypeCount": 1295
   }
 }
