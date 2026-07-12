@@ -48,6 +48,32 @@ public sealed class ComponentAccessibilityE2ETests : WasmTestBase
     private static readonly string[] CriticalOnly = ["critical"];
     private static readonly string[] CriticalOrSerious = ["critical", "serious"];
 
+    private static async Task SetDarkAsync(IPage page)
+    {
+        await page.EvaluateAsync(
+            """
+            () => {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.documentElement.classList.add('dark', 'tm-dark');
+                document.body.classList.add('dark');
+                document.querySelectorAll('[data-theme]').forEach(el => el.setAttribute('data-theme', 'dark'));
+            }
+            """);
+        await page.WaitForTimeoutAsync(250);
+    }
+
+    // The swept component must be free of critical/serious violations in BOTH light and dark themes.
+    private async Task AssertAxeCleanBothThemesAsync(IPage page, string selector, string screenshotName)
+    {
+        var light = await AxeViolationsAsync(page, selector, CriticalOrSerious);
+        Assert.AreEqual(0, light.Length, "LIGHT:" + Environment.NewLine + string.Join(Environment.NewLine, light));
+
+        await SetDarkAsync(page);
+        await SaveScreenshotAsync(page, screenshotName + "-dark");
+        var dark = await AxeViolationsAsync(page, selector, CriticalOrSerious);
+        Assert.AreEqual(0, dark.Length, "DARK:" + Environment.NewLine + string.Join(Environment.NewLine, dark));
+    }
+
     [TestMethod]
     public async Task FormInputs_Axe_HasNoCriticalOrSeriousViolations()
     {
@@ -59,8 +85,7 @@ public sealed class ComponentAccessibilityE2ETests : WasmTestBase
         // (labeled TmTextInput/TmTextArea incl. a "With Error" instance exercising aria-invalid/
         // aria-describedby/role=alert) — not the whole demo page, whose other widgets + editorial
         // prose carry app-wide pre-existing colour-contrast debt orthogonal to this phase.
-        var violations = await AxeViolationsAsync(page, ".demo-section", CriticalOrSerious);
-        Assert.AreEqual(0, violations.Length, string.Join(Environment.NewLine, violations));
+        await AssertAxeCleanBothThemesAsync(page, ".demo-section", "forms");
     }
 
     [TestMethod]
@@ -72,8 +97,7 @@ public sealed class ComponentAccessibilityE2ETests : WasmTestBase
 
         // Scope to the component instance (toolbar + filters + rows + pagination), not the demo
         // page's editorial prose/callouts/code, which carry their own (out-of-scope) contrast debt.
-        var violations = await AxeViolationsAsync(page, ".tm-data-table-wrapper", CriticalOrSerious);
-        Assert.AreEqual(0, violations.Length, string.Join(Environment.NewLine, violations));
+        await AssertAxeCleanBothThemesAsync(page, ".tm-data-table-wrapper", "data-table");
     }
 
     [TestMethod]
@@ -89,9 +113,8 @@ public sealed class ComponentAccessibilityE2ETests : WasmTestBase
         await Assertions.Expect(page.Locator(".tm-modal")).ToHaveAttributeAsync("aria-modal", "true");
         await SaveScreenshotAsync(page, "modal-open");
 
-        // Open dialog must be free of critical/serious violations.
-        var violations = await AxeViolationsAsync(page, ".tm-modal-overlay", CriticalOrSerious);
-        Assert.AreEqual(0, violations.Length, string.Join(Environment.NewLine, violations));
+        // Open dialog must be free of critical/serious violations in light and dark.
+        await AssertAxeCleanBothThemesAsync(page, ".tm-modal-overlay", "modal-open");
 
         // Close with Escape → focus returns to the trigger (focus restore).
         await page.Keyboard.PressAsync("Escape");

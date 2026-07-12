@@ -34,7 +34,7 @@
 }
 
 .tm-decimal-input__input::placeholder {
-    color: var(--tm-color-gray-600);
+    color: var(--tm-text-secondary);
     font-weight: 400;
 }
 
@@ -49,7 +49,7 @@
     padding: 0;
     background-color: var(--tm-bg-muted);
     border: none;
-    color: var(--tm-color-gray-600);
+    color: var(--tm-text-secondary);
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;
     flex-shrink: 0;
@@ -85,7 +85,7 @@
 .tm-decimal-input__suffix {
     font-size: var(--tm-font-size-xs, 0.8125rem);
     font-weight: 500;
-    color: var(--tm-color-gray-600);
+    color: var(--tm-text-secondary);
     white-space: nowrap;
     user-select: none;
     flex-shrink: 0;

@@ -89,7 +89,8 @@
 
   /* ── Text ───────────────────────────────────────────────────── */
   --tm-text-primary:           var(--tm-color-gray-900);
-  --tm-text-secondary:         var(--tm-color-gray-500);
+  /* gray-600 (>=4.5:1 on white AND on --tm-bg-muted/gray-100) so muted text stays AA on muted panels. */
+  --tm-text-secondary:         var(--tm-color-gray-600);
   /* gray-400 (#9ca3af) is only ~2.8:1 on white; gray-500 (>=4.5:1) keeps muted TEXT (placeholders,
      meta, counts) WCAG AA. Disabled text stays lighter (WCAG exempts disabled controls). */
   --tm-text-tertiary:          var(--tm-color-gray-500);
