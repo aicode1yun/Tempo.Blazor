@@ -30,7 +30,7 @@ public sealed class BuiltInUiRoleVocabularySource : IUiRoleVocabularySource
         R("multi-select", "Multi-select", "Chooses multiple values from a list.", "multiple select", "vice vyberu", "TmMultiSelect"),
         R("cascading-select", "Cascading select", "Chooses values through dependent hierarchical lists.", "dependent select", "kaskadovy vyber", "TmCascadingSelect"),
         R("dropdown", "Dropdown", "Opens a menu or list of options.", "drop down", "rozbalovaci seznam", "TmDropdown", "TmDropdownItem"),
-        R("entity-picker", "Entity picker", "Finds and selects a domain entity.", "record picker", "vyber entity", "TmEntityPicker"),
+        R("entity-picker", "Entity picker", "Finds and selects a domain entity.", "record picker", "vyber entity", "TmEntityPicker", "TmUserPicker"),
         R("expression-editor", "Expression editor", "Builds or edits a formula-like expression.", "rule editor", "editor vyrazu", "TmExpressionEditor"),
         R("password-strength", "Password strength", "Shows password quality feedback.", "password meter", "sila hesla", "TmPasswordStrengthIndicator"),
         R("slider", "Slider", "Selects a numeric value on a continuous scale.", "range input", "posuvnik", "TmSlider"),

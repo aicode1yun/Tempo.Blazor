@@ -7,7 +7,7 @@ Kompletní přehled všech komponent knihovny Tempo.Blazor, jejich parametrů, p
 ## Obsah
 
 1. [Tlačítka (Buttons)](#tlačítka) — TmButton, TmSplitButton, TmCopyButton
-2. [Textové vstupy (Inputs)](#textové-vstupy) — TmTextInput, TmTextArea, TmNumberInput, TmSearchInput, TmEntityPicker, TmExpressionEditor, TmPasswordStrengthIndicator
+2. [Textové vstupy (Inputs)](#textové-vstupy) — TmTextInput, TmTextArea, TmNumberInput, TmSearchInput, TmEntityPicker, TmUserPicker, TmExpressionEditor, TmPasswordStrengthIndicator
 3. [Výběrové komponenty (Select, Dropdown)](#výběrové-komponenty) — TmSelect, TmMultiSelect, TmDropdown, TmFilterableDropdown
 4. [Přepínače a checkboxy](#přepínače-a-checkboxy) — TmCheckbox, TmToggle, TmRadioGroup, TmRadio
 5. [Datové zobrazení (Data Display)](#datové-zobrazení) — TmBadge, TmCard, TmAccordion, TmChip, TmChipGroup, TmChangeDiff, TmEmptyState, TmStatCard, TmKanbanBoard, TmMultiViewList
@@ -526,6 +526,88 @@ Picker pro výběr entity s asynchronním vyhledáváním.
     DisplaySelector="@(p => p.Name)"
     Label="Produkt"
     Error="@(_productCode is null ? "Vyberte produkt" : null)" />
+```
+
+### TmUserPicker\<TUser\>
+
+Generický picker uživatelů/entit s debounced zrušitelným vyhledáváním, výběrem přes pointerdown (registruje se dřív než blur zavře nabídku) a klávesnicovou navigací. Bez závislosti na LDAP/AD — volající dodává vlastní `SearchProvider`/`ResolveProvider`.
+
+**Klíčové pravidlo:** `SearchProvider`/`ResolveProvider` vrací `TmPickerFetchState` (`Ok` / `Empty` / `Transient`). Komponenta tyto tři stavy renderuje ODLIŠNĚ — transientní chyba (síť, timeout) se nikdy nezamění s tichým „žádné výsledky". Komponenta sama neprovádí retry smyčku; to je odpovědnost volajícího uvnitř provideru.
+
+#### CSS třídy
+
+| Třída | Popis |
+|-------|-------|
+| `tm-user-picker` | Root |
+| `tm-user-picker--disabled` | Zakázáno |
+| `tm-user-picker__selected` / `__selected-display` / `__selected-login` | Vybraná hodnota |
+| `tm-user-picker__clear` | Tlačítko zrušení výběru |
+| `tm-user-picker__search` / `__input` | Vyhledávací pole |
+| `tm-user-picker__results` / `__result-item` / `__result-item--active` | Dropdown výsledků |
+| `tm-user-picker__loading` / `__no-results` | Stavy `Ok` (prázdno) / načítání |
+| `tm-user-picker__transient` / `__retry` | Stav `Transient` s tlačítkem opakování |
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Value` | `string?` | `null` | Identifikátor vybrané hodnoty (login) |
+| `ValueChanged` | `EventCallback<string?>` | — | Změna výběru (`null` při zrušení) |
+| `SearchProvider` | `Func<string, CancellationToken, Task<TmPickerSearchResult<TUser>>>` | **povinný** | Debounced vyhledávání |
+| `ResolveProvider` | `Func<string, CancellationToken, Task<TmPickerResolveResult<TUser>>>` | **povinný** | Dotažení entity podle `Value` |
+| `ValueSelector` | `Func<TUser, string>` | **povinný** | Extrakce identifikátoru |
+| `DisplaySelector` | `Func<TUser, string>` | **povinný** | Extrakce zobrazovaného textu |
+| `AvatarNameSelector` | `Func<TUser, string>?` | `null` | Jméno pro iniciály avataru (fallback `DisplaySelector`) |
+| `AvatarSrcSelector` | `Func<TUser, string?>?` | `null` | URL obrázku avataru |
+| `MinChars` | `int` | `3` | Min. znaků pro spuštění hledání |
+| `DebounceMs` | `int` | `300` | Debounce v ms |
+| `Disabled` | `bool` | `false` | Zakázáno |
+| `Label` | `string?` | `null` | Popisek |
+| `Placeholder` | `string?` | `null` | Placeholder |
+| `LoadingText` | `string` | `"Loading..."` | Text během načítání |
+| `NoResultsText` | `string` | `"No results found"` | Text pro stav `Empty` |
+| `TransientErrorText` | `string` | `"Something went wrong. Please try again."` | Text pro stav `Transient` |
+| `RetryText` | `string` | `"Retry"` | Text tlačítka opakování |
+| `ClearLabel` | `string` | `"Clear selection"` | Přístupný popisek tlačítka zrušení |
+| `ItemTemplate` | `RenderFragment<TUser>?` | `null` | Vlastní vykreslení položky výsledku |
+| `EmptyTemplate` | `RenderFragment?` | `null` | Vlastní vykreslení stavu `Empty` |
+| `TransientErrorTemplate` | `RenderFragment<Func<Task>>?` | `null` | Vlastní vykreslení stavu `Transient` (dostane retry callback) |
+| `SelectedTemplate` | `RenderFragment<TUser>?` | `null` | Vlastní vykreslení vybrané hodnoty |
+
+#### Příklady
+
+```razor
+<TmUserPicker TUser="UserDto"
+    @bind-Value="_ownerLogin"
+    SearchProvider="SearchUsersAsync"
+    ResolveProvider="ResolveUserAsync"
+    ValueSelector="@(u => u.Login)"
+    DisplaySelector="@(u => u.DisplayName)"
+    Label="Vlastník"
+    Placeholder="Hledat osobu..." />
+
+@code {
+    private string? _ownerLogin;
+
+    private async Task<TmPickerSearchResult<UserDto>> SearchUsersAsync(string query, CancellationToken ct)
+    {
+        try
+        {
+            var users = await UserService.SearchAsync(query, ct);
+            return new TmPickerSearchResult<UserDto>(users, users.Count == 0 ? TmPickerFetchState.Empty : TmPickerFetchState.Ok);
+        }
+        catch (Exception) when (!ct.IsCancellationRequested)
+        {
+            return new TmPickerSearchResult<UserDto>([], TmPickerFetchState.Transient);
+        }
+    }
+
+    private async Task<TmPickerResolveResult<UserDto>> ResolveUserAsync(string login, CancellationToken ct)
+    {
+        var user = await UserService.GetByLoginAsync(login, ct);
+        return new TmPickerResolveResult<UserDto>(user, TmPickerFetchState.Ok);
+    }
+}
 ```
 
 ### TmExpressionEditor

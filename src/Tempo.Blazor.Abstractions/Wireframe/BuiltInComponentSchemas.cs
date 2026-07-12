@@ -214,6 +214,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmCascadingSelect"] = ["cascading-select"],
             ["TmFilterableDropdown"] = ["dropdown", "search-input"],
             ["TmEntityPicker"] = ["entity-picker"],
+            ["TmUserPicker"] = ["entity-picker"],
             ["TmExpressionEditor"] = ["expression-editor"],
             ["TmPasswordStrengthIndicator"] = ["password-strength"],
             ["TmSlider"] = ["slider"],
@@ -659,6 +660,18 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("label",       "Label",       PropType.String, "Select entity", cat: "Content"),
                 P("placeholder", "Placeholder", PropType.String, "Choose...",     cat: "Content"),
                 P("multiple",    "Multiple",    PropType.Bool,   false,           cat: "Behavior"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmUserPicker", Category = "Inputs", DisplayName = "User Picker",
+            DefaultWidth = 240, DefaultHeight = 56,
+            Props =
+            [
+                P("label",       "Label",       PropType.String, "Owner",      cat: "Content"),
+                P("placeholder", "Placeholder", PropType.String, "Search...",  cat: "Content"),
+                P("disabled",    "Disabled",    PropType.Bool,   false,        cat: "Behavior"),
             ]
         };
 
