@@ -1,0 +1,176 @@
+@namespace Tempo.Blazor.Components.Navigation
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.JSInterop
+@using Tempo.Blazor.Components.Feedback
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+@if (Enabled)
+{
+    <TmDialog Show="@_showConfirm"
+              Type="DialogType.Confirm"
+              Title="@ConfirmTitle"
+              Message="@ConfirmMessage"
+              OkButtonText="@ConfirmLeaveText"
+              CancelButtonText="@CancelText"
+              OnResult="HandleDialogResultAsync" />
+}
+
+@code {
+    private const string ModulePath = "./_content/Tempo.Blazor/Components/Navigation/TmNavigationGuard.razor.js";
+
+    private IDisposable? _locationChangingRegistration;
+    private IJSObjectReference? _module;
+    private bool _showConfirm;
+    private bool _suppressNext;
+    private string? _pendingTargetLocation;
+    private bool? _lastPushedDirty;
+
+    /// <summary>Whether the host currently has unsaved work. Ignored when <see cref="IsDirtyCallback"/> is set.</summary>
+    [Parameter] public bool IsDirty { get; set; }
+
+    /// <summary>
+    /// Optional callback evaluated on every check instead of <see cref="IsDirty"/>. Useful when dirty state is
+    /// derived (e.g. from a working copy) rather than tracked as a simple flag.
+    /// </summary>
+    [Parameter] public Func<bool>? IsDirtyCallback { get; set; }
+
+    /// <summary>When false, the guard never blocks navigation or the browser unload prompt.</summary>
+    [Parameter] public bool Enabled { get; set; } = true;
+
+    /// <summary>Title shown in the leave-confirmation dialog.</summary>
+    [Parameter] public string ConfirmTitle { get; set; } = "Unsaved changes";
+
+    /// <summary>Message shown in the leave-confirmation dialog.</summary>
+    [Parameter] public string ConfirmMessage { get; set; } = "You have unsaved changes. If you leave now, they will be lost.";
+
+    /// <summary>Text for the button that confirms leaving (discarding unsaved work).</summary>
+    [Parameter] public string ConfirmLeaveText { get; set; } = "Leave";
+
+    /// <summary>Text for the button that cancels navigation and stays on the page.</summary>
+    [Parameter] public string CancelText { get; set; } = "Stay";
+
+    /// <summary>When true, also registers a browser `beforeunload` prompt for tab close/refresh.</summary>
+    [Parameter] public bool BeforeUnloadPrompt { get; set; } = true;
+
+    /// <summary>Raised after the user confirms leaving, right before navigation is re-issued.</summary>
+    [Parameter] public EventCallback OnConfirmLeave { get; set; }
+
+    /// <summary>Raised after the user cancels and stays on the page.</summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private bool EffectiveDirty => IsDirtyCallback?.Invoke() ?? IsDirty;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        _locationChangingRegistration = Navigation.RegisterLocationChangingHandler(OnLocationChangingAsync);
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!Enabled || !BeforeUnloadPrompt)
+        {
+            return;
+        }
+
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            await _module.InvokeVoidAsync("register", EffectiveDirty);
+            _lastPushedDirty = EffectiveDirty;
+            return;
+        }
+
+        if (_module is not null && _lastPushedDirty != EffectiveDirty)
+        {
+            _lastPushedDirty = EffectiveDirty;
+            await _module.InvokeVoidAsync("setDirty", EffectiveDirty);
+        }
+    }
+
+    private ValueTask OnLocationChangingAsync(LocationChangingContext context)
+    {
+        if (!Enabled)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        if (_suppressNext)
+        {
+            _suppressNext = false;
+            return ValueTask.CompletedTask;
+        }
+
+        if (!EffectiveDirty)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        context.PreventNavigation();
+        _pendingTargetLocation = context.TargetLocation;
+        _showConfirm = true;
+        StateHasChanged();
+        return ValueTask.CompletedTask;
+    }
+
+    private async Task HandleDialogResultAsync(bool? confirmed)
+    {
+        _showConfirm = false;
+        var targetLocation = _pendingTargetLocation;
+        _pendingTargetLocation = null;
+
+        if (confirmed == true)
+        {
+            if (OnConfirmLeave.HasDelegate)
+            {
+                await OnConfirmLeave.InvokeAsync();
+            }
+
+            if (targetLocation is not null)
+            {
+                _suppressNext = true;
+                Navigation.NavigateTo(targetLocation);
+            }
+        }
+        else if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+
+    /// <summary>
+    /// Bypasses the guard for the single navigation that immediately follows this call. Hosts should call this
+    /// before a post-commit programmatic navigation (e.g. after a successful save) so the guard does not
+    /// re-prompt for work that was just persisted.
+    /// </summary>
+    public void Suppress() => _suppressNext = true;
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        _locationChangingRegistration?.Dispose();
+
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.InvokeVoidAsync("dispose");
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already gone; nothing left to clean up client-side.
+            }
+
+            try
+            {
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+}

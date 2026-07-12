@@ -123,6 +123,13 @@
       "description": "Complete setup for Blazor Web App (.NET 8+) with InteractiveAuto rendering, supporting both Server and WebAssembly modes. Tempo.Blazor handles prerendering, double initialization, and JS interop safety automatically.",
       "code": "// ── Server Program.cs ──\nbuilder.Services.AddRazorComponents()\n    .AddInteractiveServerComponents()\n    .AddInteractiveWebAssemblyComponents();\n\nbuilder.Services.AddTempoBlazor();\n\n// ── Client (WASM) Program.cs ──\nbuilder.Services.AddTempoBlazor();\n\n// ── App.razor ──\n// <HeadOutlet @rendermode=\"InteractiveAuto\" />\n// <Routes @rendermode=\"InteractiveAuto\" />",
       "setupNote": "AddTempoBlazor() registers ITmLocalizer (Singleton), ThemeService (Scoped), and ToastService (Scoped). Call it in both Server and Client Program.cs. Components with JS interop (TmDashboard, TmRichEditor, TmWorkflowDesignerCanvas, TmScheduler) gracefully degrade during prerendering. Multi-targets .NET 8.0, 9.0, and 10.0."
+    },
+    {
+      "title": "TmNavigationGuard - Guard an edit form against unsaved-work loss",
+      "category": "Navigation",
+      "description": "Blocks internal router navigation while a form is dirty, showing a TmDialog confirmation, and arms a browser beforeunload prompt for tab close/refresh. Call Suppress() before a post-commit programmatic navigation so the guard does not re-prompt for work that was just saved.",
+      "code": "<TmNavigationGuard @ref=\"_guard\" IsDirty=\"@_isDirty\" OnConfirmLeave=\"@(() => _isDirty = false)\" />\n\n<EditForm Model=\"@_model\" OnValidSubmit=\"SaveAndCloseAsync\">\n    <TmTextInput @bind-Value=\"_model.Name\"\n        ValueChanged=\"@(v => { _model.Name = v; _isDirty = true; })\" />\n    <TmButton Type=\"ButtonType.Submit\">Save</TmButton>\n</EditForm>\n\n@code {\n    private TmNavigationGuard? _guard;\n    private bool _isDirty;\n    private DocumentModel _model = new();\n\n    private async Task SaveAndCloseAsync()\n    {\n        await DocumentService.SaveAsync(_model);\n        _isDirty = false;\n        _guard?.Suppress();\n        Navigation.NavigateTo(\"/documents\");\n    }\n}",
+      "setupNote": "The beforeunload handler caches the dirty flag client-side and never calls back into .NET during unload, so it stays reliable even when the circuit is unloading. The guard only gates navigation — it does not manage locks or working copies."
     }
   ]
 }

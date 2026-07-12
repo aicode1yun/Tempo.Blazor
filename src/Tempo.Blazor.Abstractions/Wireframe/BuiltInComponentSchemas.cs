@@ -147,6 +147,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmContextMenu"] = ["context-menu"],
             ["TmContextMenuItem"] = ["context-menu"],
             ["TmBottomNavigation"] = ["bottom-navigation"],
+            ["TmNavigationGuard"] = ["navigation-guard"],
             ["TmMenu"] = ["menu"],
             ["TmTopBar"] = ["navigation-bar"],
             ["TmSidebar"] = ["sidebar"],
@@ -1402,6 +1403,17 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             [
                 P("items",     "Items",     PropType.StringList, cat: "Content"),
                 P("showIcons", "Show Icons",PropType.Bool, true, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmNavigationGuard", Category = "Navigation", DisplayName = "Navigation Guard",
+            DefaultWidth = 160, DefaultHeight = 32,
+            Props =
+            [
+                P("isDirty", "Is Dirty", PropType.Bool, false, cat: "State"),
+                P("enabled", "Enabled", PropType.Bool, true, cat: "Behavior"),
             ]
         };
     }

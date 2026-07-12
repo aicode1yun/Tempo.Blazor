@@ -12,7 +12,7 @@ Kompletní přehled všech komponent knihovny Tempo.Blazor, jejich parametrů, p
 4. [Přepínače a checkboxy](#přepínače-a-checkboxy) — TmCheckbox, TmToggle, TmRadioGroup, TmRadio
 5. [Datové zobrazení (Data Display)](#datové-zobrazení) — TmBadge, TmCard, TmAccordion, TmChip, TmChipGroup, TmChangeDiff, TmEmptyState, TmStatCard, TmKanbanBoard, TmMultiViewList
 6. [Zpětná vazba (Feedback)](#zpětná-vazba) — TmAlert, TmModal, TmDialog, TmTooltip, TmSpinner, TmPopover, TmToastContainer, TmNotificationBell, TmProgressBar, TmSkeleton
-7. [Navigace](#navigace) — TmTabs, TmTabPanel, TmContextMenu
+7. [Navigace](#navigace) — TmTabs, TmTabPanel, TmContextMenu, TmNavigationGuard
 8. [Ikony a avatary](#ikony-a-avatary) — TmIcon, TmAvatar, TmAvatarGroup
 9. [Pickery (datum, čas)](#pickery) — TmDatePicker, TmDateRangePicker, TmDateTimePicker, TmDateTimeRangePicker, TmTimePicker, TmTimeInput, TmTimeRangePicker, TmCalendarView
 10. [Formuláře a validace](#formuláře-a-validace) — TmFormField, TmValidatedField, TmValidationSummary, TmFormValidationMessage, TmInlineEdit, TmFormSection, TmFormRow, TmDynamicFormRenderer
@@ -2323,6 +2323,57 @@ Kontextové menu (pravé kliknutí).
         <TmContextMenuItem Label="Smazat" Icon="@IconNames.Trash" IsDangerous="true" OnClick="Delete" />
     </ChildContent>
 </TmContextMenu>
+```
+
+### TmNavigationGuard
+
+Ochrana proti ztrátě neuložených změn. Registruje `NavigationManager.RegisterLocationChangingHandler` pro interní navigaci routeru (při rozpracovaných změnách zobrazí potvrzovací `TmDialog`) a volitelně i prohlížečový `beforeunload` prompt pro zavření/refresh záložky. Komponenta pouze hlídá navigaci — nespravuje zámky ani pracovní kopie.
+
+#### CSS třídy
+
+Žádné vlastní — vzhled potvrzovacího dialogu deleguje na `TmDialog` (`tm-dialog`, `tm-dialog-btn-ok`, `tm-dialog-btn-cancel`, …).
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `IsDirty` | `bool` | `false` | Existují neuložené změny? Ignorováno, pokud je nastaven `IsDirtyCallback` |
+| `IsDirtyCallback` | `Func<bool>?` | `null` | Alternativa k `IsDirty` — vyhodnocena při každé kontrole navigace |
+| `Enabled` | `bool` | `true` | Když `false`, ochrana nikdy neblokuje navigaci ani beforeunload |
+| `ConfirmTitle` | `string` | `"Unsaved changes"` | Titulek potvrzovacího dialogu |
+| `ConfirmMessage` | `string` | `"You have unsaved changes. If you leave now, they will be lost."` | Text potvrzovacího dialogu |
+| `ConfirmLeaveText` | `string` | `"Leave"` | Text tlačítka pro odchod (zahození změn) |
+| `CancelText` | `string` | `"Stay"` | Text tlačítka pro zůstání na stránce |
+| `BeforeUnloadPrompt` | `bool` | `true` | Registruje i prohlížečový `beforeunload` prompt |
+| `OnConfirmLeave` | `EventCallback` | — | Vyvoláno po potvrzení odchodu, těsně před opětovným vydáním navigace |
+| `OnCancel` | `EventCallback` | — | Vyvoláno po zrušení odchodu |
+
+Veřejná metoda `Suppress()` obejde ochranu pro bezprostředně následující navigaci — hostitel ji zavolá před programovou navigací po úspěšném uložení, aby se ochrana znovu nezeptala na práci, která byla právě persistována.
+
+#### Příklady
+
+```razor
+<TmNavigationGuard @ref="_guard" IsDirty="@_isDirty"
+    OnConfirmLeave="@(() => _isDirty = false)" />
+
+<EditForm Model="@_model" OnValidSubmit="SaveAndCloseAsync">
+    <TmTextInput @bind-Value="_model.Name"
+        ValueChanged="@(v => { _model.Name = v; _isDirty = true; })" />
+    <TmButton Type="ButtonType.Submit">Uložit</TmButton>
+</EditForm>
+
+@code {
+    private TmNavigationGuard? _guard;
+    private bool _isDirty;
+
+    private async Task SaveAndCloseAsync()
+    {
+        await DocumentService.SaveAsync(_model);
+        _isDirty = false;
+        _guard?.Suppress();
+        Navigation.NavigateTo("/documents");
+    }
+}
 ```
 
 ---
