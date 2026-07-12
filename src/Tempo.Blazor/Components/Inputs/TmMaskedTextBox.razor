@@ -9,6 +9,7 @@
            type="text"
            value="@DisplayValue"
            placeholder="@Placeholder"
+           aria-label="@(string.IsNullOrEmpty(Label) ? Placeholder : null)"
            disabled="@Disabled"
            readonly="@ReadOnly"
            class="tm-masked-text-box__input @AdditionalCssClass"
