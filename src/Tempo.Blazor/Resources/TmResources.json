@@ -1,4 +1,10 @@
 {
+  "TmColorGradient_Area": "Saturation and brightness",
+  "TmColorGradient_Hue": "Hue",
+  "TmColorGradient_Alpha": "Opacity",
+  "TmColorGradient_Red": "Red",
+  "TmColorGradient_Green": "Green",
+  "TmColorGradient_Blue": "Blue",
   "TmWidgetSelector_Title": "Add Widgets",
   "TmWidgetSelector_Subtitle": "Choose widgets to add to your dashboard",
   "TmWidgetSelector_SearchPlaceholder": "Search widgets...",

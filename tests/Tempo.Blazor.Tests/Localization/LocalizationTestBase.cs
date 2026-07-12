@@ -1933,6 +1933,12 @@ public abstract class LocalizationTestBase : TestContext
 
         // TmChat
         ["TmChat_Placeholder"] = "Type a message…",
+        ["TmColorGradient_Area"] = "Saturation and brightness",
+        ["TmColorGradient_Hue"] = "Hue",
+        ["TmColorGradient_Alpha"] = "Opacity",
+        ["TmColorGradient_Red"] = "Red",
+        ["TmColorGradient_Green"] = "Green",
+        ["TmColorGradient_Blue"] = "Blue",
         ["TmChat_Send"] = "Send message",
         ["TmChat_React"] = "React",
         ["TmChat_Reply"] = "Reply",
@@ -4657,6 +4663,12 @@ public abstract class LocalizationTestBase : TestContext
 
         // TmChat
         ["TmChat_Placeholder"] = "Napište zprávu…",
+        ["TmColorGradient_Area"] = "Sytost a jas",
+        ["TmColorGradient_Hue"] = "Odstín",
+        ["TmColorGradient_Alpha"] = "Průhlednost",
+        ["TmColorGradient_Red"] = "Červená",
+        ["TmColorGradient_Green"] = "Zelená",
+        ["TmColorGradient_Blue"] = "Modrá",
         ["TmChat_Send"] = "Odeslat zprávu",
         ["TmChat_React"] = "Reagovat",
         ["TmChat_Reply"] = "Odpovědět",

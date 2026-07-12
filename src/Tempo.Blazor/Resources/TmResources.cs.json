@@ -1,4 +1,10 @@
 {
+  "TmColorGradient_Area": "Sytost a jas",
+  "TmColorGradient_Hue": "Odstín",
+  "TmColorGradient_Alpha": "Průhlednost",
+  "TmColorGradient_Red": "Červená",
+  "TmColorGradient_Green": "Zelená",
+  "TmColorGradient_Blue": "Modrá",
   "TmWidgetSelector_Title": "Přidat widgety",
   "TmWidgetSelector_Subtitle": "Vyberte widgety pro přidání na nástěnku",
   "TmWidgetSelector_SearchPlaceholder": "Hledat widgety...",

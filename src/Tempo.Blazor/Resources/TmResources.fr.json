@@ -1,4 +1,10 @@
 {
+  "TmColorGradient_Area": "Saturation et luminosité",
+  "TmColorGradient_Hue": "Teinte",
+  "TmColorGradient_Alpha": "Opacité",
+  "TmColorGradient_Red": "Rouge",
+  "TmColorGradient_Green": "Vert",
+  "TmColorGradient_Blue": "Bleu",
   "TmWidgetSelector_Title": "Ajouter des widgets",
   "TmWidgetSelector_Subtitle": "Choisissez les widgets à ajouter à votre tableau de bord",
   "TmWidgetSelector_SearchPlaceholder": "Rechercher des widgets...",
