@@ -1,12 +1,14 @@
 @namespace Tempo.Blazor.Components.Charts
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using System.Globalization
 
 <div class="tm-chart @(Animated ? "tm-chart--animated" : "") @Class"
-     style="width: @Width; height: @Height;">
+     style="width: @Width; height: @Height;"
+     data-testid="@RootTestId("tm-chart")">
 
     @if (Data is null || Data.Labels.Length == 0 || Data.Datasets.Length == 0)
     {
-        <div class="tm-chart__empty">No data available</div>
+        <div class="tm-chart__empty">@Loc["TmChart_NoData"]</div>
     }
     else
     {
@@ -17,17 +19,40 @@
              width="100%"
              height="100%">
             @ChartContent
+            @TooltipContent
         </svg>
 
         @if (ShowLegend && Data.Datasets.Length > 0)
         {
             <div class="tm-chart__legend">
-                @foreach (var item in LegendItems)
+                @for (var li = 0; li < LegendItemList.Count; li++)
                 {
-                    <div class="tm-chart__legend-item">
-                        <span class="tm-chart__legend-color" style="background-color: @item.Color;"></span>
-                        <span class="tm-chart__legend-label">@item.Label</span>
-                    </div>
+                    var i = li;
+                    var item = LegendItemList[i];
+                    var hidden = _hidden.Contains(i);
+                    var cls = "tm-chart__legend-item"
+                        + (InteractiveLegend ? " tm-chart__legend-item--interactive" : "")
+                        + (hidden ? " tm-chart__legend-item--hidden" : "");
+
+                    @if (InteractiveLegend)
+                    {
+                        <button type="button"
+                                class="@cls"
+                                data-testid="@TestId($"chart-legend-{i}")"
+                                aria-pressed="@((!hidden).ToString().ToLowerInvariant())"
+                                aria-label="@string.Format(Loc["TmChart_ToggleSeries"], item.Label)"
+                                @onclick="() => ToggleSeriesAsync(i)">
+                            <span class="tm-chart__legend-color" style="background-color: @item.Color;"></span>
+                            <span class="tm-chart__legend-label">@item.Label</span>
+                        </button>
+                    }
+                    else
+                    {
+                        <div class="@cls">
+                            <span class="tm-chart__legend-color" style="background-color: @item.Color;"></span>
+                            <span class="tm-chart__legend-label">@item.Label</span>
+                        </div>
+                    }
                 }
             </div>
         }
@@ -55,17 +80,106 @@
     [Parameter] public EventCallback<ChartSegment> OnSegmentClick { get; set; }
     [Parameter] public string? Class { get; set; }
 
+    /// <summary>
+    /// When true, legend items become buttons that toggle the visibility of their series
+    /// (multi-dataset legend) or single value (per-value legend). The component owns the
+    /// hidden state; <see cref="OnSeriesToggle"/> reports each change. Default false keeps
+    /// the legend non-interactive (backward compatible).
+    /// </summary>
+    [Parameter] public bool InteractiveLegend { get; set; }
+
+    /// <summary>Raised whenever a legend series/value is toggled.</summary>
+    [Parameter] public EventCallback<ChartSeriesToggle> OnSeriesToggle { get; set; }
+
+    /// <summary>Shows a tooltip when hovering a bar, point or slice. Default true.</summary>
+    [Parameter] public bool ShowTooltip { get; set; } = true;
+
+    /// <summary>Optional custom tooltip content; when null a rich default tooltip is used.</summary>
+    [Parameter] public RenderFragment<ChartTooltipContext>? TooltipTemplate { get; set; }
+
     private string ChartAriaLabel => $"{Type} chart";
     private record LegendItem(string Label, string Color);
+
+    // Hidden legend-item indices (meaning depends on per-value vs per-dataset legend).
+    private readonly HashSet<int> _hidden = [];
+
+    // Hovered tooltip state (pure Blazor; rendered as an in-SVG foreignObject).
+    private ChartTooltipContext? _tip;
+    private double _tipX, _tipY;
+
+    private bool PerValue => UsesPerValueLegend();
+
+    private bool IsSegmentHidden(int datasetIndex, int valueIndex)
+        => PerValue ? _hidden.Contains(valueIndex) : _hidden.Contains(datasetIndex);
+
+    private async Task ToggleSeriesAsync(int legendIndex)
+    {
+        bool hidden;
+        if (_hidden.Contains(legendIndex))
+        {
+            _hidden.Remove(legendIndex);
+            hidden = false;
+        }
+        else
+        {
+            _hidden.Add(legendIndex);
+            hidden = true;
+        }
+
+        _tip = null; // avoid a stale tooltip after the layout changes
+        var label = legendIndex < LegendItemList.Count ? LegendItemList[legendIndex].Label : "";
+        if (OnSeriesToggle.HasDelegate)
+        {
+            await OnSeriesToggle.InvokeAsync(new ChartSeriesToggle(legendIndex, label, hidden));
+        }
+    }
+
+    private void ShowTip(int datasetIndex, int valueIndex, double anchorX, double anchorY)
+    {
+        if (!ShowTooltip) return;
+        _tip = TipContext(datasetIndex, valueIndex);
+        _tipX = anchorX;
+        _tipY = anchorY;
+    }
+
+    private void HideTip() => _tip = null;
+
+    private ChartTooltipContext TipContext(int datasetIndex, int valueIndex)
+    {
+        var ds = Data.Datasets[datasetIndex];
+        var label = valueIndex < Data.Labels.Length ? Data.Labels[valueIndex] : "";
+        var value = valueIndex < ds.Values.Length ? ds.Values[valueIndex] : 0;
+        return new ChartTooltipContext(datasetIndex, valueIndex, label, value, ds.Label, SegmentColor(datasetIndex, valueIndex));
+    }
+
+    private string SegmentColor(int datasetIndex, int valueIndex)
+    {
+        var ds = Data.Datasets[datasetIndex];
+        return Type is ChartType.Pie or ChartType.Donut
+            ? ResolveFillColor(ds, valueIndex, Palette[valueIndex % Palette.Length])
+            : ResolveFillColor(ds, valueIndex, ds.BackgroundColor ?? ds.Color);
+    }
 
     private double MaxVal
     {
         get
         {
             double m = 0;
-            foreach (var ds in Data.Datasets)
-                foreach (var v in ds.Values)
-                    if (v > m) m = v;
+            if (PerValue)
+            {
+                var ds = Data.Datasets[0];
+                for (int i = 0; i < ds.Values.Length; i++)
+                    if (!IsSegmentHidden(0, i) && ds.Values[i] > m) m = ds.Values[i];
+            }
+            else
+            {
+                for (int di = 0; di < Data.Datasets.Length; di++)
+                {
+                    if (IsSegmentHidden(di, -1)) continue;
+                    foreach (var v in Data.Datasets[di].Values)
+                        if (v > m) m = v;
+                }
+            }
             return m == 0 ? 1 : m;
         }
     }
@@ -77,26 +191,27 @@
         ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6",
          "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1"];
 
-    private IEnumerable<LegendItem> LegendItems
+    private List<LegendItem> LegendItemList
     {
         get
         {
+            var list = new List<LegendItem>();
             if (UsesPerValueLegend())
             {
                 var dataset = Data.Datasets[0];
                 var count = Math.Min(Data.Labels.Length, dataset.Values.Length);
                 for (int i = 0; i < count; i++)
                 {
-                    yield return new LegendItem(Data.Labels[i], ResolveLegendFillColor(dataset, i));
+                    list.Add(new LegendItem(Data.Labels[i], ResolveLegendFillColor(dataset, i)));
                 }
-
-                yield break;
+                return list;
             }
 
             foreach (var dataset in Data.Datasets)
             {
-                yield return new LegendItem(dataset.Label, dataset.Color);
+                list.Add(new LegendItem(dataset.Label, dataset.Color));
             }
+            return list;
         }
     }
 
@@ -172,12 +287,13 @@
             var ds = Data.Datasets[di];
             for (int i = 0; i < ds.Values.Length && i < lc; i++)
             {
+                if (IsSegmentHidden(di, i)) continue;
                 var val = ds.Values[i];
                 var bh = (val / max) * CH;
                 var x = PL + i * gw + gp + di * bw;
                 var y = PT + CH - bh;
                 var fill = ResolveFillColor(ds, i, ds.BackgroundColor ?? ds.Color);
-                SvgRect(b, x, y, bw, bh, fill, ds.Color, di, i);
+                SvgRect(b, x, y, bw, bh, fill, ds.Color, di, i, x + bw / 2, y);
                 if (ShowValues)
                     SvgText(b, "tm-chart__value", x + bw / 2, y - 4, F(val), "middle");
             }
@@ -203,11 +319,12 @@
             var ds = Data.Datasets[di];
             for (int i = 0; i < ds.Values.Length && i < lc; i++)
             {
+                if (IsSegmentHidden(di, i)) continue;
                 var val = ds.Values[i];
                 var bw = (val / max) * CW;
                 var y = PT + i * gh + gp + di * bh;
                 var fill = ResolveFillColor(ds, i, ds.BackgroundColor ?? ds.Color);
-                SvgRect(b, PL, y, bw, bh, fill, ds.Color, di, i);
+                SvgRect(b, PL, y, bw, bh, fill, ds.Color, di, i, PL + bw + 6, y + bh / 2);
                 if (ShowValues)
                     SvgText(b, "tm-chart__value", PL + bw + 6, y + bh / 2 + 4, F(val), "start");
             }
@@ -227,6 +344,7 @@
 
         for (int di = 0; di < Data.Datasets.Length; di++)
         {
+            if (IsSegmentHidden(di, -1)) continue;
             var ds = Data.Datasets[di];
             var sb = new System.Text.StringBuilder();
             for (int i = 0; i < ds.Values.Length && i < lc; i++)
@@ -266,6 +384,11 @@
                 b.AddAttribute(8, "onclick",
                     EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
                         this, () => HandleClick(cdi, ci)));
+                b.AddAttribute(9, "onmouseover",
+                    EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                        this, () => ShowTip(cdi, ci, x, y)));
+                b.AddAttribute(10, "onmouseout",
+                    EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, HideTip));
                 b.CloseElement();
 
                 if (ShowValues)
@@ -285,7 +408,9 @@
     {
         if (Data.Datasets.Length == 0) return;
         var ds = Data.Datasets[0];
-        var total = ds.Values.Sum();
+        double total = 0;
+        for (int i = 0; i < ds.Values.Length; i++)
+            if (!IsSegmentHidden(0, i)) total += ds.Values[i];
         if (total == 0) return;
 
         var cx = SvgW / 2.0;
@@ -297,10 +422,12 @@
 
         for (int i = 0; i < ds.Values.Length; i++)
         {
+            if (IsSegmentHidden(0, i)) continue;
             var val = ds.Values[i];
             var sliceAngle = (val / total) * 2 * Math.PI;
             var endAngle = startAngle + sliceAngle;
             var largeArc = sliceAngle > Math.PI ? 1 : 0;
+            var midAngle = startAngle + sliceAngle / 2;
 
             var x1o = cx + outerR * Math.Cos(startAngle);
             var y1o = cy + outerR * Math.Sin(startAngle);
@@ -327,6 +454,10 @@
             }
 
             var capturedI = i;
+            var labelR = (outerR + innerR) / 2;
+            var tipX = cx + labelR * Math.Cos(midAngle);
+            var tipY = cy + labelR * Math.Sin(midAngle);
+
             b.OpenElement(0, "path");
             b.AddAttribute(1, "class", "tm-chart__slice");
             b.AddAttribute(2, "d", path);
@@ -336,11 +467,65 @@
             b.AddAttribute(6, "onclick",
                 EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
                     this, () => HandleClick(0, capturedI)));
+            b.AddAttribute(7, "onmouseover",
+                EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                    this, () => ShowTip(0, capturedI, tipX, tipY)));
+            b.AddAttribute(8, "onmouseout",
+                EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, HideTip));
             b.CloseElement();
 
             startAngle = endAngle;
         }
     }
+
+    // ── Tooltip (rendered inside the SVG as a foreignObject so it scales with the chart; no JS) ──
+
+    private RenderFragment TooltipContent => builder =>
+    {
+        if (!ShowTooltip || _tip is null) return;
+
+        const double boxW = 160, boxH = 50;
+        var fx = Math.Clamp(_tipX - boxW / 2, 0, SvgW - boxW);
+        var fy = Math.Clamp(_tipY - boxH - 8, 0, SvgH - boxH);
+
+        builder.OpenElement(0, "foreignObject");
+        builder.AddAttribute(1, "class", "tm-chart__tooltip-fo");
+        builder.AddAttribute(2, "x", F(fx));
+        builder.AddAttribute(3, "y", F(fy));
+        builder.AddAttribute(4, "width", F(boxW));
+        builder.AddAttribute(5, "height", F(boxH));
+        builder.AddAttribute(6, "style", "pointer-events:none;overflow:visible;");
+
+        builder.OpenElement(7, "div");
+        builder.AddAttribute(8, "xmlns", "http://www.w3.org/1999/xhtml");
+        builder.AddAttribute(9, "class", "tm-chart__tooltip");
+        builder.AddAttribute(10, "data-testid", TestId("chart-tooltip"));
+
+        if (TooltipTemplate is not null)
+        {
+            builder.AddContent(11, TooltipTemplate(_tip));
+        }
+        else
+        {
+            builder.OpenElement(12, "span");
+            builder.AddAttribute(13, "class", "tm-chart__tooltip-label");
+            builder.AddContent(14, _tip.Label);
+            builder.CloseElement();
+
+            builder.OpenElement(15, "span");
+            builder.AddAttribute(16, "class", "tm-chart__tooltip-value");
+            builder.OpenElement(17, "span");
+            builder.AddAttribute(18, "class", "tm-chart__tooltip-dot");
+            builder.AddAttribute(19, "style", $"background-color:{_tip.Color};");
+            builder.CloseElement();
+            var text = Data.Datasets.Length > 1 ? $"{_tip.DatasetLabel}: {F(_tip.Value)}" : F(_tip.Value);
+            builder.AddContent(20, text);
+            builder.CloseElement();
+        }
+
+        builder.CloseElement(); // div
+        builder.CloseElement(); // foreignObject
+    };
 
     // ── SVG element helpers ──
 
@@ -398,7 +583,8 @@
     }
 
     private void SvgRect(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b,
-        double x, double y, double w, double h, string fill, string stroke, int di, int idx)
+        double x, double y, double w, double h, string fill, string stroke, int di, int idx,
+        double tipX, double tipY)
     {
         var cdi = di;
         var ci = idx;
@@ -414,6 +600,11 @@
         b.AddAttribute(9, "onclick",
             EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
                 this, () => HandleClick(cdi, ci)));
+        b.AddAttribute(10, "onmouseover",
+            EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                this, () => ShowTip(cdi, ci, tipX, tipY)));
+        b.AddAttribute(11, "onmouseout",
+            EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, HideTip));
         b.CloseElement();
     }
 }

@@ -1,4 +1,6 @@
 {
+  "TmChart_NoData": "Aucune donnée disponible",
+  "TmChart_ToggleSeries": "Basculer {0}",
   "TmColorGradient_Area": "Saturation et luminosité",
   "TmColorGradient_Hue": "Teinte",
   "TmColorGradient_Alpha": "Opacité",

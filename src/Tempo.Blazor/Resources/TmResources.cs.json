@@ -1,4 +1,6 @@
 {
+  "TmChart_NoData": "Žádná data k dispozici",
+  "TmChart_ToggleSeries": "Přepnout {0}",
   "TmColorGradient_Area": "Sytost a jas",
   "TmColorGradient_Hue": "Odstín",
   "TmColorGradient_Alpha": "Průhlednost",

@@ -211,6 +211,8 @@ public abstract class LocalizationTestBase : TestContext
     private static MockTmLocalizer BuildEnglishLocalizer() => new(new Dictionary<string, string>
     {
         // Document open dialog
+        ["TmChart_NoData"]                      = "No data available",
+        ["TmChart_ToggleSeries"]                = "Toggle {0}",
         ["TmDocumentOpenDialog_Title"]          = "Open document",
         ["TmDocumentOpenDialog_Search"]         = "Search documents",
         ["TmDocumentOpenDialog_NewFolder"]      = "New folder",
