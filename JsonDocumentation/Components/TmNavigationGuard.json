@@ -1,0 +1,97 @@
+{
+  "itemName": "TmNavigationGuard",
+  "kind": "Component",
+  "category": "Navigation",
+  "description": "Guards a form or working area against losing unsaved changes. Registers a router LocationChanging handler so internal navigation while dirty shows a TmDialog confirmation instead of navigating away silently, and optionally arms a browser beforeunload prompt for tab close/refresh. Does not manage locks or working copies itself — it only gates navigation.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Navigation"
+  ],
+  "parameters": [
+    {
+      "name": "IsDirty",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Whether the host currently has unsaved work. Ignored when IsDirtyCallback is set."
+    },
+    {
+      "name": "IsDirtyCallback",
+      "type": "Func<bool>?",
+      "isRequired": false,
+      "description": "Optional callback evaluated on every navigation check instead of IsDirty. Useful when dirty state is derived (e.g. from a working copy) rather than tracked as a simple flag."
+    },
+    {
+      "name": "Enabled",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When false, the guard never blocks navigation or arms the browser unload prompt."
+    },
+    {
+      "name": "ConfirmTitle",
+      "type": "string",
+      "isRequired": false,
+      "default": "Unsaved changes",
+      "description": "Title shown in the leave-confirmation dialog."
+    },
+    {
+      "name": "ConfirmMessage",
+      "type": "string",
+      "isRequired": false,
+      "default": "You have unsaved changes. If you leave now, they will be lost.",
+      "description": "Message shown in the leave-confirmation dialog."
+    },
+    {
+      "name": "ConfirmLeaveText",
+      "type": "string",
+      "isRequired": false,
+      "default": "Leave",
+      "description": "Text for the button that confirms leaving (discarding unsaved work)."
+    },
+    {
+      "name": "CancelText",
+      "type": "string",
+      "isRequired": false,
+      "default": "Stay",
+      "description": "Text for the button that cancels navigation and stays on the page."
+    },
+    {
+      "name": "BeforeUnloadPrompt",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When true, also registers a browser beforeunload prompt for tab close/refresh. The handler reads a client-cached dirty flag synchronously and never attempts a server call from inside unload."
+    },
+    {
+      "name": "OnConfirmLeave",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised after the user confirms leaving, right before navigation is re-issued."
+    },
+    {
+      "name": "OnCancel",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised after the user cancels and stays on the page."
+    }
+  ],
+  "cssClasses": [],
+  "examples": [
+    {
+      "title": "Guard a form with a working-copy dirty flag",
+      "code": "<TmNavigationGuard IsDirty=\"@_isDirty\"\n                    OnConfirmLeave=\"@(() => _isDirty = false)\" />\n\n<EditForm Model=\"@_model\" OnValidSubmit=\"Save\">\n    <TmTextInput @bind-Value=\"_model.Name\" ValueChanged=\"@(v => { _model.Name = v; _isDirty = true; })\" />\n    <TmButton Type=\"ButtonType.Submit\">Save</TmButton>\n</EditForm>"
+    },
+    {
+      "title": "Derived dirty state via callback",
+      "code": "<TmNavigationGuard IsDirtyCallback=\"@(() => WorkingCopy.HasPendingChanges)\" />"
+    },
+    {
+      "title": "Suppress the guard for a post-commit programmatic navigation",
+      "code": "<TmNavigationGuard @ref=\"_guard\" IsDirty=\"@_isDirty\" />\n\n@code {\n    private TmNavigationGuard? _guard;\n\n    private async Task SaveAndCloseAsync()\n    {\n        await SaveAsync();\n        _isDirty = false;\n        _guard?.Suppress();\n        Navigation.NavigateTo(\"/documents\");\n    }\n}"
+    },
+    {
+      "title": "Custom confirmation text",
+      "code": "<TmNavigationGuard IsDirty=\"@_isDirty\"\n                    ConfirmTitle=\"Discard changes?\"\n                    ConfirmMessage=\"Your edits have not been saved yet.\"\n                    ConfirmLeaveText=\"Discard\"\n                    CancelText=\"Keep editing\" />"
+    }
+  ]
+}

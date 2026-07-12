@@ -90,7 +90,7 @@ public class TempoPackFormControlsRenderTests
     [Fact]
     public void FormControlTypeList_CoversCompleteSchemaCategories()
     {
-        FormControlTypes.Should().HaveCount(43);
+        FormControlTypes.Should().HaveCount(44);
         FormControlTypes.Should().Contain(["TmButton", "TmTextInput", "TmQueryInput", "TmDecimalInput", "TmDatePicker", "TmTagPicker", "TmDropdownItem"]);
     }
 

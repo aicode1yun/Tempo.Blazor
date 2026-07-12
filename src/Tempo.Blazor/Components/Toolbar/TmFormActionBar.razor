@@ -1,0 +1,161 @@
+@namespace Tempo.Blazor.Components.Toolbar
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div class="@RootClass"
+     role="toolbar"
+     aria-label="@AriaLabel"
+     data-testid="@TestId"
+     @attributes="AdditionalAttributes"
+     @ref="_rootRef">
+    @if (!string.IsNullOrWhiteSpace(LiveMessage))
+    {
+        <span class="tm-form-action-bar__live-region visually-hidden" aria-live="polite">@LiveMessage</span>
+    }
+    <div class="tm-form-action-bar__inner">
+        <div class="tm-form-action-bar__start">
+            @ChildContent
+            @if (Status is not null)
+            {
+                <div class="tm-form-action-bar__status">@Status</div>
+            }
+        </div>
+        @if (PrimaryActions is not null || SecondaryActions is not null || DangerActions is not null)
+        {
+            <div class="tm-form-action-bar__end">
+                @if (DangerActions is not null)
+                {
+                    <div class="tm-form-action-bar__danger">@DangerActions</div>
+                }
+                @if (SecondaryActions is not null)
+                {
+                    <div class="tm-form-action-bar__secondary">@SecondaryActions</div>
+                }
+                @if (PrimaryActions is not null)
+                {
+                    <div class="tm-form-action-bar__primary">@PrimaryActions</div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private const string ModulePath = "./_content/Tempo.Blazor/Components/Toolbar/TmFormActionBar.razor.js";
+
+    private ElementReference _rootRef;
+    private IJSObjectReference? _module;
+    private bool _listenerRegistered;
+
+    /// <summary>Placement mode. Defaults to normal document flow.</summary>
+    [Parameter] public FormActionBarPosition Position { get; set; } = FormActionBarPosition.Static;
+
+    /// <summary>
+    /// When true, the bar starts hidden and a passive scroll listener reveals it once the page has been
+    /// scrolled past a threshold (and hides it again near the top). Functional — not a reserved no-op hook.
+    /// </summary>
+    [Parameter] public bool ShowOnScroll { get; set; }
+
+    /// <summary>Primary (e.g. Save) action buttons.</summary>
+    [Parameter] public RenderFragment? PrimaryActions { get; set; }
+
+    /// <summary>Secondary (e.g. Cancel) action buttons.</summary>
+    [Parameter] public RenderFragment? SecondaryActions { get; set; }
+
+    /// <summary>Destructive (e.g. Delete) action buttons.</summary>
+    [Parameter] public RenderFragment? DangerActions { get; set; }
+
+    /// <summary>Save/validation status content shown next to the start content.</summary>
+    [Parameter] public RenderFragment? Status { get; set; }
+
+    /// <summary>Left/start content, typically a title or breadcrumb.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Accessible toolbar label.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    /// <summary>Optional polite status text announced to assistive technology.</summary>
+    [Parameter] public string? LiveMessage { get; set; }
+
+    /// <summary>Additional CSS class for the root element.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Test id for the root element.</summary>
+    [Parameter] public string TestId { get; set; } = "tm-form-action-bar";
+
+    /// <summary>Additional HTML attributes for the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string RootClass
+    {
+        get
+        {
+            var positionClass = Position switch
+            {
+                FormActionBarPosition.StickyTop => "tm-form-action-bar--sticky-top",
+                FormActionBarPosition.FloatingBottom => "tm-form-action-bar--floating-bottom",
+                _ => "tm-form-action-bar--static"
+            };
+
+            var classes = new List<string> { "tm-form-action-bar", positionClass };
+            if (ShowOnScroll)
+            {
+                classes.Add("tm-form-action-bar--show-on-scroll");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Class))
+            {
+                classes.Add(Class);
+            }
+
+            return string.Join(" ", classes);
+        }
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ShowOnScroll && !_listenerRegistered)
+        {
+            _listenerRegistered = true;
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            await _module.InvokeVoidAsync("register", _rootRef);
+        }
+        else if (!ShowOnScroll && _listenerRegistered)
+        {
+            _listenerRegistered = false;
+            await DisposeModuleAsync();
+        }
+    }
+
+    private async Task DisposeModuleAsync()
+    {
+        if (_module is null)
+        {
+            return;
+        }
+
+        var module = _module;
+        _module = null;
+
+        try
+        {
+            await module.InvokeVoidAsync("dispose");
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+
+        try
+        {
+            await module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync() => await DisposeModuleAsync();
+}

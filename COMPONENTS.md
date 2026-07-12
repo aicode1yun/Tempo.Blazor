@@ -7,12 +7,12 @@ Kompletní přehled všech komponent knihovny Tempo.Blazor, jejich parametrů, p
 ## Obsah
 
 1. [Tlačítka (Buttons)](#tlačítka) — TmButton, TmSplitButton, TmCopyButton
-2. [Textové vstupy (Inputs)](#textové-vstupy) — TmTextInput, TmTextArea, TmNumberInput, TmSearchInput, TmEntityPicker, TmExpressionEditor, TmPasswordStrengthIndicator
+2. [Textové vstupy (Inputs)](#textové-vstupy) — TmTextInput, TmTextArea, TmNumberInput, TmSearchInput, TmEntityPicker, TmUserPicker, TmExpressionEditor, TmPasswordStrengthIndicator
 3. [Výběrové komponenty (Select, Dropdown)](#výběrové-komponenty) — TmSelect, TmMultiSelect, TmDropdown, TmFilterableDropdown
 4. [Přepínače a checkboxy](#přepínače-a-checkboxy) — TmCheckbox, TmToggle, TmRadioGroup, TmRadio
 5. [Datové zobrazení (Data Display)](#datové-zobrazení) — TmBadge, TmCard, TmAccordion, TmChip, TmChipGroup, TmChangeDiff, TmEmptyState, TmStatCard, TmKanbanBoard, TmMultiViewList
 6. [Zpětná vazba (Feedback)](#zpětná-vazba) — TmAlert, TmModal, TmDialog, TmTooltip, TmSpinner, TmPopover, TmToastContainer, TmNotificationBell, TmProgressBar, TmSkeleton
-7. [Navigace](#navigace) — TmTabs, TmTabPanel, TmContextMenu
+7. [Navigace](#navigace) — TmTabs, TmTabPanel, TmContextMenu, TmNavigationGuard, TmScrollSpyNav
 8. [Ikony a avatary](#ikony-a-avatary) — TmIcon, TmAvatar, TmAvatarGroup
 9. [Pickery (datum, čas)](#pickery) — TmDatePicker, TmDateRangePicker, TmDateTimePicker, TmDateTimeRangePicker, TmTimePicker, TmTimeInput, TmTimeRangePicker, TmCalendarView
 10. [Formuláře a validace](#formuláře-a-validace) — TmFormField, TmValidatedField, TmValidationSummary, TmFormValidationMessage, TmInlineEdit, TmFormSection, TmFormRow, TmDynamicFormRenderer
@@ -24,7 +24,7 @@ Kompletní přehled všech komponent knihovny Tempo.Blazor, jejich parametrů, p
 16. [Grafy](#grafy) — TmChart
 17. [Tagy](#tagy) — TmTagPicker
 18. [Timeline](#timeline) — TmTimeline
-19. [Toolbar](#toolbar) — TmToolbar, TmToolbarButton, TmToolbarDivider
+19. [Toolbar](#toolbar) — TmToolbar, TmToolbarButton, TmToolbarDivider, TmFormActionBar
 20. [TreeView](#treeview) — TmTreeView
 21. [Scheduler](#scheduler) — TmScheduler
 22. [Dashboard](#dashboard) — TmDashboard
@@ -40,7 +40,7 @@ Kompletní přehled všech komponent knihovny Tempo.Blazor, jejich parametrů, p
 17. [Grafy](#grafy) — TmChart, TmStockChart, TmSparkline, TmGauge
 18. [Tagy](#tagy) — TmTagPicker
 19. [Timeline](#timeline) — TmTimeline
-20. [Toolbar](#toolbar) — TmToolbar, TmToolbarButton, TmToolbarDivider
+20. [Toolbar](#toolbar) — TmToolbar, TmToolbarButton, TmToolbarDivider, TmFormActionBar
 21. [TreeView](#treeview) — TmTreeView
 22. [Scheduler](#scheduler) — TmScheduler
 23. [Dashboard](#dashboard) — TmDashboard
@@ -526,6 +526,88 @@ Picker pro výběr entity s asynchronním vyhledáváním.
     DisplaySelector="@(p => p.Name)"
     Label="Produkt"
     Error="@(_productCode is null ? "Vyberte produkt" : null)" />
+```
+
+### TmUserPicker\<TUser\>
+
+Generický picker uživatelů/entit s debounced zrušitelným vyhledáváním, výběrem přes pointerdown (registruje se dřív než blur zavře nabídku) a klávesnicovou navigací. Bez závislosti na LDAP/AD — volající dodává vlastní `SearchProvider`/`ResolveProvider`.
+
+**Klíčové pravidlo:** `SearchProvider`/`ResolveProvider` vrací `TmPickerFetchState` (`Ok` / `Empty` / `Transient`). Komponenta tyto tři stavy renderuje ODLIŠNĚ — transientní chyba (síť, timeout) se nikdy nezamění s tichým „žádné výsledky". Komponenta sama neprovádí retry smyčku; to je odpovědnost volajícího uvnitř provideru.
+
+#### CSS třídy
+
+| Třída | Popis |
+|-------|-------|
+| `tm-user-picker` | Root |
+| `tm-user-picker--disabled` | Zakázáno |
+| `tm-user-picker__selected` / `__selected-display` / `__selected-login` | Vybraná hodnota |
+| `tm-user-picker__clear` | Tlačítko zrušení výběru |
+| `tm-user-picker__search` / `__input` | Vyhledávací pole |
+| `tm-user-picker__results` / `__result-item` / `__result-item--active` | Dropdown výsledků |
+| `tm-user-picker__loading` / `__no-results` | Stavy `Ok` (prázdno) / načítání |
+| `tm-user-picker__transient` / `__retry` | Stav `Transient` s tlačítkem opakování |
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Value` | `string?` | `null` | Identifikátor vybrané hodnoty (login) |
+| `ValueChanged` | `EventCallback<string?>` | — | Změna výběru (`null` při zrušení) |
+| `SearchProvider` | `Func<string, CancellationToken, Task<TmPickerSearchResult<TUser>>>` | **povinný** | Debounced vyhledávání |
+| `ResolveProvider` | `Func<string, CancellationToken, Task<TmPickerResolveResult<TUser>>>` | **povinný** | Dotažení entity podle `Value` |
+| `ValueSelector` | `Func<TUser, string>` | **povinný** | Extrakce identifikátoru |
+| `DisplaySelector` | `Func<TUser, string>` | **povinný** | Extrakce zobrazovaného textu |
+| `AvatarNameSelector` | `Func<TUser, string>?` | `null` | Jméno pro iniciály avataru (fallback `DisplaySelector`) |
+| `AvatarSrcSelector` | `Func<TUser, string?>?` | `null` | URL obrázku avataru |
+| `MinChars` | `int` | `3` | Min. znaků pro spuštění hledání |
+| `DebounceMs` | `int` | `300` | Debounce v ms |
+| `Disabled` | `bool` | `false` | Zakázáno |
+| `Label` | `string?` | `null` | Popisek |
+| `Placeholder` | `string?` | `null` | Placeholder |
+| `LoadingText` | `string` | `"Loading..."` | Text během načítání |
+| `NoResultsText` | `string` | `"No results found"` | Text pro stav `Empty` |
+| `TransientErrorText` | `string` | `"Something went wrong. Please try again."` | Text pro stav `Transient` |
+| `RetryText` | `string` | `"Retry"` | Text tlačítka opakování |
+| `ClearLabel` | `string` | `"Clear selection"` | Přístupný popisek tlačítka zrušení |
+| `ItemTemplate` | `RenderFragment<TUser>?` | `null` | Vlastní vykreslení položky výsledku |
+| `EmptyTemplate` | `RenderFragment?` | `null` | Vlastní vykreslení stavu `Empty` |
+| `TransientErrorTemplate` | `RenderFragment<Func<Task>>?` | `null` | Vlastní vykreslení stavu `Transient` (dostane retry callback) |
+| `SelectedTemplate` | `RenderFragment<TUser>?` | `null` | Vlastní vykreslení vybrané hodnoty |
+
+#### Příklady
+
+```razor
+<TmUserPicker TUser="UserDto"
+    @bind-Value="_ownerLogin"
+    SearchProvider="SearchUsersAsync"
+    ResolveProvider="ResolveUserAsync"
+    ValueSelector="@(u => u.Login)"
+    DisplaySelector="@(u => u.DisplayName)"
+    Label="Vlastník"
+    Placeholder="Hledat osobu..." />
+
+@code {
+    private string? _ownerLogin;
+
+    private async Task<TmPickerSearchResult<UserDto>> SearchUsersAsync(string query, CancellationToken ct)
+    {
+        try
+        {
+            var users = await UserService.SearchAsync(query, ct);
+            return new TmPickerSearchResult<UserDto>(users, users.Count == 0 ? TmPickerFetchState.Empty : TmPickerFetchState.Ok);
+        }
+        catch (Exception) when (!ct.IsCancellationRequested)
+        {
+            return new TmPickerSearchResult<UserDto>([], TmPickerFetchState.Transient);
+        }
+    }
+
+    private async Task<TmPickerResolveResult<UserDto>> ResolveUserAsync(string login, CancellationToken ct)
+    {
+        var user = await UserService.GetByLoginAsync(login, ct);
+        return new TmPickerResolveResult<UserDto>(user, TmPickerFetchState.Ok);
+    }
+}
 ```
 
 ### TmExpressionEditor
@@ -2323,6 +2405,118 @@ Kontextové menu (pravé kliknutí).
         <TmContextMenuItem Label="Smazat" Icon="@IconNames.Trash" IsDangerous="true" OnClick="Delete" />
     </ChildContent>
 </TmContextMenu>
+```
+
+### TmNavigationGuard
+
+Ochrana proti ztrátě neuložených změn. Registruje `NavigationManager.RegisterLocationChangingHandler` pro interní navigaci routeru (při rozpracovaných změnách zobrazí potvrzovací `TmDialog`) a volitelně i prohlížečový `beforeunload` prompt pro zavření/refresh záložky. Komponenta pouze hlídá navigaci — nespravuje zámky ani pracovní kopie.
+
+#### CSS třídy
+
+Žádné vlastní — vzhled potvrzovacího dialogu deleguje na `TmDialog` (`tm-dialog`, `tm-dialog-btn-ok`, `tm-dialog-btn-cancel`, …).
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `IsDirty` | `bool` | `false` | Existují neuložené změny? Ignorováno, pokud je nastaven `IsDirtyCallback` |
+| `IsDirtyCallback` | `Func<bool>?` | `null` | Alternativa k `IsDirty` — vyhodnocena při každé kontrole navigace |
+| `Enabled` | `bool` | `true` | Když `false`, ochrana nikdy neblokuje navigaci ani beforeunload |
+| `ConfirmTitle` | `string` | `"Unsaved changes"` | Titulek potvrzovacího dialogu |
+| `ConfirmMessage` | `string` | `"You have unsaved changes. If you leave now, they will be lost."` | Text potvrzovacího dialogu |
+| `ConfirmLeaveText` | `string` | `"Leave"` | Text tlačítka pro odchod (zahození změn) |
+| `CancelText` | `string` | `"Stay"` | Text tlačítka pro zůstání na stránce |
+| `BeforeUnloadPrompt` | `bool` | `true` | Registruje i prohlížečový `beforeunload` prompt |
+| `OnConfirmLeave` | `EventCallback` | — | Vyvoláno po potvrzení odchodu, těsně před opětovným vydáním navigace |
+| `OnCancel` | `EventCallback` | — | Vyvoláno po zrušení odchodu |
+
+Veřejná metoda `Suppress()` obejde ochranu pro bezprostředně následující navigaci — hostitel ji zavolá před programovou navigací po úspěšném uložení, aby se ochrana znovu nezeptala na práci, která byla právě persistována.
+
+#### Příklady
+
+```razor
+<TmNavigationGuard @ref="_guard" IsDirty="@_isDirty"
+    OnConfirmLeave="@(() => _isDirty = false)" />
+
+<EditForm Model="@_model" OnValidSubmit="SaveAndCloseAsync">
+    <TmTextInput @bind-Value="_model.Name"
+        ValueChanged="@(v => { _model.Name = v; _isDirty = true; })" />
+    <TmButton Type="ButtonType.Submit">Uložit</TmButton>
+</EditForm>
+
+@code {
+    private TmNavigationGuard? _guard;
+    private bool _isDirty;
+
+    private async Task SaveAndCloseAsync()
+    {
+        await DocumentService.SaveAsync(_model);
+        _isDirty = false;
+        _guard?.Suppress();
+        Navigation.NavigateTo("/documents");
+    }
+}
+```
+
+### TmScrollSpyNav
+
+Sekční in-page navigace s volitelným scroll-spy sledováním aktivní sekce. Položky jsou záměrně minimální (jen `Id`+`Label`) — pro odznaky/stavy použij `ItemTemplate`. Klik vždy plynule scrolluje na odpovídající element podle `id`; `EnableScrollSpy` navíc udržuje aktivní položku synchronizovanou při ručním scrollování.
+
+#### CSS třídy
+
+| Třída | Popis |
+|-------|-------|
+| `tm-scroll-spy-nav` | Kořenový `<nav>` |
+| `tm-scroll-spy-nav--siderail` / `--breadcrumb` | Varianta layoutu |
+| `tm-scroll-spy-nav__title` | Nadpis (jen SideRail) |
+| `tm-scroll-spy-nav__list` | Seznam položek |
+| `tm-scroll-spy-nav__item` | Obal položky |
+| `tm-scroll-spy-nav__link` | Tlačítko položky (nativní `<button>`, klávesnicově dostupné) |
+| `tm-scroll-spy-nav__link--active` | Aktivní položka |
+| `tm-scroll-spy-nav__label` | Výchozí text položky (když není `ItemTemplate`) |
+
+Aktivní položka má vždy `aria-current="true"` i `data-active="true"` (ostatní explicitně `"false"`).
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Items` | `IReadOnlyList<ScrollSpyNavItem>` | `[]` | Sekce k zobrazení; jen `IsVisible == true`, seřazeno podle `Order` |
+| `ItemTemplate` | `RenderFragment<ScrollSpyNavItem>?` | `null` | Vlastní vykreslení položky místo výchozího labelu |
+| `ActiveId` | `string?` | `null` | Aktivní sekce (`@bind-ActiveId`) |
+| `ActiveIdChanged` | `EventCallback<string>` | — | Změna aktivní sekce (klik i scroll-spy) |
+| `OnNavigate` | `EventCallback<string>` | — | Explicitní výběr kliknutím |
+| `EnableScrollSpy` | `bool` | `false` | Zapne pasivní scroll listener sledující aktivní sekci |
+| `ScrollOffset` | `int` | `120` | Práh (px) od horního okraje pro scroll-spy |
+| `Variant` | `ScrollSpyNavVariant` | `SideRail` | `SideRail` (svislý, sticky) nebo `Breadcrumb` (vodorovný pruh) |
+| `Title` | `string?` | `null` | Nadpis panelu (jen SideRail) |
+| `Class` | `string?` | `null` | Další CSS třídy |
+
+`ScrollSpyNavItem` je `record(string Id, string Label, bool IsVisible = true, int Order = 0)`.
+
+#### Příklady
+
+```razor
+<div style="display:flex; gap:2rem; align-items:flex-start;">
+    <TmScrollSpyNav Items="@_sections" @bind-ActiveId="_activeSection"
+        EnableScrollSpy="true" Title="Na této stránce" />
+
+    <div style="flex:1;">
+        <section id="overview">...</section>
+        <section id="pricing">...</section>
+        <section id="faq">...</section>
+    </div>
+</div>
+
+@code {
+    private string? _activeSection;
+    private readonly IReadOnlyList<ScrollSpyNavItem> _sections =
+    [
+        new("overview", "Přehled", Order: 0),
+        new("pricing", "Ceník", Order: 1),
+        new("faq", "Časté dotazy", Order: 2),
+    ];
+}
 ```
 
 ---
@@ -4931,6 +5125,69 @@ Oddělovač v toolbaru (bez parametrů).
         <TmButton Variant="ButtonVariant.Primary" OnClick="Publish">Publikovat</TmButton>
     </Actions>
 </TmToolbar>
+```
+
+### TmFormActionBar
+
+Sticky/plovoucí panel akcí pro dlouhé formuláře. Vlevo obsah (`ChildContent`) + stav (`Status`), vpravo akce rozdělené na `DangerActions` / `SecondaryActions` / `PrimaryActions`. `ShowOnScroll` je funkční — reálný pasivní scroll listener (`TmFormActionBar.razor.js`), ne rezervovaný no-op hook.
+
+#### CSS třídy
+
+| Třída | Popis |
+|-------|-------|
+| `tm-form-action-bar` | Kořenový kontejner (`role="toolbar"`) |
+| `tm-form-action-bar--static` / `--sticky-top` / `--floating-bottom` | Varianta pozice |
+| `tm-form-action-bar--show-on-scroll` | Skryto, dokud scroll nepřekročí práh |
+| `tm-form-action-bar--visible` | Přidáno JS listenerem po překročení prahu |
+| `tm-form-action-bar__inner` | Vnitřní řádek (max-width, centrováno) |
+| `tm-form-action-bar__start` | Levá strana (obsah + stav) |
+| `tm-form-action-bar__status` | Wrapper slotu `Status` |
+| `tm-form-action-bar__end` | Pravá strana (akce) |
+| `tm-form-action-bar__danger` / `__secondary` / `__primary` | Wrappery jednotlivých slotů akcí |
+| `tm-form-action-bar__live-region` | Skrytá `aria-live="polite"` oblast pro `LiveMessage` |
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Position` | `FormActionBarPosition` | `Static` | `Static`, `StickyTop`, nebo `FloatingBottom` |
+| `ShowOnScroll` | `bool` | `false` | Funkční odhalení po scrollu přes práh (reálný listener) |
+| `PrimaryActions` | `RenderFragment?` | `null` | Primární akce (např. Uložit), zcela vpravo |
+| `SecondaryActions` | `RenderFragment?` | `null` | Sekundární akce (např. Zrušit) |
+| `DangerActions` | `RenderFragment?` | `null` | Nebezpečné akce (např. Smazat), nejvíce vlevo v clusteru akcí |
+| `Status` | `RenderFragment?` | `null` | Stav uložení/validace vedle levého obsahu |
+| `ChildContent` | `RenderFragment?` | `null` | Levý/start obsah (titulek apod.) |
+| `AriaLabel` | `string?` | `null` | Přístupný popisek toolbaru |
+| `LiveMessage` | `string?` | `null` | Volitelný polite status text pro asistivní technologie |
+| `Class` | `string?` | `null` | Další CSS třídy |
+| `TestId` | `string` | `"tm-form-action-bar"` | `data-testid` kořenového elementu |
+| `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy |
+
+#### Příklady
+
+```razor
+<TmFormActionBar Position="FormActionBarPosition.StickyTop" AriaLabel="Akce formuláře" LiveMessage="@_statusAnnouncement">
+    <span>@_documentTitle</span>
+    <Status>
+        @(_isDirty ? "Neuložené změny" : "Uloženo")
+    </Status>
+    <DangerActions>
+        <TmButton Variant="ButtonVariant.Danger" OnClick="DeleteAsync">Smazat</TmButton>
+    </DangerActions>
+    <SecondaryActions>
+        <TmButton Variant="ButtonVariant.Ghost" OnClick="CancelAsync">Zrušit</TmButton>
+    </SecondaryActions>
+    <PrimaryActions>
+        <TmButton Variant="ButtonVariant.Primary" IsLoading="@_isSaving" OnClick="SaveAsync">Uložit</TmButton>
+    </PrimaryActions>
+</TmFormActionBar>
+
+@* Plovoucí spodní panel, viditelný až po scrollu *@
+<TmFormActionBar Position="FormActionBarPosition.FloatingBottom" ShowOnScroll="true">
+    <PrimaryActions>
+        <TmButton Variant="ButtonVariant.Primary" OnClick="SaveAsync">Uložit změny</TmButton>
+    </PrimaryActions>
+</TmFormActionBar>
 ```
 
 ---

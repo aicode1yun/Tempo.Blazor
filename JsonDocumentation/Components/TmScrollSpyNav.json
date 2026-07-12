@@ -1,0 +1,100 @@
+{
+  "itemName": "TmScrollSpyNav",
+  "kind": "Component",
+  "category": "Navigation",
+  "description": "Sectional in-page navigation with an optional scroll-spy that tracks the active section as the user scrolls. Renders a minimal, generic item list (id + label); hosts that need badges, status dots, or required markers supply an ItemTemplate. Clicking an item always smooth-scrolls to the matching element id; EnableScrollSpy additionally keeps the active item in sync while scrolling.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Navigation"
+  ],
+  "parameters": [
+    {
+      "name": "Items",
+      "type": "IReadOnlyList<ScrollSpyNavItem>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Sections to list. Only items with IsVisible == true render, ordered by Order."
+    },
+    {
+      "name": "ItemTemplate",
+      "type": "RenderFragment<ScrollSpyNavItem>?",
+      "isRequired": false,
+      "description": "Optional per-item render override. Falls back to the item's Label when null."
+    },
+    {
+      "name": "ActiveId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Active section id. Supports @bind-ActiveId; also updated by scroll-spy when enabled."
+    },
+    {
+      "name": "ActiveIdChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fires whenever the active section changes, whether by click or scroll-spy."
+    },
+    {
+      "name": "OnNavigate",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Raised when a section is explicitly selected by click (not by scroll-spy)."
+    },
+    {
+      "name": "EnableScrollSpy",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "When true, observes section elements by id and tracks the active one on scroll via a passive scroll listener."
+    },
+    {
+      "name": "ScrollOffset",
+      "type": "int",
+      "isRequired": false,
+      "default": "120",
+      "description": "Distance from the top (px) at which a section becomes active during scroll-spy."
+    },
+    {
+      "name": "Variant",
+      "type": "ScrollSpyNavVariant",
+      "isRequired": false,
+      "default": "SideRail",
+      "description": "Layout variant: SideRail (vertical, sticky) or Breadcrumb (horizontal strip)."
+    },
+    {
+      "name": "Title",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional rail heading. Rendered only in the SideRail variant."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class(es) for the root element."
+    }
+  ],
+  "cssClasses": [
+    "tm-scroll-spy-nav",
+    "tm-scroll-spy-nav--siderail",
+    "tm-scroll-spy-nav--breadcrumb",
+    "tm-scroll-spy-nav__title",
+    "tm-scroll-spy-nav__list",
+    "tm-scroll-spy-nav__item",
+    "tm-scroll-spy-nav__link",
+    "tm-scroll-spy-nav__link--active",
+    "tm-scroll-spy-nav__label"
+  ],
+  "examples": [
+    {
+      "title": "Side-rail scroll-spy navigation",
+      "code": "<TmScrollSpyNav Items=\"@_sections\" @bind-ActiveId=\"_activeSection\" EnableScrollSpy=\"true\" Title=\"On this page\" />\n\n@code {\n    private string? _activeSection;\n    private readonly IReadOnlyList<ScrollSpyNavItem> _sections =\n    [\n        new(\"overview\", \"Overview\", Order: 0),\n        new(\"pricing\", \"Pricing\", Order: 1),\n        new(\"faq\", \"FAQ\", Order: 2),\n    ];\n}"
+    },
+    {
+      "title": "Breadcrumb variant without scroll-spy",
+      "code": "<TmScrollSpyNav Items=\"@_sections\" Variant=\"ScrollSpyNavVariant.Breadcrumb\" OnNavigate=\"HandleNavigate\" />"
+    },
+    {
+      "title": "Custom item rendering with a badge",
+      "code": "<TmScrollSpyNav Items=\"@_sections\" EnableScrollSpy=\"true\">\n    <ItemTemplate Context=\"item\">\n        <span>@item.Label</span>\n        @if (_errorCounts.TryGetValue(item.Id, out var count) && count > 0)\n        {\n            <TmBadge Variant=\"BadgeVariant.Danger\">@count</TmBadge>\n        }\n    </ItemTemplate>\n</TmScrollSpyNav>"
+    }
+  ]
+}

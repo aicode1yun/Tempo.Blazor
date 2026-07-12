@@ -1,0 +1,179 @@
+{
+  "itemName": "TmUserPicker",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "Generic entity/user picker with debounced cancellable search, three-state fetch rendering (Ok / Empty / Transient), keyboard navigation, and pointer-down selection so a click registers before blur closes the dropdown. Generic over TUser — no directory/LDAP dependency. Callers supply plain async SearchProvider/ResolveProvider functions that each return an explicit TmPickerFetchState; the component never conflates a transient fetch failure with a genuine empty result, and never bakes in its own retry loop.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "Value",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Selected user's identifying value (e.g. a login)."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Fires when the selection changes; null when cleared."
+    },
+    {
+      "name": "SearchProvider",
+      "type": "Func<string, CancellationToken, Task<TmPickerSearchResult<TUser>>>",
+      "isRequired": true,
+      "description": "Debounced, cancellable search. Returns items plus an explicit TmPickerFetchState; never bakes in retries — callers own that policy."
+    },
+    {
+      "name": "ResolveProvider",
+      "type": "Func<string, CancellationToken, Task<TmPickerResolveResult<TUser>>>",
+      "isRequired": true,
+      "description": "Resolves Value into a full TUser for display when the value is set externally (e.g. bound from a saved record)."
+    },
+    {
+      "name": "ValueSelector",
+      "type": "Func<TUser, string>",
+      "isRequired": true,
+      "description": "Extracts the identifying value (e.g. login) from an item."
+    },
+    {
+      "name": "DisplaySelector",
+      "type": "Func<TUser, string>",
+      "isRequired": true,
+      "description": "Extracts the display text from an item."
+    },
+    {
+      "name": "AvatarNameSelector",
+      "type": "Func<TUser, string>?",
+      "isRequired": false,
+      "description": "Extracts the name used to derive avatar initials. Falls back to DisplaySelector when omitted."
+    },
+    {
+      "name": "AvatarSrcSelector",
+      "type": "Func<TUser, string?>?",
+      "isRequired": false,
+      "description": "Extracts an avatar image URL, if any."
+    },
+    {
+      "name": "MinChars",
+      "type": "int",
+      "isRequired": false,
+      "default": "3",
+      "description": "Minimum characters before a search fires."
+    },
+    {
+      "name": "DebounceMs",
+      "type": "int",
+      "isRequired": false,
+      "default": "300",
+      "description": "Debounce delay in ms before a search fires."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Disables the input and hides the clear button."
+    },
+    {
+      "name": "Label",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Field label."
+    },
+    {
+      "name": "Placeholder",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Search box placeholder."
+    },
+    {
+      "name": "LoadingText",
+      "type": "string",
+      "isRequired": false,
+      "default": "Loading...",
+      "description": "Text shown while a search is in flight."
+    },
+    {
+      "name": "NoResultsText",
+      "type": "string",
+      "isRequired": false,
+      "default": "No results found",
+      "description": "Text shown when a search succeeds but finds nothing (State == Empty)."
+    },
+    {
+      "name": "TransientErrorText",
+      "type": "string",
+      "isRequired": false,
+      "default": "Something went wrong. Please try again.",
+      "description": "Text shown when a search or resolve fails transiently (State == Transient)."
+    },
+    {
+      "name": "RetryText",
+      "type": "string",
+      "isRequired": false,
+      "default": "Retry",
+      "description": "Retry button text for the transient-error state."
+    },
+    {
+      "name": "ClearLabel",
+      "type": "string",
+      "isRequired": false,
+      "default": "Clear selection",
+      "description": "Accessible label for the clear-selection button."
+    },
+    {
+      "name": "ItemTemplate",
+      "type": "RenderFragment<TUser>?",
+      "isRequired": false,
+      "description": "Overrides rendering of a single result item. Defaults to TmAvatar + display + [login]."
+    },
+    {
+      "name": "EmptyTemplate",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Overrides the no-results message."
+    },
+    {
+      "name": "TransientErrorTemplate",
+      "type": "RenderFragment<Func<Task>>?",
+      "isRequired": false,
+      "description": "Overrides the transient-error UI. Receives a retry callback that re-invokes whichever provider (search or resolve) just failed."
+    },
+    {
+      "name": "SelectedTemplate",
+      "type": "RenderFragment<TUser>?",
+      "isRequired": false,
+      "description": "Overrides rendering of the selected value's chip."
+    }
+  ],
+  "cssClasses": [
+    "tm-user-picker",
+    "tm-user-picker--disabled",
+    "tm-user-picker__selected",
+    "tm-user-picker__selected-display",
+    "tm-user-picker__selected-login",
+    "tm-user-picker__clear",
+    "tm-user-picker__search",
+    "tm-user-picker__input",
+    "tm-user-picker__results",
+    "tm-user-picker__result-item",
+    "tm-user-picker__result-item--active",
+    "tm-user-picker__result-display",
+    "tm-user-picker__result-login",
+    "tm-user-picker__loading",
+    "tm-user-picker__no-results",
+    "tm-user-picker__transient",
+    "tm-user-picker__retry"
+  ],
+  "examples": [
+    {
+      "title": "Basic user picker",
+      "code": "<TmUserPicker TUser=\"UserDto\"\n    @bind-Value=\"_ownerLogin\"\n    SearchProvider=\"SearchUsersAsync\"\n    ResolveProvider=\"ResolveUserAsync\"\n    ValueSelector=\"@(u => u.Login)\"\n    DisplaySelector=\"@(u => u.DisplayName)\"\n    Label=\"Owner\"\n    Placeholder=\"Search people...\" />\n\n@code {\n    private string? _ownerLogin;\n\n    private async Task<TmPickerSearchResult<UserDto>> SearchUsersAsync(string query, CancellationToken ct)\n    {\n        try\n        {\n            var users = await UserService.SearchAsync(query, ct);\n            return new TmPickerSearchResult<UserDto>(users, users.Count == 0 ? TmPickerFetchState.Empty : TmPickerFetchState.Ok);\n        }\n        catch (Exception) when (!ct.IsCancellationRequested)\n        {\n            return new TmPickerSearchResult<UserDto>([], TmPickerFetchState.Transient);\n        }\n    }\n\n    private async Task<TmPickerResolveResult<UserDto>> ResolveUserAsync(string login, CancellationToken ct)\n    {\n        try\n        {\n            var user = await UserService.GetByLoginAsync(login, ct);\n            return new TmPickerResolveResult<UserDto>(user, TmPickerFetchState.Ok);\n        }\n        catch (Exception) when (!ct.IsCancellationRequested)\n        {\n            return new TmPickerResolveResult<UserDto>(default, TmPickerFetchState.Transient);\n        }\n    }\n}"
+    },
+    {
+      "title": "With avatar image and a custom item template",
+      "code": "<TmUserPicker TUser=\"UserDto\"\n    @bind-Value=\"_assigneeLogin\"\n    SearchProvider=\"SearchUsersAsync\"\n    ResolveProvider=\"ResolveUserAsync\"\n    ValueSelector=\"@(u => u.Login)\"\n    DisplaySelector=\"@(u => u.DisplayName)\"\n    AvatarSrcSelector=\"@(u => u.PhotoUrl)\">\n    <ItemTemplate Context=\"user\">\n        <TmAvatar Name=\"@user.DisplayName\" Src=\"@user.PhotoUrl\" Size=\"AvatarSize.Xs\" />\n        <span>@user.DisplayName</span>\n        <TmBadge Variant=\"BadgeVariant.Secondary\">@user.Department</TmBadge>\n    </ItemTemplate>\n</TmUserPicker>"
+    }
+  ]
+}

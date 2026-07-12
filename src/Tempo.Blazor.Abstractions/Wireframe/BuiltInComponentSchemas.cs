@@ -147,6 +147,8 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmContextMenu"] = ["context-menu"],
             ["TmContextMenuItem"] = ["context-menu"],
             ["TmBottomNavigation"] = ["bottom-navigation"],
+            ["TmNavigationGuard"] = ["navigation-guard"],
+            ["TmScrollSpyNav"] = ["scroll-spy-nav"],
             ["TmMenu"] = ["menu"],
             ["TmTopBar"] = ["navigation-bar"],
             ["TmSidebar"] = ["sidebar"],
@@ -160,6 +162,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmToolbar"] = ["toolbar"],
             ["TmToolbarButton"] = ["toolbar", "button"],
             ["TmToolbarDivider"] = ["toolbar"],
+            ["TmFormActionBar"] = ["toolbar"],
             ["TmAlert"] = ["alert"],
             ["TmModal"] = ["modal"],
             ["TmDialog"] = ["dialog"],
@@ -211,6 +214,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmCascadingSelect"] = ["cascading-select"],
             ["TmFilterableDropdown"] = ["dropdown", "search-input"],
             ["TmEntityPicker"] = ["entity-picker"],
+            ["TmUserPicker"] = ["entity-picker"],
             ["TmExpressionEditor"] = ["expression-editor"],
             ["TmPasswordStrengthIndicator"] = ["password-strength"],
             ["TmSlider"] = ["slider"],
@@ -656,6 +660,18 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("label",       "Label",       PropType.String, "Select entity", cat: "Content"),
                 P("placeholder", "Placeholder", PropType.String, "Choose...",     cat: "Content"),
                 P("multiple",    "Multiple",    PropType.Bool,   false,           cat: "Behavior"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmUserPicker", Category = "Inputs", DisplayName = "User Picker",
+            DefaultWidth = 240, DefaultHeight = 56,
+            Props =
+            [
+                P("label",       "Label",       PropType.String, "Owner",      cat: "Content"),
+                P("placeholder", "Placeholder", PropType.String, "Search...",  cat: "Content"),
+                P("disabled",    "Disabled",    PropType.Bool,   false,        cat: "Behavior"),
             ]
         };
 
@@ -1404,6 +1420,31 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("showIcons", "Show Icons",PropType.Bool, true, cat: "Appearance"),
             ]
         };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmNavigationGuard", Category = "Navigation", DisplayName = "Navigation Guard",
+            DefaultWidth = 160, DefaultHeight = 32,
+            Props =
+            [
+                P("isDirty", "Is Dirty", PropType.Bool, false, cat: "State"),
+                P("enabled", "Enabled", PropType.Bool, true, cat: "Behavior"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmScrollSpyNav", Category = "Navigation", DisplayName = "Scroll Spy Nav",
+            DefaultWidth = 200, DefaultHeight = 180,
+            Props =
+            [
+                P("title",           "Title",             PropType.String,     "",       cat: "Content"),
+                P("items",           "Items",             PropType.StringList, cat: "Content"),
+                P("variant",         "Variant",           PropType.Enum, "sideRail", cat: "Appearance",
+                    opts: ["sideRail","breadcrumb"]),
+                P("enableScrollSpy", "Enable Scroll Spy", PropType.Bool,  false, cat: "Behavior"),
+            ]
+        };
     }
 
     // ── LAYOUT ────────────────────────────────────────────────────────────────
@@ -1538,6 +1579,20 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             Type = "TmToolbarDivider", Category = "Toolbar", DisplayName = "Toolbar Divider",
             DefaultWidth = 1, DefaultHeight = 32,
             Props = []
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmFormActionBar", Category = "Toolbar", DisplayName = "Form Action Bar",
+            DefaultWidth = 600, DefaultHeight = 56,
+            Props =
+            [
+                P("position",     "Position",       PropType.Enum, "static", cat: "Appearance",
+                    opts: ["static","stickyTop","floatingBottom"]),
+                P("showOnScroll", "Show On Scroll", PropType.Bool,  false,   cat: "Behavior"),
+                P("statusText",   "Status Text",    PropType.String, "",     cat: "Content"),
+                P("primaryLabel", "Primary Label",  PropType.String, "Save", cat: "Content"),
+            ]
         };
     }
 

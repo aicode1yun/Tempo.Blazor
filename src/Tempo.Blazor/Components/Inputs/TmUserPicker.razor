@@ -1,0 +1,407 @@
+@namespace Tempo.Blazor.Components.Inputs
+@typeparam TUser
+@using Microsoft.AspNetCore.Components.Web
+@using Tempo.Blazor.Components.Avatars
+@implements IDisposable
+
+<div class="tm-user-picker @(Disabled ? "tm-user-picker--disabled" : "")" data-testid="tm-user-picker" @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="tm-input-label">@Label</label>
+    }
+
+    @if (_selectedUser is not null)
+    {
+        <div class="tm-user-picker__selected">
+            @if (SelectedTemplate is not null)
+            {
+                @SelectedTemplate(_selectedUser)
+            }
+            else
+            {
+                <TmAvatar Name="@AvatarName(_selectedUser)" Src="@AvatarSrc(_selectedUser)" Size="AvatarSize.Sm" />
+                <span class="tm-user-picker__selected-display">@DisplaySelector(_selectedUser)</span>
+                <span class="tm-user-picker__selected-login">[@ValueSelector(_selectedUser)]</span>
+            }
+            @if (!Disabled)
+            {
+                <button type="button" class="tm-user-picker__clear" @onclick="HandleClearAsync"
+                        aria-label="@ClearLabel" data-testid="tm-user-picker-clear">&times;</button>
+            }
+        </div>
+    }
+    else if (_resolveState == TmPickerFetchState.Transient)
+    {
+        <div class="tm-user-picker__transient" role="alert" aria-live="polite" data-testid="tm-user-picker-resolve-transient">
+            @if (TransientErrorTemplate is not null)
+            {
+                @TransientErrorTemplate(RetryResolveAsync)
+            }
+            else
+            {
+                <span>@TransientErrorText</span>
+                <button type="button" class="tm-user-picker__retry" @onclick="RetryResolveAsync"
+                        data-testid="tm-user-picker-resolve-retry">@RetryText</button>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="tm-user-picker__search">
+            <input type="text"
+                   value="@_searchTerm"
+                   placeholder="@Placeholder"
+                   disabled="@Disabled"
+                   class="tm-user-picker__input"
+                   role="combobox"
+                   aria-expanded="@(_showResults ? "true" : "false")"
+                   aria-autocomplete="list"
+                   data-testid="tm-user-picker-input"
+                   @oninput="HandleSearchInputAsync"
+                   @onkeydown="HandleKeyDownAsync"
+                   @onblur="HandleBlur" />
+
+            @if (_loading)
+            {
+                <div class="tm-user-picker__loading" data-testid="tm-user-picker-loading">@LoadingText</div>
+            }
+            else if (_showResults && _searchState == TmPickerFetchState.Transient)
+            {
+                <div class="tm-user-picker__transient" role="alert" aria-live="polite" data-testid="tm-user-picker-search-transient">
+                    @if (TransientErrorTemplate is not null)
+                    {
+                        @TransientErrorTemplate(RetrySearchAsync)
+                    }
+                    else
+                    {
+                        <span>@TransientErrorText</span>
+                        <button type="button" class="tm-user-picker__retry" @onclick="RetrySearchAsync"
+                                data-testid="tm-user-picker-search-retry">@RetryText</button>
+                    }
+                </div>
+            }
+            else if (_showResults && _results.Count > 0)
+            {
+                <ul class="tm-user-picker__results" role="listbox" data-testid="tm-user-picker-results">
+                    @for (var i = 0; i < _results.Count; i++)
+                    {
+                        var user = _results[i];
+                        var active = i == _highlightedIndex;
+                        <li class="tm-user-picker__result-item @(active ? "tm-user-picker__result-item--active" : null)"
+                            role="option" aria-selected="@(active ? "true" : "false")" data-testid="tm-user-picker-result-item"
+                            @onpointerdown="() => HandleSelectAsync(user)" @onpointerdown:preventDefault="true">
+                            @if (ItemTemplate is not null)
+                            {
+                                @ItemTemplate(user)
+                            }
+                            else
+                            {
+                                <TmAvatar Name="@AvatarName(user)" Src="@AvatarSrc(user)" Size="AvatarSize.Xs" />
+                                <span class="tm-user-picker__result-display">@DisplaySelector(user)</span>
+                                <span class="tm-user-picker__result-login">[@ValueSelector(user)]</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+            else if (_showResults)
+            {
+                @if (EmptyTemplate is not null)
+                {
+                    @EmptyTemplate
+                }
+                else
+                {
+                    <div class="tm-user-picker__no-results" data-testid="tm-user-picker-no-results">@NoResultsText</div>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private string _searchTerm = string.Empty;
+    private bool _showResults;
+    private bool _loading;
+    private List<TUser> _results = [];
+    private int _highlightedIndex = -1;
+    private CancellationTokenSource? _debounceCts;
+    private TUser? _selectedUser;
+    private string? _loadedValue;
+    private TmPickerFetchState _searchState = TmPickerFetchState.Ok;
+    private TmPickerFetchState _resolveState = TmPickerFetchState.Ok;
+
+    /// <summary>Selected user's identifying value (e.g. a login).</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>Fires when the selection changes; <c>null</c> when cleared.</summary>
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>Debounced, cancellable search. Never bakes in retries — callers own that policy.</summary>
+    [Parameter, EditorRequired] public Func<string, CancellationToken, Task<TmPickerSearchResult<TUser>>> SearchProvider { get; set; } = default!;
+
+    /// <summary>Resolves <see cref="Value"/> into a full <typeparamref name="TUser"/> for display.</summary>
+    [Parameter, EditorRequired] public Func<string, CancellationToken, Task<TmPickerResolveResult<TUser>>> ResolveProvider { get; set; } = default!;
+
+    /// <summary>Extracts the identifying value (e.g. login) from an item.</summary>
+    [Parameter, EditorRequired] public Func<TUser, string> ValueSelector { get; set; } = default!;
+
+    /// <summary>Extracts the display text from an item.</summary>
+    [Parameter, EditorRequired] public Func<TUser, string> DisplaySelector { get; set; } = default!;
+
+    /// <summary>Extracts the name used to derive avatar initials. Falls back to <see cref="DisplaySelector"/>.</summary>
+    [Parameter] public Func<TUser, string>? AvatarNameSelector { get; set; }
+
+    /// <summary>Extracts an avatar image URL, if any.</summary>
+    [Parameter] public Func<TUser, string?>? AvatarSrcSelector { get; set; }
+
+    /// <summary>Minimum characters before a search fires. Default 3.</summary>
+    [Parameter] public int MinChars { get; set; } = 3;
+
+    /// <summary>Debounce delay in ms before a search fires. Default 300.</summary>
+    [Parameter] public int DebounceMs { get; set; } = 300;
+
+    /// <summary>Disables the input and hides the clear button.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Field label.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Search box placeholder.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Text shown while a search is in flight.</summary>
+    [Parameter] public string LoadingText { get; set; } = "Loading...";
+
+    /// <summary>Text shown when a search succeeds but finds nothing.</summary>
+    [Parameter] public string NoResultsText { get; set; } = "No results found";
+
+    /// <summary>Text shown when a search or resolve fails transiently.</summary>
+    [Parameter] public string TransientErrorText { get; set; } = "Something went wrong. Please try again.";
+
+    /// <summary>Retry button text for the transient-error state.</summary>
+    [Parameter] public string RetryText { get; set; } = "Retry";
+
+    /// <summary>Accessible label for the clear-selection button.</summary>
+    [Parameter] public string ClearLabel { get; set; } = "Clear selection";
+
+    /// <summary>Overrides rendering of a single result item. Defaults to avatar + display + [login].</summary>
+    [Parameter] public RenderFragment<TUser>? ItemTemplate { get; set; }
+
+    /// <summary>Overrides the no-results message.</summary>
+    [Parameter] public RenderFragment? EmptyTemplate { get; set; }
+
+    /// <summary>
+    /// Overrides the transient-error UI. Receives a retry callback that re-invokes whichever provider
+    /// (search or resolve) just failed.
+    /// </summary>
+    [Parameter] public RenderFragment<Func<Task>>? TransientErrorTemplate { get; set; }
+
+    /// <summary>Overrides rendering of the selected value's chip.</summary>
+    [Parameter] public RenderFragment<TUser>? SelectedTemplate { get; set; }
+
+    /// <summary>Additional HTML attributes applied to the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string AvatarName(TUser user) => (AvatarNameSelector ?? DisplaySelector)(user);
+
+    private string? AvatarSrc(TUser user) => AvatarSrcSelector?.Invoke(user);
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(Value) && !string.Equals(_loadedValue, Value, StringComparison.Ordinal))
+        {
+            var requested = Value;
+            var resolution = await ResolveProvider(requested, CancellationToken.None);
+
+            // Guard against a stale resolution: Value may have changed (cleared, or re-picked) while the
+            // resolve was in flight. Only apply the result if it still matches what we requested.
+            if (!string.Equals(Value, requested, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (resolution.State == TmPickerFetchState.Transient)
+            {
+                _resolveState = TmPickerFetchState.Transient;
+                _selectedUser = default;
+                return;
+            }
+
+            _resolveState = TmPickerFetchState.Ok;
+            _loadedValue = requested;
+            _selectedUser = resolution.Item;
+        }
+        else if (string.IsNullOrEmpty(Value))
+        {
+            _selectedUser = default;
+            _loadedValue = null;
+            _resolveState = TmPickerFetchState.Ok;
+        }
+    }
+
+    private async Task RetryResolveAsync()
+    {
+        if (string.IsNullOrEmpty(Value))
+        {
+            return;
+        }
+
+        var requested = Value;
+        var resolution = await ResolveProvider(requested, CancellationToken.None);
+        if (!string.Equals(Value, requested, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (resolution.State == TmPickerFetchState.Transient)
+        {
+            _resolveState = TmPickerFetchState.Transient;
+            return;
+        }
+
+        _resolveState = TmPickerFetchState.Ok;
+        _loadedValue = requested;
+        _selectedUser = resolution.Item;
+    }
+
+    private async Task HandleSearchInputAsync(ChangeEventArgs e)
+    {
+        _searchTerm = e.Value?.ToString() ?? string.Empty;
+        _searchState = TmPickerFetchState.Ok;
+
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+
+        if (_searchTerm.Length < MinChars)
+        {
+            _showResults = false;
+            _results = [];
+            _highlightedIndex = -1;
+            return;
+        }
+
+        try
+        {
+            await Task.Delay(DebounceMs, token);
+            await SearchNowAsync(_searchTerm, token);
+        }
+        catch (TaskCanceledException)
+        {
+            // Superseded by a newer keystroke.
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SearchNowAsync(string term, CancellationToken token)
+    {
+        _loading = true;
+        StateHasChanged();
+
+        var result = await SearchProvider(term, token);
+        if (token.IsCancellationRequested)
+        {
+            return;
+        }
+
+        _searchState = result.State;
+        _results = result.State == TmPickerFetchState.Ok ? result.Items.ToList() : [];
+        _showResults = true;
+        _highlightedIndex = _results.Count > 0 ? 0 : -1;
+    }
+
+    private async Task RetrySearchAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_searchTerm) || _searchTerm.Length < MinChars)
+        {
+            return;
+        }
+
+        using var cts = new CancellationTokenSource();
+        await SearchNowAsync(_searchTerm, cts.Token);
+        _loading = false;
+    }
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (!_showResults || _results.Count == 0)
+        {
+            if (string.Equals(e.Key, "Escape", StringComparison.Ordinal))
+            {
+                _showResults = false;
+            }
+
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                _highlightedIndex = Math.Min(_highlightedIndex + 1, _results.Count - 1);
+                break;
+            case "ArrowUp":
+                _highlightedIndex = Math.Max(_highlightedIndex - 1, 0);
+                break;
+            case "Enter" when _highlightedIndex >= 0 && _highlightedIndex < _results.Count:
+                await HandleSelectAsync(_results[_highlightedIndex]);
+                break;
+            case "Escape":
+                _showResults = false;
+                break;
+            default:
+                break;
+        }
+    }
+
+    private async Task HandleSelectAsync(TUser user)
+    {
+        _debounceCts?.Cancel();
+        _showResults = false;
+        _searchTerm = string.Empty;
+        _results = [];
+        _highlightedIndex = -1;
+        _selectedUser = user;
+        _resolveState = TmPickerFetchState.Ok;
+
+        var newValue = ValueSelector(user);
+        _loadedValue = newValue;
+        Value = newValue;
+        await ValueChanged.InvokeAsync(newValue);
+    }
+
+    private async Task HandleClearAsync()
+    {
+        _debounceCts?.Cancel();
+        _selectedUser = default;
+        _loadedValue = null;
+        _searchTerm = string.Empty;
+        _showResults = false;
+        _results = [];
+        _resolveState = TmPickerFetchState.Ok;
+        Value = null;
+        await ValueChanged.InvokeAsync(null);
+    }
+
+    private void HandleBlur()
+    {
+        // Delay so a pointerdown-triggered selection on a result item fires before the dropdown closes.
+        _ = Task.Delay(200).ContinueWith(_ =>
+        {
+            _showResults = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+    }
+}
