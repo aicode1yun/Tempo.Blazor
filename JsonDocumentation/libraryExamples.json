@@ -137,6 +137,13 @@
       "description": "A sticky-top form action bar with status, danger, secondary, and primary action slots. ShowOnScroll can additionally reveal a floating-bottom variant only once the user has scrolled.",
       "code": "<TmFormActionBar Position=\"FormActionBarPosition.StickyTop\" AriaLabel=\"Form actions\" LiveMessage=\"@_statusAnnouncement\">\n    <span>@_documentTitle</span>\n    <Status>\n        @if (_isDirty)\n        {\n            <span>Unsaved changes</span>\n        }\n        else\n        {\n            <span>Saved</span>\n        }\n    </Status>\n    <DangerActions>\n        <TmButton Variant=\"ButtonVariant.Danger\" OnClick=\"DeleteAsync\">Delete</TmButton>\n    </DangerActions>\n    <SecondaryActions>\n        <TmButton Variant=\"ButtonVariant.Ghost\" OnClick=\"CancelAsync\">Cancel</TmButton>\n    </SecondaryActions>\n    <PrimaryActions>\n        <TmButton Variant=\"ButtonVariant.Primary\" IsLoading=\"@_isSaving\" OnClick=\"SaveAsync\">Save</TmButton>\n    </PrimaryActions>\n</TmFormActionBar>",
       "setupNote": "ShowOnScroll registers a real passive scroll listener (via a co-located TmFormActionBar.razor.js module) that toggles a CSS class once the page scrolls past a threshold — it is not an inert reserved hook."
+    },
+    {
+      "title": "TmScrollSpyNav - Side-rail in-page navigation with scroll-spy",
+      "category": "Navigation",
+      "description": "A sticky side-rail that tracks the active in-page section while scrolling and smooth-scrolls to a section on click. Items are intentionally minimal (id + label); use ItemTemplate to add badges or status without extending the shared record type.",
+      "code": "<div style=\"display:flex; gap:2rem; align-items:flex-start;\">\n    <TmScrollSpyNav Items=\"@_sections\" @bind-ActiveId=\"_activeSection\"\n        EnableScrollSpy=\"true\" Title=\"On this page\" />\n\n    <div style=\"flex:1;\">\n        <section id=\"overview\">...</section>\n        <section id=\"pricing\">...</section>\n        <section id=\"faq\">...</section>\n    </div>\n</div>\n\n@code {\n    private string? _activeSection;\n    private readonly IReadOnlyList<ScrollSpyNavItem> _sections =\n    [\n        new(\"overview\", \"Overview\", Order: 0),\n        new(\"pricing\", \"Pricing\", Order: 1),\n        new(\"faq\", \"FAQ\", Order: 2),\n    ];\n}",
+      "setupNote": "Clicking an item always smooth-scrolls to the matching element id, independent of EnableScrollSpy. EnableScrollSpy additionally arms a passive scroll listener (TmScrollSpyNav.razor.js) that keeps ActiveId in sync while the user scrolls manually."
     }
   ]
 }

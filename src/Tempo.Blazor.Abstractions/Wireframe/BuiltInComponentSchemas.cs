@@ -148,6 +148,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmContextMenuItem"] = ["context-menu"],
             ["TmBottomNavigation"] = ["bottom-navigation"],
             ["TmNavigationGuard"] = ["navigation-guard"],
+            ["TmScrollSpyNav"] = ["scroll-spy-nav"],
             ["TmMenu"] = ["menu"],
             ["TmTopBar"] = ["navigation-bar"],
             ["TmSidebar"] = ["sidebar"],
@@ -1415,6 +1416,20 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             [
                 P("isDirty", "Is Dirty", PropType.Bool, false, cat: "State"),
                 P("enabled", "Enabled", PropType.Bool, true, cat: "Behavior"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmScrollSpyNav", Category = "Navigation", DisplayName = "Scroll Spy Nav",
+            DefaultWidth = 200, DefaultHeight = 180,
+            Props =
+            [
+                P("title",           "Title",             PropType.String,     "",       cat: "Content"),
+                P("items",           "Items",             PropType.StringList, cat: "Content"),
+                P("variant",         "Variant",           PropType.Enum, "sideRail", cat: "Appearance",
+                    opts: ["sideRail","breadcrumb"]),
+                P("enableScrollSpy", "Enable Scroll Spy", PropType.Bool,  false, cat: "Behavior"),
             ]
         };
     }

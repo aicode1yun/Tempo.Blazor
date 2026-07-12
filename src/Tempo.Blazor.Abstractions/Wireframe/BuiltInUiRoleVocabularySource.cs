@@ -77,6 +77,7 @@ public sealed class BuiltInUiRoleVocabularySource : IUiRoleVocabularySource
         R("context-menu", "Context menu", "Shows actions for a selected target.", "right click menu", "kontextove menu", "TmContextMenu", "TmContextMenuItem"),
         R("bottom-navigation", "Bottom navigation", "Provides primary navigation along the bottom edge.", "bottom nav", "spodni navigace", "TmBottomNavigation"),
         R("navigation-guard", "Navigation guard", "Confirms and gates navigation away from unsaved work.", "unsaved changes guard", "leave confirmation", "ochrana neulozenych zmen", "TmNavigationGuard"),
+        R("scroll-spy-nav", "Scroll-spy navigation", "Highlights the current in-page section while scrolling and jumps to sections on click.", "section nav", "anchor nav", "navigace podle sekci", "TmScrollSpyNav"),
         R("menu", "Menu", "Displays navigation or command choices.", "navigation menu", "nabidka", "TmMenu"),
         R("navigation-bar", "Navigation bar", "Provides top-level page or app navigation.", "navbar", "top navigation", "navigacni lista", "TmNavbar", "TmTopBar"),
         R("sidebar", "Sidebar", "Provides side navigation or supporting panels.", "side nav", "bocni panel", "TmSidebar"),

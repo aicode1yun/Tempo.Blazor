@@ -12,7 +12,7 @@ Kompletní přehled všech komponent knihovny Tempo.Blazor, jejich parametrů, p
 4. [Přepínače a checkboxy](#přepínače-a-checkboxy) — TmCheckbox, TmToggle, TmRadioGroup, TmRadio
 5. [Datové zobrazení (Data Display)](#datové-zobrazení) — TmBadge, TmCard, TmAccordion, TmChip, TmChipGroup, TmChangeDiff, TmEmptyState, TmStatCard, TmKanbanBoard, TmMultiViewList
 6. [Zpětná vazba (Feedback)](#zpětná-vazba) — TmAlert, TmModal, TmDialog, TmTooltip, TmSpinner, TmPopover, TmToastContainer, TmNotificationBell, TmProgressBar, TmSkeleton
-7. [Navigace](#navigace) — TmTabs, TmTabPanel, TmContextMenu, TmNavigationGuard
+7. [Navigace](#navigace) — TmTabs, TmTabPanel, TmContextMenu, TmNavigationGuard, TmScrollSpyNav
 8. [Ikony a avatary](#ikony-a-avatary) — TmIcon, TmAvatar, TmAvatarGroup
 9. [Pickery (datum, čas)](#pickery) — TmDatePicker, TmDateRangePicker, TmDateTimePicker, TmDateTimeRangePicker, TmTimePicker, TmTimeInput, TmTimeRangePicker, TmCalendarView
 10. [Formuláře a validace](#formuláře-a-validace) — TmFormField, TmValidatedField, TmValidationSummary, TmFormValidationMessage, TmInlineEdit, TmFormSection, TmFormRow, TmDynamicFormRenderer
@@ -2373,6 +2373,67 @@ Veřejná metoda `Suppress()` obejde ochranu pro bezprostředně následující 
         _guard?.Suppress();
         Navigation.NavigateTo("/documents");
     }
+}
+```
+
+### TmScrollSpyNav
+
+Sekční in-page navigace s volitelným scroll-spy sledováním aktivní sekce. Položky jsou záměrně minimální (jen `Id`+`Label`) — pro odznaky/stavy použij `ItemTemplate`. Klik vždy plynule scrolluje na odpovídající element podle `id`; `EnableScrollSpy` navíc udržuje aktivní položku synchronizovanou při ručním scrollování.
+
+#### CSS třídy
+
+| Třída | Popis |
+|-------|-------|
+| `tm-scroll-spy-nav` | Kořenový `<nav>` |
+| `tm-scroll-spy-nav--siderail` / `--breadcrumb` | Varianta layoutu |
+| `tm-scroll-spy-nav__title` | Nadpis (jen SideRail) |
+| `tm-scroll-spy-nav__list` | Seznam položek |
+| `tm-scroll-spy-nav__item` | Obal položky |
+| `tm-scroll-spy-nav__link` | Tlačítko položky (nativní `<button>`, klávesnicově dostupné) |
+| `tm-scroll-spy-nav__link--active` | Aktivní položka |
+| `tm-scroll-spy-nav__label` | Výchozí text položky (když není `ItemTemplate`) |
+
+Aktivní položka má vždy `aria-current="true"` i `data-active="true"` (ostatní explicitně `"false"`).
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Items` | `IReadOnlyList<ScrollSpyNavItem>` | `[]` | Sekce k zobrazení; jen `IsVisible == true`, seřazeno podle `Order` |
+| `ItemTemplate` | `RenderFragment<ScrollSpyNavItem>?` | `null` | Vlastní vykreslení položky místo výchozího labelu |
+| `ActiveId` | `string?` | `null` | Aktivní sekce (`@bind-ActiveId`) |
+| `ActiveIdChanged` | `EventCallback<string>` | — | Změna aktivní sekce (klik i scroll-spy) |
+| `OnNavigate` | `EventCallback<string>` | — | Explicitní výběr kliknutím |
+| `EnableScrollSpy` | `bool` | `false` | Zapne pasivní scroll listener sledující aktivní sekci |
+| `ScrollOffset` | `int` | `120` | Práh (px) od horního okraje pro scroll-spy |
+| `Variant` | `ScrollSpyNavVariant` | `SideRail` | `SideRail` (svislý, sticky) nebo `Breadcrumb` (vodorovný pruh) |
+| `Title` | `string?` | `null` | Nadpis panelu (jen SideRail) |
+| `Class` | `string?` | `null` | Další CSS třídy |
+
+`ScrollSpyNavItem` je `record(string Id, string Label, bool IsVisible = true, int Order = 0)`.
+
+#### Příklady
+
+```razor
+<div style="display:flex; gap:2rem; align-items:flex-start;">
+    <TmScrollSpyNav Items="@_sections" @bind-ActiveId="_activeSection"
+        EnableScrollSpy="true" Title="Na této stránce" />
+
+    <div style="flex:1;">
+        <section id="overview">...</section>
+        <section id="pricing">...</section>
+        <section id="faq">...</section>
+    </div>
+</div>
+
+@code {
+    private string? _activeSection;
+    private readonly IReadOnlyList<ScrollSpyNavItem> _sections =
+    [
+        new("overview", "Přehled", Order: 0),
+        new("pricing", "Ceník", Order: 1),
+        new("faq", "Časté dotazy", Order: 2),
+    ];
 }
 ```
 

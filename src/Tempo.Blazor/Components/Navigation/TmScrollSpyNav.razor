@@ -1,0 +1,178 @@
+@namespace Tempo.Blazor.Components.Navigation
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<nav class="@RootClass" aria-label="@(Title ?? "Section navigation")" data-testid="tm-scroll-spy-nav" @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrEmpty(Title) && Variant == ScrollSpyNavVariant.SideRail)
+    {
+        <div class="tm-scroll-spy-nav__title">@Title</div>
+    }
+    <ul class="tm-scroll-spy-nav__list">
+        @foreach (var item in VisibleItems)
+        {
+            var current = item;
+            var isActive = string.Equals(current.Id, _active, StringComparison.Ordinal);
+            <li class="tm-scroll-spy-nav__item">
+                <button type="button"
+                        class="tm-scroll-spy-nav__link @(isActive ? "tm-scroll-spy-nav__link--active" : "")"
+                        data-testid="@($"tm-scroll-spy-nav-{current.Id}")"
+                        data-active="@(isActive ? "true" : "false")"
+                        aria-current="@(isActive ? "true" : "false")"
+                        @onclick="() => SelectAsync(current.Id)">
+                    @if (ItemTemplate is not null)
+                    {
+                        @ItemTemplate(current)
+                    }
+                    else
+                    {
+                        <span class="tm-scroll-spy-nav__label">@current.Label</span>
+                    }
+                </button>
+            </li>
+        }
+    </ul>
+</nav>
+
+@code {
+    private const string ModulePath = "./_content/Tempo.Blazor/Components/Navigation/TmScrollSpyNav.razor.js";
+
+    private string? _active;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<TmScrollSpyNav>? _self;
+    private string[] _observedIds = [];
+
+    /// <summary>Sections to list. Only items with <c>IsVisible == true</c> render, ordered by <c>Order</c>.</summary>
+    [Parameter] public IReadOnlyList<ScrollSpyNavItem> Items { get; set; } = [];
+
+    /// <summary>Optional per-item render override. Falls back to the item's <c>Label</c> when null.</summary>
+    [Parameter] public RenderFragment<ScrollSpyNavItem>? ItemTemplate { get; set; }
+
+    /// <summary>Active section id (supports <c>@@bind-ActiveId</c>); also updated by scroll-spy when enabled.</summary>
+    [Parameter] public string? ActiveId { get; set; }
+
+    /// <summary>Fires whenever the active section changes, whether by click or scroll-spy.</summary>
+    [Parameter] public EventCallback<string> ActiveIdChanged { get; set; }
+
+    /// <summary>Raised when a section is explicitly selected by click (not by scroll-spy).</summary>
+    [Parameter] public EventCallback<string> OnNavigate { get; set; }
+
+    /// <summary>When true, observes section elements by id and tracks the active one on scroll.</summary>
+    [Parameter] public bool EnableScrollSpy { get; set; }
+
+    /// <summary>Distance from the top (px) at which a section becomes active during scroll-spy.</summary>
+    [Parameter] public int ScrollOffset { get; set; } = 120;
+
+    /// <summary>Layout variant.</summary>
+    [Parameter] public ScrollSpyNavVariant Variant { get; set; } = ScrollSpyNavVariant.SideRail;
+
+    /// <summary>Optional rail heading (side-rail variant only).</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Additional CSS class for the root element.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Additional HTML attributes for the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private IEnumerable<ScrollSpyNavItem> VisibleItems =>
+        Items.Where(i => i.IsVisible).OrderBy(i => i.Order);
+
+    private string RootClass
+    {
+        get
+        {
+            var variantClass = Variant == ScrollSpyNavVariant.Breadcrumb
+                ? "tm-scroll-spy-nav--breadcrumb"
+                : "tm-scroll-spy-nav--siderail";
+            var baseClass = $"tm-scroll-spy-nav {variantClass}";
+            return string.IsNullOrWhiteSpace(Class) ? baseClass : $"{baseClass} {Class}";
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (ActiveId is not null)
+        {
+            _active = ActiveId;
+        }
+        else if (_active is null)
+        {
+            _active = VisibleItems.FirstOrDefault()?.Id;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _self = DotNetObjectReference.Create(this);
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
+        }
+
+        if (_module is null)
+        {
+            return;
+        }
+
+        if (EnableScrollSpy)
+        {
+            var ids = VisibleItems.Select(i => i.Id).ToArray();
+            if (!ids.SequenceEqual(_observedIds, StringComparer.Ordinal))
+            {
+                _observedIds = ids;
+                await _module.InvokeVoidAsync("observe", _self, ids, ScrollOffset);
+            }
+        }
+        else if (_observedIds.Length > 0)
+        {
+            _observedIds = [];
+            await _module.InvokeVoidAsync("unobserve");
+        }
+    }
+
+    /// <summary>Called by the scroll-spy JS as the user scrolls past sections.</summary>
+    [JSInvokable]
+    public async Task SetActiveFromScroll(string id)
+    {
+        if (!string.Equals(_active, id, StringComparison.Ordinal))
+        {
+            _active = id;
+            await ActiveIdChanged.InvokeAsync(id);
+            StateHasChanged();
+        }
+    }
+
+    private async Task SelectAsync(string id)
+    {
+        _active = id;
+        await ActiveIdChanged.InvokeAsync(id);
+        await OnNavigate.InvokeAsync(id);
+
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("scrollTo", id);
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module is not null)
+            {
+                await _module.InvokeVoidAsync("dispose");
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit already gone.
+        }
+
+        _self?.Dispose();
+    }
+}
