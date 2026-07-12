@@ -1,0 +1,60 @@
+@page "/testid-prefix"
+@using Tempo.Blazor.Components.Files
+<PageTitle>Test ID Prefix (K9) – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Test ID Prefix (K9)</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        Every Tempo.Blazor component routes its internal <code>data-testid</code> attributes through
+        <code>TmComponentBase.TestId(name)</code>. Setting <code>TestIdPrefix</code> namespaces every id as
+        <code>{prefix}-{name}</code>, so two instances of the same component on one page never collide;
+        leaving it null keeps the bare name, which is fully backward compatible. The same
+        <code>TmFileUploadProgress</code> is rendered three times below with the same data.
+    </p>
+</div>
+
+<!-- data-testid prefixing (K9) -->
+<section class="demo-section" data-testid="k9-testid-prefix-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Namespaced vs. bare test ids</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">Infra</span>
+    </div>
+
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        The upload-progress list emits <code>data-testid="tm-upload-progress"</code> internally. With a prefix it
+        becomes <code>k9-alpha-tm-upload-progress</code> / <code>k9-beta-tm-upload-progress</code>; without one it
+        stays <code>tm-upload-progress</code>.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div data-testid="k9-instance-alpha">
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">TestIdPrefix="k9-alpha"</p>
+            <div class="showcase-card">
+                <TmFileUploadProgress TestIdPrefix="k9-alpha" Uploads="_uploads" />
+            </div>
+        </div>
+        <div data-testid="k9-instance-beta">
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">TestIdPrefix="k9-beta"</p>
+            <div class="showcase-card">
+                <TmFileUploadProgress TestIdPrefix="k9-beta" Uploads="_uploads" />
+            </div>
+        </div>
+        <div data-testid="k9-instance-bare">
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">No prefix (bare, backward compatible)</p>
+            <div class="showcase-card">
+                <TmFileUploadProgress Uploads="_uploads" />
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    // Same data for all three instances — only the TestIdPrefix differs, so any difference in the
+    // emitted data-testid values comes purely from the K9 prefixing, not the content.
+    private readonly List<TmUploadItem> _uploads = new()
+    {
+        new TmUploadItem { FileName = "annual-report.pdf", Percent = 62, State = TmUploadState.Uploading },
+        new TmUploadItem { FileName = "brand-logo.svg", Percent = 100, State = TmUploadState.Completed },
+    };
+}
