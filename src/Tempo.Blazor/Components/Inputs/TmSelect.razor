@@ -11,6 +11,8 @@
         <select id="@Id"
                 disabled="@Disabled"
                 class="@SelectCssClass"
+                aria-invalid="@(IsInvalid ? "true" : null)"
+                aria-describedby="@DescribedBy"
                 @onchange="HandleChangeAsync">
             @if (!string.IsNullOrEmpty(Placeholder))
             {
@@ -34,11 +36,11 @@
     </div>
     @if (!string.IsNullOrEmpty(Error))
     {
-        <div data-testid="select-error" class="tm-select-error-message">@Error</div>
+        <div id="@ErrorId" data-testid="select-error" class="tm-select-error-message" role="alert">@Error</div>
     }
     @if (!string.IsNullOrEmpty(HelpText) && string.IsNullOrEmpty(Error))
     {
-        <div data-testid="select-help" class="tm-select-help-text">@HelpText</div>
+        <div id="@HelpId" data-testid="select-help" class="tm-select-help-text">@HelpText</div>
     }
 </div>
 
@@ -78,6 +80,15 @@
 
     /// <summary>&lt;option&gt; elements for the select.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    // ── Accessibility ────────────────────────────────────────────
+    private bool IsInvalid => !string.IsNullOrEmpty(Error);
+    private string ErrorId => $"{Id}-error";
+    private string HelpId => $"{Id}-help";
+    private string? DescribedBy =>
+        !string.IsNullOrEmpty(Error) ? ErrorId
+        : !string.IsNullOrEmpty(HelpText) ? HelpId
+        : null;
 
     private bool IsSelected(TValue? optValue) =>
         EqualityComparer<TValue?>.Default.Equals(optValue, Value);

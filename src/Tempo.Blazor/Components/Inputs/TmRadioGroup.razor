@@ -1,7 +1,7 @@
 @namespace Tempo.Blazor.Components.Inputs
 @typeparam T
 
-<div class="tm-radio-group @LayoutCssClass @Class" @attributes="AdditionalAttributes">
+<div class="tm-radio-group @LayoutCssClass @Class" role="radiogroup" @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(Label))
     {
         <label class="tm-radio-group-label">@Label</label>

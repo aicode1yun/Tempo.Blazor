@@ -771,6 +771,7 @@
   "TmDataTable_SaveView": "Uložit pohled",
   "TmDataTable_SearchPlaceholder": "Hledat...",
   "TmDataTable_SelectAll": "Vybrat všechny řádky",
+  "TmDataTable_SelectRow": "Vybrat řádek",
   "TmDataTable_ShowingItems": "Zobrazeno {0}–{1} z {2}",
   "TmDataTable_SortAscending": "Řadit vzestupně",
   "TmDataTable_SortDescending": "Řadit sestupně",

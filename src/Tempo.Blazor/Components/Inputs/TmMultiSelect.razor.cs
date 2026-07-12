@@ -78,6 +78,15 @@ public partial class TmMultiSelect<TItem, TValue>
     /// <summary>Marks the field as required.</summary>
     [Parameter] public bool Required { get; set; }
 
+    // ── Accessibility ────────────────────────────────────────────
+    private bool IsInvalid => !string.IsNullOrEmpty(Error);
+    private string ErrorId => $"{Id}-error";
+    private string HelpId => $"{Id}-help";
+    private string? DescribedBy =>
+        !string.IsNullOrEmpty(Error) ? ErrorId
+        : !string.IsNullOrEmpty(HelpText) ? HelpId
+        : null;
+
     // ── Filtering ────────────────────────────────────────────────
 
     /// <summary>Enables the search input in the dropdown. Default: true.</summary>

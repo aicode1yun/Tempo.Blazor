@@ -772,6 +772,7 @@
   "TmDataTable_SaveView": "Save view",
   "TmDataTable_SearchPlaceholder": "Search...",
   "TmDataTable_SelectAll": "Select all rows",
+  "TmDataTable_SelectRow": "Select row",
   "TmDataTable_ShowingItems": "Showing {0}–{1} of {2}",
   "TmDataTable_SortAscending": "Sort ascending",
   "TmDataTable_SortDescending": "Sort descending",

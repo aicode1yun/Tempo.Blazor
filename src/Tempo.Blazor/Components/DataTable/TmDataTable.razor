@@ -264,6 +264,7 @@
                             {
                                 <td class="tm-col-check">
                                     <input type="checkbox"
+                                           aria-label="@Loc["TmDataTable_SelectRow"]"
                                            checked="@IsSelected(rowItem)"
                                            @onchange="e => ToggleRowSelectionAsync(rowItem, e)"
                                            @onclick:stopPropagation="true" />
@@ -361,6 +362,7 @@
                                 {
                                     <td class="tm-col-check">
                                         <input type="checkbox"
+                                               aria-label="@Loc["TmDataTable_SelectRow"]"
                                                checked="@IsSelected(rowItem)"
                                                @onchange="e => ToggleRowSelectionAsync(rowItem, e)"
                                                @onclick:stopPropagation="true" />

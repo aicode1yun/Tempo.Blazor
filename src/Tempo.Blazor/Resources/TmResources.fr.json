@@ -342,6 +342,7 @@
   "TmDataTable_SaveView": "Enregistrer la vue",
   "TmDataTable_SearchPlaceholder": "Rechercher...",
   "TmDataTable_SelectAll": "Sélectionner toutes les lignes",
+  "TmDataTable_SelectRow": "Sélectionner la ligne",
   "TmDataTable_ShowingItems": "Affichage de {0}–{1} sur {2}",
   "TmDataTable_SortAscending": "Tri croissant",
   "TmDataTable_SortDescending": "Tri décroissant",

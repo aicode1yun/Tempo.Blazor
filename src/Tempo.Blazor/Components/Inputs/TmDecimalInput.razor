@@ -73,7 +73,7 @@
 
     @if (HasError)
     {
-        <div id="@ErrorId" class="tm-input-error-message">@ResolvedError</div>
+        <div id="@ErrorId" class="tm-input-error-message" role="alert">@ResolvedError</div>
     }
     else if (!string.IsNullOrEmpty(HelpText))
     {

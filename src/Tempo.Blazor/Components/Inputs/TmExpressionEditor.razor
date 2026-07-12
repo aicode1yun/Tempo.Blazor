@@ -12,6 +12,8 @@
                   placeholder="@Placeholder"
                   disabled="@Disabled"
                   rows="4"
+                  aria-invalid="@(Error is not null ? "true" : null)"
+                  aria-describedby="@DescribedBy"
                   @oninput="HandleInput" />
 
         <div class="tm-expression-editor__panel">
@@ -36,7 +38,7 @@
 
     @if (Error is not null)
     {
-        <div class="tm-expression-editor__error">@Error</div>
+        <div id="@ErrorId" class="tm-expression-editor__error" role="alert">@Error</div>
     }
 </div>
 
@@ -67,6 +69,11 @@
 
     /// <summary>Additional attributes applied to the root element.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    // ── Accessibility ────────────────────────────────────────────
+    private readonly string _ariaId = Guid.NewGuid().ToString("n")[..8];
+    private string ErrorId => $"{_ariaId}-error";
+    private string? DescribedBy => Error is not null ? ErrorId : null;
 
     private async Task HandleInput(ChangeEventArgs e)
     {
