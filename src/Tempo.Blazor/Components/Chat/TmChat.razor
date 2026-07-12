@@ -15,88 +15,9 @@
         }
         else
         {
-            @foreach (var message in Messages)
+            @foreach (var message in RootMessages())
             {
-                <div class="@GetMessageCssClass(message)" data-message-id="@message.Id">
-                    @if (message.Type == ChatMessageType.System)
-                    {
-                        <span class="tm-chat__system-text">@message.Text</span>
-                    }
-                    else
-                    {
-                        <!-- Avatar -->
-                        @if (message.Type == ChatMessageType.Incoming || !IsCurrentUser(message.Author))
-                        {
-                            <div class="tm-chat__avatar tm-chat__avatar--incoming">
-                                @if (!string.IsNullOrEmpty(message.Author?.Avatar))
-                                {
-                                    <span>@message.Author.Avatar</span>
-                                }
-                                else
-                                {
-                                    <TmIcon Name="user" Size="IconSize.Sm" />
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="tm-chat__avatar tm-chat__avatar--outgoing">
-                                @if (!string.IsNullOrEmpty(CurrentUser.Avatar))
-                                {
-                                    <span>@CurrentUser.Avatar</span>
-                                }
-                                else
-                                {
-                                    <TmIcon Name="user" Size="IconSize.Sm" />
-                                }
-                            </div>
-                        }
-
-                        <!-- Bubble -->
-                        <div class="tm-chat__bubble">
-                            <div class="tm-chat__meta">
-                                <span class="tm-chat__author">@(message.Author?.Name ?? CurrentUser.Name)</span>
-                                <span class="tm-chat__message-time">@FormatTimestamp(message.Timestamp)</span>
-                            </div>
-
-                            <div class="tm-chat__text">
-                                @if (message.IsError)
-                                {
-                                    <span class="tm-chat__error-text">@message.Text</span>
-                                }
-                                else if (message.IsSending)
-                                {
-                                    <span>@message.Text</span>
-                                    <span class="tm-chat__sending-dots" aria-hidden="true"></span>
-                                }
-                                else
-                                {
-                                    <span>@message.Text</span>
-                                }
-                            </div>
-
-                            @if (message.Attachments.Count > 0)
-                            {
-                                <div class="tm-chat__attachments">
-                                    @foreach (var attachment in message.Attachments)
-                                    {
-                                        <button type="button"
-                                                class="tm-chat__attachment"
-                                                @onclick="() => HandleAttachmentClick(attachment)"
-                                                title="@attachment.Name">
-                                            <TmIcon Name="file" Size="IconSize.Sm" />
-                                            <span class="tm-chat__attachment-name">@attachment.Name</span>
-                                            @if (attachment.Size.HasValue)
-                                            {
-                                                <span class="tm-chat__attachment-size">@FormatFileSize(attachment.Size)</span>
-                                            }
-                                        </button>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
+                @RenderMessage(message, inThread: false)
             }
         }
 
@@ -132,4 +53,240 @@
         </button>
     </div>
 
+    <!-- Thread panel -->
+    @if (EnableThreads && ActiveThreadRoot is { } threadRoot)
+    {
+        <aside class="tm-chat__thread-panel" data-testid="chat-thread-panel">
+            <div class="tm-chat__thread-header">
+                <span class="tm-chat__thread-title">@Loc["TmChat_ThreadTitle"]</span>
+                <button type="button"
+                        class="tm-chat__thread-close"
+                        data-testid="chat-thread-close"
+                        aria-label="@Loc["TmChat_ThreadClose"]"
+                        @onclick="CloseThreadAsync">
+                    <TmIcon Name="x" Size="IconSize.Sm" />
+                </button>
+            </div>
+            <div class="tm-chat__thread-messages">
+                @RenderMessage(threadRoot, inThread: true)
+                <div class="tm-chat__thread-divider">
+                    <span>@string.Format(Loc["TmChat_ReplyCount"], ReplyCountOf(threadRoot))</span>
+                </div>
+                @foreach (var reply in RepliesOf(threadRoot.Id))
+                {
+                    @RenderMessage(reply, inThread: true)
+                }
+            </div>
+            <div class="tm-chat__thread-input-area">
+                <textarea class="tm-chat__input tm-chat__thread-input"
+                          rows="1"
+                          data-testid="chat-thread-input"
+                          placeholder="@Loc["TmChat_ReplyPlaceholder"]"
+                          disabled="@Disabled"
+                          @bind="_threadInput"
+                          @bind:event="oninput"
+                          @onkeydown="HandleThreadKeyDownAsync"></textarea>
+                <button type="button"
+                        class="tm-chat__send-btn"
+                        data-testid="chat-thread-send"
+                        disabled="@(Disabled || string.IsNullOrWhiteSpace(_threadInput))"
+                        aria-label="@Loc["TmChat_Send"]"
+                        @onclick="SendThreadReplyAsync">
+                    <TmIcon Name="send" Size="IconSize.Sm" />
+                </button>
+            </div>
+        </aside>
+    }
+
 </div>
+
+@code {
+    private RenderFragment RenderMessage(ChatMessage message, bool inThread) => @<div class="@GetMessageCssClass(message)" data-message-id="@message.Id">
+        @if (message.Type == ChatMessageType.System)
+        {
+            <span class="tm-chat__system-text">@message.Text</span>
+        }
+        else
+        {
+            @if (message.Type == ChatMessageType.Incoming || !IsCurrentUser(message.Author))
+            {
+                <div class="tm-chat__avatar tm-chat__avatar--incoming">
+                    @if (!string.IsNullOrEmpty(message.Author?.Avatar))
+                    {
+                        <span>@message.Author.Avatar</span>
+                    }
+                    else
+                    {
+                        <TmIcon Name="user" Size="IconSize.Sm" />
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="tm-chat__avatar tm-chat__avatar--outgoing">
+                    @if (!string.IsNullOrEmpty(CurrentUser.Avatar))
+                    {
+                        <span>@CurrentUser.Avatar</span>
+                    }
+                    else
+                    {
+                        <TmIcon Name="user" Size="IconSize.Sm" />
+                    }
+                </div>
+            }
+
+            <div class="tm-chat__bubble">
+                <div class="tm-chat__meta">
+                    <span class="tm-chat__author">@(message.Author?.Name ?? CurrentUser.Name)</span>
+                    <span class="tm-chat__message-time">@FormatTimestamp(message.Timestamp)</span>
+                    @if (message.IsEdited && !message.IsDeleted)
+                    {
+                        <span class="tm-chat__edited" data-testid="chat-edited-@message.Id">@Loc["TmChat_Edited"]</span>
+                    }
+                </div>
+
+                @if (message.IsDeleted)
+                {
+                    <div class="tm-chat__text tm-chat__text--deleted" data-testid="chat-deleted-@message.Id">
+                        <TmIcon Name="slash" Size="IconSize.Sm" />
+                        <span>@Loc["TmChat_Deleted"]</span>
+                    </div>
+                }
+                else if (_editingId == message.Id)
+                {
+                    <div class="tm-chat__edit">
+                        <textarea class="tm-chat__input tm-chat__edit-input"
+                                  rows="1"
+                                  data-testid="chat-edit-input"
+                                  @bind="_editText"
+                                  @bind:event="oninput"
+                                  @onkeydown="HandleEditKeyDownAsync"></textarea>
+                        <div class="tm-chat__edit-actions">
+                            <button type="button" class="tm-chat__edit-save" data-testid="chat-edit-save" @onclick="CommitEditAsync">@Loc["TmChat_Save"]</button>
+                            <button type="button" class="tm-chat__edit-cancel" data-testid="chat-edit-cancel" @onclick="CancelEdit">@Loc["TmChat_Cancel"]</button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="tm-chat__text">
+                        @if (message.IsError)
+                        {
+                            <span class="tm-chat__error-text">@message.Text</span>
+                        }
+                        else if (message.IsSending)
+                        {
+                            <span>@message.Text</span>
+                            <span class="tm-chat__sending-dots" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <span>@message.Text</span>
+                        }
+                    </div>
+
+                    @if (message.Attachments.Count > 0)
+                    {
+                        <div class="tm-chat__attachments">
+                            @foreach (var attachment in message.Attachments)
+                            {
+                                <button type="button"
+                                        class="tm-chat__attachment"
+                                        @onclick="() => HandleAttachmentClick(attachment)"
+                                        title="@attachment.Name">
+                                    <TmIcon Name="file" Size="IconSize.Sm" />
+                                    <span class="tm-chat__attachment-name">@attachment.Name</span>
+                                    @if (attachment.Size.HasValue)
+                                    {
+                                        <span class="tm-chat__attachment-size">@FormatFileSize(attachment.Size)</span>
+                                    }
+                                </button>
+                            }
+                        </div>
+                    }
+                }
+
+                @if (EnableReactions && message.Reactions.Count > 0 && !message.IsDeleted)
+                {
+                    <div class="tm-chat__reactions">
+                        @foreach (var reaction in message.Reactions.Where(r => r.Count > 0))
+                        {
+                            var r = reaction;
+                            <button type="button"
+                                    class="@GetReactionChipClass(r)"
+                                    data-testid="chat-reaction-@message.Id"
+                                    data-emoji="@r.Emoji"
+                                    @onclick="() => ToggleReactionAsync(message.Id, r.Emoji)">
+                                <span class="tm-chat__reaction-emoji">@r.Emoji</span>
+                                <span class="tm-chat__reaction-count">@r.Count</span>
+                            </button>
+                        }
+                    </div>
+                }
+
+                @if (!inThread && EnableThreads && ReplyCountOf(message) > 0)
+                {
+                    <button type="button"
+                            class="tm-chat__thread-badge"
+                            data-testid="chat-thread-open-@message.Id"
+                            @onclick="() => OpenThreadAsync(message)">
+                        <TmIcon Name="message-circle" Size="IconSize.Sm" />
+                        <span>@string.Format(Loc["TmChat_ReplyCount"], ReplyCountOf(message))</span>
+                    </button>
+                }
+
+                @if (ShowReadReceipts && IsCurrentUser(message.Author) && !message.IsDeleted && OtherReaders(message).Count > 0)
+                {
+                    <div class="tm-chat__receipts" data-testid="chat-receipts-@message.Id" title="@GetReceiptsText(message)">
+                        <TmIcon Name="check-check" Size="IconSize.Sm" />
+                        <span class="tm-chat__receipts-text">@GetReceiptsText(message)</span>
+                    </div>
+                }
+
+                @if (!message.IsDeleted && _editingId != message.Id)
+                {
+                    <div class="tm-chat__actions">
+                        @if (EnableReactions)
+                        {
+                            <button type="button" class="tm-chat__action" data-testid="chat-react-@message.Id"
+                                    aria-label="@Loc["TmChat_React"]" @onclick="() => TogglePicker(message.Id)">
+                                <TmIcon Name="smile" Size="IconSize.Sm" />
+                            </button>
+                        }
+                        @if (!inThread && EnableThreads)
+                        {
+                            <button type="button" class="tm-chat__action" data-testid="chat-reply-@message.Id"
+                                    aria-label="@Loc["TmChat_Reply"]" @onclick="() => OpenThreadAsync(message)">
+                                <TmIcon Name="message-circle" Size="IconSize.Sm" />
+                            </button>
+                        }
+                        @if (CanEditDelete(message))
+                        {
+                            <button type="button" class="tm-chat__action" data-testid="chat-edit-@message.Id"
+                                    aria-label="@Loc["TmChat_Edit"]" @onclick="() => StartEdit(message)">
+                                <TmIcon Name="pencil" Size="IconSize.Sm" />
+                            </button>
+                            <button type="button" class="tm-chat__action tm-chat__action--danger" data-testid="chat-delete-@message.Id"
+                                    aria-label="@Loc["TmChat_Delete"]" @onclick="() => DeleteAsync(message)">
+                                <TmIcon Name="trash" Size="IconSize.Sm" />
+                            </button>
+                        }
+                    </div>
+
+                    @if (_pickerForId == message.Id)
+                    {
+                        <div class="tm-chat__emoji-picker" data-testid="chat-emoji-picker">
+                            @for (var i = 0; i < ReactionEmojis.Count; i++)
+                            {
+                                var emoji = ReactionEmojis[i];
+                                var idx = i;
+                                <button type="button" class="tm-chat__emoji" data-testid="chat-emoji-@message.Id-@idx"
+                                        @onclick="() => ToggleReactionAsync(message.Id, emoji)">@emoji</button>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        }
+    </div>;
+}
