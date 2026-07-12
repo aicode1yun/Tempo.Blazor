@@ -113,7 +113,9 @@ public partial class TmChat : ComponentBase
     {
         if (!AutoReadReceipts || !OnMessageRead.HasDelegate) return;
 
-        foreach (var message in Messages)
+        // Enumerate a snapshot: the handler may mutate the host's message list
+        // (e.g. a shared conversation store) while we iterate, and the list is not ours.
+        foreach (var message in Messages.ToArray())
         {
             if (message.Type == ChatMessageType.System || message.IsDeleted) continue;
             if (IsCurrentUser(message.Author)) continue;

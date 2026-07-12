@@ -200,6 +200,32 @@ public class TmChatK6Tests : LocalizationTestBase
     }
 
     [Fact]
+    public void OnMessageRead_HandlerMutatingMessageList_DoesNotThrow()
+    {
+        // Regression: a host whose read handler mutates the SAME list the component was
+        // handed (a shared conversation store) must not trip "collection modified" while
+        // TmChat enumerates messages for read receipts during OnAfterRenderAsync.
+        var messages = new List<ChatMessage>
+        {
+            new("m1", "Hi", Bob, ChatMessageType.Incoming),
+            new("m2", "Yo", Bob, ChatMessageType.Incoming),
+        };
+        var addedOnce = false;
+
+        var act = () => RenderComponent<TmChat>(p => p
+            .Add(c => c.CurrentUser, Me)
+            .Add(c => c.Messages, messages)
+            .Add(c => c.OnMessageRead, EventCallback.Factory.Create<string>(this, _ =>
+            {
+                if (addedOnce) return;
+                addedOnce = true;
+                messages.Add(new ChatMessage("m3", "auto", Bob, ChatMessageType.Incoming));
+            })));
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
     public void AlreadyReadIncomingMessage_DoesNotFireOnMessageRead()
     {
         var read = new List<string>();
