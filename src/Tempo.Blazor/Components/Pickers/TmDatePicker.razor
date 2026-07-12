@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Pickers
+@using Tempo.Blazor.Components.Icons
 
 <div class="tm-date-picker @Class" @onkeydown="OnKeyDown" @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(Label))
@@ -21,7 +22,9 @@
             {
                 <span class="tm-picker-placeholder">@(Placeholder ?? Loc["TmDatePicker_Placeholder"])</span>
             }
-            <span class="tm-date-picker-icon" aria-hidden="true"></span>
+            <span class="tm-date-picker-icon" aria-hidden="true">
+                <TmIcon Name="@IconNames.Calendar" Size="IconSize.Sm" />
+            </span>
         </button>
 
         @if (Value.HasValue && !Disabled)

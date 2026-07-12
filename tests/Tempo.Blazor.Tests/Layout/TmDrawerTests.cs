@@ -1,7 +1,6 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Components.Layout;
 using Tempo.Blazor.Tests.Localization;
 
@@ -178,10 +177,10 @@ public class TmDrawerTests : LocalizationTestBase
         isOpen.Should().BeTrue();
     }
 
-    // ── Escape key ─────────────────────────────────────────
+    // ── Escape key (document-level via focus-trap module) ──
 
     [Fact]
-    public void Drawer_EscapeKey_ClosesDrawer()
+    public async Task Drawer_EscapeKey_ClosesDrawer()
     {
         bool isOpen = true;
         var cut = RenderComponent<TmDrawer>(p => p
@@ -189,9 +188,26 @@ public class TmDrawerTests : LocalizationTestBase
             .Add(x => x.IsOpenChanged, EventCallback.Factory.Create<bool>(this, v => isOpen = v))
             .AddChildContent("Content"));
 
-        cut.Find("[role='dialog']").KeyDown(new KeyboardEventArgs { Key = "Escape" });
+        // Esc is delivered by the shared focus-trap module at the document level so it works
+        // regardless of where focus sits; the module calls back into this JSInvokable.
+        await cut.InvokeAsync(() => cut.Instance.HandleFocusTrapEscapeAsync());
 
         isOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Drawer_EscapeKey_DoesNotClose_WhenCloseOnEscapeFalse()
+    {
+        bool isOpen = true;
+        var cut = RenderComponent<TmDrawer>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.CloseOnEscape, false)
+            .Add(x => x.IsOpenChanged, EventCallback.Factory.Create<bool>(this, v => isOpen = v))
+            .AddChildContent("Content"));
+
+        await cut.InvokeAsync(() => cut.Instance.HandleFocusTrapEscapeAsync());
+
+        isOpen.Should().BeTrue();
     }
 
     // ── Header / Footer slots ──────────────────────────────

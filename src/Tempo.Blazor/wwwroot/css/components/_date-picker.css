@@ -30,8 +30,7 @@
 .tm-date-picker-trigger:focus { outline: none; border-color: var(--tm-color-primary); box-shadow: var(--tm-shadow-focus); }
 .tm-date-picker-trigger[disabled] { opacity: 0.5; cursor: not-allowed; }
 
-.tm-date-picker-icon { margin-left: auto; color: var(--tm-text-tertiary); font-size: 0.875rem; }
-.tm-date-picker-icon::after { content: "\01F4C5"; }
+.tm-date-picker-icon { margin-left: auto; color: var(--tm-text-tertiary); }
 
 .tm-date-picker-popup {
   position: absolute;
