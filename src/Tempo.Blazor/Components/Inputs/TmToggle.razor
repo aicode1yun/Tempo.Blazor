@@ -12,6 +12,7 @@
                disabled="@Disabled"
                class="tm-toggle-input"
                role="switch"
+               aria-label="@Label"
                aria-checked="@Value.ToString().ToLowerInvariant()"
                @onchange="HandleChangeAsync"
                @onkeydown="HandleKeyDownAsync" />

@@ -14,6 +14,7 @@
                        class="tm-input @(ReadOnly ? "tm-input--readonly" : "")"
                        value="@_amountText"
                        placeholder="0.00"
+                       aria-label="@ResolvedAmountLabel"
                        readonly="@ReadOnly"
                        @onchange="HandleAmountChangeAsync"
                        @onblur="HandleAmountBlurAsync" />
@@ -42,6 +43,7 @@
                         <input type="text"
                                class="tm-input tm-input--readonly"
                                value="@_convertedText"
+                               aria-label="@ResolvedConvertedLabel"
                                readonly />
                         @if (_converting)
                         {
@@ -69,6 +71,7 @@
                 <input type="text"
                        class="tm-input @(ReadOnly ? "tm-input--readonly" : "")"
                        value="@_manualRateText"
+                       aria-label="@ResolvedManualRateLabel"
                        readonly="@ReadOnly"
                        @onchange="HandleManualRateChangeAsync"
                        @onblur="HandleManualRateBlurAsync" />
