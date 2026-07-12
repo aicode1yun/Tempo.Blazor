@@ -52,6 +52,11 @@
 .tm-btn-primary:active:not(:disabled) {
   background-color: var(--tm-color-primary-active);
 }
+/* Dark mode: --tm-color-primary is a lighter blue (primary-400) for accents; white text on it is
+   only ~2.4:1, so filled primary buttons use dark text (>=8:1) instead. */
+[data-theme="dark"] .tm-btn-primary {
+  color: var(--tm-color-gray-900);
+}
 
 .tm-btn-secondary {
   background-color: var(--tm-bg-surface);

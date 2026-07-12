@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
 @implements IAsyncDisposable
@@ -7,7 +8,7 @@
 {
     <div @ref="_dialog"
          class="tm-document-json-debug-modal"
-         data-testid="document-json-debug-modal"
+         data-testid="@TestId("document-json-debug-modal")"
          role="dialog"
          aria-modal="true"
          aria-label="@Loc["TmDocumentEditor_DebugDocumentJsonTitle"]">
@@ -18,7 +19,7 @@
                 <button type="button"
                         @ref="_copyButton"
                         class="tm-document-json-debug-modal__copy"
-                        data-testid="document-json-debug-copy"
+                        data-testid="@TestId("document-json-debug-copy")"
                         title="@Loc["TmDocumentEditor_Copy"]"
                         aria-label="@Loc["TmDocumentEditor_Copy"]"
                         @onclick="OnCopyJson">
@@ -26,7 +27,7 @@
                 </button>
                 <button type="button"
                         class="tm-document-json-debug-modal__close"
-                        data-testid="document-json-debug-close"
+                        data-testid="@TestId("document-json-debug-close")"
                         title="@Loc["TmDocumentEditor_Close"]"
                         aria-label="@Loc["TmDocumentEditor_Close"]"
                         @onclick="OnClose">
@@ -34,36 +35,36 @@
                 </button>
             </header>
             <section class="tm-document-json-debug-modal__section"
-                     data-testid="document-canonical-debug">
+                     data-testid="@TestId("document-canonical-debug")">
                 <h3 class="tm-document-json-debug-modal__section-title">@Loc["TmDocumentEditor_DebugCanonicalDocument"]</h3>
                 <pre class="tm-document-json-debug-modal__json"
-                     data-testid="document-json-debug-content">@Json</pre>
+                     data-testid="@TestId("document-json-debug-content")">@Json</pre>
             </section>
             @if (!string.IsNullOrWhiteSpace(RuntimeDebugJson))
             {
                 <section class="tm-document-json-debug-modal__section"
-                         data-testid="document-runtime-debug">
+                         data-testid="@TestId("document-runtime-debug")">
                     <h3 class="tm-document-json-debug-modal__section-title">@Loc["TmDocumentEditor_DebugRuntimeState"]</h3>
                     <pre class="tm-document-json-debug-modal__json"
-                         data-testid="document-runtime-debug-content">@RuntimeDebugJson</pre>
+                         data-testid="@TestId("document-runtime-debug-content")">@RuntimeDebugJson</pre>
                 </section>
             }
             @if (!string.IsNullOrWhiteSpace(DocxDrawingMetadataJson))
             {
                 <section class="tm-document-json-debug-modal__section"
-                         data-testid="document-docx-drawing-debug">
+                         data-testid="@TestId("document-docx-drawing-debug")">
                     <h3 class="tm-document-json-debug-modal__section-title">@Loc["TmDocumentEditor_DebugDocxDrawingMetadata"]</h3>
                     <pre class="tm-document-json-debug-modal__json"
-                         data-testid="document-docx-drawing-debug-content">@DocxDrawingMetadataJson</pre>
+                         data-testid="@TestId("document-docx-drawing-debug-content")">@DocxDrawingMetadataJson</pre>
                 </section>
             }
             @if (!string.IsNullOrWhiteSpace(RecoveryDetailJson))
             {
                 <section class="tm-document-json-debug-modal__section"
-                         data-testid="document-runtime-recovery-debug">
+                         data-testid="@TestId("document-runtime-recovery-debug")">
                     <h3 class="tm-document-json-debug-modal__section-title">@Loc["TmDocumentEditor_DebugRuntimeRecovery"]</h3>
                     <pre class="tm-document-json-debug-modal__json"
-                         data-testid="document-runtime-recovery-debug-content">@RecoveryDetailJson</pre>
+                         data-testid="@TestId("document-runtime-recovery-debug-content")">@RecoveryDetailJson</pre>
                 </section>
             }
         </div>

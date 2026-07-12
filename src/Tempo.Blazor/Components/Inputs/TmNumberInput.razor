@@ -11,7 +11,7 @@
             <button type="button"
                     class="tm-number-input__decrement"
                     disabled="@(Disabled || IsAtMin)"
-                    aria-label="Decrease"
+                    aria-label="@Loc["TmNumberInput_Decrease"]"
                     @onclick="Decrement">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                     <line x1="5" y1="12" x2="19" y2="12" />
@@ -32,6 +32,8 @@
                max="@Max"
                step="@Step"
                autocomplete="@AutoComplete"
+               aria-invalid="@(HasError ? "true" : null)"
+               aria-describedby="@DescribedBy"
                class="tm-number-input__input"
                @attributes="AdditionalAttributes"
                @onchange="HandleChange" />
@@ -46,7 +48,7 @@
             <button type="button"
                     class="tm-number-input__increment"
                     disabled="@(Disabled || IsAtMax)"
-                    aria-label="Increase"
+                    aria-label="@Loc["TmNumberInput_Increase"]"
                     @onclick="Increment">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                     <line x1="12" y1="5" x2="12" y2="19" />
@@ -57,11 +59,11 @@
     </div>
     @if (!string.IsNullOrEmpty(Error))
     {
-        <div class="tm-input-error-message">@Error</div>
+        <div id="@ErrorId" class="tm-input-error-message" role="alert">@Error</div>
     }
     @if (!string.IsNullOrEmpty(HelpText) && string.IsNullOrEmpty(Error))
     {
-        <div class="tm-input-help-text">@HelpText</div>
+        <div id="@HelpId" class="tm-input-help-text">@HelpText</div>
     }
 </div>
 
@@ -115,6 +117,16 @@
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
     private bool HasError => !string.IsNullOrEmpty(Error);
+
+    // ── Accessibility ────────────────────────────────────────────
+    private readonly string _ariaId = Guid.NewGuid().ToString("n")[..8];
+    private string ErrorId => $"{_ariaId}-error";
+    private string HelpId => $"{_ariaId}-help";
+    private string? DescribedBy =>
+        HasError ? ErrorId
+        : !string.IsNullOrEmpty(HelpText) ? HelpId
+        : null;
+
     private bool IsAtMin => Min.HasValue && Value.HasValue && Value.Value <= Min.Value;
     private bool IsAtMax => Max.HasValue && Value.HasValue && Value.Value >= Max.Value;
 

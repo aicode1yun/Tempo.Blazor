@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "In-memory IPushSubscriptionStore for demos and tests (upsert by endpoint, query by user).",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/InMemoryPushSubscriptionStore.cs",
+  "documentationStatus": "generated",
+  "itemName": "InMemoryPushSubscriptionStore"
+}

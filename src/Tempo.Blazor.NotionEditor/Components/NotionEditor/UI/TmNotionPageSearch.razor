@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.Components.NotionEditor.Services
@@ -69,7 +70,7 @@
                     <div class="tm-nps__filter-group">
                         <label class="tm-nps__filter-label">@Loc["TmNotionPageSearch_FilterAuthorLabel"]</label>
                         <input class="tm-nps__filter-input"
-                               data-testid="notion-search-filter-author"
+                               data-testid="@TestId("notion-search-filter-author")"
                                type="text"
                                placeholder="@Loc["TmNotionPageSearch_FilterAuthorPlaceholder"]"
                                value="@_filterAuthor"
@@ -79,7 +80,7 @@
                     <div class="tm-nps__filter-group">
                         <label class="tm-nps__filter-label">@Loc["TmNotionPageSearch_FilterLabelLabel"]</label>
                         <input class="tm-nps__filter-input"
-                               data-testid="notion-search-filter-label"
+                               data-testid="@TestId("notion-search-filter-label")"
                                type="text"
                                placeholder="@Loc["TmNotionPageSearch_FilterLabelPlaceholder"]"
                                value="@_filterLabel"
@@ -89,7 +90,7 @@
                     <div class="tm-nps__filter-group">
                         <label class="tm-nps__filter-label">@Loc["TmNotionPageSearch_FilterTypeLabel"]</label>
                         <select class="tm-nps__filter-input"
-                                data-testid="notion-search-filter-type"
+                                data-testid="@TestId("notion-search-filter-type")"
                                 value="@_filterType"
                                 @onchange="e => { _filterType = e.Value?.ToString() ?? string.Empty; _ = ApplyFiltersAsync(); }">
                             <option value="">@Loc["TmNotionPageSearch_FilterTypeAll"]</option>
@@ -105,7 +106,7 @@
                     <div class="tm-nps__filter-group">
                         <label class="tm-nps__filter-label">@Loc["TmNotionPageSearch_FilterSpaceLabel"]</label>
                         <input class="tm-nps__filter-input"
-                               data-testid="notion-search-filter-space"
+                               data-testid="@TestId("notion-search-filter-space")"
                                type="text"
                                placeholder="@Loc["TmNotionPageSearch_FilterSpacePlaceholder"]"
                                value="@_filterSpace"
@@ -115,7 +116,7 @@
                     <div class="tm-nps__filter-group">
                         <label class="tm-nps__filter-label">@Loc["TmNotionPageSearch_FilterDateFromLabel"]</label>
                         <input class="tm-nps__filter-input"
-                               data-testid="notion-search-filter-created-after"
+                               data-testid="@TestId("notion-search-filter-created-after")"
                                type="date"
                                value="@_filterDateFrom"
                                @onchange="e => { _filterDateFrom = e.Value?.ToString() ?? string.Empty; _ = ApplyFiltersAsync(); }" />
@@ -124,7 +125,7 @@
                     <div class="tm-nps__filter-group">
                         <label class="tm-nps__filter-label">@Loc["TmNotionPageSearch_FilterDateToLabel"]</label>
                         <input class="tm-nps__filter-input"
-                               data-testid="notion-search-filter-created-before"
+                               data-testid="@TestId("notion-search-filter-created-before")"
                                type="date"
                                value="@_filterDateTo"
                                @onchange="e => { _filterDateTo = e.Value?.ToString() ?? string.Empty; _ = ApplyFiltersAsync(); }" />
@@ -133,7 +134,7 @@
                     <div class="tm-nps__filter-group">
                         <label class="tm-nps__filter-label">@Loc["TmNotionPageSearch_FilterEditedBeforeLabel"]</label>
                         <input class="tm-nps__filter-input"
-                               data-testid="notion-search-filter-edited-before"
+                               data-testid="@TestId("notion-search-filter-edited-before")"
                                type="date"
                                value="@_filterEditedBefore"
                                @onchange="e => { _filterEditedBefore = e.Value?.ToString() ?? string.Empty; _ = ApplyFiltersAsync(); }" />
@@ -142,7 +143,7 @@
                     @if (HasActiveFilters)
                     {
                         <button class="tm-nps__filter-clear"
-                                data-testid="notion-search-filter-clear"
+                                data-testid="@TestId("notion-search-filter-clear")"
                                 type="button"
                                 @onclick="ClearFiltersAsync">
                             @Loc["TmNotionPageSearch_FilterClear"]

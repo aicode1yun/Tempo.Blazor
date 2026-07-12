@@ -42,6 +42,7 @@
             <label class="tm-pagination-size-label">@Loc["TmDataTable_PageSize"]</label>
             <select class="tm-pagination-page-size"
                     value="@PageSize"
+                    aria-label="@Loc["TmDataTable_PageSize"]"
                     @onchange="OnPageSizeSelectChange">
                 @foreach (var size in PageSizeOptions)
                 {

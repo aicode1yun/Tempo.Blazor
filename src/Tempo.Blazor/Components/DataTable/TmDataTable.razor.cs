@@ -482,6 +482,27 @@ public partial class TmDataTable<TItem> : IDisposable
     private IReadOnlyDictionary<string, object>? GetRowAttributes(TItem item)
     {
         var attributes = RowAttributes?.Invoke(item);
+
+        // Selectable rows expose their selection state to assistive tech via aria-selected
+        // (the table is role=grid). This requires merging into the consumer attributes.
+        if (Selectable)
+        {
+            var result = new Dictionary<string, object>((attributes?.Count ?? 0) + 1, StringComparer.Ordinal);
+            if (attributes is not null)
+            {
+                foreach (var pair in attributes)
+                {
+                    if (!ReservedRowAttributeNames.Contains(pair.Key) &&
+                        !string.Equals(pair.Key, "aria-selected", StringComparison.Ordinal))
+                    {
+                        result[pair.Key] = pair.Value;
+                    }
+                }
+            }
+            result["aria-selected"] = IsSelected(item) ? "true" : "false";
+            return result;
+        }
+
         if (attributes is null || attributes.Count == 0)
         {
             return attributes;
@@ -1473,6 +1494,7 @@ public partial class TmDataTable<TItem> : IDisposable
                             builder.AddAttribute(seq++, "class", "tm-col-check");
                             builder.OpenElement(seq++, "input");
                             builder.AddAttribute(seq++, "type", "checkbox");
+                            builder.AddAttribute(seq++, "aria-label", Loc["TmDataTable_SelectRow"]);
                             builder.AddAttribute(seq++, "checked", IsSelected(rowItem));
                             builder.AddAttribute(seq++, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, e => ToggleRowSelectionAsync(rowItem, e)));
                             builder.CloseElement(); // input

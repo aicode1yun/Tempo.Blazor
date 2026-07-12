@@ -15,10 +15,10 @@
   /* Border */
   --tm-border-color:         #334155;
 
-  /* Text */
+  /* Text — lightened so muted text stays WCAG AA on dark muted surfaces (--tm-bg-muted #334155). */
   --tm-text-primary:         #f1f5f9;
-  --tm-text-secondary:       #94a3b8;
-  --tm-text-tertiary:        #64748b;
+  --tm-text-secondary:       #cbd5e1; /* slate-300: >=4.5:1 on #334155 (was slate-400 #94a3b8 ~3.7:1) */
+  --tm-text-tertiary:        #94a3b8; /* slate-400: AA on dark input/surface (was slate-500 #64748b) */
   --tm-text-disabled:        #475569;
   --tm-text-inverse:         #0f172a;
 

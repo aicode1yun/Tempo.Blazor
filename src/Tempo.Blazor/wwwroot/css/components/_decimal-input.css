@@ -34,7 +34,7 @@
 }
 
 .tm-decimal-input__input::placeholder {
-    color: var(--tm-text-tertiary);
+    color: var(--tm-text-secondary);
     font-weight: 400;
 }
 

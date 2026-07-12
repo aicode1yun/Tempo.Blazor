@@ -1,8 +1,9 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Page
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Components.NotionEditor
 @using Tempo.Blazor.NotionEditor.Interfaces
 
-<section class="tm-npp @Class" data-testid="notion-public-page">
+<section class="tm-npp @Class" data-testid="@TestId("notion-public-page")">
     @if (_loading)
     {
         <div class="tm-npp__state" role="status" aria-busy="true">
@@ -12,7 +13,7 @@
     }
     else if (_share is null)
     {
-        <div class="tm-npp__state tm-npp__state--empty" data-testid="notion-public-not-found">
+        <div class="tm-npp__state tm-npp__state--empty" data-testid="@TestId("notion-public-not-found")">
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
                 <path d="M9 13h10M11 17h6M8 4.5h8l4 4v15H8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M16 4.5v4h4" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>

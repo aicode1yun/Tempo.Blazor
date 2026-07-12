@@ -5,6 +5,9 @@
 <div class="tm-color-gradient @Class" @attributes="AdditionalAttributes">
     @* SV Gradient Area *@
     <div class="tm-color-gradient-area"
+         role="slider"
+         aria-label="@Loc["TmColorGradient_Area"]"
+         aria-valuetext="@FormatValue()"
          style="background-color: @(_hueColor);"
          @onpointerdown="OnGradientPointerDown"
          @onpointermove="OnGradientPointerMove"
@@ -18,6 +21,9 @@
 
     @* Hue Slider *@
     <div class="tm-color-gradient-hue-track"
+         role="slider"
+         aria-label="@Loc["TmColorGradient_Hue"]"
+         aria-valuemin="0" aria-valuemax="360" aria-valuenow="@((int)_hue)"
          @onpointerdown="OnHuePointerDown"
          @onpointermove="OnHuePointerMove"
          @onpointerup="OnHuePointerUp">
@@ -29,6 +35,9 @@
     @if (ShowAlpha)
     {
         <div class="tm-color-gradient-alpha-track"
+             role="slider"
+             aria-label="@Loc["TmColorGradient_Alpha"]"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="@((int)(_alpha * 100))"
              @onpointerdown="OnAlphaPointerDown"
              @onpointermove="OnAlphaPointerMove"
              @onpointerup="OnAlphaPointerUp">
@@ -42,21 +51,21 @@
     <div class="tm-color-gradient-inputs">
         <div class="tm-color-gradient-input-group">
             <label class="tm-color-gradient-input-label">R</label>
-            <input type="number" min="0" max="255" class="tm-color-gradient-input" value="@_r" @onchange="OnRedChanged" />
+            <input type="number" min="0" max="255" aria-label="@Loc["TmColorGradient_Red"]" class="tm-color-gradient-input" value="@_r" @onchange="OnRedChanged" />
         </div>
         <div class="tm-color-gradient-input-group">
             <label class="tm-color-gradient-input-label">G</label>
-            <input type="number" min="0" max="255" class="tm-color-gradient-input" value="@_g" @onchange="OnGreenChanged" />
+            <input type="number" min="0" max="255" aria-label="@Loc["TmColorGradient_Green"]" class="tm-color-gradient-input" value="@_g" @onchange="OnGreenChanged" />
         </div>
         <div class="tm-color-gradient-input-group">
             <label class="tm-color-gradient-input-label">B</label>
-            <input type="number" min="0" max="255" class="tm-color-gradient-input" value="@_b" @onchange="OnBlueChanged" />
+            <input type="number" min="0" max="255" aria-label="@Loc["TmColorGradient_Blue"]" class="tm-color-gradient-input" value="@_b" @onchange="OnBlueChanged" />
         </div>
         @if (ShowAlpha)
         {
             <div class="tm-color-gradient-input-group">
                 <label class="tm-color-gradient-input-label">A</label>
-                <input type="number" min="0" max="1" step="0.01" class="tm-color-gradient-input" value="@_alpha.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnAlphaInputChanged" />
+                <input type="number" min="0" max="1" step="0.01" aria-label="@Loc["TmColorGradient_Alpha"]" class="tm-color-gradient-input" value="@_alpha.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnAlphaInputChanged" />
             </div>
         }
     </div>

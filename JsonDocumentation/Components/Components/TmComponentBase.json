@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components",
+  "description": "Shared base class for Tempo.Blazor components that standardises the data-testid convention. A component renders each of its internal test ids through the protected TestId(name) helper: when a host sets TestIdPrefix, every internal id becomes \"{prefix}-{name}\", so multiple instances of the same component on one page no longer collide; when the prefix is null the bare name is emitted, so existing E2E selectors keep working (fully backward compatible). DataTestId overrides the component's root test id and is resolved through the protected RootTestId(defaultName) helper. Inheriting this base is purely additive: both parameters are optional, default to null, and change no existing rendered output.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/TmComponentBase.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DataTestId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional explicit data-testid for the component's root element. When set, it overrides the component's default root test id (see RootTestId). Null keeps the component's built-in default."
+    },
+    {
+      "name": "TestIdPrefix",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional namespace applied to every internal test id the component emits via TestId(name). When set, each id becomes \"{prefix}-{name}\", letting several instances of the same component coexist on one page without colliding. Null emits bare names, preserving backward-compatible selectors."
+    }
+  ],
+  "itemName": "TmComponentBase"
+}

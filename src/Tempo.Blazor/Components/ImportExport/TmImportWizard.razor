@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.ImportExport
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Components.Buttons
 @using Tempo.Blazor.Components.Workflow
 @using Tempo.Blazor.Interfaces
@@ -18,25 +19,25 @@
     </div>
 
     <div class="tm-import-wizard-actions">
-        <span data-testid="wizard-cancel">
+        <span data-testid="@TestId("wizard-cancel")">
             <TmButton Variant="ButtonVariant.Ghost" OnClick="@OnCancel">@DisplayCancelText</TmButton>
         </span>
         <div class="tm-import-wizard-actions-right">
             @if (ActiveStep > 0)
             {
-                <span data-testid="wizard-back">
+                <span data-testid="@TestId("wizard-back")">
                     <TmButton Variant="ButtonVariant.Secondary" OnClick="@GoBack">@DisplayBackText</TmButton>
                 </span>
             }
             @if (IsLastStep)
             {
-                <span data-testid="wizard-complete">
+                <span data-testid="@TestId("wizard-complete")">
                     <TmButton Variant="ButtonVariant.Primary" OnClick="@OnComplete">@DisplayCompleteText</TmButton>
                 </span>
             }
             else
             {
-                <span data-testid="wizard-next">
+                <span data-testid="@TestId("wizard-next")">
                     <TmButton Variant="ButtonVariant.Primary" OnClick="@GoNext">@DisplayNextText</TmButton>
                 </span>
             }

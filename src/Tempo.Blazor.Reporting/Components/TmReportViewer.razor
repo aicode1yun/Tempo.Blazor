@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Reporting.Components
+@inherits Tempo.Blazor.Components.TmComponentBase
 @implements IAsyncDisposable
 @using Tempo.Blazor.Reporting.Interop
 @using Tempo.Blazor.Reporting.Services
@@ -8,15 +9,15 @@
 <div @ref="_root"
      class="@CssClass"
      style="@RootStyle"
-     data-testid="tm-report-viewer"
+     data-testid="@TestId("tm-report-viewer")"
      @attributes="AdditionalAttributes">
-    <div class="tm-report-viewer__toolbar" role="toolbar" aria-label="@Loc["TmReportViewer_ToolbarLabel"]" data-testid="tm-report-toolbar">
+    <div class="tm-report-viewer__toolbar" role="toolbar" aria-label="@Loc["TmReportViewer_ToolbarLabel"]" data-testid="@TestId("tm-report-toolbar")">
         <div class="tm-report-viewer__toolbar-group">
             <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.SkipBack" AriaLabel="@Loc["TmReportViewer_FirstPage"]" Disabled="@(!CanGoPrevious)" OnClick="FirstPageAsync" />
             <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.ChevronLeft" AriaLabel="@Loc["TmReportViewer_PreviousPage"]" Disabled="@(!CanGoPrevious)" OnClick="PreviousPageAsync" />
             <label class="tm-report-viewer__page-label" for="@_pageInputId">@Loc["TmReportViewer_Page"]</label>
             <input id="@_pageInputId"
-                   data-testid="tm-report-page-input"
+                   data-testid="@TestId("tm-report-page-input")"
                    class="tm-report-viewer__page-input"
                    type="number"
                    min="1"
@@ -24,7 +25,7 @@
                    value="@CurrentPage"
                    disabled="@(_snapshot is null || _isLoading)"
                    @onchange="HandlePageInputAsync" />
-            <span class="tm-report-viewer__page-count" data-testid="tm-report-page-count">@Loc["TmReportViewer_PageOf", CurrentPage, PageCount]</span>
+            <span class="tm-report-viewer__page-count" data-testid="@TestId("tm-report-page-count")">@Loc["TmReportViewer_PageOf", CurrentPage, PageCount]</span>
             <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.ChevronRight" AriaLabel="@Loc["TmReportViewer_NextPage"]" Disabled="@(!CanGoNext)" OnClick="NextPageAsync" />
             <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.SkipForward" AriaLabel="@Loc["TmReportViewer_LastPage"]" Disabled="@(!CanGoNext)" OnClick="LastPageAsync" />
         </div>
@@ -32,7 +33,7 @@
         <div class="tm-report-viewer__toolbar-group">
             <label class="tm-report-viewer__zoom-label" for="@_zoomSelectId">@Loc["TmReportViewer_Zoom"]</label>
             <select id="@_zoomSelectId"
-                    data-testid="tm-report-zoom-select"
+                    data-testid="@TestId("tm-report-zoom-select")"
                     class="tm-report-viewer__zoom-select"
                     value="@ZoomValue"
                     disabled="@(_snapshot is null || _isLoading)"
@@ -65,7 +66,7 @@
 
         <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="@IconNames.Refresh" AriaLabel="@Loc["TmReportViewer_Refresh"]" Disabled="@(ReportSource is null || _isLoading)" OnClick="RefreshAsync" />
 
-        <div class="tm-report-viewer__export" data-testid="tm-report-export">
+        <div class="tm-report-viewer__export" data-testid="@TestId("tm-report-export")">
             <TmButton Variant="ButtonVariant.Ghost"
                       Size="ButtonSize.Sm"
                       Icon="@IconNames.FileDown"
@@ -77,10 +78,10 @@
             </TmButton>
             @if (_exportMenuOpen)
             {
-                <div class="tm-report-viewer__export-menu" role="menu" data-testid="tm-report-export-menu">
-                    <button type="button" role="menuitem" class="tm-report-viewer__menu-item" data-testid="tm-report-export-pdf" @onclick="ExportPdfAsync">@Loc["TmReportViewer_ExportPdf"]</button>
-                    <button type="button" role="menuitem" class="tm-report-viewer__menu-item" data-testid="tm-report-export-csv" @onclick="ExportCsvAsync">@Loc["TmReportViewer_ExportCsv"]</button>
-                    <button type="button" role="menuitem" class="tm-report-viewer__menu-item" data-testid="tm-report-export-xlsx" @onclick="ExportXlsxAsync">@Loc["TmReportViewer_ExportXlsx"]</button>
+                <div class="tm-report-viewer__export-menu" role="menu" data-testid="@TestId("tm-report-export-menu")">
+                    <button type="button" role="menuitem" class="tm-report-viewer__menu-item" data-testid="@TestId("tm-report-export-pdf")" @onclick="ExportPdfAsync">@Loc["TmReportViewer_ExportPdf"]</button>
+                    <button type="button" role="menuitem" class="tm-report-viewer__menu-item" data-testid="@TestId("tm-report-export-csv")" @onclick="ExportCsvAsync">@Loc["TmReportViewer_ExportCsv"]</button>
+                    <button type="button" role="menuitem" class="tm-report-viewer__menu-item" data-testid="@TestId("tm-report-export-xlsx")" @onclick="ExportXlsxAsync">@Loc["TmReportViewer_ExportXlsx"]</button>
                 </div>
             }
         </div>
@@ -97,21 +98,21 @@
                                 OnSubmit="HandleParameterSubmitAsync" />
     }
 
-    <div class="tm-report-viewer__surface" data-testid="tm-report-surface">
-        <div class="tm-report-viewer__canvas-wrap @(_snapshot is null ? "tm-report-viewer__canvas-wrap--hidden" : null)" data-testid="tm-report-canvas-wrap">
-            <canvas @ref="_canvas" class="tm-report-viewer__canvas" data-testid="tm-report-viewer-canvas"></canvas>
+    <div class="tm-report-viewer__surface" data-testid="@TestId("tm-report-surface")">
+        <div class="tm-report-viewer__canvas-wrap @(_snapshot is null ? "tm-report-viewer__canvas-wrap--hidden" : null)" data-testid="@TestId("tm-report-canvas-wrap")">
+            <canvas @ref="_canvas" class="tm-report-viewer__canvas" data-testid="@TestId("tm-report-viewer-canvas")"></canvas>
         </div>
 
         @if (_isLoading)
         {
-            <div class="tm-report-viewer__state" data-testid="tm-report-loading-state">
+            <div class="tm-report-viewer__state" data-testid="@TestId("tm-report-loading-state")">
                 <TmSpinner Size="SpinnerSize.Md" />
                 <span>@Loc["TmReportViewer_Loading"]</span>
             </div>
         }
         else if (!string.IsNullOrWhiteSpace(_error))
         {
-            <div class="tm-report-viewer__state tm-report-viewer__state--error" data-testid="tm-report-error-state">
+            <div class="tm-report-viewer__state tm-report-viewer__state--error" data-testid="@TestId("tm-report-error-state")">
                 <TmIcon Name="@IconNames.AlertTriangle" Size="IconSize.Md" />
                 <strong>@Loc["TmReportViewer_ErrorTitle"]</strong>
                 <span>@_error</span>
@@ -119,7 +120,7 @@
         }
         else if (_snapshot is null)
         {
-            <div class="tm-report-viewer__state" data-testid="tm-report-empty-state">
+            <div class="tm-report-viewer__state" data-testid="@TestId("tm-report-empty-state")">
                 <TmIcon Name="@IconNames.FileText" Size="IconSize.Md" />
                 <strong>@Loc["TmReportViewer_EmptyTitle"]</strong>
                 <span>@Loc[ReportSource is null ? "TmReportViewer_NoSource" : "TmReportViewer_EmptyDescription"]</span>

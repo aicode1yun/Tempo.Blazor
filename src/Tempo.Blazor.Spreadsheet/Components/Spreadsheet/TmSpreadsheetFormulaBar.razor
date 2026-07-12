@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Spreadsheet
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Components.Spreadsheet.Models
 
 <div class="tm-spreadsheet-formula-bar" @ref="_rootRef">
@@ -37,13 +38,13 @@
                    aria-label="@Loc["TmSpreadsheet_FormulaEditorLabel"]"
                    aria-describedby="@GetFormulaAriaDescribedBy()"
                    placeholder="@Loc["TmSpreadsheet_FormulaBarPlaceholder"]"
-                   data-testid="tm-spreadsheet-formula-bar-input" />
+                   data-testid="@TestId("tm-spreadsheet-formula-bar-input")" />
             @if (HasSuggestions)
             {
                 <div class="tm-spreadsheet-formula-bar__suggestions"
                      role="listbox"
                      aria-label="@Loc["TmSpreadsheet_FormulaFunctionSuggestionsLabel"]"
-                     data-testid="tm-spreadsheet-formula-bar-suggestions">
+                     data-testid="@TestId("tm-spreadsheet-formula-bar-suggestions")">
                     @for (var index = 0; index < CurrentSession.Suggestions.Count; index++)
                     {
                         var suggestion = CurrentSession.Suggestions[index];
@@ -54,7 +55,7 @@
                                 aria-selected="@(isSelected ? "true" : "false")"
                                 @onmousedown:preventDefault
                                 @onclick="() => AcceptSuggestionAsync(index)"
-                                data-testid="tm-spreadsheet-formula-bar-suggestion">
+                                data-testid="@TestId("tm-spreadsheet-formula-bar-suggestion")">
                             <span class="tm-spreadsheet-formula-bar__suggestion-name">@suggestion.Name</span>
                             <span class="tm-spreadsheet-formula-bar__suggestion-signature">@suggestion.Signature</span>
                         </button>
@@ -66,7 +67,7 @@
                 <div class="tm-spreadsheet-formula-bar__hint"
                      id="@_functionHintId"
                      aria-live="polite"
-                     data-testid="tm-spreadsheet-formula-bar-hint">
+                     data-testid="@TestId("tm-spreadsheet-formula-bar-hint")">
                     <div class="tm-spreadsheet-formula-bar__hint-name">@CurrentSession.ActiveFunctionHint.Function.Name</div>
                     <div class="tm-spreadsheet-formula-bar__hint-signature">
                         <span>@($"{CurrentSession.ActiveFunctionHint.Function.Name}(")</span>

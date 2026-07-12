@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.Page;
 
-public partial class TmNotionPublicPage : ComponentBase
+public partial class TmNotionPublicPage : TmComponentBase
 {
     /// <summary>Public share token from the route.</summary>
     [Parameter] public string? Token { get; set; }

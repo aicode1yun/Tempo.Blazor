@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Scheduler
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Models
 
 @if (IsOpen)
@@ -22,7 +23,7 @@
                     <div class="tm-gantt__mapping-row">
                         <span class="tm-gantt__mapping-source">@col</span>
                         <select class="tm-input tm-gantt__mapping-select"
-                                data-testid="mapping-select-@col"
+                                data-testid="@TestId($"mapping-select-{col}")"
                                 value="@GetMappingValue(col)"
                                 @onchange="e => SetMapping(col, e.Value?.ToString())">
                             <option value="">—</option>

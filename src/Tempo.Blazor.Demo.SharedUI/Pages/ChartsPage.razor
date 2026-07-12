@@ -76,6 +76,38 @@
              ShowValues="true" />
 </section>
 
+<!-- Interactive legend & tooltips (K10) -->
+<section class="demo-section mb-8" data-testid="charts-interactive-section">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Interactive Legend &amp; Tooltips</h2>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        Click a legend entry to toggle its series (multi-dataset) or single slice (per-value); hover any
+        bar, point or slice for a rich tooltip. The component owns the hidden state and reports each
+        change through <code>OnSeriesToggle</code>.
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <TmChart Type="ChartType.Bar"
+                     Data="_groupedBarData"
+                     Height="320px"
+                     InteractiveLegend="true"
+                     OnSeriesToggle="HandleSeriesToggle" />
+        </div>
+        <div>
+            <TmChart Type="ChartType.Donut"
+                     Data="_donutCustomColorsData"
+                     Height="320px"
+                     InteractiveLegend="true"
+                     OnSeriesToggle="HandleSeriesToggle" />
+        </div>
+    </div>
+    @if (_lastToggle is not null)
+    {
+        <p class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="charts-toggle-status">
+            Toggled <strong>@_lastToggle.Label</strong> → @(_lastToggle.Hidden ? "hidden" : "shown")
+        </p>
+    }
+</section>
+
 <!-- Line Chart -->
 <section class="demo-section mb-8">
     <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Line Chart</h2>
@@ -201,10 +233,16 @@
 
 @code {
     private ChartSegment? _clickedSegment;
+    private ChartSeriesToggle? _lastToggle;
 
     private void HandleSegmentClick(ChartSegment segment)
     {
         _clickedSegment = segment;
+    }
+
+    private void HandleSeriesToggle(ChartSeriesToggle toggle)
+    {
+        _lastToggle = toggle;
     }
 
     private static readonly ChartData _donutCustomColorsData = new()

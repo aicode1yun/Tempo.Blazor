@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Files
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.Abstractions.Interfaces
 @using Microsoft.AspNetCore.Components.Forms
@@ -26,13 +27,13 @@
                         @if (att.ScanStatus is FileScanStatus.Blocked)
                         {
                             <span class="tm-file-scan-badge tm-file-scan-badge--blocked"
-                                  data-testid="attachment-scan-blocked"
+                                  data-testid="@TestId("attachment-scan-blocked")"
                                   title="@(att.ScanMessage ?? Loc["TmFileScan_Blocked"])">@Loc["TmFileScan_Blocked"]</span>
                         }
                         else if (att.ScanStatus is FileScanStatus.Pending)
                         {
                             <span class="tm-file-scan-badge tm-file-scan-badge--pending"
-                                  data-testid="attachment-scan-pending"
+                                  data-testid="@TestId("attachment-scan-pending")"
                                   title="@Loc["TmFileScan_Pending"]">@Loc["TmFileScan_Pending"]</span>
                         }
                         else if (att.CanDownload)

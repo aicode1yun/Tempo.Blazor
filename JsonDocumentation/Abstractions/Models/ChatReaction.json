@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "An emoji reaction on a chat message, grouped by emoji with the reacting users.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatReaction.cs",
+  "documentationStatus": "generated",
+  "itemName": "ChatReaction"
+}

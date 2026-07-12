@@ -1,46 +1,47 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 
 <section class="tm-document-table-toolbar"
          role="toolbar"
          aria-label="@Loc["TmDocumentEditor_TableToolbarLabel"]"
-         data-testid="document-table-toolbar">
-    <button type="button" data-testid="document-table-toolbar-insert-row-before" @onclick="InsertRowBefore">
+         data-testid="@TestId("document-table-toolbar")">
+    <button type="button" data-testid="@TestId("document-table-toolbar-insert-row-before")" @onclick="InsertRowBefore">
         <TmIcon Name="panel-top-open" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_InsertRowBefore"]</span>
     </button>
-    <button type="button" data-testid="document-table-toolbar-insert-row-after" @onclick="InsertRowAfter">
+    <button type="button" data-testid="@TestId("document-table-toolbar-insert-row-after")" @onclick="InsertRowAfter">
         <TmIcon Name="panel-bottom-open" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_InsertRow"]</span>
     </button>
-    <button type="button" data-testid="document-table-toolbar-insert-column-before" @onclick="InsertColumnBefore">
+    <button type="button" data-testid="@TestId("document-table-toolbar-insert-column-before")" @onclick="InsertColumnBefore">
         <TmIcon Name="panel-left-open" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_InsertColumnBefore"]</span>
     </button>
-    <button type="button" data-testid="document-table-toolbar-insert-column-after" @onclick="InsertColumnAfter">
+    <button type="button" data-testid="@TestId("document-table-toolbar-insert-column-after")" @onclick="InsertColumnAfter">
         <TmIcon Name="panel-right-open" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_InsertColumn"]</span>
     </button>
-    <button type="button" data-testid="document-table-toolbar-delete-row" @onclick="DeleteRow">
+    <button type="button" data-testid="@TestId("document-table-toolbar-delete-row")" @onclick="DeleteRow">
         <TmIcon Name="delete" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_DeleteRow"]</span>
     </button>
-    <button type="button" data-testid="document-table-toolbar-delete-column" @onclick="DeleteColumn">
+    <button type="button" data-testid="@TestId("document-table-toolbar-delete-column")" @onclick="DeleteColumn">
         <TmIcon Name="delete" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_DeleteColumn"]</span>
     </button>
-    <button type="button" data-testid="document-table-toolbar-merge-cells" @onclick="MergeCells">
+    <button type="button" data-testid="@TestId("document-table-toolbar-merge-cells")" @onclick="MergeCells">
         <TmIcon Name="combine" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_MergeCells"]</span>
     </button>
-    <button type="button" data-testid="document-table-toolbar-split-cell" @onclick="SplitCell">
+    <button type="button" data-testid="@TestId("document-table-toolbar-split-cell")" @onclick="SplitCell">
         <TmIcon Name="split-square-horizontal" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_SplitCell"]</span>
     </button>
-    <button type="button" data-testid="document-table-toolbar-table-properties" @onclick="TableProperties">
+    <button type="button" data-testid="@TestId("document-table-toolbar-table-properties")" @onclick="TableProperties">
         <TmIcon Name="table-properties" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_TableProperties"]</span>
     </button>
-    <button type="button" data-testid="document-table-toolbar-cell-properties" @onclick="CellProperties">
+    <button type="button" data-testid="@TestId("document-table-toolbar-cell-properties")" @onclick="CellProperties">
         <TmIcon Name="square" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_CellProperties"]</span>
     </button>

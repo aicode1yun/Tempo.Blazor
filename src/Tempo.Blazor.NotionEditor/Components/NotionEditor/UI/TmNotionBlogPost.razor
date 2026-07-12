@@ -1,9 +1,10 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Components.NotionEditor.Blocks
 @using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.NotionEditor.Models
 
-<article class="tm-notion-blog-post @Class" data-testid="notion-blog-post" data-post-id="@Post.Id">
+<article class="tm-notion-blog-post @Class" data-testid="@TestId("notion-blog-post")" data-post-id="@Post.Id">
     <header class="tm-notion-blog-post__header">
         <div class="tm-notion-blog-post__title-wrap">
             <h2 class="tm-notion-blog-post__title">@Post.Title</h2>
@@ -23,7 +24,7 @@
         {
             <button type="button"
                     class="tm-notion-blog-post__publish"
-                    data-testid="notion-blog-publish"
+                    data-testid="@TestId("notion-blog-publish")"
                     disabled="@IsPublishing"
                     @onclick="() => OnPublish.InvokeAsync(Post.Id)">
                 @Loc["Notion_Blog_Publish"]

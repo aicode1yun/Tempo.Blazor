@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Runs one notification-digest pass (query per recipient, build, send) with no hosting dependency; a hosted BackgroundService wraps it.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/NotificationDigestRunner.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotificationDigestRunner"
+}

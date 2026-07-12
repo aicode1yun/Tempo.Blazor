@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
@@ -24,7 +25,7 @@ public enum NotionAiMenuMode
     Ask
 }
 
-public partial class TmNotionAiMenu : ComponentBase, IAsyncDisposable
+public partial class TmNotionAiMenu : TmComponentBase, IAsyncDisposable
 {
     [CascadingParameter] private NotionEditorContext? Context { get; set; }
 

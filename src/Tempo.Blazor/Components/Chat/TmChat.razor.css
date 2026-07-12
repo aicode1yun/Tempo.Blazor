@@ -322,6 +322,318 @@
   cursor: not-allowed;
 }
 
+/* ══ K6: threads, edit/delete, reactions, receipts ══════════════ */
+.tm-chat { position: relative; }
+.tm-chat__bubble { position: relative; }
+
+/* ── Edited marker & deleted tombstone ──────────────────────── */
+.tm-chat__edited {
+  color: var(--tm-color-text-muted);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.tm-chat__message--outgoing .tm-chat__edited {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.tm-chat__text--deleted {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tm-space-1-5);
+  color: var(--tm-color-text-muted);
+  font-style: italic;
+}
+
+.tm-chat__message--outgoing .tm-chat__text--deleted {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ── Inline edit ────────────────────────────────────────────── */
+.tm-chat__edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-1-5);
+}
+
+.tm-chat__edit-input {
+  min-height: 34px;
+}
+
+.tm-chat__edit-actions {
+  display: flex;
+  gap: var(--tm-space-2);
+}
+
+.tm-chat__edit-save,
+.tm-chat__edit-cancel {
+  padding: var(--tm-space-1) var(--tm-space-2-5);
+  border-radius: var(--tm-radius-md);
+  border: 1px solid var(--tm-border-color);
+  font-size: var(--tm-font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tm-chat__edit-save {
+  background: var(--tm-color-primary);
+  color: var(--tm-color-primary-contrast);
+  border-color: var(--tm-color-primary);
+}
+
+.tm-chat__edit-cancel {
+  background: transparent;
+  color: var(--tm-color-text-secondary);
+}
+
+/* ── Reactions ──────────────────────────────────────────────── */
+.tm-chat__reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tm-space-1);
+  margin-top: var(--tm-space-1);
+}
+
+.tm-chat__reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tm-space-1);
+  padding: 1px var(--tm-space-1-5);
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-full);
+  background: var(--tm-bg-surface);
+  color: var(--tm-color-text);
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background var(--tm-transition-fast), border-color var(--tm-transition-fast);
+}
+
+.tm-chat__reaction:hover {
+  background: var(--tm-bg-muted);
+}
+
+.tm-chat__reaction--mine {
+  background: var(--tm-color-primary-subtle);
+  border-color: var(--tm-color-primary);
+  color: var(--tm-color-primary);
+}
+
+.tm-chat__reaction-count {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Thread badge (reply count) ─────────────────────────────── */
+.tm-chat__thread-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tm-space-1);
+  margin-top: var(--tm-space-1);
+  padding: 1px var(--tm-space-1-5);
+  border: none;
+  background: transparent;
+  color: var(--tm-color-primary);
+  font-size: var(--tm-font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.tm-chat__message--outgoing .tm-chat__thread-badge {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.tm-chat__thread-badge:hover {
+  text-decoration: underline;
+}
+
+/* ── Read receipts ──────────────────────────────────────────── */
+.tm-chat__receipts {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tm-space-1);
+  margin-top: var(--tm-space-0-5);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  align-self: flex-end;
+}
+
+.tm-chat__receipts-text {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Hover actions ──────────────────────────────────────────── */
+.tm-chat__actions {
+  position: absolute;
+  top: calc(-1 * var(--tm-space-3));
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-md);
+  background: var(--tm-bg-surface);
+  box-shadow: var(--tm-shadow-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--tm-transition-fast);
+  z-index: 2;
+}
+
+.tm-chat__message--incoming .tm-chat__actions { right: var(--tm-space-2); }
+.tm-chat__message--outgoing .tm-chat__actions { left: var(--tm-space-2); }
+
+.tm-chat__message:hover .tm-chat__actions,
+.tm-chat__bubble:focus-within .tm-chat__actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tm-chat__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: var(--tm-radius-sm);
+  background: transparent;
+  color: var(--tm-color-text-secondary);
+  cursor: pointer;
+  transition: background var(--tm-transition-fast), color var(--tm-transition-fast);
+}
+
+.tm-chat__action:hover {
+  background: var(--tm-bg-muted);
+  color: var(--tm-color-text);
+}
+
+.tm-chat__action--danger:hover {
+  color: var(--tm-color-error);
+}
+
+/* ── Emoji picker ───────────────────────────────────────────── */
+.tm-chat__emoji-picker {
+  position: absolute;
+  top: calc(-1 * var(--tm-space-8));
+  display: inline-flex;
+  gap: 2px;
+  padding: var(--tm-space-1);
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-full);
+  background: var(--tm-bg-surface);
+  box-shadow: var(--tm-shadow-md);
+  z-index: 3;
+}
+
+.tm-chat__message--incoming .tm-chat__emoji-picker { right: var(--tm-space-2); }
+.tm-chat__message--outgoing .tm-chat__emoji-picker { left: var(--tm-space-2); }
+
+.tm-chat__emoji {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--tm-radius-sm);
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform var(--tm-transition-fast);
+}
+
+.tm-chat__emoji:hover {
+  background: var(--tm-bg-muted);
+  transform: scale(1.2);
+}
+
+/* ── Thread panel ───────────────────────────────────────────── */
+.tm-chat__thread-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(360px, 85%);
+  display: flex;
+  flex-direction: column;
+  background: var(--tm-bg-surface);
+  border-left: 1px solid var(--tm-border-color);
+  box-shadow: var(--tm-shadow-lg);
+  z-index: 5;
+}
+
+.tm-chat__thread-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--tm-space-3) var(--tm-space-4);
+  border-bottom: 1px solid var(--tm-border-color);
+}
+
+.tm-chat__thread-title {
+  font-weight: 700;
+  font-size: var(--tm-font-size-sm);
+  color: var(--tm-color-text);
+}
+
+.tm-chat__thread-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--tm-radius-sm);
+  background: transparent;
+  color: var(--tm-color-text-secondary);
+  cursor: pointer;
+  transition: background var(--tm-transition-fast);
+}
+
+.tm-chat__thread-close:hover {
+  background: var(--tm-bg-muted);
+  color: var(--tm-color-text);
+}
+
+.tm-chat__thread-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--tm-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-3);
+}
+
+.tm-chat__thread-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--tm-space-2);
+  font-size: var(--tm-font-size-xs);
+  color: var(--tm-color-text-muted);
+}
+
+.tm-chat__thread-divider::before,
+.tm-chat__thread-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--tm-border-color);
+}
+
+.tm-chat__thread-input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--tm-space-2);
+  padding: var(--tm-space-3);
+  border-top: 1px solid var(--tm-border-color);
+}
+
 /* ── Dark mode overrides ────────────────────────────────────── */
 [data-theme="dark"] .tm-chat__attachment {
   background: rgba(255, 255, 255, 0.05);
@@ -329,4 +641,23 @@
 
 [data-theme="dark"] .tm-chat__attachment:hover {
   background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .tm-chat__reaction {
+  background: var(--tm-bg-muted);
+}
+
+/* ── Reduced motion ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .tm-chat__action,
+  .tm-chat__actions,
+  .tm-chat__reaction,
+  .tm-chat__emoji,
+  .tm-chat__thread-close,
+  .tm-chat__send-btn {
+    transition: none;
+  }
+  .tm-chat__emoji:hover {
+    transform: none;
+  }
 }

@@ -16,7 +16,7 @@ namespace Tempo.Blazor.Components.Diagram;
 /// primitives and <see cref="foreignObject"/> labels, and communicates
 /// with <c>diagram-editor.js</c> for pan, zoom, drag, and selection.
 /// </summary>
-public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
+public partial class TmDiagramCanvas : TmComponentBase, IAsyncDisposable
 {
     // ── DI ───────────────────────────────────────────────────────────────────
 

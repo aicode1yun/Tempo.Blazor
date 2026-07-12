@@ -1,7 +1,8 @@
 @namespace Tempo.Blazor.Components.Files
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Models
 
-<div class="tm-pdf-annotation-layer" data-testid="pdf-annotation-layer" aria-label="@Loc["TmPdfViewer_AnnotationsLayerLabel"]">
+<div class="tm-pdf-annotation-layer" data-testid="@TestId("pdf-annotation-layer")" aria-label="@Loc["TmPdfViewer_AnnotationsLayerLabel"]">
     @foreach (var thread in VisibleThreads)
     {
         @if (thread.Anchor.Kind == DocumentCommentAnchorKind.TextRange)
@@ -35,7 +36,7 @@
                 style="@MarkerStyle(thread)"
                 aria-label="@MarkerLabel(thread)"
                 data-thread-id="@thread.Id"
-                data-testid="pdf-annotation-marker"
+                data-testid="@TestId("pdf-annotation-marker")"
                 disabled="@Disabled"
                 @onclick:stopPropagation="true"
                 @onclick="() => SelectAsync(thread.Id)">
@@ -51,7 +52,7 @@
             {
                 <div class="tm-pdf-annotation-layer__highlight tm-pdf-annotation-layer__highlight--draft"
                      style="@DocumentCommentGeometryHelper.ToRectStyle(rect)"
-                     data-testid="pdf-annotation-draft"
+                     data-testid="@TestId("pdf-annotation-draft")"
                      aria-hidden="true"></div>
             }
         }
@@ -59,7 +60,7 @@
         {
             <div class="tm-pdf-annotation-layer__area tm-pdf-annotation-layer__area--draft"
                  style="@DocumentCommentGeometryHelper.ToAreaStyle(DraftAnchor)"
-                 data-testid="pdf-annotation-draft"
+                 data-testid="@TestId("pdf-annotation-draft")"
                  aria-hidden="true"></div>
         }
     }

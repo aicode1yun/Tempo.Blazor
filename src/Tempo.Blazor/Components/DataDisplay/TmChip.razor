@@ -14,7 +14,7 @@
     <span class="tm-chip__label">@Label</span>
     @if (Removable)
     {
-        <button type="button" class="tm-chip__remove" aria-label="Remove" @onclick="HandleRemove" @onclick:stopPropagation="true">
+        <button type="button" class="tm-chip__remove" aria-label="@Loc["TmChip_Remove"]" @onclick="HandleRemove" @onclick:stopPropagation="true">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />

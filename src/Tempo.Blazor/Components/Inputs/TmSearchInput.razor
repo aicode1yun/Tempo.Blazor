@@ -8,6 +8,7 @@
             <TmIcon Name="@IconNames.Search" Size="IconSize.Sm" />
         </div>
         <input type="search"
+               aria-label="@(Placeholder ?? Loc["TmSearchInput_Placeholder"])"
                value="@Value"
                placeholder="@(Placeholder ?? Loc["TmSearchInput_Placeholder"])"
                disabled="@Disabled"

@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.Sidebar;
 
-public partial class TmNotionSpaceSwitcher : ComponentBase
+public partial class TmNotionSpaceSwitcher : TmComponentBase
 {
     private readonly string _listId = $"tm-ns-space-list-{Guid.NewGuid():N}";
     private IReadOnlyList<NotionSpaceDto> _spaces = [];

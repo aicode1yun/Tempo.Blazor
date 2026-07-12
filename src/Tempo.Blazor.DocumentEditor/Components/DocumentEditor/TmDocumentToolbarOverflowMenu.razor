@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Microsoft.AspNetCore.Components.Web
 
 <button type="button"
@@ -10,7 +11,7 @@
         title="@MoreCommandsLabel"
         @onclick="OnToggle"
         @onkeydown="OnMoreKeyDown"
-        data-testid="document-toolbar-more">
+        data-testid="@TestId("document-toolbar-more")">
     <TmIcon Name="ellipsis" Size="IconSize.Sm" />
     <span>@MoreLabel</span>
 </button>
@@ -25,11 +26,11 @@
             aria-label="@MoreCommandsLabel"
             tabindex="-1"
             @onclick="OnToggle"
-            data-testid="document-toolbar-more-backdrop"></button>
+            data-testid="@TestId("document-toolbar-more-backdrop")"></button>
     <div class="tm-document-editor__overflow-menu"
          role="menu"
          aria-label="@MoreCommandsLabel"
-         data-testid="document-toolbar-more-menu">
+         data-testid="@TestId("document-toolbar-more-menu")">
         @if (ShowSearch)
         {
             <label class="tm-document-editor__overflow-search">
@@ -38,20 +39,20 @@
                        placeholder="@SearchLabel"
                        aria-label="@SearchLabel"
                        @oninput="OnSearchInput"
-                       data-testid="document-toolbar-more-search" />
+                       data-testid="@TestId("document-toolbar-more-search")" />
             </label>
         }
         @if (Groups.Count == 0)
         {
             <div class="tm-document-editor__overflow-menu-empty"
                  role="status"
-                 data-testid="document-toolbar-more-empty">@NoResultsLabel</div>
+                 data-testid="@TestId("document-toolbar-more-empty")">@NoResultsLabel</div>
         }
         @foreach (var group in Groups)
         {
             <div class="tm-document-editor__overflow-menu-group"
                  role="presentation"
-                 data-testid="document-toolbar-more-group"
+                 data-testid="@TestId("document-toolbar-more-group")"
                  data-group="@group.GroupId">
                 @group.Label
             </div>

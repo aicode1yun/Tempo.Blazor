@@ -26,7 +26,8 @@
     ],
     "namespaces": [
       "Tempo.Blazor.DocumentEditor.Services",
-      "Tempo.Blazor.DocumentLibrary.Collaboration"
+      "Tempo.Blazor.DocumentLibrary.Collaboration",
+      "Tempo.Blazor.Notifications"
     ]
   },
   "gettingStarted": {
@@ -154,6 +155,222 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "SignalRNotificationService",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Notifications",
+      "description": "SignalR-backed ITmNotificationService: joins the per-user group, receives real-time NotificationReceived/NotificationsChanged pushes, and invokes the hub for reads/writes. Dual-mode (in-process transport or hub URL/connection).",
+      "packageId": "Tempo.Blazor.Collaboration",
+      "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRNotificationService.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetNotifications",
+          "kind": "Field",
+          "type": "string",
+          "description": "Queries notifications for a recipient."
+        },
+        {
+          "name": "GetUnreadCount",
+          "kind": "Field",
+          "type": "string",
+          "description": "Gets the unread count for a recipient."
+        },
+        {
+          "name": "JoinUser",
+          "kind": "Field",
+          "type": "string",
+          "description": "Joins the caller's per-user notification group."
+        },
+        {
+          "name": "LeaveUser",
+          "kind": "Field",
+          "type": "string",
+          "description": "Leaves the caller's per-user notification group."
+        },
+        {
+          "name": "MarkAllAsRead",
+          "kind": "Field",
+          "type": "string",
+          "description": "Marks all notifications as read."
+        },
+        {
+          "name": "MarkAsDelivered",
+          "kind": "Field",
+          "type": "string",
+          "description": "Records a delivery acknowledgement."
+        },
+        {
+          "name": "MarkAsRead",
+          "kind": "Field",
+          "type": "string",
+          "description": "Marks one notification as read."
+        },
+        {
+          "name": "NotificationReceived",
+          "kind": "Field",
+          "type": "string",
+          "description": "Client event carrying a newly published notification."
+        },
+        {
+          "name": "NotificationsChanged",
+          "kind": "Field",
+          "type": "string",
+          "description": "Client event signalling that read/unread state changed."
+        },
+        {
+          "name": "Publish",
+          "kind": "Field",
+          "type": "string",
+          "description": "Publishes a notification."
+        },
+        {
+          "name": "ConnectAsync",
+          "kind": "Method",
+          "type": "Task",
+          "description": "Ensures the hub is connected and the user group is joined.",
+          "parameters": [
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "DisposeAsync",
+          "kind": "Method",
+          "type": "ValueTask"
+        },
+        {
+          "name": "GetNotificationsAsync",
+          "kind": "Method",
+          "type": "Task<IReadOnlyList<TmNotification>>",
+          "parameters": [
+            {
+              "name": "query",
+              "type": "TmNotificationQuery"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "GetUnreadCountAsync",
+          "kind": "Method",
+          "type": "Task<int>",
+          "parameters": [
+            {
+              "name": "recipientUserId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "GroupName",
+          "kind": "Method",
+          "type": "string",
+          "description": "The SignalR group name for a given user's notifications.",
+          "parameters": [
+            {
+              "name": "userId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "MarkAllAsReadAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "recipientUserId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "MarkAsDeliveredAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "notificationId",
+              "type": "string"
+            },
+            {
+              "name": "recipientUserId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "MarkAsReadAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "notificationId",
+              "type": "string"
+            },
+            {
+              "name": "recipientUserId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "PublishAsync",
+          "kind": "Method",
+          "type": "Task<TmNotification>",
+          "parameters": [
+            {
+              "name": "notification",
+              "type": "TmNotification"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "SignalRNotificationService.HubMethods",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Notifications",
+      "description": "Hub method and client-event names shared by the notification client and the server hub.",
+      "packageId": "Tempo.Blazor.Collaboration",
+      "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRNotificationService.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "SignalRTempoDocumentChangeNotifier",
       "kind": "Class",
       "category": "General",
@@ -223,11 +440,11 @@
     }
   ],
   "summary": {
-    "itemCount": 4,
-    "manualItemCount": 4,
-    "generatedItemCount": 4,
+    "itemCount": 6,
+    "manualItemCount": 6,
+    "generatedItemCount": 6,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 4
+    "publicApiTypeCount": 6
   }
 }

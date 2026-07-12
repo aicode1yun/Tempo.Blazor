@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DataTable
+@inherits Tempo.Blazor.Components.TmComponentBase
 @typeparam TItem
 @using Tempo.Blazor.Components.Feedback
 @using Tempo.Blazor.Components.DataDisplay
@@ -172,7 +173,7 @@
                                             class="tm-col-pin-btn @(GetPin(col) != ColumnPin.None ? "tm-col-pin-btn--active" : "")"
                                             title="@Loc["TmDataTable_PinColumn"]"
                                             aria-label="@Loc["TmDataTable_PinColumn"]"
-                                            data-testid="pin-@col.Key"
+                                            data-testid="@TestId($"pin-{col.Key}")"
                                             @onclick:stopPropagation="true"
                                             @onclick="() => CyclePinAsync(col)">
                                         <span aria-hidden="true">@GetPinGlyph(col)</span>
@@ -181,7 +182,7 @@
                                 @if (col.Resizable)
                                 {
                                     <span class="tm-col-resize-handle"
-                                          data-testid="resize-@col.Key"
+                                          data-testid="@TestId($"resize-{col.Key}")"
                                           @onpointerdown:stopPropagation="true"
                                           @onpointerdown="e => StartColumnResizeAsync(col, e)"></span>
                                 }
@@ -264,6 +265,7 @@
                             {
                                 <td class="tm-col-check">
                                     <input type="checkbox"
+                                           aria-label="@Loc["TmDataTable_SelectRow"]"
                                            checked="@IsSelected(rowItem)"
                                            @onchange="e => ToggleRowSelectionAsync(rowItem, e)"
                                            @onclick:stopPropagation="true" />
@@ -294,7 +296,7 @@
                         @if (Editable && IsEditingRow(currentRowIndex))
                         {
                             <CascadingValue Value="_editContext" IsFixed="false">
-                                <tr class="tm-row-editing" data-testid="row-editing" @onkeydown="HandleEditKeyDownAsync">
+                                <tr class="tm-row-editing" data-testid="@TestId("row-editing")" @onkeydown="HandleEditKeyDownAsync">
                                     @if (HasDetail)
                                     {
                                         <td class="tm-col-expander"></td>
@@ -326,11 +328,11 @@
                                         @RowEditValidator
                                         @if (_editHasErrors)
                                         {
-                                            <span class="tm-row-edit-error" data-testid="edit-error">@Loc["TmDataTable_EditInvalid"]</span>
+                                            <span class="tm-row-edit-error" data-testid="@TestId("edit-error")">@Loc["TmDataTable_EditInvalid"]</span>
                                         }
-                                        <button type="button" class="tm-data-table-edit-save" data-testid="edit-commit"
+                                        <button type="button" class="tm-data-table-edit-save" data-testid="@TestId("edit-commit")"
                                                 @onclick="CommitEditAsync">@Loc["TmDataTable_Save"]</button>
-                                        <button type="button" class="tm-data-table-edit-cancel" data-testid="edit-cancel"
+                                        <button type="button" class="tm-data-table-edit-cancel" data-testid="@TestId("edit-cancel")"
                                                 @onclick="CancelEditAsync">@Loc["TmDataTable_Cancel"]</button>
                                     </td>
                                 </tr>
@@ -350,7 +352,7 @@
                                         <button type="button" class="tm-row-expander-btn"
                                                 aria-label="@Loc["TmDataTable_ToggleDetail"]"
                                                 aria-expanded="@IsRowExpanded(rowItem).ToString().ToLowerInvariant()"
-                                                data-testid="expander"
+                                                data-testid="@TestId("expander")"
                                                 @onclick:stopPropagation="true"
                                                 @onclick="() => ToggleRowDetailAsync(rowItem)">
                                             <span class="tm-row-expander-icon @(IsRowExpanded(rowItem) ? "tm-row-expander-icon--open" : "")" aria-hidden="true"></span>
@@ -361,6 +363,7 @@
                                 {
                                     <td class="tm-col-check">
                                         <input type="checkbox"
+                                               aria-label="@Loc["TmDataTable_SelectRow"]"
                                                checked="@IsSelected(rowItem)"
                                                @onchange="e => ToggleRowSelectionAsync(rowItem, e)"
                                                @onclick:stopPropagation="true" />
@@ -383,7 +386,7 @@
                         }
                         @if (HasDetail && IsRowExpanded(rowItem))
                         {
-                            <tr class="tm-row-detail" data-testid="row-detail">
+                            <tr class="tm-row-detail" data-testid="@TestId("row-detail")">
                                 <td colspan="@ColSpan">@DetailTemplate!(rowItem)</td>
                             </tr>
                         }

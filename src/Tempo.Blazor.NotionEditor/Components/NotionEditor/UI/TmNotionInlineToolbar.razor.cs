@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.NotionEditor.Enums;
 
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
-public partial class TmNotionInlineToolbar : ComponentBase
+public partial class TmNotionInlineToolbar : TmComponentBase
 {
     // ── DI ───────────────────────────────────────────────────────────────────
 

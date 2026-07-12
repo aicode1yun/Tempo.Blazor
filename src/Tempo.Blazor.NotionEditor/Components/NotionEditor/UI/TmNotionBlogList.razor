@@ -1,7 +1,8 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Models
 
-<section class="tm-notion-blog tm-notion-blog-panel @Class" aria-label="@Loc["Notion_Blog_Title"]" data-testid="notion-blog-panel">
+<section class="tm-notion-blog tm-notion-blog-panel @Class" aria-label="@Loc["Notion_Blog_Title"]" data-testid="@TestId("notion-blog-panel")">
     <header class="tm-notion-blog__header">
         <div class="tm-notion-blog__title-wrap">
             <h2 class="tm-notion-blog__title">@Loc["Notion_Blog_Title"]</h2>
@@ -11,7 +12,7 @@
         <div class="tm-notion-blog__actions">
             <button type="button"
                     class="tm-notion-blog__new"
-                    data-testid="notion-blog-new"
+                    data-testid="@TestId("notion-blog-new")"
                     disabled="@_isCreating"
                     @onclick="CreatePostAsync">
                 @Loc["Notion_Blog_New"]
@@ -45,7 +46,7 @@
     }
     else if (_posts.Count == 0)
     {
-        <div class="tm-notion-blog__empty" role="status" data-testid="notion-blog-empty">
+        <div class="tm-notion-blog__empty" role="status" data-testid="@TestId("notion-blog-empty")">
             <svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true">
                 <rect x="7" y="6" width="20" height="22" rx="4" stroke="currentColor" stroke-width="1.6"/>
                 <path d="M12 13h10M12 18h8M12 23h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
@@ -61,7 +62,7 @@
                 {
                     <button type="button"
                             class="@PostButtonClass(post)"
-                            data-testid="notion-blog-post-item"
+                            data-testid="@TestId("notion-blog-post-item")"
                             data-post-id="@post.Id"
                             @onclick="() => SelectPostAsync(post.Id)">
                         <span class="tm-notion-blog__post-title">@post.Title</span>
@@ -89,7 +90,7 @@
                     <span>@Loc["Notion_Blog_Page", CurrentPage]</span>
                     <button type="button"
                             class="tm-notion-blog__page"
-                            data-testid="notion-blog-next"
+                            data-testid="@TestId("notion-blog-next")"
                             disabled="@(!_hasNextPage)"
                             @onclick="NextPageAsync">
                         @Loc["Notion_Blog_Next"]

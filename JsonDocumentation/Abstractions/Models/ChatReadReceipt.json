@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "A per-user read receipt for a chat message: who read it and when.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatReadReceipt.cs",
+  "documentationStatus": "generated",
+  "itemName": "ChatReadReceipt"
+}

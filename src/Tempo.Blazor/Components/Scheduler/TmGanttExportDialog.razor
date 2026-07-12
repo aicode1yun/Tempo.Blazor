@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Scheduler
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Models
 
 @if (IsOpen)
@@ -30,7 +31,7 @@
                         <span>@Loc["TmGantt_ExportPng"]</span>
                     </label>
                     <label class="tm-gantt__export-format-option @(_format == GanttExportFormat.Xlsx ? "tm-gantt__export-format-option--selected" : "")"
-                           data-testid="export-format-xlsx">
+                           data-testid="@TestId("export-format-xlsx")">
                         <input type="radio" name="export-format" value="Xlsx"
                                checked="@(_format == GanttExportFormat.Xlsx)"
                                @onchange="() => _format = GanttExportFormat.Xlsx" />
@@ -64,7 +65,7 @@
                 }
 
                 <!-- Preview area -->
-                <div class="tm-gantt__export-preview" data-testid="export-preview">
+                <div class="tm-gantt__export-preview" data-testid="@TestId("export-preview")">
                     <TmIcon Name="gantt-chart" Size="IconSize.Lg" />
                     <span>@Loc["TmGantt_ExportPreview"]</span>
                 </div>

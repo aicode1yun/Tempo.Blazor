@@ -1,5 +1,6 @@
 using Bunit;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Tempo.Blazor.Components.Charts;
 using Tempo.Blazor.Tests.Localization;
 
@@ -394,6 +395,173 @@ public class TmChartTests : LocalizationTestBase
             .Add(x => x.Data, emptyData));
 
         cut.Find(".tm-chart__empty").Should().NotBeNull();
+    }
+
+    // ── Interactive legend (K10) ──
+
+    [Fact]
+    public void InteractiveLegend_Default_LegendItemsAreNotButtons()
+    {
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, MultiDatasetData));
+
+        // Backward compatible: without opting in, legend items stay plain divs.
+        cut.FindAll("button.tm-chart__legend-item").Count.Should().Be(0);
+        cut.FindAll(".tm-chart__legend-item").Count.Should().Be(2);
+    }
+
+    [Fact]
+    public void InteractiveLegend_Enabled_LegendItemsAreButtons()
+    {
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, MultiDatasetData)
+            .Add(x => x.InteractiveLegend, true));
+
+        cut.FindAll("button.tm-chart__legend-item").Count.Should().Be(2);
+    }
+
+    [Fact]
+    public void InteractiveLegend_ClickDataset_HidesItsBars()
+    {
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, MultiDatasetData)
+            .Add(x => x.InteractiveLegend, true));
+
+        cut.FindAll("rect.tm-chart__bar").Count.Should().Be(6);
+
+        cut.FindAll("button.tm-chart__legend-item")[0].Click();
+
+        // Dataset 0's 3 bars are hidden → only dataset 1's 3 bars remain.
+        cut.FindAll("rect.tm-chart__bar").Count.Should().Be(3);
+        cut.FindAll(".tm-chart__legend-item--hidden").Count.Should().Be(1);
+    }
+
+    [Fact]
+    public void InteractiveLegend_Toggle_FiresOnSeriesToggle()
+    {
+        ChartSeriesToggle? evt = null;
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, MultiDatasetData)
+            .Add(x => x.InteractiveLegend, true)
+            .Add(x => x.OnSeriesToggle, e => evt = e));
+
+        cut.FindAll("button.tm-chart__legend-item")[0].Click();
+
+        evt.Should().NotBeNull();
+        evt!.Index.Should().Be(0);
+        evt.Label.Should().Be("2024");
+        evt.Hidden.Should().BeTrue();
+    }
+
+    [Fact]
+    public void InteractiveLegend_ClickTwice_RestoresSeries()
+    {
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, MultiDatasetData)
+            .Add(x => x.InteractiveLegend, true));
+
+        var btn = cut.FindAll("button.tm-chart__legend-item")[0];
+        btn.Click();
+        cut.FindAll("rect.tm-chart__bar").Count.Should().Be(3);
+
+        cut.FindAll("button.tm-chart__legend-item")[0].Click();
+        cut.FindAll("rect.tm-chart__bar").Count.Should().Be(6);
+        cut.FindAll(".tm-chart__legend-item--hidden").Count.Should().Be(0);
+    }
+
+    [Fact]
+    public void InteractiveLegend_PerValue_HidesSingleSlice()
+    {
+        var data = ChartDataWithBackgroundColors(["#dc2626", "#ea580c", "#16a34a"]);
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Donut)
+            .Add(x => x.Data, data)
+            .Add(x => x.InteractiveLegend, true));
+
+        cut.FindAll("path.tm-chart__slice").Count.Should().Be(3);
+
+        // Per-value legend → each legend item is one slice; hide the middle one.
+        cut.FindAll("button.tm-chart__legend-item")[1].Click();
+
+        cut.FindAll("path.tm-chart__slice").Count.Should().Be(2);
+    }
+
+    // ── Tooltips (K10) ──
+
+    [Fact]
+    public void Tooltip_Enabled_NotRenderedUntilHover()
+    {
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, SimpleBarData));
+
+        cut.FindAll(".tm-chart__tooltip").Count.Should().Be(0);
+    }
+
+    [Fact]
+    public void Tooltip_Hover_ShowsLabelAndValue()
+    {
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, SimpleBarData));
+
+        cut.FindAll("rect.tm-chart__bar")[1].MouseOver();
+
+        var tip = cut.Find(".tm-chart__tooltip");
+        tip.TextContent.Should().Contain("Feb");
+        tip.TextContent.Should().Contain("20");
+    }
+
+    [Fact]
+    public void Tooltip_Disabled_NotShownOnHover()
+    {
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, SimpleBarData)
+            .Add(x => x.ShowTooltip, false));
+
+        cut.FindAll("rect.tm-chart__bar")[1].MouseOver();
+
+        cut.FindAll(".tm-chart__tooltip").Count.Should().Be(0);
+    }
+
+    [Fact]
+    public void Tooltip_CustomTemplate_UsedOnHover()
+    {
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, SimpleBarData)
+            .Add(x => x.TooltipTemplate, ctx => builder =>
+            {
+                builder.OpenElement(0, "span");
+                builder.AddAttribute(1, "class", "custom-tip");
+                builder.AddContent(2, $"{ctx.Label}={ctx.Value}");
+                builder.CloseElement();
+            }));
+
+        cut.FindAll("rect.tm-chart__bar")[0].MouseOver();
+
+        var custom = cut.Find(".custom-tip");
+        custom.TextContent.Should().Be("Jan=10");
+    }
+
+    // ── Localized empty message (K10) ──
+
+    [Fact]
+    public void EmptyData_Message_IsLocalized()
+    {
+        var emptyData = new ChartData { Labels = [], Datasets = [] };
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, emptyData));
+
+        var expected = Services.GetRequiredService<Tempo.Blazor.Localization.ITmLocalizer>()["TmChart_NoData"];
+        cut.Find(".tm-chart__empty").TextContent.Trim().Should().Be(expected);
     }
 
     private static ChartData ChartDataWithBackgroundColors(

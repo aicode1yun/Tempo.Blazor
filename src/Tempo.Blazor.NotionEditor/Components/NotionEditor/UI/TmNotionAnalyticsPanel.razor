@@ -1,7 +1,8 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Models
 
-<section class="tm-notion-analytics tm-notion-analytics-panel @Class" aria-label="@Loc["Notion_Analytics_Title"]" data-testid="notion-analytics-panel">
+<section class="tm-notion-analytics tm-notion-analytics-panel @Class" aria-label="@Loc["Notion_Analytics_Title"]" data-testid="@TestId("notion-analytics-panel")">
     <header class="tm-notion-analytics__header">
         <div class="tm-notion-analytics__title-wrap">
             <h2 class="tm-notion-analytics__title">@Loc["Notion_Analytics_Title"]</h2>
@@ -37,11 +38,11 @@
     {
         <div class="tm-notion-analytics__body">
             <section class="tm-notion-analytics__summary" aria-label="@Loc["Notion_Analytics_Views"]">
-                <div class="tm-notion-analytics__metric" data-testid="notion-analytics-views">
+                <div class="tm-notion-analytics__metric" data-testid="@TestId("notion-analytics-views")">
                     <span class="tm-notion-analytics__metric-label">@Loc["Notion_Analytics_Views"]</span>
                     <strong class="tm-notion-analytics__metric-value">@CurrentSummary.Views.ToString("N0")</strong>
                 </div>
-                <div class="tm-notion-analytics__metric" data-testid="notion-analytics-unique">
+                <div class="tm-notion-analytics__metric" data-testid="@TestId("notion-analytics-unique")">
                     <span class="tm-notion-analytics__metric-label">@Loc["Notion_Analytics_Unique"]</span>
                     <strong class="tm-notion-analytics__metric-value">@CurrentSummary.UniqueVisitors.ToString("N0")</strong>
                 </div>
@@ -66,7 +67,7 @@
                 </div>
                 @if (CurrentSummary.ViewsByDay.Count == 0)
                 {
-                    <div class="tm-notion-analytics__empty tm-notion-analytics__empty--compact" data-testid="notion-analytics-zero">
+                    <div class="tm-notion-analytics__empty tm-notion-analytics__empty--compact" data-testid="@TestId("notion-analytics-zero")">
                         @Loc["Notion_Analytics_Empty"]
                     </div>
                 }
@@ -92,13 +93,13 @@
 
                 @if (_topPages.Count == 0)
                 {
-                    <div class="tm-notion-analytics__empty" data-testid="notion-analytics-empty">
+                    <div class="tm-notion-analytics__empty" data-testid="@TestId("notion-analytics-empty")">
                         @Loc["Notion_Analytics_Empty"]
                     </div>
                 }
                 else
                 {
-                    <ol class="tm-notion-analytics__top-list" data-testid="notion-analytics-top-pages">
+                    <ol class="tm-notion-analytics__top-list" data-testid="@TestId("notion-analytics-top-pages")">
                         @foreach (var topPage in _topPages)
                         {
                             <li class="tm-notion-analytics__top-item">

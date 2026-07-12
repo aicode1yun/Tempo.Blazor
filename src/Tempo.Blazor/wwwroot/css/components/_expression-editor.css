@@ -43,12 +43,12 @@
 }
 
 .tm-expression-editor__textarea::placeholder {
-    color: var(--tm-text-tertiary);
+    color: var(--tm-text-secondary);
 }
 
 .tm-expression-editor__textarea:disabled {
     background-color: var(--tm-bg-muted);
-    color: var(--tm-text-tertiary);
+    color: var(--tm-text-secondary);
     cursor: not-allowed;
 }
 
@@ -113,7 +113,7 @@
 .tm-expression-editor__var-type {
     font-size: 0.65rem;
     font-family: var(--tm-font-mono, ui-monospace, monospace);
-    color: var(--tm-text-tertiary);
+    color: var(--tm-text-secondary);
 }
 
 /* ── Error ── */

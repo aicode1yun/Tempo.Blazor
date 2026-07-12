@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Page
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Interfaces
 
 @if (Visible)
@@ -8,7 +9,7 @@
              role="dialog"
              aria-modal="true"
              aria-labelledby="tm-npsd-title"
-             data-testid="notion-share-dialog"
+             data-testid="@TestId("notion-share-dialog")"
              @onclick:stopPropagation="true">
         <header class="tm-npsd__header">
             <div>
@@ -46,7 +47,7 @@
                     <input type="checkbox"
                            checked="@_allowComments"
                            disabled="@_saving"
-                           data-testid="notion-share-allow-comments"
+                           data-testid="@TestId("notion-share-allow-comments")"
                            @onchange="HandleAllowCommentsChanged" />
                     <span>@Loc["Notion_Share_AllowComments"]</span>
                 </label>
@@ -58,7 +59,7 @@
                            type="date"
                            value="@ExpiresValue"
                            disabled="@_saving"
-                           data-testid="notion-share-expires"
+                           data-testid="@TestId("notion-share-expires")"
                            @onchange="HandleExpiresChanged" />
                 </div>
 
@@ -72,11 +73,11 @@
                                    type="text"
                                    value="@ShareUrl"
                                    readonly
-                                   data-testid="notion-share-url" />
+                                   data-testid="@TestId("notion-share-url")" />
                             <button class="tm-npsd__secondary"
                                     type="button"
                                     disabled="@_copying"
-                                    data-testid="notion-share-copy"
+                                    data-testid="@TestId("notion-share-copy")"
                                     @onclick="CopyAsync">
                                 @if (_copying)
                                 {
@@ -104,7 +105,7 @@
                     <button class="tm-npsd__danger"
                             type="button"
                             disabled="@_saving"
-                            data-testid="notion-share-revoke"
+                            data-testid="@TestId("notion-share-revoke")"
                             @onclick="RevokeAsync">
                         @if (_saving)
                         {
@@ -118,7 +119,7 @@
                     <button class="tm-npsd__primary"
                             type="button"
                             disabled="@_saving"
-                            data-testid="notion-share-create"
+                            data-testid="@TestId("notion-share-create")"
                             @onclick="CreateAsync">
                         @if (_saving)
                         {

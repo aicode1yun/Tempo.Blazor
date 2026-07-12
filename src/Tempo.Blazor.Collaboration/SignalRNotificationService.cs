@@ -185,11 +185,20 @@ public sealed class SignalRNotificationService : ITmNotificationService, IAsyncD
         if (_hub is null || _started) return;
 
         _started = true;
-        if (_hub.State == HubConnectionState.Disconnected)
+        try
         {
-            await _hub.StartAsync(cancellationToken).ConfigureAwait(false);
+            if (_hub.State == HubConnectionState.Disconnected)
+            {
+                await _hub.StartAsync(cancellationToken).ConfigureAwait(false);
+            }
+            await _hub.InvokeAsync(HubMethods.JoinUser, _userId, cancellationToken).ConfigureAwait(false);
         }
-        await _hub.InvokeAsync(HubMethods.JoinUser, _userId, cancellationToken).ConfigureAwait(false);
+        catch
+        {
+            // Allow a later call to retry the connection instead of getting stuck "started".
+            _started = false;
+            throw;
+        }
     }
 
     private void RaiseChanged() => OnChanged?.Invoke();

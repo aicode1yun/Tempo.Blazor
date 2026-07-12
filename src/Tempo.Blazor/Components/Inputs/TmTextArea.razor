@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Inputs
+@inherits Tempo.Blazor.Components.TmComponentBase
 
 <div class="tm-input-wrapper @Class">
     @if (!string.IsNullOrEmpty(Label))
@@ -12,13 +13,15 @@
               disabled="@Disabled"
               tabindex="@TabIndex"
               autocomplete="@AutoComplete"
+              aria-invalid="@(IsInvalid ? "true" : null)"
+              aria-describedby="@DescribedBy"
               class="@InputCssClass"
               @attributes="AdditionalAttributes"
               @onchange="HandleOnChange"
               @oninput="HandleOnInput">@Value</textarea>
     @if (!string.IsNullOrEmpty(Error))
     {
-        <div data-testid="error-message" class="tm-input-error-message">@Error</div>
+        <div id="@ErrorId" data-testid="@TestId("error-message")" class="tm-input-error-message" role="alert">@Error</div>
     }
 </div>
 
@@ -64,6 +67,11 @@
 
     /// <summary>Additional attributes to be applied to the textarea element.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    // ── Accessibility ────────────────────────────────────────────
+    private bool IsInvalid => !string.IsNullOrEmpty(Error);
+    private string ErrorId => $"{Id}-error";
+    private string? DescribedBy => !string.IsNullOrEmpty(Error) ? ErrorId : null;
 
     private string InputCssClass =>
         $"tm-input tm-textarea{(string.IsNullOrEmpty(Error) ? "" : " tm-input-error")}{(Disabled ? " tm-input-disabled" : "")}";

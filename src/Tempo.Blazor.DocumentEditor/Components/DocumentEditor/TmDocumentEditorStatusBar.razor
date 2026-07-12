@@ -1,14 +1,15 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 
 <footer class="tm-document-editor__status-bar"
         role="status"
         aria-live="polite"
         aria-label="@Loc["TmDocumentEditor_StatusBarLabel"]"
-        data-testid="document-status-bar">
+        data-testid="@TestId("document-status-bar")">
     <div class="tm-document-editor__status-bar-group tm-document-editor__status-bar-group--save">
         @if (PendingCount > 0)
         {
-            <span class="tm-document-editor__pending" data-testid="document-pending-status" aria-live="polite">
+            <span class="tm-document-editor__pending" data-testid="@TestId("document-pending-status")" aria-live="polite">
                 @if (!string.IsNullOrWhiteSpace(PendingMessage))
                 {
                     @PendingMessage
@@ -21,16 +22,16 @@
         }
         else if (IsDirty)
         {
-            <span class="tm-document-editor__dirty" data-testid="document-dirty-status">@Loc["TmDocumentEditor_UnsavedChanges"]</span>
+            <span class="tm-document-editor__dirty" data-testid="@TestId("document-dirty-status")">@Loc["TmDocumentEditor_UnsavedChanges"]</span>
         }
         @if (!string.IsNullOrWhiteSpace(SaveMessage))
         {
-            <span class="tm-document-editor__save-message" data-testid="document-save-message">@SaveMessage</span>
+            <span class="tm-document-editor__save-message" data-testid="@TestId("document-save-message")">@SaveMessage</span>
             @if (CanRetrySave)
             {
                 <button type="button"
                         class="tm-document-editor__save-retry"
-                        data-testid="document-save-retry"
+                        data-testid="@TestId("document-save-retry")"
                         @onclick="OnRetrySave">
                     @Loc["TmDocumentEditor_Retry"]
                 </button>
@@ -38,23 +39,23 @@
         }
         @if (LastSavedAt is not null)
         {
-            <span class="tm-document-editor__last-saved" data-testid="document-last-saved">
+            <span class="tm-document-editor__last-saved" data-testid="@TestId("document-last-saved")">
                 @Loc["TmDocumentEditor_LastSavedAt", LastSavedAt.Value.ToLocalTime().ToString("HH:mm:ss")]
             </span>
         }
         @if (!string.IsNullOrWhiteSpace(RuntimeMessage))
         {
             <span class="tm-document-editor__runtime-message @(RuntimeFailed ? "tm-document-editor__runtime-message--failed" : "tm-document-editor__runtime-message--recovered")"
-                  data-testid="document-runtime-message"
+                  data-testid="@TestId("document-runtime-message")"
                   role="alert">@RuntimeMessage</span>
         }
     </div>
 
     <div class="tm-document-editor__status-bar-group tm-document-editor__status-bar-group--metrics">
-        <span data-testid="document-status-word-count">@Loc["TmDocumentEditor_WordCount", WordCount]</span>
-        <span data-testid="document-status-page-count">@Loc["TmDocumentEditor_PageCount", PageCount]</span>
-        <span data-testid="document-status-region">@Loc["TmDocumentEditor_ActiveRegion", ActiveRegionLabel]</span>
-        <span data-testid="document-status-zoom">@Loc["TmDocumentEditor_ZoomStatus", ZoomLabel]</span>
+        <span data-testid="@TestId("document-status-word-count")">@Loc["TmDocumentEditor_WordCount", WordCount]</span>
+        <span data-testid="@TestId("document-status-page-count")">@Loc["TmDocumentEditor_PageCount", PageCount]</span>
+        <span data-testid="@TestId("document-status-region")">@Loc["TmDocumentEditor_ActiveRegion", ActiveRegionLabel]</span>
+        <span data-testid="@TestId("document-status-zoom")">@Loc["TmDocumentEditor_ZoomStatus", ZoomLabel]</span>
     </div>
 </footer>
 

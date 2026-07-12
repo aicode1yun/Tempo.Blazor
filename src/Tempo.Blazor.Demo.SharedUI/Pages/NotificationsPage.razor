@@ -1,0 +1,189 @@
+@page "/notifications"
+@using System.Net.Http.Json
+@using Microsoft.JSInterop
+@using Tempo.Blazor.Abstractions.Shared
+@using Tempo.Blazor.Notifications
+@inject IHttpClientFactory HttpFactory
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+<PageTitle>Notifications – Tempo.Blazor</PageTitle>
+
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Notifications — real-time backend</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        This page connects to the SignalR notification hub as <code>demo-user</code>. Open it in two windows:
+        publishing in one updates the bell in the other in real time. You can also opt in to Web Push and
+        trigger the daily digest email (delivered to smtp4dev).
+    </p>
+</div>
+
+<section class="showcase-card p-6">
+    <div class="flex items-center gap-4 mb-4">
+        <!-- Bell -->
+        <div class="tm-notif-demo-bell" data-testid="notif-bell" style="position:relative;font-size:1.75rem;">
+            🔔
+            @if (_unread > 0)
+            {
+                <span data-testid="notif-bell-count"
+                      style="position:absolute;top:-6px;right:-10px;background:var(--tm-color-danger,#dc2626);color:#fff;border-radius:999px;padding:1px 7px;font-size:0.75rem;font-weight:700;">
+                    @_unread
+                </span>
+            }
+        </div>
+        <span class="text-sm text-slate-500 dark:text-slate-400" data-testid="notif-status">
+            @(_connected ? "Connected" : "Connecting…") · @_unread unread
+        </span>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mb-4">
+        <button type="button" class="tm-btn tm-btn--primary" data-testid="notif-send" @onclick="SendAsync">Send notification</button>
+        <button type="button" class="tm-btn tm-btn--secondary" data-testid="notif-mark-read" @onclick="MarkAllReadAsync">Mark all read</button>
+        <button type="button" class="tm-btn tm-btn--secondary" data-testid="notif-subscribe" @onclick="SubscribeAsync">Subscribe to push</button>
+        <button type="button" class="tm-btn tm-btn--secondary" data-testid="notif-test-push" @onclick="TestPushAsync">Send test push</button>
+        <button type="button" class="tm-btn tm-btn--secondary" data-testid="notif-digest" @onclick="RunDigestAsync">Run digest now</button>
+    </div>
+
+    <div class="flex flex-wrap gap-4 mb-4 text-sm">
+        @if (_pushState is not null)
+        {
+            <span data-testid="notif-push-state" class="text-slate-600 dark:text-slate-300">Push: <strong>@_pushState</strong></span>
+        }
+        @if (_pushAttempted is not null)
+        {
+            <span data-testid="notif-push-attempted" class="text-slate-600 dark:text-slate-300">Test push attempted: <strong>@_pushAttempted</strong></span>
+        }
+        @if (_digestSent is not null)
+        {
+            <span data-testid="notif-digest-sent" class="text-slate-600 dark:text-slate-300">Digest emails sent: <strong>@_digestSent</strong></span>
+        }
+    </div>
+
+    <ul class="tm-notif-demo-list" data-testid="notif-list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;">
+        @foreach (var n in _items)
+        {
+            <li data-testid="notif-item"
+                class="@(n.IsRead ? "" : "tm-notif-demo-item--unread")"
+                style="padding:8px 12px;border:1px solid var(--tm-border-color,#e5e7eb);border-radius:6px;@(n.IsRead ? "opacity:.6;" : "")">
+                <div style="font-weight:600;">@n.Title</div>
+                <div style="font-size:0.8125rem;color:var(--tm-text-secondary,#6b7280);">@n.Body</div>
+            </li>
+        }
+        @if (_items.Count == 0)
+        {
+            <li class="text-slate-400 text-sm" data-testid="notif-empty">No notifications yet — click “Send notification”.</li>
+        }
+    </ul>
+</section>
+
+@code {
+    private const string UserId = "demo-user";
+
+    private SignalRNotificationService? _svc;
+    private IJSObjectReference? _pushModule;
+    private string _apiBase = string.Empty;
+    private bool _connected;
+    private int _unread;
+    private List<TmNotification> _items = [];
+    private string? _pushState;
+    private int? _pushAttempted;
+    private int? _digestSent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _apiBase = HttpFactory.CreateClient("DemoApi").BaseAddress!.ToString().TrimEnd('/');
+        _svc = new SignalRNotificationService($"{_apiBase}/hubs/notifications", UserId);
+        _svc.OnChanged += HandleChanged;
+        try
+        {
+            await _svc.ConnectAsync();
+            _connected = true;
+            await ReloadAsync();
+        }
+        catch
+        {
+            _connected = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleChanged() => _ = InvokeAsync(ReloadAsync);
+
+    private async Task ReloadAsync()
+    {
+        if (_svc is null) return;
+        _items = [.. await _svc.GetNotificationsAsync(new TmNotificationQuery { RecipientUserId = UserId, IncludeRead = true, Take = 20 })];
+        _unread = await _svc.GetUnreadCountAsync(UserId);
+        StateHasChanged();
+    }
+
+    private async Task SendAsync()
+    {
+        if (_svc is null) return;
+        await _svc.PublishAsync(new TmNotification
+        {
+            RecipientUserId = UserId,
+            Recipient = new TmUserRef { Id = UserId, DisplayName = "Demo User", Email = "demo-user@tempo.local" },
+            Actor = new TmUserRef { Id = "system", DisplayName = "System" },
+            Type = "demo",
+            Title = $"New activity #{_items.Count + 1}",
+            Body = "Someone interacted with your content.",
+            Severity = TmNotificationSeverity.Info
+        });
+    }
+
+    private async Task MarkAllReadAsync()
+    {
+        if (_svc is not null) await _svc.MarkAllAsReadAsync(UserId);
+    }
+
+    private async Task SubscribeAsync()
+    {
+        try
+        {
+            _pushModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "/notifications-push.js");
+            var vapid = await HttpFactory.CreateClient("DemoApi").GetFromJsonAsync<VapidResponse>("/api/notifications/push/vapid-public-key");
+            await _pushModule.InvokeVoidAsync("ensurePermission");
+            var result = await _pushModule.InvokeAsync<SubscribeResult>("subscribe", UserId, _apiBase, vapid!.PublicKey);
+            _pushState = result.Ok ? (result.Synthetic ? "subscribed (simulated)" : "subscribed") : "failed";
+        }
+        catch (Exception ex)
+        {
+            _pushState = $"unavailable ({ex.GetType().Name})";
+        }
+        StateHasChanged();
+    }
+
+    private async Task TestPushAsync()
+    {
+        var resp = await HttpFactory.CreateClient("DemoApi").PostAsync($"/api/notifications/push/test?userId={UserId}", content: null);
+        var r = await resp.Content.ReadFromJsonAsync<TestPushResponse>();
+        _pushAttempted = r?.Attempted ?? 0;
+        StateHasChanged();
+    }
+
+    private async Task RunDigestAsync()
+    {
+        var resp = await HttpFactory.CreateClient("DemoApi").PostAsync("/api/notifications/digest/run", content: null);
+        var r = await resp.Content.ReadFromJsonAsync<DigestResponse>();
+        _digestSent = r?.Sent ?? 0;
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_svc is not null)
+        {
+            _svc.OnChanged -= HandleChanged;
+            await _svc.DisposeAsync();
+        }
+        if (_pushModule is not null)
+        {
+            try { await _pushModule.DisposeAsync(); } catch { /* circuit closing */ }
+        }
+    }
+
+    private sealed record VapidResponse(string PublicKey);
+    private sealed record SubscribeResult(bool Ok, bool Synthetic, string Endpoint);
+    private sealed record TestPushResponse(int Attempted, int Succeeded, int Expired);
+    private sealed record DigestResponse(int Sent, string[] Recipients);
+}

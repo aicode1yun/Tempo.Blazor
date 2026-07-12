@@ -4,7 +4,7 @@
 
 @if (Items is { Count: > 0 })
 {
-    <nav class="tm-breadcrumbs @Class" aria-label="Breadcrumb" @attributes="AdditionalAttributes">
+    <nav class="tm-breadcrumbs @Class" aria-label="@Loc["TmBreadcrumbs_Aria"]" @attributes="AdditionalAttributes">
         <ol class="tm-breadcrumb-list">
             @for (int i = 0; i < Items.Count; i++)
             {

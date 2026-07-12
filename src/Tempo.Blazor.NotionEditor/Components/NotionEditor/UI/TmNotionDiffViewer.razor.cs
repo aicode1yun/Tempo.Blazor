@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -12,7 +13,7 @@ public enum NotionDiffViewMode
     SideBySide
 }
 
-public partial class TmNotionDiffViewer : ComponentBase
+public partial class TmNotionDiffViewer : TmComponentBase
 {
     [Parameter] public IReadOnlyList<BlockDiff> Diffs { get; set; } = [];
     [Parameter] public NotionDiffViewMode ViewMode { get; set; } = NotionDiffViewMode.Inline;

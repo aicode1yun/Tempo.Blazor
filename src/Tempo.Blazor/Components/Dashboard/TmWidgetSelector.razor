@@ -9,8 +9,8 @@
         
         @* Header ──────────────────────────────────────────────── *@
         <div class="tm-widget-selector-header">
-            <h3>Add Widgets</h3>
-            <p>Choose widgets to add to your dashboard</p>
+            <h3>@Loc["TmWidgetSelector_Title"]</h3>
+            <p>@Loc["TmWidgetSelector_Subtitle"]</p>
             <button type="button" class="tm-widget-selector-close" @onclick="OnClose">
                 <TmIcon Name="x" Size="IconSize.Sm" />
             </button>
@@ -19,7 +19,7 @@
         @* Search ──────────────────────────────────────────────── *@
         <div class="tm-widget-selector-search">
             <TmSearchInput @bind-Value="_searchText" 
-                          Placeholder="Search widgets..." />
+                          Placeholder="@Loc["TmWidgetSelector_SearchPlaceholder"]" />
         </div>
         
         @* Content ─────────────────────────────────────────────── *@
@@ -32,7 +32,7 @@
                             class="tm-widget-selector-category @(_selectedCategory == null ? "tm-widget-selector-category--active" : "")"
                             @onclick="() => SelectCategory(null)">
                         <TmIcon Name="grid" Size="IconSize.Sm" />
-                        <span>All Widgets</span>
+                        <span>@Loc["TmWidgetSelector_AllWidgets"]</span>
                         <span class="tm-widget-selector-count">@GetTotalWidgetCount()</span>
                     </button>
                     
@@ -46,7 +46,7 @@
                                     @onclick="() => SelectCategory(category.Id)"
                                     style="--category-color: @(category.Color ?? "#6366f1")">
                                 <TmIcon Name="@category.Icon" Size="IconSize.Sm" />
-                                <span>@category.Name</span>
+                                <span>@GetCategoryName(category)</span>
                                 <span class="tm-widget-selector-count">@count</span>
                             </button>
                         }
@@ -75,7 +75,7 @@
                                         <span class="tm-widget-card-size">@widget.DefaultWidth×@widget.DefaultHeight</span>
                                         @if (!widget.AllowMultiple && IsAlreadyAdded(widget))
                                         {
-                                            <span class="tm-widget-card-badge tm-widget-card-badge--added">Added</span>
+                                            <span class="tm-widget-card-badge tm-widget-card-badge--added">@Loc["TmWidgetSelector_Added"]</span>
                                         }
                                     </div>
                                 </div>
@@ -94,8 +94,8 @@
                 {
                     <div class="tm-widget-selector-empty">
                         <TmIcon Name="search" Size="IconSize.Xl" />
-                        <p>No widgets found</p>
-                        <span>Try adjusting your search or category filter</span>
+                        <p>@Loc["TmWidgetSelector_NoWidgets"]</p>
+                        <span>@Loc["TmWidgetSelector_NoWidgetsHint"]</span>
                     </div>
                 }
             </div>
@@ -105,10 +105,10 @@
         <div class="tm-widget-selector-footer">
             <span class="tm-widget-selector-hint">
                 <TmIcon Name="info" Size="IconSize.Sm" />
-                Click on a widget to add it to your dashboard
+                @Loc["TmWidgetSelector_Hint"]
             </span>
             <button type="button" class="tm-btn tm-btn-ghost" @onclick="OnClose">
-                Done
+                @Loc["TmWidgetSelector_Done"]
             </button>
         </div>
     </div>
@@ -153,6 +153,14 @@
     {
         if (WidgetRegistry is null) return Enumerable.Empty<WidgetCategory>();
         return WidgetRegistry.GetCategories().OrderBy(c => c.Order);
+    }
+
+    // Localizes built-in category names by id; falls back to the model's Name for custom categories.
+    private string GetCategoryName(WidgetCategory category)
+    {
+        var key = $"TmDashboard_Category_{category.Id}";
+        var localized = Loc[key];
+        return localized == key ? category.Name : localized;
     }
     
     private int GetTotalWidgetCount()

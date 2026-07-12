@@ -49,3 +49,18 @@ public sealed record ChartDataset
 
 /// <summary>Identifies a clicked segment.</summary>
 public sealed record ChartSegment(int DatasetIndex, int Index, string Label, double Value);
+
+/// <summary>
+/// Raised when a series (multi-dataset legend) or a single value (per-value legend) is
+/// toggled through the interactive legend. <see cref="Index"/> is the legend-item index.
+/// </summary>
+public sealed record ChartSeriesToggle(int Index, string Label, bool Hidden);
+
+/// <summary>Context passed to a chart tooltip — the default tooltip and any custom TooltipTemplate.</summary>
+public sealed record ChartTooltipContext(
+    int DatasetIndex,
+    int Index,
+    string Label,
+    double Value,
+    string DatasetLabel,
+    string Color);

@@ -17,7 +17,7 @@ namespace Tempo.Blazor.Components.Diagram;
 /// Top-level diagram editor component. Composes the canvas, toolbox, properties panel,
 /// and toolbar into a fully working editor.
 /// </summary>
-public partial class TmDiagramEditor : ComponentBase, IDisposable
+public partial class TmDiagramEditor : TmComponentBase, IDisposable
 {
     // ── DI ───────────────────────────────────────────────────────────────────
 

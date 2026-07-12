@@ -1,7 +1,8 @@
 @using Tempo.Blazor.Modeling
+@inherits Tempo.Blazor.Components.TmComponentBase
 
 <section class="@RootClass"
-         data-testid="modeling-issue-panel"
+         data-testid="@TestId("modeling-issue-panel")"
          data-issue-count="@Issues.Count"
          aria-label="@Loc["TmModelingIssuePanel_Title"]">
     <header class="tm-modeling-issue-panel__header">
@@ -13,14 +14,14 @@
 
     @if (Issues.Count == 0)
     {
-        <div class="tm-modeling-issue-panel__empty" data-testid="modeling-issue-empty">
+        <div class="tm-modeling-issue-panel__empty" data-testid="@TestId("modeling-issue-empty")">
             <strong>@Loc["TmModelingIssuePanel_EmptyTitle"]</strong>
             <span>@Loc["TmModelingIssuePanel_EmptyText"]</span>
         </div>
     }
     else
     {
-        <ol class="tm-modeling-issue-panel__list" data-testid="modeling-issue-list">
+        <ol class="tm-modeling-issue-panel__list" data-testid="@TestId("modeling-issue-list")">
             @foreach (var issue in Issues.Select((value, index) => (value, index)))
             {
                 <li role="listitem">

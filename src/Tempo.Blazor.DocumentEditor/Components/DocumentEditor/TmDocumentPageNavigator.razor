@@ -1,13 +1,14 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using System.Globalization
 @using Tempo.Blazor.DocumentEditor.Models
 
 <aside class="tm-document-page-navigator"
-       data-testid="document-page-navigator"
+       data-testid="@TestId("document-page-navigator")"
        aria-label="@Loc["TmDocumentEditor_Pages"]">
     <header class="tm-document-page-navigator__header">
         <span>@Loc["TmDocumentEditor_Pages"]</span>
-        <span data-testid="document-page-navigator-count">
+        <span data-testid="@TestId("document-page-navigator-count")">
             @string.Format(CultureInfo.InvariantCulture, Loc["TmDocumentEditor_PageCount"], PageCount)
         </span>
     </header>
@@ -15,7 +16,7 @@
     @if (VisiblePages.Count == 0)
     {
         <p class="tm-document-page-navigator__empty"
-           data-testid="document-page-navigator-empty">
+           data-testid="@TestId("document-page-navigator-empty")">
             @Loc["TmDocumentEditor_PageNavigatorEmpty"]
         </p>
     }
@@ -27,7 +28,7 @@
                 <li>
                     <button type="button"
                             class="@GetPageClass(pageMetric)"
-                            data-testid="document-page-navigator-item"
+                            data-testid="@TestId("document-page-navigator-item")"
                             data-page-index="@pageMetric.PageIndex"
                             aria-current="@GetAriaCurrent(pageMetric)"
                             @onclick="() => OnNavigateToPage.InvokeAsync(pageMetric.PageIndex)">
@@ -42,7 +43,7 @@
                         @if (pageMetric.HasOverflow)
                         {
                             <span class="tm-document-page-navigator__overflow"
-                                  data-testid="document-page-navigator-overflow">
+                                  data-testid="@TestId("document-page-navigator-overflow")">
                                 @Loc["TmDocumentEditor_PageOverflow"]
                             </span>
                         }

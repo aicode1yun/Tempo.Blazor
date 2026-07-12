@@ -1,11 +1,12 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.DocumentEditor.Models
 
 @if (Inline is DocumentDrawingRun drawing)
 {
     <span class="@GetDrawingClass(drawing)"
           style="@GetDrawingFigureStyle(drawing)"
-          data-testid="document-drawing-object"
+          data-testid="@TestId("document-drawing-object")"
           data-object-id="@drawing.ObjectId"
           data-wrap-mode="@GetDrawingWrapMode(drawing)"
           role="img"

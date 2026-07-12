@@ -1,8 +1,9 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Microsoft.AspNetCore.Components.Web
 
 <div class="tm-document-table-grid-picker"
-     data-testid="document-table-grid-picker"
+     data-testid="@TestId("document-table-grid-picker")"
      role="grid"
      aria-label="@Loc["TmDocumentEditor_TableGridPickerLabel"]"
      tabindex="0"

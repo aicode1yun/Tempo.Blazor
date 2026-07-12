@@ -8,7 +8,7 @@ namespace Tempo.Blazor.Components.Diagram;
 /// <summary>
 /// Toolbox panel showing available diagram stencils that can be dragged onto the canvas.
 /// </summary>
-public partial class TmDiagramToolbox : ComponentBase
+public partial class TmDiagramToolbox : TmComponentBase
 {
     [Inject] private IJSRuntime JS { get; set; } = default!;
 

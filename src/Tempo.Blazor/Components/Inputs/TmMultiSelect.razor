@@ -14,10 +14,14 @@
     <div class="tm-multiselect @GetTriggerCss()"
          role="combobox"
          id="@Id"
+         aria-label="@Label"
          tabindex="0"
          aria-expanded="@_isOpen.ToString().ToLowerInvariant()"
          aria-haspopup="listbox"
          aria-owns="@(Id + "-listbox")"
+         aria-required="@(Required ? "true" : null)"
+         aria-invalid="@(IsInvalid ? "true" : null)"
+         aria-describedby="@DescribedBy"
          @onclick="ToggleDropdownAsync"
          @onkeydown="HandleTriggerKeyDownAsync">
 
@@ -221,11 +225,11 @@
 
     @if (!string.IsNullOrEmpty(Error))
     {
-        <div class="tm-input-error-message">@Error</div>
+        <div id="@ErrorId" class="tm-input-error-message" role="alert">@Error</div>
     }
     @if (!string.IsNullOrEmpty(HelpText) && string.IsNullOrEmpty(Error))
     {
-        <div class="tm-input-help-text">@HelpText</div>
+        <div id="@HelpId" class="tm-input-help-text">@HelpText</div>
     }
 </div>
 

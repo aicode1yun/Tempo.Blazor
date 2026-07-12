@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Microsoft.JSInterop
 @using Tempo.Blazor.DocumentEditor.Models
 @inject IJSRuntime JSRuntime
@@ -9,7 +10,7 @@
          role="dialog"
          aria-modal="true"
          aria-label="@Loc["TmDocumentEditor_CreateVersion"]"
-         data-testid="document-version-dialog">
+         data-testid="@TestId("document-version-dialog")">
     <header class="tm-document-version-dialog__header">
         <h3>@Loc["TmDocumentEditor_CreateVersion"]</h3>
         <button type="button"
@@ -17,7 +18,7 @@
                 title="@Loc["TmDocumentEditor_CloseVersionDialog"]"
                 aria-label="@Loc["TmDocumentEditor_CloseVersionDialog"]"
                 @onclick="OnCancel"
-                data-testid="document-version-dialog-close">
+                data-testid="@TestId("document-version-dialog-close")">
             <TmIcon Name="x" Size="IconSize.Sm" />
         </button>
     </header>
@@ -27,7 +28,7 @@
         <select @ref="_kindSelect"
                 value="@_kind"
                 @onchange="ChangeKind"
-                data-testid="document-version-kind">
+                data-testid="@TestId("document-version-kind")">
             <option value="@DocumentVersionKind.Minor">@Loc["TmDocumentEditor_VersionKindMinor"]</option>
             <option value="@DocumentVersionKind.Major">@Loc["TmDocumentEditor_VersionKindMajor"]</option>
         </select>
@@ -35,22 +36,22 @@
 
     <label>
         <span>@Loc["TmDocumentEditor_VersionLabel"]</span>
-        <input value="@_label" @oninput="args => _label = args.Value?.ToString()" data-testid="document-version-label" />
+        <input value="@_label" @oninput="args => _label = args.Value?.ToString()" data-testid="@TestId("document-version-label")" />
     </label>
 
     <label>
         <span>@Loc["TmDocumentEditor_VersionDescription"]</span>
-        <textarea value="@_description" @oninput="args => _description = args.Value?.ToString()" data-testid="document-version-description"></textarea>
+        <textarea value="@_description" @oninput="args => _description = args.Value?.ToString()" data-testid="@TestId("document-version-description")"></textarea>
     </label>
 
     @if (!string.IsNullOrWhiteSpace(_validationMessage))
     {
-        <div class="tm-document-version-dialog__error" role="alert" data-testid="document-version-error">@_validationMessage</div>
+        <div class="tm-document-version-dialog__error" role="alert" data-testid="@TestId("document-version-error")">@_validationMessage</div>
     }
 
     <footer class="tm-document-version-dialog__actions">
-        <button type="button" @onclick="OnCancel" data-testid="document-version-cancel">@Loc["TmDocumentEditor_Cancel"]</button>
-        <button type="button" @onclick="SubmitAsync" disabled="@IsBusy" data-testid="document-version-create-submit">
+        <button type="button" @onclick="OnCancel" data-testid="@TestId("document-version-cancel")">@Loc["TmDocumentEditor_Cancel"]</button>
+        <button type="button" @onclick="SubmitAsync" disabled="@IsBusy" data-testid="@TestId("document-version-create-submit")">
             @Loc["TmDocumentEditor_CreateVersion"]
         </button>
     </footer>

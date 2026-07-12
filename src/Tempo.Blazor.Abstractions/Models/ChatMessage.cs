@@ -35,6 +35,40 @@ public sealed record ChatMessage
     /// <summary>Optional error text when sending failed.</summary>
     public string? ErrorMessage { get; init; }
 
+    // ── K6: threads, edit/delete, reactions, receipts (all additive) ──
+
+    /// <summary>Id of the specific message this one replies to, when it is a reply.</summary>
+    public string? ReplyToId { get; init; }
+
+    /// <summary>Id of the root message of the thread this message belongs to; the root's own
+    /// <see cref="Id"/> for a thread starter, or the root id for its replies. Null for standalone messages.</summary>
+    public string? ThreadRootId { get; init; }
+
+    /// <summary>Number of replies in this message's thread (meaningful on a thread root).</summary>
+    public int ReplyCount { get; init; }
+
+    /// <summary>Emoji reactions on this message, grouped by emoji.</summary>
+    public IReadOnlyList<ChatReaction> Reactions { get; init; } = [];
+
+    /// <summary>Per-user read receipts for this message.</summary>
+    public IReadOnlyList<ChatReadReceipt> ReadBy { get; init; } = [];
+
+    /// <summary>Timestamp of the last edit, or null when the message was never edited.</summary>
+    public DateTimeOffset? EditedAt { get; init; }
+
+    /// <summary>Whether the message has been deleted (rendered as a tombstone).</summary>
+    public bool IsDeleted { get; init; }
+
+    /// <summary>True when the message carries an edit timestamp.</summary>
+    public bool IsEdited => EditedAt.HasValue;
+
+    /// <summary>True when the message is a reply within a thread.</summary>
+    public bool IsReply => !string.IsNullOrEmpty(ReplyToId) || !string.IsNullOrEmpty(ThreadRootId);
+
+    /// <summary>Returns true when <paramref name="userId"/> has read this message.</summary>
+    public bool IsReadByUser(string userId)
+        => IsRead || ReadBy.Any(r => string.Equals(r.User?.Id, userId, StringComparison.Ordinal));
+
     public ChatMessage() { }
 
     public ChatMessage(string id, string text, ChatUser? author = null, ChatMessageType type = ChatMessageType.Incoming, DateTimeOffset? timestamp = null)

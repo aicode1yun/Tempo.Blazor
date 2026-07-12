@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Sidebar
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Interfaces
 
 <li class="tm-npt-item @(IsActive ? "tm-npt-item--active" : "") @(_isDragOver ? "tm-npt-item--drag-over" : "")"
@@ -26,7 +27,7 @@
 
         <input class="tm-npt-select"
                type="checkbox"
-               data-testid="notion-page-select-@Page.Id.ToString("D")"
+               data-testid="@TestId($"notion-page-select-{Page.Id:D}")"
                checked="@Tree.IsSelected(Page.Id.ToString("D"))"
                aria-label="@string.Format(Loc["TmNotionPageTree_SelectPage"], PageTitle)"
                @onchange="OnSelectionChangedAsync"

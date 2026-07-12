@@ -25,7 +25,7 @@
         {
             <button class="tm-topbar-search-trigger"
                     type="button"
-                    aria-label="Open command palette"
+                    aria-label="@Loc["TmTopBar_OpenCommandPalette"]"
                     @onclick="async () => await OnCommandPalette.InvokeAsync()">
                 <TmIcon Name="@IconNames.Search" Size="IconSize.Sm" />
                 <span class="tm-topbar-search-hint">⌘K</span>
@@ -42,7 +42,7 @@
             <div class="tm-topbar-user">
                 <button class="tm-topbar-user-button"
                         type="button"
-                        aria-label="User menu"
+                        aria-label="@Loc["TmTopBar_UserMenu"]"
                         @onclick="ToggleUserMenu">
                     <TmAvatar Src="@User.AvatarSrc" Name="@User.DisplayName" Size="AvatarSize.Sm" />
                     @if (!string.IsNullOrEmpty(User.DisplayName))

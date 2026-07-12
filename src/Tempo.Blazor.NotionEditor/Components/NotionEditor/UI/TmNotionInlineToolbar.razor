@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.NotionEditor.Enums
 
 @if (Visible)
@@ -272,7 +273,7 @@
 
                 <button class="tm-notion-inline-toolbar__btn"
                         title="@Loc["Notion_AI_Assistant"]"
-                        data-testid="notion-inline-ai"
+                        data-testid="@TestId("notion-inline-ai")"
                         @onclick="HandleAIAsync" @onclick:preventDefault="true">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                         <path d="M8 1.75l1.05 3.2 3.2 1.05-3.2 1.05L8 10.25 6.95 7.05 3.75 6l3.2-1.05L8 1.75z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/>

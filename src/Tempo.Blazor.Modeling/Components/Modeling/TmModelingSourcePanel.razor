@@ -1,6 +1,7 @@
 @using Tempo.Blazor.Modeling
+@inherits Tempo.Blazor.Components.TmComponentBase
 
-<section class="@RootClass" data-testid="modeling-source-panel" data-freshness="@FreshnessState">
+<section class="@RootClass" data-testid="@TestId("modeling-source-panel")" data-freshness="@FreshnessState">
     <div class="tm-modeling-source-panel__header">
         <div>
             <h3>@Loc["TmModelingSourcePanel_Title"]</h3>
@@ -8,7 +9,7 @@
         </div>
         @if (Metadata is not null)
         {
-            <span class="@FreshnessBadgeClass" data-testid="modeling-source-freshness-indicator">
+            <span class="@FreshnessBadgeClass" data-testid="@TestId("modeling-source-freshness-indicator")">
                 @FreshnessLabel
             </span>
         }
@@ -16,7 +17,7 @@
 
     @if (Metadata is null)
     {
-        <div class="tm-modeling-source-panel__empty" data-testid="modeling-source-empty">
+        <div class="tm-modeling-source-panel__empty" data-testid="@TestId("modeling-source-empty")">
             <strong>@Loc["TmModelingSourcePanel_EmptyTitle"]</strong>
             <span>@Loc["TmModelingSourcePanel_EmptyText"]</span>
         </div>
@@ -26,21 +27,21 @@
         <dl class="tm-modeling-source-panel__metadata">
             <div>
                 <dt>@Loc["TmModelingSourcePanel_SourceSystem"]</dt>
-                <dd class="tm-modeling-source-panel__value" data-testid="modeling-source-system" title="@Metadata.SourceSystem">@DisplaySourceSystem</dd>
+                <dd class="tm-modeling-source-panel__value" data-testid="@TestId("modeling-source-system")" title="@Metadata.SourceSystem">@DisplaySourceSystem</dd>
             </div>
             <div>
                 <dt>@Loc["TmModelingSourcePanel_SourceVersion"]</dt>
-                <dd class="tm-modeling-source-panel__value" data-testid="modeling-source-version" title="@Metadata.SourceVersion">@DisplaySourceVersion</dd>
+                <dd class="tm-modeling-source-panel__value" data-testid="@TestId("modeling-source-version")" title="@Metadata.SourceVersion">@DisplaySourceVersion</dd>
             </div>
             <div>
                 <dt>@Loc["TmModelingSourcePanel_LoadedAt"]</dt>
-                <dd class="tm-modeling-source-panel__value" data-testid="modeling-source-loaded-at">@DisplayLoadedAt</dd>
+                <dd class="tm-modeling-source-panel__value" data-testid="@TestId("modeling-source-loaded-at")">@DisplayLoadedAt</dd>
             </div>
         </dl>
 
         @if (!Metadata.IsFresh)
         {
-            <div class="tm-modeling-source-panel__warning" data-testid="modeling-source-freshness-warning" role="status">
+            <div class="tm-modeling-source-panel__warning" data-testid="@TestId("modeling-source-freshness-warning")" role="status">
                 <span class="tm-modeling-source-panel__warning-icon" aria-hidden="true">!</span>
                 <span>@Loc["TmModelingSourcePanel_StaleWarning"]</span>
             </div>
@@ -49,7 +50,7 @@
 
     <button type="button"
             class="tm-modeling-source-panel__load"
-            data-testid="modeling-source-load-button"
+            data-testid="@TestId("modeling-source-load-button")"
             disabled="@EffectiveIsLoading"
             @onclick="HandleLoadRequestedAsync">
         @if (EffectiveIsLoading)

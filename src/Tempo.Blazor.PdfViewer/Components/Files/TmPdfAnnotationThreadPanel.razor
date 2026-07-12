@@ -1,9 +1,10 @@
 @namespace Tempo.Blazor.Components.Files
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using System.Globalization
 @using Microsoft.AspNetCore.Components.Web
 @using Tempo.Blazor.Abstractions.Models
 
-<aside class="tm-pdf-annotation-panel" data-testid="pdf-annotation-panel" aria-label="@Loc["TmPdfViewer_AnnotationsPanelLabel"]">
+<aside class="tm-pdf-annotation-panel" data-testid="@TestId("pdf-annotation-panel")" aria-label="@Loc["TmPdfViewer_AnnotationsPanelLabel"]">
 
     <header class="tm-pdf-annotation-panel__header">
         <span class="tm-pdf-annotation-panel__title">@Loc["TmPdfViewer_Annotations"]</span>
@@ -11,7 +12,7 @@
             <input type="checkbox"
                    checked="@ShowResolved"
                    disabled="@Disabled"
-                   data-testid="pdf-annotation-show-resolved"
+                   data-testid="@TestId("pdf-annotation-show-resolved")"
                    @onchange="ToggleResolvedAsync" />
             @Loc["TmPdfViewer_ShowResolved"]
         </label>
@@ -19,7 +20,7 @@
 
     @if (PendingSelection is not null && !Disabled)
     {
-        <div class="tm-pdf-annotation-panel__new" data-testid="pdf-annotation-new">
+        <div class="tm-pdf-annotation-panel__new" data-testid="@TestId("pdf-annotation-new")">
             <div class="tm-pdf-annotation-panel__prompt">@Loc["TmPdfViewer_SelectionPrompt"]</div>
             @if (!string.IsNullOrWhiteSpace(PendingSelection.Text))
             {
@@ -27,20 +28,20 @@
             }
             <textarea class="tm-pdf-annotation-panel__input"
                       placeholder="@Loc["TmPdfViewer_NewCommentPlaceholder"]"
-                      data-testid="pdf-annotation-new-input"
+                      data-testid="@TestId("pdf-annotation-new-input")"
                       @bind="_newBody"
                       @bind:event="oninput"></textarea>
             <div class="tm-pdf-annotation-panel__actions">
                 <button type="button"
                         class="tm-pdf-annotation-panel__btn tm-pdf-annotation-panel__btn--primary"
                         disabled="@(string.IsNullOrWhiteSpace(_newBody))"
-                        data-testid="pdf-annotation-new-submit"
+                        data-testid="@TestId("pdf-annotation-new-submit")"
                         @onclick="CreateThreadAsync">
                     @Loc["TmPdfViewer_Comment"]
                 </button>
                 <button type="button"
                         class="tm-pdf-annotation-panel__btn tm-pdf-annotation-panel__btn--ghost"
-                        data-testid="pdf-annotation-new-cancel"
+                        data-testid="@TestId("pdf-annotation-new-cancel")"
                         @onclick="CancelSelectionAsync">
                     @Loc["TmPdfViewer_Cancel"]
                 </button>
@@ -50,7 +51,7 @@
 
     @if (!VisibleThreads.Any())
     {
-        <div class="tm-pdf-annotation-panel__empty" data-testid="pdf-annotation-empty">
+        <div class="tm-pdf-annotation-panel__empty" data-testid="@TestId("pdf-annotation-empty")">
             @Loc["TmPdfViewer_NoAnnotations"]
         </div>
     }
@@ -63,7 +64,7 @@
                     <button type="button"
                             class="tm-pdf-annotation-panel__thread-head"
                             data-thread-id="@thread.Id"
-                            data-testid="pdf-annotation-thread"
+                            data-testid="@TestId("pdf-annotation-thread")"
                             @onclick="() => SelectAsync(thread.Id)">
                         <span class="tm-pdf-annotation-panel__badge">@ThreadNumber(thread)</span>
                         <span class="tm-pdf-annotation-panel__preview">@Preview(thread)</span>
@@ -75,7 +76,7 @@
 
                     @if (string.Equals(thread.Id, SelectedThreadId, StringComparison.Ordinal))
                     {
-                        <div class="tm-pdf-annotation-panel__detail" data-testid="pdf-annotation-detail">
+                        <div class="tm-pdf-annotation-panel__detail" data-testid="@TestId("pdf-annotation-detail")">
                             @if (!string.IsNullOrWhiteSpace(thread.Anchor.HighlightedText))
                             {
                                 <div class="tm-pdf-annotation-panel__quote">@Truncate(thread.Anchor.HighlightedText!)</div>
@@ -83,7 +84,7 @@
 
                             @foreach (var comment in thread.Comments)
                             {
-                                <div class="tm-pdf-annotation-panel__comment" data-testid="pdf-annotation-comment">
+                                <div class="tm-pdf-annotation-panel__comment" data-testid="@TestId("pdf-annotation-comment")">
                                     <div class="tm-pdf-annotation-panel__comment-head">
                                         <span class="tm-pdf-annotation-panel__author">@comment.AuthorName</span>
                                         <span class="tm-pdf-annotation-panel__time">@FormatTime(comment.CreatedAt)</span>
@@ -93,7 +94,7 @@
                                     {
                                         <button type="button"
                                                 class="tm-pdf-annotation-panel__link"
-                                                data-testid="pdf-annotation-delete"
+                                                data-testid="@TestId("pdf-annotation-delete")"
                                                 @onclick="() => DeleteAsync(thread.Id, comment.Id)">
                                             @Loc["TmPdfViewer_Delete"]
                                         </button>
@@ -105,14 +106,14 @@
                             {
                                 <textarea class="tm-pdf-annotation-panel__input"
                                           placeholder="@Loc["TmPdfViewer_ReplyPlaceholder"]"
-                                          data-testid="pdf-annotation-reply-input"
+                                          data-testid="@TestId("pdf-annotation-reply-input")"
                                           @bind="_replyBody"
                                           @bind:event="oninput"></textarea>
                                 <div class="tm-pdf-annotation-panel__actions">
                                     <button type="button"
                                             class="tm-pdf-annotation-panel__btn tm-pdf-annotation-panel__btn--primary"
                                             disabled="@(string.IsNullOrWhiteSpace(_replyBody))"
-                                            data-testid="pdf-annotation-reply-submit"
+                                            data-testid="@TestId("pdf-annotation-reply-submit")"
                                             @onclick="() => ReplyAsync(thread.Id)">
                                         @Loc["TmPdfViewer_Reply"]
                                     </button>
@@ -120,7 +121,7 @@
                                     {
                                         <button type="button"
                                                 class="tm-pdf-annotation-panel__btn tm-pdf-annotation-panel__btn--ghost"
-                                                data-testid="pdf-annotation-resolve"
+                                                data-testid="@TestId("pdf-annotation-resolve")"
                                                 @onclick="() => ResolveAsync(thread.Id)">
                                             @Loc["TmPdfViewer_Resolve"]
                                         </button>
@@ -129,7 +130,7 @@
                                     {
                                         <button type="button"
                                                 class="tm-pdf-annotation-panel__btn tm-pdf-annotation-panel__btn--ghost"
-                                                data-testid="pdf-annotation-reopen"
+                                                data-testid="@TestId("pdf-annotation-reopen")"
                                                 @onclick="() => ReopenAsync(thread.Id)">
                                             @Loc["TmPdfViewer_Reopen"]
                                         </button>

@@ -6,6 +6,7 @@
     {
         <select class="tm-col-filter-select"
                 value="@_value"
+                aria-label="@Loc["TmDataTable_Filter"]"
                 @onchange="OnSelectChange">
             <option value=""></option>
             <option value="true">@Loc["Tm_Yes"]</option>
@@ -16,6 +17,7 @@
     {
         <select class="tm-col-filter-select"
                 value="@_value"
+                aria-label="@Loc["TmDataTable_Filter"]"
                 @onchange="OnSelectChange">
             <option value=""></option>
             @if (FilterOptions != null)
@@ -34,6 +36,7 @@
                    type="@InputType"
                    value="@_value"
                    placeholder="@Loc["TmDataTable_Filter"]"
+                   aria-label="@Loc["TmDataTable_Filter"]"
                    @oninput="OnInputChange" />
             @if (!string.IsNullOrEmpty(_value))
             {

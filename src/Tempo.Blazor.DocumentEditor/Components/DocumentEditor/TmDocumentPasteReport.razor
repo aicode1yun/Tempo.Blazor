@@ -1,21 +1,22 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Components.DocumentEditor.Clipboard
 
 @if (Warnings.Count > 0)
 {
     <section class="tm-document-paste-report"
-             data-testid="document-paste-report"
+             data-testid="@TestId("document-paste-report")"
              role="status"
              aria-live="polite">
         <div class="tm-document-paste-report__summary">
             <span>@string.Format(Loc["TmDocumentEditor_PasteReportSummary"], Warnings.Count)</span>
             <button type="button"
-                    data-testid="document-paste-report-toggle"
+                    data-testid="@TestId("document-paste-report-toggle")"
                     @onclick="ToggleDetailsAsync">
                 @Loc[ShowDetails ? "TmDocumentEditor_PasteReportHideDetails" : "TmDocumentEditor_PasteReportShowDetails"]
             </button>
             <button type="button"
-                    data-testid="document-paste-report-close"
+                    data-testid="@TestId("document-paste-report-close")"
                     aria-label="@Loc["TmDocumentEditor_PasteReportClose"]"
                     @onclick="CloseAsync">
                 &#10005;
@@ -23,7 +24,7 @@
         </div>
         @if (ShowDetails)
         {
-            <ul class="tm-document-paste-report__details" data-testid="document-paste-report-details">
+            <ul class="tm-document-paste-report__details" data-testid="@TestId("document-paste-report-details")">
                 @foreach (var warning in Warnings)
                 {
                     <li>

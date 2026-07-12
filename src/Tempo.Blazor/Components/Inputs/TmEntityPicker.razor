@@ -22,6 +22,8 @@
                    role="combobox"
                    aria-expanded="@(_showDropdown ? "true" : "false")"
                    aria-autocomplete="list"
+                   aria-invalid="@(IsInvalid ? "true" : null)"
+                   aria-describedby="@DescribedBy"
                    @oninput="HandleSearch"
                    @onfocus="HandleFocus"
                    @onblur="HandleBlur" />
@@ -61,7 +63,7 @@
 
     @if (!string.IsNullOrEmpty(Error))
     {
-        <div class="tm-input-error-message">@Error</div>
+        <div id="@ErrorId" class="tm-input-error-message" role="alert">@Error</div>
     }
 </div>
 
@@ -71,6 +73,12 @@
     private bool _isLoading;
     private List<TItem> _results = [];
     private CancellationTokenSource? _debounceToken;
+
+    // ── Accessibility ────────────────────────────────────────────
+    private readonly string _ariaId = Guid.NewGuid().ToString("n")[..8];
+    private bool IsInvalid => !string.IsNullOrEmpty(Error);
+    private string ErrorId => $"{_ariaId}-error";
+    private string? DescribedBy => !string.IsNullOrEmpty(Error) ? ErrorId : null;
 
     /// <summary>Current selected value.</summary>
     [Parameter] public TValue? Value { get; set; }

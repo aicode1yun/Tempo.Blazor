@@ -1,7 +1,8 @@
 @using Tempo.Blazor.Modeling
+@inherits Tempo.Blazor.Components.TmComponentBase
 
 <section class="@RootClass"
-         data-testid="modeling-model-tree"
+         data-testid="@TestId("modeling-model-tree")"
          data-visible-count="@VisibleElementCount"
          aria-label="@Loc["TmModelingModelTree_Title"]">
     <div class="tm-modeling-model-tree__header">
@@ -11,7 +12,7 @@
         </div>
         <label class="tm-modeling-model-tree__search">
             <span>@Loc["TmModelingModelTree_SearchLabel"]</span>
-            <input data-testid="modeling-tree-search"
+            <input data-testid="@TestId("modeling-tree-search")"
                    value="@_filterText"
                    @oninput="HandleFilterChanged"
                    placeholder="@Loc["TmModelingModelTree_SearchPlaceholder"]"
@@ -21,14 +22,14 @@
 
     @if (Elements.Count == 0)
     {
-        <div class="tm-modeling-model-tree__empty" data-testid="modeling-tree-empty">
+        <div class="tm-modeling-model-tree__empty" data-testid="@TestId("modeling-tree-empty")">
             <strong>@Loc["TmModelingModelTree_EmptyTitle"]</strong>
             <span>@Loc["TmModelingModelTree_EmptyText"]</span>
         </div>
     }
     else if (VisibleElementCount == 0)
     {
-        <div class="tm-modeling-model-tree__empty" data-testid="modeling-tree-empty-filter" aria-live="polite">
+        <div class="tm-modeling-model-tree__empty" data-testid="@TestId("modeling-tree-empty-filter")" aria-live="polite">
             <strong>@Loc["TmModelingModelTree_NoResultsTitle"]</strong>
             <span>@Loc["TmModelingModelTree_NoResultsText", _filterText]</span>
         </div>

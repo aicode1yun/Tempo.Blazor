@@ -6,6 +6,7 @@
            checked="@IsChecked"
            disabled="@Disabled"
            class="tm-radio-input"
+           aria-checked="@(IsChecked ? "true" : "false")"
            @onchange="HandleChangeAsync" />
     <span class="tm-radio-custom"></span>
     @if (!string.IsNullOrEmpty(Label))

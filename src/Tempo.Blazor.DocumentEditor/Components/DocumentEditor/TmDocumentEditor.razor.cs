@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -16,7 +17,7 @@ using Tempo.Blazor.Interfaces;
 namespace Tempo.Blazor.Components.DocumentEditor;
 
 /// <summary>Word-like document editor shell backed by the document editor JSON provider contracts.</summary>
-public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDisposable
+public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisposable
 {
     private readonly DocumentEditorCommandStack _commandStack = new();
     private readonly DocumentEditorKeyboardManager _keyboardManager = new();
