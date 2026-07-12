@@ -37,6 +37,9 @@
 .tm-text-center { text-align: center; }
 .tm-text-right  { text-align: right; }
 
+/* Tabular (monospaced) figures — keeps numeric columns vertically aligned. */
+.tm-tabular-nums { font-variant-numeric: tabular-nums; }
+
 /* Scrollbar (Webkit) */
 .tm-root ::-webkit-scrollbar       { width: 6px; height: 6px; }
 .tm-root ::-webkit-scrollbar-track  { background: var(--tm-bg-muted); }

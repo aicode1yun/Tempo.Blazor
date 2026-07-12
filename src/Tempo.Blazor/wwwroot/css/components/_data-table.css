@@ -275,6 +275,13 @@
 .tm-text-center { text-align: center; }
 .tm-text-right  { text-align: right; }
 
+/* Numeric / right-aligned cells get tabular figures so digits line up. */
+.tm-data-table td.tm-text-right,
+.tm-data-table th.tm-text-right,
+.tm-data-table td.tm-tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Loading / empty states in table */
 .tm-data-table .tm-spinner { margin: var(--tm-space-6) auto; }
 
