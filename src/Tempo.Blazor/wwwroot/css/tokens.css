@@ -18,9 +18,10 @@
   --tm-color-primary-800:  #1e40af;
   --tm-color-primary-900:  #1e3a8a;
 
-  --tm-color-primary:          var(--tm-color-primary-500);
-  --tm-color-primary-hover:    var(--tm-color-primary-600);
-  --tm-color-primary-active:   var(--tm-color-primary-700);
+  /* -600 base so filled buttons (white text) and primary text/borders meet WCAG AA (>=4.5:1) on white. */
+  --tm-color-primary:          var(--tm-color-primary-600);
+  --tm-color-primary-hover:    var(--tm-color-primary-700);
+  --tm-color-primary-active:   var(--tm-color-primary-800);
   --tm-color-primary-subtle:   var(--tm-color-primary-50);
   --tm-color-primary-text:     var(--tm-color-primary-800);
   /* RGB channels of --tm-color-primary-500, for rgba() alpha compositing. */
@@ -89,7 +90,9 @@
   /* ── Text ───────────────────────────────────────────────────── */
   --tm-text-primary:           var(--tm-color-gray-900);
   --tm-text-secondary:         var(--tm-color-gray-500);
-  --tm-text-tertiary:          var(--tm-color-gray-400);
+  /* gray-400 (#9ca3af) is only ~2.8:1 on white; gray-500 (>=4.5:1) keeps muted TEXT (placeholders,
+     meta, counts) WCAG AA. Disabled text stays lighter (WCAG exempts disabled controls). */
+  --tm-text-tertiary:          var(--tm-color-gray-500);
   --tm-text-disabled:          var(--tm-color-gray-400);
   --tm-text-inverse:           var(--tm-color-white);
   --tm-text-link:              var(--tm-color-primary);

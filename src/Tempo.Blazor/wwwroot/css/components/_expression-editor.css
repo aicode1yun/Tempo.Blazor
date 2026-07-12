@@ -43,12 +43,12 @@
 }
 
 .tm-expression-editor__textarea::placeholder {
-    color: var(--tm-text-tertiary);
+    color: var(--tm-color-gray-600);
 }
 
 .tm-expression-editor__textarea:disabled {
     background-color: var(--tm-bg-muted);
-    color: var(--tm-text-tertiary);
+    color: var(--tm-color-gray-600);
     cursor: not-allowed;
 }
 
@@ -69,7 +69,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--tm-text-secondary);
+    color: var(--tm-color-gray-600);
     border-bottom: 1px solid var(--tm-border-color);
 }
 
@@ -106,14 +106,14 @@
 
 .tm-expression-editor__var-desc {
     font-size: 0.7rem;
-    color: var(--tm-text-secondary);
+    color: var(--tm-color-gray-600);
     line-height: 1.3;
 }
 
 .tm-expression-editor__var-type {
     font-size: 0.65rem;
     font-family: var(--tm-font-mono, ui-monospace, monospace);
-    color: var(--tm-text-tertiary);
+    color: var(--tm-color-gray-600);
 }
 
 /* ── Error ── */

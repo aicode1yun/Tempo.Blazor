@@ -107,7 +107,7 @@
 }
 .tm-input-error-message {
   font-size: var(--tm-font-size-xs);
-  color: var(--tm-color-danger);
+  color: var(--tm-color-danger-text);
   line-height: var(--tm-line-height-tight);
   display: flex;
   align-items: center;

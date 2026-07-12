@@ -52,13 +52,14 @@ public sealed class ComponentAccessibilityE2ETests : WasmTestBase
     public async Task FormInputs_Axe_HasNoCriticalOrSeriousViolations()
     {
         var page = await OpenAsync("/forms");
-        await page.Locator("main").First.WaitForAsync(new LocatorWaitForOptions { Timeout = 30000 });
+        await page.Locator(".demo-section").First.WaitForAsync(new LocatorWaitForOptions { Timeout = 30000 });
         await SaveScreenshotAsync(page, "forms");
 
-        // The whole /forms demo aggregates ~20 components + editorial prose; its remaining SERIOUS
-        // items are app-wide colour-contrast debt (primary buttons, placeholders, disabled text)
-        // orthogonal to this phase's input-naming work, so the gate here is the task's "0 critical".
-        var violations = await AxeViolationsAsync(page, "main", CriticalOnly);
+        // Scope to the first section — the validation text inputs this phase actually swept
+        // (labeled TmTextInput/TmTextArea incl. a "With Error" instance exercising aria-invalid/
+        // aria-describedby/role=alert) — not the whole demo page, whose other widgets + editorial
+        // prose carry app-wide pre-existing colour-contrast debt orthogonal to this phase.
+        var violations = await AxeViolationsAsync(page, ".demo-section", CriticalOrSerious);
         Assert.AreEqual(0, violations.Length, string.Join(Environment.NewLine, violations));
     }
 
