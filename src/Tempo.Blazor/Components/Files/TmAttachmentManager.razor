@@ -108,6 +108,9 @@
 
     private List<TmAttachment> _attachments = [];
     private readonly List<TmUploadItem> _uploads = [];
+    // Scan verdicts recorded this session, re-applied after every reload so a Blocked gate
+    // survives a provider re-fetch. Keyed by asset id and "name:"+file name.
+    private readonly Dictionary<string, (FileScanStatus Status, string? Message)> _scanVerdicts = [];
 
     protected override async Task OnParametersSetAsync()
     {
@@ -115,6 +118,24 @@
         if (AttachmentProvider is not null && entityRef is not null)
         {
             _attachments = [.. await AttachmentProvider.GetForEntityAsync(entityRef)];
+            ReapplyScanVerdicts();
+        }
+    }
+
+    private void ReapplyScanVerdicts()
+    {
+        if (_scanVerdicts.Count == 0) return;
+        foreach (var att in _attachments)
+        {
+            (FileScanStatus Status, string? Message) v = default;
+            if ((!string.IsNullOrEmpty(att.AssetId) && _scanVerdicts.TryGetValue(att.AssetId!, out v))
+                || _scanVerdicts.TryGetValue(att.Id, out v)
+                || _scanVerdicts.TryGetValue("name:" + att.FileName, out v))
+            {
+                att.ScanStatus = v.Status;
+                att.ScanMessage = v.Message;
+                if (v.Status is FileScanStatus.Blocked) att.CanDownload = false;
+            }
         }
     }
 
@@ -251,6 +272,13 @@
         if (result.Status is FileScanStatus.Blocked)
         {
             attachment.CanDownload = false;
+        }
+
+        if (result.Status is not (FileScanStatus.NotScanned or FileScanStatus.Clean))
+        {
+            var value = (result.Status, result.Message ?? result.ThreatName);
+            if (!string.IsNullOrEmpty(attachment.AssetId)) _scanVerdicts[attachment.AssetId!] = value;
+            _scanVerdicts["name:" + attachment.FileName] = value;
         }
     }
 

@@ -10452,6 +10452,26 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IFileScanHook",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+      "description": "Optional hook that scans a freshly uploaded file (virus / content inspection); an upload moves Pending -> Clean/Blocked and blocked files are rendered as unavailable.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IFileScanHook.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IFileVersioningHook",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+      "description": "Optional hook that records and manages historical versions of a file: create-on-reupload, list history, diff two versions, and restore a prior version.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IFileVersioningHook.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IGalleryImage",
       "kind": "Interface",
       "category": "Interfaces",
@@ -12591,6 +12611,18 @@
           "description": "Access permissions for the current user."
         },
         {
+          "name": "ScanMessage",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional human-readable detail about the scan outcome."
+        },
+        {
+          "name": "ScanStatus",
+          "kind": "Property",
+          "type": "FileScanStatus",
+          "description": "Anti-virus / content scan state for the item's primary content. When or , downloads are suppressed and the item is shown as unavailable."
+        },
+        {
           "name": "Size",
           "kind": "Property",
           "type": "long?",
@@ -13209,6 +13241,18 @@
           "kind": "Property",
           "type": "required string",
           "description": "Full path of the item."
+        },
+        {
+          "name": "ScanMessage",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional human-readable detail about the scan outcome."
+        },
+        {
+          "name": "ScanStatus",
+          "kind": "Property",
+          "type": "FileScanStatus",
+          "description": "Anti-virus / content scan state. When or , the item is shown as unavailable and downloads are suppressed."
         },
         {
           "name": "Size",
@@ -24393,6 +24437,177 @@
       "documentationStatus": "manual"
     },
     {
+      "itemName": "FileScanRequest",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Describes an uploaded file (name, content type, size, asset id, entity) passed to an IFileScanHook for scanning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileScanRequest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AssetId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Provider-managed asset identifier assigned during upload, when available."
+        },
+        {
+          "name": "ContentType",
+          "kind": "Property",
+          "type": "string?",
+          "description": "MIME content type, when known."
+        },
+        {
+          "name": "EntityRef",
+          "kind": "Property",
+          "type": "TmEntityRef?",
+          "description": "Entity that owns the uploaded asset, when known."
+        },
+        {
+          "name": "FileName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Original or display file name."
+        },
+        {
+          "name": "Metadata",
+          "kind": "Property",
+          "type": "Dictionary<string, object>?",
+          "description": "Arbitrary metadata carried from the upload for the scanner's use."
+        },
+        {
+          "name": "Purpose",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional purpose, matching the upload's purpose (e.g. \"document-manager\")."
+        },
+        {
+          "name": "SizeBytes",
+          "kind": "Property",
+          "type": "long",
+          "description": "File size in bytes."
+        }
+      ]
+    },
+    {
+      "itemName": "FileScanResult",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Outcome of an IFileScanHook scan: resulting status plus optional message and detected threat name.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileScanResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BlockedBy",
+          "kind": "Method",
+          "type": "FileScanResult",
+          "description": "Convenience factory for a blocked result.",
+          "parameters": [
+            {
+              "name": "threatName",
+              "type": "string"
+            },
+            {
+              "name": "message",
+              "type": "string?",
+              "default": "null"
+            }
+          ]
+        },
+        {
+          "name": "Clean",
+          "kind": "Method",
+          "type": "FileScanResult",
+          "description": "Convenience factory for a clean result."
+        },
+        {
+          "name": "Message",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Human-readable detail (localized by the host), such as why a file was blocked."
+        },
+        {
+          "name": "Status",
+          "kind": "Property",
+          "type": "FileScanStatus",
+          "description": "Resulting scan state."
+        },
+        {
+          "name": "ThreatName",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Name of the detected threat when is ."
+        }
+      ]
+    },
+    {
+      "itemName": "FileScanStatus",
+      "kind": "Enum",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Anti-virus / content scan state of an uploaded file: NotScanned, Pending, Clean, Blocked, or Failed.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileScanStatus.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "FileVersionRequest",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Describes a new version to record via IFileVersioningHook.CreateVersionAsync (item id, file name, size, asset id, author, comment).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileVersionRequest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AssetId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Provider-managed asset id for the new version's content, when available."
+        },
+        {
+          "name": "Comment",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional change comment."
+        },
+        {
+          "name": "ContentType",
+          "kind": "Property",
+          "type": "string?",
+          "description": "MIME content type, when known."
+        },
+        {
+          "name": "CreatedBy",
+          "kind": "Property",
+          "type": "TmUserRef?",
+          "description": "User creating the version, when known."
+        },
+        {
+          "name": "FileName",
+          "kind": "Property",
+          "type": "string",
+          "description": "File name for the new version."
+        },
+        {
+          "name": "ItemId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Identifier of the logical item receiving a new version."
+        },
+        {
+          "name": "SizeBytes",
+          "kind": "Property",
+          "type": "long",
+          "description": "File size in bytes."
+        }
+      ]
+    },
+    {
       "itemName": "ITmActivityProvider",
       "kind": "Interface",
       "category": "Shared",
@@ -24950,6 +25165,18 @@
           "description": "Optional purpose, such as \"work-item\", \"document-manager\", \"signature\", or \"notion-media\"."
         },
         {
+          "name": "ScanMessage",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional human-readable detail about the scan outcome."
+        },
+        {
+          "name": "ScanStatus",
+          "kind": "Property",
+          "type": "FileScanStatus",
+          "description": "Anti-virus / content scan state. When or , the file should be treated as unavailable."
+        },
+        {
           "name": "SizeBytes",
           "kind": "Property",
           "type": "long",
@@ -25176,6 +25403,78 @@
               "type": "this IServiceCollection"
             }
           ]
+        }
+      ]
+    },
+    {
+      "itemName": "TmChunkedUploadRequest",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Describes a chunked upload of a single file including chunk size and optional resume state (resume-from index and upload session id).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmChunkedUploadRequest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "DefaultChunkSizeBytes",
+          "kind": "Field",
+          "type": "int",
+          "description": "Default chunk size in bytes (256 KB)."
+        },
+        {
+          "name": "ChunkSizeBytes",
+          "kind": "Property",
+          "type": "int",
+          "description": "Chunk size in bytes. Defaults to ."
+        },
+        {
+          "name": "ContentType",
+          "kind": "Property",
+          "type": "string?",
+          "description": "MIME content type, when known."
+        },
+        {
+          "name": "EntityRef",
+          "kind": "Property",
+          "type": "TmEntityRef?",
+          "description": "Entity that will own or reference the uploaded asset."
+        },
+        {
+          "name": "FileName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Original or display file name."
+        },
+        {
+          "name": "Metadata",
+          "kind": "Property",
+          "type": "Dictionary<string, object>?",
+          "description": "Arbitrary metadata forwarded to each chunk for provider use."
+        },
+        {
+          "name": "Purpose",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional purpose, such as \"document-manager\"."
+        },
+        {
+          "name": "ResumeFromChunkIndex",
+          "kind": "Property",
+          "type": "int",
+          "description": "Zero-based index of the first chunk to send. Non-zero resumes an interrupted upload."
+        },
+        {
+          "name": "TotalSizeBytes",
+          "kind": "Property",
+          "type": "long",
+          "description": "Total file size in bytes."
+        },
+        {
+          "name": "UploadSessionId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Upload session id from a previous attempt, used when resuming."
         }
       ]
     },
@@ -26414,6 +26713,114 @@
       ]
     },
     {
+      "itemName": "TmFileVersion",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "A single historical version of a file: version number, file name, size, author, timestamp, comment, and whether it is current.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersion.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AssetId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Provider-managed asset id for this version's content, when available."
+        },
+        {
+          "name": "Comment",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional change comment."
+        },
+        {
+          "name": "ContentType",
+          "kind": "Property",
+          "type": "string?",
+          "description": "MIME content type, when known."
+        },
+        {
+          "name": "CreatedAt",
+          "kind": "Property",
+          "type": "DateTimeOffset",
+          "description": "Timestamp when this version was created."
+        },
+        {
+          "name": "CreatedBy",
+          "kind": "Property",
+          "type": "TmUserRef?",
+          "description": "User who created this version, when known."
+        },
+        {
+          "name": "FileName",
+          "kind": "Property",
+          "type": "string",
+          "description": "File name captured for this version."
+        },
+        {
+          "name": "IsCurrent",
+          "kind": "Property",
+          "type": "bool",
+          "description": "True when this is the current (latest) version of the item."
+        },
+        {
+          "name": "ItemId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Identifier of the logical item this version belongs to."
+        },
+        {
+          "name": "SizeBytes",
+          "kind": "Property",
+          "type": "long",
+          "description": "File size in bytes for this version."
+        },
+        {
+          "name": "VersionId",
+          "kind": "Property",
+          "type": "string",
+          "description": "Stable version identifier."
+        },
+        {
+          "name": "VersionNumber",
+          "kind": "Property",
+          "type": "int",
+          "description": "Monotonic version number (1-based); higher is newer."
+        }
+      ]
+    },
+    {
+      "itemName": "TmFileVersionDiff",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Result of comparing two file versions: line-by-line text diff (when applicable), size delta, and added/removed line counts.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersionDiff.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmFileVersionDiffKind",
+      "kind": "Enum",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Nature of a single line in a version diff: Unchanged, Added, or Removed.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersionDiff.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmFileVersionDiffLine",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "A single line entry in a text diff between two file versions, with its kind, text, and old/new line numbers.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersionDiff.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "TmNotification",
       "kind": "Class",
       "category": "Shared",
@@ -27220,6 +27627,60 @@
           "kind": "Property",
           "type": "string?",
           "description": "Optional tenant, workspace, or application scope identifier."
+        }
+      ]
+    },
+    {
+      "itemName": "TmUploadProgress",
+      "kind": "Class",
+      "category": "Shared",
+      "namespace": "Tempo.Blazor.Abstractions.Shared",
+      "description": "Progress snapshot emitted while a chunked upload is in flight: bytes transferred, total bytes, chunk index/count, and completion percentage.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmUploadProgress.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BytesTransferred",
+          "kind": "Property",
+          "type": "long",
+          "description": "Bytes transferred so far (sum of completed chunks)."
+        },
+        {
+          "name": "ChunkIndex",
+          "kind": "Property",
+          "type": "int",
+          "description": "Zero-based index of the most recently sent chunk."
+        },
+        {
+          "name": "FileName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Original or display file name being uploaded."
+        },
+        {
+          "name": "IsComplete",
+          "kind": "Property",
+          "type": "bool",
+          "description": "True once the final chunk has been acknowledged."
+        },
+        {
+          "name": "TotalBytes",
+          "kind": "Property",
+          "type": "long",
+          "description": "Total file size in bytes."
+        },
+        {
+          "name": "TotalChunks",
+          "kind": "Property",
+          "type": "int",
+          "description": "Total number of chunks for the file."
+        },
+        {
+          "name": "UploadSessionId",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Upload session id assigned by the provider, when one is used."
         }
       ]
     },
@@ -32993,11 +33454,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1291,
-    "manualItemCount": 1291,
-    "generatedItemCount": 1274,
+    "itemCount": 1303,
+    "manualItemCount": 1303,
+    "generatedItemCount": 1286,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1274
+    "publicApiTypeCount": 1286
   }
 }

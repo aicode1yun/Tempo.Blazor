@@ -9,11 +9,22 @@ namespace Tempo.Blazor.Demo.Services;
 /// In-memory demo data provider for <see cref="Tempo.Blazor.Components.Files.TmDocumentManager{TMetadata}"/>.
 /// Includes metadata, tags, categories, and per-item permissions.
 /// </summary>
-public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<DocumentMetadata>
+public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<DocumentMetadata>, ITmChunkedFileProvider
 {
     private readonly List<DocumentManagerItem<DocumentMetadata>> _items;
     private readonly Dictionary<string, List<TmAttachment>> _attachments = new();
     private readonly Dictionary<string, Dictionary<string, byte[]>> _attachmentData = new();
+    private readonly Dictionary<string, ChunkSession> _chunkSessions = new();
+
+    /// <summary>Tracks an in-flight chunked upload without retaining the payload (memory-safe for large files).</summary>
+    private sealed class ChunkSession
+    {
+        public string FileName = string.Empty;
+        public string? ContentType;
+        public string FolderPath = "/";
+        public long BytesReceived;
+        public int ChunksReceived;
+    }
 
     public DemoDocumentManagerProvider(bool readOnly = false)
     {
@@ -370,7 +381,61 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
 
     public Task<TmFileUploadResult> UploadChunkAsync(TmFileChunk chunk, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(new TmFileUploadResult { Success = true, IsComplete = chunk.IsLast });
+        // Assemble by counting bytes only — never buffer the whole payload, so a 100 MB
+        // upload stays memory-safe in the browser.
+        var sessionId = chunk.UploadSessionId ?? Guid.NewGuid().ToString("N");
+        if (!_chunkSessions.TryGetValue(sessionId, out var session))
+        {
+            var folder = chunk.Metadata is not null
+                && chunk.Metadata.TryGetValue("folderPath", out var fp) && fp is string s
+                ? s : "/";
+            session = _chunkSessions[sessionId] = new ChunkSession
+            {
+                FileName = chunk.FileName,
+                ContentType = chunk.ContentType,
+                FolderPath = string.IsNullOrEmpty(folder) ? "/" : folder
+            };
+        }
+
+        session.BytesReceived += chunk.Data.LongLength;
+        session.ChunksReceived++;
+
+        if (!chunk.IsLast)
+        {
+            return Task.FromResult(new TmFileUploadResult
+            {
+                Success = true,
+                IsComplete = false,
+                UploadSessionId = sessionId
+            });
+        }
+
+        _chunkSessions.Remove(sessionId);
+        var parent = session.FolderPath.TrimEnd('/');
+        var item = new DocumentManagerItem<DocumentMetadata>
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Name = session.FileName,
+            Path = $"{parent}/{session.FileName}",
+            IsDirectory = false,
+            Size = session.BytesReceived,
+            Extension = System.IO.Path.GetExtension(session.FileName),
+            ModifiedDate = DateTime.Now,
+            CreatedDate = DateTime.Now,
+            Metadata = new DocumentMetadata { Category = "Uploads", Description = "Chunked upload", Owner = "You" }
+        };
+        _items.Add(item);
+
+        return Task.FromResult(new TmFileUploadResult
+        {
+            Success = true,
+            IsComplete = true,
+            UploadSessionId = sessionId,
+            AssetId = item.Id,
+            FileName = session.FileName,
+            ContentType = session.ContentType,
+            SizeBytes = session.BytesReceived
+        });
     }
 
     public Task<IReadOnlyList<TmAttachment>> GetAttachmentsAsync(string itemId, CancellationToken cancellationToken = default)

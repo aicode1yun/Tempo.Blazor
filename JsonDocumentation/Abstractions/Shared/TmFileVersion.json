@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "A single historical version of a file: version number, file name, size, author, timestamp, comment, and whether it is current.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersion.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmFileVersion"
+}

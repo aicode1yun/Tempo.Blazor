@@ -37,6 +37,23 @@
         </section>
     </TmTabPanel>
 
+    <TmTabPanel Id="chunked" Title="Chunked Upload, Scan &amp; Versions" Icon="upload-cloud">
+        <div class="mb-3 text-sm text-slate-600 dark:text-slate-400" data-testid="dms-chunked-help">
+            Upload is streamed in 256&nbsp;KB chunks with a live progress bar (cancel &amp; resume supported).
+            Each finished file is virus-scanned — name a file with <code>virus</code> to see it blocked and made unavailable.
+            Select a file and open <strong>Version history</strong> to compare and restore versions.
+        </div>
+        <section class="showcase-card p-0 overflow-hidden" style="height: 600px;" data-testid="dms-chunked">
+            <TmDocumentManager TMetadata="DocumentMetadata"
+                               DataProvider="_chunkedProvider"
+                               ScanHook="_scanHook"
+                               VersioningHook="_versioningHook"
+                               ShowVersionHistory="true"
+                               ItemMetaTemplate="MetaTemplate"
+                               DetailPanel="DetailTemplate" />
+        </section>
+    </TmTabPanel>
+
     <TmTabPanel Id="readonly" Title="Read-Only DMS" Icon="lock">
         <section class="showcase-card p-0 overflow-hidden" style="height: 600px;">
             <TmDocumentManager TMetadata="DocumentMetadata"
@@ -57,6 +74,9 @@
     private readonly DemoFileManagerProvider _fileProvider = new();
     private readonly DemoDocumentManagerProvider _dmsProvider = new();
     private readonly DemoDocumentManagerProvider _readonlyProvider = new(readOnly: true);
+    private readonly DemoDocumentManagerProvider _chunkedProvider = new();
+    private readonly DemoFileScanHook _scanHook = new();
+    private readonly DemoFileVersioningHook _versioningHook = new();
 
     private RenderFragment<DocumentManagerItem<DocumentMetadata>> MetaTemplate => item =>
         @<span class="text-xs text-slate-500 dark:text-slate-400">

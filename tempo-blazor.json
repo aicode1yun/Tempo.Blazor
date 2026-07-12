@@ -4683,6 +4683,34 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "TmChunkedUploader",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Dependency-free coordinator that streams a file to a chunk sink in fixed 256 KB chunks with progress, cancellation, and resume.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Files/TmChunkedUploader.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ChunkSink",
+          "kind": "Method",
+          "type": "delegate Task<TmFileUploadResult>",
+          "description": "Delegate matching a provider's chunk-upload entry point.",
+          "parameters": [
+            {
+              "name": "chunk",
+              "type": "TmFileChunk"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "itemName": "TmSignatureCaptureChangedEventArgs",
       "kind": "Record",
       "category": "Components",
@@ -4710,6 +4738,54 @@
       "description": "Capture modes supported by .",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmSignatureCaptureMode.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmTextLineDiff",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Computes a line-by-line diff (via longest-common-subsequence) between two text versions; useful for IFileVersioningHook implementations.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Files/TmTextLineDiff.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Compute",
+          "kind": "Method",
+          "type": "IReadOnlyList<TmFileVersionDiffLine>",
+          "description": "Produces added/removed/unchanged lines describing the change from old to new text.",
+          "parameters": [
+            {
+              "name": "oldText",
+              "type": "string?"
+            },
+            {
+              "name": "newText",
+              "type": "string?"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "TmUploadItem",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Observable state for a single tracked upload (progress, lifecycle, cancel/resume context) rendered by TmFileUploadProgress.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Files/TmUploadItem.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmUploadState",
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Lifecycle state of a tracked upload: Uploading, Scanning, Completed, Failed, Cancelled, or Blocked.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Files/TmUploadItem.cs",
       "documentationStatus": "merged"
     },
     {
@@ -8786,10 +8862,29 @@
           "description": "Provider for uploading files and resolving asset URLs."
         },
         {
+          "name": "MaxUploadSize",
+          "type": "long",
+          "isRequired": false,
+          "default": "100L * 1024 * 1024",
+          "description": "Maximum size of a single upload in bytes. Default 100 MB. Also caps the browser read stream."
+        },
+        {
           "name": "OnDeleted",
           "type": "EventCallback<TmAttachment>",
           "isRequired": false,
           "description": "Fires when an attachment is deleted."
+        },
+        {
+          "name": "OnUploadProgress",
+          "type": "EventCallback<TmUploadProgress>",
+          "isRequired": false,
+          "description": "Fires for each chunk progress update during a chunked upload."
+        },
+        {
+          "name": "ScanHook",
+          "type": "IFileScanHook?",
+          "isRequired": false,
+          "description": "Optional scan hook run after each upload; a result marks the file unavailable."
         }
       ],
       "cssClasses": [
@@ -8932,6 +9027,13 @@
           "description": "Template rendered below the item name in list/grid views (e.g. tags, metadata preview)."
         },
         {
+          "name": "MaxUploadSize",
+          "type": "long",
+          "isRequired": false,
+          "default": "100L * 1024 * 1024",
+          "description": "Maximum size of a single upload in bytes. Default 100 MB. Also caps the browser read stream."
+        },
+        {
           "name": "NewFolderForm",
           "type": "RenderFragment<NewFolderContext<TMetadata>>?",
           "isRequired": false,
@@ -8950,11 +9052,23 @@
           "description": "Event fired when the selection changes."
         },
         {
+          "name": "OnUploadProgress",
+          "type": "EventCallback<TmUploadProgress>",
+          "isRequired": false,
+          "description": "Fires for each chunk progress update during a chunked upload."
+        },
+        {
           "name": "RespectPermissions",
           "type": "bool",
           "isRequired": false,
           "default": "true",
           "description": "When true, hides actions the current user is not permitted to perform."
+        },
+        {
+          "name": "ScanHook",
+          "type": "IFileScanHook?",
+          "isRequired": false,
+          "description": "Optional scan hook run after each upload; a result marks the item unavailable."
         },
         {
           "name": "ShowCopyButton",
@@ -9025,10 +9139,23 @@
           "description": "Whether to show the Upload button. Default is true."
         },
         {
+          "name": "ShowVersionHistory",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether to show the version-history action (requires ). Default true."
+        },
+        {
           "name": "UploadForm",
           "type": "RenderFragment<UploadContext<TMetadata>>?",
           "isRequired": false,
           "description": "Custom form for uploading files with metadata. When null, a simple file input is used."
+        },
+        {
+          "name": "VersioningHook",
+          "type": "IFileVersioningHook?",
+          "isRequired": false,
+          "description": "Optional versioning hook. When supplied and is set, a version-history action is available."
         },
         {
           "name": "ViewMode",
@@ -9274,6 +9401,13 @@
           "description": "When true, disables all user interactions."
         },
         {
+          "name": "MaxUploadSize",
+          "type": "long",
+          "isRequired": false,
+          "default": "100L * 1024 * 1024",
+          "description": "Maximum size of a single upload in bytes. Default 100 MB. Also caps the browser read stream."
+        },
+        {
           "name": "OnItemOpen",
           "type": "EventCallback<FileManagerItem>",
           "isRequired": false,
@@ -9284,6 +9418,18 @@
           "type": "EventCallback<IReadOnlyList<FileManagerItem>>",
           "isRequired": false,
           "description": "Event fired when the selection changes."
+        },
+        {
+          "name": "OnUploadProgress",
+          "type": "EventCallback<TmUploadProgress>",
+          "isRequired": false,
+          "description": "Fires for each chunk progress update during a chunked upload."
+        },
+        {
+          "name": "ScanHook",
+          "type": "IFileScanHook?",
+          "isRequired": false,
+          "description": "Optional scan hook run after each upload; a result marks the file unavailable."
         },
         {
           "name": "ShowDeleteButton",
@@ -9332,6 +9478,78 @@
           "type": "EventCallback<FileManagerViewMode>",
           "isRequired": false,
           "description": "Display mode (List or Grid). Default is ."
+        }
+      ]
+    },
+    {
+      "itemName": "TmFileUploadProgress",
+      "kind": "Component",
+      "category": "Files",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Renders a list of in-progress and finished uploads with progress bars and cancel / resume / dismiss actions.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Files/TmFileUploadProgress.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Files"
+      ],
+      "parameters": [
+        {
+          "name": "OnCancel",
+          "type": "EventCallback<TmUploadItem>",
+          "isRequired": false,
+          "description": "Invoked when the user cancels an in-flight upload."
+        },
+        {
+          "name": "OnDismiss",
+          "type": "EventCallback<TmUploadItem>",
+          "isRequired": false,
+          "description": "Invoked when the user dismisses a finished upload from the list."
+        },
+        {
+          "name": "OnResume",
+          "type": "EventCallback<TmUploadItem>",
+          "isRequired": false,
+          "description": "Invoked when the user resumes a cancelled or failed upload."
+        },
+        {
+          "name": "Uploads",
+          "type": "IReadOnlyList<TmUploadItem>?",
+          "isRequired": false,
+          "description": "Uploads to display (in-progress and recently finished)."
+        }
+      ]
+    },
+    {
+      "itemName": "TmFileVersionHistory",
+      "kind": "Component",
+      "category": "Files",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Version-history panel for a file: lists versions newest-first with a current badge, compares a version with current (line diff), and restores a prior version via IFileVersioningHook.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Files/TmFileVersionHistory.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Files"
+      ],
+      "parameters": [
+        {
+          "name": "Hook",
+          "type": "IFileVersioningHook?",
+          "isRequired": false,
+          "description": "Versioning hook that supplies the history, diffs, and restore."
+        },
+        {
+          "name": "ItemId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Identifier of the item whose versions are shown."
+        },
+        {
+          "name": "OnRestored",
+          "type": "EventCallback<TmFileVersion>",
+          "isRequired": false,
+          "description": "Raised after a version is restored so the host can refresh its listing."
         }
       ]
     },
@@ -21358,11 +21576,11 @@
     }
   ],
   "summary": {
-    "itemCount": 297,
-    "manualItemCount": 297,
-    "generatedItemCount": 289,
+    "itemCount": 303,
+    "manualItemCount": 303,
+    "generatedItemCount": 295,
     "generatedOnlyItemCount": 0,
-    "componentCount": 178,
-    "publicApiTypeCount": 111
+    "componentCount": 180,
+    "publicApiTypeCount": 115
   }
 }

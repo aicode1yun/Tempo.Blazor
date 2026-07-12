@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Describes an uploaded file (name, content type, size, asset id, entity) passed to an IFileScanHook for scanning.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/FileScanRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "FileScanRequest"
+}

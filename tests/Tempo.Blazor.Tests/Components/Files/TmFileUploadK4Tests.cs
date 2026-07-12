@@ -175,6 +175,34 @@ public class TmFileUploadK4Tests : LocalizationTestBase
             .Any(b => b.TextContent.Contains("Download")).Should().BeFalse();
     }
 
+    [Fact]
+    public async Task DocumentManager_ScanBlocked_SurvivesProviderReturningFreshItems()
+    {
+        // Regression: a provider that returns NEW item instances on every reload must still
+        // show the file as Blocked (the scan gate is re-applied from the recorded verdict).
+        var provider = new ChunkingDocProvider { CloneOnRead = true };
+        var cut = RenderComponent<TmDocumentManager<DocMeta>>(p => p
+            .Add(c => c.DataProvider, provider)
+            .Add(c => c.ScanHook, new BlockingScanHook()));
+
+        cut.FindComponent<InputFile>().UploadFiles(
+            InputFileContent.CreateFromText("payload", "virus.exe", contentType: "application/octet-stream"));
+        await cut.InvokeAsync(() => { });
+
+        cut.FindAll("[data-testid='file-scan-blocked']").Should().ContainSingle();
+
+        // Force another reload (fresh instances) — the badge must persist.
+        await cut.InvokeAsync(async () =>
+        {
+            var reload = typeof(TmDocumentManager<DocMeta>)
+                .GetMethod("LoadDataAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            await (System.Threading.Tasks.Task)reload!.Invoke(cut.Instance, null)!;
+        });
+        cut.Render();
+
+        cut.FindAll("[data-testid='file-scan-blocked']").Should().ContainSingle();
+    }
+
     // ── Chunked upload: TmFileManager ────────────────────────────
 
     [Fact]
@@ -331,7 +359,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
             var list = _store[itemId];
             var from = list.First(e => e.v.VersionId == fromVersionId);
             var to = list.First(e => e.v.VersionId == toVersionId);
-            var lines = LineDiff.Compute(from.content, to.content);
+            var lines = TmTextLineDiff.Compute(from.content, to.content);
             return Task.FromResult(new TmFileVersionDiff
             {
                 ItemId = itemId,
@@ -353,8 +381,21 @@ public class TmFileUploadK4Tests : LocalizationTestBase
         public int ChunkCount { get; private set; }
         public bool LastCompleted { get; private set; }
 
+        /// <summary>When true, returns fresh item instances per read (simulates an HTTP/DB provider).</summary>
+        public bool CloneOnRead { get; init; }
+
+        private static DocumentManagerItem<DocMeta> Clone(DocumentManagerItem<DocMeta> i) => new()
+        {
+            Id = i.Id, Name = i.Name, Path = i.Path, IsDirectory = i.IsDirectory,
+            Size = i.Size, Extension = i.Extension, ModifiedDate = i.ModifiedDate
+        };
+
         public Task<IReadOnlyList<DocumentManagerItem<DocMeta>>> GetFolderContentsAsync(string? folderPath = null, CancellationToken ct = default)
-            => Task.FromResult<IReadOnlyList<DocumentManagerItem<DocMeta>>>(_items.Where(i => i.Path.StartsWith("/")).ToList());
+        {
+            var items = _items.Where(i => i.Path.StartsWith("/"));
+            if (CloneOnRead) items = items.Select(Clone);
+            return Task.FromResult<IReadOnlyList<DocumentManagerItem<DocMeta>>>(items.ToList());
+        }
         public Task<IReadOnlyList<DocumentManagerItem<DocMeta>>> GetFolderTreeAsync(CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<DocumentManagerItem<DocMeta>>>([]);
         public Task<DocumentManagerItem<DocMeta>> GetItemDetailAsync(string itemId, CancellationToken ct = default)
@@ -481,22 +522,43 @@ public class TmFileUploadK4Tests : LocalizationTestBase
         }
     }
 
-    /// <summary>Minimal LCS-free line diff used only by the fake versioning hook.</summary>
-    private static class LineDiff
+}
+
+/// <summary>Unit tests for the reusable LCS line-diff utility.</summary>
+public class TmTextLineDiffTests
+{
+    [Fact]
+    public void Diff_AddedLine_IsDetected()
     {
-        public static IReadOnlyList<TmFileVersionDiffLine> Compute(string from, string to)
-        {
-            var a = from.Split('\n');
-            var b = to.Split('\n');
-            var set = new HashSet<string>(a);
-            var result = new List<TmFileVersionDiffLine>();
-            foreach (var line in a)
-                if (!b.Contains(line)) result.Add(new TmFileVersionDiffLine { Kind = TmFileVersionDiffKind.Removed, Text = line });
-            foreach (var line in b)
-                result.Add(set.Contains(line)
-                    ? new TmFileVersionDiffLine { Kind = TmFileVersionDiffKind.Unchanged, Text = line }
-                    : new TmFileVersionDiffLine { Kind = TmFileVersionDiffKind.Added, Text = line });
-            return result;
-        }
+        var diff = TmTextLineDiff.Compute("a\nb", "a\nb\nc");
+        diff.Count(l => l.Kind == TmFileVersionDiffKind.Added).Should().Be(1);
+        diff.Count(l => l.Kind == TmFileVersionDiffKind.Removed).Should().Be(0);
+        diff.Last().Text.Should().Be("c");
+        diff.Last().NewLineNumber.Should().Be(3);
+    }
+
+    [Fact]
+    public void Diff_RemovedAndChanged_AreDetected()
+    {
+        // "b" replaced by "B": one removed + one added; "a" and "c" unchanged.
+        var diff = TmTextLineDiff.Compute("a\nb\nc", "a\nB\nc");
+        diff.Count(l => l.Kind == TmFileVersionDiffKind.Added).Should().Be(1);
+        diff.Count(l => l.Kind == TmFileVersionDiffKind.Removed).Should().Be(1);
+        diff.Count(l => l.Kind == TmFileVersionDiffKind.Unchanged).Should().Be(2);
+    }
+
+    [Fact]
+    public void Diff_Identical_AllUnchanged()
+    {
+        var diff = TmTextLineDiff.Compute("x\ny", "x\ny");
+        diff.Should().OnlyContain(l => l.Kind == TmFileVersionDiffKind.Unchanged);
+    }
+
+    [Fact]
+    public void Diff_EmptyOld_AllAdded()
+    {
+        var diff = TmTextLineDiff.Compute("", "one\ntwo");
+        diff.Should().OnlyContain(l => l.Kind == TmFileVersionDiffKind.Added);
+        diff.Should().HaveCount(2);
     }
 }

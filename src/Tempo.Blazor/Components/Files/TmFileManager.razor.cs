@@ -28,6 +28,9 @@ public partial class TmFileManager
     private bool _showDeleteDialog;
     private readonly List<FileManagerItem> _itemsToDelete = [];
     private readonly List<TmUploadItem> _uploads = [];
+    // Scan verdicts recorded this session, re-applied after every reload so a Blocked/Pending
+    // gate survives providers that return fresh item instances. Keyed by asset id and "name:"+name.
+    private readonly Dictionary<string, (FileScanStatus Status, string? Message)> _scanVerdicts = [];
 
     // ── Keyboard navigation state ────────────────────────────────
     private int _focusedIndex = -1;   // index of the keyboard-focused item
@@ -127,9 +130,26 @@ public partial class TmFileManager
             _items = [];
         }
 
+        ReapplyScanVerdicts();
+
         // Reset keyboard focus when folder content changes
         _focusedIndex = _items.Count > 0 ? 0 : -1;
         _anchorIndex = _focusedIndex;
+    }
+
+    private void ReapplyScanVerdicts()
+    {
+        if (_scanVerdicts.Count == 0) return;
+        foreach (var item in _items)
+        {
+            if (item.IsDirectory) continue;
+            if (_scanVerdicts.TryGetValue(item.Id, out var v)
+                || _scanVerdicts.TryGetValue("name:" + item.Name, out v))
+            {
+                item.ScanStatus = v.Status;
+                item.ScanMessage = v.Message;
+            }
+        }
     }
 
     // ── Navigation ───────────────────────────────────────────────
@@ -501,7 +521,7 @@ public partial class TmFileManager
                 _uploads.Add(item);
                 await ChunkUploadAsync(chunked, item);
             }
-            await LoadDataAsync();
+            // Each ChunkUploadAsync already reloads (and re-applies scan verdicts) per file.
             return;
         }
 
@@ -585,8 +605,8 @@ public partial class TmFileManager
 
         var status = await ScanUploadAsync(item, file, result);
         item.State = status is FileScanStatus.Blocked ? TmUploadState.Blocked : TmUploadState.Completed;
+        // LoadDataAsync re-applies recorded verdicts, so the gate survives the reload.
         await LoadDataAsync();
-        ApplyScanStatus(file.Name, status, item.Message);
         StateHasChanged();
     }
 
@@ -610,18 +630,16 @@ public partial class TmFileManager
         {
             item.Message = scan.Message ?? scan.ThreatName;
         }
+        RecordScanVerdict(result.AssetId, file.Name, scan);
         return scan.Status;
     }
 
-    private void ApplyScanStatus(string fileName, FileScanStatus status, string? message)
+    private void RecordScanVerdict(string? assetId, string fileName, FileScanResult scan)
     {
-        if (status is FileScanStatus.NotScanned) return;
-        var uploaded = _items.LastOrDefault(i => !i.IsDirectory && i.Name == fileName);
-        if (uploaded is not null)
-        {
-            uploaded.ScanStatus = status;
-            uploaded.ScanMessage = message;
-        }
+        if (scan.Status is FileScanStatus.NotScanned or FileScanStatus.Clean) return;
+        var value = (scan.Status, scan.Message ?? scan.ThreatName);
+        if (!string.IsNullOrEmpty(assetId)) _scanVerdicts[assetId!] = value;
+        _scanVerdicts["name:" + fileName] = value;
     }
 
     private async Task CancelUploadAsync(TmUploadItem item)

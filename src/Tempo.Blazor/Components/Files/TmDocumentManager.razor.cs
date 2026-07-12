@@ -78,6 +78,9 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
     private readonly List<TmUploadItem> _uploads = [];
     private bool _showVersionHistory;
     private DocumentManagerItem<TMetadata>? _versionHistoryItem;
+    // Scan verdicts recorded this session, re-applied after every reload so a Blocked/Pending
+    // gate survives providers that return fresh item instances. Keyed by asset id and "name:"+name.
+    private readonly Dictionary<string, (FileScanStatus Status, string? Message)> _scanVerdicts = [];
 
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
@@ -225,8 +228,28 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
             _items = [];
         }
 
+        ReapplyScanVerdicts();
+
         _focusedIndex = _items.Count > 0 ? 0 : -1;
         _anchorIndex = _focusedIndex;
+    }
+
+    private void ReapplyScanVerdicts()
+    {
+        if (_scanVerdicts.Count == 0) return;
+        foreach (var item in _items)
+        {
+            if (item.IsDirectory) continue;
+            var attachmentAsset = item.Attachments
+                .FirstOrDefault(a => !string.IsNullOrEmpty(a.AssetId) && _scanVerdicts.ContainsKey(a.AssetId!))?.AssetId;
+            if (_scanVerdicts.TryGetValue(item.Id, out var v)
+                || (attachmentAsset is not null && _scanVerdicts.TryGetValue(attachmentAsset, out v))
+                || _scanVerdicts.TryGetValue("name:" + item.Name, out v))
+            {
+                item.ScanStatus = v.Status;
+                item.ScanMessage = v.Message;
+            }
+        }
     }
 
     // ── Permissions helpers ──────────────────────────────────────
@@ -616,10 +639,19 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
 
     private Task CancelAttachmentUpload()
     {
+        DisposeStagedAttachmentStreams();
         _showAttachmentUploadForm = false;
         _attachmentTargetItem = null;
         _attachmentUploadFiles = [];
         return Task.CompletedTask;
+    }
+
+    private void DisposeStagedAttachmentStreams()
+    {
+        foreach (var f in _attachmentUploadFiles)
+        {
+            try { f.Stream.Dispose(); } catch { /* browser stream already closed */ }
+        }
     }
 
     private async Task RemoveAttachmentAsync(string attachmentId)
@@ -769,7 +801,7 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
                 _uploads.Add(item);
                 await ChunkUploadAsync(chunked, item);
             }
-            await LoadDataAsync();
+            // Each ChunkUploadAsync already reloads (and re-applies scan verdicts) per file.
             return;
         }
 
@@ -853,8 +885,8 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
 
         var status = await ScanUploadAsync(item, file, result);
         item.State = status is FileScanStatus.Blocked ? TmUploadState.Blocked : TmUploadState.Completed;
+        // LoadDataAsync re-applies recorded verdicts, so the gate survives the reload.
         await LoadDataAsync();
-        ApplyScanStatus(file.Name, status, item.Message);
         StateHasChanged();
     }
 
@@ -878,18 +910,16 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         {
             item.Message = scan.Message ?? scan.ThreatName;
         }
+        RecordScanVerdict(result.AssetId, file.Name, scan);
         return scan.Status;
     }
 
-    private void ApplyScanStatus(string fileName, FileScanStatus status, string? message)
+    private void RecordScanVerdict(string? assetId, string fileName, FileScanResult scan)
     {
-        if (status is FileScanStatus.NotScanned) return;
-        var uploaded = _items.LastOrDefault(i => !i.IsDirectory && i.Name == fileName);
-        if (uploaded is not null)
-        {
-            uploaded.ScanStatus = status;
-            uploaded.ScanMessage = message;
-        }
+        if (scan.Status is FileScanStatus.NotScanned or FileScanStatus.Clean) return;
+        var value = (scan.Status, scan.Message ?? scan.ThreatName);
+        if (!string.IsNullOrEmpty(assetId)) _scanVerdicts[assetId!] = value;
+        _scanVerdicts["name:" + fileName] = value;
     }
 
     private async Task CancelUploadAsync(TmUploadItem item)

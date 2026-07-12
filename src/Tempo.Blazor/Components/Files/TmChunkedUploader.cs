@@ -73,6 +73,14 @@ public static class TmChunkedUploader
                 sessionId = result.UploadSessionId;
             }
 
+            // Only advance progress (and therefore the resume index) for an *acknowledged*
+            // chunk. A failed chunk must not move NextChunkIndex past itself, otherwise a
+            // resume would skip the unsent chunk and corrupt the reassembled file.
+            if (!result.Success)
+            {
+                return result;
+            }
+
             bytesTransferred = Math.Min(totalSize == 0 ? read : totalSize, bytesTransferred + read);
 
             progress?.Report(new TmUploadProgress
@@ -83,13 +91,8 @@ public static class TmChunkedUploader
                 ChunkIndex = index,
                 TotalChunks = totalChunks,
                 UploadSessionId = sessionId,
-                IsComplete = chunk.IsLast && result.Success
+                IsComplete = chunk.IsLast
             });
-
-            if (!result.Success)
-            {
-                return result;
-            }
         }
 
         return result;

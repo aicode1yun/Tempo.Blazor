@@ -1,0 +1,13 @@
+{
+  "itemName": "TmFileVersionHistory",
+  "kind": "Component",
+  "category": "Files",
+  "description": "Version-history panel for a file: lists versions newest-first with a current badge, compares a version with current (line diff), and restores a prior version via IFileVersioningHook.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "sourcePath": "src/Tempo.Blazor/Components/Files/TmFileVersionHistory.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Files"
+  ]
+}

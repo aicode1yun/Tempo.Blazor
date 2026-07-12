@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Progress snapshot emitted while a chunked upload is in flight: bytes transferred, total bytes, chunk index/count, and completion percentage.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmUploadProgress.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmUploadProgress"
+}

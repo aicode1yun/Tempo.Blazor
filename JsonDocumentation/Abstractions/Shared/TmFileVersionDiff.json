@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Shared",
+  "namespace": "Tempo.Blazor.Abstractions.Shared",
+  "description": "Result of comparing two file versions: line-by-line text diff (when applicable), size delta, and added/removed line counts.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmFileVersionDiff.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmFileVersionDiff"
+}

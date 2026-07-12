@@ -194,4 +194,26 @@ public class TmChunkedUploaderTests
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("boom");
     }
+
+    [Fact]
+    public async Task Upload_FailedChunk_DoesNotAdvanceResumeIndex()
+    {
+        // Regression: a failed chunk must NOT report progress for itself, otherwise the
+        // component's NextChunkIndex advances past it and a resume skips the unsent chunk.
+        var (stream, bytes) = MakeFile(ChunkSize * 3);
+        var reports = new List<TmUploadProgress>();
+
+        Task<TmFileUploadResult> Sink(TmFileChunk chunk, CancellationToken ct)
+            => Task.FromResult(new TmFileUploadResult { Success = chunk.ChunkIndex != 1, IsComplete = false });
+
+        await TmChunkedUploader.UploadAsync(
+            stream,
+            new TmChunkedUploadRequest { FileName = "f", TotalSizeBytes = bytes.Length },
+            Sink,
+            new Progress<TmUploadProgress>(reports.Add));
+
+        await Task.Yield();
+        // Only chunk 0 (acknowledged) is reported; the failed chunk 1 is not.
+        reports.Should().OnlyContain(p => p.ChunkIndex == 0);
+    }
 }
