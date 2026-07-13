@@ -2,9 +2,29 @@
   "kind": "Record",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Inputs",
-  "description": "Result of a picker search invocation.",
+  "description": "Result of a TmUserPicker SearchProvider invocation: the matching items paired with a fetch state that reports whether the search found results, found none, or failed transiently.",
   "packageId": "Tempo.Blazor",
   "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmPickerSearchResult.cs",
   "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "T",
+      "description": "The picked entity type."
+    }
+  ],
+  "members": [
+    {
+      "name": "Items",
+      "kind": "Property",
+      "type": "IReadOnlyList<T>",
+      "description": "Matching items. Empty (and typically unused) when State is not Ok."
+    },
+    {
+      "name": "State",
+      "kind": "Property",
+      "type": "TmPickerFetchState",
+      "description": "Whether the search found results (Ok), found none (Empty), or failed transiently (Transient)."
+    }
+  ],
   "itemName": "TmPickerSearchResult<T>"
 }

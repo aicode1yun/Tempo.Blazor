@@ -2,9 +2,29 @@
   "kind": "Record",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Inputs",
-  "description": "Result of a picker resolve invocation.",
+  "description": "Result of a TmUserPicker ResolveProvider invocation: the resolved item paired with a fetch state that reports whether the value resolved, resolved to nothing, or failed transiently.",
   "packageId": "Tempo.Blazor",
   "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmPickerResolveResult.cs",
   "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "T",
+      "description": "The picked entity type."
+    }
+  ],
+  "members": [
+    {
+      "name": "Item",
+      "kind": "Property",
+      "type": "T?",
+      "description": "The resolved item, or default when not found or when State is Transient."
+    },
+    {
+      "name": "State",
+      "kind": "Property",
+      "type": "TmPickerFetchState",
+      "description": "Whether the value resolved (Ok), resolved to nothing (Empty), or failed transiently (Transient)."
+    }
+  ],
   "itemName": "TmPickerResolveResult<T>"
 }

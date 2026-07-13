@@ -151,6 +151,10 @@
         "description": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml."
       },
       {
+        "name": "Tempo.Blazor.WebPush",
+        "description": "Optional VAPID Web Push sender for Tempo.Blazor notifications, implementing IWebPushSender on top of the WebPush library."
+      },
+      {
         "name": "Tempo.Blazor.DocumentEditor",
         "description": "Document editor components for Tempo.Blazor, including canvas rendering, collaboration UI, clipboard normalization, and document editor interop assets."
       },
@@ -3892,10 +3896,27 @@
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Toolbar",
-      "description": "Placement mode for the form action bar.",
+      "description": "Placement mode for a TmFormActionBar: rendered in normal document flow, stuck to the top of the scroll container, or fixed to the bottom of the viewport.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Toolbar/FormActionBarPosition.cs",
-      "documentationStatus": "merged"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Static",
+          "kind": "Field",
+          "description": "Render in normal document flow."
+        },
+        {
+          "name": "StickyTop",
+          "kind": "Field",
+          "description": "Stick to the top of the scroll container."
+        },
+        {
+          "name": "FloatingBottom",
+          "kind": "Field",
+          "description": "Fix to the bottom of the viewport."
+        }
+      ]
     },
     {
       "itemName": "GanttDropPosition",
@@ -4927,20 +4948,58 @@
       "kind": "Record",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Navigation",
-      "description": "A single entry in a scroll-spy navigation.",
+      "description": "A single entry in a TmScrollSpyNav. Intentionally minimal and generic: hosts that need badges, status dots, or required markers should supply a custom ItemTemplate rather than extend this record with domain-specific fields.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Navigation/ScrollSpyNavItem.cs",
-      "documentationStatus": "merged"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Id",
+          "kind": "Property",
+          "type": "string",
+          "description": "Stable identifier. Must match the id attribute of the corresponding in-page section."
+        },
+        {
+          "name": "Label",
+          "kind": "Property",
+          "type": "string",
+          "description": "Display text shown by the default item rendering."
+        },
+        {
+          "name": "IsVisible",
+          "kind": "Property",
+          "type": "bool",
+          "description": "When false, the item is excluded from the rendered list. Defaults to true."
+        },
+        {
+          "name": "Order",
+          "kind": "Property",
+          "type": "int",
+          "description": "Sort order among visible items (ascending). Defaults to 0."
+        }
+      ]
     },
     {
       "itemName": "ScrollSpyNavVariant",
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Navigation",
-      "description": "Visual layout of the scroll-spy navigation.",
+      "description": "Visual layout of a TmScrollSpyNav: a vertical sticky side-rail or a horizontal breadcrumb-style strip.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Navigation/ScrollSpyNavVariant.cs",
-      "documentationStatus": "merged"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "SideRail",
+          "kind": "Field",
+          "description": "Vertical sticky side-rail (default)."
+        },
+        {
+          "name": "Breadcrumb",
+          "kind": "Field",
+          "description": "Horizontal breadcrumb-style strip."
+        }
+      ]
     },
     {
       "itemName": "SkeletonVariant",
@@ -5099,17 +5158,34 @@
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Inputs",
-      "description": "Outcome of a picker search or resolve fetch.",
+      "description": "Outcome of a TmUserPicker search or resolve fetch. Callers must distinguish Empty (the fetch succeeded and found nothing) from Transient (the fetch itself failed, e.g. a network blip); conflating the two hides real outages behind a silent \"no results\" message.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmPickerFetchState.cs",
-      "documentationStatus": "merged"
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Ok",
+          "kind": "Field",
+          "description": "The fetch succeeded."
+        },
+        {
+          "name": "Empty",
+          "kind": "Field",
+          "description": "The fetch succeeded but found no matching items."
+        },
+        {
+          "name": "Transient",
+          "kind": "Field",
+          "description": "The fetch failed for a reason that may resolve on retry (timeout, network error, 5xx, and similar)."
+        }
+      ]
     },
     {
       "itemName": "TmPickerResolveResult<T>",
       "kind": "Record",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Inputs",
-      "description": "Result of a picker resolve invocation.",
+      "description": "Result of a TmUserPicker ResolveProvider invocation: the resolved item paired with a fetch state that reports whether the value resolved, resolved to nothing, or failed transiently.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmPickerResolveResult.cs",
       "documentationStatus": "merged",
@@ -5118,6 +5194,20 @@
           "name": "T",
           "description": "Generic type parameter T."
         }
+      ],
+      "members": [
+        {
+          "name": "Item",
+          "kind": "Property",
+          "type": "T?",
+          "description": "The resolved item, or default when not found or when State is Transient."
+        },
+        {
+          "name": "State",
+          "kind": "Property",
+          "type": "TmPickerFetchState",
+          "description": "Whether the value resolved (Ok), resolved to nothing (Empty), or failed transiently (Transient)."
+        }
       ]
     },
     {
@@ -5125,7 +5215,7 @@
       "kind": "Record",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Inputs",
-      "description": "Result of a picker search invocation.",
+      "description": "Result of a TmUserPicker SearchProvider invocation: the matching items paired with a fetch state that reports whether the search found results, found none, or failed transiently.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmPickerSearchResult.cs",
       "documentationStatus": "merged",
@@ -5133,6 +5223,20 @@
         {
           "name": "T",
           "description": "Generic type parameter T."
+        }
+      ],
+      "members": [
+        {
+          "name": "Items",
+          "kind": "Property",
+          "type": "IReadOnlyList<T>",
+          "description": "Matching items. Empty (and typically unused) when State is not Ok."
+        },
+        {
+          "name": "State",
+          "kind": "Property",
+          "type": "TmPickerFetchState",
+          "description": "Whether the search found results (Ok), found none (Empty), or failed transiently (Transient)."
         }
       ]
     },

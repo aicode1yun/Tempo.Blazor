@@ -2,9 +2,26 @@
   "kind": "Enum",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Toolbar",
-  "description": "Placement mode for the form action bar.",
+  "description": "Placement mode for a TmFormActionBar: rendered in normal document flow, stuck to the top of the scroll container, or fixed to the bottom of the viewport.",
   "packageId": "Tempo.Blazor",
   "sourcePath": "src/Tempo.Blazor/Components/Toolbar/FormActionBarPosition.cs",
   "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Static",
+      "kind": "Field",
+      "description": "Render in normal document flow."
+    },
+    {
+      "name": "StickyTop",
+      "kind": "Field",
+      "description": "Stick to the top of the scroll container."
+    },
+    {
+      "name": "FloatingBottom",
+      "kind": "Field",
+      "description": "Fix to the bottom of the viewport."
+    }
+  ],
   "itemName": "FormActionBarPosition"
 }
