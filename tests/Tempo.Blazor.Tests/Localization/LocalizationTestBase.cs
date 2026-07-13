@@ -814,6 +814,16 @@ public abstract class LocalizationTestBase : TestContext
         // TmInlineEdit
         ["TmInlineEdit_Placeholder"] = "Click to edit",
 
+        // TmImportWizard - K10 parse + column mapping
+        ["TmImportWizard_ApplyMapping"] = "Apply mapping",
+        ["TmImportWizard_DetectedColumns"] = "Detected columns",
+        ["TmImportWizard_Ignore"] = "Ignore column",
+        ["TmImportWizard_RowsDetected"] = "{0} rows detected",
+        ["TmImportWizard_SourceColumn"] = "File column",
+        ["TmImportWizard_TargetField"] = "Maps to",
+        ["TmImportWizard_UploadHint"] = "CSV files are supported.",
+        ["TmImportWizard_UploadPrompt"] = "Select a file to import",
+
         // TmKanbanBoard
         ["TmKanbanBoard_Empty"] = "No items",
         ["TmKanban_NoSwimlane"] = "No value",
@@ -3888,6 +3898,16 @@ public abstract class LocalizationTestBase : TestContext
 
         // TmInlineEdit
         ["TmInlineEdit_Placeholder"] = "Klikněte pro úpravu...",
+
+        // TmImportWizard - K10 parse + column mapping
+        ["TmImportWizard_ApplyMapping"] = "Použít mapování",
+        ["TmImportWizard_DetectedColumns"] = "Zjištěné sloupce",
+        ["TmImportWizard_Ignore"] = "Ignorovat sloupec",
+        ["TmImportWizard_RowsDetected"] = "Zjištěno řádků: {0}",
+        ["TmImportWizard_SourceColumn"] = "Sloupec souboru",
+        ["TmImportWizard_TargetField"] = "Mapuje se na",
+        ["TmImportWizard_UploadHint"] = "Podporovány jsou soubory CSV.",
+        ["TmImportWizard_UploadPrompt"] = "Vyberte soubor k importu",
 
         // TmRichEditor - Tokens
         ["TmRichEditor_Token"] = "Vložit proměnnou",
