@@ -16,6 +16,152 @@ public class RecurrenceEngineExtendedTests
             .ToList();
     }
 
+    private static List<DateTime> ExpandDatesInZone(
+        string rrule, DateTimeOffset start, DateTime rangeStart, DateTime rangeEnd, TimeZoneInfo zone)
+    {
+        var src = new TmScheduleEvent { Title = "x", Start = start, End = start.AddHours(1), RecurrenceRule = rrule };
+        return RecurrenceEngine.ExpandRecurrence(src, rangeStart, rangeEnd, zone)
+            .Select(o => o.StartLocal.Date)
+            .ToList();
+    }
+
+    private static TimeZoneInfo NewYork()
+    {
+        foreach (var id in new[] { "America/New_York", "Eastern Standard Time" })
+        {
+            if (TimeZoneInfo.TryFindSystemTimeZoneById(id, out var tz))
+            {
+                return tz;
+            }
+        }
+
+        throw new InvalidOperationException("New York timezone not available on this machine.");
+    }
+
+    // ── WKST (RFC 5545 week-start) ──
+
+    [Fact]
+    public void Parse_Wkst_SetsWeekStart()
+    {
+        RecurrenceEngine.Parse("FREQ=WEEKLY;BYDAY=TU,SU;WKST=SU")!.WeekStart.Should().Be(DayOfWeek.Sunday);
+    }
+
+    [Fact]
+    public void Parse_NoWkst_DefaultsToMonday()
+    {
+        RecurrenceEngine.Parse("FREQ=WEEKLY;BYDAY=TU,SU")!.WeekStart.Should().Be(DayOfWeek.Monday);
+    }
+
+    [Fact]
+    public void Serialize_NonDefaultWkst_IsEmitted()
+    {
+        var rule = new TmRecurrenceRule
+        {
+            Frequency = TmRecurrenceFrequency.Weekly,
+            Interval = 2,
+            ByDay = [DayOfWeek.Tuesday, DayOfWeek.Sunday],
+            WeekStart = DayOfWeek.Sunday
+        };
+
+        RecurrenceEngine.Serialize(rule).Should().Contain("WKST=SU");
+    }
+
+    [Fact]
+    public void Serialize_DefaultWkst_IsOmitted()
+    {
+        var rule = new TmRecurrenceRule
+        {
+            Frequency = TmRecurrenceFrequency.Weekly,
+            ByDay = [DayOfWeek.Tuesday]
+        };
+
+        RecurrenceEngine.Serialize(rule).Should().NotContain("WKST");
+    }
+
+    [Fact]
+    public void ParseSerialize_RoundTrip_PreservesWkst()
+    {
+        var serialized = RecurrenceEngine.Serialize(
+            RecurrenceEngine.Parse("FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,SU;WKST=SU")!);
+
+        serialized.Should().Contain("WKST=SU");
+        RecurrenceEngine.Parse(serialized)!.WeekStart.Should().Be(DayOfWeek.Sunday);
+    }
+
+    [Fact]
+    public void Weekly_Interval2_ByDay_DefaultWkst_IsMonday_MatchesRfcExample()
+    {
+        // RFC 5545 example: FREQ=WEEKLY;INTERVAL=2;COUNT=4;BYDAY=TU,SU;WKST=MO (5 Aug 1997 = Tue)
+        // ==> Aug 5, 10, 19, 24. WKST=MO is the default, so omitting it must match.
+        var dates = ExpandDates("FREQ=WEEKLY;INTERVAL=2;COUNT=4;BYDAY=TU,SU",
+            new DateTime(1997, 8, 5, 9, 0, 0), new DateTime(1997, 8, 1), new DateTime(1997, 9, 30));
+
+        dates.Should().Equal(
+            new DateTime(1997, 8, 5), new DateTime(1997, 8, 10),
+            new DateTime(1997, 8, 19), new DateTime(1997, 8, 24));
+    }
+
+    [Fact]
+    public void Weekly_Interval2_ByDay_WkstMonday_MatchesRfcExample()
+    {
+        // RFC 5545 example (explicit WKST=MO) ==> Aug 5, 10, 19, 24.
+        var dates = ExpandDates("FREQ=WEEKLY;INTERVAL=2;COUNT=4;BYDAY=TU,SU;WKST=MO",
+            new DateTime(1997, 8, 5, 9, 0, 0), new DateTime(1997, 8, 1), new DateTime(1997, 9, 30));
+
+        dates.Should().Equal(
+            new DateTime(1997, 8, 5), new DateTime(1997, 8, 10),
+            new DateTime(1997, 8, 19), new DateTime(1997, 8, 24));
+    }
+
+    [Fact]
+    public void Weekly_Interval2_ByDay_WkstSunday_MatchesRfcExample()
+    {
+        // RFC 5545 example: same rule but WKST=SU regroups the weeks ==> Aug 5, 17, 19, 31.
+        var dates = ExpandDates("FREQ=WEEKLY;INTERVAL=2;COUNT=4;BYDAY=TU,SU;WKST=SU",
+            new DateTime(1997, 8, 5, 9, 0, 0), new DateTime(1997, 8, 1), new DateTime(1997, 9, 30));
+
+        dates.Should().Equal(
+            new DateTime(1997, 8, 5), new DateTime(1997, 8, 17),
+            new DateTime(1997, 8, 19), new DateTime(1997, 8, 31));
+    }
+
+    // ── UNTIL boundary normalized in the target timezone (DST safety) ──
+
+    [Fact]
+    public void Until_Utc_AcrossFallDst_NoDayDrift()
+    {
+        // America/New_York DST ends 2 Nov 2025 (EDT -4 → EST -5). A 19:30 local occurrence maps to
+        // 23:30 UTC while EDT (same UTC day) but to 00:30 UTC the *next* day once EST. With
+        // UNTIL=3 Nov 00:00 UTC, the last occurrence whose UTC date is ≤ 3 Nov is 2 Nov local; the
+        // 3 Nov local occurrence (→ 4 Nov UTC) must be excluded — no ±1 day drift.
+        var dates = ExpandDatesInZone(
+            "FREQ=DAILY;UNTIL=20251103T000000Z",
+            new DateTimeOffset(2025, 10, 31, 19, 30, 0, TimeSpan.FromHours(-4)),
+            new DateTime(2025, 10, 31), new DateTime(2025, 11, 10), NewYork());
+
+        dates.Should().Equal(
+            new DateTime(2025, 10, 31),
+            new DateTime(2025, 11, 1),
+            new DateTime(2025, 11, 2));
+    }
+
+    [Fact]
+    public void Until_DateOnly_Floating_AcrossFallDst_IsInclusiveWallClock()
+    {
+        // A floating date-only UNTIL is compared in the event's wall clock and is unaffected by the
+        // DST offset shift: occurrences up to and including 3 Nov are kept.
+        var dates = ExpandDatesInZone(
+            "FREQ=DAILY;UNTIL=20251103",
+            new DateTimeOffset(2025, 10, 31, 9, 0, 0, TimeSpan.FromHours(-4)),
+            new DateTime(2025, 10, 31), new DateTime(2025, 11, 10), NewYork());
+
+        dates.Should().Equal(
+            new DateTime(2025, 10, 31),
+            new DateTime(2025, 11, 1),
+            new DateTime(2025, 11, 2),
+            new DateTime(2025, 11, 3));
+    }
+
     [Fact]
     public void Monthly_ThirdThursday()
     {
