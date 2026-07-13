@@ -1,0 +1,132 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.WebPush",
+    "title": "Tempo.Blazor.WebPush",
+    "description": "Optional VAPID Web Push sender for Tempo.Blazor notifications, implementing IWebPushSender on top of the WebPush library.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;notifications;webpush;vapid;push",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.WebPush"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "WebPush",
+        "version": "1.0.12"
+      },
+      {
+        "name": "Microsoft.Extensions.Options",
+        "version": "8.0.2"
+      },
+      {
+        "name": "Microsoft.Extensions.Options",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.Extensions.Options",
+        "version": "10.0.3"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.WebPush"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.WebPush",
+    "overview": "Optional VAPID Web Push sender for Tempo.Blazor notifications, implementing IWebPushSender on top of the WebPush library.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.WebPush"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "WebPush",
+        "version": "1.0.12"
+      },
+      {
+        "name": "Microsoft.Extensions.Options",
+        "version": "8.0.2"
+      },
+      {
+        "name": "Microsoft.Extensions.Options",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.Extensions.Options",
+        "version": "10.0.3"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "VapidWebPushSender",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.WebPush",
+      "description": "IWebPushSender that encrypts and delivers Web Push payloads to browser push services using VAPID (via the WebPush library). A 404/410 from the push service is surfaced as an expired TmWebPushResult so the caller can prune the dead subscription. Ships in the optional Tempo.Blazor.WebPush package so hosts opt into the WebPush dependency.",
+      "packageId": "Tempo.Blazor.WebPush",
+      "sourcePath": "src/Tempo.Blazor.WebPush/VapidWebPushSender.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "SendAsync",
+          "kind": "Method",
+          "type": "Task<TmWebPushResult>",
+          "description": "Encrypts and sends a payload to a single push subscription; returns a result that flags an expired subscription (HTTP 404/410) so the caller can prune it."
+        }
+      ]
+    },
+    {
+      "itemName": "WebPushOptions",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.WebPush",
+      "description": "VAPID configuration for Web Push, bound from the \"WebPush\" configuration section. When PublicKey/PrivateKey are empty a host may generate an ephemeral key pair at startup.",
+      "packageId": "Tempo.Blazor.WebPush",
+      "sourcePath": "src/Tempo.Blazor.WebPush/WebPushOptions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "PrivateKey",
+          "kind": "Property",
+          "type": "string",
+          "description": "VAPID private key (base64url)."
+        },
+        {
+          "name": "PublicKey",
+          "kind": "Property",
+          "type": "string",
+          "description": "VAPID public key (base64url, uncompressed P-256 point)."
+        },
+        {
+          "name": "Subject",
+          "kind": "Property",
+          "type": "string",
+          "description": "VAPID subject (a mailto: or origin URL)."
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [],
+  "summary": {
+    "itemCount": 2,
+    "manualItemCount": 2,
+    "generatedItemCount": 2,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 0,
+    "publicApiTypeCount": 2
+  }
+}

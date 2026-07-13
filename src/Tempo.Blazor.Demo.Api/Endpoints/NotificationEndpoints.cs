@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Tempo.Blazor.Abstractions.Interfaces;
 using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Demo.Api.Services;
+using Tempo.Blazor.WebPush;
 
 namespace Tempo.Blazor.Demo.Api.Endpoints;
 

@@ -1,0 +1,16 @@
+{
+  "itemName": "WebPushOptions",
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.WebPush",
+  "description": "VAPID configuration for Web Push, bound from the \"WebPush\" configuration section. When PublicKey/PrivateKey are empty a host may generate an ephemeral key pair at startup.",
+  "packageId": "Tempo.Blazor.WebPush",
+  "sourcePath": "src/Tempo.Blazor.WebPush/WebPushOptions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    { "name": "Subject", "kind": "Property", "type": "string", "description": "VAPID subject (a mailto: or origin URL)." },
+    { "name": "PublicKey", "kind": "Property", "type": "string", "description": "VAPID public key (base64url, uncompressed P-256 point)." },
+    { "name": "PrivateKey", "kind": "Property", "type": "string", "description": "VAPID private key (base64url)." },
+    { "name": "IsConfigured", "kind": "Property", "type": "bool", "description": "True when a usable VAPID key pair is configured." }
+  ]
+}

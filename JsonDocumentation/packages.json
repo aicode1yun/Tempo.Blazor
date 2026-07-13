@@ -102,6 +102,17 @@
       "includePublicTypes": true
     },
     {
+      "packageId": "Tempo.Blazor.WebPush",
+      "sourceProject": "src/Tempo.Blazor.WebPush/Tempo.Blazor.WebPush.csproj",
+      "outputFile": "tempo-blazor-webpush.json",
+      "documentationRoots": [ "Packages/Tempo.Blazor.WebPush/items" ],
+      "componentRoots": [],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "includePublicTypes": true,
+      "includeAssets": false
+    },
+    {
       "packageId": "Tempo.Blazor.DocumentEditor",
       "sourceProject": "src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj",
       "outputFile": "tempo-blazor-documenteditor.json",
