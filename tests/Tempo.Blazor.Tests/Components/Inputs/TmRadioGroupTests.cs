@@ -104,4 +104,35 @@ public class TmRadioGroupTests : LocalizationTestBase
 
         cut.Find(".tm-radio-group-error").TextContent.Should().Contain("Selection required");
     }
+
+    // ── Required (accessibility) ─────────────────────────────────
+
+    [Fact]
+    public void TmRadioGroup_Required_SetsAriaRequiredOnRadiogroup()
+    {
+        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+            .Add(c => c.Options, SampleOptions)
+            .Add(c => c.Required, true));
+        cut.Find("[role='radiogroup']").GetAttribute("aria-required").Should().Be("true");
+    }
+
+    [Fact]
+    public void TmRadioGroup_Required_AddsRequiredMarkerClassToLabel()
+    {
+        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+            .Add(c => c.Label, "Pick a fruit")
+            .Add(c => c.Options, SampleOptions)
+            .Add(c => c.Required, true));
+        cut.Find(".tm-radio-group-label").ClassList.Should().Contain("tm-input-label-required");
+    }
+
+    [Fact]
+    public void TmRadioGroup_NotRequired_HasNoAriaRequiredAndNoMarker()
+    {
+        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+            .Add(c => c.Label, "Pick a fruit")
+            .Add(c => c.Options, SampleOptions));
+        cut.Find("[role='radiogroup']").HasAttribute("aria-required").Should().BeFalse();
+        cut.Find(".tm-radio-group-label").ClassList.Should().NotContain("tm-input-label-required");
+    }
 }

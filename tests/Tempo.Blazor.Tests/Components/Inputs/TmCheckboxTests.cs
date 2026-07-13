@@ -84,4 +84,30 @@ public class TmCheckboxTests : LocalizationTestBase
 
         captured.Should().BeTrue();
     }
+
+    // ── Required (accessibility) ─────────────────────────────────
+
+    [Fact]
+    public void TmCheckbox_Required_SetsAriaRequiredOnInput()
+    {
+        var cut = RenderComponent<TmCheckbox>(p => p.Add(c => c.Required, true));
+        cut.Find("input[type='checkbox']").GetAttribute("aria-required").Should().Be("true");
+    }
+
+    [Fact]
+    public void TmCheckbox_Required_AddsRequiredMarkerClassToLabelText()
+    {
+        var cut = RenderComponent<TmCheckbox>(p => p
+            .Add(c => c.Label, "Accept terms")
+            .Add(c => c.Required, true));
+        cut.Find(".tm-checkbox-text").ClassList.Should().Contain("tm-input-label-required");
+    }
+
+    [Fact]
+    public void TmCheckbox_NotRequired_HasNoAriaRequiredAndNoMarker()
+    {
+        var cut = RenderComponent<TmCheckbox>(p => p.Add(c => c.Label, "Accept terms"));
+        cut.Find("input[type='checkbox']").HasAttribute("aria-required").Should().BeFalse();
+        cut.Find(".tm-checkbox-text").ClassList.Should().NotContain("tm-input-label-required");
+    }
 }

@@ -6,12 +6,14 @@
 <div class="tm-select-wrapper @Class" @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(Label))
     {
-        <label for="@Id" class="tm-select-label">@Label</label>
+        <label for="@Id" class="tm-select-label @(Required ? "tm-input-label-required" : "")">@Label</label>
     }
     <div class="tm-select-container">
         <select id="@Id"
                 disabled="@Disabled"
+                required="@Required"
                 class="@SelectCssClass"
+                aria-required="@(Required ? "true" : null)"
                 aria-invalid="@(IsInvalid ? "true" : null)"
                 aria-describedby="@DescribedBy"
                 aria-label="@(string.IsNullOrEmpty(Label) && !string.IsNullOrEmpty(Placeholder) ? Placeholder : null)"
@@ -73,6 +75,9 @@
 
     /// <summary>Disables the select.</summary>
     [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Marks the select as required. Shows a required marker on the label and sets aria-required on the &lt;select&gt; element.</summary>
+    [Parameter] public bool Required { get; set; }
 
     /// <summary>Additional attributes applied to the root element.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }

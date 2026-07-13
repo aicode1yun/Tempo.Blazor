@@ -210,4 +210,30 @@ public class TmSelectTests : LocalizationTestBase
         var rendered = cut.FindAll("option");
         rendered.Count.Should().Be(2);
     }
+
+    // ── Required (accessibility) ─────────────────────────────────
+
+    [Fact]
+    public void TmSelect_Required_SetsAriaRequiredOnSelectElement()
+    {
+        var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.Required, true));
+        cut.Find("select").GetAttribute("aria-required").Should().Be("true");
+    }
+
+    [Fact]
+    public void TmSelect_Required_AddsRequiredMarkerClassToLabel()
+    {
+        var cut = RenderComponent<TmSelect<string>>(p => p
+            .Add(c => c.Label, "Status")
+            .Add(c => c.Required, true));
+        cut.Find("label").ClassList.Should().Contain("tm-input-label-required");
+    }
+
+    [Fact]
+    public void TmSelect_NotRequired_HasNoAriaRequiredAndNoMarker()
+    {
+        var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.Label, "Status"));
+        cut.Find("select").HasAttribute("aria-required").Should().BeFalse();
+        cut.Find("label").ClassList.Should().NotContain("tm-input-label-required");
+    }
 }

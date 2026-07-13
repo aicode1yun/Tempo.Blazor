@@ -6,6 +6,8 @@
         <input type="checkbox"
                checked="@Value"
                disabled="@Disabled"
+               required="@Required"
+               aria-required="@(Required ? "true" : null)"
                class="tm-checkbox-input"
                @onchange="HandleChangeAsync" />
         <span class="tm-checkbox-custom">
@@ -26,7 +28,7 @@
         </span>
         @if (!string.IsNullOrEmpty(Label))
         {
-            <span class="tm-checkbox-text">@Label</span>
+            <span class="tm-checkbox-text @(Required ? "tm-input-label-required" : "")">@Label</span>
         }
     </label>
     @if (!string.IsNullOrEmpty(HelpText))
@@ -53,6 +55,9 @@
 
     /// <summary>Disables the checkbox.</summary>
     [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Marks the checkbox as required. Shows a required marker on the label and sets aria-required on the checkbox input.</summary>
+    [Parameter] public bool Required { get; set; }
 
     /// <summary>Additional attributes applied to the root element.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }

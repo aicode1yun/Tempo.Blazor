@@ -548,6 +548,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("label",         "Label",         PropType.String, "Checkbox", cat: "Content"),
                 P("checked",       "Checked",       PropType.Bool,   false,      cat: "State"),
                 P("indeterminate", "Indeterminate", PropType.Bool,   false,      cat: "State"),
+                P("required",      "Required",      PropType.Bool,   false,      cat: "Behavior"),
                 P("disabled",      "Disabled",      PropType.Bool,   false,      cat: "Behavior"),
             ]
         };
@@ -572,6 +573,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             [
                 P("label",    "Label",    PropType.String,     "Options", cat: "Content"),
                 P("options",  "Options",  PropType.StringList, cat: "Content"),
+                P("required", "Required", PropType.Bool,       false,     cat: "Behavior"),
                 P("disabled", "Disabled", PropType.Bool,       false,     cat: "Behavior"),
             ]
         };
