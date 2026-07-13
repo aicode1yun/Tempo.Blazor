@@ -41,6 +41,29 @@ public sealed class TmDocumentTableToolbarTests : LocalizationTestBase
     }
 
     [Fact]
+    public void TablePropertiesPanel_TestIdRoot_DrivesTestIds()
+    {
+        var cut = RenderComponent<TmDocumentTablePropertiesPanel>(parameters => parameters
+            .Add(p => p.Layout, new TableLayoutContent { Width = 200 })
+            .Add(p => p.TestIdRoot, "tbl"));
+
+        cut.Find("[data-testid='tbl-panel']").Should().NotBeNull();
+        cut.Find("[data-testid='tbl-width']").Should().NotBeNull();
+    }
+
+#pragma warning disable CS0618 // exercising the deprecated alias on purpose
+    [Fact]
+    public void TablePropertiesPanel_DeprecatedTestIdPrefix_ForwardsToTestIdRoot()
+    {
+        var cut = RenderComponent<TmDocumentTablePropertiesPanel>(parameters => parameters
+            .Add(p => p.Layout, new TableLayoutContent { Width = 200 })
+            .Add(p => p.TestIdPrefix, "legacy"));
+
+        cut.Find("[data-testid='legacy-panel']").Should().NotBeNull();
+    }
+#pragma warning restore CS0618
+
+    [Fact]
     public void TablePropertiesPanel_RendersAlignmentControls()
     {
         var cut = RenderComponent<TmDocumentTablePropertiesPanel>(parameters => parameters
