@@ -1,6 +1,7 @@
 @namespace Tempo.Blazor.Components.Feedback
 @using Tempo.Blazor.Components.Buttons
 @using Tempo.Blazor.Components.Icons
+@using Tempo.Blazor.Helpers
 @implements IAsyncDisposable
 
 @if (Show)
@@ -127,7 +128,7 @@
     private string _titleId = Guid.NewGuid().ToString("N");
     private bool _wasShown;
     private bool _shouldActivateTrap;
-    private bool _trapActive;
+    private FocusTrap? _focusTrap;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -154,31 +155,28 @@
     }
 
     // Traps Tab focus inside the modal and remembers the trigger to restore on close.
+    // Escape is handled at element level (HandleKeyUp) — focus is trapped inside the modal.
     private async Task ActivateTrapAsync()
     {
-        try
-        {
-            await JS.InvokeVoidAsync("tmFocusTrap.activate", _modalElement, _titleId);
-            _trapActive = true;
-        }
-        catch
-        {
-            // JS unavailable (e.g. bUnit / prerender) — fall back to focusing the modal.
-            try { await _modalElement.FocusAsync(); } catch { }
-        }
+        _focusTrap ??= new FocusTrap(JS);
+        await _focusTrap.ActivateAsync<TmModal>(_modalElement);
     }
 
     private async Task DeactivateTrapAsync()
     {
-        if (!_trapActive) return;
-        _trapActive = false;
-        try { await JS.InvokeVoidAsync("tmFocusTrap.deactivate", _modalElement, _titleId); } catch { }
+        if (_focusTrap is not null)
+        {
+            await _focusTrap.DeactivateAsync();
+        }
     }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        await DeactivateTrapAsync();
+        if (_focusTrap is not null)
+        {
+            await _focusTrap.DisposeAsync();
+        }
     }
 
 

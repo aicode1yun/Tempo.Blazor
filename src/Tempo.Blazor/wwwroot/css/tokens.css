@@ -114,7 +114,7 @@
   --tm-text-link:              var(--tm-color-primary);
 
   /* ── Typography ─────────────────────────────────────────────── */
-  --tm-font-sans:              system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --tm-font-sans:              'InterVariable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --tm-font-mono:              ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
   --tm-font-size-xs:           0.75rem;
   --tm-font-size-sm:           0.875rem;

@@ -190,3 +190,20 @@
     font-display: swap;
     src: url("../fonts/dancing-script/DancingScript-VariableFont_wght.ttf") format("truetype");
 }
+
+/* Self-hosted Inter (variable) — primary UI sans, OFL 1.1.
+   Full charset incl. latin-ext (cs/sk diacritics). */
+@font-face {
+    font-family: "InterVariable";
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url("../fonts/inter/InterVariable.woff2") format("woff2");
+}
+@font-face {
+    font-family: "InterVariable";
+    font-style: italic;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url("../fonts/inter/InterVariable-Italic.woff2") format("woff2");
+}

@@ -2,12 +2,15 @@
 @using Tempo.Blazor.Components.Buttons
 @using Tempo.Blazor.Components.Icons
 @using Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Helpers
+@implements IAsyncDisposable
 
 @if (Show)
 {
     <div class="tm-modal-overlay tm-modal--animated @GetVisibleClass() @Class"
-         @attributes="AdditionalAttributes">
-        <div class="tm-modal-container tm-modal--center">
+         @attributes="AdditionalAttributes"
+         @onclick="HandleOverlayClick">
+        <div class="tm-modal-container tm-modal--center" @onclick:stopPropagation="true">
             <div class="tm-dialog @GetDialogClasses()"
                  role="dialog"
                  aria-modal="true"
@@ -103,24 +106,76 @@
     [Parameter] public EventCallback<bool?> OnResult { get; set; }
     [Parameter] public EventCallback<string?> OnPromptResult { get; set; }
 
+    /// <summary>When true, pressing Escape cancels the dialog. Defaults to true (current behavior).</summary>
+    [Parameter] public bool CloseOnEscape { get; set; } = true;
+
+    /// <summary>
+    /// When true, clicking the backdrop cancels the dialog. Defaults to false so a decision
+    /// prompt is not dismissed by an accidental outside click (current behavior).
+    /// </summary>
+    [Parameter] public bool CloseOnOverlayClick { get; set; } = false;
+
     [Parameter] public string? Class { get; set; }
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
-    
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
     private ElementReference _dialogElement;
     private string _titleId = Guid.NewGuid().ToString("N");
     private string _promptValue = string.Empty;
     private bool _wasShown;
-    
-    protected override void OnParametersSet()
+    private bool _shouldActivateTrap;
+    private FocusTrap? _focusTrap;
+
+    protected override async Task OnParametersSetAsync()
     {
         if (Show && !_wasShown)
         {
             _wasShown = true;
+            _shouldActivateTrap = true;
             _promptValue = DefaultValue ?? string.Empty;
         }
-        else if (!Show)
+        else if (!Show && _wasShown)
         {
             _wasShown = false;
+            await DeactivateTrapAsync();
+        }
+    }
+
+    // Traps Tab focus inside the dialog and restores focus to the trigger on close.
+    // Escape is handled at element level (HandleKeyUp) — focus is trapped inside the dialog.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldActivateTrap && Show)
+        {
+            _shouldActivateTrap = false;
+            _focusTrap ??= new FocusTrap(JS);
+            await _focusTrap.ActivateAsync<TmDialog>(_dialogElement);
+        }
+    }
+
+    private async Task DeactivateTrapAsync()
+    {
+        if (_focusTrap is not null)
+        {
+            await _focusTrap.DeactivateAsync();
+        }
+    }
+
+    private void HandleOverlayClick()
+    {
+        if (CloseOnOverlayClick)
+        {
+            OnCancelClick();
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_focusTrap is not null)
+        {
+            await _focusTrap.DisposeAsync();
         }
     }
     
@@ -210,7 +265,7 @@
     
     private void HandleKeyUp(KeyboardEventArgs e)
     {
-        if (e.Key == "Escape")
+        if (CloseOnEscape && e.Key == "Escape")
         {
             OnCancelClick();
         }

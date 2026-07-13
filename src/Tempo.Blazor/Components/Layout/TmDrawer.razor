@@ -1,5 +1,8 @@
 @namespace Tempo.Blazor.Components.Layout
 @using Tempo.Blazor.Components.Icons
+@using Tempo.Blazor.Helpers
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 
 @if (IsOpen)
 {
@@ -12,7 +15,7 @@
          role="dialog"
          aria-modal="true"
          aria-labelledby="@(!string.IsNullOrEmpty(Title) ? "tm-drawer-title" : null)"
-         @onkeydown="HandleKeyDown"
+         @ref="_drawerElement"
          @attributes="AdditionalAttributes">
 
         <div class="tm-drawer__panel" style="width: @Width;">
@@ -97,11 +100,56 @@
     /// <summary>Additional HTML attributes for the root element.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
+    private ElementReference _drawerElement;
+    private bool _wasOpen;
+    private bool _shouldActivateTrap;
+    private FocusTrap? _focusTrap;
+    private DotNetObjectReference<TmDrawer>? _dotNetRef;
+
     private string PositionClass => Position switch
     {
         DrawerPosition.Left => "tm-drawer--left",
         _ => "tm-drawer--right"
     };
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_wasOpen)
+        {
+            _wasOpen = true;
+            _shouldActivateTrap = true;
+        }
+        else if (!IsOpen && _wasOpen)
+        {
+            _wasOpen = false;
+            await DeactivateTrapAsync();
+        }
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldActivateTrap && IsOpen)
+        {
+            _shouldActivateTrap = false;
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+            _focusTrap ??= new FocusTrap(JS);
+            // Escape is handled at the document level so it closes the drawer regardless of
+            // where focus currently sits (the panel is not always the focused element).
+            await _focusTrap.ActivateAsync(_drawerElement, _dotNetRef, CloseOnEscape);
+        }
+    }
+
+    /// <summary>Invoked by the shared focus-trap module when Escape is pressed at the document level.</summary>
+    [JSInvokable]
+    public async Task HandleFocusTrapEscapeAsync()
+    {
+        if (CloseOnEscape)
+        {
+            await Close();
+        }
+    }
 
     private async Task Close()
     {
@@ -114,9 +162,21 @@
             await Close();
     }
 
-    private async Task HandleKeyDown(KeyboardEventArgs e)
+    private async Task DeactivateTrapAsync()
     {
-        if (e.Key == "Escape" && CloseOnEscape)
-            await Close();
+        if (_focusTrap is not null)
+        {
+            await _focusTrap.DeactivateAsync();
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_focusTrap is not null)
+        {
+            await _focusTrap.DisposeAsync();
+        }
+        _dotNetRef?.Dispose();
     }
 }

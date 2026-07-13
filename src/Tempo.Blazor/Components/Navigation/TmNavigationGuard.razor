@@ -1,6 +1,7 @@
 @namespace Tempo.Blazor.Components.Navigation
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.JSInterop
+@using Tempo.Blazor.Components.Buttons
 @using Tempo.Blazor.Components.Feedback
 @implements IAsyncDisposable
 @inject NavigationManager Navigation
@@ -8,13 +9,38 @@
 
 @if (Enabled)
 {
-    <TmDialog Show="@_showConfirm"
-              Type="DialogType.Confirm"
-              Title="@ConfirmTitle"
-              Message="@ConfirmMessage"
-              OkButtonText="@ConfirmLeaveText"
-              CancelButtonText="@CancelText"
-              OnResult="HandleDialogResultAsync" />
+    @if (OnSaveAndLeave.HasDelegate)
+    {
+        @* Three-choice variant: Stay / Save and leave / Leave.
+           OnResult wires Escape (TmDialog cancel) to "stay", matching the two-choice variant. *@
+        <TmDialog Show="@_showConfirm"
+                  Type="DialogType.Custom"
+                  Title="@ConfirmTitle"
+                  Message="@ConfirmMessage"
+                  OnResult="HandleDialogResultAsync">
+            <FooterContent>
+                <TmButton Variant="ButtonVariant.Ghost" OnClick="() => HandleDialogResultAsync(false)">
+                    @CancelText
+                </TmButton>
+                <TmButton Variant="ButtonVariant.Primary" OnClick="HandleSaveAndLeaveAsync">
+                    @SaveAndLeaveText
+                </TmButton>
+                <TmButton Variant="ButtonVariant.Danger" OnClick="() => HandleDialogResultAsync(true)">
+                    @ConfirmLeaveText
+                </TmButton>
+            </FooterContent>
+        </TmDialog>
+    }
+    else
+    {
+        <TmDialog Show="@_showConfirm"
+                  Type="DialogType.Confirm"
+                  Title="@ConfirmTitle"
+                  Message="@ConfirmMessage"
+                  OkButtonText="@ConfirmLeaveText"
+                  CancelButtonText="@CancelText"
+                  OnResult="HandleDialogResultAsync" />
+    }
 }
 
 @code {
@@ -50,6 +76,26 @@
 
     /// <summary>Text for the button that cancels navigation and stays on the page.</summary>
     [Parameter] public string CancelText { get; set; } = "Stay";
+
+    /// <summary>
+    /// Text for the optional third button that saves the pending work and then leaves. The button is only
+    /// rendered when <see cref="OnSaveAndLeave"/> has a delegate, so existing two-choice usages are unchanged.
+    /// </summary>
+    [Parameter] public string SaveAndLeaveText { get; set; } = "Save and leave";
+
+    /// <summary>
+    /// Optional callback that persists the pending work before navigation continues. When set, the
+    /// confirmation dialog shows a third "save and leave" button; the guard awaits this callback and then
+    /// re-issues the blocked navigation. Leave unset for the classic Leave/Stay behavior.
+    /// </summary>
+    [Parameter] public EventCallback OnSaveAndLeave { get; set; }
+
+    /// <summary>
+    /// Optional predicate over the target URI deciding whether a navigation should be guarded at all.
+    /// Return false to let a navigation through without prompting even when the host is dirty (e.g. moving
+    /// between URL tabs or the detail↔sub-page of the same document). When null, every navigation is guarded.
+    /// </summary>
+    [Parameter] public Func<string, bool>? ShouldGuard { get; set; }
 
     /// <summary>When true, also registers a browser `beforeunload` prompt for tab close/refresh.</summary>
     [Parameter] public bool BeforeUnloadPrompt { get; set; } = true;
@@ -109,6 +155,12 @@
             return ValueTask.CompletedTask;
         }
 
+        if (ShouldGuard is not null && !ShouldGuard(context.TargetLocation))
+        {
+            // Host opted this destination out of guarding (e.g. same-document URL tab / sub-page).
+            return ValueTask.CompletedTask;
+        }
+
         context.PreventNavigation();
         _pendingTargetLocation = context.TargetLocation;
         _showConfirm = true;
@@ -138,6 +190,21 @@
         else if (OnCancel.HasDelegate)
         {
             await OnCancel.InvokeAsync();
+        }
+    }
+
+    private async Task HandleSaveAndLeaveAsync()
+    {
+        _showConfirm = false;
+        var targetLocation = _pendingTargetLocation;
+        _pendingTargetLocation = null;
+
+        await OnSaveAndLeave.InvokeAsync();
+
+        if (targetLocation is not null)
+        {
+            _suppressNext = true;
+            Navigation.NavigateTo(targetLocation);
         }
     }
 
