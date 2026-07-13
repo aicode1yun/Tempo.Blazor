@@ -812,7 +812,7 @@
       "kind": "Component",
       "category": "Activity",
       "namespace": "Tempo.Blazor.Components.Activity",
-      "description": "MarkdownToolbar Blazor component in the Activity category.",
+      "description": "Formatting toolbar for the Markdown editor. Renders grouped buttons for headings (H1-H3), inline formatting (bold, italic, and more), lists, links, and code that raise an OnFormat callback with the requested command. Reflects the currently active formats and honours a disabled state.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Activity/MarkdownToolbar.razor",
       "documentationStatus": "merged",
@@ -1168,6 +1168,42 @@
           "isRequired": false
         },
         {
+          "name": "ShowTimelineFilterBar",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, the timeline tab renders a built-in search + type filter bar (default: false)."
+        },
+        {
+          "name": "TimelineDataProvider",
+          "type": "ITimelineDataProvider?",
+          "isRequired": false,
+          "description": "Optional async data provider for the timeline tab (server-side filtering + pagination)."
+        },
+        {
+          "name": "TimelineEntryTypeFilter",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional entry-type filter forwarded to the timeline tab; null/empty shows all types."
+        },
+        {
+          "name": "TimelineEntryTypeFilterOptions",
+          "type": "IReadOnlyList<string>?",
+          "isRequired": false,
+          "description": "Optional explicit entry-type options for the timeline filter bar."
+        },
+        {
+          "name": "TimelineFilter",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional free-text filter forwarded to the timeline tab (author, content, entry type)."
+        },
+        {
+          "name": "TimelinePageSize",
+          "type": "int?",
+          "isRequired": false,
+          "description": "Page size for the timeline tab's incremental \"load more\" paging. null (default) shows every entry."
+        },
+        {
           "name": "EntityId",
           "type": "string?",
           "isRequired": false
@@ -1257,6 +1293,12 @@
       ],
       "parameters": [
         {
+          "name": "DataProvider",
+          "type": "ITimelineDataProvider?",
+          "isRequired": false,
+          "description": "Optional async data provider. When set, entries are fetched (filtered + paged) from it instead of ."
+        },
+        {
           "name": "Entries",
           "type": "IEnumerable<ITimelineEntry>",
           "isRequired": false,
@@ -1264,10 +1306,47 @@
           "description": "Timeline entries to display. Sorted newest-first."
         },
         {
+          "name": "EntryTypeFilter",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional entry-type filter (e.g. \"comment\"); null/empty shows all types (additive, default: none)."
+        },
+        {
+          "name": "EntryTypeFilterOptions",
+          "type": "IReadOnlyList<string>?",
+          "isRequired": false,
+          "description": "Optional explicit set of entry-type options for the filter bar. When null, distinct types are derived from ."
+        },
+        {
+          "name": "Filter",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional free-text filter applied to author, content, and entry type (additive, default: none)."
+        },
+        {
           "name": "IsLoading",
           "type": "bool",
           "isRequired": false,
           "description": "Whether the timeline is loading data."
+        },
+        {
+          "name": "PageSize",
+          "type": "int?",
+          "isRequired": false,
+          "description": "Page size for incremental \"load more\" paging. null (default) shows every entry — backward compatible."
+        },
+        {
+          "name": "ShowFilterBar",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, renders a built-in search + type filter bar (default: false)."
+        },
+        {
+          "name": "ShowInternal",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether internal entries are included (default: true — the activity timeline shows everything)."
         }
       ],
       "cssClasses": [
@@ -2682,6 +2761,31 @@
           "editorRequired": true
         },
         {
+          "name": "InteractiveLegend",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, legend items become buttons that toggle the visibility of their series (multi-dataset legend) or single value (per-value legend). The component owns the hidden state; reports each change. Default false keeps the legend non-interactive (backward compatible)."
+        },
+        {
+          "name": "OnSeriesToggle",
+          "type": "EventCallback<ChartSeriesToggle>",
+          "isRequired": false,
+          "description": "Raised whenever a legend series/value is toggled."
+        },
+        {
+          "name": "ShowTooltip",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Shows a tooltip when hovering a bar, point or slice. Default true."
+        },
+        {
+          "name": "TooltipTemplate",
+          "type": "RenderFragment<ChartTooltipContext>?",
+          "isRequired": false,
+          "description": "Optional custom tooltip content; when null a rich default tooltip is used."
+        },
+        {
           "name": "Width",
           "type": "string",
           "isRequired": false,
@@ -2769,7 +2873,7 @@
       "kind": "Component",
       "category": "Charts",
       "namespace": "Tempo.Blazor.Components.Charts",
-      "description": "TmGauge Blazor component in the Charts category.",
+      "description": "SVG gauge chart that visualizes a single value against a range. Supports Arc, Circular, and Linear gauge styles and scales responsively within its container.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Charts/TmGauge.razor",
       "documentationStatus": "merged",
@@ -2789,7 +2893,7 @@
       "kind": "Component",
       "category": "Charts",
       "namespace": "Tempo.Blazor.Components.Charts",
-      "description": "TmSparkline Blazor component in the Charts category.",
+      "description": "Compact inline SVG mini-chart for a single data series. Renders Line, Bar, Area, or Pie variants and shows an empty state when no data is supplied; sized to fit inline within tables, cards, or text.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Charts/TmSparkline.razor",
       "documentationStatus": "merged",
@@ -2809,7 +2913,7 @@
       "kind": "Component",
       "category": "Charts",
       "namespace": "Tempo.Blazor.Components.Charts",
-      "description": "TmStockChart Blazor component in the Charts category.",
+      "description": "Financial chart for price series. Renders Candlestick, OHLC, or Line variants with grid and axes, an optional volume panel, and an empty state when no data is supplied.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Charts/TmStockChart.razor",
       "documentationStatus": "merged",
@@ -3260,6 +3364,84 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "ChartSeriesToggle",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Charts",
+      "description": "Event payload raised by TmChart when a series (multi-dataset legend) or a single value (per-value legend) is toggled through the interactive legend. Reports which legend item changed and whether it is now hidden.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Index",
+          "kind": "Property",
+          "type": "int",
+          "description": "Zero-based index of the toggled legend item (the dataset index for a multi-series legend, or the value index for a per-value legend)."
+        },
+        {
+          "name": "Label",
+          "kind": "Property",
+          "type": "string",
+          "description": "Display label of the toggled legend item."
+        },
+        {
+          "name": "Hidden",
+          "kind": "Property",
+          "type": "bool",
+          "description": "True when the series or value is now hidden; false when it has been re-shown."
+        }
+      ]
+    },
+    {
+      "itemName": "ChartTooltipContext",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Charts",
+      "description": "Context passed to a chart tooltip, used both by TmChart's default tooltip and by any custom TooltipTemplate. Describes the hovered data point: its dataset, position, label, value, dataset label, and color.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "DatasetIndex",
+          "kind": "Property",
+          "type": "int",
+          "description": "Zero-based index of the dataset the hovered point belongs to."
+        },
+        {
+          "name": "Index",
+          "kind": "Property",
+          "type": "int",
+          "description": "Zero-based index of the point within its dataset (the category/label index)."
+        },
+        {
+          "name": "Label",
+          "kind": "Property",
+          "type": "string",
+          "description": "Category label of the hovered point (the X-axis or slice label)."
+        },
+        {
+          "name": "Value",
+          "kind": "Property",
+          "type": "double",
+          "description": "Numeric value of the hovered point."
+        },
+        {
+          "name": "DatasetLabel",
+          "kind": "Property",
+          "type": "string",
+          "description": "Label of the dataset (as shown in the legend)."
+        },
+        {
+          "name": "Color",
+          "kind": "Property",
+          "type": "string",
+          "description": "Resolved color of the hovered point or series."
+        }
+      ]
+    },
+    {
       "itemName": "ChartType",
       "kind": "Enum",
       "category": "Components",
@@ -3342,6 +3524,34 @@
             {
               "name": "data",
               "type": "DataTableExportData"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "CsvImportFileParser",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.ImportExport",
+      "description": "Dependency-free CSV implementation of IImportFileParser used to power the parse step of TmImportWizard. Performs RFC-4180-ish parsing: quoted fields, embedded delimiters, embedded newlines, escaped quotes (\"\"), and CR/LF/CRLF line endings. Reads UTF-8 and strips a leading BOM. Rows are normalised to a rectangular shape by padding shorter records to the widest column count.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/ImportExport/CsvImportFileParser.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Parse",
+          "kind": "Method",
+          "type": "ImportParseResult",
+          "description": "Parses raw CSV using the given .",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string"
+            },
+            {
+              "name": "options",
+              "type": "ImportParseOptions"
             }
           ]
         }
@@ -4406,6 +4616,35 @@
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Scheduler/InMemoryScheduleDataProvider.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "InMemoryTimelineDataProvider",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Timeline",
+      "description": "Client-side implementation of ITimelineDataProvider that filters, orders newest-first, and windows an in-memory list of timeline entries. Useful for opting into the provider-based filtering/pagination pipeline for TmTimeline, TmActivityTimeline, and TmActivityLog without wiring up a server, or as a test double.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Timeline/InMemoryTimelineDataProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetEntriesAsync",
+          "kind": "Method",
+          "type": "Task<TimelinePage>",
+          "description": "Filters, orders newest-first, and returns the requested window of entries.",
+          "parameters": [
+            {
+              "name": "query",
+              "type": "TimelineQuery"
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
     },
     {
       "itemName": "JustifyContent",
@@ -5939,6 +6178,13 @@
       ],
       "parameters": [
         {
+          "name": "CardItemSize",
+          "type": "double",
+          "isRequired": false,
+          "default": "88",
+          "description": "Estimated card row height (px) handed to <Virtualize ItemSize> when is enabled. Defaults to 88."
+        },
+        {
           "name": "CardTemplate",
           "type": "RenderFragment<TItem>?",
           "isRequired": true,
@@ -6032,6 +6278,12 @@
           "type": "Func<TItem, string?>?",
           "isRequired": false,
           "description": "Groups cards into horizontal swimlanes. Returning null places an item in the trailing \"no value\" lane. When null the board renders without swimlanes (classic layout)."
+        },
+        {
+          "name": "VirtualizeCards",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Opt-in vertical card virtualization. When , each (non-swimlane) column body becomes a fixed-height scroll container that renders only the visible window of cards through Blazor's built-in <Virtualize> — so a column holding thousands of cards stays fast. The card markup/template is unchanged. Defaults to , which keeps the exact classic @foreach rendering (fully backward compatible)."
         }
       ],
       "cssClasses": [
@@ -7544,7 +7796,7 @@
       "kind": "Component",
       "category": "Data Table",
       "namespace": "Tempo.Blazor.Components.DataTable",
-      "description": "TmTreeListColumn Blazor component in the Data Table category.",
+      "description": "Column definition for TmTreeList. A non-visual component that registers a column with its parent tree list, supplying the header title, a field accessor or cell template, optional inline editing with an edit template, width, alignment, CSS class, and a .NET format string.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/DataTable/TmTreeListColumn.razor",
       "documentationStatus": "merged",
@@ -11201,11 +11453,35 @@
           "description": "Fires when the wizard completes."
         },
         {
+          "name": "OnMapped",
+          "type": "EventCallback<ImportMappingResult>",
+          "isRequired": false,
+          "description": "Fires when the user applies a column mapping, carrying the mapping and mapped rows."
+        },
+        {
+          "name": "ParseOptions",
+          "type": "ImportParseOptions?",
+          "isRequired": false,
+          "description": "Options passed to . Defaults to new ImportParseOptions()."
+        },
+        {
+          "name": "Parser",
+          "type": "IImportFileParser?",
+          "isRequired": false,
+          "description": "Optional parser hook. When supplied, the wizard renders a built-in upload → column-mapping panel: it parses the chosen file, shows the detected columns, and lets the user map each column to a entry. When null the wizard behaves exactly as before."
+        },
+        {
           "name": "ShowStepIndicator",
           "type": "bool",
           "isRequired": false,
           "default": "true",
           "description": "Whether to show the step indicator. Defaults to true."
+        },
+        {
+          "name": "TargetFields",
+          "type": "IReadOnlyList<ImportTargetField>?",
+          "isRequired": false,
+          "description": "Target fields the host declares as mapping destinations for detected columns."
         }
       ],
       "cssClasses": [
@@ -11580,7 +11856,7 @@
       "kind": "Component",
       "category": "Inputs",
       "namespace": "Tempo.Blazor.Components.Inputs",
-      "description": "TmColorPicker Blazor component in the Inputs category.",
+      "description": "Color picker input. Shows a trigger button with the current color swatch and value, opening a dropdown that hosts a TmFlatColorPicker with palette, gradient, hex input, and optional alpha. Two-way binds the selected color via Value, supports keyboard interaction, an optional Apply/Cancel flow, placeholder text, and a disabled state.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmColorPicker.razor",
       "documentationStatus": "merged",
@@ -11747,7 +12023,7 @@
           "name": "ConvertAsync",
           "type": "Func<decimal, string, Task<decimal?>>?",
           "isRequired": false,
-          "description": "Optional async callback for converting Amount to another currency. Receives (amount, currencyCode) and returns the converted value. When null, the converted amount column is hidden entirely."
+          "description": "Optional async callback for converting Amount to another currency. Receives (amount, currencyCode) and returns the converted value. Used as a fallback when is not supplied. When both this and are null, the converted amount column is hidden entirely."
         },
         {
           "name": "ConvertedAmount",
@@ -11792,6 +12068,12 @@
           "description": "Override label for the currency select."
         },
         {
+          "name": "ExchangeRateProvider",
+          "type": "IExchangeRateProvider?",
+          "isRequired": false,
+          "description": "Optional exchange-rate provider. When supplied, it takes precedence over : the component fetches the rate for → and multiplies the amount by it. If the provider returns null (rate unavailable), the converted value is left unchanged. When null, the existing callback is used exactly as before."
+        },
+        {
           "name": "ManualRate",
           "type": "decimal?",
           "isRequired": false,
@@ -11820,6 +12102,12 @@
           "type": "bool",
           "isRequired": false,
           "description": "Show the manual exchange rate input. Only meaningful when ConvertAsync is provided."
+        },
+        {
+          "name": "TargetCurrency",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Target currency code the amount is converted into when using . When null, the selected is used as the target (a self-conversion). Ignored by the callback-based path, which encodes its own target."
         }
       ],
       "cssClasses": [
@@ -12064,10 +12352,22 @@
       ],
       "parameters": [
         {
+          "name": "AllowCreateNew",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Shows an inline \"create new\" row that calls .CreateAsync. Requires . Default false."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
           "description": "Additional CSS class(es)."
+        },
+        {
+          "name": "DataProvider",
+          "type": "IDropdownDataProvider<TItem>?",
+          "isRequired": false,
+          "description": "Optional data provider that powers the create-new and recent-items features (opt-in). The main search still flows through ."
         },
         {
           "name": "Debounce",
@@ -12109,6 +12409,12 @@
           "description": "Minimum characters before search triggers."
         },
         {
+          "name": "MultiSelect",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Enables multi-select mode: selections are tracked via and rendered as chips. Default false."
+        },
+        {
           "name": "Placeholder",
           "type": "string?",
           "isRequired": false,
@@ -12120,6 +12426,25 @@
           "isRequired": true,
           "description": "Search provider function.",
           "editorRequired": true
+        },
+        {
+          "name": "SelectedValues",
+          "type": "IReadOnlyList<TValue>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "The selected values in multi-select mode (source of truth when is true)."
+        },
+        {
+          "name": "SelectedValuesChanged",
+          "type": "EventCallback<IReadOnlyList<TValue>>",
+          "isRequired": false,
+          "description": "Fires when the multi-select selection changes."
+        },
+        {
+          "name": "ShowRecent",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Shows a \"recent\" group loaded from .GetRecentAsync when the picker opens. Requires . Default false."
         },
         {
           "name": "Value",
@@ -12474,6 +12799,12 @@
       ],
       "parameters": [
         {
+          "name": "AllowCreateNew",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Shows an inline \"create new\" row that calls .CreateAsync. Requires . Default false."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
@@ -12492,6 +12823,12 @@
           "isRequired": false,
           "default": "[]",
           "description": "Data source for the dropdown grid."
+        },
+        {
+          "name": "DataProvider",
+          "type": "IDropdownDataProvider<TItem>?",
+          "isRequired": false,
+          "description": "Optional data provider that powers the create-new and recent-items features (opt-in). The grid still binds to ."
         },
         {
           "name": "Disabled",
@@ -12513,10 +12850,29 @@
           "description": "Placeholder for the filter input."
         },
         {
+          "name": "MultiSelect",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Enables multi-select mode: selections are tracked via and rendered as chips in the trigger. Default false."
+        },
+        {
           "name": "Placeholder",
           "type": "string?",
           "isRequired": false,
           "description": "Placeholder shown when no value is selected."
+        },
+        {
+          "name": "SelectedValues",
+          "type": "IReadOnlyList<TValue>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "The selected values in multi-select mode (source of truth when is true)."
+        },
+        {
+          "name": "SelectedValuesChanged",
+          "type": "EventCallback<IReadOnlyList<TValue>>",
+          "isRequired": false,
+          "description": "Fires when the multi-select selection changes."
         },
         {
           "name": "ShowClearButton",
@@ -12524,6 +12880,12 @@
           "isRequired": false,
           "default": "true",
           "description": "Whether to show a clear button. Default is true."
+        },
+        {
+          "name": "ShowRecent",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Shows a \"recent\" group loaded from .GetRecentAsync when the dropdown opens. Requires . Default false."
         },
         {
           "name": "TextField",
@@ -16539,7 +16901,7 @@
       "kind": "Component",
       "category": "Notifications",
       "namespace": "Tempo.Blazor.Components.Notifications",
-      "description": "TmNotificationToastContainer Blazor component in the Notifications category.",
+      "description": "Container that displays transient notification toasts. Subscribes to the notification service to surface incoming notifications as auto-dismissing toasts showing an icon, title, and actor, raises a click callback (for example to navigate), and supports manual dismissal.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Notifications/TmNotificationToastContainer.razor",
       "documentationStatus": "merged",
@@ -17377,7 +17739,7 @@
       "kind": "Component",
       "category": "Pivot Table",
       "namespace": "Tempo.Blazor.Components.PivotTable",
-      "description": "TmPivotFieldChip Blazor component in the Pivot Table category.",
+      "description": "Draggable chip representing a pivot field placed in a Row, Column, Value, or Filter area of a pivot table. Shows the field title and, for row/column areas, a sort indicator and a menu for changing sort direction; supports drag-and-drop reordering between areas.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/PivotTable/TmPivotFieldChip.razor",
       "documentationStatus": "merged",
@@ -17572,7 +17934,7 @@
       "kind": "Component",
       "category": "Pivot Table",
       "namespace": "Tempo.Blazor.Components.PivotTable",
-      "description": "TmPivotFieldTree Blazor component in the Pivot Table category.",
+      "description": "List of the available pivot fields shown in the pivot-table field panel. Each field has an actions menu to add it to the Row, Column, Value, or Filter area, and fields already in use are marked with an area badge.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/PivotTable/TmPivotFieldTree.razor",
       "documentationStatus": "merged",
@@ -17830,7 +18192,7 @@
       "kind": "Component",
       "category": "Scheduler",
       "namespace": "Tempo.Blazor.Components.Scheduler",
-      "description": "TmGantt Blazor component in the Scheduler category.",
+      "description": "Full-featured interactive Gantt chart for project scheduling. Combines a tree grid of tasks with a zoomable timeline and a toolbar for adding tasks, expand/collapse, day/week/month views, and cascade sort. Supports task hierarchies and dependencies, baselines, time tracking, bulk edits, filtering, import/export, critical-path and overdue highlighting, a workload panel, resource calendars, and optional real-time SignalR updates.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGantt.razor",
       "documentationStatus": "merged",
@@ -18276,7 +18638,7 @@
       "kind": "Component",
       "category": "Scheduler",
       "namespace": "Tempo.Blazor.Components.Scheduler",
-      "description": "TmGanttFilterPanel Blazor component in the Scheduler category.",
+      "description": "Side panel for building filter rules applied to a TmGantt. Each rule combines a field (Title, Status, Priority), an operator, and a value; rules can be added and removed, and applying them raises a callback with the resulting filter set.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttFilterPanel.razor",
       "documentationStatus": "merged",
@@ -18420,7 +18782,7 @@
       "kind": "Component",
       "category": "Scheduler",
       "namespace": "Tempo.Blazor.Components.Scheduler",
-      "description": "TmGanttPortfolio Blazor component in the Scheduler category.",
+      "description": "Portfolio overview that renders multiple projects, each shown as a summary TmGantt with its own tasks and dependencies, giving a roll-up view across several project schedules.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttPortfolio.razor",
       "documentationStatus": "merged",
@@ -18441,7 +18803,7 @@
       "kind": "Component",
       "category": "Scheduler",
       "namespace": "Tempo.Blazor.Components.Scheduler",
-      "description": "TmGanttReportsPanel Blazor component in the Scheduler category.",
+      "description": "Panel that lists saved Gantt reports and lets the user create a new report or run an existing one. Each entry shows the report name and type, with a run action that raises the corresponding callback.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttReportsPanel.razor",
       "documentationStatus": "merged",
@@ -18568,7 +18930,7 @@
       "kind": "Component",
       "category": "Scheduler",
       "namespace": "Tempo.Blazor.Components.Scheduler",
-      "description": "TmGanttWorkloadView Blazor component in the Scheduler category.",
+      "description": "Resource workload view for a Gantt schedule. Computes per-assignee daily allocation from the tasks and working schedule and renders it as a grid across a rolling multi-week date window, highlighting weekends.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttWorkloadView.razor",
       "documentationStatus": "merged",
@@ -20793,10 +21155,46 @@
       ],
       "parameters": [
         {
+          "name": "DataProvider",
+          "type": "ITimelineDataProvider?",
+          "isRequired": false,
+          "description": "Optional async data provider. When set, entries are fetched (filtered + paged) from it instead of ."
+        },
+        {
           "name": "Entries",
           "type": "IEnumerable<ITimelineEntry>?",
           "isRequired": false,
           "description": "Timeline entries to display."
+        },
+        {
+          "name": "EntryTypeFilter",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional entry-type filter (e.g. \"comment\"); null/empty shows all types (additive, default: none)."
+        },
+        {
+          "name": "EntryTypeFilterOptions",
+          "type": "IReadOnlyList<string>?",
+          "isRequired": false,
+          "description": "Optional explicit set of entry-type options for the filter bar. When null, distinct types are derived from ."
+        },
+        {
+          "name": "Filter",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional free-text filter applied to author, content, and entry type (additive, default: none)."
+        },
+        {
+          "name": "PageSize",
+          "type": "int?",
+          "isRequired": false,
+          "description": "Page size for incremental \"load more\" paging. null (default) shows every entry — backward compatible."
+        },
+        {
+          "name": "ShowFilterBar",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, renders a built-in search + type filter bar (default: false)."
         },
         {
           "name": "ShowInternal",
@@ -22419,11 +22817,11 @@
     }
   ],
   "summary": {
-    "itemCount": 317,
-    "manualItemCount": 317,
-    "generatedItemCount": 309,
+    "itemCount": 321,
+    "manualItemCount": 321,
+    "generatedItemCount": 313,
     "generatedOnlyItemCount": 0,
     "componentCount": 184,
-    "publicApiTypeCount": 125
+    "publicApiTypeCount": 129
   }
 }

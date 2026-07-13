@@ -32,7 +32,13 @@ public sealed class CsvImportFileParser : IImportFileParser
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        var records = Tokenize(text ?? string.Empty, options.Delimiter);
+        var normalized = text ?? string.Empty;
+        if (normalized.Length > 0 && normalized[0] == '﻿')
+        {
+            normalized = normalized[1..]; // strip a leading BOM on the decoded-text path too
+        }
+
+        var records = Tokenize(normalized, options.Delimiter);
         if (records.Count == 0)
         {
             return new ImportParseResult([], []);
@@ -96,6 +102,7 @@ public sealed class CsvImportFileParser : IImportFileParser
         var record = new List<string>();
         var field = new StringBuilder();
         var inQuotes = false;
+        var sawAny = false; // any structural content on the current line (a field char, a quote, or a delimiter)
         var i = 0;
 
         while (i < text.Length)
@@ -129,39 +136,43 @@ public sealed class CsvImportFileParser : IImportFileParser
             if (ch == '"' && field.Length == 0)
             {
                 inQuotes = true;
+                sawAny = true;
                 i++;
             }
             else if (ch == delimiter)
             {
                 record.Add(field.ToString());
                 field.Clear();
+                sawAny = true;
                 i++;
             }
-            else if (ch == '\r')
+            else if (ch == '\r' || ch == '\n')
             {
-                record.Add(field.ToString());
+                // End of line. Emit the record UNLESS the line was completely blank (no fields,
+                // no content) so a blank line or an extra trailing newline does not become a
+                // phantom all-empty row — while a lone quoted-empty field ("") stays a real
+                // one-cell row (sawAny is set when a quote opens).
+                if (field.Length > 0 || record.Count > 0 || sawAny)
+                {
+                    record.Add(field.ToString());
+                    records.Add(record);
+                    record = [];
+                }
                 field.Clear();
-                records.Add(record);
-                record = [];
-                i += i + 1 < text.Length && text[i + 1] == '\n' ? 2 : 1;
-            }
-            else if (ch == '\n')
-            {
-                record.Add(field.ToString());
-                field.Clear();
-                records.Add(record);
-                record = [];
-                i++;
+                sawAny = false;
+                i += ch == '\r' && i + 1 < text.Length && text[i + 1] == '\n' ? 2 : 1;
             }
             else
             {
                 field.Append(ch);
+                sawAny = true;
                 i++;
             }
         }
 
-        // Flush a final field/record when the text does not end with a newline.
-        if (field.Length > 0 || record.Count > 0)
+        // Flush a final field/record when the text does not end with a newline. sawAny covers a
+        // trailing lone/empty quoted field (e.g. `"` or `""`) that leaves field/record empty.
+        if (field.Length > 0 || record.Count > 0 || sawAny)
         {
             record.Add(field.ToString());
             records.Add(record);

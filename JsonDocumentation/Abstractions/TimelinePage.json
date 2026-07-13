@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "A filtered, windowed slice of timeline entries returned by an ITimelineDataProvider. TotalCount lets the component decide whether a \"load more\" affordance should be offered.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/TimelinePage.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Items",
+      "kind": "Property",
+      "type": "IReadOnlyList<ITimelineEntry>",
+      "description": "Entries in this slice, already filtered, ordered, and windowed by the provider."
+    },
+    {
+      "name": "TotalCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Total number of entries matching the query across all pages, before windowing."
+    }
+  ],
+  "itemName": "TimelinePage"
+}

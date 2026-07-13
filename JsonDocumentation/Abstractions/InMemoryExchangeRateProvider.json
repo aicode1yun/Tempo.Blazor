@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "In-memory IExchangeRateProvider backed by a directional rate table keyed by (from, to) currency-code pairs, compared case-insensitively. Suitable for demos, tests, and prototypes. Same-currency conversions return 1 by default; any pair not present in the table returns null (rate unavailable), which tells TmCurrencyInput to keep the existing value. The constructor is seeded from an IReadOnlyDictionary of (from, to) to multiplier, with an optional identityForSameCurrency flag (default true).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/InMemoryExchangeRateProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetRateAsync",
+      "kind": "Method",
+      "type": "Task<decimal?>",
+      "description": "Looks up the rate to convert one unit of fromCurrency into toCurrency. Returns 1 for a same-currency conversion when identity is enabled, the seeded rate when the (from, to) pair is present, or null otherwise.",
+      "parameters": [
+        { "name": "fromCurrency", "type": "string", "description": "Source currency code." },
+        { "name": "toCurrency", "type": "string", "description": "Target currency code." },
+        { "name": "ct", "type": "CancellationToken", "description": "Token used to cancel the operation." }
+      ]
+    }
+  ],
+  "itemName": "InMemoryExchangeRateProvider"
+}

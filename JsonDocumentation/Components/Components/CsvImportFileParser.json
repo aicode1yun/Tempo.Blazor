@@ -1,0 +1,33 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.ImportExport",
+  "description": "Dependency-free CSV implementation of IImportFileParser used to power the parse step of TmImportWizard. Performs RFC-4180-ish parsing: quoted fields, embedded delimiters, embedded newlines, escaped quotes (\"\"), and CR/LF/CRLF line endings. Reads UTF-8 and strips a leading BOM. Rows are normalised to a rectangular shape by padding shorter records to the widest column count.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/ImportExport/CsvImportFileParser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ParseAsync",
+      "kind": "Method",
+      "type": "Task<ImportParseResult>",
+      "description": "Reads the stream as UTF-8 (BOM stripped) and parses its contents into detected columns and raw string rows.",
+      "parameters": [
+        { "name": "stream", "type": "Stream", "description": "Readable stream of the uploaded file's bytes." },
+        { "name": "options", "type": "ImportParseOptions", "description": "Parsing options (header handling, delimiter)." },
+        { "name": "ct", "type": "CancellationToken", "description": "Token used to cancel the operation." }
+      ]
+    },
+    {
+      "name": "Parse",
+      "kind": "Method",
+      "type": "ImportParseResult",
+      "description": "Static helper that parses already-loaded CSV text using the given options.",
+      "parameters": [
+        { "name": "text", "type": "string", "description": "Raw CSV text to parse." },
+        { "name": "options", "type": "ImportParseOptions", "description": "Parsing options (header handling, delimiter)." }
+      ]
+    }
+  ],
+  "itemName": "CsvImportFileParser"
+}

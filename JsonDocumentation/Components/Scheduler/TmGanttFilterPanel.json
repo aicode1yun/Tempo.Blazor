@@ -2,7 +2,7 @@
   "itemName": "TmGanttFilterPanel",
   "kind": "Component",
   "category": "Scheduler",
-  "description": "TmGanttFilterPanel Blazor component in the Scheduler category.",
+  "description": "Side panel for building filter rules applied to a TmGantt. Each rule combines a field (Title, Status, Priority), an operator, and a value; rules can be added and removed, and applying them raises a callback with the resulting filter set.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.Scheduler",
   "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttFilterPanel.razor",

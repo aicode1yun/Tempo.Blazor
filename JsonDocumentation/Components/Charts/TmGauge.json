@@ -2,7 +2,7 @@
   "itemName": "TmGauge",
   "kind": "Component",
   "category": "Charts",
-  "description": "TmGauge Blazor component in the Charts category.",
+  "description": "SVG gauge chart that visualizes a single value against a range. Supports Arc, Circular, and Linear gauge styles and scales responsively within its container.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.Charts",
   "sourcePath": "src/Tempo.Blazor/Components/Charts/TmGauge.razor",

@@ -10442,6 +10442,41 @@
       ]
     },
     {
+      "itemName": "IExchangeRateProvider",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Optional async provider that supplies foreign-exchange rates to TmCurrencyInput. When a provider is supplied, the component fetches the rate for a conversion and multiplies the entered amount by it; when no provider is supplied, the component falls back to its existing callback-based ConvertAsync FX so existing consumers keep working unchanged. For a ready-made implementation, use InMemoryExchangeRateProvider.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IExchangeRateProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetRateAsync",
+          "kind": "Method",
+          "type": "Task<decimal?>",
+          "description": "Returns the multiplier to convert one unit of fromCurrency into toCurrency (toAmount = fromAmount * rate). Returns null when the rate is unavailable, signalling the consumer to keep the existing value rather than converting.",
+          "parameters": [
+            {
+              "name": "fromCurrency",
+              "type": "string",
+              "description": "Source currency code (e.g. \"USD\")."
+            },
+            {
+              "name": "toCurrency",
+              "type": "string",
+              "description": "Target currency code (e.g. \"CZK\")."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Token used to cancel the operation."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "itemName": "IFileManagerDataProvider",
       "kind": "Interface",
       "category": "Interfaces",
@@ -10598,6 +10633,197 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IImportFileParser",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Pluggable hook that parses an uploaded import file into rows and detected columns. Supply an implementation to TmImportWizard to power its parse and column-mapping flow. The core library ships a dependency-free CSV implementation (CsvImportFileParser); this interface is the extension point that lets a future package provide an XLSX or JSON parser without any change to the wizard.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IImportFileParser.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ParseAsync",
+          "kind": "Method",
+          "type": "Task<ImportParseResult>",
+          "description": "Parses the supplied stream into detected columns and raw string rows using the given options.",
+          "parameters": [
+            {
+              "name": "stream",
+              "type": "Stream",
+              "description": "Readable stream of the uploaded file's bytes."
+            },
+            {
+              "name": "options",
+              "type": "ImportParseOptions",
+              "description": "Parsing options (header handling, delimiter)."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Token used to cancel the operation."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "ImportColumn",
+      "kind": "Record",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "A column detected by an IImportFileParser while parsing an import source, such as a CSV header cell or a generated positional name when the source has no header row.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ImportColumn.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Index",
+          "kind": "Property",
+          "type": "int",
+          "description": "Zero-based position of the column in the parsed rows."
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string",
+          "description": "Detected header name, or a generated placeholder when no header exists."
+        }
+      ]
+    },
+    {
+      "itemName": "ImportColumnMapping",
+      "kind": "Record",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "A single detected source column mapped to a target field, as produced by the TmImportWizard mapping step. A null TargetFieldKey means the column is ignored.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ImportColumnMapping.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ColumnIndex",
+          "kind": "Property",
+          "type": "int",
+          "description": "Zero-based index of the source column (matches ImportColumn.Index)."
+        },
+        {
+          "name": "ColumnName",
+          "kind": "Property",
+          "type": "string",
+          "description": "Detected name of the source column."
+        },
+        {
+          "name": "TargetFieldKey",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Key of the ImportTargetField this column maps to, or null when the column is ignored."
+        }
+      ]
+    },
+    {
+      "itemName": "ImportMappingResult",
+      "kind": "Record",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "The result handed back to the host when the user applies a column mapping in TmImportWizard. Carries both the chosen Mappings (which source column went to which target field) and the Rows re-projected onto the target field keys, with mapped values only and ignored columns omitted. This is a mapping payload, not a full import engine.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ImportMappingResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Mappings",
+          "kind": "Property",
+          "type": "IReadOnlyList<ImportColumnMapping>",
+          "description": "The chosen column-to-field mappings, one per detected source column."
+        },
+        {
+          "name": "Rows",
+          "kind": "Property",
+          "type": "IReadOnlyList<IReadOnlyDictionary<string, string>>",
+          "description": "Data rows keyed by ImportTargetField.Key; a key is present only when a source column was mapped to it."
+        }
+      ]
+    },
+    {
+      "itemName": "ImportParseOptions",
+      "kind": "Record",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Options controlling how an IImportFileParser reads an import source. Positional parameters carry sensible defaults so new ImportParseOptions() works out of the box.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ImportParseOptions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "HasHeaderRow",
+          "kind": "Property",
+          "type": "bool",
+          "description": "When true (default) the first record supplies the column names and is not returned as a data row; when false, columns are named positionally and every record is treated as data."
+        },
+        {
+          "name": "Delimiter",
+          "kind": "Property",
+          "type": "char",
+          "description": "Field delimiter for delimited formats such as CSV. Defaults to a comma."
+        }
+      ]
+    },
+    {
+      "itemName": "ImportParseResult",
+      "kind": "Record",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "The outcome of parsing an import source: the detected Columns and the raw string Rows, where each row is a list of cell values aligned to the columns by index.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ImportParseResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Columns",
+          "kind": "Property",
+          "type": "IReadOnlyList<ImportColumn>",
+          "description": "Columns detected in the source, ordered by ImportColumn.Index."
+        },
+        {
+          "name": "Rows",
+          "kind": "Property",
+          "type": "IReadOnlyList<IReadOnlyList<string>>",
+          "description": "Data rows as raw string cells, padded so every row spans all columns."
+        }
+      ]
+    },
+    {
+      "itemName": "ImportTargetField",
+      "kind": "Record",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "A destination field the host declares for TmImportWizard column mapping. Each detected source column can be mapped to one target field, or ignored.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ImportTargetField.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Key",
+          "kind": "Property",
+          "type": "string",
+          "description": "Stable identifier used as the key in the mapped output rows."
+        },
+        {
+          "name": "Label",
+          "kind": "Property",
+          "type": "string",
+          "description": "Human-readable label shown in the mapping UI (localized by the host)."
+        },
+        {
+          "name": "Required",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Whether the host considers this field mandatory. Informational only."
+        }
+      ]
+    },
+    {
       "itemName": "IMultiViewListItem",
       "kind": "Interface",
       "category": "Interfaces",
@@ -10606,6 +10832,38 @@
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IMultiViewListItem.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "InMemoryExchangeRateProvider",
+      "kind": "Class",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "In-memory IExchangeRateProvider backed by a directional rate table keyed by (from, to) currency-code pairs, compared case-insensitively. Suitable for demos, tests, and prototypes. Same-currency conversions return 1 by default; any pair not present in the table returns null (rate unavailable), which tells TmCurrencyInput to keep the existing value. The constructor is seeded from an IReadOnlyDictionary of (from, to) to multiplier, with an optional identityForSameCurrency flag (default true).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/InMemoryExchangeRateProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetRateAsync",
+          "kind": "Method",
+          "type": "Task<decimal?>",
+          "parameters": [
+            {
+              "name": "fromCurrency",
+              "type": "string"
+            },
+            {
+              "name": "toCurrency",
+              "type": "string"
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
     },
     {
       "itemName": "INotificationDigestSender",
@@ -10822,6 +11080,36 @@
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ITag.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ITimelineDataProvider",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Optional server-side (or async) data provider for TmTimeline, TmActivityTimeline, and TmActivityLog. Implement this to power filtering and incremental (\"load more\") pagination of audit-scale timelines from an API or database. When no provider is supplied the components fall back to filtering and paging the in-memory Entries list client-side, so existing consumers keep working unchanged. For a ready-made in-memory implementation, use InMemoryTimelineDataProvider from Tempo.Blazor.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ITimelineDataProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetEntriesAsync",
+          "kind": "Method",
+          "type": "Task<TimelinePage>",
+          "description": "Fetches a filtered, windowed slice of timeline entries for the given query.",
+          "parameters": [
+            {
+              "name": "query",
+              "type": "TimelineQuery",
+              "description": "Filter and paging options for the requested slice."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Token used to cancel the operation."
+            }
+          ]
+        }
+      ]
     },
     {
       "itemName": "ITimelineEntry",
@@ -11045,6 +11333,72 @@
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IDashboardProvider.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TimelinePage",
+      "kind": "Class",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "A filtered, windowed slice of timeline entries returned by an ITimelineDataProvider. TotalCount lets the component decide whether a \"load more\" affordance should be offered.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/TimelinePage.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Items",
+          "kind": "Property",
+          "type": "IReadOnlyList<ITimelineEntry>",
+          "description": "Entries in this slice — already filtered, ordered, and windowed by the provider."
+        },
+        {
+          "name": "TotalCount",
+          "kind": "Property",
+          "type": "int",
+          "description": "Total number of entries matching the query across all pages (before windowing)."
+        }
+      ]
+    },
+    {
+      "itemName": "TimelineQuery",
+      "kind": "Class",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Query describing the slice of timeline entries requested from an ITimelineDataProvider. Used by TmTimeline, TmActivityTimeline, and TmActivityLog to fetch filtered, incrementally paged audit data from a server.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/TimelineQuery.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "EntryType",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional entry-type filter (e.g. \"comment\", \"status_change\"). Null/empty means \"all types\"."
+        },
+        {
+          "name": "IncludeInternal",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Whether internal entries should be included in the result."
+        },
+        {
+          "name": "SearchText",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional free-text filter. Providers should match it against the author name, entry content, and entry type (case-insensitive). Null/empty means \"no text filter\"."
+        },
+        {
+          "name": "Skip",
+          "kind": "Property",
+          "type": "int",
+          "description": "Number of matching entries to skip before returning items."
+        },
+        {
+          "name": "Take",
+          "kind": "Property",
+          "type": "int",
+          "description": "Maximum number of matching entries to return. means \"return everything that matches\" (used when no page size is configured)."
+        }
+      ]
     },
     {
       "itemName": "ITmLocalizer",
@@ -33878,11 +34232,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1317,
-    "manualItemCount": 1317,
-    "generatedItemCount": 1300,
+    "itemCount": 1329,
+    "manualItemCount": 1329,
+    "generatedItemCount": 1312,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1300
+    "publicApiTypeCount": 1312
   }
 }

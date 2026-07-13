@@ -15,6 +15,46 @@ public class CsvImportFileParserTests
         return await parser.ParseAsync(stream, options ?? new ImportParseOptions());
     }
 
+    // ── Regression (K10 code review): blank-line phantom row, lone quote, static-Parse BOM ──
+
+    [Fact]
+    public async Task DoubleTrailingNewline_DoesNotProducePhantomRow()
+    {
+        var result = await ParseAsync("A,B\r\n1,2\r\n\r\n");
+
+        result.Rows.Should().HaveCount(1);
+        result.Rows[0].Should().Equal("1", "2");
+    }
+
+    [Fact]
+    public async Task BlankLineBetweenRows_IsSkipped()
+    {
+        var result = await ParseAsync("A,B\r\n1,2\r\n\r\n3,4\r\n");
+
+        result.Rows.Should().HaveCount(2);
+        result.Rows[0].Should().Equal("1", "2");
+        result.Rows[1].Should().Equal("3", "4");
+    }
+
+    [Fact]
+    public async Task LoneEmptyQuotedField_IsOneEmptyCell()
+    {
+        var result = await ParseAsync("\"\"", new ImportParseOptions(HasHeaderRow: false));
+
+        result.Rows.Should().HaveCount(1);
+        result.Rows[0].Should().Equal("");
+    }
+
+    [Fact]
+    public void StaticParse_StripsLeadingBom()
+    {
+        var result = CsvImportFileParser.Parse("﻿Name,Email\r\nAlice,a@x.com", new ImportParseOptions());
+
+        result.Columns[0].Name.Should().Be("Name");
+        result.Rows.Should().HaveCount(1);
+        result.Rows[0].Should().Equal("Alice", "a@x.com");
+    }
+
     [Fact]
     public async Task Parses_Header_And_Rows()
     {

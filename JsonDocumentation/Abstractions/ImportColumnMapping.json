@@ -1,0 +1,30 @@
+{
+  "kind": "Record",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "A single detected source column mapped to a target field, as produced by the TmImportWizard mapping step. A null TargetFieldKey means the column is ignored.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ImportColumnMapping.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ColumnIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based index of the source column (matches ImportColumn.Index)."
+    },
+    {
+      "name": "ColumnName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Detected name of the source column."
+    },
+    {
+      "name": "TargetFieldKey",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Key of the ImportTargetField this column maps to, or null when the column is ignored."
+    }
+  ],
+  "itemName": "ImportColumnMapping"
+}

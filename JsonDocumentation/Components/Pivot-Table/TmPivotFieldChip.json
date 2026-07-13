@@ -2,7 +2,7 @@
   "itemName": "TmPivotFieldChip",
   "kind": "Component",
   "category": "Pivot Table",
-  "description": "TmPivotFieldChip Blazor component in the Pivot Table category.",
+  "description": "Draggable chip representing a pivot field placed in a Row, Column, Value, or Filter area of a pivot table. Shows the field title and, for row/column areas, a sort indicator and a menu for changing sort direction; supports drag-and-drop reordering between areas.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.PivotTable",
   "sourcePath": "src/Tempo.Blazor/Components/PivotTable/TmPivotFieldChip.razor",

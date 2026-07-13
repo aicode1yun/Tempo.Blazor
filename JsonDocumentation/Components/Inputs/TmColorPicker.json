@@ -2,7 +2,7 @@
   "itemName": "TmColorPicker",
   "kind": "Component",
   "category": "Inputs",
-  "description": "TmColorPicker Blazor component in the Inputs category.",
+  "description": "Color picker input. Shows a trigger button with the current color swatch and value, opening a dropdown that hosts a TmFlatColorPicker with palette, gradient, hex input, and optional alpha. Two-way binds the selected color via Value, supports keyboard interaction, an optional Apply/Cancel flow, placeholder text, and a disabled state.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.Inputs",
   "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmColorPicker.razor",

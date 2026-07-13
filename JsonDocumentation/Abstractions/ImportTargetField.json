@@ -1,0 +1,30 @@
+{
+  "kind": "Record",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "A destination field the host declares for TmImportWizard column mapping. Each detected source column can be mapped to one target field, or ignored.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ImportTargetField.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Key",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable identifier used as the key in the mapped output rows."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string",
+      "description": "Human-readable label shown in the mapping UI (localized by the host)."
+    },
+    {
+      "name": "Required",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the host considers this field mandatory. Informational only."
+    }
+  ],
+  "itemName": "ImportTargetField"
+}

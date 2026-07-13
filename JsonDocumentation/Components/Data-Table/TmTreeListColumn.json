@@ -2,7 +2,7 @@
   "itemName": "TmTreeListColumn",
   "kind": "Component",
   "category": "Data Table",
-  "description": "TmTreeListColumn Blazor component in the Data Table category.",
+  "description": "Column definition for TmTreeList. A non-visual component that registers a column with its parent tree list, supplying the header title, a field accessor or cell template, optional inline editing with an edit template, width, alignment, CSS class, and a .NET format string.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.DataTable",
   "sourcePath": "src/Tempo.Blazor/Components/DataTable/TmTreeListColumn.razor",

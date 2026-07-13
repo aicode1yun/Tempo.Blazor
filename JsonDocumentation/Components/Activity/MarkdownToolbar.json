@@ -2,7 +2,7 @@
   "itemName": "MarkdownToolbar",
   "kind": "Component",
   "category": "Activity",
-  "description": "MarkdownToolbar Blazor component in the Activity category.",
+  "description": "Formatting toolbar for the Markdown editor. Renders grouped buttons for headings (H1-H3), inline formatting (bold, italic, and more), lists, links, and code that raise an OnFormat callback with the requested command. Reflects the currently active formats and honours a disabled state.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.Activity",
   "sourcePath": "src/Tempo.Blazor/Components/Activity/MarkdownToolbar.razor",

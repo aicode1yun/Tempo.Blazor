@@ -107,6 +107,20 @@
     private ChartTooltipContext? _tip;
     private double _tipX, _tipY;
 
+    // Reset toggle/tooltip state when the parent swaps in a different Data instance so hidden
+    // legend indices don't leak across unrelated datasets (ChartData is an immutable record).
+    private ChartData? _lastData;
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_lastData, Data))
+        {
+            _hidden.Clear();
+            _tip = null;
+            _lastData = Data;
+        }
+    }
+
     private bool PerValue => UsesPerValueLegend();
 
     private bool IsSegmentHidden(int datasetIndex, int valueIndex)

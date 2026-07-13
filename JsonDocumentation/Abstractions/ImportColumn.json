@@ -1,0 +1,24 @@
+{
+  "kind": "Record",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "A column detected by an IImportFileParser while parsing an import source, such as a CSV header cell or a generated positional name when the source has no header row.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ImportColumn.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Index",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based position of the column in the parsed rows."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Detected header name, or a generated placeholder when no header exists."
+    }
+  ],
+  "itemName": "ImportColumn"
+}

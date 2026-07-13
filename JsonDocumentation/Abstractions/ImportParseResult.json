@@ -1,0 +1,24 @@
+{
+  "kind": "Record",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "The outcome of parsing an import source: the detected Columns and the raw string Rows, where each row is a list of cell values aligned to the columns by index.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ImportParseResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Columns",
+      "kind": "Property",
+      "type": "IReadOnlyList<ImportColumn>",
+      "description": "Columns detected in the source, ordered by ImportColumn.Index."
+    },
+    {
+      "name": "Rows",
+      "kind": "Property",
+      "type": "IReadOnlyList<IReadOnlyList<string>>",
+      "description": "Data rows as raw string cells, padded so every row spans all columns."
+    }
+  ],
+  "itemName": "ImportParseResult"
+}

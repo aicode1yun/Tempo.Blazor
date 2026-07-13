@@ -2,7 +2,7 @@
   "itemName": "TmGantt",
   "kind": "Component",
   "category": "Scheduler",
-  "description": "TmGantt Blazor component in the Scheduler category.",
+  "description": "Full-featured interactive Gantt chart for project scheduling. Combines a tree grid of tasks with a zoomable timeline and a toolbar for adding tasks, expand/collapse, day/week/month views, and cascade sort. Supports task hierarchies and dependencies, baselines, time tracking, bulk edits, filtering, import/export, critical-path and overdue highlighting, a workload panel, resource calendars, and optional real-time SignalR updates.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.Scheduler",
   "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGantt.razor",

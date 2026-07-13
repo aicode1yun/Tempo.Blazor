@@ -2,7 +2,7 @@
   "itemName": "TmGanttReportsPanel",
   "kind": "Component",
   "category": "Scheduler",
-  "description": "TmGanttReportsPanel Blazor component in the Scheduler category.",
+  "description": "Panel that lists saved Gantt reports and lets the user create a new report or run an existing one. Each entry shows the report name and type, with a run action that raises the corresponding callback.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.Scheduler",
   "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttReportsPanel.razor",

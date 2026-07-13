@@ -2,7 +2,7 @@
   "itemName": "TmNotificationToastContainer",
   "kind": "Component",
   "category": "Notifications",
-  "description": "TmNotificationToastContainer Blazor component in the Notifications category.",
+  "description": "Container that displays transient notification toasts. Subscribes to the notification service to surface incoming notifications as auto-dismissing toasts showing an icon, title, and actor, raises a click callback (for example to navigate), and supports manual dismissal.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.Notifications",
   "sourcePath": "src/Tempo.Blazor/Components/Notifications/TmNotificationToastContainer.razor",

@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Query describing the slice of timeline entries requested from an ITimelineDataProvider. Used by TmTimeline, TmActivityTimeline, and TmActivityLog to fetch filtered, incrementally paged audit data from a server.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/TimelineQuery.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "SearchText",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional free-text filter. Providers should match it case-insensitively against the author name, entry content, and entry type. Null/empty means no text filter."
+    },
+    {
+      "name": "EntryType",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional entry-type filter (e.g. \"comment\", \"status_change\"). Null/empty means all types."
+    },
+    {
+      "name": "IncludeInternal",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether internal entries should be included in the result."
+    },
+    {
+      "name": "Skip",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of matching entries to skip before returning items."
+    },
+    {
+      "name": "Take",
+      "kind": "Property",
+      "type": "int",
+      "description": "Maximum number of matching entries to return. int.MaxValue means return everything that matches (used when no page size is configured)."
+    }
+  ],
+  "itemName": "TimelineQuery"
+}

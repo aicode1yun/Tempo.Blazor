@@ -1,0 +1,24 @@
+{
+  "kind": "Record",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Options controlling how an IImportFileParser reads an import source. Positional parameters carry sensible defaults so new ImportParseOptions() works out of the box.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ImportParseOptions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "HasHeaderRow",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When true (default) the first record supplies the column names and is not returned as a data row; when false, columns are named positionally and every record is treated as data."
+    },
+    {
+      "name": "Delimiter",
+      "kind": "Property",
+      "type": "char",
+      "description": "Field delimiter for delimited formats such as CSV. Defaults to a comma."
+    }
+  ],
+  "itemName": "ImportParseOptions"
+}

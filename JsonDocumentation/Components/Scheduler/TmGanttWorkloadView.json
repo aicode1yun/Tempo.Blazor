@@ -2,7 +2,7 @@
   "itemName": "TmGanttWorkloadView",
   "kind": "Component",
   "category": "Scheduler",
-  "description": "TmGanttWorkloadView Blazor component in the Scheduler category.",
+  "description": "Resource workload view for a Gantt schedule. Computes per-assignee daily allocation from the tasks and working schedule and renders it as a grid across a rolling multi-week date window, highlighting weekends.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.Scheduler",
   "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttWorkloadView.razor",
