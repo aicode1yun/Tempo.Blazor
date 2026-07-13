@@ -109,6 +109,10 @@
         "description": "Optional XLSX exporter for Tempo.Blazor TmDataTable, backed by DocumentFormat.OpenXml."
       },
       {
+        "name": "Tempo.Blazor.WebPush",
+        "description": "Optional VAPID Web Push sender for Tempo.Blazor notifications, implementing IWebPushSender on top of the WebPush library."
+      },
+      {
         "name": "Tempo.Blazor.DocumentEditor",
         "description": "Document editor components for Tempo.Blazor, including canvas rendering, collaboration UI, clipboard normalization, and document editor interop assets."
       },
