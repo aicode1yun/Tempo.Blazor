@@ -57,6 +57,18 @@
   --tm-color-danger-soft-border:  rgba(248, 113, 113, 0.3);
   --tm-color-info-soft-border:    rgba(56, 189, 248, 0.3);
 
+  /* Categorical palette — lifted to 400-tones so category colours read well on the
+     dark dashboard surface (#1e293b / #0f172a). Same hues as light, one step lighter. */
+  --tm-category-1: #60a5fa; /* Analytics — blue-400 */
+  --tm-category-2: #a78bfa; /* Charts — violet-400 */
+  --tm-category-3: #fbbf24; /* QuickActions — amber-400 */
+  --tm-category-4: #34d399; /* Lists — emerald-400 */
+  --tm-category-5: #f472b6; /* Calendar — pink-400 */
+  --tm-category-6: #f87171; /* Notifications — red-400 */
+  --tm-category-7: #9ca3af; /* System — gray-400 */
+  --tm-category-8: #2dd4bf; /* Custom — teal-400 */
+  --tm-category-fallback: #818cf8; /* indigo-400 */
+
   /* Neutral scale — inverted for dark mode */
   --tm-color-gray-50:        #1e293b;
   --tm-color-gray-100:       #334155;

@@ -63,6 +63,21 @@
   --tm-color-danger-soft-border:  #fecaca;
   --tm-color-info-soft-border:    #a5f3fc;
 
+  /* ── Categorical Palette (dashboard widget categories) ──────── */
+  /* Ordered to match DashboardModels.WidgetCategories.All. Light values equal each
+     built-in category's model .Color hex, so light mode is pixel-identical; the dark
+     theme lifts them to 400-tones (tokens-dark.css) for contrast on dark surfaces. */
+  --tm-category-1: #3b82f6; /* Analytics */
+  --tm-category-2: #8b5cf6; /* Charts */
+  --tm-category-3: #f59e0b; /* QuickActions */
+  --tm-category-4: #10b981; /* Lists */
+  --tm-category-5: #ec4899; /* Calendar */
+  --tm-category-6: #ef4444; /* Notifications */
+  --tm-category-7: #6b7280; /* System */
+  --tm-category-8: #14b8a6; /* Custom */
+  /* Fallback for unknown/custom categories that supply no .Color (was hardcoded #6366f1). */
+  --tm-category-fallback: #6366f1;
+
   /* ── Neutrals ───────────────────────────────────────────────── */
   --tm-color-white:            #ffffff;
   --tm-color-gray-50:          #f9fafb;
