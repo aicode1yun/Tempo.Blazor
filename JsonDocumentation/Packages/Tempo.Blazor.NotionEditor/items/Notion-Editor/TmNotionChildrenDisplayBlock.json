@@ -2,7 +2,7 @@
   "itemName": "TmNotionChildrenDisplayBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionChildrenDisplayBlock Blazor component in the Notion Editor category.",
+  "description": "Block rendering a tree of descendant child pages under a configurable root page and depth. Editable configuration exposes root and depth selectors and a show-icons toggle, with loading, empty, and source-deleted states.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionChildrenDisplayBlock.razor",

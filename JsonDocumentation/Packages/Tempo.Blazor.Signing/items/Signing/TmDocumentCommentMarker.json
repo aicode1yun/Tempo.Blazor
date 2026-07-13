@@ -2,7 +2,7 @@
   "itemName": "TmDocumentCommentMarker",
   "kind": "Component",
   "category": "Signing",
-  "description": "TmDocumentCommentMarker Blazor component in the Signing category.",
+  "description": "Clickable marker drawn on the document overlay for a single comment thread, positioned from the thread's point or area anchor. Displays the thread number (or a custom template) and raises OnSelected when activated.",
   "packageId": "Tempo.Blazor.Signing",
   "namespace": "Tempo.Blazor.Components.Signing",
   "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmDocumentCommentMarker.razor",

@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbCalendarView",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbCalendarView Blazor component in the Notion Editor category.",
+  "description": "Monthly calendar view (a six-week, Monday-based grid) that places records as colored events on their date field. Supports previous/next/today navigation, drag-to-reschedule, click-to-create, and per-cell overflow indicators.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDbCalendarView.razor",

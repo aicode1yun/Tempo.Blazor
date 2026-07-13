@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbCellPhone",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbCellPhone Blazor component in the Notion Editor category.",
+  "description": "Editor for a phone database cell, showing the value as a tel link and, when editing, a telephone input.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/Cells/TmNotionDbCellPhone.razor",

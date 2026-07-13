@@ -2,7 +2,7 @@
   "itemName": "TmEmailExportDialog",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailExportDialog Blazor component in the Components category.",
+  "description": "Modal dialog that renders the current email document as read-only source, toggling between generated MJML and the document's JSON representation for copying.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailExportDialog.razor",

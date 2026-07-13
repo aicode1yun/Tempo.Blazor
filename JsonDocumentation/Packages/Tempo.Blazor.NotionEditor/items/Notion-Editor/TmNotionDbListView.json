@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbListView",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbListView Blazor component in the Notion Editor category.",
+  "description": "Compact list view of database records, rendering each as a clickable row with a page icon, primary title, and colored preview-field chips, plus an empty state and add-row buttons.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDbListView.razor",

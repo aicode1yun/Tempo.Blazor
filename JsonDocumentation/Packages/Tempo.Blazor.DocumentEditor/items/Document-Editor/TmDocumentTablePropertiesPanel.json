@@ -2,7 +2,7 @@
   "itemName": "TmDocumentTablePropertiesPanel",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentTablePropertiesPanel Blazor component in the Document Editor category.",
+  "description": "Property panel for the selected table, with controls for width, alignment, cell padding, background color, and border style. Clones the layout and raises LayoutChanged on each edit.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentTablePropertiesPanel.razor",

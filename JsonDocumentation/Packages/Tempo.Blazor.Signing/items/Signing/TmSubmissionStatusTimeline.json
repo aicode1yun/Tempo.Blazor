@@ -2,7 +2,7 @@
   "itemName": "TmSubmissionStatusTimeline",
   "kind": "Component",
   "category": "Signing",
-  "description": "TmSubmissionStatusTimeline Blazor component in the Signing category.",
+  "description": "Vertical timeline that renders the lifecycle events of a signing submission (sent, viewed, signed, and so on). Each entry shows a type icon, localized label, timestamp, recipient, and any event metadata, ordered chronologically.",
   "packageId": "Tempo.Blazor.Signing",
   "namespace": "Tempo.Blazor.Components.Signing",
   "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmSubmissionStatusTimeline.razor",

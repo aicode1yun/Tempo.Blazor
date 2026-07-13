@@ -2,7 +2,7 @@
   "itemName": "TmNotionPageSettingsMenu",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionPageSettingsMenu Blazor component in the Notion Editor category.",
+  "description": "Dropdown page menu with view toggles (full width, small text, lock), export and import submenus, AI actions, mark comments read, history, info, share, restrictions, copy link, move-to search, favorite toggle, and delete with confirmation.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Page/TmNotionPageSettingsMenu.razor",

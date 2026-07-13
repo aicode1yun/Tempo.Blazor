@@ -2,7 +2,7 @@
   "itemName": "TmEmailVariablePicker",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailVariablePicker Blazor component in the Components category.",
+  "description": "Searchable list of the template variables available to the document. Selecting a variable raises OnInsert with its {{ path }} token, and collection variables are badged so array bindings are recognizable.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailVariablePicker.razor",

@@ -2,7 +2,7 @@
   "itemName": "TmEmailTemplateToolbox",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailTemplateToolbox Blazor component in the Components category.",
+  "description": "Palette of email building blocks from the block registry, grouped by category, plus a set of column-layout presets. Clicking or dragging a block raises the add/drag callbacks, and choosing a preset inserts a new section.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTemplateToolbox.razor",

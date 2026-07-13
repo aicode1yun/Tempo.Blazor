@@ -2,7 +2,7 @@
   "itemName": "TmNotionIncludePageBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionIncludePageBlock Blazor component in the Notion Editor category.",
+  "description": "Block that renders another source page's content inline, rendering each source block by type (paragraphs, headings, lists, callouts, code, tables, nested includes, and more) with a source picker and cyclic and depth guards.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionIncludePageBlock.razor",

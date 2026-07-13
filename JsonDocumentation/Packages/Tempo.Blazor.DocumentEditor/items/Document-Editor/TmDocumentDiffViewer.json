@@ -2,7 +2,7 @@
   "itemName": "TmDocumentDiffViewer",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentDiffViewer Blazor component in the Document Editor category.",
+  "description": "Renders a document diff with a summary header, an optional side-by-side old/new plain-text comparison, and an inline colored view of added, removed, and unchanged segments computed from two documents or a precomputed compare result.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentDiffViewer.razor",

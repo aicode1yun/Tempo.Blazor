@@ -2,7 +2,7 @@
   "itemName": "TmNotionDiagramBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDiagramBlock Blazor component in the Notion Editor category.",
+  "description": "Block embedding a Tempo diagram document. The empty editable state offers create and insert-existing actions; the filled state shows an SVG preview with an edit overlay that opens TmNotionDiagramEditModal, plus an editable caption and a not-found state.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/TempoBlocks/TmNotionDiagramBlock.razor",

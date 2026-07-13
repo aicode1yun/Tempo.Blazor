@@ -2,7 +2,7 @@
   "itemName": "TmNotionTemplateButtonBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionTemplateButtonBlock Blazor component in the Notion Editor category.",
+  "description": "Block rendering a button that inserts a preconfigured set of template blocks on click. An editable configuration panel sets the button label and adds or removes the template's block types.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionTemplateButtonBlock.razor",

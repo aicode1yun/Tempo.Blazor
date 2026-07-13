@@ -2,7 +2,7 @@
   "itemName": "TmDocumentCommandPalette",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentCommandPalette Blazor component in the Document Editor category.",
+  "description": "Modal command palette with a search input and a listbox of matching commands showing each command's label, category, shortcut, and any disabled reason. Supports keyboard navigation and executes the chosen command.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCommandPalette.razor",

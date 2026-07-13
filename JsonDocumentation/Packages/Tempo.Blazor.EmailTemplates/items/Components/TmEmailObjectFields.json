@@ -2,7 +2,7 @@
   "itemName": "TmEmailObjectFields",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailObjectFields Blazor component in the Components category.",
+  "description": "Reflection-driven form that edits the scalar properties of a target model object. Named primary fields are shown first, with the remaining properties collapsed under an \"Advanced\" section, and any property can be excluded when handled elsewhere.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailObjectFields.razor",

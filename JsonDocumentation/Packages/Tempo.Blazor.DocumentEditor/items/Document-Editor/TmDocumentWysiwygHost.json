@@ -2,7 +2,7 @@
   "itemName": "TmDocumentWysiwygHost",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentWysiwygHost Blazor component in the Document Editor category.",
+  "description": "Blazor host that wraps the JavaScript-owned WYSIWYG editing surface of the document editor. Renders the editable page and bridges the JS runtime and .NET across a wide event surface: dirty/save and undo/redo state, selection and formatting state, page metrics, comments, revisions and suggestions, image upload and validation, zoom, ruler, track changes, and runtime recovery.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentWysiwygHost.razor",

@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbTemplateMenu",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbTemplateMenu Blazor component in the Notion Editor category.",
+  "description": "Popup listing a database's record templates. Each template can create a new record, with actions to add, edit, or delete templates.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDbTemplateMenu.razor",

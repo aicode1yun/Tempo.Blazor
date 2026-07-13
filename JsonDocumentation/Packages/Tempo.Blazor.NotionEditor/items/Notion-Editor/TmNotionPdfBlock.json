@@ -2,7 +2,7 @@
   "itemName": "TmNotionPdfBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionPdfBlock Blazor component in the Notion Editor category.",
+  "description": "PDF block. The empty editable state shows a drag-and-drop upload zone; the filled state embeds the PDF via a dynamic viewer component or an embed-tag fallback, plus an editable caption.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Media",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Media/TmNotionPdfBlock.razor",

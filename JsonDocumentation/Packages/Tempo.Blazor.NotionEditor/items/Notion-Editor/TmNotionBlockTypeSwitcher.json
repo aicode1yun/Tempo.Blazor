@@ -2,7 +2,7 @@
   "itemName": "TmNotionBlockTypeSwitcher",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionBlockTypeSwitcher Blazor component in the Notion Editor category.",
+  "description": "A \"turn into\" popup listbox that groups block types (basic blocks, lists, and blocks) with icons and a check on the current type, supporting keyboard navigation and raising OnTypeChanged.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionBlockTypeSwitcher.razor",

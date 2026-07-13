@@ -2,7 +2,7 @@
   "itemName": "TmNotionSpaceSwitcher",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionSpaceSwitcher Blazor component in the Notion Editor category.",
+  "description": "Space selector showing the current space with a dropdown of spaces and an overview toggle that renders per-space cards with page counts and a move-current-page-here action, using the space provider.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Sidebar",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Sidebar/TmNotionSpaceSwitcher.razor",

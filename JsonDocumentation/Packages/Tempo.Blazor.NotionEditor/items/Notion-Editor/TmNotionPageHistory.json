@@ -2,7 +2,7 @@
   "itemName": "TmNotionPageHistory",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionPageHistory Blazor component in the Notion Editor category.",
+  "description": "Version-history dialog with a paginated version list and a content pane showing either a read-only version preview or a diff (via TmNotionDiffViewer), supporting compare mode and restore with confirmation.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionPageHistory.razor",

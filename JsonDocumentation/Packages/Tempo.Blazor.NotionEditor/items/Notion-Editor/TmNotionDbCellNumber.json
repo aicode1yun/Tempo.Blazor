@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbCellNumber",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbCellNumber Blazor component in the Notion Editor category.",
+  "description": "Editor for a number database cell, displaying the value formatted per the field's number format (currency, percent, thousands separators) and offering a numeric input that commits a parsed number.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/Cells/TmNotionDbCellNumber.razor",

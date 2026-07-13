@@ -2,7 +2,7 @@
   "itemName": "TmDiagramTemplateGallery",
   "kind": "Component",
   "category": "Diagram",
-  "description": "TmDiagramTemplateGallery Blazor component in the Diagram category.",
+  "description": "Modal gallery for browsing and picking a starter diagram template from the DiagramTemplateRegistry. Supports free-text search and category filters, groups matching templates into sections of TmDiagramTemplateCard tiles, and raises OnSelect with the chosen template.",
   "packageId": "Tempo.Blazor.DiagramEditor",
   "namespace": "Tempo.Blazor.Components.Diagram",
   "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/TmDiagramTemplateGallery.razor",

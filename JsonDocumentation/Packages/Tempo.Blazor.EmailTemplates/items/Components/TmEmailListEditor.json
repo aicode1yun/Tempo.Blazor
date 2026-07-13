@@ -2,7 +2,7 @@
   "itemName": "TmEmailListEditor",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailListEditor Blazor component in the Components category.",
+  "description": "Generic editor for an ordered list of model items. Each item is edited via TmEmailObjectFields, and the list supports adding, removing, and reordering (move up/down) entries.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailListEditor.razor",

@@ -2,7 +2,7 @@
   "itemName": "TmNotionLinkedPageBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionLinkedPageBlock Blazor component in the Notion Editor category.",
+  "description": "Block rendering a clickable link-style row (link arrow, page icon, and title) that navigates to a referenced page.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Page",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Page/TmNotionLinkedPageBlock.razor",

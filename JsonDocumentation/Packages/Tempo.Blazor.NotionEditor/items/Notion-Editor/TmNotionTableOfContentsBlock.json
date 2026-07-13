@@ -2,7 +2,7 @@
   "itemName": "TmNotionTableOfContentsBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionTableOfContentsBlock Blazor component in the Notion Editor category.",
+  "description": "Block rendering a table of contents that lists the page's headings indented by level and scrolls to a heading when its entry is clicked, with an empty message when there are no headings.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionTableOfContentsBlock.razor",

@@ -2,7 +2,7 @@
   "itemName": "TmDocumentPageNavigator",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentPageNavigator Blazor component in the Document Editor category.",
+  "description": "Page navigator showing the total page count and a list of clickable page thumbnails. Marks the active page, indicates virtual or overflow pages, and raises OnNavigateToPage when a page is chosen.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentPageNavigator.razor",

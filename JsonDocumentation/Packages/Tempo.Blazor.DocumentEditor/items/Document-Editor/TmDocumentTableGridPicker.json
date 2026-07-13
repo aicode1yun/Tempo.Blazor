@@ -2,7 +2,7 @@
   "itemName": "TmDocumentTableGridPicker",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentTableGridPicker Blazor component in the Document Editor category.",
+  "description": "Interactive 10x10 grid for choosing table dimensions by hovering or arrow-key navigation, with a live rows-by-columns readout. Raises OnInsert with the chosen dimensions and closes on Escape.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentTableGridPicker.razor",

@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbCellText",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbCellText Blazor component in the Notion Editor category.",
+  "description": "Editor for a text database cell, showing plain text and, when editing, an inline input that commits on Enter or blur and cancels on Escape.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/Cells/TmNotionDbCellText.razor",

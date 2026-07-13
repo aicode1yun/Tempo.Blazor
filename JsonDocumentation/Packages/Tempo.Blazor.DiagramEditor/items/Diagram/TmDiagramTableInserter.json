@@ -2,7 +2,7 @@
   "itemName": "TmDiagramTableInserter",
   "kind": "Component",
   "category": "Diagram",
-  "description": "TmDiagramTableInserter Blazor component in the Diagram category.",
+  "description": "Word-style grid picker for choosing table dimensions. The user hovers over a 10x8 cell grid to highlight the desired size, and clicking raises OnInsert with the selected row and column counts (1-based).",
   "packageId": "Tempo.Blazor.DiagramEditor",
   "namespace": "Tempo.Blazor.Components.Diagram",
   "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramTableInserter.razor",

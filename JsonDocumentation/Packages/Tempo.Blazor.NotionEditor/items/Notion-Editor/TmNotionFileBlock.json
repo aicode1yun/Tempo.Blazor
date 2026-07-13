@@ -2,7 +2,7 @@
   "itemName": "TmNotionFileBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionFileBlock Blazor component in the Notion Editor category.",
+  "description": "File attachment block. The empty editable state shows a drag-and-drop upload zone; the filled state shows a card with a file icon, name, formatted size, a download link, and a replace button, plus an editable caption.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Media",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Media/TmNotionFileBlock.razor",

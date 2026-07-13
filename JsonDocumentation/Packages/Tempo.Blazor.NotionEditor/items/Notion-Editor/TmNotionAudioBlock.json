@@ -2,7 +2,7 @@
   "itemName": "TmNotionAudioBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionAudioBlock Blazor component in the Notion Editor category.",
+  "description": "Audio block. The empty editable state shows an upload zone and media dialog; the filled state shows either a provider iframe embed or a native audio player with a replace button, plus an editable caption.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Media",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Media/TmNotionAudioBlock.razor",

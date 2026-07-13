@@ -2,7 +2,7 @@
   "itemName": "TmDiagramArrowSelect",
   "kind": "Component",
   "category": "Diagram",
-  "description": "TmDiagramArrowSelect Blazor component in the Diagram category.",
+  "description": "Custom dropdown for picking an edge arrowhead style, rendering an SVG preview of each option (from the arrowhead registry or a custom PreviewRenderer) alongside its label. Two-way binds the selected value and supports full keyboard navigation of the option list.",
   "packageId": "Tempo.Blazor.DiagramEditor",
   "namespace": "Tempo.Blazor.Components.Diagram",
   "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramArrowSelect.razor",

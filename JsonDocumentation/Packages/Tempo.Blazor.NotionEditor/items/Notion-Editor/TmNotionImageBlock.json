@@ -2,7 +2,7 @@
   "itemName": "TmNotionImageBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionImageBlock Blazor component in the Notion Editor category.",
+  "description": "Image block. The empty editable state shows a drag-and-drop upload zone and dialog; the filled state shows the image with a replace button and left, center, and full-width alignment controls, plus an editable caption.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Media",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Media/TmNotionImageBlock.razor",

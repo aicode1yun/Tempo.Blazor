@@ -2,7 +2,7 @@
   "itemName": "TmEmailTemplateEditor",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailTemplateEditor Blazor component in the Components category.",
+  "description": "Top-level MJML email template editor. Combines a toolbar (undo/redo, preview, validate, import, export, save with autosave status) with a three-pane layout: a block toolbox, a drag-and-drop canvas, and a property panel for the selected element.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTemplateEditor.razor",

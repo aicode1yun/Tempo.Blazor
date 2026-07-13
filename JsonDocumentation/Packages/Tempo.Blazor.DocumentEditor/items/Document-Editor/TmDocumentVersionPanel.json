@@ -2,7 +2,7 @@
   "itemName": "TmDocumentVersionPanel",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentVersionPanel Blazor component in the Document Editor category.",
+  "description": "Docked panel showing the document's version history. Lists saved versions with their metadata and offers create, preview, return-to-current, and restore (with confirmation) actions, and can render an inline diff of two selected versions via TmDocumentDiffViewer.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentVersionPanel.razor",

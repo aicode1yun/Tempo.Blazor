@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbCell",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbCell Blazor component in the Notion Editor category.",
+  "description": "Dispatcher that renders the matching type-specific cell editor for a database field based on its type (defaulting to text), forwarding the value, read-only and editing state, and the commit, cancel, and edit-request callbacks.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/Cells/TmNotionDbCell.razor",

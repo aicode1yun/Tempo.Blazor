@@ -2,7 +2,7 @@
   "itemName": "TmEmailImportDialog",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailImportDialog Blazor component in the Components category.",
+  "description": "Modal dialog for importing an email template from MJML or JSON, via pasted text or a dropped file. Shows parse errors or a summary preview (section and warning counts) and confirms the import into the editor.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailImportDialog.razor",

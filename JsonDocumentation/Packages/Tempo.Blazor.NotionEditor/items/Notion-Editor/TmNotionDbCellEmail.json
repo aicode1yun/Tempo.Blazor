@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbCellEmail",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbCellEmail Blazor component in the Notion Editor category.",
+  "description": "Editor for an email database cell, showing the value as a mailto link and, when editing, an email input.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/Cells/TmNotionDbCellEmail.razor",

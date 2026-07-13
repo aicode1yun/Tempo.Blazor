@@ -2,7 +2,7 @@
   "itemName": "TmNotionBookmarkBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionBookmarkBlock Blazor component in the Notion Editor category.",
+  "description": "Bookmark block for a URL. The empty editable state offers a URL input that resolves link metadata, and the resolved state renders a clickable card with title, description, favicon, domain, and cover image, plus an editable caption.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Embed",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Embed/TmNotionBookmarkBlock.razor",

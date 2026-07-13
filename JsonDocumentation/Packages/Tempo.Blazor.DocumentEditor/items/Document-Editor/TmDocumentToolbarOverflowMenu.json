@@ -2,7 +2,7 @@
   "itemName": "TmDocumentToolbarOverflowMenu",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentToolbarOverflowMenu Blazor component in the Document Editor category.",
+  "description": "Ribbon overflow control that renders a \"More\" button and a popup menu of commands that did not fit in the toolbar. Supports an optional search box, grouped menu items with keyboard navigation, and a no-results message.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentToolbarOverflowMenu.razor",

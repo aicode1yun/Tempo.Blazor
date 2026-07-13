@@ -2,7 +2,7 @@
   "itemName": "TmCommentReactions",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmCommentReactions Blazor component in the Notion Editor category.",
+  "description": "Emoji-reaction bar for a comment entry showing active reaction and count pills and an add-reaction picker popover, toggling reactions through the reaction provider.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmCommentReactions.razor",

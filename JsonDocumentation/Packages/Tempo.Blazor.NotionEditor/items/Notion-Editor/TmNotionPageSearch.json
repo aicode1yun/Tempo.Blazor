@@ -2,7 +2,7 @@
   "itemName": "TmNotionPageSearch",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionPageSearch Blazor component in the Notion Editor category.",
+  "description": "Modal command-palette page search with a query input, collapsible advanced filters, and grouped page and block results with keyboard navigation, navigating to the selected result.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionPageSearch.razor",

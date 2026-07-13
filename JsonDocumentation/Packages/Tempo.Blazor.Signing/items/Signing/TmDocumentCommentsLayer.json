@@ -2,7 +2,7 @@
   "itemName": "TmDocumentCommentsLayer",
   "kind": "Component",
   "category": "Signing",
-  "description": "TmDocumentCommentsLayer Blazor component in the Signing category.",
+  "description": "Overlay layer positioned over a document page that renders a TmDocumentCommentMarker for each comment thread anchored to the current page, plus a visual indicator for an in-progress draft anchor (point or area).",
   "packageId": "Tempo.Blazor.Signing",
   "namespace": "Tempo.Blazor.Components.Signing",
   "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmDocumentCommentsLayer.razor",

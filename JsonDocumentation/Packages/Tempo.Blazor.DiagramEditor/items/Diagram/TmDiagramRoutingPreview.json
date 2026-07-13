@@ -2,7 +2,7 @@
   "itemName": "TmDiagramRoutingPreview",
   "kind": "Component",
   "category": "Diagram",
-  "description": "TmDiagramRoutingPreview Blazor component in the Diagram category.",
+  "description": "Small selectable button that renders an SVG glyph illustrating an edge routing style (straight, orthogonal, elbow, segment, or curved). Used in toolbars and property panels to let the user pick how connectors are routed.",
   "packageId": "Tempo.Blazor.DiagramEditor",
   "namespace": "Tempo.Blazor.Components.Diagram",
   "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramRoutingPreview.razor",

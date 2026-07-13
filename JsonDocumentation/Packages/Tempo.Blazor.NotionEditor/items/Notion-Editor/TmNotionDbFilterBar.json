@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbFilterBar",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbFilterBar Blazor component in the Notion Editor category.",
+  "description": "Filter builder for a database view. Renders condition rows (field, operator, and a type-appropriate value input) and nested AND/OR groups with add, remove, and clear-all, emitting the assembled filter.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDbFilterBar.razor",

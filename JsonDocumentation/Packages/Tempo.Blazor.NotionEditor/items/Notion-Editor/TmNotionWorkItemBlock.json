@@ -2,7 +2,7 @@
   "itemName": "TmNotionWorkItemBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionWorkItemBlock Blazor component in the Notion Editor category.",
+  "description": "Block that embeds a reference to an external work item. When unset and editable it shows a provider dropdown and search that queries work-item providers; once resolved it renders the item as a card, inline, or list per the display mode.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Embed",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Embed/TmNotionWorkItemBlock.razor",

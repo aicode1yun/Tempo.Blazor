@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbCellLastEditedTime",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbCellLastEditedTime Blazor component in the Notion Editor category.",
+  "description": "Read-only display of a record's last-edited-time database cell, formatted as a date with the full timestamp shown on hover.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/Cells/TmNotionDbCellLastEditedTime.razor",

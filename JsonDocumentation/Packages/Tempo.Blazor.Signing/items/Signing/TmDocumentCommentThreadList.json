@@ -2,7 +2,7 @@
   "itemName": "TmDocumentCommentThreadList",
   "kind": "Component",
   "category": "Signing",
-  "description": "TmDocumentCommentThreadList Blazor component in the Signing category.",
+  "description": "List of document comment threads rendered as selectable rows, each showing a stable thread number, title, preview of the latest message, and a mention indicator when the current user is mentioned.",
   "packageId": "Tempo.Blazor.Signing",
   "namespace": "Tempo.Blazor.Components.Signing",
   "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmDocumentCommentThreadList.razor",

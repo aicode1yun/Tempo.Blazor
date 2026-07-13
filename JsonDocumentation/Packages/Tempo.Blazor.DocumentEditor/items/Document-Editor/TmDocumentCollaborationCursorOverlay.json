@@ -2,7 +2,7 @@
   "itemName": "TmDocumentCollaborationCursorOverlay",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentCollaborationCursorOverlay Blazor component in the Document Editor category.",
+  "description": "Overlay that renders remote collaborators' cursors when any are present - each a colored bar with a name/client label positioned over the relevant block via a CSS color variable.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCollaborationCursorOverlay.razor",

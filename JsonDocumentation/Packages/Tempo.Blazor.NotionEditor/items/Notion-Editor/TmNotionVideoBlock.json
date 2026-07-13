@@ -2,7 +2,7 @@
   "itemName": "TmNotionVideoBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionVideoBlock Blazor component in the Notion Editor category.",
+  "description": "Video block. The empty editable state shows an upload zone and media dialog; the filled state shows either a provider iframe embed or a native video player with a replace overlay, plus an editable caption.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Media",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Media/TmNotionVideoBlock.razor",

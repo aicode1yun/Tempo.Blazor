@@ -2,7 +2,7 @@
   "itemName": "TmEmailClassesEditor",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailClassesEditor Blazor component in the Components category.",
+  "description": "Editor for named MJML mj-class definitions. Each class exposes its attribute key/value map (edited via TmEmailKeyValueEditor), and new classes can be added by name or removed.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailClassesEditor.razor",

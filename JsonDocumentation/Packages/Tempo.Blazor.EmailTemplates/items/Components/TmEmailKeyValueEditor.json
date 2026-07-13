@@ -2,7 +2,7 @@
   "itemName": "TmEmailKeyValueEditor",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailKeyValueEditor Blazor component in the Components category.",
+  "description": "Editor for a string-to-string dictionary, presenting each entry as an editable key/value pair with add and remove controls. Rebuilds the dictionary in place on every change.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailKeyValueEditor.razor",

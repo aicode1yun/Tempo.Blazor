@@ -2,7 +2,7 @@
   "itemName": "TmNotionContentByLabelBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionContentByLabelBlock Blazor component in the Notion Editor category.",
+  "description": "Block listing pages that match selected labels, each a clickable navigation button. Editable configuration offers label chips and a picker, a max-items limit, and a sort order.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionContentByLabelBlock.razor",

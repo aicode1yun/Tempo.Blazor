@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbCellLastEditedBy",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbCellLastEditedBy Blazor component in the Notion Editor category.",
+  "description": "Read-only display of a record's last-edited-by database cell, showing the user's avatar initials and name.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/Cells/TmNotionDbCellLastEditedBy.razor",

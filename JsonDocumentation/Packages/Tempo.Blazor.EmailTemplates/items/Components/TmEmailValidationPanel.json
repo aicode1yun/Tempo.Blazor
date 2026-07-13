@@ -2,7 +2,7 @@
   "itemName": "TmEmailValidationPanel",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailValidationPanel Blazor component in the Components category.",
+  "description": "Lists validation findings for the email document, combining structural checks with Scriban template-syntax validation of every template-bearing string. Each finding is severity-tagged and, when clicked, navigates to the offending node.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailValidationPanel.razor",

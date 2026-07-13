@@ -2,7 +2,7 @@
   "itemName": "TmNotionSidebar",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionSidebar Blazor component in the Notion Editor category.",
+  "description": "Main editor sidebar shell rendering the space switcher, a search and new-page header, Favorites, Recent, the root page tree, and a trash toggle, plus a resize handle and template gallery. Loads its data through the context data provider.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Sidebar",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Sidebar/TmNotionSidebar.razor",

@@ -2,7 +2,7 @@
   "itemName": "TmDocumentSidePanel",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentSidePanel Blazor component in the Document Editor category.",
+  "description": "Docked, tabbed side panel for the document editor hosting the Comments, Revisions, Versions, Properties, Outline, and Pages tabs. Each tab is toggleable with a count badge, and an edge toggle reopens the panel after it is closed.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentSidePanel.razor",
