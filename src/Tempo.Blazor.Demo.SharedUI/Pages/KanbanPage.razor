@@ -87,6 +87,24 @@
     }
 </section>
 
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">Virtualized columns (large card count)</h2>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        With <code>VirtualizeCards="true"</code> each column body becomes a fixed-height scroll container that renders
+        only the cards in view via Blazor's built-in <code>&lt;Virtualize&gt;</code>. This board holds
+        <strong>@_manyTasks.Count</strong> cards spread across the columns, yet each column only materializes its
+        visible window as you scroll. <code>CardItemSize</code> sets the estimated card row height.
+    </p>
+
+    <TmKanbanBoard TItem="TaskItem"
+                   Columns="_virtualColumns"
+                   Items="_manyTasks"
+                   ColumnSelector="t => t.Status"
+                   CardTemplate="RenderCard"
+                   VirtualizeCards="true"
+                   CardItemSize="92" />
+</section>
+
 @code {
     private record TaskItem(int Id, string Title, string Status, string Priority, string Assignee);
 
@@ -125,6 +143,38 @@
         new(8, "Deploy v1.0", "done", "High", "Bob"),
         new(9, "User testing", "done", "Medium", "Charlie"),
     ];
+
+    // ── Virtualized board demo (large card count) ──
+
+    private static readonly IReadOnlyList<KanbanColumn> _virtualColumns =
+    [
+        new("backlog", "Backlog", "#6b7280"),
+        new("todo", "To Do", "#3b82f6"),
+        new("doing", "In Progress", "#f59e0b"),
+        new("review", "Review", "#8b5cf6"),
+        new("done", "Done", "#10b981"),
+    ];
+
+    private static readonly List<TaskItem> _manyTasks = BuildManyTasks();
+
+    private static List<TaskItem> BuildManyTasks()
+    {
+        string[] statuses = ["backlog", "todo", "doing", "review", "done"];
+        string[] priorities = ["Low", "Medium", "High", "Critical"];
+        string[] assignees = ["Alice", "Bob", "Charlie", "Dana"];
+
+        var list = new List<TaskItem>(800);
+        for (var i = 1; i <= 800; i++)
+        {
+            list.Add(new TaskItem(
+                10_000 + i,
+                $"Card #{i}",
+                statuses[i % statuses.Length],
+                priorities[i % priorities.Length],
+                assignees[i % assignees.Length]));
+        }
+        return list;
+    }
 
     private void HandleCardClick(TaskItem task) => _clickedTask = task;
 
