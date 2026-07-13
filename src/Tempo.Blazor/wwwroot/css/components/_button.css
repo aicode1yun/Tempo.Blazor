@@ -54,8 +54,12 @@
 }
 /* Dark mode: --tm-color-primary is a lighter blue (primary-400) for accents; white text on it is
    only ~2.4:1, so filled primary buttons use dark text (>=8:1) instead. */
-[data-theme="dark"] .tm-btn-primary {
-  color: var(--tm-color-gray-900);
+[data-theme="dark"] .tm-btn-primary,
+[data-theme="dark"] .tm-btn-danger {
+  /* Dark filled bg is a light 400-tone (primary-400 #60a5fa / danger #f87171); use dark text
+     (--tm-text-inverse #0f172a, ~6.8:1 / ~7.5:1) — NOT gray-900, which the dark palette remaps to
+     #fff (~2.5:1 / ~2.3:1, fails AA). Matches the existing dark-text warning button. */
+  color: var(--tm-text-inverse);
 }
 
 .tm-btn-secondary {

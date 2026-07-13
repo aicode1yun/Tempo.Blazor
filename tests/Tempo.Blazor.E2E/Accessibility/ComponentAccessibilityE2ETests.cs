@@ -141,6 +141,64 @@ public sealed class ComponentAccessibilityE2ETests : WasmTestBase
         Assert.IsTrue(focusReturned, "Focus should return to the modal trigger after close.");
     }
 
+    // ── Dark-theme broadening (this phase) ──────────────────────────────────────────────────────
+    // K8 swept forms/data-table/modal in BOTH themes but the DARK theme was never broadly audited —
+    // filled buttons/badges/alerts (and other component demos) were out of scope. These scans switch
+    // the demo into dark, scope to the component container (NOT whole <main>), and assert ZERO
+    // critical/serious WCAG contrast violations. They filter the same critical+serious impacts as K8
+    // and exclude demo-page CHROME (Tailwind dark: editorial prose the synthetic toggle can't fully
+    // activate) so only the swept component under test is asserted. Light stays covered by the three
+    // K8 both-theme tests above; these are dark-only by design (the audit's remit).
+    private async Task AssertAxeCleanDarkAsync(IPage page, string selector, string screenshotName, string[]? excludeChrome = null)
+    {
+        await SetDarkAsync(page);
+        await SaveScreenshotAsync(page, screenshotName + "-dark");
+        var dark = await AxeViolationsAsync(page, selector, CriticalOrSerious, excludeChrome);
+        Assert.AreEqual(0, dark.Length, "DARK:" + Environment.NewLine + string.Join(Environment.NewLine, dark));
+    }
+
+    [TestMethod]
+    public async Task Buttons_Dark_HasNoCriticalOrSeriousViolations()
+    {
+        var page = await OpenAsync("/buttons");
+        await page.Locator("[data-testid='buttons-variants-card'] .tm-btn").First
+            .WaitForAsync(new LocatorWaitForOptions { Timeout = 30000 });
+
+        // Scope to the first card, which holds every variant (filled primary/danger/warning +
+        // secondary, outline, outline-secondary, outline-warning, ghost, link). In dark the filled
+        // accents are light 400-tones, so primary/danger were switched to dark text in _button.css —
+        // this verifies that fix reads clean. The card has no editorial prose, so no chrome exclude.
+        await AssertAxeCleanDarkAsync(page, "[data-testid='buttons-variants-card']", "buttons-variants");
+    }
+
+    [TestMethod]
+    public async Task Badges_Dark_HasNoCriticalOrSeriousViolations()
+    {
+        var page = await OpenAsync("/data-display");
+        await page.Locator("[data-testid='badges-card'] .tm-badge").First
+            .WaitForAsync(new LocatorWaitForOptions { Timeout = 30000 });
+
+        // Filled colour badges (primary/success/warning/danger/info) paired white text with the dark
+        // palette's light 400-tone fills (~1.4–2.4:1). _badge.css now gives them dark text in dark.
+        // Exclude the card's h3 sub-labels (Tailwind dark:text-slate-300 editorial chrome).
+        await AssertAxeCleanDarkAsync(page, "[data-testid='badges-card']", "badges", excludeChrome: ["h3"]);
+    }
+
+    [TestMethod]
+    public async Task Alerts_Dark_HasNoCriticalOrSeriousViolations()
+    {
+        var page = await OpenAsync("/feedback");
+        await page.Locator("[data-testid='alerts-section'] .tm-alert").First
+            .WaitForAsync(new LocatorWaitForOptions { Timeout = 30000 });
+
+        // Filled alerts kept white text on mid-tone fills that fail AA in dark (worst on the
+        // .9-opacity description). _alert.css now fills them with the bright dark-palette accents +
+        // dark text (mirrors buttons/badges). Soft + outlined variants already had dark overrides.
+        // Exclude the section heading, the count badge, and the uppercase variant labels (chrome).
+        await AssertAxeCleanDarkAsync(page, "[data-testid='alerts-section']", "alerts",
+            excludeChrome: ["h2", "p", ".rounded-full"]);
+    }
+
     private static async Task SaveScreenshotAsync(IPage page, string fileName)
     {
         var dir = Path.Combine(FindRepoRoot().FullName, "tests", "Tempo.Blazor.E2E", "__screenshots__", "accessibility");
