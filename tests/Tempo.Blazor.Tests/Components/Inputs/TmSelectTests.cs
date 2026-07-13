@@ -25,6 +25,28 @@ public class TmSelectTests : LocalizationTestBase
     }
 
     [Fact]
+    public void TmSelect_NoLabel_WithPlaceholder_UsesPlaceholderAsAriaLabel()
+    {
+        // Accessibility: a select with only a placeholder (no visible <label>) must still have
+        // an accessible name so it passes axe select-name.
+        var cut = RenderComponent<TmSelect<string>>(p => p
+            .Add(x => x.Placeholder, "Filter by department"));
+
+        cut.Find("select").GetAttribute("aria-label").Should().Be("Filter by department");
+    }
+
+    [Fact]
+    public void TmSelect_WithLabel_DoesNotSetAriaLabel()
+    {
+        var cut = RenderComponent<TmSelect<string>>(p => p
+            .Add(x => x.Label, "Department")
+            .Add(x => x.Placeholder, "Filter by department"));
+
+        // The visible <label for> already names the control; no aria-label to avoid double-naming.
+        cut.Find("select").GetAttribute("aria-label").Should().BeNull();
+    }
+
+    [Fact]
     public void TmSelect_Label_Renders_Label_Element()
     {
         var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.Label, "Status"));
