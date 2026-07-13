@@ -2,7 +2,7 @@
   "itemName": "TmNotionColumnListBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionColumnListBlock Blazor component in the Notion Editor category.",
+  "description": "Horizontal multi-column layout that places its column children at computed width percentages with drag-to-resize dividers between them and an add-column button up to the configured maximum.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Layout",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Layout/TmNotionColumnListBlock.razor",

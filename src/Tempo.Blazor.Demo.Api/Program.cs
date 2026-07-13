@@ -9,6 +9,7 @@ using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.EmailTemplates.Abstractions;
 using Tempo.Blazor.Mcp;
 using Tempo.Blazor.Models;
+using Tempo.Blazor.WebPush;
 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 

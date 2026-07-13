@@ -2,7 +2,7 @@
   "itemName": "TmCommentReactionBar",
   "kind": "Component",
   "category": "Signing",
-  "description": "TmCommentReactionBar Blazor component in the Signing category.",
+  "description": "Reaction bar for a comment showing each grouped emoji reaction with its count and highlighting the current user's own reactions. An add button opens a TmReactionPicker, and toggling a reaction raises OnReactionToggled.",
   "packageId": "Tempo.Blazor.Signing",
   "namespace": "Tempo.Blazor.Components.Signing",
   "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmCommentReactionBar.razor",

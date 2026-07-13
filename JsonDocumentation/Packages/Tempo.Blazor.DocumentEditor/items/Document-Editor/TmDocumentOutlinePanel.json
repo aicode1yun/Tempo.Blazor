@@ -2,7 +2,7 @@
   "itemName": "TmDocumentOutlinePanel",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentOutlinePanel Blazor component in the Document Editor category.",
+  "description": "Document outline panel rendering the heading structure as a clickable minimap of markers plus a level-indented list of heading links. Highlights the active heading and raises OnNavigateToBlock on selection.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentOutlinePanel.razor",

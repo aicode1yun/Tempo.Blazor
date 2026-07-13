@@ -1,0 +1,48 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "description": "Context passed to a chart tooltip, used both by TmChart's default tooltip and by any custom TooltipTemplate. Describes the hovered data point: its dataset, position, label, value, dataset label, and color.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DatasetIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based index of the dataset the hovered point belongs to."
+    },
+    {
+      "name": "Index",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based index of the point within its dataset (the category/label index)."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string",
+      "description": "Category label of the hovered point (the X-axis or slice label)."
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "double",
+      "description": "Numeric value of the hovered point."
+    },
+    {
+      "name": "DatasetLabel",
+      "kind": "Property",
+      "type": "string",
+      "description": "Label of the dataset (as shown in the legend)."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string",
+      "description": "Resolved color of the hovered point or series."
+    }
+  ],
+  "itemName": "ChartTooltipContext"
+}

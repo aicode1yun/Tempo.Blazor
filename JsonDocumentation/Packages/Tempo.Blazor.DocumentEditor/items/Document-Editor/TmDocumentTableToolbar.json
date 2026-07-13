@@ -2,7 +2,7 @@
   "itemName": "TmDocumentTableToolbar",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentTableToolbar Blazor component in the Document Editor category.",
+  "description": "Toolbar of icon buttons for editing the current table: insert or delete rows and columns (before/after), merge and split cells, and open the table or cell properties panels. Each action raises its own callback.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentTableToolbar.razor",

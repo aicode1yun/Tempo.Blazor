@@ -2,7 +2,7 @@
   "itemName": "TmNotionPagePropertiesReportBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionPagePropertiesReportBlock Blazor component in the Notion Editor category.",
+  "description": "Block rendering a table that aggregates page properties across pages matching configured labels and columns (via a provider), with clickable page-title links and editable configuration, plus no-provider, loading, and empty states.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionPagePropertiesReportBlock.razor",

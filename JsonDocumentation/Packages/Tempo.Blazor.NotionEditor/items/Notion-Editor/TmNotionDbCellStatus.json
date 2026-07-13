@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbCellStatus",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbCellStatus Blazor component in the Notion Editor category.",
+  "description": "Editor for a status database cell, showing the selected option chip and, when editing, a searchable popup with options grouped by status group.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/Cells/TmNotionDbCellStatus.razor",

@@ -2,6 +2,8 @@ using Bunit;
 using FluentAssertions;
 using Tempo.Blazor.Abstractions.Models;
 using Tempo.Blazor.Components.Inputs;
+using Tempo.Blazor.Interfaces;
+using Tempo.Blazor.Models;
 using Tempo.Blazor.Tests.Localization;
 using Xunit;
 
@@ -25,6 +27,19 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
         new() { Title = "Category", Field = p => p.Category },
         new() { Title = "Price", Field = p => p.Price, Width = "80px" },
     };
+
+    /// <summary>Provider that supports inline create-new and recent items via the K10 default-interface methods.</summary>
+    private sealed class FakeProductProvider : IDropdownDataProvider<Product>
+    {
+        public Task<DropdownDataResult<Product>> GetItemsAsync(DropdownSearchRequest request, CancellationToken ct = default)
+            => Task.FromResult(DropdownDataResult<Product>.WithAllItems(GetProducts()));
+
+        public Task<Product?> CreateAsync(string text, CancellationToken ct = default)
+            => Task.FromResult<Product?>(new Product(99, text, "New", 0m));
+
+        public Task<IReadOnlyList<Product>> GetRecentAsync(CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<Product>>(new List<Product> { new(2, "Mouse", "Electronics", 25m) });
+    }
 
     [Fact]
     public void TmMultiColumnComboBox_Renders_Trigger()
@@ -210,5 +225,105 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
         filterInput.Input("XYZ");
 
         cut.Find(".tm-multi-column-combo-box__empty").TextContent.Should().Contain("No results");
+    }
+
+    // ── K10: multi-select, create-new, recent ──────────────────────
+
+    [Fact]
+    public void TmMultiColumnComboBox_MultiSelect_Toggles_And_RaisesSelectedValuesChanged()
+    {
+        IReadOnlyList<int> selected = new List<int>();
+
+        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+            .Add(c => c.Data, GetProducts())
+            .Add(c => c.ValueField, p => p.Id)
+            .Add(c => c.TextField, p => p.Name)
+            .Add(c => c.Columns, GetColumns())
+            .Add(c => c.MultiSelect, true)
+            .Add(c => c.SelectedValues, selected)
+            .Add(c => c.SelectedValuesChanged, v => selected = v));
+
+        cut.Find(".tm-multi-column-combo-box__trigger").Click();
+        cut.FindAll(".tm-multi-column-combo-box__tr")[0].Click();
+
+        selected.Should().BeEquivalentTo(new[] { 1 });
+
+        // Simulate two-way binding (@bind-SelectedValues) before the second toggle.
+        cut.SetParametersAndRender(p => p.Add(c => c.SelectedValues, selected));
+        cut.FindAll(".tm-multi-column-combo-box__tr")[1].Click();
+
+        selected.Should().BeEquivalentTo(new[] { 1, 2 });
+    }
+
+    [Fact]
+    public void TmMultiColumnComboBox_MultiSelect_Deselect_RemovesValue()
+    {
+        IReadOnlyList<int> selected = new List<int> { 1 };
+
+        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+            .Add(c => c.Data, GetProducts())
+            .Add(c => c.ValueField, p => p.Id)
+            .Add(c => c.TextField, p => p.Name)
+            .Add(c => c.Columns, GetColumns())
+            .Add(c => c.MultiSelect, true)
+            .Add(c => c.SelectedValues, selected)
+            .Add(c => c.SelectedValuesChanged, v => selected = v));
+
+        cut.Find(".tm-multi-column-combo-box__trigger").Click();
+        cut.FindAll(".tm-multi-column-combo-box__tr")[0].Click(); // Laptop (id 1) selected → toggle off
+
+        selected.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TmMultiColumnComboBox_MultiSelect_Shows_Chips_For_Selected()
+    {
+        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+            .Add(c => c.Data, GetProducts())
+            .Add(c => c.ValueField, p => p.Id)
+            .Add(c => c.TextField, p => p.Name)
+            .Add(c => c.Columns, GetColumns())
+            .Add(c => c.MultiSelect, true)
+            .Add(c => c.SelectedValues, new List<int> { 1, 3 }));
+
+        cut.FindAll(".tm-multi-column-combo-box__chip").Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void TmMultiColumnComboBox_CreateNew_AddsAndSelectsItem()
+    {
+        int? value = null;
+
+        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+            .Add(c => c.Data, GetProducts())
+            .Add(c => c.ValueField, p => p.Id)
+            .Add(c => c.TextField, p => p.Name)
+            .Add(c => c.Columns, GetColumns())
+            .Add(c => c.AllowCreateNew, true)
+            .Add(c => c.DataProvider, new FakeProductProvider())
+            .Add(c => c.ValueChanged, v => value = v));
+
+        cut.Find(".tm-multi-column-combo-box__trigger").Click();
+        cut.Find(".tm-multi-column-combo-box__filter input").Input("Gadget");
+        cut.Find(".tm-multi-column-combo-box__create").Click();
+
+        value.Should().Be(99);
+    }
+
+    [Fact]
+    public void TmMultiColumnComboBox_Recent_RendersItems_OnOpen()
+    {
+        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+            .Add(c => c.Data, GetProducts())
+            .Add(c => c.ValueField, p => p.Id)
+            .Add(c => c.TextField, p => p.Name)
+            .Add(c => c.Columns, GetColumns())
+            .Add(c => c.ShowRecent, true)
+            .Add(c => c.DataProvider, new FakeProductProvider()));
+
+        cut.Find(".tm-multi-column-combo-box__trigger").Click();
+
+        cut.WaitForState(() => cut.FindAll(".tm-multi-column-combo-box__recent-item").Count > 0);
+        cut.Find(".tm-multi-column-combo-box__recent").TextContent.Should().Contain("Mouse");
     }
 }

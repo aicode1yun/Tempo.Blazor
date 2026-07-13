@@ -1,0 +1,23 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Optional async provider that supplies foreign-exchange rates to TmCurrencyInput. When a provider is supplied, the component fetches the rate for a conversion and multiplies the entered amount by it; when no provider is supplied, the component falls back to its existing callback-based ConvertAsync FX so existing consumers keep working unchanged. For a ready-made implementation, use InMemoryExchangeRateProvider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IExchangeRateProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetRateAsync",
+      "kind": "Method",
+      "type": "Task<decimal?>",
+      "description": "Returns the multiplier to convert one unit of fromCurrency into toCurrency (toAmount = fromAmount * rate). Returns null when the rate is unavailable, signalling the consumer to keep the existing value rather than converting.",
+      "parameters": [
+        { "name": "fromCurrency", "type": "string", "description": "Source currency code (e.g. \"USD\")." },
+        { "name": "toCurrency", "type": "string", "description": "Target currency code (e.g. \"CZK\")." },
+        { "name": "ct", "type": "CancellationToken", "description": "Token used to cancel the operation." }
+      ]
+    }
+  ],
+  "itemName": "IExchangeRateProvider"
+}

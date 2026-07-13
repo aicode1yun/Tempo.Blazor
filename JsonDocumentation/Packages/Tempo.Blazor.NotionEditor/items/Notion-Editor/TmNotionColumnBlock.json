@@ -2,7 +2,7 @@
   "itemName": "TmNotionColumnBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionColumnBlock Blazor component in the Notion Editor category.",
+  "description": "Single column within a column layout, rendering its child blocks as a nested block list (with a loading skeleton) and forwarding child reorder, focus, delete, update, add, and menu callbacks to the parent.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Layout",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Layout/TmNotionColumnBlock.razor",

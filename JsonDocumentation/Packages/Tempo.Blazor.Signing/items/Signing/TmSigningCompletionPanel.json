@@ -2,7 +2,7 @@
   "itemName": "TmSigningCompletionPanel",
   "kind": "Component",
   "category": "Signing",
-  "description": "TmSigningCompletionPanel Blazor component in the Signing category.",
+  "description": "Confirmation panel shown after a signer finishes, reflecting either a completed or waiting-for-others state. Offers actions to download the signed document, send a copy by email, and an optional custom action.",
   "packageId": "Tempo.Blazor.Signing",
   "namespace": "Tempo.Blazor.Components.Signing",
   "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmSigningCompletionPanel.razor",

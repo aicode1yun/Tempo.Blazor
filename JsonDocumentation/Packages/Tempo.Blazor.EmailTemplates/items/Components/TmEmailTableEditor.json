@@ -2,7 +2,7 @@
   "itemName": "TmEmailTableEditor",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailTableEditor Blazor component in the Components category.",
+  "description": "Grid editor for a table block's cells. Lets the user edit each cell's text, mark rows as header rows, and add or remove rows and columns.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTableEditor.razor",

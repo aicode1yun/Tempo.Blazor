@@ -41,10 +41,10 @@
                         var count = GetWidgetCountByCategory(category.Id);
                         if (count > 0)
                         {
-                            <button type="button" 
-                                    class="tm-widget-selector-category @(_selectedCategory == category.Id ? "tm-widget-selector-category--active" : "")"
+                            <button type="button"
+                                    class="tm-widget-selector-category @(_selectedCategory == category.Id ? "tm-widget-selector-category--active" : "") @GetCategoryColorClass(category.Id)"
                                     @onclick="() => SelectCategory(category.Id)"
-                                    style="--category-color: @(category.Color ?? "#6366f1")">
+                                    style="@GetCategoryColorStyle(category.Id)">
                                 <TmIcon Name="@category.Icon" Size="IconSize.Sm" />
                                 <span>@GetCategoryName(category)</span>
                                 <span class="tm-widget-selector-count">@count</span>
@@ -64,7 +64,7 @@
                             <div class="tm-widget-card @(!CanAddWidget(widget) ? "tm-widget-card--disabled" : "")"
                                  @onclick="() => SelectWidget(widget)">
                                 
-                                <div class="tm-widget-card-icon" style="background: @GetCategoryColor(widget.Category)">
+                                <div class="tm-widget-card-icon @GetCategoryColorClass(widget.Category)" style="@GetCategoryColorStyle(widget.Category)">
                                     <TmIcon Name="@widget.Icon" Size="IconSize.Lg" />
                                 </div>
                                 
@@ -173,10 +173,22 @@
         return WidgetRegistry?.GetWidgetsByCategory(categoryId).Count() ?? 0;
     }
     
-    private string GetCategoryColor(string categoryId)
+    // Built-in categories are rendered via theme-aware categorical tokens (--tm-category-N),
+    // exposed through a BEM colour class so dark mode gets proper values. Custom/host-supplied
+    // categories keep their inline model .Color (the model's public Color defaults are unchanged).
+    private static bool IsBuiltInCategory(string categoryId)
+        => WidgetCategories.All.Any(c => c.Id == categoryId);
+
+    // BEM colour class for a built-in category (maps to var(--tm-category-N)); empty for custom.
+    private static string GetCategoryColorClass(string categoryId)
+        => IsBuiltInCategory(categoryId) ? $"tm-dashboard-category--{categoryId.ToLowerInvariant()}" : "";
+
+    // Inline --category-color for custom/unknown categories; empty for built-in (class supplies it).
+    private string GetCategoryColorStyle(string categoryId)
     {
-        var category = WidgetCategories.All.FirstOrDefault(c => c.Id == categoryId);
-        return category?.Color ?? "#6366f1";
+        if (IsBuiltInCategory(categoryId)) return "";
+        var color = GetCategories().FirstOrDefault(c => c.Id == categoryId)?.Color ?? "var(--tm-category-fallback)";
+        return $"--category-color: {color}";
     }
     
     private void SelectCategory(string? categoryId)

@@ -79,6 +79,16 @@
     gap: var(--tm-space-2, 0.5rem);
 }
 
+/* ── Virtualized card list (opt-in VirtualizeCards) ── */
+
+/* Bounds the column body to a definite height so Blazor's <Virtualize> has a scroll
+   viewport to measure and only the visible window of cards is rendered. */
+.tm-kanban__cards--virtual {
+    --tm-kanban-virtual-max-height: 520px;
+    max-height: var(--tm-kanban-virtual-max-height);
+    overflow-y: auto;
+}
+
 /* ── Card ── */
 
 .tm-kanban__card {

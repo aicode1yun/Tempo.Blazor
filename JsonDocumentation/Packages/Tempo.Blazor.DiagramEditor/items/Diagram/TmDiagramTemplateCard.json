@@ -2,7 +2,7 @@
   "itemName": "TmDiagramTemplateCard",
   "kind": "Component",
   "category": "Diagram",
-  "description": "TmDiagramTemplateCard Blazor component in the Diagram category.",
+  "description": "Selectable card that previews a single diagram template, showing its thumbnail (or an initial-letter placeholder), name, and up to three tags. Raises OnClick when chosen; used to populate the template gallery grid.",
   "packageId": "Tempo.Blazor.DiagramEditor",
   "namespace": "Tempo.Blazor.Components.Diagram",
   "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Templates/TmDiagramTemplateCard.razor",

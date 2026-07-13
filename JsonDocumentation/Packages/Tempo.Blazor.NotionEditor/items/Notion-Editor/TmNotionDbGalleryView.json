@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbGalleryView",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbGalleryView Blazor component in the Notion Editor category.",
+  "description": "Gallery view showing database records as a grid of cards with a cover image (from a cover or files field), title, and preview properties. Card size and cover fit are configurable, with an add-card button.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDbGalleryView.razor",

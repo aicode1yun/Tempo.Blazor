@@ -1,0 +1,22 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Optional server-side (or async) data provider for TmTimeline, TmActivityTimeline, and TmActivityLog. Implement this to power filtering and incremental (\"load more\") pagination of audit-scale timelines from an API or database. When no provider is supplied the components fall back to filtering and paging the in-memory Entries list client-side, so existing consumers keep working unchanged. For a ready-made in-memory implementation, use InMemoryTimelineDataProvider from Tempo.Blazor.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ITimelineDataProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetEntriesAsync",
+      "kind": "Method",
+      "type": "Task<TimelinePage>",
+      "description": "Fetches a filtered, windowed slice of timeline entries for the given query.",
+      "parameters": [
+        { "name": "query", "type": "TimelineQuery", "description": "Filter and paging options for the requested slice." },
+        { "name": "ct", "type": "CancellationToken", "description": "Token used to cancel the operation." }
+      ]
+    }
+  ],
+  "itemName": "ITimelineDataProvider"
+}

@@ -2,7 +2,7 @@
   "itemName": "TmNotionAiMenu",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionAiMenu Blazor component in the Notion Editor category.",
+  "description": "AI assistant panel with Generate, Improve, Summarize, and Ask tabs. Runs the AI provider, streaming output into a live region, and offers run, accept (as HTML), retry, cancel, and discard.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionAiMenu.razor",

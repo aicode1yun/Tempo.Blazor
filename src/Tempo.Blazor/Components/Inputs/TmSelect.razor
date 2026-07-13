@@ -14,6 +14,7 @@
                 class="@SelectCssClass"
                 aria-invalid="@(IsInvalid ? "true" : null)"
                 aria-describedby="@DescribedBy"
+                aria-label="@(string.IsNullOrEmpty(Label) && !string.IsNullOrEmpty(Placeholder) ? Placeholder : null)"
                 @onchange="HandleChangeAsync">
             @if (!string.IsNullOrEmpty(Placeholder))
             {

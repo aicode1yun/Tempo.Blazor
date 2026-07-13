@@ -2,7 +2,7 @@
   "itemName": "TmEmailHtmlAttributesEditor",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailHtmlAttributesEditor Blazor component in the Components category.",
+  "description": "Editor for MJML mj-html-attributes selectors. Each selector has a target path and a key/value list of attributes (edited via TmEmailKeyValueEditor); selectors can be added or removed.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailHtmlAttributesEditor.razor",

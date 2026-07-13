@@ -2,7 +2,7 @@
   "itemName": "TmEmailTemplatePreview",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailTemplatePreview Blazor component in the Components category.",
+  "description": "Live preview of the rendered email with desktop/mobile device toggles and HTML/plain-text view switching. Includes a sample-data editor (with generation) for resolving template variables and surfaces any rendering warnings.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTemplatePreview.razor",

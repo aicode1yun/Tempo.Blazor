@@ -2,7 +2,7 @@
   "itemName": "TmPdfSignatureVerification",
   "kind": "Component",
   "category": "Signing",
-  "description": "TmPdfSignatureVerification Blazor component in the Signing category.",
+  "description": "Panel that presents the result of verifying a PDF's digital signatures. Shows an overall status (loading, empty, valid, invalid), file name and checksum, and a per-signature breakdown of signer, timestamp, verification method, and certificate subject.",
   "packageId": "Tempo.Blazor.Signing",
   "namespace": "Tempo.Blazor.Components.Signing",
   "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmPdfSignatureVerification.razor",

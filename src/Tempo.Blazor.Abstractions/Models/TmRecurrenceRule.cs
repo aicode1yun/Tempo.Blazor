@@ -32,6 +32,15 @@ public class TmRecurrenceRule
     public DayOfWeek[]? ByDay { get; set; }
 
     /// <summary>
+    /// The day the workweek starts (RFC 5545 <c>WKST</c>). For <c>WEEKLY</c> rules with
+    /// <see cref="Interval"/> &gt; 1 and multiple <see cref="ByDay"/> entries, this determines which
+    /// week an occurrence falls into and therefore the resulting dates. Defaults to
+    /// <see cref="DayOfWeek.Monday"/>, matching the RFC 5545 default (behavior is unchanged when
+    /// <c>WKST</c> is absent).
+    /// </summary>
+    public DayOfWeek WeekStart { get; set; } = DayOfWeek.Monday;
+
+    /// <summary>
     /// Positional BYDAY entries for MONTHLY/YEARLY frequency, e.g. <c>3TH</c> (3rd Thursday) or
     /// <c>-1FR</c> (last Friday). Ordinal is 1-based from the start, or negative from the end.
     /// </summary>

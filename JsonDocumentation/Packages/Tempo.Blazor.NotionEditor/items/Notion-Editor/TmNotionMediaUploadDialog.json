@@ -2,7 +2,7 @@
   "itemName": "TmNotionMediaUploadDialog",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionMediaUploadDialog Blazor component in the Notion Editor category.",
+  "description": "Media-insertion modal with Upload (drag-and-drop or file picker), Embed (URL), and Library (searchable paginated grid) tabs, validating and uploading through the file provider and raising OnConfirmed with a file id or URL.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionMediaUploadDialog.razor",

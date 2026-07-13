@@ -2,7 +2,7 @@
   "itemName": "TmDocumentImageWrapPanel",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentImageWrapPanel Blazor component in the Document Editor category.",
+  "description": "Floating toolbar for a selected image offering alt-text, caption, replace, and delete actions, a seven-mode text-wrap control, and (for non-inline modes) horizontal position, edge-distance fields, an anchor lock, and a more-options button.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentImageWrapPanel.razor",

@@ -1,0 +1,24 @@
+{
+  "kind": "Record",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "The result handed back to the host when the user applies a column mapping in TmImportWizard. Carries both the chosen Mappings (which source column went to which target field) and the Rows re-projected onto the target field keys, with mapped values only and ignored columns omitted. This is a mapping payload, not a full import engine.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ImportMappingResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Mappings",
+      "kind": "Property",
+      "type": "IReadOnlyList<ImportColumnMapping>",
+      "description": "The chosen column-to-field mappings, one per detected source column."
+    },
+    {
+      "name": "Rows",
+      "kind": "Property",
+      "type": "IReadOnlyList<IReadOnlyDictionary<string, string>>",
+      "description": "Data rows keyed by ImportTargetField.Key; a key is present only when a source column was mapped to it."
+    }
+  ],
+  "itemName": "ImportMappingResult"
+}

@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbCellRelation",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbCellRelation Blazor component in the Notion Editor category.",
+  "description": "Read-only display of a relation database cell, rendering linked record ids as chips or a no-linked-records placeholder.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/Cells/TmNotionDbCellRelation.razor",

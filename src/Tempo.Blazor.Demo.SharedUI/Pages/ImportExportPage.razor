@@ -1,4 +1,5 @@
 @page "/import-export"
+@using System.Text
 @using Tempo.Blazor.Components.ImportExport
 @using Tempo.Blazor.Components.DataTable
 @using Tempo.Blazor.Models
@@ -241,6 +242,70 @@
     </div>
 </section>
 
+<!-- Real CSV parse + column mapping (K10) -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">CSV Parse &amp; Column Mapping</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Real parsing via the IImportFileParser hook, then map detected columns to target fields</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">K10</span>
+    </div>
+
+    <div class="showcase-card">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="space-y-3">
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Sample CSV (paste or edit)</label>
+                <textarea class="w-full h-40 p-3 text-sm font-mono border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                          @bind="_sampleCsv"></textarea>
+                <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" OnClick="ParseSampleCsvAsync">
+                    <TmIcon Name="play" class="mr-2" />
+                    Parse sample CSV
+                </TmButton>
+
+                <TmImportWizard @ref="_k10Wizard"
+                                ShowStepIndicator="false"
+                                Parser="_csvParser"
+                                TargetFields="_k10TargetFields"
+                                OnMapped="HandleMapped"
+                                OnCancel="ResetK10" />
+            </div>
+
+            <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Mapped Result</h3>
+                @if (_mappedRows is { Count: > 0 })
+                {
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50 dark:bg-slate-800">
+                            <tr>
+                                @foreach (var field in _k10TargetFields)
+                                {
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-slate-500">@field.Label</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                            @foreach (var row in _mappedRows)
+                            {
+                                <tr>
+                                    @foreach (var field in _k10TargetFields)
+                                    {
+                                        <td class="px-3 py-2">@(row.TryGetValue(field.Key, out var v) ? v : "—")</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="text-sm text-slate-500 italic">Parse a CSV above, adjust the mapping, then click Apply mapping.</p>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Combined Import/Export Demo -->
 <section class="demo-section">
     <div class="flex items-center justify-between mb-4">
@@ -407,6 +472,43 @@
     private void ShowExportDialog()
     {
         Toast.ShowInfo("Export dialog would open here");
+    }
+
+    // K10: real CSV parse + column mapping
+    private readonly CsvImportFileParser _csvParser = new();
+    private TmImportWizard? _k10Wizard;
+    private string _sampleCsv =
+        "Name,Email,Department\n" +
+        "Alice Johnson,alice.j@example.com,Engineering\n" +
+        "Bob Smith,bob.smith@example.com,Sales\n" +
+        "Carol White,carol.w@example.com,Marketing";
+
+    private readonly List<ImportTargetField> _k10TargetFields = new()
+    {
+        new("name", "Name"),
+        new("email", "Email"),
+        new("department", "Department"),
+    };
+
+    private IReadOnlyList<IReadOnlyDictionary<string, string>>? _mappedRows;
+
+    private async Task ParseSampleCsvAsync()
+    {
+        if (_k10Wizard is null) return;
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(_sampleCsv));
+        await _k10Wizard.ParseAsync(stream);
+    }
+
+    private void HandleMapped(ImportMappingResult result)
+    {
+        _mappedRows = result.Rows;
+        var mappedCount = result.Mappings.Count(m => m.TargetFieldKey is not null);
+        Toast.ShowSuccess($"Mapped {result.Rows.Count} row(s) across {mappedCount} field(s).");
+    }
+
+    private void ResetK10()
+    {
+        _mappedRows = null;
     }
 
     private async Task HandleModalWizardComplete()

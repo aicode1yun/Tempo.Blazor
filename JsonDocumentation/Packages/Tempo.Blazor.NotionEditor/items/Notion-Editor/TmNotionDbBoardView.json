@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbBoardView",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbBoardView Blazor component in the Notion Editor category.",
+  "description": "Kanban board view that groups database records into columns by a select or status field. Renders cards with cover image, title, and preview properties, supports drag-and-drop between columns (which rewrites the group field), and offers per-column add-card.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDbBoardView.razor",

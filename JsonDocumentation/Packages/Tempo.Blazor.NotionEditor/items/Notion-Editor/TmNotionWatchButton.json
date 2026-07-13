@@ -2,7 +2,7 @@
   "itemName": "TmNotionWatchButton",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionWatchButton Blazor component in the Notion Editor category.",
+  "description": "Watch/unwatch toggle button for a page, with an include-children checkbox when watching, loading and persisting the subscription state through the watch provider.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionWatchButton.razor",

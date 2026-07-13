@@ -1,5 +1,6 @@
 @namespace Tempo.Blazor.Components.Inputs
 @using Tempo.Blazor.Models
+@using Tempo.Blazor.Interfaces
 
 <div class="tm-currency-input @Class" @attributes="AdditionalAttributes">
     <div class="tm-currency-input__row">
@@ -31,7 +32,7 @@
                       Placeholder="–" />
         </div>
 
-        @if (ConvertAsync is not null)
+        @if (HasConversion)
         {
             <div class="tm-currency-input__converted">
                 <div class="tm-input-wrapper">
@@ -60,7 +61,7 @@
 
     </div>
 
-    @if (ShowManualRate && ConvertAsync is not null)
+    @if (ShowManualRate && HasConversion)
     {
         <div class="tm-currency-input__manual-rate">
             <div class="tm-input-wrapper">
@@ -113,9 +114,25 @@
     /// <summary>
     /// Optional async callback for converting Amount to another currency.
     /// Receives (amount, currencyCode) and returns the converted value.
-    /// When null, the converted amount column is hidden entirely.
+    /// Used as a fallback when <see cref="ExchangeRateProvider"/> is not supplied.
+    /// When both this and <see cref="ExchangeRateProvider"/> are null, the converted amount column is hidden entirely.
     /// </summary>
     [Parameter] public Func<decimal, string, Task<decimal?>>? ConvertAsync { get; set; }
+
+    /// <summary>
+    /// Optional exchange-rate provider. When supplied, it takes precedence over <see cref="ConvertAsync"/>:
+    /// the component fetches the rate for <see cref="Currency"/> → <see cref="TargetCurrency"/> and multiplies
+    /// the amount by it. If the provider returns <c>null</c> (rate unavailable), the converted value is left
+    /// unchanged. When null, the existing <see cref="ConvertAsync"/> callback is used exactly as before.
+    /// </summary>
+    [Parameter] public IExchangeRateProvider? ExchangeRateProvider { get; set; }
+
+    /// <summary>
+    /// Target currency code the amount is converted into when using <see cref="ExchangeRateProvider"/>.
+    /// When null, the selected <see cref="Currency"/> is used as the target (a self-conversion).
+    /// Ignored by the callback-based <see cref="ConvertAsync"/> path, which encodes its own target.
+    /// </summary>
+    [Parameter] public string? TargetCurrency { get; set; }
 
     // ── Display options ────────────────────────────────────────────────────────
 
@@ -149,6 +166,9 @@
     private string? _convertedText;
     private string? _manualRateText;
     private bool _converting;
+
+    /// <summary>True when a conversion source (provider or callback) is available.</summary>
+    private bool HasConversion => ExchangeRateProvider is not null || ConvertAsync is not null;
 
     private string ResolvedAmountLabel    => AmountLabel    ?? Loc["TmCurrencyInput_Amount"];
     private string ResolvedCurrencyLabel  => CurrencyLabel  ?? Loc["TmCurrencyInput_Currency"];
@@ -205,14 +225,14 @@
 
     private async Task TriggerConversionAsync()
     {
-        if (ConvertAsync is null) return;
+        if (!HasConversion) return;
         if (!Amount.HasValue || string.IsNullOrEmpty(Currency))
         {
             await SetConvertedAsync(null);
             return;
         }
 
-        // If a manual rate is provided, use it directly without calling ConvertAsync
+        // A manual rate override, when shown, wins over any conversion source.
         if (ShowManualRate && ManualRate.HasValue && ManualRate.Value > 0)
         {
             await SetConvertedAsync(Math.Round(Amount.Value * ManualRate.Value, 2));
@@ -224,8 +244,22 @@
 
         try
         {
-            var result = await ConvertAsync(Amount.Value, Currency);
-            await SetConvertedAsync(result);
+            if (ExchangeRateProvider is not null)
+            {
+                var rate = await ExchangeRateProvider.GetRateAsync(Currency, TargetCurrency ?? Currency);
+                if (rate is null)
+                {
+                    // Rate unavailable: keep the existing converted value, do not convert.
+                    return;
+                }
+
+                await SetConvertedAsync(Math.Round(Amount.Value * rate.Value, 2));
+            }
+            else
+            {
+                var result = await ConvertAsync!(Amount.Value, Currency);
+                await SetConvertedAsync(result);
+            }
         }
         finally
         {

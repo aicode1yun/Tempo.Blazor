@@ -2,7 +2,7 @@
   "itemName": "TmDocumentPasteReport",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentPasteReport Blazor component in the Document Editor category.",
+  "description": "Status banner, shown only when a paste produced warnings, that summarizes the warning count and can expand to a details list of warning codes and messages.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentPasteReport.razor",

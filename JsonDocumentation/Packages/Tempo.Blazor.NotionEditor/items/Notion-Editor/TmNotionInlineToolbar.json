@@ -2,7 +2,7 @@
   "itemName": "TmNotionInlineToolbar",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionInlineToolbar Blazor component in the Notion Editor category.",
+  "description": "Floating text-selection formatting toolbar - bold, italic, underline, strikethrough, inline code, link, color, turn-into, align, comment, math, and optional AI - applying formats via interop and swapping in link, color, turn-into, and align sub-panels.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionInlineToolbar.razor",

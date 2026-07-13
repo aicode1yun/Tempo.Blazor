@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbTemplateEditor",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbTemplateEditor Blazor component in the Notion Editor category.",
+  "description": "Modal for editing a database record template - its name and emoji, default field values (via TmNotionDbCell), and template content blocks - auto-saving through the database provider.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDbTemplateEditor.razor",

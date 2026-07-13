@@ -2,7 +2,7 @@
   "itemName": "TmNotionPageTreeItem",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionPageTreeItem Blazor component in the Notion Editor category.",
+  "description": "Recursive page-tree node with a selection checkbox, an expand toggle that lazy-loads children, an icon, a title with inline rename, hover add-child and menu buttons, drag-and-drop move, and a context menu (rename, duplicate, move, favorite, delete).",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Sidebar",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Sidebar/TmNotionPageTreeItem.razor",

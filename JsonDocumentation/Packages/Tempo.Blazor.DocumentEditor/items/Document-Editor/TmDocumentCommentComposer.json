@@ -2,7 +2,7 @@
   "itemName": "TmDocumentCommentComposer",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentCommentComposer Blazor component in the Document Editor category.",
+  "description": "Comment input with a textarea and an inline @-mention autocomplete backed by a mention provider, plus submit and optional cancel actions; trims and emits the text on submit.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCommentComposer.razor",

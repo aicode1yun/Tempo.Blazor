@@ -2,7 +2,7 @@
   "itemName": "TmNotionDatabaseBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDatabaseBlock Blazor component in the Notion Editor category.",
+  "description": "Top-level inline or linked database block. Renders an editable title and icon, a toolbar (filter, sort, group, sub-items, properties, import/export, and new-record with templates), view tabs, and the active view, loading fields, views, and records through the database provider.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDatabaseBlock.razor",

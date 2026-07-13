@@ -2,7 +2,7 @@
   "itemName": "TmNotionTemplateGallery",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionTemplateGallery Blazor component in the Notion Editor category.",
+  "description": "Modal template gallery with search, category tabs, and a grid of template cards (icon, preview, description) each with a Use button, loading templates through the template provider and always including a blank template.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionTemplateGallery.razor",

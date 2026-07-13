@@ -601,6 +601,12 @@ public abstract class LocalizationTestBase : TestContext
         ["TmTimeline_HoursAgo"]    = "{0} h ago",
         ["TmTimeline_DaysAgo"]     = "{0} days ago",
         ["TmTimeline_DateFormat"]  = "MMM d, yyyy",
+        ["TmTimeline_FilterLabel"]        = "Search activity",
+        ["TmTimeline_FilterPlaceholder"]  = "Search activity...",
+        ["TmTimeline_LoadMore"]           = "Load more",
+        ["TmTimeline_ShowingCount"]       = "Showing {0} of {1}",
+        ["TmTimeline_TypeFilterAll"]      = "All types",
+        ["TmTimeline_TypeFilterLabel"]    = "Filter by type",
 
         // TmTreeView
         ["TmTreeView_Search"]    = "Search...",
@@ -807,6 +813,16 @@ public abstract class LocalizationTestBase : TestContext
 
         // TmInlineEdit
         ["TmInlineEdit_Placeholder"] = "Click to edit",
+
+        // TmImportWizard - K10 parse + column mapping
+        ["TmImportWizard_ApplyMapping"] = "Apply mapping",
+        ["TmImportWizard_DetectedColumns"] = "Detected columns",
+        ["TmImportWizard_Ignore"] = "Ignore column",
+        ["TmImportWizard_RowsDetected"] = "{0} rows detected",
+        ["TmImportWizard_SourceColumn"] = "File column",
+        ["TmImportWizard_TargetField"] = "Maps to",
+        ["TmImportWizard_UploadHint"] = "CSV files are supported.",
+        ["TmImportWizard_UploadPrompt"] = "Select a file to import",
 
         // TmKanbanBoard
         ["TmKanbanBoard_Empty"] = "No items",
@@ -1788,11 +1804,20 @@ public abstract class LocalizationTestBase : TestContext
         ["TmFileManager_Download"] = "Download",
         ["TmFileManager_DownloadAll"] = "Download All",
 
+        // TmEntityPicker
+        ["TmEntityPicker_NoResults"] = "No results found",
+        ["TmEntityPicker_CreateNew"] = "Create \"{0}\"",
+        ["TmEntityPicker_Recent"] = "Recent",
+        ["TmEntityPicker_RemoveItem"] = "Remove {0}",
+
         // TmMultiColumnComboBox
         ["TmMultiColumnComboBox_Placeholder"] = "Select an item...",
         ["TmMultiColumnComboBox_Clear"] = "Clear selection",
+        ["TmMultiColumnComboBox_CreateNew"] = "Create \"{0}\"",
         ["TmMultiColumnComboBox_FilterPlaceholder"] = "Search...",
         ["TmMultiColumnComboBox_NoResults"] = "No results found",
+        ["TmMultiColumnComboBox_Recent"] = "Recent",
+        ["TmMultiColumnComboBox_RemoveItem"] = "Remove {0}",
 
         // TmRecurrenceEditor
         ["TmRecurrenceEditor_Pattern"] = "Pattern",
@@ -3874,6 +3899,16 @@ public abstract class LocalizationTestBase : TestContext
         // TmInlineEdit
         ["TmInlineEdit_Placeholder"] = "Klikněte pro úpravu...",
 
+        // TmImportWizard - K10 parse + column mapping
+        ["TmImportWizard_ApplyMapping"] = "Použít mapování",
+        ["TmImportWizard_DetectedColumns"] = "Zjištěné sloupce",
+        ["TmImportWizard_Ignore"] = "Ignorovat sloupec",
+        ["TmImportWizard_RowsDetected"] = "Zjištěno řádků: {0}",
+        ["TmImportWizard_SourceColumn"] = "Sloupec souboru",
+        ["TmImportWizard_TargetField"] = "Mapuje se na",
+        ["TmImportWizard_UploadHint"] = "Podporovány jsou soubory CSV.",
+        ["TmImportWizard_UploadPrompt"] = "Vyberte soubor k importu",
+
         // TmRichEditor - Tokens
         ["TmRichEditor_Token"] = "Vložit proměnnou",
         ["TmRichEditor_TokenEmpty"] = "Žádné proměnné nenalezeny",
@@ -4521,11 +4556,20 @@ public abstract class LocalizationTestBase : TestContext
         ["TmFileManager_Download"] = "Stáhnout",
         ["TmFileManager_DownloadAll"] = "Stáhnout vše",
 
+        // TmEntityPicker
+        ["TmEntityPicker_NoResults"] = "Žádné výsledky",
+        ["TmEntityPicker_CreateNew"] = "Vytvořit \"{0}\"",
+        ["TmEntityPicker_Recent"] = "Nedávné",
+        ["TmEntityPicker_RemoveItem"] = "Odebrat {0}",
+
         // TmMultiColumnComboBox
         ["TmMultiColumnComboBox_Placeholder"] = "Vyberte polozku...",
         ["TmMultiColumnComboBox_Clear"] = "Vymazat výběr",
+        ["TmMultiColumnComboBox_CreateNew"] = "Vytvořit \"{0}\"",
         ["TmMultiColumnComboBox_FilterPlaceholder"] = "Hledat...",
         ["TmMultiColumnComboBox_NoResults"] = "Žádné výsledky",
+        ["TmMultiColumnComboBox_Recent"] = "Nedávné",
+        ["TmMultiColumnComboBox_RemoveItem"] = "Odebrat {0}",
 
         // TmRecurrenceEditor
         ["TmRecurrenceEditor_Pattern"] = "Opakování",

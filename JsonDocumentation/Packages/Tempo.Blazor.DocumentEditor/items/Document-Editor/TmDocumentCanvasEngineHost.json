@@ -2,7 +2,7 @@
   "itemName": "TmDocumentCanvasEngineHost",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentCanvasEngineHost Blazor component in the Document Editor category.",
+  "description": "Blazor host for the canvas-based document editing engine. Renders the mount root with stacked canvas layers (background, content, objects, selection, annotations, diagnostics), an accessibility mirror, live region, and hidden input, and bootstraps and drives the JavaScript canvas editor through a broad JS interop surface covering document replace, command execution, clipboard, collaboration, comments, and export.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCanvasEngineHost.razor",

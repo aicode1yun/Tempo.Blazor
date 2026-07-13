@@ -2,7 +2,7 @@
   "itemName": "TmNotionPageCommentSection",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionPageCommentSection Blazor component in the Notion Editor category.",
+  "description": "Thin labeled-section wrapper that renders TmNotionPageCommentPanel, forwarding the page id, expanded state, and the expanded, count, and mention callbacks.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionPageCommentSection.razor",

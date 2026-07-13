@@ -2,7 +2,7 @@
   "itemName": "TmNotionPagePropertiesBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionPagePropertiesBlock Blazor component in the Notion Editor category.",
+  "description": "Block rendering an editable key/value properties table for the page, with an add-row button and per-row key input, value textarea, and delete, plus an empty state.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionPagePropertiesBlock.razor",

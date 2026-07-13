@@ -2,7 +2,7 @@
   "itemName": "TmNotionTokenDropdown",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionTokenDropdown Blazor component in the Notion Editor category.",
+  "description": "Token autocomplete dropdown with a search input and a results list (icon, name, description, type) plus an optional create-token footer, keyboard-navigable and searching through the token provider.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionTokenDropdown.razor",

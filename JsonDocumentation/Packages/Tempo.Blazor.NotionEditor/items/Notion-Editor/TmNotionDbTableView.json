@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbTableView",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbTableView Blazor component in the Notion Editor category.",
+  "description": "Spreadsheet-style table view of a database. Renders a select-all header, resizable and drag-reorderable field columns with an add-field button, and grouped collapsible rows with inline per-cell editing (TmNotionDbCell), row selection, expandable sub-items, and add-row.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDbTableView.razor",

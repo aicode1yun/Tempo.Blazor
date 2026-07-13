@@ -491,6 +491,27 @@ public class TmChartTests : LocalizationTestBase
         cut.FindAll("path.tm-chart__slice").Count.Should().Be(2);
     }
 
+    [Fact]
+    public void InteractiveLegend_DataSwap_ClearsHiddenState()
+    {
+        var first = MultiDatasetData;
+        var second = MultiDatasetData; // distinct instance, same shape
+
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, first)
+            .Add(x => x.InteractiveLegend, true));
+
+        cut.FindAll("button.tm-chart__legend-item")[0].Click();
+        cut.FindAll("rect.tm-chart__bar").Count.Should().Be(3);
+
+        // Parent swaps in a different (same-shape) dataset → hidden state must reset.
+        cut.SetParametersAndRender(p => p.Add(x => x.Data, second));
+
+        cut.FindAll("rect.tm-chart__bar").Count.Should().Be(6);
+        cut.FindAll(".tm-chart__legend-item--hidden").Count.Should().Be(0);
+    }
+
     // ── Tooltips (K10) ──
 
     [Fact]

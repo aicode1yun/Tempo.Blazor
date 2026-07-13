@@ -2,9 +2,26 @@
   "kind": "Enum",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Inputs",
-  "description": "Outcome of a picker search or resolve fetch.",
+  "description": "Outcome of a TmUserPicker search or resolve fetch. Callers must distinguish Empty (the fetch succeeded and found nothing) from Transient (the fetch itself failed, e.g. a network blip); conflating the two hides real outages behind a silent \"no results\" message.",
   "packageId": "Tempo.Blazor",
   "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmPickerFetchState.cs",
   "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Ok",
+      "kind": "Field",
+      "description": "The fetch succeeded."
+    },
+    {
+      "name": "Empty",
+      "kind": "Field",
+      "description": "The fetch succeeded but found no matching items."
+    },
+    {
+      "name": "Transient",
+      "kind": "Field",
+      "description": "The fetch failed for a reason that may resolve on retry (timeout, network error, 5xx, and similar)."
+    }
+  ],
   "itemName": "TmPickerFetchState"
 }

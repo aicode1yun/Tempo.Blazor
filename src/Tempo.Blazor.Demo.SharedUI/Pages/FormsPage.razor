@@ -517,6 +517,20 @@
         </div>
 
         <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">With IExchangeRateProvider (in-memory rate table)</h3>
+            <TmCurrencyInput Currencies="@_demoCurrencies"
+                             @bind-Amount="_currAmount4"
+                             @bind-Currency="_currCurrency4"
+                             @bind-ConvertedAmount="_currConverted4"
+                             ExchangeRateProvider="_rateProvider"
+                             TargetCurrency="CZK"
+                             ConvertedLabel="Amount (CZK)" />
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">
+                Rate fetched via <code>GetRateAsync(currency, "CZK")</code>. Converted: <strong>@(_currConverted4?.ToString("N2") ?? "–") CZK</strong>
+            </p>
+        </div>
+
+        <div class="showcase-card">
             <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">With manual rate override</h3>
             <TmCurrencyInput Currencies="@_demoCurrencies"
                              @bind-Amount="_currAmount3"
@@ -977,10 +991,18 @@
     private decimal? _currConverted3;
     private decimal? _currManualRate3;
 
+    private decimal? _currAmount4;
+    private string? _currCurrency4;
+    private decimal? _currConverted4;
+
     private static readonly Dictionary<string, decimal> _demoRates = new()
     {
         { "USD", 23.10m }, { "EUR", 25.40m }, { "GBP", 29.80m }, { "CZK", 1m }, { "CHF", 25.90m },
     };
+
+    // Provider-driven conversion: a small in-memory (currency → CZK) rate table.
+    private static readonly IExchangeRateProvider _rateProvider = new InMemoryExchangeRateProvider(
+        _demoRates.ToDictionary(kvp => (kvp.Key, "CZK"), kvp => kvp.Value));
 
     private async Task<decimal?> SimulateConvertAsync(decimal amount, string currency)
     {

@@ -1,0 +1,23 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Pluggable hook that parses an uploaded import file into rows and detected columns. Supply an implementation to TmImportWizard to power its parse and column-mapping flow. The core library ships a dependency-free CSV implementation (CsvImportFileParser); this interface is the extension point that lets a future package provide an XLSX or JSON parser without any change to the wizard.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IImportFileParser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ParseAsync",
+      "kind": "Method",
+      "type": "Task<ImportParseResult>",
+      "description": "Parses the supplied stream into detected columns and raw string rows using the given options.",
+      "parameters": [
+        { "name": "stream", "type": "Stream", "description": "Readable stream of the uploaded file's bytes." },
+        { "name": "options", "type": "ImportParseOptions", "description": "Parsing options (header handling, delimiter)." },
+        { "name": "ct", "type": "CancellationToken", "description": "Token used to cancel the operation." }
+      ]
+    }
+  ],
+  "itemName": "IImportFileParser"
+}

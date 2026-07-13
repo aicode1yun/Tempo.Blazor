@@ -2,7 +2,7 @@
   "itemName": "TmNotionPageReactions",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionPageReactions Blazor component in the Notion Editor category.",
+  "description": "Row of page reactions with a like button, emoji-reaction count pills, and an add-reaction picker popover, toggling likes and reactions through the reaction provider.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Page/TmNotionPageReactions.razor",

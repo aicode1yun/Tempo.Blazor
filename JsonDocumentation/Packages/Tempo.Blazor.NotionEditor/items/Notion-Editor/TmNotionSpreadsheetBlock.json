@@ -2,7 +2,7 @@
   "itemName": "TmNotionSpreadsheetBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionSpreadsheetBlock Blazor component in the Notion Editor category.",
+  "description": "Block embedding a Tempo spreadsheet document via a dynamic component with an Edit button that opens TmNotionSpreadsheetEditModal. The empty editable state offers create and insert-existing actions, plus an editable caption and a not-found state.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/TempoBlocks/TmNotionSpreadsheetBlock.razor",

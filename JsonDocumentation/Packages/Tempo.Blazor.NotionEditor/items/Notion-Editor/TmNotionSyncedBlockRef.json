@@ -2,7 +2,7 @@
   "itemName": "TmNotionSyncedBlockRef",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionSyncedBlockRef Blazor component in the Notion Editor category.",
+  "description": "Block rendering a mirror reference to a synced origin block: a header with a badge, a go-to-origin link, and an unsync button, above a nested list of the mirrored child blocks.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Synced",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Synced/TmNotionSyncedBlockRef.razor",

@@ -2,7 +2,7 @@
   "itemName": "TmGanttPortfolio",
   "kind": "Component",
   "category": "Scheduler",
-  "description": "TmGanttPortfolio Blazor component in the Scheduler category.",
+  "description": "Portfolio overview that renders multiple projects, each shown as a summary TmGantt with its own tasks and dependencies, giving a roll-up view across several project schedules.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.Scheduler",
   "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttPortfolio.razor",

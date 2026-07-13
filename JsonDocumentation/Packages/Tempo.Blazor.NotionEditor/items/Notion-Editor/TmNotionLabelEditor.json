@@ -2,7 +2,7 @@
   "itemName": "TmNotionLabelEditor",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionLabelEditor Blazor component in the Notion Editor category.",
+  "description": "Page-label editor rendering removable label chips, an add-input with autocomplete suggestions, and a per-label filter panel listing pages sharing the label, persisting through the data provider.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionLabelEditor.razor",

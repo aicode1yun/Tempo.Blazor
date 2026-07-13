@@ -2,7 +2,7 @@
   "itemName": "TmNotionEquationBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionEquationBlock Blazor component in the Notion Editor category.",
+  "description": "Block rendering a math equation. Edit mode shows a textarea with a live preview and cancel/done buttons; view mode shows the rendered expression or a placeholder.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionEquationBlock.razor",

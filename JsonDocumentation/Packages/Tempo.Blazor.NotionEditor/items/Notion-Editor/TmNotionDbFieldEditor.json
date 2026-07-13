@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbFieldEditor",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbFieldEditor Blazor component in the Notion Editor category.",
+  "description": "Dialog for editing a database field's name and type with type-specific configuration - select and multi-select options, status groups, number format, formula expression, relation target, rollup settings, and date format - plus duplicate and delete.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/TmNotionDbFieldEditor.razor",

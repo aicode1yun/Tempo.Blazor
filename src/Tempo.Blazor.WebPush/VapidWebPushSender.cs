@@ -4,7 +4,7 @@ using Tempo.Blazor.Abstractions.Interfaces;
 using Tempo.Blazor.Abstractions.Shared;
 using WebPush;
 
-namespace Tempo.Blazor.Demo.Api.Services;
+namespace Tempo.Blazor.WebPush;
 
 /// <summary>
 /// <see cref="IWebPushSender"/> that encrypts and delivers payloads to browser push services

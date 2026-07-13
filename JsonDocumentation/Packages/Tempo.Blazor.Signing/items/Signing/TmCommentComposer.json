@@ -2,7 +2,7 @@
   "itemName": "TmCommentComposer",
   "kind": "Component",
   "category": "Signing",
-  "description": "TmCommentComposer Blazor component in the Signing category.",
+  "description": "Text input for composing a comment or reply, with @-mention autocomplete that filters a user list as you type, keyboard navigation of suggestions, and chips summarizing the selected mentions before submit.",
   "packageId": "Tempo.Blazor.Signing",
   "namespace": "Tempo.Blazor.Components.Signing",
   "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmCommentComposer.razor",

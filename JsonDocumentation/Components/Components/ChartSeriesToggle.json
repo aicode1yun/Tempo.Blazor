@@ -1,0 +1,30 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "description": "Event payload raised by TmChart when a series (multi-dataset legend) or a single value (per-value legend) is toggled through the interactive legend. Reports which legend item changed and whether it is now hidden.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Index",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based index of the toggled legend item (the dataset index for a multi-series legend, or the value index for a per-value legend)."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display label of the toggled legend item."
+    },
+    {
+      "name": "Hidden",
+      "kind": "Property",
+      "type": "bool",
+      "description": "True when the series or value is now hidden; false when it has been re-shown."
+    }
+  ],
+  "itemName": "ChartSeriesToggle"
+}

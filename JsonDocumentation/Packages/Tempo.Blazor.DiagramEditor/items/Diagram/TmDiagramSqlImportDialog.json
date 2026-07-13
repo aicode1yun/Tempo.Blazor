@@ -2,7 +2,7 @@
   "itemName": "TmDiagramSqlImportDialog",
   "kind": "Component",
   "category": "Diagram",
-  "description": "TmDiagramSqlImportDialog Blazor component in the Diagram category.",
+  "description": "Modal dialog that generates an entity-relationship diagram from pasted SQL DDL. The user picks a layout for the parsed tables and sees a preview of how many tables and relations were detected before importing.",
   "packageId": "Tempo.Blazor.DiagramEditor",
   "namespace": "Tempo.Blazor.Components.Diagram",
   "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramSqlImportDialog.razor",

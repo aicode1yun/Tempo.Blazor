@@ -13,10 +13,10 @@
     <ProjectReference Include="..\Tempo.Blazor.EmailTemplates.Abstractions\Tempo.Blazor.EmailTemplates.Abstractions.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.Mcp\Tempo.Blazor.Mcp.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.Wireframe\Tempo.Blazor.Wireframe.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.WebPush\Tempo.Blazor.WebPush.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MailKit" Version="4.17.0" />
-    <PackageReference Include="WebPush" Version="1.0.12" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
     <PackageReference Include="QuestPDF" Version="2026.2.4" />

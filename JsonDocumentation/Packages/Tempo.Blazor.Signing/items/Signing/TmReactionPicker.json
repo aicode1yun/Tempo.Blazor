@@ -2,7 +2,7 @@
   "itemName": "TmReactionPicker",
   "kind": "Component",
   "category": "Signing",
-  "description": "TmReactionPicker Blazor component in the Signing category.",
+  "description": "Small popover listbox presenting a set of emoji reaction choices for a comment. Raises OnSelected with the chosen reaction; defaults to a thumbs-up/check/eyes/heart/party set.",
   "packageId": "Tempo.Blazor.Signing",
   "namespace": "Tempo.Blazor.Components.Signing",
   "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmReactionPicker.razor",

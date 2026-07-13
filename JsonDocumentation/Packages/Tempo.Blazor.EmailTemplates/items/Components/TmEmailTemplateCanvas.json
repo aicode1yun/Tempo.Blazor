@@ -2,7 +2,7 @@
   "itemName": "TmEmailTemplateCanvas",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailTemplateCanvas Blazor component in the Components category.",
+  "description": "Central editing canvas that renders an email document's sections, columns, and blocks. Supports selection, drag-and-drop, keyboard navigation, and per-section toolbars for adding columns and moving, duplicating, or deleting a section.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTemplateCanvas.razor",

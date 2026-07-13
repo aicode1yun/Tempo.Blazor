@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Interfaces;
 
 namespace Tempo.Blazor.Components.Inputs;
 
@@ -12,6 +13,8 @@ public partial class TmMultiColumnComboBox<TItem, TValue>
     private string _filterText = string.Empty;
     private readonly List<MultiColumnComboBoxColumn<TItem>> _columns = [];
     private IReadOnlyList<TItem> _filteredItems = [];
+    private List<TItem> _recentItems = [];
+    private readonly List<TItem> _createdItems = [];
 
     // ── Parameters ───────────────────────────────────────────────
 
@@ -54,6 +57,24 @@ public partial class TmMultiColumnComboBox<TItem, TValue>
     /// <summary>Column definitions for the dropdown grid.</summary>
     [Parameter] public IReadOnlyList<MultiColumnComboBoxColumn<TItem>> Columns { get; set; } = [];
 
+    /// <summary>Enables multi-select mode: selections are tracked via <see cref="SelectedValues"/> and rendered as chips in the trigger. Default <c>false</c>.</summary>
+    [Parameter] public bool MultiSelect { get; set; }
+
+    /// <summary>The selected values in multi-select mode (source of truth when <see cref="MultiSelect"/> is <c>true</c>).</summary>
+    [Parameter] public IReadOnlyList<TValue> SelectedValues { get; set; } = [];
+
+    /// <summary>Fires when the multi-select selection changes.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<TValue>> SelectedValuesChanged { get; set; }
+
+    /// <summary>Shows an inline "create new" row that calls <see cref="DataProvider"/>.CreateAsync. Requires <see cref="DataProvider"/>. Default <c>false</c>.</summary>
+    [Parameter] public bool AllowCreateNew { get; set; }
+
+    /// <summary>Shows a "recent" group loaded from <see cref="DataProvider"/>.GetRecentAsync when the dropdown opens. Requires <see cref="DataProvider"/>. Default <c>false</c>.</summary>
+    [Parameter] public bool ShowRecent { get; set; }
+
+    /// <summary>Optional data provider that powers the create-new and recent-items features (opt-in). The grid still binds to <see cref="Data"/>.</summary>
+    [Parameter] public IDropdownDataProvider<TItem>? DataProvider { get; set; }
+
     // ── Lifecycle ────────────────────────────────────────────────
 
     /// <inheritdoc />
@@ -72,7 +93,13 @@ public partial class TmMultiColumnComboBox<TItem, TValue>
         if (Disabled) return;
         _isOpen = !_isOpen;
         if (_isOpen)
+        {
             _filteredItems = ApplyFilter(Data, _filterText);
+            if (ShowRecent && DataProvider is not null && _recentItems.Count == 0)
+            {
+                await LoadRecentAsync();
+            }
+        }
     }
 
     private async Task SelectItemAsync(TItem item)
@@ -80,14 +107,78 @@ public partial class TmMultiColumnComboBox<TItem, TValue>
         if (Disabled || ValueField is null) return;
 
         var value = ValueField(item);
-        await ValueChanged.InvokeAsync(value);
-        _isOpen = false;
+
+        if (MultiSelect)
+        {
+            var list = SelectedValues.ToList();
+            var existing = list.FindIndex(v => EqualityComparer<TValue>.Default.Equals(v, value));
+            if (existing >= 0)
+            {
+                list.RemoveAt(existing);
+            }
+            else
+            {
+                list.Add(value);
+            }
+            await SelectedValuesChanged.InvokeAsync(list);
+            // Keep the dropdown open so the user can toggle multiple items.
+        }
+        else
+        {
+            await ValueChanged.InvokeAsync(value);
+            _isOpen = false;
+        }
+    }
+
+    private async Task RemoveValueAsync(TValue value)
+    {
+        if (Disabled) return;
+        var list = SelectedValues.Where(v => !EqualityComparer<TValue>.Default.Equals(v, value)).ToList();
+        await SelectedValuesChanged.InvokeAsync(list);
+    }
+
+    private async Task CreateNewAsync()
+    {
+        if (Disabled || DataProvider is null) return;
+
+        var created = await DataProvider.CreateAsync(_filterText);
+        if (created is null) return;
+
+        _createdItems.Add(created);
+        await SelectItemAsync(created);
+        if (MultiSelect)
+        {
+            // Reset the query so the create row disappears and the new chip is visible.
+            _filterText = string.Empty;
+            _filteredItems = ApplyFilter(Data, _filterText);
+        }
+    }
+
+    private async Task LoadRecentAsync()
+    {
+        try
+        {
+            var recent = await DataProvider!.GetRecentAsync();
+            _recentItems = recent.ToList();
+        }
+        catch
+        {
+            _recentItems.Clear();
+        }
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ClearValueAsync()
     {
         if (Disabled) return;
-        await ValueChanged.InvokeAsync(default);
+        if (MultiSelect)
+        {
+            await SelectedValuesChanged.InvokeAsync(Array.Empty<TValue>());
+        }
+        else
+        {
+            await ValueChanged.InvokeAsync(default);
+        }
     }
 
     private async Task OnFilterChangedAsync(string text)
@@ -131,9 +222,64 @@ public partial class TmMultiColumnComboBox<TItem, TValue>
 
     private bool IsItemSelected(TItem item)
     {
-        if (ValueField is null || Value is null) return false;
+        if (ValueField is null) return false;
         var itemValue = ValueField(item);
+
+        if (MultiSelect)
+        {
+            return SelectedValues.Any(v => EqualityComparer<TValue>.Default.Equals(v, itemValue));
+        }
+
+        if (Value is null) return false;
         return EqualityComparer<TValue>.Default.Equals(itemValue, Value);
+    }
+
+    /// <summary>Whether the multi-select trigger currently has a non-empty selection.</summary>
+    private bool HasSelection => MultiSelect ? SelectedValues.Count > 0 : Value is not null && !IsEmptyValue(Value);
+
+    /// <summary>Whether the recent-items group should render in the dropdown.</summary>
+    private bool RecentVisible => ShowRecent && _recentItems.Count > 0 && string.IsNullOrWhiteSpace(_filterText);
+
+    /// <summary>Whether the inline create-new row should render.</summary>
+    private bool ShowCreateOption => AllowCreateNew && DataProvider is not null && !string.IsNullOrWhiteSpace(_filterText);
+
+    /// <summary>Resolves the items backing the current multi-select chips (from <see cref="Data"/> or created items).</summary>
+    private IEnumerable<(TValue Value, string Text)> GetSelectedChips()
+    {
+        if (ValueField is null)
+        {
+            yield break;
+        }
+
+        foreach (var value in SelectedValues)
+        {
+            var item = FindItem(value);
+            var text = item is not null && TextField is not null
+                ? TextField(item)
+                : value?.ToString() ?? string.Empty;
+            yield return (value, text);
+        }
+    }
+
+    private TItem? FindItem(TValue value)
+    {
+        if (ValueField is null) return default;
+
+        foreach (var item in Data)
+        {
+            if (EqualityComparer<TValue>.Default.Equals(ValueField(item), value))
+            {
+                return item;
+            }
+        }
+        foreach (var item in _createdItems)
+        {
+            if (EqualityComparer<TValue>.Default.Equals(ValueField(item), value))
+            {
+                return item;
+            }
+        }
+        return default;
     }
 
     private string GetItemKey(TItem item)

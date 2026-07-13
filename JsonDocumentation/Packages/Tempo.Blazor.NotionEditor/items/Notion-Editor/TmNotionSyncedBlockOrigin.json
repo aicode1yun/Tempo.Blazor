@@ -2,7 +2,7 @@
   "itemName": "TmNotionSyncedBlockOrigin",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionSyncedBlockOrigin Blazor component in the Notion Editor category.",
+  "description": "Block rendering the origin of a synced block: a header with a sync badge, reference count, and copy-and-sync button, above a nested list of the synced child blocks.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Synced",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Synced/TmNotionSyncedBlockOrigin.razor",

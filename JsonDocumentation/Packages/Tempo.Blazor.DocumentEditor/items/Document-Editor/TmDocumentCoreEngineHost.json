@@ -2,7 +2,7 @@
   "itemName": "TmDocumentCoreEngineHost",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentCoreEngineHost Blazor component in the Document Editor category.",
+  "description": "Blazor host that wraps the JavaScript-owned core (text) document engine. Renders the editor surface, exposes an imperative handle once the engine is ready, and forwards engine events to .NET: debounced model changes for autosave, object selection, text operations for collaboration, and context-menu requests.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCoreEngineHost.razor",

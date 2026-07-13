@@ -3,6 +3,7 @@
 @using Tempo.Blazor.Components.Buttons
 @using Tempo.Blazor.Components.Workflow
 @using Tempo.Blazor.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
 
 <div class="tm-import-wizard @Class">
     @if (ShowStepIndicator && _steps.Count > 0)
@@ -16,6 +17,75 @@
         <CascadingValue Value="this" IsFixed="true">
             @ChildContent
         </CascadingValue>
+
+        @if (Parser is not null)
+        {
+            <div class="tm-import-wizard__parse">
+                @if (_parseResult is null)
+                {
+                    <div class="tm-import-wizard__upload" data-testid="@TestId("import-upload")">
+                        <label class="tm-import-wizard__upload-label">@Loc["TmImportWizard_UploadPrompt"]</label>
+                        <InputFile class="tm-import-wizard__upload-input"
+                                   data-testid="@TestId("import-file")"
+                                   OnChange="OnParseFileSelectedAsync" />
+                        <p class="tm-import-wizard__upload-hint">@Loc["TmImportWizard_UploadHint"]</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="tm-import-wizard__mapping" data-testid="@TestId("import-mapping")">
+                        <div class="tm-import-wizard__mapping-summary">
+                            <span class="tm-import-wizard__mapping-title">@Loc["TmImportWizard_DetectedColumns"]</span>
+                            <span class="tm-import-wizard__mapping-count">
+                                @(string.Format(Loc["TmImportWizard_RowsDetected"], _parseResult.Rows.Count))
+                            </span>
+                        </div>
+
+                        <table class="tm-import-wizard__mapping-table">
+                            <thead>
+                                <tr>
+                                    <th>@Loc["TmImportWizard_SourceColumn"]</th>
+                                    <th>@Loc["TmImportWizard_TargetField"]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var column in _parseResult.Columns)
+                                {
+                                    <tr data-testid="@TestId($"import-map-row-{column.Index}")">
+                                        <td class="tm-import-wizard__map-column">@column.Name</td>
+                                        <td>
+                                            <select class="tm-import-wizard__map-select"
+                                                    data-testid="@TestId($"import-map-select-{column.Index}")"
+                                                    value="@(_mappings.GetValueOrDefault(column.Index) ?? string.Empty)"
+                                                    @onchange="e => OnMapChanged(column.Index, e)">
+                                                <option value="" selected="@(_mappings.GetValueOrDefault(column.Index) is null)">
+                                                    @Loc["TmImportWizard_Ignore"]
+                                                </option>
+                                                @foreach (var field in TargetFields ?? [])
+                                                {
+                                                    <option value="@field.Key"
+                                                            selected="@(string.Equals(_mappings.GetValueOrDefault(column.Index), field.Key, StringComparison.Ordinal))">
+                                                        @field.Label
+                                                    </option>
+                                                }
+                                            </select>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <div class="tm-import-wizard__mapping-actions">
+                            <span data-testid="@TestId("import-map-apply")">
+                                <TmButton Variant="ButtonVariant.Primary" OnClick="ApplyMappingAsync">
+                                    @Loc["TmImportWizard_ApplyMapping"]
+                                </TmButton>
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </div>
 
     <div class="tm-import-wizard-actions">
@@ -23,23 +93,26 @@
             <TmButton Variant="ButtonVariant.Ghost" OnClick="@OnCancel">@DisplayCancelText</TmButton>
         </span>
         <div class="tm-import-wizard-actions-right">
-            @if (ActiveStep > 0)
+            @if (_steps.Count > 0)
             {
-                <span data-testid="@TestId("wizard-back")">
-                    <TmButton Variant="ButtonVariant.Secondary" OnClick="@GoBack">@DisplayBackText</TmButton>
-                </span>
-            }
-            @if (IsLastStep)
-            {
-                <span data-testid="@TestId("wizard-complete")">
-                    <TmButton Variant="ButtonVariant.Primary" OnClick="@OnComplete">@DisplayCompleteText</TmButton>
-                </span>
-            }
-            else
-            {
-                <span data-testid="@TestId("wizard-next")">
-                    <TmButton Variant="ButtonVariant.Primary" OnClick="@GoNext">@DisplayNextText</TmButton>
-                </span>
+                @if (ActiveStep > 0)
+                {
+                    <span data-testid="@TestId("wizard-back")">
+                        <TmButton Variant="ButtonVariant.Secondary" OnClick="@GoBack">@DisplayBackText</TmButton>
+                    </span>
+                }
+                @if (IsLastStep)
+                {
+                    <span data-testid="@TestId("wizard-complete")">
+                        <TmButton Variant="ButtonVariant.Primary" OnClick="@OnComplete">@DisplayCompleteText</TmButton>
+                    </span>
+                }
+                else
+                {
+                    <span data-testid="@TestId("wizard-next")">
+                        <TmButton Variant="ButtonVariant.Primary" OnClick="@GoNext">@DisplayNextText</TmButton>
+                    </span>
+                }
             }
         </div>
     </div>
@@ -47,6 +120,8 @@
 
 @code {
     private readonly List<TmImportWizardStep> _steps = [];
+    private readonly Dictionary<int, string?> _mappings = [];
+    private ImportParseResult? _parseResult;
 
     /// <summary>Wizard step components.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
@@ -81,12 +156,33 @@
     /// <summary>Additional CSS class(es).</summary>
     [Parameter] public string? Class { get; set; }
 
+    /// <summary>
+    /// Optional parser hook. When supplied, the wizard renders a built-in upload → column-mapping
+    /// panel: it parses the chosen file, shows the detected columns, and lets the user map each
+    /// column to a <see cref="TargetFields"/> entry. When null the wizard behaves exactly as before.
+    /// </summary>
+    [Parameter] public IImportFileParser? Parser { get; set; }
+
+    /// <summary>Options passed to <see cref="Parser"/>. Defaults to <c>new ImportParseOptions()</c>.</summary>
+    [Parameter] public ImportParseOptions? ParseOptions { get; set; }
+
+    /// <summary>Target fields the host declares as mapping destinations for detected columns.</summary>
+    [Parameter] public IReadOnlyList<ImportTargetField>? TargetFields { get; set; }
+
+    /// <summary>Fires when the user applies a column mapping, carrying the mapping and mapped rows.</summary>
+    [Parameter] public EventCallback<ImportMappingResult> OnMapped { get; set; }
+
+    private const long MaxParseFileBytes = 10 * 1024 * 1024;
+
     private bool IsLastStep => _steps.Count > 0 && ActiveStep >= _steps.Count - 1;
 
     private string DisplayCompleteText => CompleteText ?? Loc["TmImportWizard_Complete"];
     private string DisplayNextText => NextText ?? Loc["TmImportWizard_Next"];
     private string DisplayBackText => BackText ?? Loc["TmImportWizard_Back"];
     private string DisplayCancelText => CancelText ?? Loc["TmImportWizard_Cancel"];
+
+    /// <summary>The most recent parse result, or null before any file has been parsed.</summary>
+    public ImportParseResult? ParseResult => _parseResult;
 
     internal bool IsStepActive(TmImportWizardStep step)
     {
@@ -106,6 +202,85 @@
     internal void UnregisterStep(TmImportWizardStep step)
     {
         _steps.Remove(step);
+    }
+
+    /// <summary>
+    /// Parses <paramref name="stream"/> with the supplied <see cref="Parser"/>, stores the detected
+    /// columns/rows, and auto-maps columns whose name matches a target field's key or label. No-op
+    /// when no <see cref="Parser"/> is configured.
+    /// </summary>
+    public async Task ParseAsync(Stream stream, CancellationToken ct = default)
+    {
+        if (Parser is null)
+        {
+            return;
+        }
+
+        var options = ParseOptions ?? new ImportParseOptions();
+        _parseResult = await Parser.ParseAsync(stream, options, ct);
+
+        _mappings.Clear();
+        if (_parseResult is not null && TargetFields is not null)
+        {
+            foreach (var column in _parseResult.Columns)
+            {
+                var match = TargetFields.FirstOrDefault(field =>
+                    string.Equals(field.Key, column.Name, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(field.Label, column.Name, StringComparison.OrdinalIgnoreCase));
+                _mappings[column.Index] = match?.Key;
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task OnParseFileSelectedAsync(InputFileChangeEventArgs e)
+    {
+        if (Parser is null)
+        {
+            return;
+        }
+
+        await using var stream = e.File.OpenReadStream(MaxParseFileBytes);
+        await ParseAsync(stream);
+    }
+
+    private void OnMapChanged(int columnIndex, ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        _mappings[columnIndex] = string.IsNullOrEmpty(value) ? null : value;
+    }
+
+    private async Task ApplyMappingAsync()
+    {
+        if (_parseResult is null)
+        {
+            return;
+        }
+
+        var mappings = _parseResult.Columns
+            .Select(column => new ImportColumnMapping(
+                column.Index, column.Name, _mappings.GetValueOrDefault(column.Index)))
+            .ToList();
+
+        var rows = new List<IReadOnlyDictionary<string, string>>(_parseResult.Rows.Count);
+        foreach (var raw in _parseResult.Rows)
+        {
+            var mapped = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var mapping in mappings)
+            {
+                if (string.IsNullOrEmpty(mapping.TargetFieldKey))
+                {
+                    continue;
+                }
+
+                mapped[mapping.TargetFieldKey] =
+                    mapping.ColumnIndex < raw.Count ? raw[mapping.ColumnIndex] : string.Empty;
+            }
+            rows.Add(mapped);
+        }
+
+        await OnMapped.InvokeAsync(new ImportMappingResult(mappings, rows));
     }
 
     private IEnumerable<IStepItem> GetStepItems() =>

@@ -77,6 +77,32 @@ public class IcsCalendarSerializerTests
     }
 
     [Fact]
+    public void RoundTrip_PreservesWkstInRrule()
+    {
+        var original = new TmScheduleEvent
+        {
+            Id = "wk1",
+            Title = "Biweekly pair",
+            Start = new DateTimeOffset(1997, 8, 5, 9, 0, 0, TimeSpan.Zero),
+            End = new DateTimeOffset(1997, 8, 5, 10, 0, 0, TimeSpan.Zero),
+            RecurrenceRule = RecurrenceEngine.Serialize(new TmRecurrenceRule
+            {
+                Frequency = TmRecurrenceFrequency.Weekly,
+                Interval = 2,
+                ByDay = [DayOfWeek.Tuesday, DayOfWeek.Sunday],
+                WeekStart = DayOfWeek.Sunday
+            })
+        };
+
+        var ics = _ics.Export([original]);
+        ics.Should().Contain("WKST=SU");
+
+        var back = _ics.Import(ics);
+        back[0].RecurrenceRule.Should().Contain("WKST=SU");
+        RecurrenceEngine.Parse(back[0].RecurrenceRule)!.WeekStart.Should().Be(DayOfWeek.Sunday);
+    }
+
+    [Fact]
     public void RoundTrip_EscapesSpecialCharacters()
     {
         var original = new TmScheduleEvent

@@ -2,7 +2,7 @@
   "itemName": "TmDocumentTokenMenu",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentTokenMenu Blazor component in the Document Editor category.",
+  "description": "Thin wrapper around the token autocomplete popup used to insert document tokens. Forwards visibility, the token list, query, highlighted index, and loading state, with token creation disabled.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentTokenMenu.razor",

@@ -715,4 +715,70 @@ public class TmKanbanBoardTests : LocalizationTestBase
         full.FromSwimlane.Should().Be("laneA");
         full.ToSwimlane.Should().Be("laneB");
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // K10: opt-in vertical CARD virtualization within columns
+    // ══════════════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void Kanban_VirtualizeCards_RendersVirtualizedColumnBody_WithCards()
+    {
+        // A column holding many cards. With VirtualizeCards on, its body becomes a dedicated
+        // scroll container that renders the visible window through <Virtualize>.
+        var many = Enumerable.Range(1, 60).Select(i => new KanbanTask(i, $"Task {i}", "todo")).ToList();
+
+        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+            .Add(x => x.Columns, Columns)
+            .Add(x => x.Items, many)
+            .Add(x => x.ColumnSelector, t => t.Status)
+            .Add(x => x.CardTemplate, t => (RenderFragment)(b => b.AddContent(0, t.Title)))
+            .Add(x => x.VirtualizeCards, true));
+
+        // The opt-in virtualized scroll container exists for the (non-swimlane) column body.
+        var body = cut.FindAll("[data-testid='cards-virtual-todo']");
+        body.Should().HaveCount(1);
+        body[0].ClassList.Should().Contain("tm-kanban__cards--virtual");
+
+        // Cards still render through the SAME card template, inside the virtualized body.
+        // (bUnit has no viewport, so <Virtualize> renders the items — assert presence, not a window size.)
+        cut.FindAll("[data-testid='cards-virtual-todo'] .tm-kanban__card").Count.Should().BeGreaterThan(0);
+        cut.Markup.Should().Contain("Task 1");
+    }
+
+    [Fact]
+    public void Kanban_VirtualizeCards_DefaultFalse_UsesStandardColumnBody()
+    {
+        // Default (opt-out) keeps the exact existing @foreach card rendering — no virtual container.
+        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+            .Add(x => x.Columns, Columns)
+            .Add(x => x.Items, Tasks)
+            .Add(x => x.ColumnSelector, t => t.Status)
+            .Add(x => x.CardTemplate, t => (RenderFragment)(b => b.AddContent(0, t.Title))));
+
+        cut.FindAll(".tm-kanban__cards--virtual").Should().BeEmpty();
+        cut.FindAll("[data-testid='cards-virtual-todo']").Should().BeEmpty();
+        cut.FindAll(".tm-kanban__card").Count.Should().Be(4);
+    }
+
+    [Fact]
+    public void Kanban_VirtualizeCards_CardsRemainDraggable_AndClickable()
+    {
+        KanbanTask? clicked = null;
+        var many = Enumerable.Range(1, 30).Select(i => new KanbanTask(i, $"Task {i}", "todo")).ToList();
+
+        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+            .Add(x => x.Columns, Columns)
+            .Add(x => x.Items, many)
+            .Add(x => x.ColumnSelector, t => t.Status)
+            .Add(x => x.CardTemplate, t => (RenderFragment)(b => b.AddContent(0, t.Title)))
+            .Add(x => x.VirtualizeCards, true)
+            .Add(x => x.OnCardClick, t => clicked = t));
+
+        var cards = cut.FindAll("[data-testid='cards-virtual-todo'] .tm-kanban__card");
+        cards[0].GetAttribute("draggable").Should().Be("true");
+
+        cards[0].Click();
+        clicked.Should().NotBeNull();
+        clicked!.Id.Should().Be(1);
+    }
 }

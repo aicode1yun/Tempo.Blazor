@@ -74,6 +74,11 @@ internal static class RecurrenceEngine
                     ParseByDay(value, rule);
                     break;
 
+                case "WKST":
+                    if (DayMap.TryGetValue(value.ToUpperInvariant(), out var weekStart))
+                        rule.WeekStart = weekStart;
+                    break;
+
                 case "BYSETPOS":
                     rule.BySetPos = value.Split(',', StringSplitOptions.RemoveEmptyEntries)
                         .Select(p => int.TryParse(p.Trim(), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var pos) ? pos : 0)
@@ -211,6 +216,14 @@ internal static class RecurrenceEngine
             sb.Append(string.Join(",", rule.BySetPos));
         }
 
+        // WKST is only emitted when it differs from the RFC 5545 default (Monday), keeping existing
+        // RRULE strings byte-for-byte identical.
+        if (rule.WeekStart != DayOfWeek.Monday)
+        {
+            sb.Append(";WKST=");
+            sb.Append(ReverseDayMap[rule.WeekStart]);
+        }
+
         return sb.ToString();
     }
 
@@ -245,7 +258,7 @@ internal static class RecurrenceEngine
             if (rule.Count.HasValue && count >= rule.Count.Value)
                 break;
 
-            if (rule.Until.HasValue && current.Date > rule.Until.Value.Date)
+            if (rule.Until.HasValue && IsAfterUntil(current, rule.Until.Value, zone))
                 break;
 
             var candidates = GetCandidatesForDate(current, rule);
@@ -255,7 +268,7 @@ internal static class RecurrenceEngine
                 if (candidate < seriesStart) continue; // occurrences never precede DTSTART
                 if (candidate >= rangeEnd) break;
                 if (rule.Count.HasValue && occurrences.Count >= rule.Count.Value) break;
-                if (rule.Until.HasValue && candidate.Date > rule.Until.Value.Date) break;
+                if (rule.Until.HasValue && IsAfterUntil(candidate, rule.Until.Value, zone)) break;
 
                 if (candidate >= rangeStart && !exceptions.Contains(candidate.Date))
                 {
@@ -271,6 +284,30 @@ internal static class RecurrenceEngine
         return occurrences;
     }
 
+    /// <summary>
+    /// Determines whether an occurrence at the given wall-clock time falls after the recurrence's
+    /// <c>UNTIL</c> boundary, comparing at day granularity but normalized into the event's target
+    /// timezone so a DST offset shift cannot push the boundary ±1 day.
+    /// </summary>
+    /// <remarks>
+    /// A UTC <c>UNTIL</c> (RFC 5545 DATE-TIME, ending in <c>Z</c>) is compared as UTC calendar dates:
+    /// the occurrence is projected to its UTC instant using its own per-occurrence offset (matching
+    /// <see cref="CreateOccurrence"/>), so an event that keeps its local wall-clock time across a DST
+    /// transition is still bounded correctly. A floating / date-only <c>UNTIL</c> carries no timezone
+    /// and is compared directly against the occurrence's wall-clock date.
+    /// </remarks>
+    private static bool IsAfterUntil(DateTime wallClock, DateTime until, TimeZoneInfo zone)
+    {
+        if (until.Kind == DateTimeKind.Utc)
+        {
+            var local = DateTime.SpecifyKind(wallClock, DateTimeKind.Unspecified);
+            var occurrenceUtc = new DateTimeOffset(local, zone.GetUtcOffset(local)).UtcDateTime;
+            return occurrenceUtc.Date > until.Date;
+        }
+
+        return wallClock.Date > until.Date;
+    }
+
     private static List<DateTime> GetCandidatesForDate(DateTime current, TmRecurrenceRule rule)
     {
         var candidates = new List<DateTime>();
@@ -284,11 +321,16 @@ internal static class RecurrenceEngine
             case TmRecurrenceFrequency.Weekly:
                 if (rule.ByDay is { Length: > 0 })
                 {
-                    // Find the week start (Monday) for the current date
-                    var weekStart = current.Date.AddDays(-((int)current.DayOfWeek + 6) % 7);
-                    foreach (var day in rule.ByDay.OrderBy(d => ((int)d + 6) % 7))
+                    // Anchor the week on WKST (RFC 5545). The default (Monday) reduces to the original
+                    // ((int)d + 6) % 7 math, so behavior is unchanged when WKST is absent. WKST only
+                    // changes results for INTERVAL > 1 with multiple BYDAY days that straddle the
+                    // week boundary — e.g. WKST=SU vs MO groups SU/SA into different weeks.
+                    var wkst = (int)rule.WeekStart;
+                    var daysSinceWeekStart = ((int)current.DayOfWeek - wkst + 7) % 7;
+                    var weekStart = current.Date.AddDays(-daysSinceWeekStart);
+                    foreach (var day in rule.ByDay.OrderBy(d => ((int)d - wkst + 7) % 7))
                     {
-                        var offset = ((int)day + 6) % 7;
+                        var offset = ((int)day - wkst + 7) % 7;
                         // All BYDAY weekdays in the week; the DTSTART guard in ExpandRecurrence
                         // trims those before the series start (only the first week).
                         candidates.Add(weekStart.AddDays(offset).Add(current.TimeOfDay));

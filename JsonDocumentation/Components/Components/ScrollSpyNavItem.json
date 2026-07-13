@@ -2,9 +2,35 @@
   "kind": "Record",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Navigation",
-  "description": "A single entry in a scroll-spy navigation.",
+  "description": "A single entry in a TmScrollSpyNav. Intentionally minimal and generic: hosts that need badges, status dots, or required markers should supply a custom ItemTemplate rather than extend this record with domain-specific fields.",
   "packageId": "Tempo.Blazor",
   "sourcePath": "src/Tempo.Blazor/Components/Navigation/ScrollSpyNavItem.cs",
   "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable identifier. Must match the id attribute of the corresponding in-page section."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display text shown by the default item rendering."
+    },
+    {
+      "name": "IsVisible",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When false, the item is excluded from the rendered list. Defaults to true."
+    },
+    {
+      "name": "Order",
+      "kind": "Property",
+      "type": "int",
+      "description": "Sort order among visible items (ascending). Defaults to 0."
+    }
+  ],
   "itemName": "ScrollSpyNavItem"
 }

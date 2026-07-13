@@ -152,6 +152,35 @@
    Dark mode
    ═══════════════════════════════════════════════════════ */
 
+/* Filled — dark.
+   The dark palette remaps the semantic accents to light 400-tones, so a solid fill takes DARK text
+   (--tm-text-inverse), not white — mirroring the dark filled buttons/badges. White on the bright
+   success/warning/info tones is only ~2–4.5:1 (fails AA, worst on the .9-opacity description); dark
+   text is ~6–9:1 with margin to spare. */
+[data-theme="dark"] .tm-alert--filled.tm-alert--info,
+.tm-dark .tm-alert--filled.tm-alert--info {
+    background-color: var(--tm-color-primary);
+    color: var(--tm-text-inverse);
+}
+
+[data-theme="dark"] .tm-alert--filled.tm-alert--success,
+.tm-dark .tm-alert--filled.tm-alert--success {
+    background-color: var(--tm-color-success);
+    color: var(--tm-text-inverse);
+}
+
+[data-theme="dark"] .tm-alert--filled.tm-alert--warning,
+.tm-dark .tm-alert--filled.tm-alert--warning {
+    background-color: var(--tm-color-warning);
+    color: var(--tm-text-inverse);
+}
+
+[data-theme="dark"] .tm-alert--filled.tm-alert--error,
+.tm-dark .tm-alert--filled.tm-alert--error {
+    background-color: var(--tm-color-danger);
+    color: var(--tm-text-inverse);
+}
+
 /* Soft — dark */
 [data-theme="dark"] .tm-alert--soft.tm-alert--info,
 .tm-dark .tm-alert--soft.tm-alert--info {

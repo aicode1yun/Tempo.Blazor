@@ -2,7 +2,7 @@
   "itemName": "TmNotionDiffViewer",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDiffViewer Blazor component in the Notion Editor category.",
+  "description": "Renders a list of block-level diffs (added, removed, modified, moved) with per-block before and after HTML in either inline or side-by-side view mode, with loading and empty states.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionDiffViewer.razor",

@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbCellRollup",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbCellRollup Blazor component in the Notion Editor category.",
+  "description": "Read-only display of a computed rollup database cell, rendering the aggregated value as text or a placeholder.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/Cells/TmNotionDbCellRollup.razor",

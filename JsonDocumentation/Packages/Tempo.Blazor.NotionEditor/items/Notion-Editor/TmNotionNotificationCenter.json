@@ -2,7 +2,7 @@
   "itemName": "TmNotionNotificationCenter",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionNotificationCenter Blazor component in the Notion Editor category.",
+  "description": "Notification bell button with an unread badge and a dropdown of notifications (with an unread filter and mark-all-read); clicking an item marks it read and navigates. Polls the notification service on an interval.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionNotificationCenter.razor",

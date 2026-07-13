@@ -1,15 +1,43 @@
 @namespace Tempo.Blazor.Components.Timeline
+@inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Interfaces
 @using Tempo.Blazor.Components.Avatars
 
 <div class="tm-timeline">
-    @if (!VisibleEntries.Any())
+    @if (ShowFilterBar)
+    {
+        <div class="tm-timeline-filter">
+            <input type="search"
+                   class="tm-timeline-search"
+                   data-testid="@TestId("timeline-search")"
+                   placeholder="@Loc["TmTimeline_FilterPlaceholder"]"
+                   aria-label="@Loc["TmTimeline_FilterLabel"]"
+                   value="@_searchText"
+                   @oninput="OnSearchChangedAsync" />
+            @if (_typeOptions.Count > 0)
+            {
+                <select class="tm-timeline-type-filter"
+                        data-testid="@TestId("timeline-type-filter")"
+                        aria-label="@Loc["TmTimeline_TypeFilterLabel"]"
+                        value="@_typeFilter"
+                        @onchange="OnTypeChangedAsync">
+                    <option value="">@Loc["TmTimeline_TypeFilterAll"]</option>
+                    @foreach (var type in _typeOptions)
+                    {
+                        <option value="@type" selected="@string.Equals(type, _typeFilter, StringComparison.OrdinalIgnoreCase)">@type</option>
+                    }
+                </select>
+            }
+        </div>
+    }
+
+    @if (_pager.Items.Count == 0)
     {
         <div class="tm-timeline-empty">@Loc["TmTimeline_NoEntries"]</div>
     }
     else
     {
-        @foreach (var entry in VisibleEntries)
+        @foreach (var entry in _pager.Items)
         {
             <div class="tm-timeline-entry @(entry.IsInternal ? "tm-timeline-entry-internal" : "")">
                 <div class="tm-timeline-header">
@@ -30,19 +58,140 @@
                 }
             </div>
         }
+
+        @if (PageSize.HasValue && _pager.TotalCount > 0)
+        {
+            <div class="tm-timeline-footer">
+                <span class="tm-timeline-count" data-testid="@TestId("timeline-count")">
+                    @(string.Format(Loc["TmTimeline_ShowingCount"], _pager.ShownCount, _pager.TotalCount))
+                </span>
+                @if (_pager.HasMore)
+                {
+                    <button type="button"
+                            class="tm-timeline-load-more"
+                            data-testid="@TestId("timeline-load-more")"
+                            @onclick="OnLoadMoreAsync">
+                        @Loc["TmTimeline_LoadMore"]
+                    </button>
+                }
+            </div>
+        }
     }
 </div>
 
 @code {
-    /// <summary>Timeline entries to display.</summary>
+    /// <summary>Timeline entries to display (client-side path). Ignored when <see cref="DataProvider"/> is set.</summary>
     [Parameter] public IEnumerable<ITimelineEntry>? Entries { get; set; }
 
     /// <summary>When true, internal entries are shown; otherwise they are hidden.</summary>
     [Parameter] public bool ShowInternal { get; set; }
 
-    private IEnumerable<ITimelineEntry> VisibleEntries =>
-        (Entries ?? Enumerable.Empty<ITimelineEntry>())
-            .Where(e => ShowInternal || !e.IsInternal);
+    /// <summary>Optional free-text filter applied to author, content, and entry type (additive, default: none).</summary>
+    [Parameter] public string? Filter { get; set; }
+
+    /// <summary>Optional entry-type filter (e.g. "comment"); null/empty shows all types (additive, default: none).</summary>
+    [Parameter] public string? EntryTypeFilter { get; set; }
+
+    /// <summary>Page size for incremental "load more" paging. <c>null</c> (default) shows every entry — backward compatible.</summary>
+    [Parameter] public int? PageSize { get; set; }
+
+    /// <summary>Optional explicit set of entry-type options for the filter bar. When null, distinct types are derived from <see cref="Entries"/>.</summary>
+    [Parameter] public IReadOnlyList<string>? EntryTypeFilterOptions { get; set; }
+
+    /// <summary>When true, renders a built-in search + type filter bar (default: false).</summary>
+    [Parameter] public bool ShowFilterBar { get; set; }
+
+    /// <summary>Optional async data provider. When set, entries are fetched (filtered + paged) from it instead of <see cref="Entries"/>.</summary>
+    [Parameter] public ITimelineDataProvider? DataProvider { get; set; }
+
+    private readonly TimelinePager _pager = new();
+    private string? _searchText;
+    private string? _typeFilter;
+    private string? _lastFilterParam;
+    private string? _lastTypeParam;
+    private string _lastSignature = string.Empty;
+    private IReadOnlyList<string> _typeOptions = [];
+
+    protected override void OnParametersSet()
+    {
+        ApplyParameters();
+
+        // The in-memory path is resolved synchronously so items are present on first
+        // render (including when this component is embedded inside another component).
+        if (DataProvider is null)
+        {
+            _pager.ReloadSync();
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (DataProvider is not null)
+        {
+            await _pager.ReloadAsync();
+        }
+    }
+
+    private void ApplyParameters()
+    {
+        // Host-controlled filter params seed the internal state whenever they change,
+        // leaving user edits from the built-in filter bar untouched otherwise.
+        if (!string.Equals(_lastFilterParam, Filter, StringComparison.Ordinal))
+        {
+            _lastFilterParam = Filter;
+            _searchText = Filter;
+        }
+        if (!string.Equals(_lastTypeParam, EntryTypeFilter, StringComparison.Ordinal))
+        {
+            _lastTypeParam = EntryTypeFilter;
+            _typeFilter = EntryTypeFilter;
+        }
+
+        _typeOptions = EntryTypeFilterOptions
+            ?? (DataProvider is null
+                ? TimelineFilter.DistinctTypes(Entries ?? [])
+                : []);
+
+        ConfigurePager();
+
+        var signature = string.Join("\u0001", _searchText, _typeFilter, ShowInternal, PageSize);
+        if (!string.Equals(signature, _lastSignature, StringComparison.Ordinal))
+        {
+            _lastSignature = signature;
+            _pager.ResetWindow();
+        }
+    }
+
+    private void ConfigurePager()
+    {
+        _pager.Source = Entries ?? [];
+        _pager.Provider = DataProvider;
+        _pager.SearchText = _searchText;
+        _pager.EntryType = _typeFilter;
+        _pager.IncludeInternal = ShowInternal;
+        _pager.PageSize = PageSize;
+        _pager.Order = null; // TmTimeline preserves the caller's ordering.
+    }
+
+    private async Task OnSearchChangedAsync(ChangeEventArgs e)
+    {
+        _searchText = e.Value?.ToString();
+        _pager.SearchText = _searchText;
+        _pager.ResetWindow();
+        _lastSignature = string.Join("\u0001", _searchText, _typeFilter, ShowInternal, PageSize);
+        await _pager.ReloadAsync();
+    }
+
+    private async Task OnTypeChangedAsync(ChangeEventArgs e)
+    {
+        _typeFilter = e.Value?.ToString();
+        _pager.EntryType = _typeFilter;
+        _pager.ResetWindow();
+        _lastSignature = string.Join("\u0001", _searchText, _typeFilter, ShowInternal, PageSize);
+        await _pager.ReloadAsync();
+    }
+
+    private Task OnLoadMoreAsync() => _pager.LoadMoreAsync();
 
     private string FormatTime(DateTimeOffset dt)
     {

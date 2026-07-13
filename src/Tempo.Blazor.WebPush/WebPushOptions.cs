@@ -1,7 +1,7 @@
-namespace Tempo.Blazor.Demo.Api.Services;
+namespace Tempo.Blazor.WebPush;
 
 /// <summary>VAPID configuration for Web Push. Bound from the <c>WebPush</c> configuration section;
-/// when the keys are empty the demo generates an ephemeral pair at startup.</summary>
+/// when the keys are empty a host may generate an ephemeral pair at startup.</summary>
 public sealed class WebPushOptions
 {
     /// <summary>VAPID subject (a <c>mailto:</c> or origin URL).</summary>

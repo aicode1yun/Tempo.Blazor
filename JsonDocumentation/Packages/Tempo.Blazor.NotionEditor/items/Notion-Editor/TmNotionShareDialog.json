@@ -2,7 +2,7 @@
   "itemName": "TmNotionShareDialog",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionShareDialog Blazor component in the Notion Editor category.",
+  "description": "Public-share dialog showing the share status, an allow-comments toggle, an expiry date, the read-only public URL with copy, and create and revoke-link actions via the public-share provider.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Page/TmNotionShareDialog.razor",

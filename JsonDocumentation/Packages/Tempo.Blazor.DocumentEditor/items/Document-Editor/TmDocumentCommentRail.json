@@ -2,7 +2,7 @@
   "itemName": "TmDocumentCommentRail",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentCommentRail Blazor component in the Document Editor category.",
+  "description": "Comments rail listing the document's comment threads (via TmDocumentCommentThread) with a visible/total count header, a new-comment button and composer, and filter and sort selectors. Raises callbacks for creating, replying, editing, resolving, reopening, deleting, and selecting comments.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCommentRail.razor",

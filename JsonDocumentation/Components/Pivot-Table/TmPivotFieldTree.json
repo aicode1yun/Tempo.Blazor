@@ -2,7 +2,7 @@
   "itemName": "TmPivotFieldTree",
   "kind": "Component",
   "category": "Pivot Table",
-  "description": "TmPivotFieldTree Blazor component in the Pivot Table category.",
+  "description": "List of the available pivot fields shown in the pivot-table field panel. Each field has an actions menu to add it to the Row, Column, Value, or Filter area, and fields already in use are marked with an area badge.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.PivotTable",
   "sourcePath": "src/Tempo.Blazor/Components/PivotTable/TmPivotFieldTree.razor",

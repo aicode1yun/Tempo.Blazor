@@ -2,7 +2,7 @@
   "itemName": "TmNotionExcerptBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionExcerptBlock Blazor component in the Notion Editor category.",
+  "description": "Block containing an editable rich-text page excerpt, rendered as a sanitized contenteditable area that commits changes on input and blur.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionExcerptBlock.razor",

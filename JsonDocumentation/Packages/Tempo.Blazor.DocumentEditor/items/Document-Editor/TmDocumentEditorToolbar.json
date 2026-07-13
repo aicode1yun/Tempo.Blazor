@@ -2,7 +2,7 @@
   "itemName": "TmDocumentEditorToolbar",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentEditorToolbar Blazor component in the Document Editor category.",
+  "description": "Full Word-style ribbon header for the document editor. Presents Home, Insert, Math, Layout, References, Review, and View tabs (plus an optional Header & Footer tab), a quick-access save/undo/redo group, and per-tab command groups such as the block-style gallery, font family and size, character formatting, alignment, spacing, and color pickers.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentEditorToolbar.razor",

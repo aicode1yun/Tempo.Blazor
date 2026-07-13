@@ -2,7 +2,7 @@
   "itemName": "TmNotionSidebarFavorites",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionSidebarFavorites Blazor component in the Notion Editor category.",
+  "description": "Collapsible Favorites section in the sidebar listing favorite pages with drag-to-reorder. Each row navigates on click and has an unfavorite button.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Sidebar",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Sidebar/TmNotionSidebarFavorites.razor",

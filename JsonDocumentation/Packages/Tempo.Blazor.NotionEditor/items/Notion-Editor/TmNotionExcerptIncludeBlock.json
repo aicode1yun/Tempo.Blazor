@@ -2,7 +2,7 @@
   "itemName": "TmNotionExcerptIncludeBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionExcerptIncludeBlock Blazor component in the Notion Editor category.",
+  "description": "Block that renders the excerpt pulled from another source page as sanitized HTML, with a source-page picker and edit-source link when editable, plus loading, not-found, and no-excerpt states.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Special/TmNotionExcerptIncludeBlock.razor",

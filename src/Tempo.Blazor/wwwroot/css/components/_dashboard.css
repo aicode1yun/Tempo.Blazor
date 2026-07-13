@@ -499,6 +499,20 @@
   color: var(--category-color, var(--tm-text-secondary));
 }
 
+/* Built-in widget category colours resolve to the theme-aware categorical tokens
+   (--tm-category-N), so dark mode gets proper values while light stays identical.
+   Custom/host-supplied categories instead set --category-color inline from their
+   model .Color; unknown categories fall back to --tm-category-fallback. Ordered to
+   match DashboardModels.WidgetCategories.All. */
+.tm-dashboard-category--analytics     { --category-color: var(--tm-category-1); }
+.tm-dashboard-category--charts        { --category-color: var(--tm-category-2); }
+.tm-dashboard-category--quickactions  { --category-color: var(--tm-category-3); }
+.tm-dashboard-category--lists         { --category-color: var(--tm-category-4); }
+.tm-dashboard-category--calendar      { --category-color: var(--tm-category-5); }
+.tm-dashboard-category--notifications { --category-color: var(--tm-category-6); }
+.tm-dashboard-category--system        { --category-color: var(--tm-category-7); }
+.tm-dashboard-category--custom        { --category-color: var(--tm-category-8); }
+
 .tm-widget-selector-count {
   margin-left: auto;
   padding: 0.125rem 0.375rem;

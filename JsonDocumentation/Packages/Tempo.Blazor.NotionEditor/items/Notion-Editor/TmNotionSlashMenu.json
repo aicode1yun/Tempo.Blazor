@@ -2,7 +2,7 @@
   "itemName": "TmNotionSlashMenu",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionSlashMenu Blazor component in the Notion Editor category.",
+  "description": "Slash-command menu with a search input and grouped block-type items (plus an optional AI item), keyboard navigation, and recently-used tracking, raising item, AI, or close callbacks.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionSlashMenu.razor",

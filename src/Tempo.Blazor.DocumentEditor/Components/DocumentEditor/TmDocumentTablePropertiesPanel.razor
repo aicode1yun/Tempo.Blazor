@@ -5,7 +5,7 @@
 <section class="tm-document-table-properties"
          role="region"
          aria-label="@Loc["TmDocumentEditor_TableProperties"]"
-         data-testid="@($"{TestIdPrefix}-panel")">
+         data-testid="@($"{TestIdRoot}-panel")">
     <header>
         <TmIcon Name="table-properties" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_TableProperties"]</span>
@@ -17,7 +17,7 @@
                min="80"
                step="10"
                value="@WidthValue"
-               data-testid="@($"{TestIdPrefix}-width")"
+               data-testid="@($"{TestIdRoot}-width")"
                @onchange="HandleWidthChangedAsync" />
     </label>
 
@@ -27,7 +27,7 @@
             <button type="button"
                     class="@SegmentClass(alignment)"
                     aria-pressed="@(CurrentAlignment == alignment)"
-                    data-testid="@($"{TestIdPrefix}-align-{alignment.ToString().ToLowerInvariant()}")"
+                    data-testid="@($"{TestIdRoot}-align-{alignment.ToString().ToLowerInvariant()}")"
                     @onclick="() => HandleAlignmentChangedAsync(alignment)">
                 @Loc[$"TmDocumentEditor_TableAlign{alignment}"]
             </button>
@@ -40,7 +40,7 @@
                min="0"
                step="1"
                value="@PaddingValue"
-               data-testid="@($"{TestIdPrefix}-padding")"
+               data-testid="@($"{TestIdRoot}-padding")"
                @onchange="HandlePaddingChangedAsync" />
     </label>
 
@@ -48,14 +48,14 @@
         <span>@Loc["TmDocumentEditor_TableBackground"]</span>
         <input type="color"
                value="@BackgroundValue"
-               data-testid="@($"{TestIdPrefix}-background")"
+               data-testid="@($"{TestIdRoot}-background")"
                @onchange="HandleBackgroundChangedAsync" />
     </label>
 
     <label>
         <span>@Loc["TmDocumentEditor_TableBorder"]</span>
         <select value="@BorderValue"
-                data-testid="@($"{TestIdPrefix}-border")"
+                data-testid="@($"{TestIdRoot}-border")"
                 @onchange="HandleBorderChangedAsync">
             <option value="">@Loc["TmDocumentEditor_None"]</option>
             <option value="1px solid var(--tm-color-border)">@Loc["TmDocumentEditor_TableBorderDefault"]</option>
@@ -78,8 +78,21 @@
     /// <summary>Raised when table properties change.</summary>
     [Parameter] public EventCallback<TableLayoutContent> LayoutChanged { get; set; }
 
-    /// <summary>Prefix used for test id attributes. Defaults to document-table-properties.</summary>
-    [Parameter] public string TestIdPrefix { get; set; } = "document-table-properties";
+    /// <summary>Base string for this panel's <c>data-testid</c> attributes. Defaults to document-table-properties.</summary>
+    [Parameter] public string TestIdRoot { get; set; } = "document-table-properties";
+
+    /// <summary>
+    /// Deprecated alias for <see cref="TestIdRoot"/>. Renamed so it no longer collides with
+    /// <c>TmComponentBase.TestIdPrefix</c> (a namespace prefix with the opposite meaning), letting
+    /// this panel safely adopt that base later. Set <see cref="TestIdRoot"/> instead.
+    /// </summary>
+    [Obsolete("Renamed to TestIdRoot; will be removed in a future major. Set TestIdRoot instead.")]
+    [Parameter]
+    public string? TestIdPrefix
+    {
+        get => TestIdRoot;
+        set { if (!string.IsNullOrEmpty(value)) TestIdRoot = value; }
+    }
 
     private TableHorizontalAlignment CurrentAlignment => Layout?.Alignment ?? TableHorizontalAlignment.Left;
 

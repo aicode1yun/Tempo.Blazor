@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Timeline",
+  "description": "Client-side implementation of ITimelineDataProvider that filters, orders newest-first, and windows an in-memory list of timeline entries. Useful for opting into the provider-based filtering/pagination pipeline for TmTimeline, TmActivityTimeline, and TmActivityLog without wiring up a server, or as a test double.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Timeline/InMemoryTimelineDataProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetEntriesAsync",
+      "kind": "Method",
+      "type": "Task<TimelinePage>",
+      "description": "Applies the query's text/type/internal filters, orders the matches newest-first, and returns the requested Skip/Take window together with the total matching count.",
+      "parameters": [
+        { "name": "query", "type": "TimelineQuery", "description": "Filter and paging options for the requested slice." },
+        { "name": "ct", "type": "CancellationToken", "description": "Token used to cancel the operation." }
+      ]
+    }
+  ],
+  "itemName": "InMemoryTimelineDataProvider"
+}

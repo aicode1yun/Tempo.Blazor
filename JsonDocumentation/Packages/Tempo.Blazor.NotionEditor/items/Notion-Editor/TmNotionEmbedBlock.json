@@ -2,7 +2,7 @@
   "itemName": "TmNotionEmbedBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionEmbedBlock Blazor component in the Notion Editor category.",
+  "description": "Block that embeds a URL as a sandboxed iframe. The empty state offers a URL input with a detected-provider badge, and the embedded state adds a source bar, replace and open-source actions, and an editable caption.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Embed",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Embed/TmNotionEmbedBlock.razor",

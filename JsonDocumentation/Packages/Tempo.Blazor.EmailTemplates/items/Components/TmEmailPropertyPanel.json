@@ -2,7 +2,7 @@
   "itemName": "TmEmailPropertyPanel",
   "kind": "Component",
   "category": "Components",
-  "description": "TmEmailPropertyPanel Blazor component in the Components category.",
+  "description": "Context-sensitive property inspector for the currently selected section, column, or block. Renders the element's common fields plus type-specific editors such as rich-text content, raw HTML, image upload, and variable insertion.",
   "packageId": "Tempo.Blazor.EmailTemplates",
   "namespace": "Tempo.Blazor.EmailTemplates.Components",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailPropertyPanel.razor",

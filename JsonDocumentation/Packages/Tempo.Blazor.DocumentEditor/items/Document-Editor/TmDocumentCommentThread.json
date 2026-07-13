@@ -2,7 +2,7 @@
   "itemName": "TmDocumentCommentThread",
   "kind": "Component",
   "category": "Document Editor",
-  "description": "TmDocumentCommentThread Blazor component in the Document Editor category.",
+  "description": "Renders a single comment thread with its anchor label and open/resolved status. Shows a collapsed preview when resolved or expanded entries with author and time, inline edit and reply composers, and resolve, reopen, and delete actions.",
   "packageId": "Tempo.Blazor.DocumentEditor",
   "namespace": "Tempo.Blazor.Components.DocumentEditor",
   "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/TmDocumentCommentThread.razor",

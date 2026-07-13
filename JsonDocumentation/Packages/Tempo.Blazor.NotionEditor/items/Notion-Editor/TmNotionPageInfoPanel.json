@@ -2,7 +2,7 @@
   "itemName": "TmNotionPageInfoPanel",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionPageInfoPanel Blazor component in the Notion Editor category.",
+  "description": "Modal side panel showing page metadata - created and last-edited user and date, computed word count and reading time, and an optional analytics view count.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Page/TmNotionPageInfoPanel.razor",

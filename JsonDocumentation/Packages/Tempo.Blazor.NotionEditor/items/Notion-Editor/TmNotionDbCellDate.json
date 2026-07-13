@@ -2,7 +2,7 @@
   "itemName": "TmNotionDbCellDate",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionDbCellDate Blazor component in the Notion Editor category.",
+  "description": "Editor for a date database cell, displaying the formatted date (with time when the field includes it) and offering a date or datetime-local input.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Database/Cells/TmNotionDbCellDate.razor",

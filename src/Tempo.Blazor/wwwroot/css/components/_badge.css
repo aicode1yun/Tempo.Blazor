@@ -31,18 +31,39 @@
 .tm-badge-danger.tm-badge-filled    { background: var(--tm-color-danger);   color: var(--tm-color-white); }
 .tm-badge-info.tm-badge-filled      { background: var(--tm-color-info);     color: var(--tm-color-white); }
 
-/* Badge variants — soft */
-.tm-badge-default.tm-badge-soft   { background: var(--tm-color-gray-100);    color: var(--tm-color-gray-700);    border-color: var(--tm-color-gray-200); }
-.tm-badge-primary.tm-badge-soft   { background: var(--tm-color-primary-subtle); color: var(--tm-color-primary-text); border-color: var(--tm-color-primary-soft-border); }
-.tm-badge-success.tm-badge-soft   { background: var(--tm-color-success-subtle); color: var(--tm-color-success-text); border-color: var(--tm-color-success-soft-border); }
-.tm-badge-warning.tm-badge-soft   { background: var(--tm-color-warning-subtle); color: var(--tm-color-warning-text); border-color: var(--tm-color-warning-soft-border); }
-.tm-badge-danger.tm-badge-soft    { background: var(--tm-color-danger-subtle);  color: var(--tm-color-danger-text);  border-color: var(--tm-color-danger-soft-border); }
-.tm-badge-info.tm-badge-soft      { background: var(--tm-color-info-subtle);    color: var(--tm-color-info-text);    border-color: var(--tm-color-info-soft-border); }
+/* Badge variants — subtle (soft tint). Class is tm-badge-subtle to match the emitted class
+   (BadgeStyle.Subtle); the previous tm-badge-soft selector matched nothing, leaving subtle badges
+   unstyled — legible-by-luck in light, but failing WCAG AA contrast in dark. */
+.tm-badge-default.tm-badge-subtle   { background: var(--tm-color-gray-100);    color: var(--tm-color-gray-700);    border-color: var(--tm-color-gray-200); }
+.tm-badge-primary.tm-badge-subtle   { background: var(--tm-color-primary-subtle); color: var(--tm-color-primary-text); border-color: var(--tm-color-primary-soft-border); }
+.tm-badge-success.tm-badge-subtle   { background: var(--tm-color-success-subtle); color: var(--tm-color-success-text); border-color: var(--tm-color-success-soft-border); }
+.tm-badge-warning.tm-badge-subtle   { background: var(--tm-color-warning-subtle); color: var(--tm-color-warning-text); border-color: var(--tm-color-warning-soft-border); }
+.tm-badge-danger.tm-badge-subtle    { background: var(--tm-color-danger-subtle);  color: var(--tm-color-danger-text);  border-color: var(--tm-color-danger-soft-border); }
+.tm-badge-info.tm-badge-subtle      { background: var(--tm-color-info-subtle);    color: var(--tm-color-info-text);    border-color: var(--tm-color-info-soft-border); }
 
 /* Badge variants — outlined */
-.tm-badge-default.tm-badge-outlined   { background: transparent; color: var(--tm-color-gray-700);    border-color: var(--tm-color-gray-300); }
-.tm-badge-primary.tm-badge-outlined   { background: transparent; color: var(--tm-color-primary);     border-color: var(--tm-color-primary); }
-.tm-badge-success.tm-badge-outlined   { background: transparent; color: var(--tm-color-success-text); border-color: var(--tm-color-success); }
-.tm-badge-warning.tm-badge-outlined   { background: transparent; color: var(--tm-color-warning-text); border-color: var(--tm-color-warning); }
-.tm-badge-danger.tm-badge-outlined    { background: transparent; color: var(--tm-color-danger-text);  border-color: var(--tm-color-danger); }
-.tm-badge-info.tm-badge-outlined      { background: transparent; color: var(--tm-color-info-text);    border-color: var(--tm-color-info); }
+.tm-badge-default.tm-badge-outline   { background: transparent; color: var(--tm-color-gray-700);    border-color: var(--tm-color-gray-300); }
+.tm-badge-primary.tm-badge-outline   { background: transparent; color: var(--tm-color-primary);     border-color: var(--tm-color-primary); }
+.tm-badge-success.tm-badge-outline   { background: transparent; color: var(--tm-color-success-text); border-color: var(--tm-color-success); }
+.tm-badge-warning.tm-badge-outline   { background: transparent; color: var(--tm-color-warning-text); border-color: var(--tm-color-warning); }
+.tm-badge-danger.tm-badge-outline    { background: transparent; color: var(--tm-color-danger-text);  border-color: var(--tm-color-danger); }
+.tm-badge-info.tm-badge-outline      { background: transparent; color: var(--tm-color-info-text);    border-color: var(--tm-color-info); }
+
+/* Dark mode — filled colour badges.
+   The dark palette remaps the semantic accents to light 400-tones (primary-400 #60a5fa,
+   success #4ade80, warning #fbbf24, danger #f87171, info #38bdf8). White text on those is only
+   ~1.4–2.4:1 (fails WCAG AA), so filled colour badges switch to dark text
+   (--tm-text-inverse #0f172a, ~6–10:1) — mirroring the dark filled buttons. The default (grey)
+   filled badge already pairs light text with a dark surface, so it is intentionally left alone. */
+[data-theme="dark"] .tm-badge-primary.tm-badge-filled,
+[data-theme="dark"] .tm-badge-success.tm-badge-filled,
+[data-theme="dark"] .tm-badge-warning.tm-badge-filled,
+[data-theme="dark"] .tm-badge-danger.tm-badge-filled,
+[data-theme="dark"] .tm-badge-info.tm-badge-filled,
+.tm-dark .tm-badge-primary.tm-badge-filled,
+.tm-dark .tm-badge-success.tm-badge-filled,
+.tm-dark .tm-badge-warning.tm-badge-filled,
+.tm-dark .tm-badge-danger.tm-badge-filled,
+.tm-dark .tm-badge-info.tm-badge-filled {
+  color: var(--tm-text-inverse);
+}

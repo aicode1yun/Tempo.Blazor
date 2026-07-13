@@ -2,7 +2,7 @@
   "itemName": "TmNotionPageCommentPanel",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "TmNotionPageCommentPanel Blazor component in the Notion Editor category.",
+  "description": "Inline collapsible page-comment panel with an unresolved-count badge. Lists comment threads with resolve and watch, nested entries with reactions and edit/delete, inline and thread replies, and a new-comment mention input.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionPageCommentPanel.razor",
