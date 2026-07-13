@@ -5,7 +5,7 @@
 <div class="tm-input-wrapper">
     @if (!string.IsNullOrEmpty(Label))
     {
-        <label for="@Id" class="tm-input-label">@Label</label>
+        <label for="@Id" class="tm-input-label @(Required ? "tm-input-label-required" : "")">@Label</label>
     }
     <div class="tm-input-container">
         @if (!string.IsNullOrEmpty(LeftIcon))

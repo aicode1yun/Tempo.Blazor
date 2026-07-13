@@ -164,4 +164,30 @@ public class TmDatePickerTests : LocalizationTestBase
 
         cut.Find(".tm-date-picker-trigger").TextContent.Trim().Should().Be("2025-03-05");
     }
+
+    // ── Required (accessibility) ─────────────────────────────────
+
+    [Fact]
+    public void DatePicker_Required_SetsAriaRequiredOnTrigger()
+    {
+        var cut = RenderComponent<TmDatePicker>(p => p.Add(c => c.Required, true));
+        cut.Find(".tm-date-picker-trigger").GetAttribute("aria-required").Should().Be("true");
+    }
+
+    [Fact]
+    public void DatePicker_Required_AddsRequiredMarkerClassToLabel()
+    {
+        var cut = RenderComponent<TmDatePicker>(p => p
+            .Add(c => c.Label, "Occurred")
+            .Add(c => c.Required, true));
+        cut.Find(".tm-picker-label").ClassList.Should().Contain("tm-input-label-required");
+    }
+
+    [Fact]
+    public void DatePicker_NotRequired_HasNoAriaRequiredAndNoMarker()
+    {
+        var cut = RenderComponent<TmDatePicker>(p => p.Add(c => c.Label, "Occurred"));
+        cut.Find(".tm-date-picker-trigger").HasAttribute("aria-required").Should().BeFalse();
+        cut.Find(".tm-picker-label").ClassList.Should().NotContain("tm-input-label-required");
+    }
 }

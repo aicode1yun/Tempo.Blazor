@@ -4,7 +4,7 @@
 <div class="tm-date-picker @Class" @onkeydown="OnKeyDown" @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(Label))
     {
-        <label class="tm-picker-label">@Label</label>
+        <label class="tm-picker-label @(Required ? "tm-input-label-required" : "")">@Label</label>
     }
 
     <div class="tm-date-picker-input-row">
@@ -13,6 +13,7 @@
                 disabled="@Disabled"
                 aria-haspopup="true"
                 aria-expanded="@_isOpen"
+                aria-required="@(Required ? "true" : null)"
                 @onclick="ToggleCalendar">
             @if (Value.HasValue)
             {

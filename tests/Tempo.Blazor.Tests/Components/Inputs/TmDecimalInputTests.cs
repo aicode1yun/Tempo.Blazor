@@ -725,4 +725,30 @@ public class TmDecimalInputTests : LocalizationTestBase
         Normalize(TmDecimalInput.FormatDecimal(1234.5m, 0, true, English)).Should().Be("1,235");
         Normalize(TmDecimalInput.FormatDecimal(1234.5m, 2, false, Czech)).Should().Be("1234,50");
     }
+
+    // ── Required (accessibility) ─────────────────────────────────
+
+    [Fact]
+    public void DecimalInput_Required_SetsAriaRequiredOnInput()
+    {
+        var cut = RenderComponent<TmDecimalInput>(p => p.Add(c => c.Required, true));
+        cut.Find("input").GetAttribute("aria-required").Should().Be("true");
+    }
+
+    [Fact]
+    public void DecimalInput_Required_AddsRequiredMarkerClassToLabel()
+    {
+        var cut = RenderComponent<TmDecimalInput>(p => p
+            .Add(c => c.Label, "Amount")
+            .Add(c => c.Required, true));
+        cut.Find("label").ClassList.Should().Contain("tm-input-label-required");
+    }
+
+    [Fact]
+    public void DecimalInput_NotRequired_HasNoAriaRequiredAndNoMarker()
+    {
+        var cut = RenderComponent<TmDecimalInput>(p => p.Add(c => c.Label, "Amount"));
+        cut.Find("input").HasAttribute("aria-required").Should().BeFalse();
+        cut.Find("label").ClassList.Should().NotContain("tm-input-label-required");
+    }
 }

@@ -9,7 +9,7 @@
 <div class="tm-input-wrapper tm-decimal-input @(HasError ? "tm-decimal-input--error" : "") @Class">
     @if (!string.IsNullOrEmpty(Label))
     {
-        <label class="tm-input-label" for="@EffectiveId">@Label</label>
+        <label class="tm-input-label @(Required ? "tm-input-label-required" : "")" for="@EffectiveId">@Label</label>
     }
 
     <div class="tm-decimal-input__control @(Disabled ? "tm-decimal-input__control--disabled" : "") @(ReadOnly ? "tm-decimal-input__control--readonly" : "") @(HasError ? "tm-decimal-input__control--error" : "")">
@@ -40,7 +40,9 @@
                placeholder="@Placeholder"
                disabled="@Disabled"
                readonly="@ReadOnly"
+               required="@Required"
                autocomplete="@AutoComplete"
+               aria-required="@(Required ? "true" : null)"
                aria-invalid="@(HasError ? "true" : null)"
                aria-describedby="@DescribedBy"
                @attributes="AdditionalAttributes"
@@ -177,6 +179,9 @@
 
     /// <summary>Render the input as read-only.</summary>
     [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>Marks the input as required. Shows a required marker on the label and sets aria-required on the input element.</summary>
+    [Parameter] public bool Required { get; set; }
 
     /// <summary>HTML autocomplete attribute. Common values: "on", "off".</summary>
     [Parameter] public string? AutoComplete { get; set; }

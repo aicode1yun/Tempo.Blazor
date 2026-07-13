@@ -189,4 +189,30 @@ public class TmTextInputTests : LocalizationTestBase
         var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.IsValid, false));
         cut.Find("input").GetAttribute("aria-invalid").Should().Be("true");
     }
+
+    // ── Required (accessibility) ─────────────────────────────────
+
+    [Fact]
+    public void TmTextInput_Required_SetsAriaRequiredOnInput()
+    {
+        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.Required, true));
+        cut.Find("input").GetAttribute("aria-required").Should().Be("true");
+    }
+
+    [Fact]
+    public void TmTextInput_Required_AddsRequiredMarkerClassToLabel()
+    {
+        var cut = RenderComponent<TmTextInput>(p => p
+            .Add(c => c.Label, "Name")
+            .Add(c => c.Required, true));
+        cut.Find("label").ClassList.Should().Contain("tm-input-label-required");
+    }
+
+    [Fact]
+    public void TmTextInput_NotRequired_HasNoAriaRequiredAndNoMarker()
+    {
+        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.Label, "Name"));
+        cut.Find("input").HasAttribute("aria-required").Should().BeFalse();
+        cut.Find("label").ClassList.Should().NotContain("tm-input-label-required");
+    }
 }

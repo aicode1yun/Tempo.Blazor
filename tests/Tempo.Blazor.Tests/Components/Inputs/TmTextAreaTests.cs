@@ -97,4 +97,30 @@ public class TmTextAreaTests : LocalizationTestBase
 
         captured.Should().Be("hello world");
     }
+
+    // ── Required (accessibility) ─────────────────────────────────
+
+    [Fact]
+    public void TmTextArea_Required_SetsAriaRequiredOnTextarea()
+    {
+        var cut = RenderComponent<TmTextArea>(p => p.Add(c => c.Required, true));
+        cut.Find("textarea").GetAttribute("aria-required").Should().Be("true");
+    }
+
+    [Fact]
+    public void TmTextArea_Required_AddsRequiredMarkerClassToLabel()
+    {
+        var cut = RenderComponent<TmTextArea>(p => p
+            .Add(c => c.Label, "Comment")
+            .Add(c => c.Required, true));
+        cut.Find("label").ClassList.Should().Contain("tm-input-label-required");
+    }
+
+    [Fact]
+    public void TmTextArea_NotRequired_HasNoAriaRequiredAndNoMarker()
+    {
+        var cut = RenderComponent<TmTextArea>(p => p.Add(c => c.Label, "Comment"));
+        cut.Find("textarea").HasAttribute("aria-required").Should().BeFalse();
+        cut.Find("label").ClassList.Should().NotContain("tm-input-label-required");
+    }
 }

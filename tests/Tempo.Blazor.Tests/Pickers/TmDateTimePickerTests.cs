@@ -95,4 +95,30 @@ public class TmDateTimePickerTests : LocalizationTestBase
         cut.FindAll(".tm-time-picker--invalid, .tm-datetime-picker--invalid")
            .Should().NotBeEmpty();
     }
+
+    // ── Required (accessibility) ─────────────────────────────────
+
+    [Fact]
+    public void DateTimePicker_Required_SetsAriaRequiredOnTrigger()
+    {
+        var cut = RenderComponent<TmDateTimePicker>(p => p.Add(c => c.Required, true));
+        cut.Find(".tm-date-picker-trigger").GetAttribute("aria-required").Should().Be("true");
+    }
+
+    [Fact]
+    public void DateTimePicker_Required_AddsRequiredMarkerClassToLabel()
+    {
+        var cut = RenderComponent<TmDateTimePicker>(p => p
+            .Add(c => c.Label, "Occurred")
+            .Add(c => c.Required, true));
+        cut.Find(".tm-picker-label").ClassList.Should().Contain("tm-input-label-required");
+    }
+
+    [Fact]
+    public void DateTimePicker_NotRequired_HasNoAriaRequiredAndNoMarker()
+    {
+        var cut = RenderComponent<TmDateTimePicker>(p => p.Add(c => c.Label, "Occurred"));
+        cut.Find(".tm-date-picker-trigger").HasAttribute("aria-required").Should().BeFalse();
+        cut.Find(".tm-picker-label").ClassList.Should().NotContain("tm-input-label-required");
+    }
 }
