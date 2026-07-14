@@ -1,0 +1,264 @@
+@namespace Tempo.Blazor.Components.Inputs
+@inherits Tempo.Blazor.Components.TmComponentBase
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="tm-code-editor @(Disabled ? "tm-code-editor--disabled" : "") @(HasError ? "tm-code-editor--error" : "") @Class"
+     data-testid="@RootTestId("code-editor")"
+     @attributes="AdditionalAttributes">
+
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label for="@Id" class="tm-input-label @(Required ? "tm-input-label-required" : "")">@Label</label>
+    }
+
+    <div class="tm-code-editor__body" @ref="_bodyRef">
+        <pre class="tm-code-editor__highlight" aria-hidden="true"><code class="@HighlightLanguageClass" @ref="_codeRef"></code></pre>
+
+        <textarea id="@Id"
+                  class="tm-code-editor__textarea"
+                  @ref="_textareaRef"
+                  placeholder="@Placeholder"
+                  rows="@Rows"
+                  maxlength="@MaxLength"
+                  disabled="@Disabled"
+                  readonly="@ReadOnly"
+                  required="@Required"
+                  spellcheck="false"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  aria-required="@(Required ? "true" : null)"
+                  aria-invalid="@(HasError ? "true" : null)"
+                  aria-describedby="@DescribedBy"
+                  value="@Value"
+                  @oninput="HandleInput"></textarea>
+
+        <div class="tm-code-editor__actions">
+            @if (ShowFormatButton && IsJson)
+            {
+                <button type="button"
+                        class="tm-code-editor__format"
+                        disabled="@(Disabled || ReadOnly)"
+                        data-testid="@TestId("format-button")"
+                        @onclick="FormatJsonAsync">
+                    @Loc["TmCodeEditor_Format"]
+                </button>
+            }
+            @if (ShowCopyButton)
+            {
+                <TmCopyButton Text="@Value" Class="tm-code-editor__copy" data-testid="@TestId("copy-button")" />
+            }
+        </div>
+    </div>
+
+    @if (HasError)
+    {
+        <div id="@ErrorId" data-testid="@TestId("error-message")" class="tm-input-error-message" role="alert">@EffectiveError</div>
+    }
+</div>
+
+@code {
+    /// <summary>Current code text. Binding this parameter gives you the raw source text.</summary>
+    [Parameter] public string Value { get; set; } = string.Empty;
+
+    /// <summary>Fires on every keystroke with the new value.</summary>
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    /// <summary>
+    /// Prism grammar id used for syntax highlighting (e.g. "json", "csharp", "sql").
+    /// Highlighting only activates when the host page loads Prism; without it the editor
+    /// degrades to a plain monospace textarea. Null disables highlighting entirely.
+    /// </summary>
+    [Parameter] public string? Language { get; set; }
+
+    /// <summary>Label shown above the editor.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Placeholder text shown while empty.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Validation error message supplied by the host. Takes precedence over built-in JSON validation.</summary>
+    [Parameter] public string? Error { get; set; }
+
+    /// <summary>Number of visible rows. Defaults to 8.</summary>
+    [Parameter] public int Rows { get; set; } = 8;
+
+    /// <summary>Maximum character count.</summary>
+    [Parameter] public int? MaxLength { get; set; }
+
+    /// <summary>Disables the editor.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Makes the editor read-only (selectable and copyable, not editable).</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>Marks the editor as required. Shows a required marker on the label and sets aria-required.</summary>
+    [Parameter] public bool Required { get; set; }
+
+    /// <summary>
+    /// When true and <see cref="Language"/> is "json", the value is parsed on every change and
+    /// a localized error is shown for invalid JSON. See <see cref="IsValid"/>.
+    /// </summary>
+    [Parameter] public bool ValidateJson { get; set; }
+
+    /// <summary>Shows a copy-to-clipboard button in the top-right corner. Defaults to true.</summary>
+    [Parameter] public bool ShowCopyButton { get; set; } = true;
+
+    /// <summary>Shows a pretty-print button for JSON content. Only rendered when <see cref="Language"/> is "json".</summary>
+    [Parameter] public bool ShowFormatButton { get; set; }
+
+    /// <summary>HTML id attribute of the textarea.</summary>
+    [Parameter] public string Id { get; set; } = Guid.NewGuid().ToString("n")[..8];
+
+    /// <summary>Additional CSS class(es) applied to the root container.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Additional HTML attributes applied to the root container.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    // ── Private state ──────────────────────────────────────────────────────────
+
+    private ElementReference _bodyRef;
+    private ElementReference _textareaRef;
+    private ElementReference _codeRef;
+    private bool _isInitialized;
+    private string _lastSyncedValue = string.Empty;
+    private string? _lastSyncedLanguage;
+    private string? _jsonError;
+
+    private bool IsJson => string.Equals(Language, "json", StringComparison.OrdinalIgnoreCase);
+    private string? EffectiveError => !string.IsNullOrEmpty(Error) ? Error : _jsonError;
+    private bool HasError => !string.IsNullOrEmpty(EffectiveError);
+    private string ErrorId => $"{Id}-error";
+    private string? DescribedBy => HasError ? ErrorId : null;
+    private string HighlightLanguageClass => string.IsNullOrEmpty(Language) ? string.Empty : $"language-{Language}";
+
+    /// <summary>False when <see cref="ValidateJson"/> is on and the current value is not parseable JSON.</summary>
+    public bool IsValid => _jsonError is null;
+
+    // ── Lifecycle ──────────────────────────────────────────────────────────────
+
+    protected override void OnParametersSet()
+    {
+        ValidateValue();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("tmCodeEditor.init", _bodyRef, _textareaRef, _codeRef, Language);
+                _lastSyncedValue = Value;
+                _lastSyncedLanguage = Language;
+                _isInitialized = true;
+            }
+            catch { /* JS not available in SSR / tests */ }
+            return;
+        }
+
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        try
+        {
+            if (Language != _lastSyncedLanguage)
+            {
+                await JS.InvokeVoidAsync("tmCodeEditor.setLanguage", _textareaRef, Language);
+                _lastSyncedLanguage = Language;
+            }
+
+            // Re-highlight after the Value parameter changed from outside (Blazor updates the
+            // textarea DOM value itself; the JS input listener does not fire for that).
+            if (Value != _lastSyncedValue)
+            {
+                _lastSyncedValue = Value;
+                await JS.InvokeVoidAsync("tmCodeEditor.refresh", _textareaRef);
+            }
+        }
+        catch { /* JS not available in SSR / tests */ }
+    }
+
+    // ── Input handling ─────────────────────────────────────────────────────────
+
+    private async Task HandleInput(ChangeEventArgs e)
+    {
+        Value = e.Value?.ToString() ?? string.Empty;
+        _lastSyncedValue = Value;
+        ValidateValue();
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    private void ValidateValue()
+    {
+        if (!ValidateJson || !IsJson || string.IsNullOrWhiteSpace(Value))
+        {
+            _jsonError = null;
+            return;
+        }
+
+        try
+        {
+            using var _ = System.Text.Json.JsonDocument.Parse(Value);
+            _jsonError = null;
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            _jsonError = string.Format(Loc["TmCodeEditor_InvalidJson"], ex.Message);
+        }
+    }
+
+    // ── Public API ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Pretty-prints the current value as indented JSON. No-op when the value is empty
+    /// or not parseable JSON.
+    /// </summary>
+    public async Task FormatJsonAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Value))
+        {
+            return;
+        }
+
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(Value);
+            Value = System.Text.Json.JsonSerializer.Serialize(
+                doc.RootElement,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return;
+        }
+
+        ValidateValue();
+        await ValueChanged.InvokeAsync(Value);
+
+        if (_isInitialized)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("tmCodeEditor.setValue", _textareaRef, Value);
+                _lastSyncedValue = Value;
+            }
+            catch { }
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // ── IAsyncDisposable ───────────────────────────────────────────────────────
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("tmCodeEditor.destroy", _textareaRef); }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { }
+        catch (TaskCanceledException) { }
+    }
+}

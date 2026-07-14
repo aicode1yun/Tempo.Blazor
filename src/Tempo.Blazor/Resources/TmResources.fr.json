@@ -1,6 +1,8 @@
 {
   "TmChart_NoData": "Aucune donnée disponible",
   "TmChart_ToggleSeries": "Basculer {0}",
+  "TmCodeEditor_InvalidJson": "JSON invalide : {0}",
+  "TmCodeEditor_Format": "Formater",
   "TmColorGradient_Area": "Saturation et luminosité",
   "TmColorGradient_Hue": "Teinte",
   "TmColorGradient_Alpha": "Opacité",

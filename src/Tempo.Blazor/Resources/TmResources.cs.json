@@ -1,6 +1,8 @@
 {
   "TmChart_NoData": "Žádná data k dispozici",
   "TmChart_ToggleSeries": "Přepnout {0}",
+  "TmCodeEditor_InvalidJson": "Neplatný JSON: {0}",
+  "TmCodeEditor_Format": "Formátovat",
   "TmColorGradient_Area": "Sytost a jas",
   "TmColorGradient_Hue": "Odstín",
   "TmColorGradient_Alpha": "Průhlednost",

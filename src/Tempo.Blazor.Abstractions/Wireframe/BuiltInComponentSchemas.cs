@@ -91,6 +91,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmScheduler"] = ["scheduler"],
             ["TmDashboard"] = ["dashboard"],
             ["TmMarkdownEditor"] = ["markdown-editor"],
+            ["TmCodeEditor"] = ["code-editor"],
             ["TmRichEditorFull"] = ["rich-text-editor"],
             ["TmRichEditorSimple"] = ["rich-text-editor"],
             ["TmImageGallery"] = ["image-gallery"],
@@ -1887,6 +1888,18 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             [
                 P("placeholder",  "Placeholder",  PropType.String, "Write markdown...", cat: "Content"),
                 P("showToolbar",  "Show Toolbar", PropType.Bool,   true,                cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmCodeEditor", Category = "Complex", DisplayName = "Code Editor",
+            DefaultWidth = 500, DefaultHeight = 260,
+            Props =
+            [
+                P("language",    "Language",    PropType.String, "json", cat: "Content"),
+                P("label",       "Label",       PropType.String,         cat: "Content"),
+                P("placeholder", "Placeholder", PropType.String,         cat: "Content"),
             ]
         };
 

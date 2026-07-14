@@ -213,6 +213,8 @@ public abstract class LocalizationTestBase : TestContext
         // Document open dialog
         ["TmChart_NoData"]                      = "No data available",
         ["TmChart_ToggleSeries"]                = "Toggle {0}",
+        ["TmCodeEditor_InvalidJson"]            = "Invalid JSON: {0}",
+        ["TmCodeEditor_Format"]                 = "Format",
         ["TmDocumentOpenDialog_Title"]          = "Open document",
         ["TmDocumentOpenDialog_Search"]         = "Search documents",
         ["TmDocumentOpenDialog_NewFolder"]      = "New folder",
@@ -3377,6 +3379,9 @@ public abstract class LocalizationTestBase : TestContext
 
     private static MockTmLocalizer BuildCzechLocalizer() => new(new Dictionary<string, string>
     {
+        ["TmCodeEditor_InvalidJson"] = "Neplatný JSON: {0}",
+        ["TmCodeEditor_Format"]      = "Formátovat",
+
         // Shared
         ["Tm_Loading"]     = "Načítání...",
         ["Tm_Close"]       = "Zavřít",
