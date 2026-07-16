@@ -1,0 +1,96 @@
+@namespace Tempo.Blazor.Components.DataDisplay
+@inherits Tempo.Blazor.Components.TmComponentBase
+@using System.Globalization
+@using Tempo.Blazor.Abstractions.Models
+
+<span class="@RootClass @Class"
+      data-amount="@InvariantAmount"
+      data-currency="@(string.IsNullOrEmpty(Currency) ? null : Currency)"
+      aria-label="@AriaLabel">@Display</span>
+
+@code {
+    /// <summary>Amount to display. Null renders an em-dash placeholder.</summary>
+    [Parameter] public decimal? Amount { get; set; }
+
+    /// <summary>ISO 4217 currency code appended after the number. Empty renders a plain number.</summary>
+    [Parameter] public string Currency { get; set; } = string.Empty;
+
+    /// <summary>Decimal places override. Defaults to the currency's ISO 4217 minor units.</summary>
+    [Parameter] public int? Decimals { get; set; }
+
+    /// <summary>Whether positive/negative amounts are tinted. Default is true.</summary>
+    [Parameter] public bool Colored { get; set; } = true;
+
+    /// <summary>Whether positive amounts carry an explicit plus sign. Default is false.</summary>
+    [Parameter] public bool ShowSign { get; set; }
+
+    /// <summary>Additional CSS classes.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    private int EffectiveDecimals => Decimals ?? MoneyMath.GetCurrencyDecimals(Currency);
+
+    private decimal? RoundedAmount
+    {
+        get
+        {
+            if (Amount is null)
+            {
+                return null;
+            }
+
+            var rounded = Math.Round(Amount.Value, EffectiveDecimals, MidpointRounding.ToEven);
+            // Strip decimal negative zero so a value classified as zero never shows "-0.00".
+            return rounded == 0m ? Math.Abs(rounded) : rounded;
+        }
+    }
+
+    private string? InvariantAmount
+        => RoundedAmount?.ToString("F" + EffectiveDecimals.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+
+    private string Display
+    {
+        get
+        {
+            if (RoundedAmount is null)
+            {
+                return "—";
+            }
+
+            var number = RoundedAmount.Value.ToString("N" + EffectiveDecimals.ToString(CultureInfo.InvariantCulture), CultureInfo.CurrentCulture);
+            if (ShowSign && RoundedAmount.Value > 0)
+            {
+                number = "+" + number;
+            }
+
+            return string.IsNullOrEmpty(Currency) ? number : number + " " + Currency;
+        }
+    }
+
+    private string AriaLabel
+        => RoundedAmount is null
+            ? Loc["TmMoneyDisplay_Empty"]
+            : Display;
+
+    private string RootClass
+    {
+        get
+        {
+            var classes = new List<string> { "tm-money" };
+            if (RoundedAmount is null)
+            {
+                classes.Add("tm-money--empty");
+            }
+            else if (Colored)
+            {
+                classes.Add(RoundedAmount.Value switch
+                {
+                    > 0 => "tm-money--positive",
+                    < 0 => "tm-money--negative",
+                    _ => "tm-money--zero"
+                });
+            }
+
+            return string.Join(" ", classes);
+        }
+    }
+}

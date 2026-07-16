@@ -115,6 +115,8 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmAuditTrailViewer"] = ["timeline", "list-view"],
             ["TmAuditLogViewer"] = ["audit-log"],
             ["TmDeadlineCalculator"] = ["deadline-calculator"],
+            ["TmLedgerGrid"] = ["ledger-grid"],
+            ["TmMoneyDisplay"] = ["money-display"],
             ["TmAIPrompt"] = ["text-area", "button"],
             ["TmWidgetSelector"] = ["dashboard", "card"],
             ["__group__"] = ["section"],
@@ -2117,6 +2119,31 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             Props =
             [
                 P("rowCount", "Row Count", PropType.Int, 5, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmLedgerGrid", Category = "Complex", DisplayName = "Ledger Grid",
+            DefaultWidth = 680, DefaultHeight = 380,
+            Props =
+            [
+                P("rowCount",   "Row Count",   PropType.Int,    6,     cat: "Content"),
+                P("currency",   "Currency",    PropType.String, "CZK", cat: "Content"),
+                P("showFooter", "Show Footer", PropType.Bool,   true,  cat: "Appearance"),
+                P("matching",   "Matching",    PropType.Bool,   true,  cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmMoneyDisplay", Category = "Basic", DisplayName = "Money Display",
+            DefaultWidth = 140, DefaultHeight = 28,
+            Props =
+            [
+                P("amount",   "Amount",   PropType.String, "1 234,56", cat: "Content"),
+                P("currency", "Currency", PropType.String, "CZK",      cat: "Content"),
+                P("negative", "Negative", PropType.Bool,   false,      cat: "State"),
             ]
         };
 

@@ -93,6 +93,7 @@
       "Tempo.Blazor.Components.ImportExport",
       "Tempo.Blazor.Components.Inputs",
       "Tempo.Blazor.Components.Layout",
+      "Tempo.Blazor.Components.Ledger",
       "Tempo.Blazor.Components.Navigation",
       "Tempo.Blazor.Components.Notifications",
       "Tempo.Blazor.Components.Pickers",
@@ -6549,6 +6550,60 @@
         {
           "title": "Swimlanes grouped by assignee",
           "code": "<TmKanbanBoard TItem=\"TaskItem\"\n               Items=\"@tasks\"\n               Columns=\"@columns\"\n               ColumnSelector=\"t => t.Status\"\n               SwimlaneSelector=\"t => string.IsNullOrEmpty(t.Assignee) ? null : t.Assignee\"\n               CardTemplate=\"RenderCard\"\n               OnItemMoved=\"HandleMove\"\n               OnItemReordered=\"HandleReorder\" />\n\n@code {\n    // e.ToSwimlane is the target assignee (null = unassigned / \"no value\" lane)\n    void HandleMove(KanbanMoveEvent<TaskItem> e)\n        => Apply(e, e.Item with { Status = e.ToColumn, Assignee = e.ToSwimlane ?? \"\" });\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "TmMoneyDisplay",
+      "kind": "Component",
+      "category": "Data Display",
+      "namespace": "Tempo.Blazor.Components.DataDisplay",
+      "description": "Atomic monetary amount: currency-aware decimals (ISO 4217 minor units via MoneyMath), locale number formatting with tabular numerals, semantic positive/negative/zero colors, an optional explicit plus sign, and an em-dash placeholder for null amounts. Exposes invariant data-amount/data-currency attributes for testing and scraping.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/TmMoneyDisplay.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.DataDisplay"
+      ],
+      "parameters": [
+        {
+          "name": "Amount",
+          "type": "decimal?",
+          "isRequired": false,
+          "description": "Amount to display. Null renders an em-dash placeholder."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes."
+        },
+        {
+          "name": "Colored",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether positive/negative amounts are tinted with the semantic success/danger colors."
+        },
+        {
+          "name": "Currency",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "ISO 4217 currency code appended after the number. Empty renders a plain number."
+        },
+        {
+          "name": "Decimals",
+          "type": "int?",
+          "isRequired": false,
+          "description": "Decimal places override. Defaults to the currency's ISO 4217 minor units."
+        },
+        {
+          "name": "ShowSign",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether positive amounts carry an explicit plus sign.",
+          "default": "false"
         }
       ]
     },
@@ -16744,6 +16799,74 @@
       ]
     },
     {
+      "itemName": "TmLedgerGrid",
+      "kind": "Component",
+      "category": "Ledger",
+      "namespace": "Tempo.Blazor.Components.Ledger",
+      "description": "Accounting ledger grid: debit/credit/running-balance columns with exact decimal money rendering via TmMoneyDisplay, server-side paging and aggregation through ILedgerDataProvider, filter-wide footer totals, search plus match-state and currency filters, and a row-matching workflow (pair/unpair with Matched/PartiallyMatched states) when the provider implements ILedgerMatchingProvider.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Ledger/TmLedgerGrid.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Ledger"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "OnEntrySelected",
+          "type": "EventCallback<LedgerEntry>",
+          "isRequired": false,
+          "description": "Raised when a row is clicked."
+        },
+        {
+          "name": "OnMatchingChanged",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised after entries were matched or unmatched."
+        },
+        {
+          "name": "PageSize",
+          "type": "int",
+          "isRequired": false,
+          "default": "50",
+          "description": "Rows per page (server-side paging)."
+        },
+        {
+          "name": "Provider",
+          "type": "ILedgerDataProvider",
+          "isRequired": true,
+          "description": "Data source of the grid. Use InMemoryLedgerDataProvider for demos and tests; implement ILedgerMatchingProvider to enable the matching UI.",
+          "editorRequired": true
+        },
+        {
+          "name": "ShowFilters",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the search and filter controls are shown."
+        },
+        {
+          "name": "ShowFooter",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the footer with filter-wide debit/credit/balance totals is shown."
+        },
+        {
+          "name": "ShowRunningBalance",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the running balance column (opening balance + cumulative page movements) is shown."
+        }
+      ]
+    },
+    {
       "itemName": "TmBottomNavigation",
       "kind": "Component",
       "category": "Navigation",
@@ -23019,6 +23142,10 @@
       "kind": "Css"
     },
     {
+      "path": "src/Tempo.Blazor/wwwroot/css/components/_ledger-grid.css",
+      "kind": "Css"
+    },
+    {
       "path": "src/Tempo.Blazor/wwwroot/css/components/_lightbox.css",
       "kind": "Css"
     },
@@ -23376,11 +23503,11 @@
     }
   ],
   "summary": {
-    "itemCount": 324,
-    "manualItemCount": 324,
-    "generatedItemCount": 316,
+    "itemCount": 326,
+    "manualItemCount": 326,
+    "generatedItemCount": 318,
     "generatedOnlyItemCount": 0,
-    "componentCount": 187,
+    "componentCount": 189,
     "publicApiTypeCount": 129
   }
 }

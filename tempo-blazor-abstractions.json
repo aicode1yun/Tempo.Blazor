@@ -14860,6 +14860,26 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "ILedgerDataProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Data source contract of TmLedgerGrid: filtered paged queries with server-side aggregation and opening balances, plus the distinct currency list.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ILedgerMatchingProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Marker capability interface for providers that can pair entries into match groups; TmLedgerGrid shows the matching UI only when its provider implements it.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ImageUrlResolvers",
       "kind": "Class",
       "category": "Models",
@@ -14990,6 +15010,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "InMemoryLedgerDataProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory ILedgerDataProvider and ILedgerMatchingProvider over a fixed entry list. Aggregates sum exact decimals first and round once per currency. Suitable for demos, tests, and small ledgers.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "InMemoryPdfAnnotationProvider",
       "kind": "Class",
       "category": "Models",
@@ -15007,6 +15037,76 @@
       "description": "Persistence contract for PDF viewer annotations (comment threads anchored to page points, areas, or text ranges). Implementations load, create, reply to, edit, delete, resolve, and reopen threads for a document.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/IPdfAnnotationProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LedgerAggregates",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Server-side aggregates of the whole filtered set: debit total, credit total, balance, and count.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LedgerEntry",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Single ledger movement: date, document number, description, counterparty, exact-decimal debit/credit, ISO currency, match state and group, and metadata.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LedgerMatchResult",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Result of matching entries into one group: group id, resulting state (Matched when balanced, otherwise PartiallyMatched), and the included entry ids.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LedgerMatchState",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Match state of a ledger entry: Unmatched, Matched, PartiallyMatched, or Disputed.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LedgerPage",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One page of ledger results with filter-wide aggregates and the opening balance (signed sum of all filtered rows before the page) for running-balance rendering.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LedgerQuery",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Filtered, paged ledger query (search, match state, currency, period). Results are ordered ascending by date then id so running balances are well-defined.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "MoneyMath",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Exact money arithmetic helpers: ISO 4217 minor-unit decimals per currency and midpoint rounding (banker's rounding by default).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
       "documentationStatus": "merged"
     },
     {
@@ -34574,11 +34674,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1359,
-    "manualItemCount": 1359,
-    "generatedItemCount": 1342,
+    "itemCount": 1369,
+    "manualItemCount": 1369,
+    "generatedItemCount": 1352,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1342
+    "publicApiTypeCount": 1352
   }
 }

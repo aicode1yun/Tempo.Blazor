@@ -1,0 +1,50 @@
+{
+  "itemName": "TmMoneyDisplay",
+  "kind": "Component",
+  "category": "Data Display",
+  "description": "Atomic monetary amount: currency-aware decimals (ISO 4217 minor units via MoneyMath), locale number formatting with tabular numerals, semantic positive/negative/zero colors, an optional explicit plus sign, and an em-dash placeholder for null amounts. Exposes invariant data-amount/data-currency attributes for testing and scraping.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DataDisplay"
+  ],
+  "parameters": [
+    {
+      "name": "Amount",
+      "type": "decimal?",
+      "isRequired": false,
+      "description": "Amount to display. Null renders an em-dash placeholder."
+    },
+    {
+      "name": "Currency",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"\"",
+      "description": "ISO 4217 currency code appended after the number. Empty renders a plain number."
+    },
+    {
+      "name": "Decimals",
+      "type": "int?",
+      "isRequired": false,
+      "description": "Decimal places override. Defaults to the currency's ISO 4217 minor units."
+    },
+    {
+      "name": "Colored",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether positive/negative amounts are tinted with the semantic success/danger colors."
+    },
+    {
+      "name": "ShowSign",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Whether positive amounts carry an explicit plus sign."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes."
+    }
+  ]
+}
