@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "The visible area of a TmMap: the map center and the current zoom level. Reported by viewport-changing events (zoom, pan) and accepted by SetViewAsync.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/Maps/MapViewport.cs",
+  "documentationStatus": "generated",
+  "itemName": "MapViewport"
+}

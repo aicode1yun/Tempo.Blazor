@@ -68,6 +68,22 @@
     r: 6;
 }
 
+/* ── Area chart ── */
+
+.tm-chart__area {
+    fill-opacity: var(--tm-chart-area-fill-opacity);
+    pointer-events: none;
+}
+
+/* Gradient fills carry their own opacity in the gradient stops. */
+.tm-chart__area--gradient {
+    fill-opacity: 1;
+}
+
+.tm-chart__area-stem {
+    stroke-linecap: round;
+}
+
 /* ── Pie / Donut ── */
 
 .tm-chart__slice {
@@ -224,6 +240,10 @@
     transform-origin: center;
 }
 
+.tm-chart--animated .tm-chart__area {
+    animation: tm-chart-area-fade 0.8s ease-out;
+}
+
 @keyframes tm-chart-bar-grow {
     from { transform: scaleY(0); }
     to { transform: scaleY(1); }
@@ -243,11 +263,17 @@
     to { opacity: 1; transform: scale(1); }
 }
 
+@keyframes tm-chart-area-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .tm-chart--animated .tm-chart__bar,
     .tm-chart--animated .tm-chart__line,
     .tm-chart--animated .tm-chart__point,
-    .tm-chart--animated .tm-chart__slice {
+    .tm-chart--animated .tm-chart__slice,
+    .tm-chart--animated .tm-chart__area {
         animation: none;
     }
     .tm-chart--animated .tm-chart__line {

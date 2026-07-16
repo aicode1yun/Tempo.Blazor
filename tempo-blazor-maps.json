@@ -1,0 +1,335 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.Maps",
+    "title": "Tempo.Blazor.Maps",
+    "description": "Leaflet powered interactive map components for Tempo.Blazor with bundled OpenStreetMap tiles support, Canvas-rendered marker batches, and marker clustering.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;components;map;leaflet;openstreetmap;markers;clustering",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Maps"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor/Tempo.Blazor.csproj",
+      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Components.Maps"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.Maps",
+    "overview": "Leaflet powered interactive map components for Tempo.Blazor with bundled OpenStreetMap tiles support, Canvas-rendered marker batches, and marker clustering.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Maps"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "8.0.12"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.AspNetCore.Components.Web",
+        "version": "10.0.3"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "TmMap",
+      "kind": "Component",
+      "category": "Maps",
+      "namespace": "Tempo.Blazor.Components.Maps",
+      "description": "Interactive Leaflet map with OpenStreetMap tiles. Leaflet 1.9.4 and leaflet.markercluster 1.5.3 are bundled with the package (no CDN dependency) and loaded lazily by the ES module. Marker batches render through a Canvas renderer; data sets (markers/clusters) are swapped atomically. Supports client-side clustering, server-side aggregated cluster bubbles, and an optional IMapDataProvider with debounced, cancellable viewport loading.",
+      "packageId": "Tempo.Blazor.Maps",
+      "sourcePath": "src/Tempo.Blazor.Maps/Components/Maps/TmMap.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Abstractions.Models",
+        "@using Tempo.Blazor.Components.Maps"
+      ],
+      "parameters": [
+        {
+          "name": "CenterLatitude",
+          "type": "double",
+          "isRequired": false,
+          "default": "49.8175",
+          "description": "Latitude of the initial map center in decimal degrees. Defaults to the Czech Republic centroid."
+        },
+        {
+          "name": "CenterLongitude",
+          "type": "double",
+          "isRequired": false,
+          "default": "15.473",
+          "description": "Longitude of the initial map center in decimal degrees. Defaults to the Czech Republic centroid."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes applied to the root element."
+        },
+        {
+          "name": "ClusterPoints",
+          "type": "IReadOnlyList<MapClusterPoint>?",
+          "isRequired": false,
+          "description": "Server-side aggregated cluster points rendered as count bubbles. A cluster with Count = 1 renders as a plain marker. Replacing the list atomically re-renders all clusters."
+        },
+        {
+          "name": "DataProvider",
+          "type": "IMapDataProvider?",
+          "isRequired": false,
+          "description": "Optional data source: when set, the component requests fresh points after the viewport settles (debounced), cancelling the superseded request. The component stays fully usable without a provider."
+        },
+        {
+          "name": "DataRequestDebounceMs",
+          "type": "int",
+          "isRequired": false,
+          "default": "300",
+          "description": "Debounce interval in milliseconds for provider requests after pan/zoom. Defaults to 300."
+        },
+        {
+          "name": "Height",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"400px\"",
+          "description": "CSS height of the map container (any CSS length). Defaults to 400px."
+        },
+        {
+          "name": "Markers",
+          "type": "IReadOnlyList<MapMarker>?",
+          "isRequired": false,
+          "description": "Markers rendered on the map via the Canvas renderer. Markers with a duplicate non-null Id are de-duplicated (the first occurrence wins). Replacing the list atomically re-renders all markers."
+        },
+        {
+          "name": "MaxZoom",
+          "type": "int",
+          "isRequired": false,
+          "default": "19",
+          "description": "Maximum zoom level offered by the tile layer. Defaults to 19."
+        },
+        {
+          "name": "OnClusterClick",
+          "type": "EventCallback<MapClusterPoint>",
+          "isRequired": false,
+          "description": "Raised when a cluster is clicked: for server-side clusters the payload carries the cluster key and count; for client-side (markercluster) groups the key is null."
+        },
+        {
+          "name": "OnDataError",
+          "type": "EventCallback<Exception>",
+          "isRequired": false,
+          "description": "Raised when DataProvider throws; the map stays usable and keeps its last data."
+        },
+        {
+          "name": "OnMapClick",
+          "type": "EventCallback<MapViewport>",
+          "isRequired": false,
+          "description": "Raised when the map background is clicked. The payload carries the clicked coordinates and current zoom."
+        },
+        {
+          "name": "OnMarkerClick",
+          "type": "EventCallback<MapMarker>",
+          "isRequired": false,
+          "description": "Raised when a marker is clicked. The payload carries the marker id and coordinates."
+        },
+        {
+          "name": "OnZoomChanged",
+          "type": "EventCallback<MapViewport>",
+          "isRequired": false,
+          "description": "Raised after the zoom level changes. The payload carries the new center and zoom."
+        },
+        {
+          "name": "TileUrlTemplate",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png\"",
+          "description": "Tile layer URL template. Defaults to the public OpenStreetMap tile server."
+        },
+        {
+          "name": "UseClientClustering",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true, Markers are grouped client-side with leaflet.markercluster (spiderfy on max zoom, zoom-to-bounds on cluster click)."
+        },
+        {
+          "name": "Zoom",
+          "type": "double",
+          "isRequired": false,
+          "default": "7.5",
+          "description": "Initial Leaflet zoom level. Fractional values are supported. Defaults to 7.5 (whole Czech Republic)."
+        }
+      ],
+      "methods": [
+        {
+          "name": "SetViewAsync",
+          "signature": "ValueTask SetViewAsync(MapViewport viewport)",
+          "description": "Moves the map to the given center and zoom without animation."
+        },
+        {
+          "name": "GetViewportAsync",
+          "signature": "ValueTask<MapViewport> GetViewportAsync()",
+          "description": "Reads the current map center and zoom."
+        },
+        {
+          "name": "SetMarkersAsync",
+          "signature": "ValueTask SetMarkersAsync(IReadOnlyList<MapMarker> markers)",
+          "description": "Atomically replaces all declarative data with the supplied marker batch (Canvas rendered)."
+        },
+        {
+          "name": "SetClusterPointsAsync",
+          "signature": "ValueTask SetClusterPointsAsync(IReadOnlyList<MapClusterPoint> points)",
+          "description": "Atomically replaces all declarative data with the supplied server-side cluster points."
+        },
+        {
+          "name": "AddMarkersAsync",
+          "signature": "ValueTask AddMarkersAsync(IReadOnlyList<MapMarker> markers)",
+          "description": "Adds a batch of Canvas markers on top of the current content."
+        },
+        {
+          "name": "AddClusterGroupAsync",
+          "signature": "ValueTask<string?> AddClusterGroupAsync()",
+          "description": "Creates an empty client-side cluster group (leaflet.markercluster) and returns its id."
+        },
+        {
+          "name": "AddMarkerToClusterAsync",
+          "signature": "ValueTask AddMarkerToClusterAsync(string clusterId, MapMarker marker)",
+          "description": "Adds a single marker into a client-side cluster group."
+        },
+        {
+          "name": "AddMarkersToClusterAsync",
+          "signature": "ValueTask AddMarkersToClusterAsync(string clusterId, IReadOnlyList<MapMarker> markers)",
+          "description": "Adds a batch of markers into a client-side cluster group."
+        },
+        {
+          "name": "ClearMarkersAsync",
+          "signature": "ValueTask ClearMarkersAsync()",
+          "description": "Removes all markers, cluster groups, and data layers from the map."
+        },
+        {
+          "name": "InvalidateSizeAsync",
+          "signature": "ValueTask InvalidateSizeAsync()",
+          "description": "Recalculates the map size. Call after the map container becomes visible again (e.g. hidden tab)."
+        },
+        {
+          "name": "RefreshDataAsync",
+          "signature": "ValueTask RefreshDataAsync()",
+          "description": "Requests fresh data from DataProvider immediately (bypasses the debounce). No-op without a provider."
+        }
+      ],
+      "cssClasses": [
+        "tm-map",
+        "tm-map__container",
+        "tm-map__loading",
+        "tm-map__loading-text",
+        "tm-map__cluster",
+        "tm-map__cluster-icon"
+      ],
+      "examples": [
+        {
+          "title": "Basic map with markers",
+          "code": "<TmMap CenterLatitude=\"49.8175\"\n       CenterLongitude=\"15.473\"\n       Zoom=\"7.5\"\n       Height=\"480px\"\n       Markers=\"@markers\"\n       OnMarkerClick=\"HandleMarkerClick\" />"
+        },
+        {
+          "title": "Client-side clustering",
+          "code": "<TmMap Markers=\"@manyMarkers\"\n       UseClientClustering=\"true\"\n       OnClusterClick=\"HandleClusterClick\" />"
+        },
+        {
+          "title": "Hybrid provider (server-side clusters below a zoom threshold)",
+          "code": "<TmMap DataProvider=\"@myProvider\"\n       OnClusterClick=\"DrillDown\"\n       OnDataError=\"ShowError\" />"
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [],
+  "assets": [
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/css/components/_map.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/css/leaflet/images/layers-2x.png",
+      "kind": "Image"
+    },
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/css/leaflet/images/layers.png",
+      "kind": "Image"
+    },
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/css/leaflet/images/marker-icon-2x.png",
+      "kind": "Image"
+    },
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/css/leaflet/images/marker-icon.png",
+      "kind": "Image"
+    },
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/css/leaflet/images/marker-shadow.png",
+      "kind": "Image"
+    },
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/css/leaflet/leaflet.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/css/leaflet/MarkerCluster.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/css/leaflet/MarkerCluster.Default.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/css/tempo-blazor-maps.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/js/leaflet/leaflet.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/js/leaflet/leaflet.markercluster.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.Maps/wwwroot/js/map.js",
+      "kind": "JavaScript"
+    }
+  ],
+  "summary": {
+    "itemCount": 1,
+    "manualItemCount": 1,
+    "generatedItemCount": 1,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 1,
+    "publicApiTypeCount": 0
+  }
+}

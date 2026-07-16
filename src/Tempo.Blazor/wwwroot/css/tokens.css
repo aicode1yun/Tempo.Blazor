@@ -209,4 +209,7 @@
   --tm-sidebar-width:    16rem;
   --tm-sidebar-collapsed: 3.5rem;
   --tm-topbar-height:    3.5rem;
+
+  /* ── Charts ── */
+  --tm-chart-area-fill-opacity: 0.25;
 }

@@ -96,4 +96,7 @@
   --tm-shadow-lg:  0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
   --tm-shadow-xl:  0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
   --tm-shadow-focus: 0 0 0 3px rgba(96, 165, 250, 0.5);
+
+  /* Charts — slightly stronger area fill on dark surfaces */
+  --tm-chart-area-fill-opacity: 0.3;
 }

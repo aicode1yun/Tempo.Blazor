@@ -716,6 +716,10 @@ public abstract class LocalizationTestBase : TestContext
 
         // TmBottomNavigation
         ["TmBottomNavigation_AriaLabel"] = "Bottom navigation",
+        ["TmMap_AriaLabel"] = "Interactive map",
+        ["TmMap_Loading"] = "Loading map…",
+        ["TmMap_Attribution"] = "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
+        ["TmMap_ClusterAriaLabel"] = "Cluster of {0} places",
 
         // TmMultiSelect
         ["TmMultiSelect_ConfirmButton"] = "Done",
@@ -5953,6 +5957,10 @@ public abstract class LocalizationTestBase : TestContext
 
         // TmBottomNavigation
         ["TmBottomNavigation_AriaLabel"] = "SpodnA- navigace",
+        ["TmMap_AriaLabel"] = "Interaktivní mapa",
+        ["TmMap_Loading"] = "Načítání mapy…",
+        ["TmMap_Attribution"] = "&copy; přispěvatelé <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>",
+        ["TmMap_ClusterAriaLabel"] = "Shluk {0} míst",
     });
 }
 

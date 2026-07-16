@@ -5,9 +5,15 @@
       "packageId": "Tempo.Blazor",
       "sourceProject": "src/Tempo.Blazor/Tempo.Blazor.csproj",
       "outputFile": "tempo-blazor.json",
-      "aliases": [ "tempo-blazor-documentation.json" ],
-      "documentationRoots": [ "Components" ],
-      "componentRoots": [ "src/Tempo.Blazor/Components" ],
+      "aliases": [
+        "tempo-blazor-documentation.json"
+      ],
+      "documentationRoots": [
+        "Components"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor/Components"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "gettingStartedFile": "gettingStarted.json",
@@ -19,8 +25,27 @@
       "packageId": "Tempo.Blazor.PdfViewer",
       "sourceProject": "src/Tempo.Blazor.PdfViewer/Tempo.Blazor.PdfViewer.csproj",
       "outputFile": "tempo-blazor-pdfviewer.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.PdfViewer/items" ],
-      "componentRoots": [ "src/Tempo.Blazor.PdfViewer/Components" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.PdfViewer/items"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor.PdfViewer/Components"
+      ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "includePublicTypes": true,
+      "includeAssets": true
+    },
+    {
+      "packageId": "Tempo.Blazor.Maps",
+      "sourceProject": "src/Tempo.Blazor.Maps/Tempo.Blazor.Maps.csproj",
+      "outputFile": "tempo-blazor-maps.json",
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.Maps/items"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor.Maps/Components"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true,
@@ -30,8 +55,12 @@
       "packageId": "Tempo.Blazor.Codes",
       "sourceProject": "src/Tempo.Blazor.Codes/Tempo.Blazor.Codes.csproj",
       "outputFile": "tempo-blazor-codes.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.Codes/items" ],
-      "componentRoots": [ "src/Tempo.Blazor.Codes/Components" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.Codes/items"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor.Codes/Components"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true,
@@ -41,8 +70,12 @@
       "packageId": "Tempo.Blazor.DiagramEditor",
       "sourceProject": "src/Tempo.Blazor.DiagramEditor/Tempo.Blazor.DiagramEditor.csproj",
       "outputFile": "tempo-blazor-diagrameditor.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.DiagramEditor/items" ],
-      "componentRoots": [ "src/Tempo.Blazor.DiagramEditor/Components" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.DiagramEditor/items"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor.DiagramEditor/Components"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true,
@@ -52,8 +85,12 @@
       "packageId": "Tempo.Blazor.Wireframe",
       "sourceProject": "src/Tempo.Blazor.Wireframe/Tempo.Blazor.Wireframe.csproj",
       "outputFile": "tempo-blazor-wireframe.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.Wireframe/items" ],
-      "componentRoots": [ "src/Tempo.Blazor.Wireframe/Components" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.Wireframe/items"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor.Wireframe/Components"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true,
@@ -63,8 +100,12 @@
       "packageId": "Tempo.Blazor.Modeling",
       "sourceProject": "src/Tempo.Blazor.Modeling/Tempo.Blazor.Modeling.csproj",
       "outputFile": "tempo-blazor-modeling.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.Modeling/items" ],
-      "componentRoots": [ "src/Tempo.Blazor.Modeling/Components" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.Modeling/items"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor.Modeling/Components"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true,
@@ -74,8 +115,12 @@
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourceProject": "src/Tempo.Blazor.Spreadsheet/Tempo.Blazor.Spreadsheet.csproj",
       "outputFile": "tempo-blazor-spreadsheet.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.Spreadsheet/items" ],
-      "componentRoots": [ "src/Tempo.Blazor.Spreadsheet/Components" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.Spreadsheet/items"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor.Spreadsheet/Components"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true,
@@ -85,7 +130,9 @@
       "packageId": "Tempo.Blazor.GanttXlsx",
       "sourceProject": "src/Tempo.Blazor.GanttXlsx/Tempo.Blazor.GanttXlsx.csproj",
       "outputFile": "tempo-blazor-ganttxlsx.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.GanttXlsx/items" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.GanttXlsx/items"
+      ],
       "componentRoots": [],
       "includePatterns": [],
       "excludePatterns": [],
@@ -96,7 +143,9 @@
       "packageId": "Tempo.Blazor.DataTableXlsx",
       "sourceProject": "src/Tempo.Blazor.DataTableXlsx/Tempo.Blazor.DataTableXlsx.csproj",
       "outputFile": "tempo-blazor-datatablexlsx.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.DataTableXlsx/items" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.DataTableXlsx/items"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true
@@ -105,7 +154,9 @@
       "packageId": "Tempo.Blazor.WebPush",
       "sourceProject": "src/Tempo.Blazor.WebPush/Tempo.Blazor.WebPush.csproj",
       "outputFile": "tempo-blazor-webpush.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.WebPush/items" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.WebPush/items"
+      ],
       "componentRoots": [],
       "includePatterns": [],
       "excludePatterns": [],
@@ -116,8 +167,12 @@
       "packageId": "Tempo.Blazor.DocumentEditor",
       "sourceProject": "src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj",
       "outputFile": "tempo-blazor-documenteditor.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.DocumentEditor/items" ],
-      "componentRoots": [ "src/Tempo.Blazor.DocumentEditor/Components" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.DocumentEditor/items"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor.DocumentEditor/Components"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true,
@@ -127,8 +182,12 @@
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourceProject": "src/Tempo.Blazor.NotionEditor/Tempo.Blazor.NotionEditor.csproj",
       "outputFile": "tempo-blazor-notioneditor.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.NotionEditor/items" ],
-      "componentRoots": [ "src/Tempo.Blazor.NotionEditor/Components" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.NotionEditor/items"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor.NotionEditor/Components"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true,
@@ -138,8 +197,12 @@
       "packageId": "Tempo.Blazor.Signing",
       "sourceProject": "src/Tempo.Blazor.Signing/Tempo.Blazor.Signing.csproj",
       "outputFile": "tempo-blazor-signing.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.Signing/items" ],
-      "componentRoots": [ "src/Tempo.Blazor.Signing/Components" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.Signing/items"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor.Signing/Components"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true,
@@ -149,7 +212,9 @@
       "packageId": "Tempo.Blazor.All",
       "sourceProject": "src/Tempo.Blazor.All/Tempo.Blazor.All.csproj",
       "outputFile": "tempo-blazor-all-package.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.All/items" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.All/items"
+      ],
       "componentRoots": [],
       "includePatterns": [],
       "excludePatterns": [],
@@ -160,7 +225,9 @@
       "packageId": "Tempo.Blazor.Abstractions",
       "sourceProject": "src/Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj",
       "outputFile": "tempo-blazor-abstractions.json",
-      "documentationRoots": [ "Abstractions" ],
+      "documentationRoots": [
+        "Abstractions"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true
@@ -169,7 +236,9 @@
       "packageId": "Tempo.Blazor.FluentValidation",
       "sourceProject": "src/Tempo.Blazor.FluentValidation/Tempo.Blazor.FluentValidation.csproj",
       "outputFile": "tempo-blazor-fluentvalidation.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.FluentValidation/items" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.FluentValidation/items"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true
@@ -178,7 +247,9 @@
       "packageId": "Tempo.Blazor.Collaboration",
       "sourceProject": "src/Tempo.Blazor.Collaboration/Tempo.Blazor.Collaboration.csproj",
       "outputFile": "tempo-blazor-collaboration.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.Collaboration/items" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.Collaboration/items"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true
@@ -187,7 +258,9 @@
       "packageId": "Tempo.Blazor.DocumentFormats",
       "sourceProject": "src/Tempo.Blazor.DocumentFormats/Tempo.Blazor.DocumentFormats.csproj",
       "outputFile": "tempo-blazor-documentformats.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.DocumentFormats/items" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.DocumentFormats/items"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true
@@ -196,7 +269,9 @@
       "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
       "sourceProject": "src/Tempo.Blazor.EmailTemplates.Abstractions/Tempo.Blazor.EmailTemplates.Abstractions.csproj",
       "outputFile": "tempo-blazor-emailtemplates-abstractions.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.EmailTemplates.Abstractions/items" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.EmailTemplates.Abstractions/items"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true
@@ -205,8 +280,12 @@
       "packageId": "Tempo.Blazor.EmailTemplates",
       "sourceProject": "src/Tempo.Blazor.EmailTemplates/Tempo.Blazor.EmailTemplates.csproj",
       "outputFile": "tempo-blazor-emailtemplates.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.EmailTemplates/items" ],
-      "componentRoots": [ "src/Tempo.Blazor.EmailTemplates/Components" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.EmailTemplates/items"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor.EmailTemplates/Components"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true,
@@ -216,7 +295,9 @@
       "packageId": "Tempo.Blazor.Mcp",
       "sourceProject": "src/Tempo.Blazor.Mcp/Tempo.Blazor.Mcp.csproj",
       "outputFile": "tempo-blazor-mcp.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.Mcp/items" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.Mcp/items"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "includePublicTypes": true
@@ -225,7 +306,9 @@
       "packageId": "Tempo.Reporting.Abstractions",
       "sourceProject": "src/Tempo.Reporting.Abstractions/Tempo.Reporting.Abstractions.csproj",
       "outputFile": "tempo-reporting-abstractions.json",
-      "documentationRoots": [ "Packages/Tempo.Reporting.Abstractions/items" ],
+      "documentationRoots": [
+        "Packages/Tempo.Reporting.Abstractions/items"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "gettingStartedFile": "Packages/Tempo.Reporting.Abstractions/gettingStarted.json",
@@ -236,7 +319,9 @@
       "packageId": "Tempo.Reporting.Engine",
       "sourceProject": "src/Tempo.Reporting.Engine/Tempo.Reporting.Engine.csproj",
       "outputFile": "tempo-reporting-engine.json",
-      "documentationRoots": [ "Packages/Tempo.Reporting.Engine/items" ],
+      "documentationRoots": [
+        "Packages/Tempo.Reporting.Engine/items"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "gettingStartedFile": "Packages/Tempo.Reporting.Engine/gettingStarted.json",
@@ -247,8 +332,12 @@
       "packageId": "Tempo.Blazor.Reporting",
       "sourceProject": "src/Tempo.Blazor.Reporting/Tempo.Blazor.Reporting.csproj",
       "outputFile": "tempo-blazor-reporting.json",
-      "documentationRoots": [ "Packages/Tempo.Blazor.Reporting/items" ],
-      "componentRoots": [ "src/Tempo.Blazor.Reporting/Components" ],
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.Reporting/items"
+      ],
+      "componentRoots": [
+        "src/Tempo.Blazor.Reporting/Components"
+      ],
       "includePatterns": [],
       "excludePatterns": [],
       "gettingStartedFile": "Packages/Tempo.Blazor.Reporting/gettingStarted.json",

@@ -33,7 +33,7 @@
   "TmChip_Remove": "Remove",
   "TmModal_Close": "Close",
   "TmDocumentOpenDialog_Breadcrumb": "Breadcrumb",
-  "TmFileDropZone_Remove": "Remove",
+  "TmFileDropZone_Remove": "Remove file",
   "TmLightbox_Aria": "Image lightbox",
   "TmNumberInput_Decrease": "Decrease",
   "TmNumberInput_Increase": "Increase",
@@ -2133,7 +2133,6 @@
   "TmFileDropZone_DragDrop": "Drag and drop files here",
   "TmFileDropZone_MaxSize": "Maximum file size: {0}",
   "TmFileDropZone_Or": "or",
-  "TmFileDropZone_Remove": "Remove file",
   "TmFileDropZone_Uploading": "Uploading...",
   "TmFileManager_AddAttachment": "Add Attachment",
   "TmFileManager_Attachments": "Attachments",
@@ -4747,5 +4746,9 @@
   "Tm_SelectAll": "Select all",
   "Tm_Upload": "Upload",
   "Tm_Yes": "Yes",
-  "TmNotionBlock_TodoPlaceholder": "To-do"
+  "TmNotionBlock_TodoPlaceholder": "To-do",
+  "TmMap_AriaLabel": "Interactive map",
+  "TmMap_Loading": "Loading map…",
+  "TmMap_Attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
+  "TmMap_ClusterAriaLabel": "Cluster of {0} places"
 }

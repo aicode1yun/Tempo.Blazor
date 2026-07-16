@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "One data set for a TmMap viewport: either individual markers, aggregated cluster points, or both. Returned by IMapDataProvider.GetPointsAsync - the provider decides per zoom level which representation to serve (hybrid clustering).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/Maps/MapDataResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "MapDataResult"
+}

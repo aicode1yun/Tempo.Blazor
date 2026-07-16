@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "A server-side aggregated cluster rendered on a TmMap as a count bubble. Produced by grid/tile aggregation on the backend, so the client never has to hold the individual points. A cluster with Count = 1 renders as a plain marker.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/Maps/MapClusterPoint.cs",
+  "documentationStatus": "generated",
+  "itemName": "MapClusterPoint"
+}

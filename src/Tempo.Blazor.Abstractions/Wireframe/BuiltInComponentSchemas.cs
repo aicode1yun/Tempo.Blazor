@@ -106,6 +106,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmImportPreview"] = ["data-table"],
             ["TmTreeView"] = ["list-view"],
             ["TmPdfViewer"] = ["pdf-viewer"],
+            ["TmMap"] = ["map"],
             ["TmCommentComposer"] = ["text-area", "avatar"],
             ["TmCommentReactions"] = ["chip"],
             ["TmReactionPicker"] = ["chip", "popover"],
@@ -1749,7 +1750,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             [
                 P("title",      "Title",       PropType.String, "Chart Title", cat: "Content"),
                 P("type",       "Type",        PropType.Enum,   "bar",         cat: "Appearance",
-                    opts: ["bar","line","pie","donut"]),
+                    opts: ["bar","line","area","pie","donut"]),
                 P("dataPoints", "Data Points", PropType.Int,    6,             cat: "Appearance"),
             ]
         };
@@ -2036,6 +2037,18 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("showToolbar",       "Show Toolbar",       PropType.Bool,   true,           cat: "Appearance"),
                 P("showSearch",        "Show Search",        PropType.Bool,   false,          cat: "Appearance"),
                 P("enableAnnotations", "Enable Annotations", PropType.Bool,   false,          cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmMap", Category = "Complex", DisplayName = "Map",
+            DefaultWidth = 420, DefaultHeight = 280,
+            Props =
+            [
+                P("markerCount",     "Marker Count",      PropType.Int,  5,     cat: "Content"),
+                P("showClusters",    "Show Clusters",     PropType.Bool, false, cat: "Appearance"),
+                P("showZoomControl", "Show Zoom Control", PropType.Bool, true,  cat: "Appearance"),
             ]
         };
 

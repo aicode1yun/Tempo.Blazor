@@ -6,7 +6,8 @@
      style="width: @Width; height: @Height;"
      data-testid="@RootTestId("tm-chart")">
 
-    @if (Data is null || Data.Labels.Length == 0 || Data.Datasets.Length == 0)
+    @if (Data is null || Data.Datasets.Length == 0
+        || (Data.Labels.Length == 0 && Data.TimePoints is not { Length: > 0 }))
     {
         <div class="tm-chart__empty">@Loc["TmChart_NoData"]</div>
     }
@@ -94,6 +95,24 @@
     /// <summary>Shows a tooltip when hovering a bar, point or slice. Default true.</summary>
     [Parameter] public bool ShowTooltip { get; set; } = true;
 
+    /// <summary>
+    /// Area charts only: fills each series with a vertical gradient fading from the series
+    /// color to transparent instead of the flat token-driven fill. Default false.
+    /// </summary>
+    [Parameter] public bool AreaGradient { get; set; }
+
+    /// <summary>
+    /// Time axis only: custom .NET date format string for the X-axis labels (e.g. "yyyy-MM").
+    /// Null picks the format automatically from the axis range (hours/days/months/years).
+    /// </summary>
+    [Parameter] public string? TimeLabelFormat { get; set; }
+
+    /// <summary>Time axis only: lower bound of the X axis. Null uses the earliest data point.</summary>
+    [Parameter] public DateTime? TimeAxisMin { get; set; }
+
+    /// <summary>Time axis only: upper bound of the X axis. Null uses the latest data point.</summary>
+    [Parameter] public DateTime? TimeAxisMax { get; set; }
+
     /// <summary>Optional custom tooltip content; when null a rich default tooltip is used.</summary>
     [Parameter] public RenderFragment<ChartTooltipContext>? TooltipTemplate { get; set; }
 
@@ -161,9 +180,22 @@
     private ChartTooltipContext TipContext(int datasetIndex, int valueIndex)
     {
         var ds = Data.Datasets[datasetIndex];
-        var label = valueIndex < Data.Labels.Length ? Data.Labels[valueIndex] : "";
+        var label = XValueLabel(valueIndex);
         var value = valueIndex < ds.Values.Length ? ds.Values[valueIndex] : 0;
         return new ChartTooltipContext(datasetIndex, valueIndex, label, value, ds.Label, SegmentColor(datasetIndex, valueIndex));
+    }
+
+    // X label for a data index: the full date on a time axis, otherwise the category label.
+    private string XValueLabel(int valueIndex)
+    {
+        if (IsTimeAxis && valueIndex < Data.TimePoints!.Length)
+        {
+            var tp = Data.TimePoints;
+            var subDay = tp.Length > 1 && (tp.Max() - tp.Min()).TotalDays <= 2;
+            return tp[valueIndex].ToString(subDay ? "g" : "d", CultureInfo.CurrentCulture);
+        }
+
+        return valueIndex < Data.Labels.Length ? Data.Labels[valueIndex] : "";
     }
 
     private string SegmentColor(int datasetIndex, int valueIndex)
@@ -232,7 +264,7 @@
     private async Task HandleClick(int di, int idx)
     {
         if (!OnSegmentClick.HasDelegate) return;
-        var label = idx < Data.Labels.Length ? Data.Labels[idx] : "";
+        var label = XValueLabel(idx);
         var value = di < Data.Datasets.Length && idx < Data.Datasets[di].Values.Length
             ? Data.Datasets[di].Values[idx] : 0;
         await OnSegmentClick.InvokeAsync(new ChartSegment(di, idx, label, value));
@@ -261,6 +293,10 @@
             case ChartType.HorizontalBar:
                 BuildHorizontalGrid(builder);
                 BuildHorizontalBarChart(builder);
+                break;
+            case ChartType.Area:
+                BuildAreaGrid(builder);
+                BuildAreaChart(builder);
                 break;
         }
     };
@@ -353,17 +389,16 @@
     private void BuildLineChart(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
     {
         var max = MaxVal;
-        var lc = Data.Labels.Length;
-        var sx = CW / (double)Math.Max(lc - 1, 1);
+        var plan = XPlan();
 
         for (int di = 0; di < Data.Datasets.Length; di++)
         {
             if (IsSegmentHidden(di, -1)) continue;
             var ds = Data.Datasets[di];
             var sb = new System.Text.StringBuilder();
-            for (int i = 0; i < ds.Values.Length && i < lc; i++)
+            foreach (var (i, x) in plan)
             {
-                var x = PL + i * sx;
+                if (i >= ds.Values.Length || double.IsNaN(ds.Values[i])) continue;
                 var y = PT + CH - (ds.Values[i] / max) * CH;
                 if (sb.Length > 0) sb.Append(' ');
                 sb.Append(F(x)).Append(',').Append(F(y));
@@ -380,12 +415,13 @@
             b.CloseElement();
 
             // Data points
-            for (int i = 0; i < ds.Values.Length && i < lc; i++)
+            foreach (var (i, x) in plan)
             {
-                var x = PL + i * sx;
+                if (i >= ds.Values.Length || double.IsNaN(ds.Values[i])) continue;
                 var y = PT + CH - (ds.Values[i] / max) * CH;
                 var cdi = di;
                 var ci = i;
+                var tipX = x;
 
                 b.OpenElement(0, "circle");
                 b.AddAttribute(1, "class", "tm-chart__point");
@@ -400,7 +436,7 @@
                         this, () => HandleClick(cdi, ci)));
                 b.AddAttribute(9, "onmouseover",
                     EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
-                        this, () => ShowTip(cdi, ci, x, y)));
+                        this, () => ShowTip(cdi, ci, tipX, y)));
                 b.AddAttribute(10, "onmouseout",
                     EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, HideTip));
                 b.CloseElement();
@@ -410,12 +446,332 @@
             }
         }
 
-        // X labels
+        BuildXAxisLabels(b);
+    }
+
+    // ── DateTime X axis (TMPO-004) ──
+    // A proportional time axis for Line/Area: unsorted input is sorted internally, duplicate
+    // timestamps keep the last value, and labels are generated at nice unit boundaries
+    // (hours/days/months/years by range) and thinned so they never overlap.
+
+    private bool IsTimeAxis => Data.TimePoints is { Length: > 0 } && Type is ChartType.Line or ChartType.Area;
+
+    // Data indices ordered by timestamp; duplicate timestamps keep the LAST input occurrence.
+    private int[] TimeOrderedIndices()
+    {
+        var tp = Data.TimePoints!;
+        var order = Enumerable.Range(0, tp.Length).OrderBy(i => tp[i]).ToArray(); // stable sort
+        var result = new List<int>(order.Length);
+        for (int k = 0; k < order.Length; k++)
+        {
+            if (k + 1 < order.Length && tp[order[k]] == tp[order[k + 1]])
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"TmChart: duplicate TimePoints value {tp[order[k]]:O} — keeping the last occurrence.");
+                continue;
+            }
+            result.Add(order[k]);
+        }
+        return [.. result];
+    }
+
+    private (DateTime Min, DateTime Max) TimeRange(int[] orderedIndices)
+    {
+        var tp = Data.TimePoints!;
+        var min = TimeAxisMin ?? tp[orderedIndices[0]];
+        var max = TimeAxisMax ?? tp[orderedIndices[^1]];
+        if (max < min) (min, max) = (max, min);
+        return (min, max);
+    }
+
+    private double TimeX(DateTime t, DateTime min, DateTime max)
+    {
+        var span = (max - min).Ticks;
+        return span == 0 ? PL + CW / 2.0 : PL + (t - min).Ticks / (double)span * CW;
+    }
+
+    // The X layout shared by Line and Area: (data index, x) pairs in render order.
+    private (int Index, double X)[] XPlan()
+    {
+        if (IsTimeAxis)
+        {
+            var ordered = TimeOrderedIndices();
+            var (min, max) = TimeRange(ordered);
+            return [.. ordered.Select(i => (i, TimeX(Data.TimePoints![i], min, max)))];
+        }
+
+        var lc = Data.Labels.Length;
+        var sx = CW / (double)Math.Max(lc - 1, 1);
+        return [.. Enumerable.Range(0, lc).Select(i => (i, PL + i * sx))];
+    }
+
+    private void BuildXAxisLabels(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
+    {
+        if (IsTimeAxis)
+        {
+            var ordered = TimeOrderedIndices();
+            var (min, max) = TimeRange(ordered);
+            BuildTimeAxisLabels(b, min, max);
+            return;
+        }
+
+        var lc = Data.Labels.Length;
+        var sx = CW / (double)Math.Max(lc - 1, 1);
         for (int i = 0; i < lc; i++)
         {
-            var cx = PL + i * sx;
-            SvgText(b, "tm-chart__label", cx, PT + CH + 24, Data.Labels[i], "middle");
+            SvgText(b, "tm-chart__label", PL + i * sx, PT + CH + 24, Data.Labels[i], "middle");
         }
+    }
+
+    private void BuildTimeAxisLabels(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b, DateTime min, DateTime max)
+    {
+        var range = max - min;
+        var ticks = new List<DateTime>();
+        string format;
+
+        if (range == TimeSpan.Zero)
+        {
+            format = TimeLabelFormat ?? "d";
+            ticks.Add(min);
+        }
+        else if (range.TotalDays <= 2)
+        {
+            format = TimeLabelFormat ?? "t";
+            var t = new DateTime(min.Year, min.Month, min.Day, min.Hour, 0, 0, min.Kind);
+            if (t < min) t = t.AddHours(1);
+            for (; t <= max; t = t.AddHours(1)) ticks.Add(t);
+        }
+        else if (range.TotalDays <= 92)
+        {
+            format = TimeLabelFormat ?? "d";
+            var t = min.Date;
+            if (t < min) t = t.AddDays(1);
+            for (; t <= max; t = t.AddDays(1)) ticks.Add(t);
+        }
+        else if (range.TotalDays <= 365.25 * 4)
+        {
+            format = TimeLabelFormat ?? "MMM yyyy";
+            var t = new DateTime(min.Year, min.Month, 1, 0, 0, 0, min.Kind);
+            if (t < min) t = t.AddMonths(1);
+            for (; t <= max; t = t.AddMonths(1)) ticks.Add(t);
+        }
+        else
+        {
+            format = TimeLabelFormat ?? "yyyy";
+            var t = new DateTime(min.Year, 1, 1, 0, 0, 0, min.Kind);
+            if (t < min) t = t.AddYears(1);
+            for (; t <= max; t = t.AddYears(1)) ticks.Add(t);
+        }
+
+        // Thin the ticks so at most 8 labels render — labels must never overlap.
+        const int maxLabels = 8;
+        var step = Math.Max(1, (int)Math.Ceiling(ticks.Count / (double)maxLabels));
+        var culture = CultureInfo.CurrentCulture;
+        for (int k = 0; k < ticks.Count; k += step)
+        {
+            var x = TimeX(ticks[k], min, max);
+            SvgText(b, "tm-chart__label", x, PT + CH + 24, ticks[k].ToString(format, culture), "middle");
+        }
+    }
+
+    // ── Area chart (TMPO-003) ──
+    // Supports negative values (fill closes on the ZERO baseline, never the chart bottom),
+    // gaps (NaN breaks the area into segments), and a single point (dot + stem to the axis).
+
+    private readonly string _areaGradientUid = Guid.NewGuid().ToString("N");
+
+    private (double Min, double Max) AreaDomain()
+    {
+        double min = 0, max = 0;
+        for (int di = 0; di < Data.Datasets.Length; di++)
+        {
+            if (IsSegmentHidden(di, -1)) continue;
+            foreach (var v in Data.Datasets[di].Values)
+            {
+                if (double.IsNaN(v)) continue;
+                if (v < min) min = v;
+                if (v > max) max = v;
+            }
+        }
+        if (max == min) max = min + 1; // flat/empty series — avoid a zero-height domain
+        return (min, max);
+    }
+
+    private double AreaY(double value, double min, double max)
+        => PT + CH - ((value - min) / (max - min)) * CH;
+
+    private void BuildAreaGrid(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
+    {
+        if (!ShowGrid) return;
+        var (min, max) = AreaDomain();
+        for (int i = 0; i <= 5; i++)
+        {
+            var value = min + (max - min) * i / 5.0;
+            var y = AreaY(value, min, max);
+            SvgLine(b, "tm-chart__grid-line", PL, y, PL + CW, y);
+            SvgText(b, "tm-chart__axis-label", PL - 8, y + 4, F(value), "end");
+        }
+
+        // Emphasized zero axis when the domain crosses zero.
+        if (min < 0)
+        {
+            var zeroY = AreaY(0, min, max);
+            b.OpenElement(0, "line");
+            b.AddAttribute(1, "class", "tm-chart__axis-zero");
+            b.AddAttribute(2, "x1", F(PL));
+            b.AddAttribute(3, "y1", F(zeroY));
+            b.AddAttribute(4, "x2", F(PL + CW));
+            b.AddAttribute(5, "y2", F(zeroY));
+            b.AddAttribute(6, "stroke", "#9ca3af");
+            b.AddAttribute(7, "stroke-width", "1");
+            b.CloseElement();
+        }
+    }
+
+    private void BuildAreaChart(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
+    {
+        var (min, max) = AreaDomain();
+        var plan = XPlan();
+        var zeroY = AreaY(0, min, max);
+
+        if (AreaGradient)
+        {
+            b.OpenElement(0, "defs");
+            for (int di = 0; di < Data.Datasets.Length; di++)
+            {
+                if (IsSegmentHidden(di, -1)) continue;
+                var ds = Data.Datasets[di];
+                b.OpenElement(1, "linearGradient");
+                b.AddAttribute(2, "id", $"tm-area-grad-{_areaGradientUid}-{di}");
+                b.AddAttribute(3, "x1", "0");
+                b.AddAttribute(4, "y1", "0");
+                b.AddAttribute(5, "x2", "0");
+                b.AddAttribute(6, "y2", "1");
+                b.OpenElement(7, "stop");
+                b.AddAttribute(8, "offset", "0%");
+                b.AddAttribute(9, "stop-color", ds.BackgroundColor ?? ds.Color);
+                b.AddAttribute(10, "stop-opacity", "0.5");
+                b.CloseElement();
+                b.OpenElement(11, "stop");
+                b.AddAttribute(12, "offset", "100%");
+                b.AddAttribute(13, "stop-color", ds.BackgroundColor ?? ds.Color);
+                b.AddAttribute(14, "stop-opacity", "0");
+                b.CloseElement();
+                b.CloseElement(); // linearGradient
+            }
+            b.CloseElement(); // defs
+        }
+
+        for (int di = 0; di < Data.Datasets.Length; di++)
+        {
+            if (IsSegmentHidden(di, -1)) continue;
+            var ds = Data.Datasets[di];
+
+            // Split the series into contiguous runs of non-NaN values (NaN = gap in the area).
+            var runs = new List<List<(int Index, double X, double Y)>>();
+            List<(int Index, double X, double Y)>? current = null;
+            foreach (var (i, x) in plan)
+            {
+                if (i >= ds.Values.Length || double.IsNaN(ds.Values[i]))
+                {
+                    current = null;
+                    continue;
+                }
+                if (current is null)
+                {
+                    current = [];
+                    runs.Add(current);
+                }
+                current.Add((i, x, AreaY(ds.Values[i], min, max)));
+            }
+
+            var fill = AreaGradient
+                ? $"url(#tm-area-grad-{_areaGradientUid}-{di})"
+                : ds.BackgroundColor ?? ds.Color;
+
+            foreach (var run in runs)
+            {
+                if (run.Count == 1)
+                {
+                    // Degenerate area: a lone point renders as a dot with a stem to the zero axis.
+                    var (_, x, y) = run[0];
+                    b.OpenElement(0, "line");
+                    b.AddAttribute(1, "class", "tm-chart__area-stem");
+                    b.AddAttribute(2, "x1", F(x));
+                    b.AddAttribute(3, "y1", F(y));
+                    b.AddAttribute(4, "x2", F(x));
+                    b.AddAttribute(5, "y2", F(zeroY));
+                    b.AddAttribute(6, "stroke", ds.Color);
+                    b.AddAttribute(7, "stroke-width", "2");
+                    b.CloseElement();
+                    continue;
+                }
+
+                // Closed area path: along the values, then back along the zero baseline.
+                var sb = new System.Text.StringBuilder();
+                sb.Append("M ").Append(F(run[0].X)).Append(',').Append(F(run[0].Y));
+                for (int p = 1; p < run.Count; p++)
+                    sb.Append(" L ").Append(F(run[p].X)).Append(',').Append(F(run[p].Y));
+                sb.Append(" L ").Append(F(run[^1].X)).Append(',').Append(F(zeroY));
+                sb.Append(" L ").Append(F(run[0].X)).Append(',').Append(F(zeroY));
+                sb.Append(" Z");
+
+                b.OpenElement(0, "path");
+                b.AddAttribute(1, "class", AreaGradient ? "tm-chart__area tm-chart__area--gradient" : "tm-chart__area");
+                b.AddAttribute(2, "d", sb.ToString());
+                b.AddAttribute(3, "fill", fill);
+                b.AddAttribute(4, "stroke", "none");
+                b.CloseElement();
+
+                // Top line over the run (visual consistency with the Line type).
+                var pts = new System.Text.StringBuilder();
+                foreach (var (_, x, y) in run)
+                {
+                    if (pts.Length > 0) pts.Append(' ');
+                    pts.Append(F(x)).Append(',').Append(F(y));
+                }
+                b.OpenElement(0, "polyline");
+                b.AddAttribute(1, "class", "tm-chart__line");
+                b.AddAttribute(2, "points", pts.ToString());
+                b.AddAttribute(3, "fill", "none");
+                b.AddAttribute(4, "stroke", ds.Color);
+                b.AddAttribute(5, "stroke-width", "2");
+                b.AddAttribute(6, "stroke-linejoin", "round");
+                b.CloseElement();
+            }
+
+            // Interactive data points for every non-NaN value.
+            foreach (var run in runs)
+            {
+                foreach (var (i, x, y) in run)
+                {
+                    var cdi = di;
+                    var ci = i;
+                    b.OpenElement(0, "circle");
+                    b.AddAttribute(1, "class", "tm-chart__point");
+                    b.AddAttribute(2, "cx", F(x));
+                    b.AddAttribute(3, "cy", F(y));
+                    b.AddAttribute(4, "r", "4");
+                    b.AddAttribute(5, "fill", ds.Color);
+                    b.AddAttribute(6, "stroke", "white");
+                    b.AddAttribute(7, "stroke-width", "2");
+                    b.AddAttribute(8, "onclick",
+                        EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                            this, () => HandleClick(cdi, ci)));
+                    b.AddAttribute(9, "onmouseover",
+                        EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                            this, () => ShowTip(cdi, ci, x, y)));
+                    b.AddAttribute(10, "onmouseout",
+                        EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, HideTip));
+                    b.CloseElement();
+
+                    if (ShowValues)
+                        SvgText(b, "tm-chart__value", x, y - 10, F(ds.Values[i]), "middle");
+                }
+            }
+        }
+
+        BuildXAxisLabels(b);
     }
 
     private void BuildPieDonut(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b, bool isDonut)

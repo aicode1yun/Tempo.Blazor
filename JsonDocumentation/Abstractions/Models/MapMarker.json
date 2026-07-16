@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "A single point rendered on a TmMap. Batches of markers are drawn with a Canvas renderer, so instances stay lightweight data records without any UI dependencies.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/Maps/MapMarker.cs",
+  "documentationStatus": "generated",
+  "itemName": "MapMarker"
+}

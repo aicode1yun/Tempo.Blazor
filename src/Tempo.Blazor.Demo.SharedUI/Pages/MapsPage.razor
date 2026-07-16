@@ -1,0 +1,414 @@
+@page "/maps"
+@using Tempo.Blazor.Components.Maps
+@using Tempo.Blazor.Abstractions.Interfaces
+@using Tempo.Blazor.Abstractions.Models
+<PageTitle>Maps – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Maps</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        Interactive Leaflet map with bundled assets (no CDN), OpenStreetMap tiles, Canvas-rendered marker
+        batches, and viewport events. Part of the <code>Tempo.Blazor.Maps</code> package.
+    </p>
+</div>
+
+<!-- Basic Usage -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Basic Map with Markers</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">Core</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Czech regional capitals rendered as a Canvas marker batch. Click a marker or the map background,
+            or zoom, to see the events below.
+        </p>
+        <TmMap @ref="_map"
+               CenterLatitude="49.8175"
+               CenterLongitude="15.473"
+               Zoom="7.5"
+               Height="480px"
+               Markers="_markers"
+               OnMarkerClick="HandleMarkerClick"
+               OnZoomChanged="HandleZoomChanged"
+               OnMapClick="HandleMapClick" />
+
+        <div class="flex flex-wrap gap-2 mt-4">
+            <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" data-testid="maps-demo-view-prague" OnClick="GoToPrague">Zoom to Prague</TmButton>
+            <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" data-testid="maps-demo-view-country" OnClick="GoToCountry">Whole country</TmButton>
+            <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" data-testid="maps-demo-clear" OnClick="ClearMarkers">Clear markers</TmButton>
+            <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" data-testid="maps-demo-restore" OnClick="RestoreMarkers">Restore markers</TmButton>
+        </div>
+
+        <div class="mt-4 text-sm text-slate-600 dark:text-slate-400" data-testid="maps-demo-log" aria-live="polite">
+            @if (_lastEvent is null)
+            {
+                <span data-testid="maps-demo-log-empty">No map events yet.</span>
+            }
+            else
+            {
+                <span data-testid="maps-demo-log-entry">@_lastEvent</span>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Client-side Clustering -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Client-side Clustering</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">markercluster</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            800 points grouped client-side with leaflet.markercluster (<code>UseClientClustering</code>).
+            Clicking a cluster zooms to its bounds; spiderfy kicks in at max zoom.
+        </p>
+        <TmMap TestIdPrefix="cluster"
+               CenterLatitude="49.8175"
+               CenterLongitude="15.473"
+               Zoom="7.5"
+               Height="420px"
+               Markers="ClusteredMarkers"
+               UseClientClustering="true"
+               OnClusterClick="HandleClientClusterClick"
+               OnMarkerClick="HandleMarkerClick" />
+        <div class="mt-4 text-sm text-slate-600 dark:text-slate-400" data-testid="maps-cluster-log" aria-live="polite">
+            @if (_clusterEvent is null)
+            {
+                <span>No cluster events yet.</span>
+            }
+            else
+            {
+                <span data-testid="maps-cluster-log-entry">@_clusterEvent</span>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Server-side Clusters via IMapDataProvider -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Server-side Clusters (IMapDataProvider)</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Hybrid</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            An <code>IMapDataProvider</code> aggregates 5&nbsp;000 points into grid cells and serves
+            count bubbles below zoom 12, individual markers above it. Requests are debounced (300 ms)
+            and superseded requests are cancelled. Click a bubble to drill down; the lone point near
+            Aš renders as a plain marker (Count&nbsp;=&nbsp;1).
+        </p>
+        <TmMap @ref="_providerMap"
+               TestIdPrefix="provider"
+               CenterLatitude="49.8175"
+               CenterLongitude="15.473"
+               Zoom="7.5"
+               Height="420px"
+               DataProvider="_demoProvider"
+               OnClusterClick="HandleProviderClusterClick"
+               OnMarkerClick="HandleMarkerClick"
+               OnDataError="HandleDataError" />
+        <div class="flex flex-wrap gap-2 mt-4">
+            <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" data-testid="maps-provider-zoom-in" OnClick="ZoomProviderMapToDetail">Zoom to detail (Brno)</TmButton>
+            <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" data-testid="maps-provider-zoom-out" OnClick="ZoomProviderMapToCountry">Whole country</TmButton>
+        </div>
+        <div class="mt-4 text-sm text-slate-600 dark:text-slate-400" data-testid="maps-provider-log" aria-live="polite">
+            @if (_providerEvent is null)
+            {
+                <span>No provider events yet.</span>
+            }
+            else
+            {
+                <span data-testid="maps-provider-log-entry">@_providerEvent</span>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Batch markers: 10 000 points -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Batch Markers — 10 000 Points</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full">Canvas</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            10&nbsp;000 points loaded imperatively through <code>SetMarkersAsync</code> and rendered by
+            the shared Canvas renderer — no DOM markers, one atomic swap.
+        </p>
+        <TmMap @ref="_batchMap"
+               TestIdPrefix="batch"
+               CenterLatitude="49.8175"
+               CenterLongitude="15.473"
+               Zoom="7.5"
+               Height="420px"
+               OnMarkerClick="HandleMarkerClick" />
+        <div class="flex flex-wrap gap-2 mt-4">
+            <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" data-testid="maps-batch-load" OnClick="LoadTenThousand">Load 10 000 points</TmButton>
+            <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" data-testid="maps-batch-clear" OnClick="ClearBatch">Clear</TmButton>
+        </div>
+        <div class="mt-4 text-sm text-slate-600 dark:text-slate-400" data-testid="maps-batch-log" aria-live="polite">
+            @if (_batchStatus is null)
+            {
+                <span>No batch loaded yet.</span>
+            }
+            else
+            {
+                <span data-testid="maps-batch-log-entry">@_batchStatus</span>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Map in a hidden tab -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Map in a Hidden Tab</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">Edge case</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            A map initialised inside a hidden tab has zero size — switching to its tab calls
+            <code>InvalidateSizeAsync</code> so Leaflet recalculates and paints correctly.
+        </p>
+        <TmTabs ActiveTabId="@_activeTab" ActiveTabIdChanged="HandleTabChanged">
+            <TmTabPanel Id="tab-info" Title="Info">
+                <p class="text-sm text-slate-600 dark:text-slate-400 py-4" data-testid="maps-tab-info-content">
+                    The map lives in the second tab. Switch over to see it initialise to the correct size.
+                </p>
+            </TmTabPanel>
+            <TmTabPanel Id="tab-map" Title="Map">
+                <div class="pt-4">
+                    <TmMap @ref="_tabMap"
+                           TestIdPrefix="tab"
+                           CenterLatitude="50.0755"
+                           CenterLongitude="14.4378"
+                           Zoom="11"
+                           Height="360px"
+                           Markers="AllMarkers" />
+                </div>
+            </TmTabPanel>
+        </TmTabs>
+    </div>
+</section>
+
+@code {
+    private TmMap? _map;
+    private TmMap? _providerMap;
+    private TmMap? _batchMap;
+    private TmMap? _tabMap;
+    private string? _batchStatus;
+    private string _activeTab = "tab-info";
+    private string? _lastEvent;
+    private string? _clusterEvent;
+    private string? _providerEvent;
+    private readonly DemoGridClusterProvider _demoProvider = new();
+    private static IReadOnlyList<MapMarker>? _clusteredMarkersCache;
+
+    // Lazy so it never runs ahead of AllMarkers in static initialisation order.
+    private static IReadOnlyList<MapMarker> ClusteredMarkers => _clusteredMarkersCache ??= BuildClusteredMarkers();
+
+    private static readonly IReadOnlyList<MapMarker> AllMarkers =
+    [
+        new("praha", 50.0755, 14.4378, "Praha"),
+        new("brno", 49.1951, 16.6068, "Brno"),
+        new("ostrava", 49.8209, 18.2625, "Ostrava"),
+        new("plzen", 49.7384, 13.3736, "Plzeň"),
+        new("liberec", 50.7663, 15.0543, "Liberec"),
+        new("olomouc", 49.5938, 17.2509, "Olomouc"),
+        new("ceske-budejovice", 48.9745, 14.4743, "České Budějovice"),
+        new("hradec-kralove", 50.2092, 15.8328, "Hradec Králové"),
+        new("usti-nad-labem", 50.6607, 14.0323, "Ústí nad Labem"),
+        new("pardubice", 50.0343, 15.7812, "Pardubice"),
+        new("zlin", 49.2265, 17.6707, "Zlín"),
+        new("jihlava", 49.3961, 15.5912, "Jihlava"),
+        new("karlovy-vary", 50.2306, 12.8702, "Karlovy Vary"),
+    ];
+
+    private IReadOnlyList<MapMarker> _markers = AllMarkers;
+
+    private void HandleMarkerClick(MapMarker marker)
+        => _lastEvent = $"Marker clicked: {marker.Id} ({marker.Latitude:F4}, {marker.Longitude:F4})";
+
+    private void HandleZoomChanged(MapViewport viewport)
+        => _lastEvent = $"Zoom changed: {viewport.Zoom:F1} @ ({viewport.Latitude:F4}, {viewport.Longitude:F4})";
+
+    private void HandleMapClick(MapViewport viewport)
+        => _lastEvent = $"Map clicked: ({viewport.Latitude:F4}, {viewport.Longitude:F4}) at zoom {viewport.Zoom:F1}";
+
+    private async Task GoToPrague()
+    {
+        if (_map is not null)
+        {
+            await _map.SetViewAsync(new MapViewport(50.0755, 14.4378, 12));
+        }
+    }
+
+    private async Task GoToCountry()
+    {
+        if (_map is not null)
+        {
+            await _map.SetViewAsync(new MapViewport(49.8175, 15.473, 7.5));
+        }
+    }
+
+    private void ClearMarkers() => _markers = [];
+
+    private void RestoreMarkers() => _markers = AllMarkers;
+
+    private void HandleClientClusterClick(MapClusterPoint cluster)
+        => _clusterEvent = $"Cluster clicked: {cluster.Count} markers at ({cluster.Latitude:F4}, {cluster.Longitude:F4})";
+
+    private async Task HandleProviderClusterClick(MapClusterPoint cluster)
+    {
+        _providerEvent = $"Cluster clicked: key={cluster.Key}, count={cluster.Count}";
+        if (_providerMap is not null)
+        {
+            var viewport = await _providerMap.GetViewportAsync();
+            await _providerMap.SetViewAsync(new MapViewport(cluster.Latitude, cluster.Longitude, Math.Min(viewport.Zoom + 2, 15)));
+        }
+    }
+
+    private void HandleDataError(Exception ex)
+        => _providerEvent = $"Data error: {ex.Message}";
+
+    private async Task LoadTenThousand()
+    {
+        if (_batchMap is null)
+        {
+            return;
+        }
+
+        var random = new Random(99);
+        var markers = new List<MapMarker>(10_000);
+        for (var i = 0; i < 10_000; i++)
+        {
+            var seed = AllMarkers[i % AllMarkers.Count];
+            markers.Add(new MapMarker(
+                $"b{i}",
+                seed.Latitude + (random.NextDouble() - 0.5) * 0.9,
+                seed.Longitude + (random.NextDouble() - 0.5) * 1.4,
+                null));
+        }
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        await _batchMap.SetMarkersAsync(markers);
+        stopwatch.Stop();
+        _batchStatus = $"Loaded 10 000 points in {stopwatch.ElapsedMilliseconds} ms.";
+    }
+
+    private async Task ClearBatch()
+    {
+        if (_batchMap is not null)
+        {
+            await _batchMap.ClearMarkersAsync();
+            _batchStatus = "Cleared.";
+        }
+    }
+
+    private async Task HandleTabChanged(string tabId)
+    {
+        _activeTab = tabId;
+        if (tabId == "tab-map" && _tabMap is not null)
+        {
+            // The map initialised while hidden — let the tab render, then fix the size.
+            await Task.Yield();
+            await _tabMap.InvalidateSizeAsync();
+        }
+    }
+
+    private async Task ZoomProviderMapToDetail()
+    {
+        if (_providerMap is not null)
+        {
+            await _providerMap.SetViewAsync(new MapViewport(49.1951, 16.6068, 13));
+        }
+    }
+
+    private async Task ZoomProviderMapToCountry()
+    {
+        if (_providerMap is not null)
+        {
+            await _providerMap.SetViewAsync(new MapViewport(49.8175, 15.473, 7.5));
+        }
+    }
+
+    private static IReadOnlyList<MapMarker> BuildClusteredMarkers()
+    {
+        // Deterministic pseudo-random spread around the regional capitals.
+        var random = new Random(42);
+        var result = new List<MapMarker>(800);
+        for (var i = 0; i < 800; i++)
+        {
+            var seed = AllMarkers[i % AllMarkers.Count];
+            var lat = seed.Latitude + (random.NextDouble() - 0.5) * 0.6;
+            var lng = seed.Longitude + (random.NextDouble() - 0.5) * 0.9;
+            result.Add(new MapMarker($"pt-{i}", lat, lng, $"{seed.Title} #{i}"));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Demo provider: grid-aggregates a deterministic data set of 5 000 points.
+    /// Below zoom 12 it serves cluster bubbles (cell size shrinks with zoom);
+    /// from zoom 12 up it serves the individual markers near the viewport center.
+    /// </summary>
+    private sealed class DemoGridClusterProvider : IMapDataProvider
+    {
+        private const double ClusterZoomThreshold = 12;
+        private readonly IReadOnlyList<MapMarker> _points = BuildPoints();
+
+        public async Task<MapDataResult> GetPointsAsync(MapViewport viewport, CancellationToken cancellationToken)
+        {
+            // Simulated backend latency; honours cancellation like a real HTTP call.
+            await Task.Delay(50, cancellationToken);
+
+            if (viewport.Zoom >= ClusterZoomThreshold)
+            {
+                var window = 360 / Math.Pow(2, viewport.Zoom) * 4;
+                var markers = _points
+                    .Where(p => Math.Abs(p.Latitude - viewport.Latitude) < window
+                             && Math.Abs(p.Longitude - viewport.Longitude) < window * 1.5)
+                    .ToList();
+                return new MapDataResult(Markers: markers);
+            }
+
+            var cellSize = viewport.Zoom < 9 ? 0.5 : 0.2;
+            var clusters = _points
+                .GroupBy(p => (LatKey: Math.Floor(p.Latitude / cellSize), LonKey: Math.Floor(p.Longitude / cellSize)))
+                .Select(g => new MapClusterPoint(
+                    $"{g.Key.LatKey}:{g.Key.LonKey}:{cellSize}",
+                    g.Average(p => p.Latitude),
+                    g.Average(p => p.Longitude),
+                    g.Count(),
+                    $"{g.Count()} points"))
+                .ToList();
+            return new MapDataResult(Clusters: clusters);
+        }
+
+        private static IReadOnlyList<MapMarker> BuildPoints()
+        {
+            var random = new Random(7);
+            var result = new List<MapMarker>(5001);
+            for (var i = 0; i < 5000; i++)
+            {
+                var seed = AllMarkers[i % AllMarkers.Count];
+                var lat = seed.Latitude + (random.NextDouble() - 0.5) * 0.8;
+                var lng = seed.Longitude + (random.NextDouble() - 0.5) * 1.2;
+                result.Add(new MapMarker($"gp-{i}", lat, lng, $"Point #{i}"));
+            }
+
+            // A lone point near Aš — always its own grid cell, so Count = 1 renders as a plain marker.
+            result.Add(new MapMarker("lone-as", 50.2239, 12.1951, "Aš — lone point"));
+            return result;
+        }
+    }
+}
