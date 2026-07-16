@@ -66,6 +66,25 @@ public static class EditContextFluentValidationExtensions
         return editContext;
     }
 
+    /// <summary>
+    /// Enables FluentValidation for the EditContext with programmatic control (model provider, rule-set
+    /// selection, RootContextData preparation, field mapping, message formatting, external-failure merge).
+    /// Returns the <see cref="FluentValidationSubscription"/> handle for manual runs
+    /// (<see cref="FluentValidationSubscription.ValidateAsync"/>), server-failure injection
+    /// (<see cref="FluentValidationSubscription.SetExternalFailures"/>) and unsubscription (dispose).
+    /// </summary>
+    /// <param name="editContext">The EditContext to extend.</param>
+    /// <param name="serviceProvider">The service provider to resolve validators from.</param>
+    /// <param name="options">The programmatic options; an empty instance reproduces the default behaviour.</param>
+    public static FluentValidationSubscription AddFluentValidation(
+        this EditContext editContext, IServiceProvider serviceProvider, FluentValidationOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(editContext);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+        ArgumentNullException.ThrowIfNull(options);
+        return new FluentValidationSubscription(editContext, serviceProvider, options);
+    }
+
     private static IValidator? ResolveValidator(Type modelType, IServiceProvider serviceProvider)
     {
         var validatorType = typeof(IValidator<>).MakeGenericType(modelType);

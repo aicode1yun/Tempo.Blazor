@@ -15,6 +15,17 @@ public class FluentValidationValidator : ComponentBase, IDisposable
     [CascadingParameter] private EditContext? CurrentEditContext { get; set; }
     [Inject] private IServiceProvider ServiceProvider { get; set; } = default!;
 
+    /// <summary>
+    /// Optional programmatic options (model provider, rule sets, RootContextData, field mapping, message
+    /// formatting, field-changed behaviour). When set, the component runs through a
+    /// <see cref="FluentValidationSubscription"/> exposed via <see cref="Subscription"/>; when null, the
+    /// pre-existing drop-in behaviour applies.
+    /// </summary>
+    [Parameter] public FluentValidationOptions? Options { get; set; }
+
+    /// <summary>The options-driven subscription handle; null unless <see cref="Options"/> was supplied.</summary>
+    public FluentValidationSubscription? Subscription { get; private set; }
+
     private ValidationMessageStore? _messageStore;
 
     /// <summary>
@@ -27,6 +38,12 @@ public class FluentValidationValidator : ComponentBase, IDisposable
             throw new InvalidOperationException(
                 $"{nameof(FluentValidationValidator)} requires a cascading {nameof(EditContext)}. " +
                 $"Ensure it is used inside an EditForm.");
+        }
+
+        if (Options is not null)
+        {
+            Subscription = CurrentEditContext.AddFluentValidation(ServiceProvider, Options);
+            return;
         }
 
         _messageStore = new ValidationMessageStore(CurrentEditContext);
@@ -99,6 +116,9 @@ public class FluentValidationValidator : ComponentBase, IDisposable
     /// </summary>
     public void Dispose()
     {
+        Subscription?.Dispose();
+        Subscription = null;
+
         if (CurrentEditContext is not null)
         {
             CurrentEditContext.OnValidationRequested -= OnValidationRequested;
