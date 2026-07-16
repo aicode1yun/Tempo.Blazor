@@ -113,6 +113,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmShareLinkPanel"] = ["copy-button", "link"],
             ["TmSubmissionStatusTimeline"] = ["timeline", "stepper"],
             ["TmAuditTrailViewer"] = ["timeline", "list-view"],
+            ["TmAuditLogViewer"] = ["audit-log"],
             ["TmAIPrompt"] = ["text-area", "button"],
             ["TmWidgetSelector"] = ["dashboard", "card"],
             ["__group__"] = ["section"],
@@ -2115,6 +2116,21 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             Props =
             [
                 P("rowCount", "Row Count", PropType.Int, 5, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmAuditLogViewer", Category = "Complex", DisplayName = "Audit Log Viewer",
+            DefaultWidth = 640, DefaultHeight = 420,
+            Props =
+            [
+                P("eventCount",   "Event Count",   PropType.Int,  100, cat: "Content"),
+                P("showTimeline", "Show Timeline", PropType.Bool, true, cat: "Appearance"),
+                P("showFilters",  "Show Filters",  PropType.Bool, true, cat: "Appearance"),
+                P("showExport",   "Show Export",   PropType.Bool, true, cat: "Appearance"),
+                P("integrity",    "Integrity",     PropType.Enum, "verified",
+                    opts: ["verified", "failed", "none"], cat: "State"),
             ]
         };
 

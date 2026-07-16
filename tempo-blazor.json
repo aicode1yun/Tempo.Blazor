@@ -74,6 +74,7 @@
       "Tempo.Blazor.Components",
       "Tempo.Blazor.Components.Activity",
       "Tempo.Blazor.Components.AITools",
+      "Tempo.Blazor.Components.AuditLog",
       "Tempo.Blazor.Components.Avatars",
       "Tempo.Blazor.Components.Buttons",
       "Tempo.Blazor.Components.Charts",
@@ -2226,6 +2227,124 @@
           "type": "string?",
           "isRequired": false,
           "description": "Placeholder text for the prompt input."
+        }
+      ]
+    },
+    {
+      "itemName": "TmAuditLogViewer",
+      "kind": "Component",
+      "category": "Audit Log",
+      "namespace": "Tempo.Blazor.Components.AuditLog",
+      "description": "Virtualized audit log viewer for large event stores (millions of rows). Rows load on demand through the pluggable IAuditLogProvider (paged queries with count aggregation). Includes a clickable timeline histogram, actor/action/entity/period filters, full-text search, an inline detail with property-level change diffs (TmChangeDiff), CSV export of the filtered set, and an optional tamper-evident hash-chain integrity indicator shown when the provider implements IAuditLogIntegrityProvider.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/AuditLog/TmAuditLogViewer.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.AuditLog"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "ExportFileName",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"audit-log.csv\"",
+          "description": "File name of the CSV export."
+        },
+        {
+          "name": "ExportMaxRows",
+          "type": "int",
+          "isRequired": false,
+          "default": "100_000",
+          "description": "Maximum number of rows included in the CSV export."
+        },
+        {
+          "name": "Height",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Height of the entry list (CSS value).",
+          "default": "\"480px\""
+        },
+        {
+          "name": "ItemSize",
+          "type": "float",
+          "isRequired": false,
+          "default": "44f",
+          "description": "Pixel height of one row used by virtualization."
+        },
+        {
+          "name": "NonVirtualizedMaxItems",
+          "type": "int",
+          "isRequired": false,
+          "default": "500",
+          "description": "Maximum rows rendered when Virtualized is false."
+        },
+        {
+          "name": "OnEntrySelected",
+          "type": "EventCallback<AuditLogEntry>",
+          "isRequired": false,
+          "description": "Raised when an entry is selected (its detail expands)."
+        },
+        {
+          "name": "Provider",
+          "type": "IAuditLogProvider",
+          "isRequired": true,
+          "description": "Data source of the viewer: filtered paged queries, filter facets, and timeline bucketing. Use InMemoryAuditLogProvider for demos and tests.",
+          "editorRequired": true
+        },
+        {
+          "name": "ShowExport",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the CSV export action is offered."
+        },
+        {
+          "name": "ShowFilters",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the actor/action/entity/period filter controls are shown."
+        },
+        {
+          "name": "ShowIntegrity",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the hash-chain integrity indicator is shown when the provider implements IAuditLogIntegrityProvider."
+        },
+        {
+          "name": "ShowSearch",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the full-text search input is shown."
+        },
+        {
+          "name": "ShowTimeline",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the timeline histogram is shown. Clicking a bar narrows the period filter to that bucket."
+        },
+        {
+          "name": "TimelineBucketCount",
+          "type": "int",
+          "isRequired": false,
+          "default": "40",
+          "description": "Number of timeline buckets."
+        },
+        {
+          "name": "Virtualized",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether rows are virtualized via the Blazor Virtualize component. Recommended for large logs."
         }
       ]
     },
@@ -22578,6 +22697,10 @@
       "kind": "Css"
     },
     {
+      "path": "src/Tempo.Blazor/wwwroot/css/components/_audit-log-viewer.css",
+      "kind": "Css"
+    },
+    {
       "path": "src/Tempo.Blazor/wwwroot/css/components/_avatar.css",
       "kind": "Css"
     },
@@ -23171,11 +23294,11 @@
     }
   ],
   "summary": {
-    "itemCount": 322,
-    "manualItemCount": 322,
-    "generatedItemCount": 314,
+    "itemCount": 323,
+    "manualItemCount": 323,
+    "generatedItemCount": 315,
     "generatedOnlyItemCount": 0,
-    "componentCount": 185,
+    "componentCount": 186,
     "publicApiTypeCount": 129
   }
 }

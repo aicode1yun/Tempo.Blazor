@@ -11863,6 +11863,106 @@
       ]
     },
     {
+      "itemName": "AuditLogActorOption",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Actor available in the audit log filter (id and display name).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogEntry",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Single immutable audit event: timestamp, actor (id/name/role), action key, entity, description, severity, property-level changes (TmChangeInfo), metadata, IP address, and optional hash-chain fields.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogFilterOptions",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Distinct actors, actions, and entity types available for the audit log filters.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogHashChain",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Tamper-evident SHA-256 hash chain over audit log entries: Seal fills Hash/PreviousHash in timestamp order, Verify names the first entry that breaks the chain.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogIntegrityResult",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Outcome of an audit log integrity verification: status, checked count, and the first entry that broke the chain.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogIntegrityStatus",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Result status of a hash-chain integrity verification: Unknown, Verified, or Failed.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogPage",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One page of audit log results plus the total count of the filtered set.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogQuery",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Filtered, paged audit log query: skip/take, actor, action, entity type/id, period (from/to), full-text search, and sort direction.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogSeverity",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Severity of an audit log entry: Info, Warning, or Critical.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogTimelineBucket",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Event count aggregated over one slice of the queried period, used by the timeline histogram.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "BreadcrumbItem",
       "kind": "Record",
       "category": "Models",
@@ -14610,6 +14710,26 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IAuditLogIntegrityProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Marker capability interface for providers that can verify a tamper-evident hash chain; TmAuditLogViewer shows the integrity widget only when its provider implements it.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IAuditLogProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Data source contract of TmAuditLogViewer: filtered paged queries with count aggregation, filter facets, and timeline bucketing.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IDataTableExporter",
       "kind": "Interface",
       "category": "Models",
@@ -14638,6 +14758,58 @@
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ImageUrlResolvers.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "InMemoryAuditLogProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IAuditLogProvider over a fixed entry list: filtered paged queries with count aggregation, filter facets, timeline bucketing, and hash-chain integrity verification. Suitable for demos, tests, and small logs.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryAuditLogProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetFilterOptionsAsync",
+          "kind": "Method",
+          "type": "Task<AuditLogFilterOptions>",
+          "parameters": [
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "QueryAsync",
+          "kind": "Method",
+          "type": "Task<AuditLogPage>",
+          "parameters": [
+            {
+              "name": "query",
+              "type": "AuditLogQuery"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "VerifyIntegrityAsync",
+          "kind": "Method",
+          "type": "Task<AuditLogIntegrityResult>",
+          "parameters": [
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
     },
     {
       "itemName": "InMemoryDataTableLayoutStore",
@@ -34282,11 +34454,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1334,
-    "manualItemCount": 1334,
-    "generatedItemCount": 1317,
+    "itemCount": 1347,
+    "manualItemCount": 1347,
+    "generatedItemCount": 1330,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1317
+    "publicApiTypeCount": 1330
   }
 }

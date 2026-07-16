@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "In-memory IAuditLogProvider over a fixed entry list: filtered paged queries with count aggregation, filter facets, timeline bucketing, and hash-chain integrity verification. Suitable for demos, tests, and small logs.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryAuditLogProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "InMemoryAuditLogProvider"
+}

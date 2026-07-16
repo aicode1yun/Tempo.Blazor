@@ -61,7 +61,9 @@ window.tmDataTable = (function () {
             document.body.appendChild(a);
             a.click();
             a.remove();
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            // Keep the blob URL alive long enough for slow consumers (e.g. automated
+            // download capture) — revoking too early cancels an in-flight download.
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
         } catch (err) {
             console.error('tmDataTable.downloadFile', err);
         }

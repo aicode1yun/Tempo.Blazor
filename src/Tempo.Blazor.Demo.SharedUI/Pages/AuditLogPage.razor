@@ -1,0 +1,212 @@
+@page "/audit-log"
+@using Tempo.Blazor.Components.AuditLog
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Models
+<PageTitle>Audit Log Viewer – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Audit Log Viewer</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        A virtualized viewer for large audit event stores. Rows load on demand through the pluggable
+        <code>IAuditLogProvider</code> (paged queries with count aggregation), so millions of events scroll
+        smoothly. Includes a clickable timeline histogram, actor/action/entity/period filters, full-text
+        search, an inline detail with <code>TmChangeDiff</code>, CSV export of the filtered set, and an
+        optional tamper-evident hash-chain integrity indicator.
+    </p>
+</div>
+
+<!-- 100k events -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">100 000 Events, Virtualized</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Performance</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            One year of synthetic activity (100 000 events, 20 actors, 12 actions). Scroll the list,
+            click a timeline bar to zoom into that period, filter by actor or action, open a row to see
+            the property-level diff, and export the filtered set as CSV.
+        </p>
+        <div data-testid="audit-log-demo-main">
+            @if (_mainProvider is null)
+            {
+                <p class="text-sm text-slate-500 dark:text-slate-400" data-testid="audit-log-demo-generating">
+                    Generating 100 000 synthetic events…
+                </p>
+            }
+            else
+            {
+                <TmAuditLogViewer Provider="_mainProvider" Height="520px" ExportFileName="audit-log-demo.csv" ShowIntegrity="false" />
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Sealed chain -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Tamper-Evident Hash Chain</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Integrity</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            A quarter of activity sealed with a SHA-256 hash chain (each entry's hash covers its fields
+            plus the previous hash). The provider implements <code>IAuditLogIntegrityProvider</code>, so
+            the viewer verifies the chain on load and shows the green shield badge.
+        </p>
+        <div data-testid="audit-log-demo-sealed">
+            @if (_sealedProvider is not null)
+            {
+                <TmAuditLogViewer Provider="_sealedProvider" Height="320px" ShowTimeline="false" />
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Tampered chain -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Tampered Hash Chain</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-full">Edge Case</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            The same viewer over a log whose fifth entry was modified after sealing. The integrity check
+            fails and the badge names the first broken entry (hover it). The viewer itself keeps working —
+            integrity is an indicator, not a gate.
+        </p>
+        <div data-testid="audit-log-demo-tampered">
+            @if (_tamperedProvider is not null)
+            {
+                <TmAuditLogViewer Provider="_tamperedProvider" Height="320px" ShowTimeline="false" />
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private InMemoryAuditLogProvider? _mainProvider;
+    private InMemoryAuditLogProvider? _sealedProvider;
+    private InMemoryAuditLogProvider? _tamperedProvider;
+
+    private static readonly (string Id, string Name, string Role)[] _actors =
+    [
+        ("alena.k", "Alena Křížová", "reviewer"),
+        ("bedrich.s", "Bedřich Šimek", "author"),
+        ("cyril.d", "Cyril Dvořák", "admin"),
+        ("dana.h", "Dana Horáková", "author"),
+        ("emil.v", "Emil Vávra", "reviewer"),
+        ("frantiska.m", "Františka Malá", "author"),
+        ("gustav.p", "Gustav Polák", "admin"),
+        ("hana.b", "Hana Benešová", "author"),
+        ("ivan.n", "Ivan Novotný", "reviewer"),
+        ("jitka.r", "Jitka Říhová", "author"),
+        ("karel.f", "Karel Fiala", "author"),
+        ("lenka.t", "Lenka Tichá", "reviewer"),
+        ("milan.z", "Milan Zeman", "author"),
+        ("nadia.c", "Naďa Čechová", "author"),
+        ("otakar.j", "Otakar Jelínek", "admin"),
+        ("pavla.u", "Pavla Urbanová", "author"),
+        ("radek.w", "Radek Wagner", "reviewer"),
+        ("simona.g", "Simona Grygarová", "author"),
+        ("tomas.l", "Tomáš Liška", "author"),
+        ("system", "System", "system")
+    ];
+
+    private static readonly (string Action, string EntityType, AuditLogSeverity Severity)[] _actions =
+    [
+        ("document.created", "document", AuditLogSeverity.Info),
+        ("document.updated", "document", AuditLogSeverity.Info),
+        ("document.deleted", "document", AuditLogSeverity.Critical),
+        ("document.exported", "document", AuditLogSeverity.Info),
+        ("case.opened", "case", AuditLogSeverity.Info),
+        ("case.assigned", "case", AuditLogSeverity.Info),
+        ("case.closed", "case", AuditLogSeverity.Info),
+        ("user.login", "user", AuditLogSeverity.Info),
+        ("user.login-failed", "user", AuditLogSeverity.Warning),
+        ("user.role-changed", "user", AuditLogSeverity.Critical),
+        ("settings.changed", "settings", AuditLogSeverity.Warning),
+        ("export.generated", "report", AuditLogSeverity.Info)
+    ];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        // Generating 100k entries (and SHA-256-sealing the smaller logs) freezes the single
+        // WASM thread if done in one go; yield between chunks so the page stays responsive.
+        await Task.Delay(50);
+        _mainProvider = new InMemoryAuditLogProvider(GenerateEntries(100_000, seed: 42, seal: false));
+        StateHasChanged();
+        await Task.Delay(1);
+
+        _sealedProvider = new InMemoryAuditLogProvider(GenerateEntries(2_000, seed: 11, seal: true));
+        StateHasChanged();
+        await Task.Delay(1);
+
+        var tampered = GenerateEntries(40, seed: 7, seal: true);
+        tampered[4].Description = "Value modified after the log was sealed.";
+        _tamperedProvider = new InMemoryAuditLogProvider(tampered);
+        StateHasChanged();
+    }
+
+    private static List<AuditLogEntry> GenerateEntries(int count, int seed, bool seal)
+    {
+        var random = new Random(seed);
+        var start = new DateTimeOffset(2025, 7, 1, 0, 0, 0, TimeSpan.Zero);
+        var entries = new List<AuditLogEntry>(count);
+
+        for (var i = 0; i < count; i++)
+        {
+            var actor = _actors[random.Next(_actors.Length)];
+            var action = _actions[random.Next(_actions.Length)];
+            var timestamp = start.AddSeconds(random.NextInt64(0, 365L * 24 * 3600));
+            var entityNumber = random.Next(1, 2500);
+
+            var entry = new AuditLogEntry
+            {
+                Id = $"evt-{seed}-{i:D6}",
+                Timestamp = timestamp,
+                ActorId = actor.Id,
+                ActorName = actor.Name,
+                ActorRole = actor.Role,
+                Action = action.Action,
+                EntityType = action.EntityType,
+                EntityId = $"{action.EntityType}-{entityNumber}",
+                EntityLabel = $"{action.EntityType} #{entityNumber}",
+                Description = $"{actor.Name} performed {action.Action} on {action.EntityType} #{entityNumber}.",
+                Severity = action.Severity,
+                IpAddress = $"10.{random.Next(0, 255)}.{random.Next(0, 255)}.{random.Next(1, 255)}",
+                Metadata = new Dictionary<string, string>
+                {
+                    ["correlationId"] = $"corr-{seed}-{i / 25:D5}"
+                }
+            };
+
+            if (action.Action is "document.updated" or "settings.changed" or "user.role-changed")
+            {
+                entry.Changes =
+                [
+                    new TmChangeInfo("Status", $"Draft v{random.Next(1, 9)}", $"Draft v{random.Next(9, 20)}"),
+                    new TmChangeInfo("Owner", _actors[random.Next(_actors.Length)].Name, actor.Name)
+                ];
+            }
+
+            entries.Add(entry);
+        }
+
+        if (seal)
+        {
+            AuditLogHashChain.Seal(entries);
+        }
+
+        return entries;
+    }
+}
