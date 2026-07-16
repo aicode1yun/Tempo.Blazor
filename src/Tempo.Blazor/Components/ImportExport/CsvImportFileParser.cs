@@ -14,6 +14,12 @@ namespace Tempo.Blazor.Components.ImportExport;
 /// </summary>
 public sealed class CsvImportFileParser : IImportFileParser
 {
+    static CsvImportFileParser()
+    {
+        // Legacy code pages (windows-1250, …) are not available on .NET without the provider.
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    }
+
     /// <inheritdoc />
     public async Task<ImportParseResult> ParseAsync(
         Stream stream, ImportParseOptions options, CancellationToken ct = default)
@@ -21,10 +27,27 @@ public sealed class CsvImportFileParser : IImportFileParser
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(options);
 
-        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        using var reader = new StreamReader(stream, ResolveEncoding(options.EncodingName), detectEncodingFromByteOrderMarks: true);
         var text = await reader.ReadToEndAsync(ct).ConfigureAwait(false);
 
         return Parse(text, options);
+    }
+
+    private static Encoding ResolveEncoding(string? encodingName)
+    {
+        if (string.IsNullOrWhiteSpace(encodingName))
+        {
+            return Encoding.UTF8;
+        }
+
+        try
+        {
+            return Encoding.GetEncoding(encodingName);
+        }
+        catch (ArgumentException)
+        {
+            return Encoding.UTF8;
+        }
     }
 
     /// <summary>Parses raw CSV <paramref name="text"/> using the given <paramref name="options"/>.</summary>
@@ -38,7 +61,8 @@ public sealed class CsvImportFileParser : IImportFileParser
             normalized = normalized[1..]; // strip a leading BOM on the decoded-text path too
         }
 
-        var records = Tokenize(normalized, options.Delimiter);
+        var delimiter = options.AutoDetectDelimiter ? DetectDelimiter(normalized) : options.Delimiter;
+        var records = Tokenize(normalized, delimiter);
         if (records.Count == 0)
         {
             return new ImportParseResult([], []);
@@ -93,6 +117,54 @@ public sealed class CsvImportFileParser : IImportFileParser
         }
 
         return new ImportParseResult(columns, rows);
+    }
+
+    /// <summary>
+    /// Sniffs the dominant separator from the first record: counts each candidate delimiter
+    /// outside quoted sections up to the first unquoted newline and picks the most frequent
+    /// (comma wins ties and empty input).
+    /// </summary>
+    private static char DetectDelimiter(string text)
+    {
+        char[] candidates = [',', ';', '\t', '|'];
+        var counts = new int[candidates.Length];
+        var inQuotes = false;
+
+        foreach (var ch in text)
+        {
+            if (ch == '"')
+            {
+                inQuotes = !inQuotes;
+                continue;
+            }
+
+            if (inQuotes)
+            {
+                continue;
+            }
+
+            if (ch is '\r' or '\n')
+            {
+                break;
+            }
+
+            var index = Array.IndexOf(candidates, ch);
+            if (index >= 0)
+            {
+                counts[index]++;
+            }
+        }
+
+        var best = 0;
+        for (var i = 1; i < candidates.Length; i++)
+        {
+            if (counts[i] > counts[best])
+            {
+                best = i;
+            }
+        }
+
+        return candidates[best];
     }
 
     /// <summary>Splits CSV text into records of raw string fields, honouring quotes and newlines.</summary>

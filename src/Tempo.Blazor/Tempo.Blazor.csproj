@@ -9,7 +9,7 @@
     <!-- NuGet Package Metadata -->
     <IsPackable>true</IsPackable>
     <PackageId>Tempo.Blazor</PackageId>
-    <Version>2.3.0-preview.9</Version>
+    <Version>2.3.0-preview.10</Version>
     <Authors>ptyll</Authors>
     <Description>Comprehensive Blazor component library with 100+ components. Supports WebAssembly, Server, and InteractiveAuto render modes. Multi-targets .NET 8/9/10. Includes multilingual support (EN/CS), CSS variable theming, and dark mode. Optional FluentValidation integration is available through Tempo.Blazor.FluentValidation.</Description>
     <PackageTags>blazor;components;ui;server;wasm;interactive-auto;localization</PackageTags>
@@ -33,6 +33,8 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.12" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <!-- Legacy code-page encodings (windows-1250, ...) for CSV imports; in-box on net10 -->
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.12" />
     <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="8.0.12" />
   </ItemGroup>
@@ -40,6 +42,7 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.3" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.3" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.3" />
     <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.3" />
     <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="9.0.3" />
   </ItemGroup>

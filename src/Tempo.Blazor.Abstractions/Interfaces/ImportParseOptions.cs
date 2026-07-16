@@ -10,4 +10,17 @@ namespace Tempo.Blazor.Interfaces;
 /// record is treated as data.
 /// </param>
 /// <param name="Delimiter">Field delimiter for delimited formats such as CSV. Defaults to a comma.</param>
-public sealed record ImportParseOptions(bool HasHeaderRow = true, char Delimiter = ',');
+/// <param name="AutoDetectDelimiter">
+/// When <see langword="true"/>, delimited parsers sniff the dominant separator
+/// (comma, semicolon, tab, or pipe) from the first record instead of using <paramref name="Delimiter"/>.
+/// Defaults to <see langword="false"/>.
+/// </param>
+/// <param name="EncodingName">
+/// Text encoding of the source (e.g. "utf-8", "windows-1250"). Null (default) reads UTF-8 with
+/// byte-order-mark detection; an unknown name falls back to UTF-8.
+/// </param>
+public sealed record ImportParseOptions(
+    bool HasHeaderRow = true,
+    char Delimiter = ',',
+    bool AutoDetectDelimiter = false,
+    string? EncodingName = null);

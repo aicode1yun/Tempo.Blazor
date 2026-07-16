@@ -19,6 +19,10 @@
     },
     "dependencies": [
       {
+        "name": "System.Text.Encoding.CodePages",
+        "version": "8.0.0"
+      },
+      {
         "name": "Microsoft.AspNetCore.Components.Web",
         "version": "8.0.12"
       },
@@ -11733,6 +11737,67 @@
       ]
     },
     {
+      "itemName": "TmDataImport",
+      "kind": "Component",
+      "category": "Import / Export",
+      "namespace": "Tempo.Blazor.Components.ImportExport",
+      "description": "Full data-import flow over the TmImportWizard shell: upload CSV/XLSX (dialect + encoding selectors, auto-detected delimiter, pluggable parsers by file extension), preview, column-to-schema mapping with auto-mapping and required/duplicate gating, batched dry-run validation with a downloadable error report (rows + reasons), and a batched import with progress, partial import (skip invalid rows), failed-rows CSV download for a corrected follow-up import, and per-session rollback — all through IDataImportTarget.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/ImportExport/TmDataImport.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Abstractions.Models",
+        "@using Tempo.Blazor.Components.ImportExport"
+      ],
+      "parameters": [
+        {
+          "name": "BatchSize",
+          "type": "int",
+          "isRequired": false,
+          "default": "500",
+          "description": "Rows per provider batch for validation and import."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "OnCompleted",
+          "type": "EventCallback<DataImportResult>",
+          "isRequired": false,
+          "description": "Callback invoked when an import run finishes, with the run summary."
+        },
+        {
+          "name": "ParseOptions",
+          "type": "ImportParseOptions?",
+          "isRequired": false,
+          "description": "Parse options override. Null uses the upload step's dialect and encoding selectors."
+        },
+        {
+          "name": "Parsers",
+          "type": "IReadOnlyDictionary<string, IImportFileParser>?",
+          "isRequired": false,
+          "description": "Parsers by lower-case file extension (e.g. \".xlsx\" → XlsxImportFileParser from Tempo.Blazor.DataTableXlsx). \".csv\"/\".txt\" fall back to the built-in CSV parser."
+        },
+        {
+          "name": "PreviewRowCount",
+          "type": "int",
+          "isRequired": false,
+          "default": "10",
+          "description": "Rows shown in the upload preview."
+        },
+        {
+          "name": "Target",
+          "type": "IDataImportTarget",
+          "isRequired": true,
+          "description": "Destination of the import: target schema, validation, batches, rollback.",
+          "editorRequired": true
+        }
+      ]
+    },
+    {
       "itemName": "TmExportOptions",
       "kind": "Component",
       "category": "Import / Export",
@@ -23124,6 +23189,10 @@
       "kind": "Css"
     },
     {
+      "path": "src/Tempo.Blazor/wwwroot/css/components/_data-import.css",
+      "kind": "Css"
+    },
+    {
       "path": "src/Tempo.Blazor/wwwroot/css/components/_data-table.css",
       "kind": "Css"
     },
@@ -23641,11 +23710,11 @@
     }
   ],
   "summary": {
-    "itemCount": 328,
-    "manualItemCount": 328,
-    "generatedItemCount": 320,
+    "itemCount": 329,
+    "manualItemCount": 329,
+    "generatedItemCount": 321,
     "generatedOnlyItemCount": 0,
-    "componentCount": 191,
+    "componentCount": 192,
     "publicApiTypeCount": 129
   }
 }

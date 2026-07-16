@@ -59,6 +59,7 @@
 @import "components/_ledger-grid.css";
 @import "components/_kyc-wizard.css";
 @import "components/_screening-result-panel.css";
+@import "components/_data-import.css";
 @import "components/_form-validation-message.css";
 @import "components/_inline-edit.css";
 

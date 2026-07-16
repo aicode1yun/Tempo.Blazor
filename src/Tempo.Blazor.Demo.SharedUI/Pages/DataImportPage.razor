@@ -1,0 +1,141 @@
+@page "/data-import"
+@using System.Text
+@using Tempo.Blazor.Components.ImportExport
+@using Tempo.Blazor.DataTableXlsx
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Demo.SharedUI.Services
+@using Tempo.Blazor.Interfaces
+@inject IJSRuntime JS
+@implements IDisposable
+<PageTitle>Data Import – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Data Import</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        A full import flow over the <code>TmImportWizard</code> shell: upload CSV/XLSX
+        (<code>CsvImportFileParser</code> dialects + encodings, <code>XlsxImportFileParser</code> via the
+        open OOXML format), preview, column mapping onto the target schema, batched dry-run validation
+        with FluentValidation (<code>FluentValidationDataImportValidator</code>), a downloadable error
+        report, and a batched import with progress, partial import, failed-rows download for continuation,
+        and per-session rollback — all through <code>IDataImportTarget</code>.
+    </p>
+</div>
+
+<!-- Import flow -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Contact Import</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Interactive</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Import contacts (Name, Email, Age, City) into the demo database below. Grab the sample file —
+            5&nbsp;000 rows with 3 hidden errors — run the dry-run to find them, then either fix the file
+            or import the valid rows and download the failed ones for a corrected follow-up import.
+        </p>
+        <div class="mb-4">
+            <button type="button"
+                    class="px-3 py-1.5 text-xs font-medium bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-md"
+                    data-testid="import-demo-sample"
+                    @onclick="DownloadSampleCsvAsync">
+                Download sample CSV (5&nbsp;000 rows, 3 errors)
+            </button>
+        </div>
+        <div data-testid="import-demo-main">
+            <TmDataImport Target="_target"
+                          Parsers="_parsers"
+                          OnCompleted="HandleImportCompleted" />
+        </div>
+    </div>
+</section>
+
+<!-- Target database -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Target Database</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Live</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            The <code>ContactImportTarget</code> behind the wizard — the count and the latest rows update
+            live after every import batch and rollback, so you can verify what actually landed.
+        </p>
+        <p class="text-sm font-semibold text-slate-900 dark:text-white mb-2">
+            Stored contacts: <span data-testid="import-db-count">@_target.Count</span>
+        </p>
+        <table class="w-full text-sm" data-testid="import-demo-db">
+            <thead>
+                <tr class="text-left text-xs text-slate-500 dark:text-slate-400">
+                    <th class="py-1">Name</th>
+                    <th class="py-1">Email</th>
+                    <th class="py-1">Age</th>
+                    <th class="py-1">City</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var contact in _target.Latest(5))
+                {
+                    <tr class="border-t border-slate-200 dark:border-slate-700" data-testid="import-db-row">
+                        <td class="py-1">@contact.Name</td>
+                        <td class="py-1">@contact.Email</td>
+                        <td class="py-1">@contact.AgeText</td>
+                        <td class="py-1">@contact.City</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@code {
+    private readonly ContactImportTarget _target = new();
+    private IReadOnlyDictionary<string, IImportFileParser> _parsers =
+        new Dictionary<string, IImportFileParser> { [".xlsx"] = new XlsxImportFileParser() };
+
+    protected override void OnInitialized()
+        => _target.Changed += HandleTargetChanged;
+
+    public void Dispose()
+        => _target.Changed -= HandleTargetChanged;
+
+    private void HandleTargetChanged()
+        => _ = InvokeAsync(StateHasChanged);
+
+    private Task HandleImportCompleted(DataImportResult result)
+        => InvokeAsync(StateHasChanged);
+
+    private async Task DownloadSampleCsvAsync()
+    {
+        var csv = BuildSampleCsv();
+        var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv)).ToArray();
+        await JS.InvokeVoidAsync("tmDataTable.downloadFile", "contacts-sample.csv", "text/csv", Convert.ToBase64String(bytes));
+    }
+
+    /// <summary>5 000 deterministic rows; rows 120, 2500 and 4998 carry the three errors.</summary>
+    private static string BuildSampleCsv()
+    {
+        string[] firstNames = ["Alice", "Bedřich", "Cyril", "Dana", "Emil", "Františka", "Gustav", "Hana"];
+        string[] lastNames = ["Novák", "Svobodová", "Dvořák", "Černá", "Procházka", "Kučerová", "Veselý", "Horáková"];
+        string[] cities = ["Praha", "Brno", "Ostrava", "Plzeň", "Olomouc", "Liberec"];
+
+        var builder = new StringBuilder("Name,Email,Age,City\r\n");
+        for (var i = 1; i <= 5000; i++)
+        {
+            var name = $"{firstNames[i % firstNames.Length]} {lastNames[(i / 8) % lastNames.Length]}";
+            var email = $"contact{i}@example.com";
+            var age = (18 + i % 60).ToString();
+            var city = cities[i % cities.Length];
+
+            if (i == 120) { name = ""; }
+            if (i == 2500) { email = "not-an-email"; }
+            if (i == 4998) { age = "999"; }
+
+            builder.Append(name).Append(',').Append(email).Append(',').Append(age).Append(',').Append(city).Append("\r\n");
+        }
+
+        return builder.ToString();
+    }
+}

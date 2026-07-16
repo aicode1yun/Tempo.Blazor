@@ -12433,6 +12433,46 @@
       ]
     },
     {
+      "itemName": "DataImportBatchResult",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Result of importing one batch: the number of rows the target accepted and the rejected rows with reasons (the import continues past them).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DataImportResult",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Summary of one finished import run reported by TmDataImport: session id (usable for rollback), imported count, rows skipped by dry-run validation, and rows rejected by the target.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DataImportRow",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One row prepared for import: the 1-based source row number and the mapped target-field values keyed by field key. Supports deep cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DataImportRowError",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One row-level problem found while validating or importing: source row number, optional offending field key, and a human-readable reason supplied by the target or validator (data, not component chrome).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DataTableExportData",
       "kind": "Class",
       "category": "Models",
@@ -14830,6 +14870,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IDataImportTarget",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Destination of a data import: declares the target schema (ImportTargetField list), validates batches without importing (dry-run), imports batches under a session id with continue-past-invalid-rows semantics, and rolls back everything imported under one session.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IDataTableExporter",
       "kind": "Interface",
       "category": "Models",
@@ -14960,6 +15010,16 @@
           ]
         }
       ]
+    },
+    {
+      "itemName": "InMemoryDataImportTarget",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IDataImportTarget for demos and tests: a pluggable per-row validator delegate, per-session storage with rollback, and clone-on-read ImportedRows snapshots.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "InMemoryDataTableLayoutStore",
@@ -34944,11 +35004,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1391,
-    "manualItemCount": 1391,
-    "generatedItemCount": 1374,
+    "itemCount": 1397,
+    "manualItemCount": 1397,
+    "generatedItemCount": 1380,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1374
+    "publicApiTypeCount": 1380
   }
 }

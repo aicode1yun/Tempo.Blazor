@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Result of importing one batch: the number of rows the target accepted and the rejected rows with reasons (the import continues past them).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DataImportBatchResult"
+}

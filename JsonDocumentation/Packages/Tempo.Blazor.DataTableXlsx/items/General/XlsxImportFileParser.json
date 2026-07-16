@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.DataTableXlsx",
+  "description": "XLSX IImportFileParser reading the open OOXML format through the DocumentFormat.OpenXml SDK: first worksheet, shared and inline strings resolved, numeric/boolean cells kept as raw invariant text, sparse rows aligned to columns by their A1 references, and CSV-parser-compatible rectangular normalisation with optional header row.",
+  "packageId": "Tempo.Blazor.DataTableXlsx",
+  "sourcePath": "src/Tempo.Blazor.DataTableXlsx/XlsxImportFileParser.cs",
+  "documentationStatus": "generated",
+  "itemName": "XlsxImportFileParser"
+}

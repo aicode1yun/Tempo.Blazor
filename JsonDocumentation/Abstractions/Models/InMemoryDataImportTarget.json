@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "In-memory IDataImportTarget for demos and tests: a pluggable per-row validator delegate, per-session storage with rollback, and clone-on-read ImportedRows snapshots.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "InMemoryDataImportTarget"
+}

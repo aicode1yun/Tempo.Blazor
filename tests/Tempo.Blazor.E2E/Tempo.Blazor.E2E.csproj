@@ -22,6 +22,7 @@
     <ProjectReference Include="..\..\src\Tempo.Blazor.DocumentFormats\Tempo.Blazor.DocumentFormats.csproj" />
     <ProjectReference Include="..\..\src\Tempo.Reporting.Engine\Tempo.Reporting.Engine.csproj" />
     <ProjectReference Include="..\..\src\Tempo.Blazor.Wireframe\Tempo.Blazor.Wireframe.csproj" />
+    <ProjectReference Include="..\..\src\Tempo.Blazor.DataTableXlsx\Tempo.Blazor.DataTableXlsx.csproj" />
   </ItemGroup>
 
   <ItemGroup>

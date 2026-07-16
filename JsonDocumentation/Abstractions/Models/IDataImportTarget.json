@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Destination of a data import: declares the target schema (ImportTargetField list), validates batches without importing (dry-run), imports batches under a session id with continue-past-invalid-rows semantics, and rolls back everything imported under one session.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDataImportTarget"
+}

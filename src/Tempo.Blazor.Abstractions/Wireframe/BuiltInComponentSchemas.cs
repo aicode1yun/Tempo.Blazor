@@ -119,6 +119,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmMoneyDisplay"] = ["money-display"],
             ["TmKycWizard"] = ["kyc-wizard"],
             ["TmScreeningResultPanel"] = ["screening-result-panel"],
+            ["TmDataImport"] = ["data-import"],
             ["TmAIPrompt"] = ["text-area", "button"],
             ["TmWidgetSelector"] = ["dashboard", "card"],
             ["__group__"] = ["section"],
@@ -2160,6 +2161,19 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("subjectKind", "Subject Kind", PropType.Enum, "person",
                     opts: ["person", "company"], cat: "Content"),
                 P("showErrors",  "Show Errors",  PropType.Bool, false, cat: "State"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmDataImport", Category = "Complex", DisplayName = "Data Import",
+            DefaultWidth = 620, DefaultHeight = 400,
+            Props =
+            [
+                P("activeStep", "Active Step", PropType.Int, 0, cat: "State"),
+                P("rowCount",   "Row Count",   PropType.Int, 6, cat: "Content"),
+                P("errorCount", "Error Count", PropType.Int, 0, cat: "State"),
+                P("progress",   "Progress",    PropType.Int, 0, cat: "State"),
             ]
         };
 
