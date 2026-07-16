@@ -8594,6 +8594,20 @@
           "default": "\"Cancel\""
         },
         {
+          "name": "CloseOnEscape",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true, pressing Escape cancels the dialog. Defaults to true (current behavior)."
+        },
+        {
+          "name": "CloseOnOverlayClick",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "When true, clicking the backdrop cancels the dialog. Defaults to false so a decision prompt is not dismissed by an accidental outside click (current behavior)."
+        },
+        {
           "name": "FooterContent",
           "type": "RenderFragment?",
           "isRequired": false
@@ -11821,6 +11835,12 @@
           "description": "Label text rendered next to the checkbox."
         },
         {
+          "name": "Required",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Marks the checkbox as required. Shows a required marker on the label and sets aria-required on the checkbox input."
+        },
+        {
           "name": "Value",
           "type": "bool",
           "isRequired": false,
@@ -11852,6 +11872,173 @@
         {
           "title": "Checkbox with help text and indeterminate state",
           "code": "<TmCheckbox @bind-Value=\"selectAll\" Label=\"Select all items\" HelpText=\"This will select all visible rows\" Indeterminate=\"@isSomeSelected\" />"
+        }
+      ]
+    },
+    {
+      "itemName": "TmCodeEditor",
+      "kind": "Component",
+      "category": "Inputs",
+      "namespace": "Tempo.Blazor.Components.Inputs",
+      "description": "Monospace source-code editor with an optional Prism syntax-highlight overlay, Tab/Shift+Tab indentation, copy-to-clipboard button and built-in JSON validation. Works without any JS/Prism as a plain monospace textarea; loading _content/Tempo.Blazor/js/code-editor.js enables the overlay and, when the host also loads Prism, syntax highlighting for the configured language.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmCodeEditor.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Inputs"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class(es) applied to the root container."
+        },
+        {
+          "name": "Disabled",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Disables the editor."
+        },
+        {
+          "name": "Error",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Validation error message supplied by the host. Takes precedence over built-in JSON validation."
+        },
+        {
+          "name": "Id",
+          "type": "string",
+          "isRequired": false,
+          "default": "Guid.NewGuid().ToString(\"n\")[..8]",
+          "description": "HTML id attribute of the textarea."
+        },
+        {
+          "name": "Label",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Label shown above the editor."
+        },
+        {
+          "name": "Language",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Prism grammar id used for syntax highlighting (e.g. \"json\", \"csharp\", \"sql\"). Highlighting only activates when the host page loads Prism; without it the editor degrades to a plain monospace textarea. Null disables highlighting entirely."
+        },
+        {
+          "name": "MaxLength",
+          "type": "int?",
+          "isRequired": false,
+          "description": "Maximum character count."
+        },
+        {
+          "name": "Placeholder",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Placeholder text shown while empty."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Makes the editor read-only (selectable and copyable, not editable)."
+        },
+        {
+          "name": "Required",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Marks the editor as required. Shows a required marker on the label and sets aria-required."
+        },
+        {
+          "name": "Rows",
+          "type": "int",
+          "isRequired": false,
+          "default": "8",
+          "description": "Number of visible rows."
+        },
+        {
+          "name": "ShowCopyButton",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Shows a copy-to-clipboard button in the top-right corner."
+        },
+        {
+          "name": "ShowFormatButton",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Shows a pretty-print button for JSON content. Only rendered when Language is \"json\"."
+        },
+        {
+          "name": "ValidateJson",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true and Language is \"json\", the value is parsed on every change and a localized error is shown for invalid JSON. The IsValid property exposes the result."
+        },
+        {
+          "name": "Value",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "Current code text. Binding this parameter gives you the raw source text."
+        },
+        {
+          "name": "ValueChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Fires on every keystroke with the new value."
+        },
+        {
+          "name": "DataTestId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Overrides the component's root data-testid (default \"code-editor\")."
+        },
+        {
+          "name": "TestIdPrefix",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Namespaces every internal data-testid as \"{TestIdPrefix}-{name}\" for unique targeting when multiple instances share a page."
+        }
+      ],
+      "methods": [
+        {
+          "name": "FormatJsonAsync",
+          "signature": "Task FormatJsonAsync()",
+          "description": "Pretty-prints the current value as indented JSON. No-op when the value is empty or not parseable JSON."
+        }
+      ],
+      "properties": [
+        {
+          "name": "IsValid",
+          "type": "bool",
+          "description": "False when ValidateJson is on and the current value is not parseable JSON."
+        }
+      ],
+      "cssClasses": [
+        "tm-code-editor",
+        "tm-code-editor--disabled",
+        "tm-code-editor--error",
+        "tm-code-editor--highlighted",
+        "tm-code-editor__body",
+        "tm-code-editor__highlight",
+        "tm-code-editor__textarea",
+        "tm-code-editor__actions",
+        "tm-code-editor__copy",
+        "tm-code-editor__format"
+      ],
+      "examples": [
+        {
+          "title": "JSON editor with validation and format button",
+          "code": "<TmCodeEditor @bind-Value=\"attributesJson\" Language=\"json\" Label=\"Attributes\" ValidateJson=\"true\" ShowFormatButton=\"true\" Rows=\"10\" />"
+        },
+        {
+          "title": "Read-only snippet with copy button",
+          "code": "<TmCodeEditor Value=\"@snippet\" Language=\"csharp\" ReadOnly=\"true\" Rows=\"6\" />"
+        },
+        {
+          "title": "Required script include (host page)",
+          "code": "<script src=\"_content/Tempo.Blazor/js/code-editor.js\"></script>\n<!-- optional, enables highlighting: -->\n<script src=\"https://cdn.jsdelivr.net/npm/prismjs@1/prism.min.js\"></script>\n<script src=\"https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js\"></script>"
         }
       ]
     },
@@ -12345,6 +12532,12 @@
           "type": "bool",
           "isRequired": false,
           "description": "Render the input as read-only."
+        },
+        {
+          "name": "Required",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Marks the input as required. Shows a required marker on the label and sets aria-required on the input element."
         },
         {
           "name": "ShowButtons",
@@ -13784,6 +13977,12 @@
           "description": "List of options to render."
         },
         {
+          "name": "Required",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Marks the radio group as required. Shows a required marker on the label and sets aria-required on the radiogroup element."
+        },
+        {
           "name": "Value",
           "type": "T?",
           "isRequired": false,
@@ -14149,6 +14348,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Placeholder option shown when no value is selected."
+        },
+        {
+          "name": "Required",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Marks the select as required. Shows a required marker on the label and sets aria-required on the <select> element."
         },
         {
           "name": "Value",
@@ -14760,6 +14965,12 @@
           "type": "string?",
           "isRequired": false,
           "description": "Placeholder text."
+        },
+        {
+          "name": "Required",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Marks the textarea as required. Shows a required marker on the label and sets aria-required on the <textarea> element."
         },
         {
           "name": "Rows",
@@ -16655,6 +16866,25 @@
           "type": "EventCallback",
           "isRequired": false,
           "description": "Raised after the user confirms leaving, right before navigation is re-issued."
+        },
+        {
+          "name": "OnSaveAndLeave",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Optional callback that persists the pending work before navigation continues. When set, the confirmation dialog shows a third \"save and leave\" button; the guard awaits this callback and then re-issues the blocked navigation. Leave unset for the classic Leave/Stay behavior."
+        },
+        {
+          "name": "SaveAndLeaveText",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"Save and leave\"",
+          "description": "Text for the optional third button that saves the pending work and then leaves. The button is only rendered when has a delegate, so existing two-choice usages are unchanged."
+        },
+        {
+          "name": "ShouldGuard",
+          "type": "Func<string, bool>?",
+          "isRequired": false,
+          "description": "Optional predicate over the target URI deciding whether a navigation should be guarded at all. Return false to let a navigation through without prompting even when the host is dirty (e.g. moving between URL tabs or the detail↔sub-page of the same document). When null, every navigation is guarded."
         }
       ],
       "cssClasses": [],
@@ -22408,6 +22638,10 @@
       "kind": "Css"
     },
     {
+      "path": "src/Tempo.Blazor/wwwroot/css/components/_code-editor.css",
+      "kind": "Css"
+    },
+    {
       "path": "src/Tempo.Blazor/wwwroot/css/components/_color-gradient.css",
       "kind": "Css"
     },
@@ -22860,6 +23094,22 @@
       "kind": "Asset"
     },
     {
+      "path": "src/Tempo.Blazor/wwwroot/fonts/inter/InterVariable-Italic.woff2",
+      "kind": "Font"
+    },
+    {
+      "path": "src/Tempo.Blazor/wwwroot/fonts/inter/InterVariable.woff2",
+      "kind": "Font"
+    },
+    {
+      "path": "src/Tempo.Blazor/wwwroot/fonts/inter/OFL.txt",
+      "kind": "Asset"
+    },
+    {
+      "path": "src/Tempo.Blazor/wwwroot/js/code-editor.js",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor/wwwroot/js/color-picker.js",
       "kind": "JavaScript"
     },
@@ -22921,11 +23171,11 @@
     }
   ],
   "summary": {
-    "itemCount": 321,
-    "manualItemCount": 321,
-    "generatedItemCount": 313,
+    "itemCount": 322,
+    "manualItemCount": 322,
+    "generatedItemCount": 314,
     "generatedOnlyItemCount": 0,
-    "componentCount": 184,
+    "componentCount": 185,
     "publicApiTypeCount": 129
   }
 }

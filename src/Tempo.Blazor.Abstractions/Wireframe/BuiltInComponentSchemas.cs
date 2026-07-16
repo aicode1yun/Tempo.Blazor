@@ -106,6 +106,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmImportPreview"] = ["data-table"],
             ["TmTreeView"] = ["list-view"],
             ["TmPdfViewer"] = ["pdf-viewer"],
+            ["TmPdfAnnotator"] = ["pdf-annotator"],
             ["TmCommentComposer"] = ["text-area", "avatar"],
             ["TmCommentReactions"] = ["chip"],
             ["TmReactionPicker"] = ["chip", "popover"],
@@ -2036,6 +2037,21 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("showToolbar",       "Show Toolbar",       PropType.Bool,   true,           cat: "Appearance"),
                 P("showSearch",        "Show Search",        PropType.Bool,   false,          cat: "Appearance"),
                 P("enableAnnotations", "Enable Annotations", PropType.Bool,   false,          cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmPdfAnnotator", Category = "Complex", DisplayName = "PDF Annotator",
+            DefaultWidth = 520, DefaultHeight = 460,
+            Props =
+            [
+                P("fileName",        "File Name",        PropType.String, "document.pdf", cat: "Content"),
+                P("annotationCount", "Annotation Count", PropType.Int,    3,              cat: "Content"),
+                P("mode",            "Mode",             PropType.Enum,   "browse",
+                    opts: ["browse", "highlight", "comment", "stamp", "draw"], cat: "State"),
+                P("showPanel",       "Show Panel",       PropType.Bool,   true,           cat: "Appearance"),
+                P("allowExport",     "Allow Export",     PropType.Bool,   true,           cat: "Appearance"),
             ]
         };
 

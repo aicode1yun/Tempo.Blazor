@@ -1,0 +1,13 @@
+{
+  "itemName": "TmPdfAnnotator",
+  "kind": "Component",
+  "category": "Files",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "description": "Standalone PDF annotation workbench built on top of TmPdfViewer. Offers highlight, comment, stamp, and freehand drawing tools, a comment thread panel with resolve/reopen, per-author or per-role annotation colors, export of annotations into the PDF (as real PDF annotations or flattened into the page content), and a print variant with a comment summary. Persistence is pluggable through IPdfAnnotationProvider.",
+  "packageId": "Tempo.Blazor.PdfViewer",
+  "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotator.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Files"
+  ]
+}

@@ -12713,6 +12713,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentAnnotationKind",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Kind of a PDF annotation thread created by TmPdfAnnotator: Comment (default, keeps existing threads working), Highlight, Stamp, or Drawing.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentCommentAnchorKind",
       "kind": "Enum",
       "category": "Models",
@@ -12994,6 +13004,26 @@
       "description": "User available for document comment mentions.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentComments.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentInkPoint",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Normalized point on a document page (fractions of the page size) used by freehand drawing annotations.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentInkStroke",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Single freehand stroke of a drawing annotation: ordered normalized points plus a thickness expressed as a fraction of the page width.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
       "documentationStatus": "merged"
     },
     {
@@ -14781,6 +14811,26 @@
       ],
       "packageId": "Tempo.Blazor.Abstractions",
       "documentationStatus": "manual"
+    },
+    {
+      "itemName": "PdfAnnotationColorHelper",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Resolves the display color of a PDF annotation thread: an explicit thread color wins, then a per-author color, then a per-role color, and finally a deterministic palette color derived from the author id.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "PdfAnnotationExportPayloadBuilder",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Builds the culture-invariant JSON payload consumed by the TmPdfAnnotator JavaScript export and print functions: one entry per annotation thread with page, kind, geometry, color, quote, ink strokes, stamp text, and comments.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "RecurrenceParser",
@@ -34232,11 +34282,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1329,
-    "manualItemCount": 1329,
-    "generatedItemCount": 1312,
+    "itemCount": 1334,
+    "manualItemCount": 1334,
+    "generatedItemCount": 1317,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1312
+    "publicApiTypeCount": 1317
   }
 }

@@ -211,12 +211,25 @@ window.tmPdfViewer = (function () {
 
     // ── Overlay positioning ──────────────────────────────────────────────────
 
+    // overlayEl → ResizeObserver keeping it aligned with its canvas.
+    const _overlayObservers = new WeakMap();
+
     function syncOverlay(canvasEl, overlayEl) {
         if (!canvasEl || !overlayEl) return;
-        overlayEl.style.left = canvasEl.offsetLeft + 'px';
-        overlayEl.style.top = canvasEl.offsetTop + 'px';
-        overlayEl.style.width = canvasEl.offsetWidth + 'px';
-        overlayEl.style.height = canvasEl.offsetHeight + 'px';
+        const apply = () => {
+            overlayEl.style.left = canvasEl.offsetLeft + 'px';
+            overlayEl.style.top = canvasEl.offsetTop + 'px';
+            overlayEl.style.width = canvasEl.offsetWidth + 'px';
+            overlayEl.style.height = canvasEl.offsetHeight + 'px';
+        };
+        apply();
+        // The canvas is resized asynchronously when a page renders (initial load, zoom,
+        // rotation). Track it so overlays never go stale between explicit sync calls.
+        if (typeof ResizeObserver !== 'undefined' && !_overlayObservers.has(overlayEl)) {
+            const observer = new ResizeObserver(apply);
+            observer.observe(canvasEl);
+            _overlayObservers.set(overlayEl, observer);
+        }
     }
 
     // ── Search ────────────────────────────────────────────────────────────────

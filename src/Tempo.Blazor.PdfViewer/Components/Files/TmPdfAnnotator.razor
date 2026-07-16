@@ -1,0 +1,171 @@
+@namespace Tempo.Blazor.Components.Files
+@inherits Tempo.Blazor.Components.TmComponentBase
+@using Tempo.Blazor.Abstractions.Models
+
+<div class="tm-pdf-annotator @Class" data-testid="@TestId("pdf-annotator")">
+
+    <div class="tm-pdf-annotator__toolbar"
+         role="toolbar"
+         aria-label="@Loc["TmPdfAnnotator_ToolbarLabel"]"
+         data-testid="@TestId("pdf-annotator-toolbar")">
+
+        <div class="tm-pdf-annotator__modes" role="group" aria-label="@Loc["TmPdfAnnotator_ToolbarLabel"]">
+            <button type="button"
+                    class="@ModeClass(PdfAnnotatorMode.Browse)"
+                    title="@Loc["TmPdfAnnotator_ModeBrowse"]"
+                    aria-label="@Loc["TmPdfAnnotator_ModeBrowse"]"
+                    aria-pressed="@(_mode == PdfAnnotatorMode.Browse ? "true" : "false")"
+                    data-testid="@TestId("pdf-annotator-mode-browse")"
+                    @onclick="() => SetModeAsync(PdfAnnotatorMode.Browse)">
+                <TmIcon Name="mouse-pointer" Size="IconSize.Sm" />
+            </button>
+            <button type="button"
+                    class="@ModeClass(PdfAnnotatorMode.Highlight)"
+                    title="@Loc["TmPdfAnnotator_ModeHighlight"]"
+                    aria-label="@Loc["TmPdfAnnotator_ModeHighlight"]"
+                    aria-pressed="@(_mode == PdfAnnotatorMode.Highlight ? "true" : "false")"
+                    data-testid="@TestId("pdf-annotator-mode-highlight")"
+                    @onclick="() => SetModeAsync(PdfAnnotatorMode.Highlight)">
+                <TmIcon Name="highlighter" Size="IconSize.Sm" />
+            </button>
+            <button type="button"
+                    class="@ModeClass(PdfAnnotatorMode.Comment)"
+                    title="@Loc["TmPdfAnnotator_ModeComment"]"
+                    aria-label="@Loc["TmPdfAnnotator_ModeComment"]"
+                    aria-pressed="@(_mode == PdfAnnotatorMode.Comment ? "true" : "false")"
+                    data-testid="@TestId("pdf-annotator-mode-comment")"
+                    @onclick="() => SetModeAsync(PdfAnnotatorMode.Comment)">
+                <TmIcon Name="message-square" Size="IconSize.Sm" />
+            </button>
+            <button type="button"
+                    class="@ModeClass(PdfAnnotatorMode.Stamp)"
+                    title="@Loc["TmPdfAnnotator_ModeStamp"]"
+                    aria-label="@Loc["TmPdfAnnotator_ModeStamp"]"
+                    aria-pressed="@(_mode == PdfAnnotatorMode.Stamp ? "true" : "false")"
+                    data-testid="@TestId("pdf-annotator-mode-stamp")"
+                    @onclick="() => SetModeAsync(PdfAnnotatorMode.Stamp)">
+                <TmIcon Name="stamp" Size="IconSize.Sm" />
+            </button>
+            <button type="button"
+                    class="@ModeClass(PdfAnnotatorMode.Draw)"
+                    title="@Loc["TmPdfAnnotator_ModeDraw"]"
+                    aria-label="@Loc["TmPdfAnnotator_ModeDraw"]"
+                    aria-pressed="@(_mode == PdfAnnotatorMode.Draw ? "true" : "false")"
+                    data-testid="@TestId("pdf-annotator-mode-draw")"
+                    @onclick="() => SetModeAsync(PdfAnnotatorMode.Draw)">
+                <TmIcon Name="pencil" Size="IconSize.Sm" />
+            </button>
+        </div>
+
+        @if (_mode == PdfAnnotatorMode.Stamp)
+        {
+            <label class="tm-pdf-annotator__stamp-picker">
+                <span class="tm-pdf-annotator__stamp-label">@Loc["TmPdfAnnotator_StampLabel"]</span>
+                <select class="tm-pdf-annotator__stamp-select"
+                        aria-label="@Loc["TmPdfAnnotator_StampLabel"]"
+                        data-testid="@TestId("pdf-annotator-stamp-select")"
+                        @onchange="HandleStampSelectionChanged">
+                    @{ var stampOptions = EffectiveStampOptions; }
+                    @for (var i = 0; i < stampOptions.Count; i++)
+                    {
+                        var index = i;
+                        <option value="@index" selected="@(index == _selectedStampIndex)">@stampOptions[index]</option>
+                    }
+                </select>
+            </label>
+        }
+
+        <span class="tm-pdf-annotator__color-chip"
+              style="background:@CurrentAuthorColor"
+              title="@Loc["TmPdfAnnotator_YourColor"]"
+              aria-hidden="true"></span>
+
+        <div class="tm-pdf-annotator__spacer"></div>
+
+        @if (AllowExport)
+        {
+            <button type="button"
+                    class="tm-pdf-annotator__action"
+                    title="@Loc["TmPdfAnnotator_Export"]"
+                    aria-label="@Loc["TmPdfAnnotator_Export"]"
+                    data-testid="@TestId("pdf-annotator-export")"
+                    @onclick="() => ExportAsync(false)">
+                <TmIcon Name="file-down" Size="IconSize.Sm" />
+                <span class="tm-pdf-annotator__action-text">@Loc["TmPdfAnnotator_Export"]</span>
+            </button>
+            <button type="button"
+                    class="tm-pdf-annotator__action"
+                    title="@Loc["TmPdfAnnotator_ExportFlattened"]"
+                    aria-label="@Loc["TmPdfAnnotator_ExportFlattened"]"
+                    data-testid="@TestId("pdf-annotator-export-flat")"
+                    @onclick="() => ExportAsync(true)">
+                <TmIcon Name="layers" Size="IconSize.Sm" />
+                <span class="tm-pdf-annotator__action-text">@Loc["TmPdfAnnotator_ExportFlattened"]</span>
+            </button>
+            <button type="button"
+                    class="tm-pdf-annotator__action"
+                    title="@Loc["TmPdfAnnotator_Print"]"
+                    aria-label="@Loc["TmPdfAnnotator_Print"]"
+                    data-testid="@TestId("pdf-annotator-print")"
+                    @onclick="PrintAsync">
+                <TmIcon Name="printer" Size="IconSize.Sm" />
+                <span class="tm-pdf-annotator__action-text">@Loc["TmPdfAnnotator_Print"]</span>
+            </button>
+        }
+    </div>
+
+    <div class="tm-pdf-annotator__body">
+        <div class="tm-pdf-annotator__viewer">
+            <TmPdfViewer Url="@Url"
+                         DocumentId="@DocumentId"
+                         Height="@(string.IsNullOrEmpty(Height) ? "600px" : Height)"
+                         ShowToolbar="ShowViewerToolbar"
+                         ShowTextLayer="true"
+                         EnableTextSelectionEvents="true"
+                         AllowDownload="false"
+                         Page="_currentPage"
+                         PageChanged="HandlePageChangedAsync"
+                         OnDocumentLoaded="HandleDocumentLoaded"
+                         OnTextSelected="HandleTextSelectedAsync">
+                <OverlayContent>
+                    <TmPdfAnnotatorLayer Threads="_threads"
+                                         PageNumber="_currentPage"
+                                         SelectedThreadId="@_selectedThreadId"
+                                         ShowResolved="_showResolved"
+                                         ColorResolver="_colorResolver"
+                                         Draft="_draft"
+                                         ActiveStroke="_activeStroke"
+                                         DraftColor="@CurrentAuthorColor"
+                                         OnThreadSelected="SelectThreadAsync" />
+                    <div @ref="_surfaceRef"
+                         class="tm-pdf-annotator__surface @(SurfaceActive ? "tm-pdf-annotator__surface--active" : "") @(_mode == PdfAnnotatorMode.Draw ? "tm-pdf-annotator__surface--draw" : "")"
+                         data-testid="@TestId("pdf-annotator-surface")"
+                         @onclick="HandleSurfaceClickAsync"
+                         @onpointerdown="HandlePointerDownAsync"
+                         @onpointerdown:preventDefault="true"
+                         @onpointermove="HandlePointerMoveAsync"
+                         @onpointerup="HandlePointerUpAsync"
+                         @onpointerleave="HandlePointerLeaveAsync"></div>
+                </OverlayContent>
+            </TmPdfViewer>
+        </div>
+
+        @if (ShowPanel)
+        {
+            <TmPdfAnnotatorPanel Threads="_threads"
+                                 SelectedThreadId="@_selectedThreadId"
+                                 SelectedThreadIdChanged="SelectThreadAsync"
+                                 ShowResolved="_showResolved"
+                                 ShowResolvedChanged="SetShowResolvedAsync"
+                                 ColorResolver="_colorResolver"
+                                 Draft="_draft"
+                                 DraftColor="@CurrentAuthorColor"
+                                 OnCreateRequested="CreateFromDraftAsync"
+                                 OnDraftDismissed="DismissDraftAsync"
+                                 OnReplyRequested="ReplyToThreadAsync"
+                                 OnResolveRequested="ResolveThreadAsync"
+                                 OnReopenRequested="ReopenThreadAsync"
+                                 OnDeleteRequested="DeleteCommentAsync" />
+        }
+    </div>
+</div>

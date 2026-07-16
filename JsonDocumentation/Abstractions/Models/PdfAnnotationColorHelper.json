@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Resolves the display color of a PDF annotation thread: an explicit thread color wins, then a per-author color, then a per-role color, and finally a deterministic palette color derived from the author id.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "PdfAnnotationColorHelper"
+}

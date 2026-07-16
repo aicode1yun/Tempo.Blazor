@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Normalized point on a document page (fractions of the page size) used by freehand drawing annotations.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentInkPoint"
+}

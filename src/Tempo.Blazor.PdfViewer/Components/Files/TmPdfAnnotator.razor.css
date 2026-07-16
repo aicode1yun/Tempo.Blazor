@@ -1,0 +1,180 @@
+/* TmPdfAnnotator scoped styles */
+
+.tm-pdf-annotator {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--tm-border, #e5e7eb);
+    border-radius: var(--tm-radius, 6px);
+    background: var(--tm-surface, #ffffff);
+    color: var(--tm-text, #111827);
+    overflow: hidden;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+
+.tm-pdf-annotator__toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--tm-space-2, 8px);
+    padding: var(--tm-space-2, 8px) var(--tm-space-3, 12px);
+    border-bottom: 1px solid var(--tm-border, #e5e7eb);
+    background: var(--tm-surface-elevated, #f9fafb);
+}
+
+.tm-pdf-annotator__modes {
+    display: inline-flex;
+    gap: var(--tm-space-1, 4px);
+}
+
+.tm-pdf-annotator__mode {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid transparent;
+    border-radius: var(--tm-radius, 6px);
+    background: transparent;
+    color: var(--tm-text, #111827);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.tm-pdf-annotator__mode:hover {
+    background: var(--tm-hover, #e5e7eb);
+}
+
+.tm-pdf-annotator__mode--active {
+    background: var(--tm-primary, #3b82f6);
+    color: var(--tm-on-primary, #ffffff);
+}
+
+.tm-pdf-annotator__mode--active:hover {
+    background: var(--tm-primary-700, #1d4ed8);
+}
+
+.tm-pdf-annotator__stamp-picker {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tm-space-1, 4px);
+    font-size: 12px;
+    color: var(--tm-text-muted, #6b7280);
+}
+
+.tm-pdf-annotator__stamp-select {
+    font: inherit;
+    font-size: 12px;
+    padding: 2px 6px;
+    border: 1px solid var(--tm-border, #e5e7eb);
+    border-radius: var(--tm-radius, 6px);
+    background: var(--tm-surface, #ffffff);
+    color: var(--tm-text, #111827);
+}
+
+.tm-pdf-annotator__color-chip {
+    width: 14px;
+    height: 14px;
+    border-radius: var(--tm-radius-full, 999px);
+    flex-shrink: 0;
+}
+
+.tm-pdf-annotator__spacer {
+    flex: 1;
+}
+
+.tm-pdf-annotator__action {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tm-space-1, 4px);
+    padding: 4px 10px;
+    border: 1px solid var(--tm-border, #e5e7eb);
+    border-radius: var(--tm-radius, 6px);
+    background: var(--tm-surface, #ffffff);
+    color: var(--tm-text, #111827);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.tm-pdf-annotator__action:hover {
+    background: var(--tm-hover, #e5e7eb);
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────── */
+
+.tm-pdf-annotator__body {
+    display: flex;
+    align-items: stretch;
+    min-height: 0;
+}
+
+.tm-pdf-annotator__viewer {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ── Interaction surface ─────────────────────────────────────────────────── */
+
+.tm-pdf-annotator__surface {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.tm-pdf-annotator__surface--active {
+    pointer-events: auto;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.tm-pdf-annotator__surface--draw {
+    cursor: crosshair;
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────────────── */
+
+[data-theme="dark"] .tm-pdf-annotator {
+    background: var(--tm-surface-dark, #1f2937);
+    border-color: var(--tm-border-dark, #374151);
+    color: var(--tm-text-dark, #f9fafb);
+}
+
+[data-theme="dark"] .tm-pdf-annotator__toolbar {
+    background: var(--tm-surface-elevated-dark, #111827);
+    border-bottom-color: var(--tm-border-dark, #374151);
+}
+
+[data-theme="dark"] .tm-pdf-annotator__mode {
+    color: var(--tm-text-dark, #f9fafb);
+}
+
+[data-theme="dark"] .tm-pdf-annotator__mode:hover {
+    background: var(--tm-hover-dark, #374151);
+}
+
+[data-theme="dark"] .tm-pdf-annotator__mode--active {
+    background: var(--tm-primary, #3b82f6);
+    color: var(--tm-on-primary, #ffffff);
+}
+
+[data-theme="dark"] .tm-pdf-annotator__action,
+[data-theme="dark"] .tm-pdf-annotator__stamp-select {
+    background: var(--tm-surface-dark, #1f2937);
+    border-color: var(--tm-border-dark, #374151);
+    color: var(--tm-text-dark, #f9fafb);
+}
+
+[data-theme="dark"] .tm-pdf-annotator__action:hover {
+    background: var(--tm-hover-dark, #374151);
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    .tm-pdf-annotator__mode,
+    .tm-pdf-annotator__action {
+        transition: none;
+    }
+}

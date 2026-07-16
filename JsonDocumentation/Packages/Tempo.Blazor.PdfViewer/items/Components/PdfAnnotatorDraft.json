@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "description": "Pending, not-yet-saved annotation created by an annotator tool: kind, anchor, and completed ink strokes.",
+  "packageId": "Tempo.Blazor.PdfViewer",
+  "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotator.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "PdfAnnotatorDraft"
+}

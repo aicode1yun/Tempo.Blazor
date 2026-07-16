@@ -108,7 +108,8 @@ public sealed class BuiltInUiRoleVocabularySource : IUiRoleVocabularySource
         R("diagram-editor", "Diagram editor", "Creates or edits visual diagrams and models.", "diagram canvas", "editor diagramu", "TmDiagramEditor", "TmModelingEditor"),
         R("image-gallery", "Image gallery", "Displays images in a browsable gallery.", "gallery", "galerie", "TmImageGallery", "TmLightbox"),
         R("filter-builder", "Filter builder", "Builds complex filter conditions.", "query builder", "tvorba filtru", "TmFilterBuilder"),
-        R("pdf-viewer", "PDF viewer", "Displays a PDF document.", "document viewer", "prohlizec pdf", "TmPdfViewer")
+        R("pdf-viewer", "PDF viewer", "Displays a PDF document.", "document viewer", "prohlizec pdf", "TmPdfViewer"),
+        R("pdf-annotator", "PDF annotator", "Annotates a PDF document with highlights, comments, stamps, and drawings.", "document markup", "anotace pdf", "TmPdfAnnotator")
     ];
 
     /// <inheritdoc/>
