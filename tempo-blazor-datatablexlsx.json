@@ -27,6 +27,7 @@
       "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
     ],
     "namespaces": [
+      "Tempo.Blazor.DataTableXlsx",
       "Tempo.Blazor.Export"
     ]
   },
@@ -84,15 +85,47 @@
           ]
         }
       ]
+    },
+    {
+      "itemName": "XlsxImportFileParser",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DataTableXlsx",
+      "description": "XLSX IImportFileParser reading the open OOXML format through the DocumentFormat.OpenXml SDK: first worksheet, shared and inline strings resolved, numeric/boolean cells kept as raw invariant text, sparse rows aligned to columns by their A1 references, and CSV-parser-compatible rectangular normalisation with optional header row.",
+      "packageId": "Tempo.Blazor.DataTableXlsx",
+      "sourcePath": "src/Tempo.Blazor.DataTableXlsx/XlsxImportFileParser.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ParseAsync",
+          "kind": "Method",
+          "type": "Task<ImportParseResult>",
+          "parameters": [
+            {
+              "name": "stream",
+              "type": "Stream"
+            },
+            {
+              "name": "options",
+              "type": "ImportParseOptions"
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
     }
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1,
-    "manualItemCount": 1,
-    "generatedItemCount": 1,
+    "itemCount": 2,
+    "manualItemCount": 2,
+    "generatedItemCount": 2,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1
+    "publicApiTypeCount": 2
   }
 }
