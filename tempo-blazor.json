@@ -135,6 +135,10 @@
         "description": "PDF.js powered PDF viewer component for Tempo.Blazor with thumbnails, search, text layer, rotation, zoom, and continuous scroll."
       },
       {
+        "name": "Tempo.Blazor.Maps",
+        "description": "Leaflet powered interactive map components for Tempo.Blazor with bundled OpenStreetMap tiles support, Canvas-rendered marker batches, and marker clustering."
+      },
+      {
         "name": "Tempo.Blazor.Codes",
         "description": "QR code and barcode components for Tempo.Blazor backed by QRCoder and ZXing.Net."
       },
@@ -2880,7 +2884,7 @@
       "kind": "Component",
       "category": "Charts",
       "namespace": "Tempo.Blazor.Components.Charts",
-      "description": "Pure SVG chart component supporting Bar, Line, Pie, Donut, and HorizontalBar chart types with optional legend, grid, value labels, animation, and click events on segments. Chart types additionally include Funnel (conversion trapezoids with per-stage conversion percentages), Heatmap (dataset-rows × label-columns intensity matrix with a global scale), and Treemap (squarified shares, flat or hierarchical via ChartTreeNode).",
+      "description": "Pure SVG chart component supporting Bar, Line, Area, Pie, Donut, and HorizontalBar chart types with optional legend, grid, value labels, animation, gradient area fills, a proportional DateTime X axis for time series, and click events on segments. Chart types additionally include Funnel (conversion trapezoids with per-stage conversion percentages), Heatmap (dataset-rows × label-columns intensity matrix with a global scale), and Treemap (squarified shares, flat or hierarchical via ChartTreeNode).",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Charts/TmChart.razor",
       "documentationStatus": "merged",
@@ -2888,6 +2892,12 @@
         "@using Tempo.Blazor.Components.Charts"
       ],
       "parameters": [
+        {
+          "name": "AreaGradient",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Area charts only: fills each series with a vertical gradient fading from the series color to transparent instead of the flat token-driven fill. Default false."
+        },
         {
           "name": "Class",
           "type": "string?",
@@ -2914,6 +2924,24 @@
           "description": "Shows a tooltip when hovering a bar, point or slice. Default true."
         },
         {
+          "name": "TimeAxisMax",
+          "type": "DateTime?",
+          "isRequired": false,
+          "description": "Time axis only: upper bound of the X axis. Null uses the latest data point."
+        },
+        {
+          "name": "TimeAxisMin",
+          "type": "DateTime?",
+          "isRequired": false,
+          "description": "Time axis only: lower bound of the X axis. Null uses the earliest data point."
+        },
+        {
+          "name": "TimeLabelFormat",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Time axis only: custom .NET date format string for the X-axis labels (e.g. \"yyyy-MM\"). Null picks the format automatically from the axis range (hours/days/months/years)."
+        },
+        {
           "name": "TooltipTemplate",
           "type": "RenderFragment<ChartTooltipContext>?",
           "isRequired": false,
@@ -2924,12 +2952,6 @@
           "type": "IReadOnlyList<ChartTreeNode>?",
           "isRequired": false,
           "description": "Hierarchical data for ChartType.Treemap: top-level nodes render as groups with header strips, their children as tiles sized by value. When null, a treemap renders flat from Data (one tile per label/value)."
-        },
-        {
-          "name": "Width",
-          "type": "string",
-          "isRequired": false,
-          "default": "\"100%\""
         },
         {
           "name": "Width",
@@ -2970,7 +2992,8 @@
           "name": "OnSegmentClick",
           "type": "EventCallback<ChartSegment>",
           "isRequired": false
-        }
+        },
+        {}
       ],
       "cssClasses": [
         "tm-chart",
@@ -2987,7 +3010,11 @@
         "tm-chart__legend",
         "tm-chart__legend-item",
         "tm-chart__legend-color",
-        "tm-chart__legend-label"
+        "tm-chart__legend-label",
+        "tm-chart__area",
+        "tm-chart__area--gradient",
+        "tm-chart__area-stem",
+        "tm-chart__axis-zero"
       ],
       "examples": [
         {
@@ -3005,6 +3032,14 @@
         {
           "title": "Line chart without animation",
           "code": "<TmChart Type=\"ChartType.Line\"\n         Data=\"@lineData\"\n         Animated=\"false\"\n         Width=\"100%\"\n         Height=\"400px\" />"
+        },
+        {
+          "title": "Area chart with gradient fill",
+          "code": "<TmChart Type=\"ChartType.Area\"\n         Data=\"@(new ChartData { Labels = new[] { \"Jan\", \"Feb\", \"Mar\", \"Apr\" }, Datasets = new[] { new ChartDataset { Label = \"Rent\", Values = new[] { 15200.0, 15750.0, 15400.0, 16100.0 }, Color = \"#3b82f6\" } } })\"\n         AreaGradient=\"true\"\n         Height=\"300px\" />"
+        },
+        {
+          "title": "Time series with a DateTime axis",
+          "code": "<TmChart Type=\"ChartType.Line\"\n         Data=\"@(new ChartData { Labels = [], TimePoints = dates, Datasets = new[] { new ChartDataset { Label = \"Price\", Values = prices, Color = \"#3b82f6\" } } })\"\n         TimeLabelFormat=\"MMM yyyy\"\n         Height=\"320px\" />"
         }
       ]
     },

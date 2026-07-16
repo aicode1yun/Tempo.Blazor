@@ -80,6 +80,10 @@
         "description": "PDF.js powered PDF viewer component for Tempo.Blazor with thumbnails, search, text layer, rotation, zoom, and continuous scroll."
       },
       {
+        "name": "Tempo.Blazor.Maps",
+        "description": "Leaflet powered interactive map components for Tempo.Blazor with bundled OpenStreetMap tiles support, Canvas-rendered marker batches, and marker clustering."
+      },
+      {
         "name": "Tempo.Blazor.Codes",
         "description": "QR code and barcode components for Tempo.Blazor backed by QRCoder and ZXing.Net."
       },

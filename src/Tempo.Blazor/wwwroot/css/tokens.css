@@ -172,6 +172,11 @@
   /* ── Z-Index Scale ──────────────────────────────────────────── */
   --tm-z-dropdown:    1000;
   --tm-z-sticky:      1020;
+  /* Transient anchored popups (open dropdown menus, autocomplete lists) must paint ABOVE sticky/floating
+     chrome (`--tm-z-sticky`: TmFormActionBar, TmTopBar, TmFab) — otherwise a menu opened near the bottom of a
+     page is covered by a floating action bar and its items become mouse-unreachable — while staying BELOW
+     modals and overlays, which legitimately eclipse the page. */
+  --tm-z-popover:     1030;
   --tm-z-modal:       1040;
   --tm-z-overlay:     1060;
   --tm-z-toast:       1080;
@@ -204,4 +209,7 @@
   --tm-sidebar-width:    16rem;
   --tm-sidebar-collapsed: 3.5rem;
   --tm-topbar-height:    3.5rem;
+
+  /* ── Charts ── */
+  --tm-chart-area-fill-opacity: 0.25;
 }

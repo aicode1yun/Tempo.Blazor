@@ -1,0 +1,16 @@
+@namespace Tempo.Blazor.Components.Maps
+@inherits Tempo.Blazor.Components.TmComponentBase
+
+<div class="tm-map @Class"
+     style="height: @Height;"
+     role="application"
+     aria-label="@Loc["TmMap_AriaLabel"]"
+     data-testid="@RootTestId("map")">
+    <div id="@_mapElementId" class="tm-map__container" data-testid="@TestId("map-container")"></div>
+    @if (!_initialized)
+    {
+        <div class="tm-map__loading" data-testid="@TestId("map-loading")" aria-live="polite">
+            <span class="tm-map__loading-text">@Loc["TmMap_Loading"]</span>
+        </div>
+    }
+</div>

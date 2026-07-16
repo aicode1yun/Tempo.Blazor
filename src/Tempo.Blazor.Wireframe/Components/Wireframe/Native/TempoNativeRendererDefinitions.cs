@@ -91,7 +91,7 @@ internal static class TempoNativeRendererDefinitions
             if (type == "donut")
                 sb.Append($"<circle cx='{F(cx)}' cy='{F(cy)}' r='{F(r * 0.5)}' fill='white'></circle>");
         }
-        else if (type == "line")
+        else if (type == "line" || type == "area")
         {
             sb.Append(VLine(chartX, chartY, chartY + chartH));
             sb.Append(HLine(chartX, chartX + chartW, chartY + chartH));
@@ -108,6 +108,14 @@ internal static class TempoNativeRendererDefinitions
                 var px = chartX + (i + 0.5) * chartW / dataPoints;
                 var py = chartY + chartH - heights[i % heights.Length] * chartH;
                 pts.Add($"{F(px)},{F(py)}");
+            }
+
+            if (type == "area" && pts.Count > 0)
+            {
+                var firstX = chartX + 0.5 * chartW / dataPoints;
+                var lastX = chartX + (dataPoints - 0.5) * chartW / dataPoints;
+                var baseline = chartY + chartH;
+                sb.Append($"<polygon points='{string.Join(" ", pts)} {F(lastX)},{F(baseline)} {F(firstX)},{F(baseline)}' fill='{FillAccent}' stroke='none'></polygon>");
             }
 
             sb.Append($"<polyline points='{string.Join(" ", pts)}' fill='none' stroke='{Accent}' stroke-width='2'></polyline>");

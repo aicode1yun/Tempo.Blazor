@@ -1,0 +1,93 @@
+/* TmMap — Leaflet map container. */
+.tm-map {
+    /* Marker fill/stroke read by the Canvas renderer via getComputedStyle. */
+    --tm-map-marker-color: var(--tm-color-danger);
+    position: relative;
+    width: 100%;
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-md);
+    overflow: hidden;
+    background: var(--tm-color-surface);
+}
+
+.tm-map__container {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.tm-map__loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--tm-color-surface);
+    z-index: 1;
+}
+
+.tm-map__loading-text {
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-sm);
+}
+
+/* Leaflet controls inherit the design system font. */
+.tm-map .leaflet-container {
+    font-family: var(--tm-font-sans);
+    background: var(--tm-color-surface-secondary, var(--tm-color-surface));
+}
+
+/* Attribution stays readable in both themes (OSM licensing requirement).
+   The extra .leaflet-container level out-ranks the runtime-injected vendor rule. */
+.tm-map .leaflet-container .leaflet-control-attribution {
+    background: var(--tm-bg-surface);
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-xs);
+}
+
+.tm-map .leaflet-container .leaflet-control-attribution a {
+    color: var(--tm-color-primary-text);
+}
+
+/* Zoom control follows surface + border tokens so dark mode works. */
+.tm-map .leaflet-control-zoom a {
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    border-color: var(--tm-border-color);
+}
+
+.tm-map .leaflet-control-zoom a:hover {
+    background: var(--tm-color-surface-hover);
+}
+
+/* Server-side cluster bubble (L.divIcon with the aggregated count). */
+.tm-map__cluster-icon {
+    background: transparent;
+    border: none;
+}
+
+.tm-map__cluster {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--tm-radius-full);
+    background: var(--tm-color-primary);
+    color: var(--tm-color-white);
+    border: 2px solid var(--tm-color-surface);
+    box-shadow: var(--tm-shadow-md);
+    font-size: var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-semibold);
+    line-height: 1;
+}
+
+/* Marker tooltips follow the design system. */
+.tm-map .leaflet-tooltip {
+    background: var(--tm-color-surface-elevated);
+    color: var(--tm-color-text);
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-sm);
+    box-shadow: var(--tm-shadow-md);
+    font-size: var(--tm-font-size-sm);
+}

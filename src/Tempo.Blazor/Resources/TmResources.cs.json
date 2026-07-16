@@ -33,7 +33,7 @@
   "TmChip_Remove": "Odebrat",
   "TmModal_Close": "Zavřít",
   "TmDocumentOpenDialog_Breadcrumb": "Drobečková navigace",
-  "TmFileDropZone_Remove": "Odebrat",
+  "TmFileDropZone_Remove": "Odebrat soubor",
   "TmLightbox_Aria": "Prohlížeč obrázků",
   "TmNumberInput_Decrease": "Snížit",
   "TmNumberInput_Increase": "Zvýšit",
@@ -2248,7 +2248,6 @@
   "TmFileDropZone_DragDrop": "Přetáhněte soubory sem",
   "TmFileDropZone_MaxSize": "Maximální velikost: {0}",
   "TmFileDropZone_Or": "nebo",
-  "TmFileDropZone_Remove": "Odebrat soubor",
   "TmFileDropZone_Uploading": "Nahrávání...",
   "TmFileManager_AddAttachment": "Přidat přílohu",
   "TmFileManager_Attachments": "Přílohy",
@@ -5009,5 +5008,9 @@
   "Tm_SelectAll": "Vybrat vše",
   "Tm_Upload": "Nahrát",
   "Tm_Yes": "Ano",
-  "TmNotionBlock_TodoPlaceholder": "Úkol"
+  "TmNotionBlock_TodoPlaceholder": "Úkol",
+  "TmMap_AriaLabel": "Interaktivní mapa",
+  "TmMap_Loading": "Načítání mapy…",
+  "TmMap_Attribution": "&copy; přispěvatelé <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>",
+  "TmMap_ClusterAriaLabel": "Shluk {0} míst"
 }

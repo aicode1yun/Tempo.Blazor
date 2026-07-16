@@ -13,6 +13,8 @@ public enum ChartType
     Donut,
     /// <summary>Horizontal bar chart.</summary>
     HorizontalBar,
+    /// <summary>Area chart — a line chart with the region between the line and the zero baseline filled.</summary>
+    Area,
     /// <summary>Conversion funnel: stacked centered trapezoids with per-stage conversion.</summary>
     Funnel,
     /// <summary>Intensity matrix: dataset rows × label columns (e.g. day × hour).</summary>
@@ -29,6 +31,14 @@ public sealed record ChartData
 
     /// <summary>One or more datasets.</summary>
     public required ChartDataset[] Datasets { get; init; }
+
+    /// <summary>
+    /// Optional DateTime X values aligned with each dataset's Values by index. When set, Line
+    /// and Area charts use a proportional time axis (auto label interval, culture-formatted
+    /// labels) instead of the categorical Labels axis. Unsorted input is sorted internally;
+    /// duplicate timestamps keep the last value.
+    /// </summary>
+    public DateTime[]? TimePoints { get; init; }
 }
 
 /// <summary>A single dataset within chart data.</summary>

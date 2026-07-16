@@ -118,6 +118,50 @@
              Height="350px" />
 </section>
 
+<!-- Area Chart -->
+<section class="demo-section mb-8" data-testid="charts-area-section">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Area Chart</h2>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+            <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Flat token-driven fill, two series</h3>
+            <TmChart Type="ChartType.Area"
+                     Data="_lineData"
+                     Height="320px"
+                     OnSegmentClick="HandleSegmentClick" />
+        </div>
+        <div>
+            <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Gradient fill, negative values &amp; a gap (NaN)</h3>
+            <TmChart Type="ChartType.Area"
+                     Data="_areaEdgeData"
+                     AreaGradient="true"
+                     Height="320px" />
+        </div>
+    </div>
+</section>
+
+<!-- DateTime Axis -->
+<section class="demo-section mb-8" data-testid="charts-time-axis-section">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">DateTime Axis (Time Series)</h2>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+            <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Monthly rent trend — auto interval, unevenly spaced &amp; unsorted input</h3>
+            <TmChart Type="ChartType.Area"
+                     Data="_rentTrendData"
+                     AreaGradient="true"
+                     Height="320px" />
+        </div>
+        <div>
+            <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Custom label format (yyyy-MM), explicit axis range</h3>
+            <TmChart Type="ChartType.Line"
+                     Data="_rentTrendData"
+                     TimeLabelFormat="yyyy-MM"
+                     TimeAxisMin="@(new DateTime(2024, 1, 1))"
+                     TimeAxisMax="@(new DateTime(2025, 12, 31))"
+                     Height="320px" />
+        </div>
+    </div>
+</section>
+
 <!-- Pie Chart -->
 <section class="demo-section mb-8">
     <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Pie Chart</h2>
@@ -353,6 +397,41 @@
     {
         _lastToggle = toggle;
     }
+
+    private static readonly ChartData _rentTrendData = new()
+    {
+        Labels = [],
+        // Deliberately unsorted with an uneven gap (no data for autumn 2024).
+        TimePoints =
+        [
+            new DateTime(2024, 6, 1), new DateTime(2024, 2, 1), new DateTime(2024, 4, 1),
+            new DateTime(2024, 8, 1), new DateTime(2025, 2, 1), new DateTime(2025, 4, 1),
+            new DateTime(2025, 6, 1), new DateTime(2025, 8, 1), new DateTime(2025, 10, 1),
+        ],
+        Datasets =
+        [
+            new ChartDataset
+            {
+                Label = "Avg rent (CZK)",
+                Values = [15750, 15200, 15400, 16100, 16900, 17100, 17400, 17250, 17800],
+                Color = "#6366f1"
+            }
+        ]
+    };
+
+    private static readonly ChartData _areaEdgeData = new()
+    {
+        Labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
+        Datasets =
+        [
+            new ChartDataset
+            {
+                Label = "Cash flow",
+                Values = [12, 18, -6, -14, double.NaN, 9, 16, 22],
+                Color = "#10b981"
+            }
+        ]
+    };
 
     private static readonly ChartData _donutCustomColorsData = new()
     {

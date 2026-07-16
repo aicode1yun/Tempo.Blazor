@@ -5055,5 +5055,9 @@
   "Tm_SelectAll": "Tout sélectionner",
   "Tm_Upload": "Importer",
   "Tm_Yes": "Oui",
-  "TmNotionBlock_TodoPlaceholder": "Tâche"
+  "TmNotionBlock_TodoPlaceholder": "Tâche",
+  "TmMap_AriaLabel": "Carte interactive",
+  "TmMap_Loading": "Chargement de la carte…",
+  "TmMap_Attribution": "&copy; contributeurs <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>",
+  "TmMap_ClusterAriaLabel": "Groupe de {0} lieux"
 }

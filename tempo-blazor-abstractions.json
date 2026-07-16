@@ -10668,6 +10668,16 @@
       ]
     },
     {
+      "itemName": "IMapDataProvider",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+      "description": "Optional data source for TmMap: the component asks for fresh points whenever the viewport settles (pan/zoom, debounced), cancelling the previous request first. Implementations typically aggregate on the server and switch between clusters and individual markers by zoom.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IMapDataProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ImportColumn",
       "kind": "Record",
       "category": "Interfaces",
@@ -15407,6 +15417,54 @@
       "description": "Filtered, paged ledger query (search, match state, currency, period). Results are ordered ascending by date then id so running balances are well-defined.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "MapClusterPoint",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "A server-side aggregated cluster rendered on a TmMap as a count bubble. Produced by grid/tile aggregation on the backend, so the client never has to hold the individual points. A cluster with Count = 1 renders as a plain marker.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/Maps/MapClusterPoint.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "MapDataResult",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One data set for a TmMap viewport: either individual markers, aggregated cluster points, or both. Returned by IMapDataProvider.GetPointsAsync - the provider decides per zoom level which representation to serve (hybrid clustering).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/Maps/MapDataResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Empty",
+          "kind": "Property",
+          "type": "static MapDataResult",
+          "description": "An empty result — nothing to render for the requested viewport."
+        }
+      ]
+    },
+    {
+      "itemName": "MapMarker",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "A single point rendered on a TmMap. Batches of markers are drawn with a Canvas renderer, so instances stay lightweight data records without any UI dependencies.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/Maps/MapMarker.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "MapViewport",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "The visible area of a TmMap: the map center and the current zoom level. Reported by viewport-changing events (zoom, pan) and accepted by SetViewAsync.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/Maps/MapViewport.cs",
       "documentationStatus": "merged"
     },
     {
@@ -35054,11 +35112,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1402,
-    "manualItemCount": 1402,
-    "generatedItemCount": 1385,
+    "itemCount": 1407,
+    "manualItemCount": 1407,
+    "generatedItemCount": 1390,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1385
+    "publicApiTypeCount": 1390
   }
 }

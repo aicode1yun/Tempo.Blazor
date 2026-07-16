@@ -43,7 +43,10 @@
   top: calc(100% + var(--tm-space-1));
   left: 0;
   right: 0;
-  z-index: var(--tm-z-dropdown);
+  /* --tm-z-popover, not --tm-z-dropdown: an OPEN menu is a transient popup and must paint above sticky/floating
+     chrome (TmFormActionBar --tm-z-sticky) — at --tm-z-dropdown (1000 < sticky 1020) a menu opened near the page
+     bottom was covered by the floating action bar and its items were mouse-unreachable (keyboard still worked). */
+  z-index: var(--tm-z-popover, 1030);
   background: var(--tm-bg-surface);
   border: 1px solid var(--tm-border-color);
   border-radius: var(--tm-radius-md);
