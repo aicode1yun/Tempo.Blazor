@@ -2880,7 +2880,7 @@
       "kind": "Component",
       "category": "Charts",
       "namespace": "Tempo.Blazor.Components.Charts",
-      "description": "Pure SVG chart component supporting Bar, Line, Pie, Donut, and HorizontalBar chart types with optional legend, grid, value labels, animation, and click events on segments.",
+      "description": "Pure SVG chart component supporting Bar, Line, Pie, Donut, and HorizontalBar chart types with optional legend, grid, value labels, animation, and click events on segments. Chart types additionally include Funnel (conversion trapezoids with per-stage conversion percentages), Heatmap (dataset-rows × label-columns intensity matrix with a global scale), and Treemap (squarified shares, flat or hierarchical via ChartTreeNode).",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Charts/TmChart.razor",
       "documentationStatus": "merged",
@@ -2918,6 +2918,12 @@
           "type": "RenderFragment<ChartTooltipContext>?",
           "isRequired": false,
           "description": "Optional custom tooltip content; when null a rich default tooltip is used."
+        },
+        {
+          "name": "TreeNodes",
+          "type": "IReadOnlyList<ChartTreeNode>?",
+          "isRequired": false,
+          "description": "Hierarchical data for ChartType.Treemap: top-level nodes render as groups with header strips, their children as tiles sized by value. When null, a treemap renders flat from Data (one tile per label/value)."
         },
         {
           "name": "Width",
@@ -3703,6 +3709,16 @@
           "description": "Resolved color of the hovered point or series."
         }
       ]
+    },
+    {
+      "itemName": "ChartTreeNode",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Charts",
+      "description": "One node of a hierarchical treemap for TmChart: display label, leaf value (a parent's size is the sum of its children), optional fill color (defaults to the chart palette by top-level index), and optional child nodes rendered as tiles inside the group.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "ChartType",
@@ -23714,11 +23730,11 @@
     }
   ],
   "summary": {
-    "itemCount": 329,
-    "manualItemCount": 329,
-    "generatedItemCount": 321,
+    "itemCount": 330,
+    "manualItemCount": 330,
+    "generatedItemCount": 322,
     "generatedOnlyItemCount": 0,
     "componentCount": 192,
-    "publicApiTypeCount": 129
+    "publicApiTypeCount": 130
   }
 }

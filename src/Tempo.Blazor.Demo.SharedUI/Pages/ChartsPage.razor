@@ -233,9 +233,116 @@
     </div>
 </section>
 
+<!-- Funnel / Heatmap / Treemap -->
+<section class="demo-section mb-8" data-testid="charts-demo-funnel">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Funnel — Case Intake Conversion</h2>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        A conversion funnel over the client-intake pipeline. Hover a stage for the tooltip,
+        click it to select, and read the per-stage conversion against the first stage.
+    </p>
+    <div class="max-w-2xl">
+        <TmChart Type="ChartType.Funnel" Data="_funnelData" Height="320px"
+                 ShowValues="true" InteractiveLegend="true" OnSegmentClick="HandleSegmentClick" />
+    </div>
+</section>
+
+<section class="demo-section mb-8" data-testid="charts-demo-heatmap">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Heatmap — Filings by Day × Hour</h2>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        Court filings received per weekday and daypart — the intensity scales with the count.
+        Toggle a day in the legend to exclude it from the scale.
+    </p>
+    <div class="max-w-3xl">
+        <TmChart Type="ChartType.Heatmap" Data="_heatmapData" Height="320px"
+                 ShowValues="true" InteractiveLegend="true" OnSegmentClick="HandleSegmentClick" />
+    </div>
+</section>
+
+<section class="demo-section mb-8" data-testid="charts-demo-treemap">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Treemap — Billing by Practice Area and Client</h2>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        Hierarchical shares: practice areas as groups, clients as tiles sized by billed amount.
+        Toggle an area in the legend to drop its whole subtree.
+    </p>
+    <div class="max-w-3xl">
+        <TmChart Type="ChartType.Treemap" TreeNodes="_treemapNodes" Height="360px"
+                 ShowValues="true" InteractiveLegend="true" OnSegmentClick="HandleSegmentClick" />
+    </div>
+    @if (_clickedSegment is not null)
+    {
+        <p class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="charts-demo-clicked">
+            Clicked: <strong>@_clickedSegment.Label</strong> = @_clickedSegment.Value
+        </p>
+    }
+</section>
+
 @code {
     private ChartSegment? _clickedSegment;
     private ChartSeriesToggle? _lastToggle;
+
+    private static readonly ChartData _funnelData = new()
+    {
+        Labels = ["Poptávky", "Konzultace", "Nabídka", "Smlouva", "Zahájení práce"],
+        Datasets =
+        [
+            new ChartDataset
+            {
+                Label = "Konverze klientů",
+                Values = [1240, 610, 320, 145, 128],
+                Color = "#2563eb",
+                BackgroundColors = ["#2563eb", "#7c3aed", "#db2777", "#ea580c", "#16a34a"]
+            }
+        ]
+    };
+
+    private static readonly ChartData _heatmapData = new()
+    {
+        Labels = ["8–10", "10–12", "12–14", "14–16", "16–18"],
+        Datasets =
+        [
+            new ChartDataset { Label = "Pondělí", Values = [14, 22, 9, 17, 6], Color = "#2563eb" },
+            new ChartDataset { Label = "Úterý", Values = [11, 26, 12, 20, 8], Color = "#2563eb" },
+            new ChartDataset { Label = "Středa", Values = [9, 19, 8, 15, 5], Color = "#2563eb" },
+            new ChartDataset { Label = "Čtvrtek", Values = [12, 24, 10, 22, 9], Color = "#2563eb" },
+            new ChartDataset { Label = "Pátek", Values = [8, 15, 6, 9, 2], Color = "#2563eb" }
+        ]
+    };
+
+    private static readonly IReadOnlyList<ChartTreeNode> _treemapNodes =
+    [
+        new ChartTreeNode
+        {
+            Label = "Sporná agenda",
+            Color = "#2563eb",
+            Children =
+            [
+                new ChartTreeNode { Label = "Novák a syn", Value = 420 },
+                new ChartTreeNode { Label = "Beta Retail", Value = 260 },
+                new ChartTreeNode { Label = "Městská nemocnice", Value = 130 }
+            ]
+        },
+        new ChartTreeNode
+        {
+            Label = "Smluvní agenda",
+            Color = "#16a34a",
+            Children =
+            [
+                new ChartTreeNode { Label = "Gama Development", Value = 310 },
+                new ChartTreeNode { Label = "Delta Logistics", Value = 180 }
+            ]
+        },
+        new ChartTreeNode
+        {
+            Label = "Compliance",
+            Color = "#ea580c",
+            Children =
+            [
+                new ChartTreeNode { Label = "Epsilon Bank", Value = 240 },
+                new ChartTreeNode { Label = "Zeta Insurance", Value = 90 },
+                new ChartTreeNode { Label = "Eta Fintech", Value = 60 }
+            ]
+        }
+    ];
 
     private void HandleSegmentClick(ChartSegment segment)
     {

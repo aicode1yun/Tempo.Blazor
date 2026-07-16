@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "description": "One node of a hierarchical treemap for TmChart: display label, leaf value (a parent's size is the sum of its children), optional fill color (defaults to the chart palette by top-level index), and optional child nodes rendered as tiles inside the group.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ChartTreeNode"
+}

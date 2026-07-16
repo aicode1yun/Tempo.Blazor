@@ -2,7 +2,7 @@
   "itemName": "TmChart",
   "kind": "Component",
   "category": "Charts",
-  "description": "Pure SVG chart component supporting Bar, Line, Pie, Donut, and HorizontalBar chart types with optional legend, grid, value labels, animation, and click events on segments.",
+  "description": "Pure SVG chart component supporting Bar, Line, Pie, Donut, and HorizontalBar chart types with optional legend, grid, value labels, animation, and click events on segments. Chart types additionally include Funnel (conversion trapezoids with per-stage conversion percentages), Heatmap (dataset-rows × label-columns intensity matrix with a global scale), and Treemap (squarified shares, flat or hierarchical via ChartTreeNode).",
   "requiredImports": [
     "@using Tempo.Blazor.Components.Charts"
   ],
@@ -57,6 +57,12 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false
+    },
+    {
+      "name": "TreeNodes",
+      "type": "IReadOnlyList<ChartTreeNode>?",
+      "isRequired": false,
+      "description": "Hierarchical data for ChartType.Treemap: top-level nodes render as groups with header strips, their children as tiles sized by value. When null, a treemap renders flat from Data (one tile per label/value)."
     }
   ],
   "cssClasses": [

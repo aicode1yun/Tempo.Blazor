@@ -2509,6 +2509,13 @@ to{opacity:1;transform:scale(1);}
 @media (prefers-reduced-motion:reduce){.tm-chart--animated .tm-chart__bar,.tm-chart--animated .tm-chart__line,.tm-chart--animated .tm-chart__point,.tm-chart--animated .tm-chart__slice{animation:none;}
 .tm-chart--animated .tm-chart__line{stroke-dasharray:none;stroke-dashoffset:0;}
 }
+.tm-chart__funnel-segment,.tm-chart__heatmap-cell,.tm-chart__treemap-tile{cursor:pointer;transition:opacity 0.15s ease;}
+.tm-chart__funnel-segment:hover,.tm-chart__treemap-tile:hover{opacity:0.85;}
+.tm-chart__heatmap-cell:hover{stroke:var(--tm-color-primary);stroke-width:2;}
+.tm-chart__treemap-group{pointer-events:none;}
+@media (prefers-reduced-motion:reduce){.tm-chart__funnel-segment,.tm-chart__heatmap-cell,.tm-chart__treemap-tile{transition:none;}
+}
+.tm-chart__heatmap-value,.tm-chart__funnel-label,.tm-chart__funnel-value,.tm-chart__treemap-label,.tm-chart__treemap-value,.tm-chart__treemap-group-label{pointer-events:none;}
 .tm-stock-chart{width:100%;height:400px;display:flex;align-items:center;justify-content:center;background:var(--tm-color-surface,#ffffff);border-radius:var(--tm-radius-lg,0.5rem);border:1px solid var(--tm-border-color);overflow:hidden;}
 .tm-stock-chart svg{display:block;}
 .tm-stock-chart__empty{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--tm-text-secondary);font-size:var(--tm-text-sm,0.875rem);}
