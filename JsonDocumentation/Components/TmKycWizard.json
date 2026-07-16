@@ -1,0 +1,61 @@
+{
+  "itemName": "TmKycWizard",
+  "kind": "Component",
+  "category": "Compliance",
+  "description": "Step-by-step compliance/identification wizard (KYC/AML style, domain neutral): subject identity (person or company), identification documents, addresses, ownership structure tree (company subjects), declarations and a final review with submission. Per-step validation is pluggable through IKycStepValidator (use KycStepFluentValidator from Tempo.Blazor.FluentValidation); drafts persist and submit through IKycProvider. Errors render as a localized summary plus inline field messages.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Compliance",
+    "@using Tempo.Blazor.Abstractions.Models"
+  ],
+  "parameters": [
+    {
+      "name": "Provider",
+      "type": "IKycProvider",
+      "isRequired": true,
+      "description": "Persistence backend for drafts and the final submission."
+    },
+    {
+      "name": "StepValidator",
+      "type": "IKycStepValidator?",
+      "isRequired": false,
+      "description": "Per-step validator gating Next/Submit. When null, navigation is not gated. Use e.g. KycStepFluentValidator from Tempo.Blazor.FluentValidation."
+    },
+    {
+      "name": "DraftId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Identifier of an existing draft to resume. Null starts a new draft."
+    },
+    {
+      "name": "InitialSubjectKind",
+      "type": "KycSubjectKind",
+      "isRequired": false,
+      "default": "KycSubjectKind.Person",
+      "description": "Subject kind preselected for new drafts. The company path adds the ownership structure step."
+    },
+    {
+      "name": "OnSubmitted",
+      "type": "EventCallback<KycSubmissionResult>",
+      "isRequired": false,
+      "description": "Callback invoked after a successful submission."
+    },
+    {
+      "name": "OnDraftSaved",
+      "type": "EventCallback<KycDraft>",
+      "isRequired": false,
+      "description": "Callback invoked after the draft was saved, with a snapshot of the draft."
+    },
+    {
+      "name": "OnStepChanged",
+      "type": "EventCallback<KycWizardStep>",
+      "isRequired": false,
+      "description": "Callback invoked when the active step changes."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes for the root element."
+    }
+  ]
+}

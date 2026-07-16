@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "In-memory IKycProvider for demos and tests. Stores deep clones and returns fresh instances on every read; exposes the Submissions snapshot list.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryKycProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "InMemoryKycProvider"
+}

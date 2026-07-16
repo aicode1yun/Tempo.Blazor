@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Request to resolve a screening finding: finding id, target status (Confirmed or Dismissed), optional note and reviewer identity.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ScreeningResolutionRequest"
+}

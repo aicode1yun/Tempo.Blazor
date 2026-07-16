@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "In-memory IScreeningProvider for demos and tests. Returns clones on every read and applies resolutions with an UTC timestamp; rejects Pending as a resolution status.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "InMemoryScreeningProvider"
+}

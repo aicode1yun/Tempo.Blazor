@@ -117,6 +117,8 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmDeadlineCalculator"] = ["deadline-calculator"],
             ["TmLedgerGrid"] = ["ledger-grid"],
             ["TmMoneyDisplay"] = ["money-display"],
+            ["TmKycWizard"] = ["kyc-wizard"],
+            ["TmScreeningResultPanel"] = ["screening-result-panel"],
             ["TmAIPrompt"] = ["text-area", "button"],
             ["TmWidgetSelector"] = ["dashboard", "card"],
             ["__group__"] = ["section"],
@@ -2144,6 +2146,32 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("amount",   "Amount",   PropType.String, "1 234,56", cat: "Content"),
                 P("currency", "Currency", PropType.String, "CZK",      cat: "Content"),
                 P("negative", "Negative", PropType.Bool,   false,      cat: "State"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmKycWizard", Category = "Complex", DisplayName = "KYC Wizard",
+            DefaultWidth = 560, DefaultHeight = 420,
+            Props =
+            [
+                P("stepCount",   "Step Count",   PropType.Int,  5,    cat: "Content"),
+                P("activeStep",  "Active Step",  PropType.Int,  1,    cat: "State"),
+                P("subjectKind", "Subject Kind", PropType.Enum, "person",
+                    opts: ["person", "company"], cat: "Content"),
+                P("showErrors",  "Show Errors",  PropType.Bool, false, cat: "State"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmScreeningResultPanel", Category = "Complex", DisplayName = "Screening Results",
+            DefaultWidth = 420, DefaultHeight = 320,
+            Props =
+            [
+                P("findingCount", "Finding Count", PropType.Int,  3,    cat: "Content"),
+                P("pendingCount", "Pending Count", PropType.Int,  2,    cat: "State"),
+                P("readOnly",     "Read Only",     PropType.Bool, false, cat: "State"),
             ]
         };
 

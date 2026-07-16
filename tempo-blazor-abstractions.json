@@ -14860,6 +14860,26 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IKycProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Persistence backend of the compliance wizard: LoadDraftAsync/SaveDraftAsync for resumable drafts and SubmitAsync for the final submission.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IKycStepValidator",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Validates one wizard step of a KycDraft and returns localization-key based errors. Implementations live outside the UI package (e.g. KycStepFluentValidator in Tempo.Blazor.FluentValidation) so the core component stays validation-framework agnostic.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ILedgerDataProvider",
       "kind": "Interface",
       "category": "Models",
@@ -15010,6 +15030,66 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "InMemoryKycProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IKycProvider for demos and tests. Stores deep clones and returns fresh instances on every read; exposes the Submissions snapshot list.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryKycProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "LoadDraftAsync",
+          "kind": "Method",
+          "type": "Task<KycDraft?>",
+          "parameters": [
+            {
+              "name": "draftId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "SaveDraftAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "draft",
+              "type": "KycDraft"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "SubmitAsync",
+          "kind": "Method",
+          "type": "Task<KycSubmissionResult>",
+          "parameters": [
+            {
+              "name": "draft",
+              "type": "KycDraft"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "itemName": "InMemoryLedgerDataProvider",
       "kind": "Class",
       "category": "Models",
@@ -15030,6 +15110,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "InMemoryScreeningProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IScreeningProvider for demos and tests. Returns clones on every read and applies resolutions with an UTC timestamp; rejects Pending as a resolution status.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IPdfAnnotationProvider",
       "kind": "Interface",
       "category": "Models",
@@ -15037,6 +15127,146 @@
       "description": "Persistence contract for PDF viewer annotations (comment threads anchored to page points, areas, or text ranges). Implementations load, create, reply to, edit, delete, resolve, and reopen threads for a document.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/IPdfAnnotationProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IScreeningProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Data source of screening results: GetFindingsAsync per subject and ResolveAsync applying a reviewer decision.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycAddress",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One address on the draft: kind, street, city, postal code, country. Supports deep cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycAddressKind",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Kind of collected address: Permanent, Mailing, Registered (company seat), Business.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycCompanyIdentity",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Identity fields of a company subject: registered name, registration number, optional legal form, country of incorporation. Supports deep cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycDeclarations",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Declarations and consents: politically-exposed-person answer (nullable so an explicit answer is required), source of funds, processing consent, optional note.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycDocument",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One identification document on the draft: kind, number, issuing authority, optional issue and expiry dates. Supports deep cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycDocumentKind",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Kind of identification document: NationalId, Passport, DrivingLicense, ResidencePermit, RegisterExtract, Other.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycDraft",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Full state of one compliance-wizard identification draft: subject kind, person/company identity, documents, addresses, ownership tree root, declarations, and last-save timestamp. Clone() creates a deep copy.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycOwnershipNode",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "A node of the ownership structure tree. The root represents the subject itself; children are direct owners with share percent and a beneficial-owner flag, recursively. Clone() copies the whole subtree.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycPersonIdentity",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Identity fields of a natural-person subject: first/last name, date of birth, nationality, optional personal ID number. Supports deep cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycSubjectKind",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Kind of subject identified by the compliance wizard: Person or Company.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycSubmissionResult",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Result of submitting a completed identification draft: success flag, assigned submission id, and rejection errors.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycValidationError",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One validation failure produced by an IKycStepValidator: an indexed field path (e.g. \"Documents[0].Number\") and a localization message KEY (never display text) that the rendering component localizes.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycWizardStep",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Logical steps of the compliance wizard: Subject, Documents, Addresses, Ownership (company only), Declarations, Review.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
       "documentationStatus": "merged"
     },
     {
@@ -15353,6 +15583,46 @@
       "description": "Context data for scheduler slot context menu events.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SchedulerContextModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ScreeningFinding",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One finding produced by a screening/check run: category, title, description, source, time, confidence (0-1), severity, review status, and resolution metadata (note, reviewer, timestamp). Supports cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ScreeningFindingStatus",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Review status of a screening finding: Pending, Confirmed (true hit), Dismissed (false positive).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ScreeningResolutionRequest",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Request to resolve a screening finding: finding id, target status (Confirmed or Dismissed), optional note and reviewer identity.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ScreeningSeverity",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Severity of a screening finding: Info, Low, Medium, High, Critical.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
       "documentationStatus": "merged"
     },
     {
@@ -34674,11 +34944,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1369,
-    "manualItemCount": 1369,
-    "generatedItemCount": 1352,
+    "itemCount": 1391,
+    "manualItemCount": 1391,
+    "generatedItemCount": 1374,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1352
+    "publicApiTypeCount": 1374
   }
 }

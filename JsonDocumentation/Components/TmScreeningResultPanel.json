@@ -1,0 +1,56 @@
+{
+  "itemName": "TmScreeningResultPanel",
+  "kind": "Component",
+  "category": "Compliance",
+  "description": "Panel listing compliance screening findings for one subject — category, severity badge, source, time and a confidence meter — ordered pending-first, then by severity and recency. Reviewers confirm a finding as a true hit or dismiss it as a false positive (optionally with a note) through IScreeningProvider; the resolution note, reviewer and timestamp render on resolved findings. Supports a read-only mode and an empty state.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Compliance",
+    "@using Tempo.Blazor.Abstractions.Models"
+  ],
+  "parameters": [
+    {
+      "name": "Provider",
+      "type": "IScreeningProvider",
+      "isRequired": true,
+      "description": "Data source of the findings and the resolution workflow."
+    },
+    {
+      "name": "SubjectId",
+      "type": "string",
+      "isRequired": true,
+      "description": "Identifier of the screened subject."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Hides the confirm/dismiss actions when true."
+    },
+    {
+      "name": "CurrentUserName",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Reviewer identity recorded with resolutions."
+    },
+    {
+      "name": "ShowConfidence",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the confidence indicator is shown."
+    },
+    {
+      "name": "OnFindingResolved",
+      "type": "EventCallback<ScreeningFinding>",
+      "isRequired": false,
+      "description": "Callback invoked after a finding was confirmed or dismissed."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes for the root element."
+    }
+  ]
+}

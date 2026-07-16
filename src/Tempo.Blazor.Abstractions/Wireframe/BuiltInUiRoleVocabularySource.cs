@@ -113,7 +113,9 @@ public sealed class BuiltInUiRoleVocabularySource : IUiRoleVocabularySource
         R("audit-log", "Audit log", "Displays a filterable, virtualized log of audit events with detail diffs.", "activity log", "auditni zaznam", "TmAuditLogViewer"),
         R("deadline-calculator", "Deadline calculator", "Computes a deadline from a base date and a rule with business-day and holiday handling.", "date calculator", "vypocet terminu", "TmDeadlineCalculator"),
         R("ledger-grid", "Ledger grid", "Displays accounting movements with debit/credit/balance columns, totals, and matching.", "accounting table", "kniha pohybu", "TmLedgerGrid"),
-        R("money-display", "Money display", "Displays a monetary amount with currency, sign, and locale formatting.", "amount", "castka", "TmMoneyDisplay")
+        R("money-display", "Money display", "Displays a monetary amount with currency, sign, and locale formatting.", "amount", "castka", "TmMoneyDisplay"),
+        R("kyc-wizard", "KYC wizard", "Guides identification of a person or company through steps: documents, addresses, ownership, declarations.", "compliance wizard", "identifikacni pruvodce", "TmKycWizard"),
+        R("screening-result-panel", "Screening results", "Lists compliance screening findings with severity and confidence, and confirm/dismiss resolution.", "screening findings", "vysledky kontrol", "TmScreeningResultPanel")
     ];
 
     /// <inheritdoc/>

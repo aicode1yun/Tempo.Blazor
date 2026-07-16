@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Review status of a screening finding: Pending, Confirmed (true hit), Dismissed (false positive).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ScreeningFindingStatus"
+}

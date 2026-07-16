@@ -1,0 +1,143 @@
+@namespace Tempo.Blazor.Components.Compliance
+@inherits Tempo.Blazor.Components.TmComponentBase
+@using System.Globalization
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Components.DataDisplay
+@using Tempo.Blazor.Components.Icons
+
+<div class="tm-screening @Class" data-testid="@TestId("screening-panel")">
+
+    <div class="tm-screening__header">
+        <h3 class="tm-screening__title">@Loc["TmScreeningResultPanel_Title"]</h3>
+        @if (_findings.Count > 0)
+        {
+            <span class="tm-screening__pending" data-testid="@TestId("screening-pending-count")">
+                @string.Format(Loc["TmScreeningResultPanel_PendingCount"], PendingCount)
+            </span>
+        }
+        <button type="button"
+                class="tm-screening__icon-btn"
+                title="@Loc["TmScreeningResultPanel_Refresh"]"
+                aria-label="@Loc["TmScreeningResultPanel_Refresh"]"
+                data-testid="@TestId("screening-refresh")"
+                @onclick="RefreshAsync">
+            <TmIcon Name="refresh-cw" Size="IconSize.Xs" />
+        </button>
+    </div>
+
+    @if (_findings.Count == 0 && !_loading)
+    {
+        <TmEmptyState Icon="shield" Title="@Loc["TmScreeningResultPanel_NoFindings"]" />
+    }
+    else
+    {
+        <div class="tm-screening__list">
+            @foreach (var finding in OrderedFindings)
+            {
+                <article class="tm-screening__finding tm-screening__finding--@StatusModifier(finding.Status)"
+                         data-finding-id="@finding.Id"
+                         data-testid="@TestId("screening-finding")">
+                    <div class="tm-screening__finding-head">
+                        <span class="tm-screening__severity tm-screening__severity--@SeverityModifier(finding.Severity)"
+                              data-testid="@TestId("screening-severity")">
+                            @SeverityLabel(finding.Severity)
+                        </span>
+                        <span class="tm-screening__category" data-testid="@TestId("screening-category")">@finding.Category</span>
+                        <strong class="tm-screening__finding-title" data-testid="@TestId("screening-title")">@finding.Title</strong>
+                        <span class="tm-screening__status tm-screening__status--@StatusModifier(finding.Status)"
+                              data-testid="@TestId("screening-status")">
+                            @StatusLabel(finding.Status)
+                        </span>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(finding.Description))
+                    {
+                        <p class="tm-screening__description">@finding.Description</p>
+                    }
+
+                    <div class="tm-screening__meta">
+                        <span class="tm-screening__source">@Loc["TmScreeningResultPanel_Source"]: @finding.Source</span>
+                        <span class="tm-screening__time">@FormatTime(finding.OccurredAt)</span>
+                        @if (ShowConfidence)
+                        {
+                            <span class="tm-screening__confidence"
+                                  data-confidence="@finding.Confidence.ToString("0.00", CultureInfo.InvariantCulture)"
+                                  data-testid="@TestId("screening-confidence")"
+                                  title="@ConfidenceTitle(finding.Confidence)"
+                                  aria-label="@ConfidenceTitle(finding.Confidence)">
+                                <span class="tm-screening__confidence-track" aria-hidden="true">
+                                    <span class="tm-screening__confidence-fill" style="width: @ConfidencePercent(finding.Confidence)%"></span>
+                                </span>
+                                @ConfidencePercent(finding.Confidence) %
+                            </span>
+                        }
+                    </div>
+
+                    @if (finding.Status != ScreeningFindingStatus.Pending && (finding.ResolutionNote is not null || finding.ResolvedBy is not null))
+                    {
+                        <div class="tm-screening__resolution" data-testid="@TestId("screening-resolution")">
+                            @if (!string.IsNullOrEmpty(finding.ResolutionNote))
+                            {
+                                <span class="tm-screening__resolution-note">@finding.ResolutionNote</span>
+                            }
+                            @if (!string.IsNullOrEmpty(finding.ResolvedBy))
+                            {
+                                <span class="tm-screening__resolution-by">@string.Format(Loc["TmScreeningResultPanel_ResolvedBy"], finding.ResolvedBy)</span>
+                            }
+                        </div>
+                    }
+
+                    @if (finding.Status == ScreeningFindingStatus.Pending && !ReadOnly)
+                    {
+                        @if (_resolvingId == finding.Id)
+                        {
+                            <div class="tm-screening__resolve-form" data-testid="@TestId("screening-resolution-form")">
+                                <label class="tm-screening__note-field">
+                                    <span class="tm-screening__note-label">@Loc["TmScreeningResultPanel_NoteLabel"]</span>
+                                    <textarea value="@_resolutionNote"
+                                              data-testid="@TestId("screening-note")"
+                                              @onchange="e => _resolutionNote = e.Value?.ToString() ?? string.Empty"></textarea>
+                                </label>
+                                <div class="tm-screening__resolve-actions">
+                                    <button type="button"
+                                            class="tm-screening__btn tm-screening__btn--primary"
+                                            disabled="@_busy"
+                                            data-testid="@TestId("screening-resolve-submit")"
+                                            @onclick="() => ResolveAsync(finding)">
+                                        @(_resolvingStatus == ScreeningFindingStatus.Confirmed
+                                            ? Loc["TmScreeningResultPanel_ConfirmAction"]
+                                            : Loc["TmScreeningResultPanel_DismissAction"])
+                                    </button>
+                                    <button type="button"
+                                            class="tm-screening__btn"
+                                            disabled="@_busy"
+                                            data-testid="@TestId("screening-resolve-cancel")"
+                                            @onclick="CancelResolution">
+                                        @Loc["TmScreeningResultPanel_Cancel"]
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="tm-screening__actions">
+                                <button type="button"
+                                        class="tm-screening__btn tm-screening__btn--danger"
+                                        data-testid="@TestId("screening-confirm")"
+                                        @onclick="() => BeginResolution(finding, ScreeningFindingStatus.Confirmed)">
+                                    @Loc["TmScreeningResultPanel_ConfirmAction"]
+                                </button>
+                                <button type="button"
+                                        class="tm-screening__btn"
+                                        data-testid="@TestId("screening-dismiss")"
+                                        @onclick="() => BeginResolution(finding, ScreeningFindingStatus.Dismissed)">
+                                    @Loc["TmScreeningResultPanel_DismissAction"]
+                                </button>
+                            </div>
+                        }
+                    }
+                </article>
+            }
+        </div>
+    }
+</div>
