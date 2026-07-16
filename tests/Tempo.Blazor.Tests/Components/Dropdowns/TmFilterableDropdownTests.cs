@@ -130,4 +130,20 @@ public class TmFilterableDropdownTests : LocalizationTestBase
 
         captured.Should().BeNull();
     }
+
+    [Fact]
+    public void TmFilterableDropdown_Disabled_Does_Not_Render_The_Clear_Button()
+    {
+        // A disabled dropdown is read-only chrome: offering a ✕ that erases the value contradicts the disabled
+        // state (and was a real data hazard — the value could be cleared from a read-only form).
+        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+            .Add(c => c.Items, FruitOptions)
+            .Add(c => c.Value, FruitOptions[0])
+            .Add(c => c.DisplayField, o => o.Label)
+            .Add(c => c.ShowClearButton, true)
+            .Add(c => c.Disabled, true));
+
+        cut.FindAll(".tm-filterable-dropdown-clear").Should().BeEmpty();
+    }
+
 }

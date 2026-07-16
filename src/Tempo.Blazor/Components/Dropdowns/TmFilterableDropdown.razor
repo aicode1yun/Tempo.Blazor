@@ -20,7 +20,7 @@
         {
             <span class="tm-filterable-dropdown-value">@GetDisplayText(Value)</span>
         }
-        @if (ShowClearButton && Value is not null && !IsEmptyValue(Value))
+        @if (ShowClearButton && !Disabled && Value is not null && !IsEmptyValue(Value))
         {
             <button type="button"
                     class="tm-filterable-dropdown-clear"
@@ -211,6 +211,10 @@
 
     private async Task ClearValueAsync()
     {
+        // Same guard as SelectItemAsync/ToggleOpen: a disabled dropdown must never mutate its value. The clear
+        // button is not rendered while Disabled, but the guard keeps the invariant even if a stale render or a
+        // programmatic click reaches the handler.
+        if (Disabled) return;
         Value = default;
         await ValueChanged.InvokeAsync(default);
     }
