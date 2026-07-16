@@ -1,0 +1,80 @@
+{
+  "kind": "Component",
+  "category": "Files",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "description": "Redaction layer for PDF documents (over TmPdfViewer) and image previews: drag rectangles over sensitive content, categorize them by PII type, preview before/after, persist through IRedactionProvider, and export DESTRUCTIVELY - the JS pipeline rasterizes the pages, burns the black rectangles in, and rebuilds a brand-new file from the pixels only, so the original text/image content is not extractable from the export (this is not a visual overlay).",
+  "packageId": "Tempo.Blazor.PdfViewer",
+  "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmRedactionLayer.razor",
+  "documentationStatus": "generated",
+  "parameters": [
+    {
+      "name": "Url",
+      "type": "string?",
+      "isRequired": false,
+      "description": "URL of the PDF document to redact. Mutually exclusive with ImageUrl (PDF wins)."
+    },
+    {
+      "name": "ImageUrl",
+      "type": "string?",
+      "isRequired": false,
+      "description": "URL of the image to redact, when no PDF is set."
+    },
+    {
+      "name": "DocumentId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Document identifier used with the provider."
+    },
+    {
+      "name": "Provider",
+      "type": "IRedactionProvider?",
+      "isRequired": false,
+      "description": "Optional persistence of the redaction definitions."
+    },
+    {
+      "name": "DefaultCategory",
+      "type": "RedactionCategory",
+      "isRequired": false,
+      "default": "RedactionCategory.Other",
+      "description": "Category assigned to newly drawn areas."
+    },
+    {
+      "name": "ShowPanel",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the area panel is shown."
+    },
+    {
+      "name": "Height",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Viewer height for the PDF mode."
+    },
+    {
+      "name": "ExportFileName",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Export file name. Defaults to redacted.pdf / redacted.png by mode."
+    },
+    {
+      "name": "OnAreasChanged",
+      "type": "EventCallback<IReadOnlyList<RedactionArea>>",
+      "isRequired": false,
+      "description": "Callback invoked whenever the set of areas changes, with a snapshot."
+    },
+    {
+      "name": "OnExported",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Callback invoked after a successful export, with the file name."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes for the root element."
+    }
+  ],
+  "itemName": "TmRedactionLayer"
+}

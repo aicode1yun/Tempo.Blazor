@@ -120,6 +120,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmKycWizard"] = ["kyc-wizard"],
             ["TmScreeningResultPanel"] = ["screening-result-panel"],
             ["TmDataImport"] = ["data-import"],
+            ["TmRedactionLayer"] = ["redaction-layer"],
             ["TmAIPrompt"] = ["text-area", "button"],
             ["TmWidgetSelector"] = ["dashboard", "card"],
             ["__group__"] = ["section"],
@@ -2174,6 +2175,18 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("rowCount",   "Row Count",   PropType.Int, 6, cat: "Content"),
                 P("errorCount", "Error Count", PropType.Int, 0, cat: "State"),
                 P("progress",   "Progress",    PropType.Int, 0, cat: "State"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmRedactionLayer", Category = "Complex", DisplayName = "Redaction Layer",
+            DefaultWidth = 520, DefaultHeight = 380,
+            Props =
+            [
+                P("areaCount", "Area Count", PropType.Int,  2,     cat: "Content"),
+                P("applied",   "Applied",    PropType.Bool, false, cat: "State"),
+                P("showPanel", "Show Panel", PropType.Bool, true,  cat: "Appearance"),
             ]
         };
 

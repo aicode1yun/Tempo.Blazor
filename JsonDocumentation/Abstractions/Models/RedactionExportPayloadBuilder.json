@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Builds the culture-invariant JSON payload driving the destructive JS export (rasterize pages, burn black rectangles, rebuild the file without the original content streams). Rects are clamped to the page and degenerate rects dropped.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "RedactionExportPayloadBuilder"
+}

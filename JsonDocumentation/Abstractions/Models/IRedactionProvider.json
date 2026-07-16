@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Persistence of redaction definitions per document: LoadAsync returns the saved areas (empty when none), SaveAsync replaces them.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "IRedactionProvider"
+}

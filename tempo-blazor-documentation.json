@@ -19,16 +19,16 @@
     },
     "dependencies": [
       {
-        "name": "System.Text.Encoding.CodePages",
-        "version": "8.0.0"
-      },
-      {
         "name": "Microsoft.AspNetCore.Components.Web",
         "version": "8.0.12"
       },
       {
         "name": "Microsoft.Extensions.Http",
         "version": "8.0.1"
+      },
+      {
+        "name": "System.Text.Encoding.CodePages",
+        "version": "8.0.0"
       },
       {
         "name": "Microsoft.Extensions.Localization",
@@ -44,6 +44,10 @@
       },
       {
         "name": "Microsoft.Extensions.Http",
+        "version": "9.0.3"
+      },
+      {
+        "name": "System.Text.Encoding.CodePages",
         "version": "9.0.3"
       },
       {

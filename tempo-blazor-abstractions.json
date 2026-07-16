@@ -15170,6 +15170,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "InMemoryRedactionProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IRedactionProvider for demos and tests with clone-on-read/write semantics.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "InMemoryScreeningProvider",
       "kind": "Class",
       "category": "Models",
@@ -15187,6 +15197,16 @@
       "description": "Persistence contract for PDF viewer annotations (comment threads anchored to page points, areas, or text ranges). Implementations load, create, reply to, edit, delete, resolve, and reopen threads for a document.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/IPdfAnnotationProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IRedactionProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Persistence of redaction definitions per document: LoadAsync returns the saved areas (empty when none), SaveAsync replaces them.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
       "documentationStatus": "merged"
     },
     {
@@ -15624,6 +15644,36 @@
           "description": "The start date of the recurrence."
         }
       ]
+    },
+    {
+      "itemName": "RedactionArea",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One rectangle marked for redaction in page-relative normalized coordinates (0-1, origin top-left): 1-based page number, position/size, PII category, and an optional note. Supports cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RedactionCategory",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "PII category of a redacted area: PersonalId, Name, Address, Contact, BankAccount, Date, Other.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RedactionExportPayloadBuilder",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Builds the culture-invariant JSON payload driving the destructive JS export (rasterize pages, burn black rectangles, rebuild the file without the original content streams). Rects are clamped to the page and degenerate rects dropped.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "SchedulerEventContext",
@@ -35004,11 +35054,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1397,
-    "manualItemCount": 1397,
-    "generatedItemCount": 1380,
+    "itemCount": 1402,
+    "manualItemCount": 1402,
+    "generatedItemCount": 1385,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1380
+    "publicApiTypeCount": 1385
   }
 }

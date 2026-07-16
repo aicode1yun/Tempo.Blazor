@@ -94,6 +94,7 @@ public sealed class UiRoleVocabularyTests
         vocabulary.Find("TmKycWizard")!.Slug.Should().Be("kyc-wizard");
         vocabulary.Find("TmScreeningResultPanel")!.Slug.Should().Be("screening-result-panel");
         vocabulary.Find("TmDataImport")!.Slug.Should().Be("data-import");
+        vocabulary.Find("TmRedactionLayer")!.Slug.Should().Be("redaction-layer");
         vocabulary.Find("TmTextField")!.Slug.Should().Be("text-input");
         vocabulary.Find("TmNavbar")!.Slug.Should().Be("navigation-bar");
         vocabulary.Find("TmHeading")!.Slug.Should().Be("heading");

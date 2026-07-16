@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "In-memory IRedactionProvider for demos and tests with clone-on-read/write semantics.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "InMemoryRedactionProvider"
+}

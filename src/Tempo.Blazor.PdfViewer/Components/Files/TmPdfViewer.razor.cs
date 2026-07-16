@@ -131,6 +131,7 @@ public partial class TmPdfViewer : TmComponentBase, IAsyncDisposable
     private ElementReference _searchLayerRef;
     private ElementReference _annotationOverlayRef;
     private ElementReference _customOverlayRef;
+    private bool _customOverlaySynced;
     private DotNetObjectReference<TmPdfViewer>? _dotNetRef;
     private bool _pdfInitialized;
     private bool _useFallback;
@@ -312,6 +313,14 @@ public partial class TmPdfViewer : TmComponentBase, IAsyncDisposable
         if (!EnableAnnotations && EnableTextSelectionEvents && !_useFallback && !_selectionEnabled)
         {
             await SetupSelectionAsync();
+            await RefreshAnnotationOverlayAsync();
+        }
+
+        // A custom overlay must be sized even when annotations/text selection are off —
+        // the ResizeObserver attached by syncOverlay keeps it aligned afterwards.
+        if (OverlayContent is not null && !_useFallback && !_customOverlaySynced && _customOverlayRef.Context is not null)
+        {
+            _customOverlaySynced = true;
             await RefreshAnnotationOverlayAsync();
         }
     }
