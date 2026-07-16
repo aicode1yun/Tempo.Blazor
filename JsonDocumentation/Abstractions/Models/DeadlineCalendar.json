@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Materialized business-day context for the pure deadline engine: weekend definition plus holiday lookup; LoadAsync materializes a year range from an IHolidayProvider.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DeadlineCalendar"
+}

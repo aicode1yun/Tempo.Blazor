@@ -114,6 +114,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmSubmissionStatusTimeline"] = ["timeline", "stepper"],
             ["TmAuditTrailViewer"] = ["timeline", "list-view"],
             ["TmAuditLogViewer"] = ["audit-log"],
+            ["TmDeadlineCalculator"] = ["deadline-calculator"],
             ["TmAIPrompt"] = ["text-area", "button"],
             ["TmWidgetSelector"] = ["dashboard", "card"],
             ["__group__"] = ["section"],
@@ -2116,6 +2117,19 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             Props =
             [
                 P("rowCount", "Row Count", PropType.Int, 5, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmDeadlineCalculator", Category = "Complex", DisplayName = "Deadline Calculator",
+            DefaultWidth = 420, DefaultHeight = 260,
+            Props =
+            [
+                P("baseDate",     "Base Date",     PropType.String, "2026-07-03", cat: "Content"),
+                P("resultDate",   "Result Date",   PropType.String, "2026-07-20", cat: "Content"),
+                P("showForm",     "Show Form",     PropType.Bool,   true,         cat: "Appearance"),
+                P("showProtocol", "Show Protocol", PropType.Bool,   true,         cat: "Appearance"),
             ]
         };
 

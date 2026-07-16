@@ -110,7 +110,8 @@ public sealed class BuiltInUiRoleVocabularySource : IUiRoleVocabularySource
         R("filter-builder", "Filter builder", "Builds complex filter conditions.", "query builder", "tvorba filtru", "TmFilterBuilder"),
         R("pdf-viewer", "PDF viewer", "Displays a PDF document.", "document viewer", "prohlizec pdf", "TmPdfViewer"),
         R("pdf-annotator", "PDF annotator", "Annotates a PDF document with highlights, comments, stamps, and drawings.", "document markup", "anotace pdf", "TmPdfAnnotator"),
-        R("audit-log", "Audit log", "Displays a filterable, virtualized log of audit events with detail diffs.", "activity log", "auditni zaznam", "TmAuditLogViewer")
+        R("audit-log", "Audit log", "Displays a filterable, virtualized log of audit events with detail diffs.", "activity log", "auditni zaznam", "TmAuditLogViewer"),
+        R("deadline-calculator", "Deadline calculator", "Computes a deadline from a base date and a rule with business-day and holiday handling.", "date calculator", "vypocet terminu", "TmDeadlineCalculator")
     ];
 
     /// <inheritdoc/>

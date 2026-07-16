@@ -82,6 +82,7 @@
       "Tempo.Blazor.Components.Dashboard",
       "Tempo.Blazor.Components.DataDisplay",
       "Tempo.Blazor.Components.DataTable",
+      "Tempo.Blazor.Components.Deadline",
       "Tempo.Blazor.Components.Dropdowns",
       "Tempo.Blazor.Components.Feedback",
       "Tempo.Blazor.Components.Files",
@@ -8228,6 +8229,83 @@
         {
           "title": "View manager with DisplayResolver for localized filter labels",
           "code": "<TmViewManager Provider=\"@viewProvider\"\n               ViewContext=\"orders\"\n               OnViewApplied=\"ApplyView\"\n               GetCurrentView=\"GetCurrentTableView\"\n               AvailableColumns=\"@availableColumns\"\n               FilterDefinitions=\"@filterDefs\"\n               DisplayResolver=\"ResolveDisplay\"\n               CanCreateTenantViews=\"true\"\n               CurrentUserId=\"@userId\"\n               CurrentTenantId=\"@tenantId\" />\n\n@code {\n    // DisplayResolver flows from TmViewManager → TmFilterBuilder → TmFilterChip.\n    // Usually you set DisplayResolver on the parent TmDataTable or TmMultiViewList\n    // and it flows automatically. Direct usage shown here for standalone scenarios.\n    private string? ResolveDisplay(string fieldName, string? rawValue)\n    {\n        if (rawValue is null)\n            return fieldName switch { \"Status\" => \"Order Status\", \"Priority\" => \"Priority\", _ => null };\n        return (fieldName, rawValue) switch\n        {\n            (\"Status\", \"Pending\") => \"Pending\",\n            (\"Status\", \"Shipped\") => \"Shipped\",\n            (\"Status\", \"Delivered\") => \"Delivered\",\n            _ => null\n        };\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "TmDeadlineCalculator",
+      "kind": "Component",
+      "category": "Deadline",
+      "namespace": "Tempo.Blazor.Components.Deadline",
+      "description": "Rule-based deadline calculator widget. Computes a deadline from a base date and a chained rule (calendar days, business days, weeks, months, years — each with configurable weekend/holiday shifting) through the pure DeadlineCalculator engine, showing a live result and a step-by-step protocol. Holiday calendars are pluggable via IHolidayProvider; ShowForm=\"false\" gives an embed mode that renders only the result and protocol.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Deadline/TmDeadlineCalculator.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Deadline"
+      ],
+      "parameters": [
+        {
+          "name": "BaseDate",
+          "type": "DateOnly?",
+          "isRequired": false,
+          "description": "Base date the periods count from. Defaults to today."
+        },
+        {
+          "name": "BaseDateChanged",
+          "type": "EventCallback<DateOnly>",
+          "isRequired": false,
+          "description": "Raised when the base date changes in the form."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "HolidayProvider",
+          "type": "IHolidayProvider?",
+          "isRequired": false,
+          "description": "Holiday calendar source. The component loads exactly the year span the calculation can touch."
+        },
+        {
+          "name": "OnCalculated",
+          "type": "EventCallback<DeadlineResult>",
+          "isRequired": false,
+          "description": "Raised with every recalculated result."
+        },
+        {
+          "name": "Rule",
+          "type": "DeadlineRule?",
+          "isRequired": false,
+          "description": "Initial deadline rule. The component edits its own copy; use RuleChanged to observe edits."
+        },
+        {
+          "name": "RuleChanged",
+          "type": "EventCallback<DeadlineRule>",
+          "isRequired": false,
+          "description": "Raised with a snapshot of the edited rule after every form change."
+        },
+        {
+          "name": "ShowForm",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the rule form is rendered. False gives the embed mode (result + protocol only)."
+        },
+        {
+          "name": "ShowProtocol",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the step-by-step protocol is rendered."
+        },
+        {
+          "name": "Weekend",
+          "type": "IReadOnlyList<DayOfWeek>?",
+          "isRequired": false,
+          "description": "Weekend days. Default is Saturday and Sunday."
         }
       ]
     },
@@ -22813,6 +22891,10 @@
       "kind": "Css"
     },
     {
+      "path": "src/Tempo.Blazor/wwwroot/css/components/_deadline-calculator.css",
+      "kind": "Css"
+    },
+    {
       "path": "src/Tempo.Blazor/wwwroot/css/components/_decimal-input.css",
       "kind": "Css"
     },
@@ -23294,11 +23376,11 @@
     }
   ],
   "summary": {
-    "itemCount": 323,
-    "manualItemCount": 323,
-    "generatedItemCount": 315,
+    "itemCount": 324,
+    "manualItemCount": 324,
+    "generatedItemCount": 316,
     "generatedOnlyItemCount": 0,
-    "componentCount": 186,
+    "componentCount": 187,
     "publicApiTypeCount": 129
   }
 }

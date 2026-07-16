@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Unit of a deadline rule step: Days, BusinessDays, Weeks, Months, or Years.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DeadlineUnit"
+}

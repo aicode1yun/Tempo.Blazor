@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "One step of a deadline rule: amount (negative counts backwards), unit, weekend/holiday shift, and an optional label. Steps chain sequentially.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DeadlineRuleStep"
+}

@@ -12651,6 +12651,106 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DeadlineCalculator",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Pure deadline rule engine: applies a chained rule to a base date over a business-day calendar and records a step-by-step protocol. Calendar-based DateOnly arithmetic, so DST transitions cannot skew results; end-of-month and leap-day additions clamp.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineCalendar",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Materialized business-day context for the pure deadline engine: weekend definition plus holiday lookup; LoadAsync materializes a year range from an IHolidayProvider.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineHoliday",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Holiday entry of a holiday calendar: date plus display name.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineNonBusinessShift",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "How a deadline landing on a weekend or holiday is shifted: None, NextBusinessDay, or PreviousBusinessDay.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineProtocolEntry",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One entry of the step-by-step deadline protocol: kind, rule step index, resulting date, added amount/unit, and the holiday shifted from.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineResult",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Result of a deadline calculation: base date, computed deadline, and the step protocol.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineRule",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Deadline computation rule: an ordered chain of steps, with a Single(...) factory for one-step rules.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineRuleStep",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One step of a deadline rule: amount (negative counts backwards), unit, weekend/holiday shift, and an optional label. Steps chain sequentially.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineStepKind",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Kind of a deadline protocol entry: Start, AddUnits, ShiftedFromWeekend, ShiftedFromHoliday, or Final.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineUnit",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Unit of a deadline rule step: Days, BusinessDays, Weeks, Months, or Years.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DeleteContext<TMetadata>",
       "kind": "Class",
       "category": "Models",
@@ -14750,6 +14850,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IHolidayProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Supplies holiday calendars (typically per country) to deadline calculations, one calendar year at a time.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ImageUrlResolvers",
       "kind": "Class",
       "category": "Models",
@@ -14868,6 +14978,16 @@
           ]
         }
       ]
+    },
+    {
+      "itemName": "InMemoryHolidayProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IHolidayProvider over a fixed holiday list.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "InMemoryPdfAnnotationProvider",
@@ -34454,11 +34574,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1347,
-    "manualItemCount": 1347,
-    "generatedItemCount": 1330,
+    "itemCount": 1359,
+    "manualItemCount": 1359,
+    "generatedItemCount": 1342,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1330
+    "publicApiTypeCount": 1342
   }
 }
