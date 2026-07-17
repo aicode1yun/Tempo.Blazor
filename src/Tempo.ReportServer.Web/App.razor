@@ -35,10 +35,11 @@
             margin: 0;
         }
     </style>
-    <HeadOutlet @rendermode="InteractiveServer" />
+    <HeadOutlet @rendermode="InteractiveAuto" />
 </head>
 <body>
-    <Routes @rendermode="InteractiveServer" />
+    @* Routes lives in the .Client project so the WebAssembly leg of InteractiveAuto can find it. *@
+    <Tempo.ReportServer.Web.Client.Routes @rendermode="InteractiveAuto" />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["report-server.js"]"></script>
 </body>

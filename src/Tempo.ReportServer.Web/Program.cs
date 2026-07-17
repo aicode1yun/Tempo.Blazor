@@ -1,16 +1,15 @@
-using Tempo.Blazor.EmailTemplates.Abstractions;
-using Tempo.Blazor.EmailTemplates.Abstractions.Contracts;
-using Tempo.Blazor.Reporting.Configuration;
 using Tempo.ReportServer.Api;
 using Tempo.ReportServer.Api.Security;
 using Tempo.ReportServer.Web;
+using Tempo.ReportServer.Web.Client;
 using Tempo.ReportServer.Web.Services;
 using Tempo.Reporting.Abstractions.Dtos;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents()
+    .AddInteractiveWebAssemblyComponents();
 
 // Cookie + OpenID Connect (Keycloak) BFF authentication with a server-side token store.
 // No-op when "Authentication:Oidc" is unconfigured, so the self-contained demo keeps running.
@@ -43,22 +42,12 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowAnyHeader());
 });
-builder.Services.AddTempoBlazorReporting();
-builder.Services.AddTempoEmailTemplateEngine();
+// Client-safe UI/data services shared with the WebAssembly leg (symmetric DI).
+builder.Services.AddCommonServices(builder.Configuration);
+
+// Host-only (server) services: report-server security + demo API key store.
 builder.Services.AddSingleton<IReportApiKeyStore, DemoReportApiKeyStore>();
 builder.Services.AddReportServerSecurity();
-builder.Services.AddSingleton<DemoReportSourceFactory>();
-builder.Services.AddSingleton<ReportServerCatalogStore>();
-builder.Services.AddSingleton<IReportScheduleClock, SystemReportScheduleClock>();
-builder.Services.AddSingleton<ReportScheduleStore>();
-builder.Services.AddSingleton<ReportRenderJobQueue>();
-builder.Services.AddSingleton<ReportEmailOutbox>();
-builder.Services.AddSingleton<ReportEmailTemplateGalleryStore>();
-builder.Services.AddSingleton<IEmailTemplateStore>(sp => sp.GetRequiredService<ReportEmailTemplateGalleryStore>());
-builder.Services.AddSingleton<IEmailSender, Smtp4DevEmailSender>();
-builder.Services.AddSingleton<IReportScheduledDeliveryService, ReportEmailDeliveryService>();
-builder.Services.AddSingleton<ReportScheduleWorker>();
-builder.Services.AddScoped<ReportServerSessionState>();
 
 var app = builder.Build();
 
@@ -93,7 +82,9 @@ if (oidcOptions.IsConfigured)
 }
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(Tempo.ReportServer.Web.Client._Imports).Assembly);
 
 app.Run();
 

@@ -1,0 +1,15 @@
+@* The interactive Router MUST live in the .Client project so the WebAssembly leg of
+   InteractiveAuto can instantiate it inside the browser runtime, which only ships the
+   client assembly. Routable pages are discovered from this assembly. *@
+<Router AppAssembly="typeof(Routes).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Tempo.ReportServer.Web.Components.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="typeof(Tempo.ReportServer.Web.Components.MainLayout)">
+            <p>Not found</p>
+        </LayoutView>
+    </NotFound>
+</Router>
