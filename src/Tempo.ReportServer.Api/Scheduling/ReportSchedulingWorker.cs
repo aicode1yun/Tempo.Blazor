@@ -126,6 +126,17 @@ public sealed class ReportScheduleProcessor : IReportScheduleProcessor
                 PendingOccurrences: []);
             await _store.ApplyRunOutcomeAsync(schedule.TenantId, schedule.ScheduleId, update, runs, cancellationToken).ConfigureAwait(false);
         }
+        catch (ReportScheduleConcurrencyException ex)
+        {
+            // Another worker already advanced this schedule. Skip the losing pass; the winning worker
+            // owns the run history and next-run state. See docs/report-server-deployment.md for the
+            // multi-instance delivery caveat.
+            _logger.LogInformation(
+                ex,
+                "Scheduled report {ScheduleId} (tenant {TenantId}) was processed concurrently by another worker; skipping this pass.",
+                schedule.ScheduleId,
+                schedule.TenantId);
+        }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             await ApplyFailureAsync(schedule, occurrences, attempt, nowUtc, ex, cancellationToken).ConfigureAwait(false);
@@ -184,7 +195,18 @@ public sealed class ReportScheduleProcessor : IReportScheduleProcessor
             LastStatus: status,
             LastStatusMessage: message,
             PendingOccurrences: pending);
-        await _store.ApplyRunOutcomeAsync(schedule.TenantId, schedule.ScheduleId, update, [run], cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await _store.ApplyRunOutcomeAsync(schedule.TenantId, schedule.ScheduleId, update, [run], cancellationToken).ConfigureAwait(false);
+        }
+        catch (ReportScheduleConcurrencyException concurrency)
+        {
+            _logger.LogInformation(
+                concurrency,
+                "Scheduled report {ScheduleId} (tenant {TenantId}) failure outcome was superseded by another worker; skipping.",
+                schedule.ScheduleId,
+                schedule.TenantId);
+        }
     }
 
     private IReadOnlyList<DateTimeOffset> ResolveOccurrences(ReportScheduleDto schedule, DateTimeOffset nowUtc)

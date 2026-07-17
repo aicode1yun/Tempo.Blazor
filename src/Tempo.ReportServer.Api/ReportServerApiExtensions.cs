@@ -30,6 +30,8 @@ public static class ReportServerApiExtensions
         services.TryAddScoped<IReportServerRenderer, ReportServerRenderer>();
         services.TryAddScoped<IReportDataProvider, EmptyReportDataProvider>();
         services.TryAddSingleton<IReportRenderJobQueue, InMemoryReportRenderJobQueue>();
+        services.TryAddSingleton<ReportRenderMetrics>();
+        services.TryAddSingleton<IReportRenderExecutor, ReportRenderExecutor>();
 
         // The persistent schedule store and a system clock are always available so the scheduling
         // endpoints work in any host. The background worker and delivery channels are opt-in through
@@ -332,8 +334,8 @@ public static class ReportServerApiExtensions
             RenderReportRequestDto request,
             IReportServerStore store,
             IReportServerRenderer renderer,
+            IReportRenderExecutor executor,
             ReportServerRequestContext context,
-            Microsoft.Extensions.Options.IOptions<ReportServerQuotaOptions> quotas,
             CancellationToken cancellationToken) =>
         {
             SetTenant(context, request.TenantId);
@@ -343,10 +345,18 @@ public static class ReportServerApiExtensions
                 return Results.NotFound();
             }
 
-            var result = await renderer.RenderAsync(report, request, context.ExecutionContext, cancellationToken).ConfigureAwait(false);
-            return result.PageCount > quotas.Value.MaxSynchronousPages
-                ? Results.Problem("The report exceeded the synchronous page quota.", statusCode: StatusCodes.Status413PayloadTooLarge)
-                : Results.Ok(result);
+            var execution = await executor
+                .ExecuteAsync(renderer, report, request, context.ExecutionContext, cancellationToken)
+                .ConfigureAwait(false);
+            return execution.Outcome switch
+            {
+                ReportRenderOutcome.Succeeded => Results.Ok(execution.Result),
+                ReportRenderOutcome.PageQuotaExceeded => Results.Problem(execution.Message, statusCode: StatusCodes.Status413PayloadTooLarge),
+                ReportRenderOutcome.OutputTooLarge => Results.Problem(execution.Message, statusCode: StatusCodes.Status413PayloadTooLarge),
+                ReportRenderOutcome.TimedOut => Results.Problem(execution.Message, statusCode: StatusCodes.Status504GatewayTimeout),
+                ReportRenderOutcome.Overloaded => Results.Problem(execution.Message, statusCode: StatusCodes.Status429TooManyRequests),
+                _ => Results.Problem("Unknown render outcome.", statusCode: StatusCodes.Status500InternalServerError),
+            };
         });
 
         group.MapPost("/render/jobs", async (

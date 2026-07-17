@@ -230,6 +230,7 @@ public sealed class WebhookScheduledReportDeliveryChannel : IScheduledReportDeli
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<WebhookScheduledReportDeliveryChannel> _logger;
+    private readonly ScheduledReportWebhookOptions _options;
 
     /// <summary>HTTP client name used for webhook delivery.</summary>
     public const string HttpClientName = "ScheduledReportWebhook";
@@ -237,10 +238,12 @@ public sealed class WebhookScheduledReportDeliveryChannel : IScheduledReportDeli
     /// <summary>Creates the webhook channel.</summary>
     public WebhookScheduledReportDeliveryChannel(
         IHttpClientFactory httpClientFactory,
-        ILogger<WebhookScheduledReportDeliveryChannel> logger)
+        ILogger<WebhookScheduledReportDeliveryChannel> logger,
+        IOptions<ScheduledReportWebhookOptions> options)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _options = (options ?? throw new ArgumentNullException(nameof(options))).Value;
     }
 
     /// <inheritdoc />
@@ -250,10 +253,9 @@ public sealed class WebhookScheduledReportDeliveryChannel : IScheduledReportDeli
     public async Task DeliverAsync(ScheduledReportDelivery delivery, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(delivery);
-        if (!Uri.TryCreate(delivery.Target, UriKind.Absolute, out var uri))
-        {
-            throw new InvalidOperationException($"Webhook delivery target '{delivery.Target}' is not an absolute URL.");
-        }
+
+        // SSRF guard: reject disallowed schemes and non-public targets before any outbound request.
+        var uri = ScheduledReportWebhookGuard.Validate(delivery.Target, _options);
 
         using var content = new ByteArrayContent(delivery.Artifact.Bytes);
         content.Headers.ContentType = new MediaTypeHeaderValue(delivery.Artifact.ContentType);

@@ -124,6 +124,42 @@ public sealed class ReportSchedulingWorkerMsSqlTests
         schedule.NextRunUtc.Should().Be(DateTimeOffset.Parse("2026-07-17T13:00:00Z"));
     }
 
+    [Fact]
+    public async Task ApplyRunOutcome_OnStaleRowVersion_ThrowsConcurrencyException()
+    {
+        await _db.ResetAsync();
+        var scheduleId = await SeedScheduleAsync(cron: "0 8 * * 5", policy: ReportScheduleMissedRunPolicy.Skip);
+
+        // Second worker loads (and tracks) the schedule row at RowVersion v1.
+        await using var loser = _db.CreateDbContext("tenant-a");
+        _ = await loser.Schedules.SingleAsync(s => s.ScheduleId == scheduleId);
+        var loserStore = new EfReportScheduleStore(loser);
+
+        // Winning worker advances the same row to v2.
+        await using (var winner = _db.CreateDbContext("tenant-a"))
+        {
+            await new EfReportScheduleStore(winner)
+                .ApplyRunOutcomeAsync("tenant-a", scheduleId, DeliveredUpdate(), [], CancellationToken.None);
+        }
+
+        // The loser now writes against the stale v1 token and must lose the optimistic-concurrency race.
+        var act = () => loserStore.ApplyRunOutcomeAsync("tenant-a", scheduleId, DeliveredUpdate(), [], CancellationToken.None);
+
+        (await act.Should().ThrowAsync<ReportScheduleConcurrencyException>())
+            .Which.ScheduleId.Should().Be(scheduleId);
+    }
+
+    private static ScheduleStateUpdate DeliveredUpdate()
+        => new(
+            LastRunUtc: Friday0700,
+            LastDeliveredUtc: Friday0700,
+            NextRunUtc: Friday0700.AddDays(7),
+            RetryAfterUtc: null,
+            FailureCount: 0,
+            LastStatus: ReportScheduleRunStatus.Delivered,
+            LastStatusMessage: "Delivered",
+            PendingOccurrences: []);
+
     private async Task<string> SeedScheduleAsync(string cron, ReportScheduleMissedRunPolicy policy)
     {
         await using var context = _db.CreateDbContext("tenant-a");

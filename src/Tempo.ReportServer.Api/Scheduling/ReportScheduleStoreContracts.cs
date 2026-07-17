@@ -2,6 +2,28 @@ using Tempo.Reporting.Abstractions.Dtos;
 
 namespace Tempo.ReportServer.Api.Scheduling;
 
+/// <summary>
+/// Raised when applying a schedule run outcome loses an optimistic-concurrency race, i.e. another
+/// worker already advanced the same schedule row. Signals the processor to skip the losing pass so a
+/// second worker does not corrupt the schedule state or append duplicate run history.
+/// </summary>
+public sealed class ReportScheduleConcurrencyException : Exception
+{
+    /// <summary>Creates the exception for a specific schedule.</summary>
+    public ReportScheduleConcurrencyException(string tenantId, string scheduleId, Exception innerException)
+        : base($"Schedule '{scheduleId}' for tenant '{tenantId}' was modified concurrently by another worker.", innerException)
+    {
+        TenantId = tenantId;
+        ScheduleId = scheduleId;
+    }
+
+    /// <summary>Tenant identifier of the contended schedule.</summary>
+    public string TenantId { get; }
+
+    /// <summary>Identifier of the contended schedule.</summary>
+    public string ScheduleId { get; }
+}
+
 /// <summary>A run record to persist as part of applying a schedule outcome.</summary>
 public sealed record ScheduleRunRecord(
     DateTimeOffset OccurrenceUtc,

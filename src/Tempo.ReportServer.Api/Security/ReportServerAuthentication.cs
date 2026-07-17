@@ -152,12 +152,30 @@ public static class ReportServerAuthenticationExtensions
                         var securityContext = ReportPrincipalMapper.FromClaimsPrincipal(principal);
                         var provisioner = context.HttpContext.RequestServices
                             .GetRequiredService<IReportServerUserProvisioner>();
-                        await provisioner.UpsertAsync(
-                            subject,
-                            securityContext.TenantId,
-                            principal.FindFirst("email")?.Value,
-                            principal.FindFirst("preferred_username")?.Value ?? principal.FindFirst("name")?.Value,
-                            context.HttpContext.RequestAborted).ConfigureAwait(false);
+                        try
+                        {
+                            await provisioner.UpsertAsync(
+                                subject,
+                                securityContext.TenantId,
+                                principal.FindFirst("email")?.Value,
+                                principal.FindFirst("preferred_username")?.Value ?? principal.FindFirst("name")?.Value,
+                                context.HttpContext.RequestAborted).ConfigureAwait(false);
+                        }
+                        catch (Exception ex) when (ex is not OperationCanceledException)
+                        {
+                            // JIT provisioning is fail-open: a transient database outage or a primary-key
+                            // race between concurrent first logins of the same subject must not turn a valid
+                            // token into a failed request. Authorization still relies on the validated token,
+                            // not on the local user projection, so skipping the upsert is safe. The next
+                            // authenticated request re-attempts the upsert.
+                            context.HttpContext.RequestServices
+                                .GetRequiredService<ILoggerFactory>()
+                                .CreateLogger("Tempo.ReportServer.Api.Security.JitProvisioning")
+                                .LogWarning(
+                                    ex,
+                                    "Just-in-time user provisioning failed for subject {Subject}; continuing with the validated token.",
+                                    subject);
+                        }
                     },
                 };
             });

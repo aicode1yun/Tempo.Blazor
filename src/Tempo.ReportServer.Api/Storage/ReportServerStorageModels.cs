@@ -60,7 +60,7 @@ public interface IReportServerStore
     Task<bool> DeleteDataSourceAsync(string tenantId, string dataSourceId, CancellationToken cancellationToken = default);
 }
 
-/// <summary>Report server quota options.</summary>
+/// <summary>Report server quota, concurrency, and timeout limits, bound from the <c>Rendering</c> section.</summary>
 public sealed record ReportServerQuotaOptions
 {
     /// <summary>Maximum pages allowed for synchronous renders.</summary>
@@ -69,6 +69,18 @@ public sealed record ReportServerQuotaOptions
     /// <summary>Maximum pages allowed for queued renders.</summary>
     public int MaxQueuedPages { get; init; } = 200;
 
-    /// <summary>Maximum render timeout.</summary>
+    /// <summary>Maximum wall-clock duration for a single synchronous render before it is cancelled.</summary>
     public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>Maximum number of renders allowed to execute concurrently across all tenants.</summary>
+    public int MaxConcurrentRenders { get; init; } = 4;
+
+    /// <summary>
+    /// Maximum number of renders allowed to wait for a concurrency slot. A request that arrives when
+    /// the queue is full is rejected immediately (HTTP 429) instead of piling up unbounded work.
+    /// </summary>
+    public int MaxRenderQueueLength { get; init; } = 50;
+
+    /// <summary>Maximum size, in bytes, of a synchronous render payload before it is rejected (HTTP 413).</summary>
+    public long MaxOutputBytes { get; init; } = 50L * 1024 * 1024;
 }

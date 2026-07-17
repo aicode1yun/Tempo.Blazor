@@ -28,6 +28,10 @@ public sealed class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddTempoReportServerApi(ConfigureDatabase(builder.Configuration));
+
+        // Render concurrency, timeout, output-size and page quotas are deployment-tunable.
+        builder.Services.Configure<Storage.ReportServerQuotaOptions>(builder.Configuration.GetSection("Rendering"));
+
         builder.Services.AddReportServerAuthentication(builder.Configuration);
 
         // Fáze 6: the scheduling worker (background service), delivery channels and persistent
@@ -46,6 +50,12 @@ public sealed class Program
         var app = builder.Build();
 
         await app.Services.EnsureTempoReportServerDatabaseAsync().ConfigureAwait(false);
+
+        // Idempotent minimal-data seed (opt-in via Database:Seed:Enabled). Runs after the schema is
+        // applied so a fresh deployment has a root folder (and optional owner grant) ready.
+        var seedOptions = builder.Configuration.GetSection("Database:Seed").Get<Storage.ReportServerSeedOptions>()
+            ?? new Storage.ReportServerSeedOptions();
+        await Storage.ReportServerSeeder.SeedFromServicesAsync(app.Services, seedOptions).ConfigureAwait(false);
 
         var frontendOrigin = builder.Configuration["Cors:FrontendOrigin"];
         if (!string.IsNullOrWhiteSpace(frontendOrigin))

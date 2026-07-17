@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Tempo.Reporting.Abstractions.Auth;
 
@@ -56,6 +57,58 @@ public sealed class MemoryCacheReportServerTokenStore : IReportServerTokenStore
     /// <inheritdoc />
     public ReportServerTokenSet? Get(string subject)
         => string.IsNullOrWhiteSpace(subject) ? null : _cache.Get<ReportServerTokenSet>(KeyPrefix + subject);
+
+    /// <inheritdoc />
+    public void Remove(string subject)
+    {
+        if (!string.IsNullOrWhiteSpace(subject))
+        {
+            _cache.Remove(KeyPrefix + subject);
+        }
+    }
+}
+
+/// <summary>
+/// <see cref="IDistributedCache"/>-backed <see cref="IReportServerTokenStore"/> for scale-out
+/// (multi-instance) BFF deployments. Unlike <see cref="MemoryCacheReportServerTokenStore"/>, which is
+/// process-local, this keeps the per-user token set in a shared cache (SQL Server via
+/// <c>AddDistributedSqlServerCache</c>, Redis, etc.) so any host instance behind the load balancer can
+/// resolve and refresh a user's tokens. The token set is stored as UTF-8 JSON.
+/// </summary>
+public sealed class DistributedCacheReportServerTokenStore : IReportServerTokenStore
+{
+    private const string KeyPrefix = "reportserver:tokens:";
+    private static readonly DistributedCacheEntryOptions EntryOptions = new()
+    {
+        // Keep the entry a little past token expiry so the refresh token stays available.
+        SlidingExpiration = TimeSpan.FromHours(8),
+    };
+
+    private readonly IDistributedCache _cache;
+
+    /// <summary>Creates the store.</summary>
+    public DistributedCacheReportServerTokenStore(IDistributedCache cache)
+        => _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+
+    /// <inheritdoc />
+    public void Set(string subject, ReportServerTokenSet tokens)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+        ArgumentNullException.ThrowIfNull(tokens);
+        _cache.Set(KeyPrefix + subject, JsonSerializer.SerializeToUtf8Bytes(tokens), EntryOptions);
+    }
+
+    /// <inheritdoc />
+    public ReportServerTokenSet? Get(string subject)
+    {
+        if (string.IsNullOrWhiteSpace(subject))
+        {
+            return null;
+        }
+
+        var payload = _cache.Get(KeyPrefix + subject);
+        return payload is null ? null : JsonSerializer.Deserialize<ReportServerTokenSet>(payload);
+    }
 
     /// <inheritdoc />
     public void Remove(string subject)
@@ -225,6 +278,14 @@ public sealed class ReportServerOidcOptions
     /// <summary>Whether HTTPS metadata is required (false for local dev over http).</summary>
     public bool RequireHttpsMetadata { get; set; } = true;
 
+    /// <summary>
+    /// Server-side token store backing: <c>Memory</c> (default, single-host process-local
+    /// <see cref="IMemoryCache"/>) or <c>Distributed</c> (scale-out, shared <see cref="IDistributedCache"/>).
+    /// A <c>Distributed</c> host must register a real distributed cache (e.g. <c>AddDistributedSqlServerCache</c>);
+    /// when none is registered a dev-only in-memory distributed cache is used as a fallback.
+    /// </summary>
+    public string TokenStore { get; set; } = "Memory";
+
     /// <summary>Additional scopes to request beyond openid/profile/email.</summary>
     public IList<string> Scopes { get; set; } = new List<string>();
 
@@ -258,7 +319,19 @@ public static class ReportServerWebAuthenticationExtensions
         builder.Services.AddMemoryCache();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddHttpClient();
-        builder.Services.AddSingleton<IReportServerTokenStore, MemoryCacheReportServerTokenStore>();
+        if (string.Equals(options.TokenStore, "Distributed", StringComparison.OrdinalIgnoreCase))
+        {
+            // Consume whatever IDistributedCache the host registered (SQL Server, Redis, ...).
+            // AddDistributedMemoryCache uses TryAdd, so a real distributed cache registered earlier wins;
+            // it only supplies a dev-only fallback so the store always resolves.
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddSingleton<IReportServerTokenStore, DistributedCacheReportServerTokenStore>();
+        }
+        else
+        {
+            builder.Services.AddSingleton<IReportServerTokenStore, MemoryCacheReportServerTokenStore>();
+        }
+
         builder.Services.AddSingleton<ReportServerTokenIssuer>();
 
         if (!options.IsConfigured)

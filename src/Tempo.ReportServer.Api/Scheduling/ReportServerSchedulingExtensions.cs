@@ -27,12 +27,14 @@ public static class ReportServerSchedulingExtensions
             services.Configure<ReportSchedulingOptions>(configuration.GetSection("Scheduling"));
             services.Configure<ScheduledReportSmtpOptions>(configuration.GetSection("Scheduling:Smtp"));
             services.Configure<ScheduledReportStorageOptions>(configuration.GetSection("Scheduling:Storage"));
+            services.Configure<ScheduledReportWebhookOptions>(configuration.GetSection("Scheduling:Webhook"));
         }
         else
         {
             services.Configure<ReportSchedulingOptions>(_ => { });
             services.Configure<ScheduledReportSmtpOptions>(_ => { });
             services.Configure<ScheduledReportStorageOptions>(_ => { });
+            services.Configure<ScheduledReportWebhookOptions>(_ => { });
         }
 
         services.TryAddScoped<IReportScheduleStore, EfReportScheduleStore>();
@@ -45,7 +47,11 @@ public static class ReportServerSchedulingExtensions
         services.AddScoped<IScheduledReportDeliveryChannel, StorageScheduledReportDeliveryChannel>();
         services.AddScoped<IScheduledReportDeliveryChannel, WebhookScheduledReportDeliveryChannel>();
         services.AddScoped<ScheduledReportDeliveryRouter>();
-        services.AddHttpClient(WebhookScheduledReportDeliveryChannel.HttpClientName);
+        services.AddHttpClient(WebhookScheduledReportDeliveryChannel.HttpClientName)
+            .ConfigureHttpClient((provider, client) =>
+                client.Timeout = provider
+                    .GetRequiredService<Microsoft.Extensions.Options.IOptions<ScheduledReportWebhookOptions>>()
+                    .Value.Timeout);
 
         services.AddHostedService<ReportSchedulingWorker>();
         return services;

@@ -203,7 +203,18 @@ public sealed class EfReportScheduleStore : IReportScheduleStore
         }
 
         // Single SaveChanges => the schedule mutation and run inserts commit as one transaction.
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        // The schedule row carries a RowVersion concurrency token: if a second worker already applied
+        // an outcome for the same schedule, SaveChanges throws DbUpdateConcurrencyException. Surface it
+        // as a typed signal so the processor skips the losing pass instead of corrupting state or
+        // appending duplicate run history.
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new ReportScheduleConcurrencyException(tenantId, scheduleId, ex);
+        }
     }
 
     private static ReportScheduleDto ToDto(ReportScheduleEntity row)
