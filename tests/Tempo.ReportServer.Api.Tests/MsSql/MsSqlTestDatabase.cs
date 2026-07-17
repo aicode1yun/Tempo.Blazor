@@ -79,6 +79,20 @@ public sealed class MsSqlTestDatabase : IAsyncLifetime
         return (context, new EfReportServerStore(context));
     }
 
+    /// <summary>Creates an <see cref="EfReportApiKeyStore"/> over a fresh context.</summary>
+    public (ReportServerDbContext Context, EfReportApiKeyStore Store) CreateApiKeyStore(string tenantId = "tenant-a")
+    {
+        var context = CreateDbContext(tenantId);
+        return (context, new EfReportApiKeyStore(context));
+    }
+
+    /// <summary>Creates an <see cref="EfReportAuditLog"/> over a fresh context.</summary>
+    public (ReportServerDbContext Context, EfReportAuditLog Log) CreateAuditLog(string tenantId = "tenant-a")
+    {
+        var context = CreateDbContext(tenantId);
+        return (context, new EfReportAuditLog(context));
+    }
+
     /// <inheritdoc />
     public Task DisposeAsync() => Task.CompletedTask;
 }

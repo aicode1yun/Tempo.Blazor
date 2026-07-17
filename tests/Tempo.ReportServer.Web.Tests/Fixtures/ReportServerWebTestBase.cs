@@ -3,6 +3,7 @@ using Tempo.Blazor.EmailTemplates.Abstractions;
 using Tempo.Blazor.EmailTemplates.Abstractions.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Tempo.Blazor.Reporting.Configuration;
+using Tempo.ReportServer.Api.Security;
 using Tempo.ReportServer.Web.Services;
 
 namespace Tempo.ReportServer.Web.Tests.Fixtures;
@@ -13,6 +14,8 @@ public abstract class ReportServerWebTestBase : TestContext
     {
         Services.AddTempoBlazorReporting();
         Services.AddTempoEmailTemplateEngine();
+        Services.AddSingleton<IReportApiKeyStore, DemoReportApiKeyStore>();
+        Services.AddReportServerSecurity();
         Services.AddSingleton<DemoReportSourceFactory>();
         Services.AddSingleton<ReportServerCatalogStore>();
         Services.AddSingleton<IReportScheduleClock, SystemReportScheduleClock>();

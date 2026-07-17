@@ -463,3 +463,53 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* API keys & audit administration (F18) */
+.rs-hint {
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+    margin: 0;
+}
+
+.rs-keycard {
+    border-color: var(--tm-color-primary);
+    gap: var(--tm-space-2);
+}
+
+.rs-secret {
+    background: var(--tm-bg-page);
+    border: 1px dashed var(--tm-border-color);
+    border-radius: var(--tm-radius-md);
+    color: var(--tm-text-primary);
+    display: block;
+    font-family: var(--tm-font-mono, monospace);
+    overflow-wrap: anywhere;
+    padding: var(--tm-space-3);
+}
+
+.rs-row-actions {
+    display: flex;
+    gap: var(--tm-space-2);
+}
+
+.rs-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--tm-space-3);
+}
+
+.rs-secret-row {
+    align-items: center;
+    display: flex;
+    gap: var(--tm-space-3);
+}
+
+.rs-secret-row .rs-secret {
+    flex: 1 1 auto;
+}
+
+.rs-confirm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2);
+}

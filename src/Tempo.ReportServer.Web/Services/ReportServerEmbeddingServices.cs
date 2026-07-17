@@ -39,6 +39,15 @@ public sealed class DemoReportApiKeyStore : IReportApiKeyStore
         => _generatedKeys.CreateAsync(tenantId, applicationId, permissions, cancellationToken);
 
     /// <inheritdoc />
+    public Task<ReportApiKeyCreationResult> CreateAsync(
+        string tenantId,
+        string applicationId,
+        ReportPermission permissions,
+        DateTimeOffset? expiresAt,
+        CancellationToken cancellationToken = default)
+        => _generatedKeys.CreateAsync(tenantId, applicationId, permissions, expiresAt, cancellationToken);
+
+    /// <inheritdoc />
     public Task<ReportApiKeyDescriptor?> ValidateAsync(
         string plainTextKey,
         CancellationToken cancellationToken = default)
@@ -75,6 +84,27 @@ public sealed class DemoReportApiKeyStore : IReportApiKeyStore
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportApiKeyDescriptor>> ListAsync(
+        string tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var generated = await _generatedKeys.ListAsync(tenantId, cancellationToken).ConfigureAwait(false);
+        if (!string.Equals(tenantId, DemoDescriptor.TenantId, StringComparison.Ordinal))
+        {
+            return generated;
+        }
+
+        ReportApiKeyDescriptor demo;
+        lock (_gate)
+        {
+            demo = _demoDescriptor;
+        }
+
+        return [demo, .. generated];
+    }
+
+    /// <inheritdoc />
     public Task RevokeAsync(
         string keyId,
         string tenantId,
@@ -98,5 +128,37 @@ public sealed class DemoReportApiKeyStore : IReportApiKeyStore
         }
 
         return _generatedKeys.RevokeAsync(keyId, tenantId, revokedByUserId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ReportApiKeyCreationResult?> RotateAsync(
+        string keyId,
+        string tenantId,
+        string rotatedByUserId,
+        DateTimeOffset? expiresAt = null,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.Equals(keyId, DemoDescriptor.KeyId, StringComparison.Ordinal) &&
+            string.Equals(tenantId, DemoDescriptor.TenantId, StringComparison.Ordinal))
+        {
+            ReportApiKeyDescriptor source;
+            lock (_gate)
+            {
+                source = _demoDescriptor;
+                _demoDescriptor = _demoDescriptor with
+                {
+                    RevokedAt = DateTimeOffset.UtcNow,
+                    RevokedByUserId = rotatedByUserId,
+                };
+            }
+
+            return await _generatedKeys
+                .CreateAsync(source.TenantId, source.ApplicationId, source.Permissions, expiresAt, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return await _generatedKeys.RotateAsync(keyId, tenantId, rotatedByUserId, expiresAt, cancellationToken)
+            .ConfigureAwait(false);
     }
 }

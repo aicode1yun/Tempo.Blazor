@@ -36,6 +36,22 @@ public static class ReportServerApiExtensions
         return services;
     }
 
+    /// <summary>
+    /// Replaces the default in-memory API key store and audit log with the EF Core persistent
+    /// implementations (backed by <see cref="ReportServerDbContext"/>). Call after
+    /// <see cref="AddTempoReportServerApi"/>. Selectable from configuration key
+    /// <c>Security:Persistence = Ef</c>.
+    /// </summary>
+    public static IServiceCollection UseEfReportServerSecurityStores(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.RemoveAll<IReportApiKeyStore>();
+        services.RemoveAll<IReportAuditLog>();
+        services.AddScoped<IReportApiKeyStore, EfReportApiKeyStore>();
+        services.AddScoped<IReportAuditLog, EfReportAuditLog>();
+        return services;
+    }
+
     /// <summary>Adds middleware that populates <see cref="ReportServerRequestContext"/>.</summary>
     public static IApplicationBuilder UseTempoReportServerTenantContext(this IApplicationBuilder app)
     {

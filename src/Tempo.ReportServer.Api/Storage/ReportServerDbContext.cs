@@ -9,6 +9,9 @@ public sealed class ReportServerDbContext : DbContext
     private const int IdMaxLength = 128;
     private const int NameMaxLength = 200;
     private const int PathMaxLength = 400;
+    private const int ApplicationIdMaxLength = 256;
+    private const int ActorIdMaxLength = 256;
+    private const int HashMaxLength = 88;
 
     private readonly ReportServerRequestContext _requestContext;
 
@@ -30,6 +33,12 @@ public sealed class ReportServerDbContext : DbContext
 
     /// <summary>Data source table.</summary>
     public DbSet<ReportDataSourceEntity> DataSources => Set<ReportDataSourceEntity>();
+
+    /// <summary>Embedding API key table.</summary>
+    public DbSet<ReportApiKeyEntity> ApiKeys => Set<ReportApiKeyEntity>();
+
+    /// <summary>Audit event table.</summary>
+    public DbSet<ReportAuditEventEntity> AuditEvents => Set<ReportAuditEventEntity>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -84,6 +93,31 @@ public sealed class ReportServerDbContext : DbContext
             entity.Property(dataSource => dataSource.Name).HasMaxLength(NameMaxLength);
             entity.Property(dataSource => dataSource.Kind).HasMaxLength(32);
             entity.HasQueryFilter(dataSource => dataSource.TenantId == _requestContext.ExecutionContext.TenantId);
+        });
+
+        // API keys and audit events are deliberately NOT tenant-query-filtered: key validation
+        // resolves a key by its hash before the tenant is known, and audit queries pass the tenant
+        // explicitly. The stores always constrain by tenant where a tenant scope applies.
+        modelBuilder.Entity<ReportApiKeyEntity>(entity =>
+        {
+            entity.HasKey(key => key.KeyId);
+            entity.Property(key => key.KeyId).HasMaxLength(IdMaxLength);
+            entity.Property(key => key.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(key => key.ApplicationId).HasMaxLength(ApplicationIdMaxLength);
+            entity.Property(key => key.KeyHash).HasMaxLength(HashMaxLength);
+            entity.Property(key => key.RevokedByUserId).HasMaxLength(ActorIdMaxLength);
+            entity.HasIndex(key => key.KeyHash).IsUnique();
+            entity.HasIndex(key => new { key.TenantId, key.ApplicationId });
+        });
+
+        modelBuilder.Entity<ReportAuditEventEntity>(entity =>
+        {
+            entity.HasKey(auditEvent => auditEvent.Id);
+            entity.Property(auditEvent => auditEvent.Id).ValueGeneratedOnAdd();
+            entity.Property(auditEvent => auditEvent.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(auditEvent => auditEvent.ActorId).HasMaxLength(ActorIdMaxLength);
+            entity.Property(auditEvent => auditEvent.ResourceId).HasMaxLength(NameMaxLength);
+            entity.HasIndex(auditEvent => new { auditEvent.TenantId, auditEvent.Timestamp });
         });
     }
 }

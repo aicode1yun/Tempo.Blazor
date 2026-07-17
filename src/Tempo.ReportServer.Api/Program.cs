@@ -28,6 +28,13 @@ public sealed class Program
 
         builder.Services.AddTempoReportServerApi(ConfigureDatabase(builder.Configuration));
         builder.Services.AddReportServerAuthentication(builder.Configuration);
+
+        // Decision O1 / ADR-0001: persist API keys and audit events in the report server database.
+        // In-memory stores remain the default so lightweight hosts and tests keep working.
+        if (string.Equals(builder.Configuration["Security:Persistence"], "Ef", StringComparison.OrdinalIgnoreCase))
+        {
+            builder.Services.UseEfReportServerSecurityStores();
+        }
         builder.Services.AddOpenApi();
         AddCors(builder);
 
