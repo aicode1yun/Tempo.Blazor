@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Dropdowns
+@using Tempo.Blazor.Helpers
 @using Tempo.Blazor.Interfaces
 @using Tempo.Blazor.Models
 @using Microsoft.AspNetCore.Components.Web
@@ -133,6 +134,13 @@
     /// <summary>Disables the dropdown.</summary>
     [Parameter] public bool Disabled { get; set; }
 
+    /// <summary>
+    /// When true (default), filtering ignores diacritics via FormD normalization —
+    /// e.g. "usti" matches "Ústí" and "práha" matches "Praha". Set to false for
+    /// accent-sensitive (but still case-insensitive) filtering.
+    /// </summary>
+    [Parameter] public bool AccentInsensitiveFilter { get; set; } = true;
+
     /// <summary>Additional HTML attributes.</summary>
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
@@ -246,6 +254,12 @@
     {
         var source = DataProvider is not null ? _providerItems : Items;
         if (string.IsNullOrWhiteSpace(_filterText)) return source;
+        if (AccentInsensitiveFilter)
+        {
+            var term = _filterText;
+            return source.Where(item => AccentInsensitiveText.Contains(GetDisplayText(item), term));
+        }
+
         var search = _filterText.ToLowerInvariant();
         return source.Where(item => GetDisplayText(item).ToLowerInvariant().Contains(search));
     }

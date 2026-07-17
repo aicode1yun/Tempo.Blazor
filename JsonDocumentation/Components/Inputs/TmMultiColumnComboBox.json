@@ -25,6 +25,13 @@
       "description": "Data source for the dropdown grid."
     },
     {
+      "name": "AccentInsensitiveFilter",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When true (default), filtering ignores diacritics via FormD normalization — e.g. \"usti\" matches \"Ústí\" and \"práha\" matches \"Praha\". Set to false for accent-sensitive (but still case-insensitive) filtering."
+    },
+    {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,

@@ -210,6 +210,66 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
         cut.Find(".tm-multi-column-combo-box").ClassList.Should().Contain("my-combo");
     }
 
+    // ── Accent-insensitive filtering (FormD normalization) ──────────────────
+
+    private static IReadOnlyList<Product> GetCzechCities() => new List<Product>
+    {
+        new(1, "Ústí nad Labem", "Ústecký kraj", 0m),
+        new(2, "Praha", "Hlavní město", 0m),
+        new(3, "Český Krumlov", "Jihočeský kraj", 0m),
+    };
+
+    [Fact]
+    public void TmMultiColumnComboBox_Filter_Without_Diacritics_Matches_Accented_Rows()
+    {
+        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+            .Add(c => c.Data, GetCzechCities())
+            .Add(c => c.ValueField, x => x.Id)
+            .Add(c => c.TextField, x => x.Name)
+            .Add(c => c.Columns, GetColumns()));
+
+        cut.Find(".tm-multi-column-combo-box__trigger").Click();
+        cut.Find(".tm-multi-column-combo-box__filter input").Input("usti");
+
+        var rows = cut.FindAll(".tm-multi-column-combo-box__tr");
+        rows.Count.Should().Be(1);
+        rows[0].TextContent.Should().Contain("Ústí nad Labem");
+    }
+
+    [Fact]
+    public void TmMultiColumnComboBox_Filter_Matches_Accent_Insensitively_Across_All_Columns()
+    {
+        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+            .Add(c => c.Data, GetCzechCities())
+            .Add(c => c.ValueField, x => x.Id)
+            .Add(c => c.TextField, x => x.Name)
+            .Add(c => c.Columns, GetColumns()));
+
+        cut.Find(".tm-multi-column-combo-box__trigger").Click();
+        cut.Find(".tm-multi-column-combo-box__filter input").Input("jihocesky");
+
+        var rows = cut.FindAll(".tm-multi-column-combo-box__tr");
+        rows.Count.Should().Be(1);
+        rows[0].TextContent.Should().Contain("Český Krumlov");
+    }
+
+    [Fact]
+    public void TmMultiColumnComboBox_AccentInsensitiveFilter_Disabled_Requires_Exact_Accents()
+    {
+        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+            .Add(c => c.Data, GetCzechCities())
+            .Add(c => c.ValueField, x => x.Id)
+            .Add(c => c.TextField, x => x.Name)
+            .Add(c => c.Columns, GetColumns())
+            .Add(c => c.AccentInsensitiveFilter, false));
+
+        cut.Find(".tm-multi-column-combo-box__trigger").Click();
+        cut.Find(".tm-multi-column-combo-box__filter input").Input("usti");
+
+        cut.FindAll(".tm-multi-column-combo-box__tr").Should().BeEmpty();
+        cut.Find(".tm-multi-column-combo-box__empty").Should().NotBeNull();
+    }
+
     [Fact]
     public void TmMultiColumnComboBox_NoResults_Shown_When_Filter_Matches_Nothing()
     {

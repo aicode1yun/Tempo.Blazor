@@ -8687,7 +8687,7 @@
       "kind": "Component",
       "category": "Dropdowns",
       "namespace": "Tempo.Blazor.Components.Dropdowns",
-      "description": "Generic searchable dropdown with client-side or server-side data loading, keyboard navigation, custom item templates, and a clear button. Supports two-way binding via Value/ValueChanged.",
+      "description": "Generic searchable dropdown with client-side or server-side data loading, keyboard navigation, custom item templates, and a clear button. Client-side filtering is contains-based and accent-insensitive by default (FormD normalization — \"usti\" matches \"Ústí\"). Supports two-way binding via Value/ValueChanged.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Dropdowns/TmFilterableDropdown.razor",
       "documentationStatus": "merged",
@@ -8705,6 +8705,13 @@
         }
       ],
       "parameters": [
+        {
+          "name": "AccentInsensitiveFilter",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true (default), filtering ignores diacritics via FormD normalization — e.g. \"usti\" matches \"Ústí\" and \"práha\" matches \"Praha\". Set to false for accent-sensitive (but still case-insensitive) filtering."
+        },
         {
           "name": "Class",
           "type": "string?",
@@ -13597,6 +13604,13 @@
         }
       ],
       "parameters": [
+        {
+          "name": "AccentInsensitiveFilter",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true (default), filtering ignores diacritics via FormD normalization — e.g. \"usti\" matches \"Ústí\" and \"práha\" matches \"Praha\". Set to false for accent-sensitive (but still case-insensitive) filtering."
+        },
         {
           "name": "AllowCreateNew",
           "type": "bool",

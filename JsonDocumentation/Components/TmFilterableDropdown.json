@@ -2,7 +2,7 @@
   "itemName": "TmFilterableDropdown",
   "kind": "Component",
   "category": "Dropdowns",
-  "description": "Generic searchable dropdown with client-side or server-side data loading, keyboard navigation, custom item templates, and a clear button. Supports two-way binding via Value/ValueChanged.",
+  "description": "Generic searchable dropdown with client-side or server-side data loading, keyboard navigation, custom item templates, and a clear button. Client-side filtering is contains-based and accent-insensitive by default (FormD normalization — \"usti\" matches \"Ústí\"). Supports two-way binding via Value/ValueChanged.",
   "requiredImports": [
     "@using Tempo.Blazor.Components.Dropdowns"
   ],
@@ -97,6 +97,13 @@
       "type": "bool",
       "isRequired": false,
       "description": "Disables the dropdown."
+    },
+    {
+      "name": "AccentInsensitiveFilter",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When true (default), filtering ignores diacritics via FormD normalization — e.g. \"usti\" matches \"Ústí\" and \"práha\" matches \"Praha\". Set to false for accent-sensitive (but still case-insensitive) filtering."
     }
   ],
   "cssClasses": [
