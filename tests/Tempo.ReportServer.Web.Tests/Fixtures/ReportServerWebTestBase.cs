@@ -3,6 +3,7 @@ using Tempo.Blazor.EmailTemplates.Abstractions;
 using Tempo.Blazor.EmailTemplates.Abstractions.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Tempo.Blazor.Reporting.Configuration;
+using Tempo.Reporting.Abstractions.Dtos;
 using Tempo.ReportServer.Api.Security;
 using Tempo.ReportServer.Web.Services;
 
@@ -18,6 +19,9 @@ public abstract class ReportServerWebTestBase : TestContext
         Services.AddReportServerSecurity();
         Services.AddSingleton<DemoReportSourceFactory>();
         Services.AddSingleton<ReportServerCatalogStore>();
+        // Catalog pages call the typed Report Server client (post-cutover); tests bind a functional
+        // in-memory fake so the explorer/revision/data-source pages exercise the real client path.
+        Services.AddSingleton<ITempoReportServerClient, FakeTempoReportServerClient>();
         Services.AddSingleton<IReportScheduleClock, SystemReportScheduleClock>();
         Services.AddSingleton<ReportScheduleStore>();
         Services.AddSingleton<ReportRenderJobQueue>();

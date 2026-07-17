@@ -1,5 +1,8 @@
 @namespace Tempo.ReportServer.Web.Pages
 @page "/admin/permissions"
+@* [TODO] Not yet cut over to ITempoReportServerClient: the Report Server API exposes no folder-permission
+   HTTP endpoints (IReportPermissionStore is server-internal). This page stays on the in-memory catalog
+   store until the permission endpoints are added in a later step. *@
 @inject ReportServerSessionState Session
 @inject ReportServerCatalogStore Catalog
 

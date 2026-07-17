@@ -1,7 +1,7 @@
 @namespace Tempo.ReportServer.Web.Pages
 @page "/admin/datasources"
 @inject ReportServerSessionState Session
-@inject ReportServerCatalogStore Catalog
+@inject ITempoReportServerClient Client
 
 <ReportServerShell Title="Data sources" ActiveSection="datasources">
     <div class="rs-page" data-testid="f12-datasources-page">
@@ -13,7 +13,7 @@
         </div>
 
         <section class="rs-admin-grid">
-            <form class="rs-panel" @onsubmit="AddSource" @onsubmit:preventDefault>
+            <form class="rs-panel" @onsubmit="AddSourceAsync" @onsubmit:preventDefault>
                 <h3>Add source</h3>
                 <label class="rs-field">
                     <span>Name</span>
@@ -30,7 +30,7 @@
                     <span>Endpoint</span>
                     <input data-testid="datasource-endpoint" value="@_endpoint" @oninput="HandleEndpointInput" />
                 </label>
-                <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Plus" data-testid="datasource-add" OnClick="AddSource">
+                <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Plus" data-testid="datasource-add" OnClick="AddSourceAsync">
                     Add source
                 </TmButton>
             </form>
@@ -38,7 +38,7 @@
             <section class="rs-panel rs-table-panel">
                 <h3>Connections</h3>
                 <div class="rs-table" data-testid="datasources-table">
-                    @foreach (var source in TenantCatalog.DataSources)
+                    @foreach (var source in _dataSources)
                     {
                         <article class="rs-table__row">
                             <div>
@@ -47,7 +47,7 @@
                             </div>
                             <code>@source.Endpoint</code>
                             <span class="@(source.LastTestSucceeded ? "rs-status rs-status--ok" : "rs-status")">@source.LastTestMessage</span>
-                            <button type="button" class="rs-text-button" data-testid="@($"test-datasource-{source.Id}")" @onclick="() => TestSource(source.Id)">
+                            <button type="button" class="rs-text-button" data-testid="@($"test-datasource-{source.Id}")" @onclick="() => TestSourceAsync(source.Id)">
                                 Test connection
                             </button>
                         </article>
@@ -59,11 +59,37 @@
 </ReportServerShell>
 
 @code {
+    // Prerendered catalog snapshot handed to the interactive (WASM) leg so it does not re-fetch.
+    [PersistentState] public List<ReportDataSourceDto>? DataSources { get; set; }
+
+    private readonly Dictionary<string, (bool Succeeded, string Message)> _testResults = new(StringComparer.Ordinal);
+    private IReadOnlyList<ReportServerDataSource> _dataSources = [];
+
     private string _name = "Analytics API";
     private string _provider = "REST JSON";
     private string _endpoint = "https://api.example.test/analytics";
 
-    private ReportServerTenantCatalog TenantCatalog => Catalog.GetCatalog(Session.CurrentTenantId);
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        DataSources ??= [.. await Client.GetDataSourcesAsync(Session.CurrentTenantId)];
+        Rebuild();
+    }
+
+    private void Rebuild()
+    {
+        _dataSources = [.. (DataSources ?? []).Select(dto =>
+        {
+            var row = ReportServerCatalogMapper.ToDataSource(dto);
+            if (_testResults.TryGetValue(row.Id, out var result))
+            {
+                row.LastTestSucceeded = result.Succeeded;
+                row.LastTestMessage = result.Message;
+            }
+
+            return row;
+        })];
+    }
 
     private void HandleNameInput(ChangeEventArgs args)
         => _name = args.Value?.ToString() ?? string.Empty;
@@ -74,9 +100,29 @@
     private void HandleEndpointInput(ChangeEventArgs args)
         => _endpoint = args.Value?.ToString() ?? string.Empty;
 
-    private void AddSource()
-        => Catalog.AddDataSource(Session.CurrentTenantId, _name, _provider, _endpoint);
+    private async Task AddSourceAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            return;
+        }
 
-    private void TestSource(string id)
-        => Catalog.TestDataSource(Session.CurrentTenantId, id);
+        await Client.UpsertDataSourceAsync(new UpsertReportDataSourceRequestDto
+        {
+            TenantId = Session.CurrentTenantId,
+            Name = _name.Trim(),
+            Kind = string.IsNullOrWhiteSpace(_provider) ? "SQL" : _provider.Trim(),
+            Connection = _endpoint.Trim(),
+        });
+
+        DataSources = [.. await Client.GetDataSourcesAsync(Session.CurrentTenantId)];
+        Rebuild();
+    }
+
+    private async Task TestSourceAsync(string dataSourceId)
+    {
+        var result = await Client.TestDataSourceConnectionAsync(dataSourceId, Session.CurrentTenantId);
+        _testResults[dataSourceId] = (result.Success, result.Message ?? (result.Success ? "Connected" : "Connection failed"));
+        Rebuild();
+    }
 }

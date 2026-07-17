@@ -1,7 +1,7 @@
 @namespace Tempo.ReportServer.Web.Pages
 @page "/admin/revisions"
 @inject ReportServerSessionState Session
-@inject ReportServerCatalogStore Catalog
+@inject ITempoReportServerClient Client
 
 <ReportServerShell Title="Revisions" ActiveSection="revisions">
     <div class="rs-page" data-testid="f12-revisions-page">
@@ -15,7 +15,7 @@
         <section class="rs-panel rs-table-panel">
             <h3>Report revisions</h3>
             <div class="rs-revisions" data-testid="revisions-table">
-                @foreach (var revision in TenantCatalog.Revisions.OrderByDescending(item => item.CreatedAt))
+                @foreach (var revision in _revisions.OrderByDescending(item => item.CreatedAt))
                 {
                     <article class="rs-revision">
                         <div class="rs-revision__header">
@@ -32,7 +32,7 @@
                                 class="rs-text-button"
                                 disabled="@revision.IsCurrent"
                                 data-testid="@($"rollback-{revision.Id}")"
-                                @onclick="() => Rollback(revision.Id)">
+                                @onclick="() => RollbackAsync(revision.ReportId, revision.Id)">
                             Roll back to this revision
                         </button>
                     </article>
@@ -43,12 +43,57 @@
 </ReportServerShell>
 
 @code {
-    private ReportServerTenantCatalog TenantCatalog => Catalog.GetCatalog(Session.CurrentTenantId);
+    // Prerendered catalog snapshot handed to the interactive (WASM) leg so it does not re-fetch.
+    [PersistentState] public List<ReportSummaryDto>? Reports { get; set; }
+    [PersistentState] public List<ReportRevisionDto>? Revisions { get; set; }
+
+    private IReadOnlyList<ReportServerRevision> _revisions = [];
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        Reports ??= [.. await Client.SearchReportsAsync(new ReportSearchRequestDto { TenantId = Session.CurrentTenantId })];
+        Revisions ??= await LoadRevisionsAsync();
+        Rebuild();
+    }
+
+    private async Task<List<ReportRevisionDto>> LoadRevisionsAsync()
+    {
+        var revisions = new List<ReportRevisionDto>();
+        foreach (var report in Reports ?? [])
+        {
+            revisions.AddRange(await Client.GetRevisionsAsync(report.ReportId, Session.CurrentTenantId));
+        }
+
+        return revisions;
+    }
+
+    private void Rebuild()
+    {
+        var latestByReport = (Reports ?? [])
+            .Where(report => report.LatestRevisionId is not null)
+            .ToDictionary(report => report.ReportId, report => report.LatestRevisionId!, StringComparer.Ordinal);
+
+        _revisions = [.. (Revisions ?? []).Select(revision =>
+            ReportServerCatalogMapper.ToRevision(
+                revision,
+                latestByReport.TryGetValue(revision.ReportId, out var latest) ? latest : null))];
+    }
 
     private string ReportName(string reportId)
-        => TenantCatalog.Reports.FirstOrDefault(report => string.Equals(report.Id, reportId, StringComparison.Ordinal))?.Name
+        => (Reports ?? []).FirstOrDefault(report => string.Equals(report.ReportId, reportId, StringComparison.Ordinal))?.Name
             ?? reportId;
 
-    private void Rollback(string revisionId)
-        => Catalog.RollbackRevision(Session.CurrentTenantId, revisionId);
+    private async Task RollbackAsync(string reportId, string revisionId)
+    {
+        await Client.RollbackRevisionAsync(reportId, Session.CurrentTenantId, new RollbackReportRevisionRequestDto
+        {
+            RevisionId = revisionId,
+        });
+
+        // The rollback creates a new latest revision, so refresh both catalog snapshots.
+        Reports = [.. await Client.SearchReportsAsync(new ReportSearchRequestDto { TenantId = Session.CurrentTenantId })];
+        Revisions = await LoadRevisionsAsync();
+        Rebuild();
+    }
 }

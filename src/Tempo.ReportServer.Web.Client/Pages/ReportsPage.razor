@@ -2,7 +2,7 @@
 @page "/reports"
 @inject NavigationManager Navigation
 @inject ReportServerSessionState Session
-@inject ReportServerCatalogStore Catalog
+@inject ITempoReportServerClient Client
 
 <ReportServerShell Title="Reports" ActiveSection="reports">
     <div class="rs-page rs-page--explorer" data-testid="f12-explorer-page">
@@ -12,29 +12,69 @@
                 <h2>Report explorer</h2>
             </div>
             <div class="rs-page__stats">
-                <span>@TenantCatalog.Reports.Count reports</span>
-                <span>@TenantCatalog.DataSources.Count data sources</span>
+                <span>@_reportItems.Count reports</span>
+                <span>@_folderCount folders</span>
             </div>
         </div>
 
-        <TmReportExplorer RootFolder="@TenantCatalog.RootFolder"
-                          Reports="@TenantCatalog.Reports"
+        <TmReportExplorer RootFolder="@_rootFolder"
+                          Reports="@_reportItems"
                           CurrentFolderPath="@_currentFolderPath"
                           CurrentFolderPathChanged="SetFolder"
                           ViewMode="@_viewMode"
                           ViewModeChanged="SetViewMode"
                           AllowFolderManagement="true"
                           ReportOpened="OpenReport"
-                          CreateFolderRequested="CreateFolder"
-                          ReportMoveRequested="MoveReport" />
+                          CreateFolderRequested="CreateFolderAsync"
+                          ReportMoveRequested="MoveReportAsync" />
     </div>
 </ReportServerShell>
 
 @code {
-    private string _currentFolderPath = "/finance";
+    // Prerendered catalog snapshot handed to the interactive (WASM) leg so it does not re-fetch.
+    [PersistentState] public List<ReportFolderDto>? Folders { get; set; }
+    [PersistentState] public List<ReportSummaryDto>? Reports { get; set; }
+
+    private ReportExplorerFolder _rootFolder = new(ReportServerCatalogMapper.RootFolderPath, "Reports");
+    private IReadOnlyList<ReportExplorerReportItem> _reportItems = [];
+    private IReadOnlyDictionary<string, string> _folderIdByPath =
+        new Dictionary<string, string>(StringComparer.Ordinal);
+    private int _folderCount;
+    private string _currentFolderPath = ReportServerCatalogMapper.RootFolderPath;
     private ReportExplorerViewMode _viewMode = ReportExplorerViewMode.Grid;
 
-    private ReportServerTenantCatalog TenantCatalog => Catalog.GetCatalog(Session.CurrentTenantId);
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        Folders ??= [.. await Client.GetFoldersAsync(Session.CurrentTenantId)];
+        Reports ??= [.. await Client.SearchReportsAsync(new ReportSearchRequestDto { TenantId = Session.CurrentTenantId })];
+        Rebuild(selectDefaultFolder: true);
+    }
+
+    private void Rebuild(bool selectDefaultFolder)
+    {
+        var folders = Folders ?? [];
+        var reports = Reports ?? [];
+
+        var countByFolderId = reports
+            .GroupBy(report => report.FolderId, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
+        _rootFolder = ReportServerCatalogMapper.BuildFolderTree(folders, countByFolderId);
+        _folderIdByPath = ReportServerCatalogMapper.FolderIdsByPath(folders);
+        _folderCount = folders.Count;
+
+        var pathByFolderId = ReportServerCatalogMapper.FolderPathsById(folders);
+        _reportItems = [.. reports.Select(report => ReportServerCatalogMapper.ToReportItem(report, pathByFolderId))];
+
+        if (selectDefaultFolder)
+        {
+            _currentFolderPath = _reportItems.Count > 0
+                ? _reportItems[0].FolderPath
+                : folders.Count > 0
+                    ? folders[0].Path
+                    : ReportServerCatalogMapper.RootFolderPath;
+        }
+    }
 
     private void SetFolder(string folderPath)
         => _currentFolderPath = folderPath;
@@ -43,17 +83,45 @@
         => _viewMode = viewMode;
 
     private void OpenReport(ReportExplorerReportItem report)
-        => Navigation.NavigateTo($"{report.Path}?Region=EU&MinimumTotal=0&IncludeClosed=true");
+        => Navigation.NavigateTo(report.Path);
 
-    private void CreateFolder(ReportExplorerCreateFolderRequest request)
+    private async Task CreateFolderAsync(ReportExplorerCreateFolderRequest request)
     {
-        Catalog.CreateFolder(Session.CurrentTenantId, request.ParentPath, request.Name);
+        await Client.CreateFolderAsync(new CreateReportFolderRequestDto
+        {
+            TenantId = Session.CurrentTenantId,
+            ParentFolderId = ResolveFolderId(request.ParentPath),
+            Name = request.Name,
+        });
+
+        Folders = [.. await Client.GetFoldersAsync(Session.CurrentTenantId)];
+        Rebuild(selectDefaultFolder: false);
         _currentFolderPath = request.ParentPath;
     }
 
-    private void MoveReport(ReportExplorerMoveReportRequest request)
+    private async Task MoveReportAsync(ReportExplorerMoveReportRequest request)
     {
-        Catalog.MoveReport(Session.CurrentTenantId, request.ReportId, request.TargetFolderPath);
+        var targetFolderId = ResolveFolderId(request.TargetFolderPath);
+        if (targetFolderId is null)
+        {
+            return;
+        }
+
+        await Client.MoveReportAsync(request.ReportId, Session.CurrentTenantId, new MoveReportRequestDto
+        {
+            FolderId = targetFolderId,
+        });
+
+        Reports = [.. await Client.SearchReportsAsync(new ReportSearchRequestDto { TenantId = Session.CurrentTenantId })];
+        Rebuild(selectDefaultFolder: false);
         _currentFolderPath = request.TargetFolderPath;
     }
+
+    // The explorer works in folder paths; the synthetic root maps to a null (top-level) parent.
+    private string? ResolveFolderId(string folderPath)
+        => string.IsNullOrEmpty(folderPath) || string.Equals(folderPath, ReportServerCatalogMapper.RootFolderPath, StringComparison.Ordinal)
+            ? null
+            : _folderIdByPath.TryGetValue(folderPath, out var folderId)
+                ? folderId
+                : null;
 }
