@@ -97,6 +97,10 @@ public static class ReportServerApiExtensions
         MapRender(group);
         MapDataSources(group);
         MapSchedules(group);
+        MapApiKeys(group);
+        MapAudit(group);
+        MapPermissions(group);
+        MapResolve(group);
         return group;
     }
 
@@ -566,6 +570,441 @@ public static class ReportServerApiExtensions
             return Results.Ok(await store.GetRunsAsync(tenantId, scheduleId, max ?? 20, cancellationToken).ConfigureAwait(false));
         });
     }
+
+    private static void MapApiKeys(RouteGroupBuilder group)
+    {
+        group.MapPost("/apikeys", async (
+            CreateReportApiKeyRequestDto request,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportPermissionResolver resolver,
+            IReportApiKeyStore keyStore,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var (principal, failure) = await AuthorizeAdminAsync(
+                http, contextFactory, resolver, request.TenantId, ReportPermission.ManagePermissions, null, cancellationToken)
+                .ConfigureAwait(false);
+            if (failure is not null || principal is null)
+            {
+                return failure!;
+            }
+
+            SetTenant(context, request.TenantId);
+            var created = await keyStore.CreateAsync(
+                request.TenantId,
+                request.ApplicationId,
+                (ReportPermission)request.Permissions,
+                request.ExpiresAt,
+                cancellationToken).ConfigureAwait(false);
+            return Results.Created("/api/apikeys", ToApiKeyResultDto(created));
+        });
+
+        group.MapGet("/apikeys", async (
+            string tenantId,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportPermissionResolver resolver,
+            IReportApiKeyStore keyStore,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var (principal, failure) = await AuthorizeAdminAsync(
+                http, contextFactory, resolver, tenantId, ReportPermission.ManagePermissions, null, cancellationToken)
+                .ConfigureAwait(false);
+            if (failure is not null || principal is null)
+            {
+                return failure!;
+            }
+
+            SetTenant(context, tenantId);
+            var descriptors = await keyStore.ListAsync(tenantId, cancellationToken).ConfigureAwait(false);
+            var now = DateTimeOffset.UtcNow;
+            return Results.Ok(descriptors.Select(descriptor => ToApiKeyDto(descriptor, now)).ToArray());
+        });
+
+        group.MapPost("/apikeys/{keyId}/rotate", async (
+            string keyId,
+            RotateReportApiKeyRequestDto request,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportPermissionResolver resolver,
+            IReportApiKeyStore keyStore,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var (principal, failure) = await AuthorizeAdminAsync(
+                http, contextFactory, resolver, request.TenantId, ReportPermission.ManagePermissions, null, cancellationToken)
+                .ConfigureAwait(false);
+            if (failure is not null || principal is null)
+            {
+                return failure!;
+            }
+
+            SetTenant(context, request.TenantId);
+            var rotated = await keyStore.RotateAsync(
+                keyId, request.TenantId, principal.ActorId, request.ExpiresAt, cancellationToken).ConfigureAwait(false);
+            return rotated is null ? Results.NotFound() : Results.Ok(ToApiKeyResultDto(rotated));
+        });
+
+        group.MapPost("/apikeys/{keyId}/revoke", async (
+            string keyId,
+            RevokeReportApiKeyRequestDto request,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportPermissionResolver resolver,
+            IReportApiKeyStore keyStore,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var (principal, failure) = await AuthorizeAdminAsync(
+                http, contextFactory, resolver, request.TenantId, ReportPermission.ManagePermissions, null, cancellationToken)
+                .ConfigureAwait(false);
+            if (failure is not null || principal is null)
+            {
+                return failure!;
+            }
+
+            SetTenant(context, request.TenantId);
+            var existing = await keyStore.GetAsync(keyId, request.TenantId, cancellationToken).ConfigureAwait(false);
+            if (existing is null)
+            {
+                return Results.NotFound();
+            }
+
+            await keyStore.RevokeAsync(keyId, request.TenantId, principal.ActorId, cancellationToken).ConfigureAwait(false);
+            return Results.NoContent();
+        });
+    }
+
+    private static void MapAudit(RouteGroupBuilder group)
+    {
+        group.MapGet("/audit", async (
+            string tenantId,
+            ReportAuditActionDto? action,
+            ReportAuditOutcomeDto? outcome,
+            string? actorId,
+            string? resourceId,
+            DateTimeOffset? from,
+            DateTimeOffset? to,
+            int? take,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportPermissionResolver resolver,
+            IReportAuditLog auditLog,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var (principal, failure) = await AuthorizeAdminAsync(
+                http, contextFactory, resolver, tenantId, ReportPermission.ManagePermissions, null, cancellationToken)
+                .ConfigureAwait(false);
+            if (failure is not null || principal is null)
+            {
+                return failure!;
+            }
+
+            SetTenant(context, tenantId);
+            var query = new ReportAuditQuery
+            {
+                TenantId = tenantId,
+                Action = action is { } a ? (ReportAuditAction)a : null,
+                Outcome = outcome is { } o ? (ReportAuditOutcome)o : null,
+                ActorId = actorId,
+                ResourceId = resourceId,
+                From = from,
+                To = to,
+                Take = take,
+            };
+            var events = await auditLog.QueryAsync(query, cancellationToken).ConfigureAwait(false);
+            return Results.Ok(events.Select(ToAuditEventDto).ToArray());
+        });
+    }
+
+    private static void MapPermissions(RouteGroupBuilder group)
+    {
+        group.MapPost("/permissions", async (
+            GrantReportPermissionRequestDto request,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportPermissionResolver resolver,
+            IReportPermissionStore permissionStore,
+            IReportAuditLog auditLog,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var (principal, failure) = await AuthorizeAdminAsync(
+                http, contextFactory, resolver, request.TenantId, ReportPermission.ManagePermissions, request.FolderId, cancellationToken)
+                .ConfigureAwait(false);
+            if (failure is not null || principal is null)
+            {
+                return failure!;
+            }
+
+            SetTenant(context, request.TenantId);
+            var executionContext = new ReportExecutionContext(request.TenantId, principal.ActorId, "en-US", CancellationToken: cancellationToken);
+            var entry = new ReportFolderAclEntry
+            {
+                TenantId = request.TenantId,
+                FolderId = request.FolderId,
+                SubjectKind = (ReportAclSubjectKind)request.SubjectKind,
+                SubjectId = request.SubjectId,
+                Effect = (ReportAclEffect)request.Effect,
+                Permissions = (ReportPermission)request.Permissions,
+            };
+            await permissionStore.GrantAclEntryAsync(request.FolderId, entry, executionContext).ConfigureAwait(false);
+            await auditLog.WriteAsync(
+                ReportAuditEvent.Allowed(request.TenantId, principal.ActorId, ReportAuditAction.ChangeAcl, ReportResourceKind.Acl, request.FolderId),
+                cancellationToken).ConfigureAwait(false);
+            return Results.Ok(ToAclEntryDto(entry));
+        });
+
+        group.MapGet("/permissions", async (
+            string tenantId,
+            string folderId,
+            string? subjectId,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportPermissionResolver resolver,
+            IReportPermissionStore permissionStore,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var (principal, failure) = await AuthorizeAdminAsync(
+                http, contextFactory, resolver, tenantId, ReportPermission.ManagePermissions, folderId, cancellationToken)
+                .ConfigureAwait(false);
+            if (failure is not null || principal is null)
+            {
+                return failure!;
+            }
+
+            SetTenant(context, tenantId);
+            var executionContext = new ReportExecutionContext(tenantId, principal.ActorId, "en-US", CancellationToken: cancellationToken);
+            var entries = await permissionStore.ListFolderAclEntriesAsync(folderId, executionContext).ConfigureAwait(false);
+            var filtered = string.IsNullOrWhiteSpace(subjectId)
+                ? entries
+                : entries.Where(entry => string.Equals(entry.SubjectId, subjectId, StringComparison.Ordinal)).ToArray();
+            return Results.Ok(filtered.Select(ToAclEntryDto).ToArray());
+        });
+
+        group.MapPost("/permissions/revoke", async (
+            RevokeReportPermissionRequestDto request,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportPermissionResolver resolver,
+            IReportPermissionStore permissionStore,
+            IReportAuditLog auditLog,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var (principal, failure) = await AuthorizeAdminAsync(
+                http, contextFactory, resolver, request.TenantId, ReportPermission.ManagePermissions, request.FolderId, cancellationToken)
+                .ConfigureAwait(false);
+            if (failure is not null || principal is null)
+            {
+                return failure!;
+            }
+
+            SetTenant(context, request.TenantId);
+            var executionContext = new ReportExecutionContext(request.TenantId, principal.ActorId, "en-US", CancellationToken: cancellationToken);
+            await permissionStore.RevokeAclEntryAsync(
+                request.FolderId,
+                (ReportAclSubjectKind)request.SubjectKind,
+                request.SubjectId,
+                executionContext).ConfigureAwait(false);
+            await auditLog.WriteAsync(
+                ReportAuditEvent.Allowed(request.TenantId, principal.ActorId, ReportAuditAction.ChangeAcl, ReportResourceKind.Acl, request.FolderId),
+                cancellationToken).ConfigureAwait(false);
+            return Results.NoContent();
+        });
+    }
+
+    private static void MapResolve(RouteGroupBuilder group)
+    {
+        group.MapGet("/resolve", async (
+            string tenantId,
+            string? reportId,
+            string? path,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportPermissionResolver resolver,
+            IReportServerStore store,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var principal = await contextFactory.CreateAsync(http, cancellationToken).ConfigureAwait(false);
+            if (principal is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            if (!string.Equals(principal.TenantId, tenantId, StringComparison.Ordinal))
+            {
+                return Results.StatusCode(StatusCodes.Status403Forbidden);
+            }
+
+            SetTenant(context, tenantId);
+
+            ReportDetailDto? report;
+            if (!string.IsNullOrWhiteSpace(reportId))
+            {
+                report = await store.GetReportAsync(tenantId, reportId, cancellationToken).ConfigureAwait(false);
+            }
+            else if (!string.IsNullOrWhiteSpace(path))
+            {
+                report = await ResolveByPathAsync(store, tenantId, path, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                return Results.BadRequest("Either 'reportId' or 'path' must be supplied.");
+            }
+
+            if (report is null)
+            {
+                return Results.NotFound();
+            }
+
+            var authorization = await resolver.AuthorizeAsync(
+                principal,
+                new ReportPermissionRequirement(ReportPermission.View, ReportResourceKind.ReportDefinition),
+                report.FolderId,
+                cancellationToken).ConfigureAwait(false);
+            if (!authorization.Allowed)
+            {
+                return Results.StatusCode(StatusCodes.Status403Forbidden);
+            }
+
+            var revisions = await store.GetRevisionsAsync(tenantId, report.ReportId, cancellationToken).ConfigureAwait(false);
+            var published = revisions.FirstOrDefault(revision => revision.IsPublished);
+            var resolved = published ?? revisions.FirstOrDefault(revision => revision.RevisionId == report.LatestRevisionId);
+            return Results.Ok(new ReportResolveResultDto
+            {
+                TenantId = tenantId,
+                ReportId = report.ReportId,
+                FolderId = report.FolderId,
+                Name = report.Name,
+                Description = report.Description,
+                LatestRevisionId = report.LatestRevisionId,
+                PublishedRevisionId = published?.RevisionId,
+                RevisionNumber = resolved?.RevisionNumber ?? 0,
+                DefinitionJson = resolved?.DefinitionJson ?? report.DefinitionJson,
+                RenderPath = "api/render",
+            });
+        });
+    }
+
+    private static async Task<ReportDetailDto?> ResolveByPathAsync(
+        IReportServerStore store,
+        string tenantId,
+        string path,
+        CancellationToken cancellationToken)
+    {
+        var trimmed = path.Trim().Trim('/');
+        var separator = trimmed.LastIndexOf('/');
+        if (separator < 0)
+        {
+            return null;
+        }
+
+        var folderPath = "/" + trimmed[..separator];
+        var reportName = trimmed[(separator + 1)..];
+        var folders = await store.GetFoldersAsync(tenantId, cancellationToken).ConfigureAwait(false);
+        var folder = folders.FirstOrDefault(candidate =>
+            string.Equals(candidate.Path, folderPath, StringComparison.OrdinalIgnoreCase));
+        if (folder is null)
+        {
+            return null;
+        }
+
+        var matches = await store.SearchReportsAsync(
+            new ReportSearchRequestDto { TenantId = tenantId, FolderId = folder.FolderId, Query = reportName },
+            cancellationToken).ConfigureAwait(false);
+        var summary = matches.FirstOrDefault(candidate =>
+            string.Equals(candidate.Name, reportName, StringComparison.OrdinalIgnoreCase));
+        return summary is null
+            ? null
+            : await store.GetReportAsync(tenantId, summary.ReportId, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Resolves the report security principal for an admin/management endpoint and enforces a
+    /// tenant-scoped permission. Returns a non-null failure result (401/403) when the caller is not
+    /// authenticated, requests a different tenant than the one it is scoped to, or lacks the permission.
+    /// </summary>
+    private static async Task<(ReportSecurityContext? Principal, IResult? Failure)> AuthorizeAdminAsync(
+        HttpContext http,
+        IReportHttpSecurityContextFactory contextFactory,
+        IReportPermissionResolver resolver,
+        string tenantId,
+        ReportPermission permission,
+        string? folderId,
+        CancellationToken cancellationToken)
+    {
+        var principal = await contextFactory.CreateAsync(http, cancellationToken).ConfigureAwait(false);
+        if (principal is null)
+        {
+            return (null, Results.Unauthorized());
+        }
+
+        if (!string.Equals(principal.TenantId, tenantId, StringComparison.Ordinal))
+        {
+            return (null, Results.StatusCode(StatusCodes.Status403Forbidden));
+        }
+
+        var authorization = await resolver.AuthorizeAsync(
+            principal,
+            new ReportPermissionRequirement(permission, ReportResourceKind.Acl),
+            folderId,
+            cancellationToken).ConfigureAwait(false);
+        return authorization.Allowed
+            ? (principal, null)
+            : (null, Results.StatusCode(StatusCodes.Status403Forbidden));
+    }
+
+    private static ReportApiKeyDto ToApiKeyDto(ReportApiKeyDescriptor descriptor, DateTimeOffset now)
+        => new()
+        {
+            KeyId = descriptor.KeyId,
+            TenantId = descriptor.TenantId,
+            ApplicationId = descriptor.ApplicationId,
+            Permissions = (ReportPermissionsDto)descriptor.Permissions,
+            CreatedAt = descriptor.CreatedAt,
+            ExpiresAt = descriptor.ExpiresAt,
+            RevokedAt = descriptor.RevokedAt,
+            RevokedByUserId = descriptor.RevokedByUserId,
+            IsActive = descriptor.IsActive(now),
+        };
+
+    private static CreateReportApiKeyResultDto ToApiKeyResultDto(ReportApiKeyCreationResult result)
+        => new()
+        {
+            KeyId = result.KeyId,
+            PlainTextKey = result.PlainTextKey,
+            Key = ToApiKeyDto(result.Descriptor, result.Descriptor.CreatedAt),
+        };
+
+    private static ReportAuditEventDto ToAuditEventDto(ReportAuditEvent auditEvent)
+        => new()
+        {
+            TenantId = auditEvent.TenantId,
+            ActorId = auditEvent.ActorId,
+            Action = (ReportAuditActionDto)auditEvent.Action,
+            ResourceKind = (ReportResourceKindDto)auditEvent.ResourceKind,
+            ResourceId = auditEvent.ResourceId,
+            Outcome = (ReportAuditOutcomeDto)auditEvent.Outcome,
+            Timestamp = auditEvent.Timestamp,
+            Details = auditEvent.Details,
+        };
+
+    private static ReportFolderAclEntryDto ToAclEntryDto(ReportFolderAclEntry entry)
+        => new()
+        {
+            TenantId = entry.TenantId,
+            FolderId = entry.FolderId,
+            SubjectKind = (ReportAclSubjectKindDto)entry.SubjectKind,
+            SubjectId = entry.SubjectId,
+            Effect = (ReportAclEffectDto)entry.Effect,
+            Permissions = (ReportPermissionsDto)entry.Permissions,
+        };
 
     private static void SetTenant(ReportServerRequestContext context, string tenantId)
     {

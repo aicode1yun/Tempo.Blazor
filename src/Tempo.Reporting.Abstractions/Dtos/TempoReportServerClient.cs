@@ -299,6 +299,166 @@ public sealed class TempoReportServerClient : ApiClientBase, ITempoReportServerC
             $"{_basePath}/schedules/{Uri.EscapeDataString(scheduleId)}/runs?tenantId={Uri.EscapeDataString(tenantId)}&max={max}",
             cancellationToken).ConfigureAwait(false) ?? [];
 
+    /// <inheritdoc />
+    public async Task<CreateReportApiKeyResultDto> CreateApiKeyAsync(
+        CreateReportApiKeyRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostAsync<CreateReportApiKeyRequestDto, CreateReportApiKeyResultDto>(
+            $"{_basePath}/apikeys",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportApiKeyDto>> GetApiKeysAsync(
+        string tenantId,
+        CancellationToken cancellationToken = default)
+        => await GetAsync<List<ReportApiKeyDto>>(
+            $"{_basePath}/apikeys?tenantId={Uri.EscapeDataString(tenantId)}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+
+    /// <inheritdoc />
+    public async Task<CreateReportApiKeyResultDto> RotateApiKeyAsync(
+        string keyId,
+        RotateReportApiKeyRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostAsync<RotateReportApiKeyRequestDto, CreateReportApiKeyResultDto>(
+            $"{_basePath}/apikeys/{Uri.EscapeDataString(keyId)}/rotate",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task RevokeApiKeyAsync(
+        string keyId,
+        RevokeReportApiKeyRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostNoResponseAsync(
+            $"{_basePath}/apikeys/{Uri.EscapeDataString(keyId)}/revoke",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportAuditEventDto>> QueryAuditAsync(
+        string tenantId,
+        ReportAuditActionDto? action = null,
+        ReportAuditOutcomeDto? outcome = null,
+        string? actorId = null,
+        string? resourceId = null,
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
+        int? take = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string> { $"tenantId={Uri.EscapeDataString(tenantId)}" };
+        if (action is { } a)
+        {
+            query.Add($"action={a}");
+        }
+
+        if (outcome is { } o)
+        {
+            query.Add($"outcome={o}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(actorId))
+        {
+            query.Add($"actorId={Uri.EscapeDataString(actorId)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(resourceId))
+        {
+            query.Add($"resourceId={Uri.EscapeDataString(resourceId)}");
+        }
+
+        if (from is { } f)
+        {
+            query.Add($"from={Uri.EscapeDataString(f.ToString("O"))}");
+        }
+
+        if (to is { } t)
+        {
+            query.Add($"to={Uri.EscapeDataString(t.ToString("O"))}");
+        }
+
+        if (take is { } take2)
+        {
+            query.Add($"take={take2}");
+        }
+
+        return await GetAsync<List<ReportAuditEventDto>>(
+            $"{_basePath}/audit?{string.Join('&', query)}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+    }
+
+    /// <inheritdoc />
+    public async Task<ReportFolderAclEntryDto> GrantPermissionAsync(
+        GrantReportPermissionRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostAsync<GrantReportPermissionRequestDto, ReportFolderAclEntryDto>(
+            $"{_basePath}/permissions",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportFolderAclEntryDto>> GetFolderPermissionsAsync(
+        string tenantId,
+        string folderId,
+        string? subjectId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = $"tenantId={Uri.EscapeDataString(tenantId)}&folderId={Uri.EscapeDataString(folderId)}";
+        if (!string.IsNullOrWhiteSpace(subjectId))
+        {
+            query += $"&subjectId={Uri.EscapeDataString(subjectId)}";
+        }
+
+        return await GetAsync<List<ReportFolderAclEntryDto>>(
+            $"{_basePath}/permissions?{query}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+    }
+
+    /// <inheritdoc />
+    public async Task RevokePermissionAsync(
+        RevokeReportPermissionRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostNoResponseAsync(
+            $"{_basePath}/permissions/revoke",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<ReportResolveResultDto> ResolveReportAsync(
+        string tenantId,
+        string? reportId = null,
+        string? path = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = $"tenantId={Uri.EscapeDataString(tenantId)}";
+        if (!string.IsNullOrWhiteSpace(reportId))
+        {
+            query += $"&reportId={Uri.EscapeDataString(reportId)}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            query += $"&path={Uri.EscapeDataString(path)}";
+        }
+
+        return await GetAsync<ReportResolveResultDto>(
+            $"{_basePath}/resolve?{query}",
+            cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException("Resolve response was empty.");
+    }
+
+    private async Task PostNoResponseAsync<TRequest>(
+        string uri,
+        TRequest request,
+        CancellationToken cancellationToken)
+    {
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Post, uri) { Content = JsonContent.Create(request) },
+            cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+    }
+
     private async Task<TResponse> PostAsync<TRequest, TResponse>(
         string uri,
         TRequest request,

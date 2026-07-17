@@ -96,6 +96,83 @@ public sealed class EfReportFolderPermissionStore : IReportPermissionStore
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// The EF store persists user-subject allow grants only (role-projected), matching the F4 folder
+    /// ACL design. Role/application subjects and deny entries are not persisted here.
+    /// </remarks>
+    public async Task GrantAclEntryAsync(
+        string folderId,
+        ReportFolderAclEntry entry,
+        ReportExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        if (entry.SubjectKind != ReportAclSubjectKind.User || entry.Effect != ReportAclEffect.Allow)
+        {
+            return;
+        }
+
+        await GrantAsync(folderId, entry.SubjectId, RoleForPermissions(entry.Permissions), context).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportFolderAclEntry>> ListFolderAclEntriesAsync(
+        string folderId,
+        ReportExecutionContext context)
+    {
+        var tenantId = context.TenantId;
+        var grants = await _dbContext.FolderPermissions
+            .AsNoTracking()
+            .Where(permission => permission.TenantId == tenantId && permission.FolderId == folderId)
+            .ToListAsync(context.CancellationToken)
+            .ConfigureAwait(false);
+
+        return grants
+            .Select(grant => ReportFolderAclEntry.AllowUser(
+                grant.FolderId,
+                grant.SubjectId,
+                PermissionsFromRole(grant.Role)) with { TenantId = tenantId })
+            .ToArray();
+    }
+
+    /// <inheritdoc />
+    public async Task RevokeAclEntryAsync(
+        string folderId,
+        ReportAclSubjectKind subjectKind,
+        string subjectId,
+        ReportExecutionContext context)
+    {
+        if (subjectKind != ReportAclSubjectKind.User)
+        {
+            return;
+        }
+
+        var tenantId = context.TenantId;
+        var existing = await _dbContext.FolderPermissions
+            .Where(permission => permission.TenantId == tenantId &&
+                permission.FolderId == folderId &&
+                permission.SubjectId == subjectId)
+            .ToListAsync(context.CancellationToken)
+            .ConfigureAwait(false);
+        if (existing.Count == 0)
+        {
+            return;
+        }
+
+        _dbContext.FolderPermissions.RemoveRange(existing);
+        await _dbContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
+    }
+
+    private static ReportServerRole RoleForPermissions(ReportPermission permissions)
+    {
+        if (permissions.HasFlag(ReportPermission.ManagePermissions) || permissions == ReportPermission.All)
+        {
+            return ReportServerRole.TenantAdmin;
+        }
+
+        return permissions.HasFlag(ReportPermission.EditDefinition) ? ReportServerRole.Author : ReportServerRole.Viewer;
+    }
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<ReportFolderAclEntry>> ListInheritedAclEntriesAsync(
         string? folderId,
         ReportExecutionContext context)

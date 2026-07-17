@@ -577,6 +577,42 @@ public interface ITempoReportServerClient
 
     /// <summary>Gets the most recent run history for a report schedule.</summary>
     Task<IReadOnlyList<ReportScheduleRunDto>> GetScheduleRunsAsync(string tenantId, string scheduleId, int max = 20, CancellationToken cancellationToken = default);
+
+    /// <summary>Creates a tenant/application-scoped API key. The result carries the one-time secret.</summary>
+    Task<CreateReportApiKeyResultDto> CreateApiKeyAsync(CreateReportApiKeyRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists API key descriptors for a tenant (never returns secret material).</summary>
+    Task<IReadOnlyList<ReportApiKeyDto>> GetApiKeysAsync(string tenantId, CancellationToken cancellationToken = default);
+
+    /// <summary>Rotates an API key, returning the new one-time secret.</summary>
+    Task<CreateReportApiKeyResultDto> RotateApiKeyAsync(string keyId, RotateReportApiKeyRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Revokes an API key.</summary>
+    Task RevokeApiKeyAsync(string keyId, RevokeReportApiKeyRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Queries the report server audit log with optional filters (most recent first).</summary>
+    Task<IReadOnlyList<ReportAuditEventDto>> QueryAuditAsync(
+        string tenantId,
+        ReportAuditActionDto? action = null,
+        ReportAuditOutcomeDto? outcome = null,
+        string? actorId = null,
+        string? resourceId = null,
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
+        int? take = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Grants (or replaces) an ACL entry for a subject on a folder.</summary>
+    Task<ReportFolderAclEntryDto> GrantPermissionAsync(GrantReportPermissionRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists the ACL entries defined directly on a folder (optionally filtered by subject).</summary>
+    Task<IReadOnlyList<ReportFolderAclEntryDto>> GetFolderPermissionsAsync(string tenantId, string folderId, string? subjectId = null, CancellationToken cancellationToken = default);
+
+    /// <summary>Revokes a subject's ACL grant on a folder.</summary>
+    Task RevokePermissionAsync(RevokeReportPermissionRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Resolves a catalog report (by id or by path) for the viewer, with its current revision.</summary>
+    Task<ReportResolveResultDto> ResolveReportAsync(string tenantId, string? reportId = null, string? path = null, CancellationToken cancellationToken = default);
 }
 
 #pragma warning restore MA0016, MA0048
