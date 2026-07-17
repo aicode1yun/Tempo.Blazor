@@ -1,0 +1,88 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Tempo.ReportServer.Api.Security;
+
+namespace Tempo.ReportServer.Api.Host;
+
+/// <summary>
+/// Executable host entry point for the Tempo Report Server API.
+/// </summary>
+/// <remarks>
+/// Declared as an explicit class in a dedicated namespace (not top-level statements) so the
+/// generated <c>Program</c> type does not collide with the <c>Program</c> emitted by the
+/// <c>Tempo.ReportServer.Web</c> host that references this assembly.
+/// </remarks>
+public sealed class Program
+{
+    private Program()
+    {
+    }
+
+    /// <summary>Builds, configures and runs the report server API host.</summary>
+    public static async Task Main(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddTempoReportServerApi(ConfigureDatabase(builder.Configuration));
+        builder.Services.AddReportServerAuthentication(builder.Configuration);
+        builder.Services.AddOpenApi();
+        AddCors(builder);
+
+        var app = builder.Build();
+
+        await app.Services.EnsureTempoReportServerDatabaseAsync().ConfigureAwait(false);
+
+        var frontendOrigin = builder.Configuration["Cors:FrontendOrigin"];
+        if (!string.IsNullOrWhiteSpace(frontendOrigin))
+        {
+            app.UseCors(CorsPolicyName);
+        }
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.UseTempoReportServerTenantContext();
+
+        app.MapOpenApi();
+
+        // The catalog/render group requires an authenticated principal from any accepted scheme.
+        // The anonymous /health and /version endpoints are mapped on the root inside this call
+        // and are deliberately excluded from the authorization requirement.
+        app.MapTempoReportServerApi()
+            .RequireAuthorization(ReportServerAuthenticationDefaults.ApiPolicy);
+
+        await app.RunAsync().ConfigureAwait(false);
+    }
+
+    private const string CorsPolicyName = "ReportServerFrontend";
+
+    private static Action<DbContextOptionsBuilder>? ConfigureDatabase(IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("ReportServer");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return null;
+        }
+
+        return options => options.UseSqlite(connectionString);
+    }
+
+    private static void AddCors(WebApplicationBuilder builder)
+    {
+        var frontendOrigin = builder.Configuration["Cors:FrontendOrigin"];
+        if (string.IsNullOrWhiteSpace(frontendOrigin))
+        {
+            return;
+        }
+
+        // Per ADR-0002: exact FE origin, no AllowCredentials (bearer auth needs none).
+        builder.Services.AddCors(options => options.AddPolicy(
+            CorsPolicyName,
+            policy => policy
+                .WithOrigins(frontendOrigin)
+                .AllowAnyHeader()
+                .AllowAnyMethod()));
+    }
+}

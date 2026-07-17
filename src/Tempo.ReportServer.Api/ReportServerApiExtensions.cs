@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -31,6 +32,7 @@ public static class ReportServerApiExtensions
         services.TryAddSingleton<IReportRenderJobQueue, InMemoryReportRenderJobQueue>();
         services.Configure<ReportServerQuotaOptions>(_ => { });
         services.AddReportServerSecurity();
+        services.AddHealthChecks();
         return services;
     }
 
@@ -42,9 +44,17 @@ public static class ReportServerApiExtensions
     }
 
     /// <summary>Maps Tempo Report Server API endpoints.</summary>
+    /// <remarks>
+    /// The returned <see cref="RouteGroupBuilder"/> covers only the <paramref name="prefix"/> group
+    /// (default <c>/api</c>); a host can chain <c>.RequireAuthorization(...)</c> on it to protect the
+    /// whole catalog. The anonymous host diagnostics endpoints (<c>/health</c>, <c>/version</c>) are
+    /// mapped on the root and are intentionally excluded from that group so they stay unauthenticated.
+    /// </remarks>
     public static RouteGroupBuilder MapTempoReportServerApi(this IEndpointRouteBuilder endpoints, string prefix = "/api")
     {
         ArgumentNullException.ThrowIfNull(endpoints);
+
+        MapHostDiagnostics(endpoints);
 
         var group = endpoints.MapGroup(prefix);
         MapFolders(group);
@@ -52,6 +62,26 @@ public static class ReportServerApiExtensions
         MapRender(group);
         MapDataSources(group);
         return group;
+    }
+
+    private static void MapHostDiagnostics(IEndpointRouteBuilder endpoints)
+    {
+        endpoints.MapHealthChecks("/health").AllowAnonymous();
+
+        endpoints.MapGet("/version", () => Results.Ok(GetVersion())).AllowAnonymous();
+    }
+
+    private static ReportServerVersionDto GetVersion()
+    {
+        var assembly = Assembly.GetEntryAssembly() ?? typeof(ReportServerApiExtensions).Assembly;
+        var informational = assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        var assemblyVersion = assembly.GetName().Version?.ToString() ?? "0.0.0.0";
+        return new ReportServerVersionDto
+        {
+            Version = string.IsNullOrWhiteSpace(informational) ? assemblyVersion : informational,
+            AssemblyVersion = assemblyVersion,
+        };
     }
 
     /// <summary>Ensures the development database exists.</summary>

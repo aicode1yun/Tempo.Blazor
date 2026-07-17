@@ -399,6 +399,16 @@ public sealed record RenderReportResultDto
     public int PageCount { get; init; }
 }
 
+/// <summary>Host version metadata returned by the anonymous <c>GET /version</c> endpoint.</summary>
+public sealed record ReportServerVersionDto
+{
+    /// <summary>Informational (or assembly) version of the running host.</summary>
+    public string Version { get; init; } = string.Empty;
+
+    /// <summary>Simple assembly version (major.minor.build.revision).</summary>
+    public string AssemblyVersion { get; init; } = string.Empty;
+}
+
 /// <summary>Named report data source DTO.</summary>
 public sealed record ReportDataSourceDto
 {
