@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.6 - 2026-07-17
+
+### Negative values on Bar and Line charts (TmChart)
+
+- `Bar` charts (including combo overlays) and `Line` charts now support negative values through a signed value domain: when any visible value is negative, the Y axis extends below zero with an emphasized zero axis (parity with Area charts), bars grow downward from the zero baseline, and line/overlay points plot below the axis. Charts with only non-negative values render exactly as before (0-based scale). Previously a negative value produced an invalid negative-height bar or a point outside the plot area.
+
 ## 2.3.5 - 2026-07-17
 
 ### Combo charts (TmChart)

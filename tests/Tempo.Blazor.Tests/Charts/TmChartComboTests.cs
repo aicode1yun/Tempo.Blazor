@@ -175,6 +175,72 @@ public class TmChartComboTests : LocalizationTestBase
     }
 
     [Fact]
+    public void ComboChart_NegativeOverlayValues_Render_Below_Zero_Axis()
+    {
+        // Cashflow can be negative: the plot domain must extend below zero, with an
+        // emphasized zero axis, and overlay points must sit below it.
+        var data = new ChartData
+        {
+            Labels = ["A", "B"],
+            Datasets =
+            [
+                new ChartDataset { Label = "Bars", Values = [10, 20], Color = "#ef4444" },
+                new ChartDataset { Label = "Cashflow", Values = [-5, 15], Color = "#3b82f6", RenderAs = ChartDatasetRenderAs.Line },
+            ]
+        };
+
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, data));
+
+        var zero = cut.Find("line.tm-chart__axis-zero");
+        var zeroY = double.Parse(zero.GetAttribute("y1")!, System.Globalization.CultureInfo.InvariantCulture);
+
+        var points = cut.FindAll("circle.tm-chart__point");
+        var negY = double.Parse(points[0].GetAttribute("cy")!, System.Globalization.CultureInfo.InvariantCulture);
+        var posY = double.Parse(points[1].GetAttribute("cy")!, System.Globalization.CultureInfo.InvariantCulture);
+        negY.Should().BeGreaterThan(zeroY);  // negative value below the zero axis
+        posY.Should().BeLessThan(zeroY);     // positive value above it
+    }
+
+    [Fact]
+    public void BarChart_NegativeValue_Renders_Bar_Below_Zero_Baseline()
+    {
+        var data = new ChartData
+        {
+            Labels = ["Up", "Down"],
+            Datasets = [new ChartDataset { Label = "V", Values = [10, -10], Color = "#3b82f6" }]
+        };
+
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, data));
+
+        var zero = cut.Find("line.tm-chart__axis-zero");
+        var zeroY = double.Parse(zero.GetAttribute("y1")!, System.Globalization.CultureInfo.InvariantCulture);
+
+        var bars = cut.FindAll("rect.tm-chart__bar");
+        bars.Count.Should().Be(2);
+        var upTop = double.Parse(bars[0].GetAttribute("y")!, System.Globalization.CultureInfo.InvariantCulture);
+        var downTop = double.Parse(bars[1].GetAttribute("y")!, System.Globalization.CultureInfo.InvariantCulture);
+        var downHeight = double.Parse(bars[1].GetAttribute("height")!, System.Globalization.CultureInfo.InvariantCulture);
+
+        upTop.Should().BeLessThan(zeroY);                      // positive bar grows up from zero
+        downTop.Should().BeApproximately(zeroY, 0.5);          // negative bar starts at the zero axis
+        downHeight.Should().BeGreaterThan(0);                  // and extends downward with valid height
+    }
+
+    [Fact]
+    public void BarChart_AllPositive_Has_No_Zero_Axis_Emphasis()
+    {
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, ComboData));
+
+        cut.FindAll("line.tm-chart__axis-zero").Should().BeEmpty();
+    }
+
+    [Fact]
     public void LineChart_Ignores_RenderAs_Line()
     {
         // RenderAs=Line on a Line chart is a no-op: the dataset renders as a normal line.
