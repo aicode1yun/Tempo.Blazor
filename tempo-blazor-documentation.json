@@ -2884,7 +2884,7 @@
       "kind": "Component",
       "category": "Charts",
       "namespace": "Tempo.Blazor.Components.Charts",
-      "description": "Pure SVG chart component supporting Bar, Line, Area, Pie, Donut, and HorizontalBar chart types with optional legend, grid, value labels, animation, gradient area fills, a proportional DateTime X axis for time series, and click events on segments. Chart types additionally include Funnel (conversion trapezoids with per-stage conversion percentages), Heatmap (dataset-rows × label-columns intensity matrix with a global scale), and Treemap (squarified shares, flat or hierarchical via ChartTreeNode).",
+      "description": "Pure SVG chart component supporting Bar, Line, Area, Pie, Donut, and HorizontalBar chart types with optional legend, grid, value labels, animation, gradient area fills, a proportional DateTime X axis for time series, combo charts (per-dataset ChartDataset.RenderAs = ChartDatasetRenderAs.Line renders that dataset as a line overlay over the bars of a Bar chart on a shared Y scale — bars for periodic flows, lines for cumulative values), dense-axis label thinning on Bar charts (over 24 categories only every n-th label renders), and click events on segments. Chart types additionally include Funnel (conversion trapezoids with per-stage conversion percentages), Heatmap (dataset-rows × label-columns intensity matrix with a global scale), and Treemap (squarified shares, flat or hierarchical via ChartTreeNode).",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Charts/TmChart.razor",
       "documentationStatus": "merged",
@@ -3040,6 +3040,10 @@
         {
           "title": "Time series with a DateTime axis",
           "code": "<TmChart Type=\"ChartType.Line\"\n         Data=\"@(new ChartData { Labels = [], TimePoints = dates, Datasets = new[] { new ChartDataset { Label = \"Price\", Values = prices, Color = \"#3b82f6\" } } })\"\n         TimeLabelFormat=\"MMM yyyy\"\n         Height=\"320px\" />"
+        },
+        {
+          "title": "Combo chart: bars with a line overlay (RenderAs)",
+          "code": "<TmChart Type=\"ChartType.Bar\"\n         Data=\"@(new ChartData { Labels = months, Datasets = new[] {\n             new ChartDataset { Label = \"Rent\", Values = rent, Color = \"#22c55e\" },\n             new ChartDataset { Label = \"Costs\", Values = costs, Color = \"#ef4444\" },\n             new ChartDataset { Label = \"Cashflow\", Values = cashflow, Color = \"#3b82f6\", RenderAs = ChartDatasetRenderAs.Line }\n         } })\"\n         Height=\"320px\" />"
         }
       ]
     },
@@ -3656,6 +3660,16 @@
           "description": "Optional per-value fill colors. When provided and contains a value for the index, overrides BackgroundColor/Color for individual bars or pie/donut slices."
         }
       ]
+    },
+    {
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Charts",
+      "description": "Per-dataset render override for combo charts. On a chart, datasets marked render as a line overlay on top of the bars (shared Y scale) — bars for periodic flows, lines for cumulative values in one plot.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+      "documentationStatus": "generated",
+      "itemName": "ChartDatasetRenderAs"
     },
     {
       "itemName": "ChartSegment",
@@ -23779,11 +23793,11 @@
     }
   ],
   "summary": {
-    "itemCount": 330,
+    "itemCount": 331,
     "manualItemCount": 330,
-    "generatedItemCount": 322,
-    "generatedOnlyItemCount": 0,
+    "generatedItemCount": 323,
+    "generatedOnlyItemCount": 1,
     "componentCount": 192,
-    "publicApiTypeCount": 130
+    "publicApiTypeCount": 131
   }
 }

@@ -304,6 +304,7 @@
             case ChartType.Bar:
                 BuildGrid(builder);
                 BuildBarChart(builder);
+                BuildComboLineOverlay(builder);
                 break;
             case ChartType.Line:
                 BuildGrid(builder);
@@ -357,35 +358,127 @@
         }
     }
 
+    // Original dataset indices that render as bars (RenderAs != Line) — combo charts keep
+    // click/tooltip payloads on the ORIGINAL index while bar slots are packed positionally.
+    private int[] BarDatasetIndices()
+    {
+        var result = new List<int>(Data.Datasets.Length);
+        for (int di = 0; di < Data.Datasets.Length; di++)
+        {
+            if (Data.Datasets[di].RenderAs != ChartDatasetRenderAs.Line)
+                result.Add(di);
+        }
+        return result.ToArray();
+    }
+
     private void BuildBarChart(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
     {
         var max = MaxVal;
         var lc = Data.Labels.Length;
-        var dc = Data.Datasets.Length;
+        var barIndices = BarDatasetIndices();
+        var dc = barIndices.Length;
         var gw = CW / (double)lc;
-        var bw = (gw * 0.7) / dc;
         var gp = gw * 0.15;
 
-        for (int di = 0; di < dc; di++)
+        if (dc > 0)
         {
-            var ds = Data.Datasets[di];
-            for (int i = 0; i < ds.Values.Length && i < lc; i++)
+            var bw = (gw * 0.7) / dc;
+            for (int slot = 0; slot < dc; slot++)
             {
-                if (IsSegmentHidden(di, i)) continue;
-                var val = ds.Values[i];
-                var bh = (val / max) * CH;
-                var x = PL + i * gw + gp + di * bw;
-                var y = PT + CH - bh;
-                var fill = ResolveFillColor(ds, i, ds.BackgroundColor ?? ds.Color);
-                SvgRect(b, x, y, bw, bh, fill, ds.Color, di, i, x + bw / 2, y);
-                if (ShowValues)
-                    SvgText(b, "tm-chart__value", x + bw / 2, y - 4, F(val), "middle");
+                var di = barIndices[slot];
+                var ds = Data.Datasets[di];
+                for (int i = 0; i < ds.Values.Length && i < lc; i++)
+                {
+                    if (IsSegmentHidden(di, i)) continue;
+                    var val = ds.Values[i];
+                    var bh = (val / max) * CH;
+                    var x = PL + i * gw + gp + slot * bw;
+                    var y = PT + CH - bh;
+                    var fill = ResolveFillColor(ds, i, ds.BackgroundColor ?? ds.Color);
+                    SvgRect(b, x, y, bw, bh, fill, ds.Color, di, i, x + bw / 2, y);
+                    if (ShowValues)
+                        SvgText(b, "tm-chart__value", x + bw / 2, y - 4, F(val), "middle");
+                }
             }
         }
-        for (int i = 0; i < lc; i++)
+
+        // Dense categorical axes thin their labels (every n-th) so they never overlap;
+        // charts with up to 24 categories keep every label (existing behavior).
+        var labelStep = lc > 24 ? (int)Math.Ceiling(lc / 12.0) : 1;
+        for (int i = 0; i < lc; i += labelStep)
         {
             var cx = PL + i * gw + gw / 2.0;
             SvgText(b, "tm-chart__label", cx, PT + CH + 24, Data.Labels[i], "middle");
+        }
+    }
+
+    /// <summary>
+    /// Combo chart: datasets with <see cref="ChartDatasetRenderAs.Line"/> render as a line
+    /// overlay (polyline + clickable points) over the bars, centered on each category and
+    /// sharing the bars' Y scale.
+    /// </summary>
+    private void BuildComboLineOverlay(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
+    {
+        var lc = Data.Labels.Length;
+        if (lc == 0) return;
+        var max = MaxVal;
+        var gw = CW / (double)lc;
+
+        for (int di = 0; di < Data.Datasets.Length; di++)
+        {
+            var ds = Data.Datasets[di];
+            if (ds.RenderAs != ChartDatasetRenderAs.Line) continue;
+            if (IsSegmentHidden(di, -1)) continue;
+
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < ds.Values.Length && i < lc; i++)
+            {
+                if (double.IsNaN(ds.Values[i])) continue;
+                var x = PL + i * gw + gw / 2.0;
+                var y = PT + CH - (ds.Values[i] / max) * CH;
+                if (sb.Length > 0) sb.Append(' ');
+                sb.Append(F(x)).Append(',').Append(F(y));
+            }
+
+            b.OpenElement(0, "polyline");
+            b.AddAttribute(1, "class", "tm-chart__line");
+            b.AddAttribute(2, "points", sb.ToString());
+            b.AddAttribute(3, "fill", "none");
+            b.AddAttribute(4, "stroke", ds.Color);
+            b.AddAttribute(5, "stroke-width", "2");
+            b.AddAttribute(6, "stroke-linejoin", "round");
+            b.CloseElement();
+
+            for (int i = 0; i < ds.Values.Length && i < lc; i++)
+            {
+                if (double.IsNaN(ds.Values[i])) continue;
+                var x = PL + i * gw + gw / 2.0;
+                var y = PT + CH - (ds.Values[i] / max) * CH;
+                var cdi = di;
+                var ci = i;
+                var tipX = x;
+
+                b.OpenElement(0, "circle");
+                b.AddAttribute(1, "class", "tm-chart__point");
+                b.AddAttribute(2, "cx", F(x));
+                b.AddAttribute(3, "cy", F(y));
+                b.AddAttribute(4, "r", "4");
+                b.AddAttribute(5, "fill", ds.Color);
+                b.AddAttribute(6, "stroke", "white");
+                b.AddAttribute(7, "stroke-width", "2");
+                b.AddAttribute(8, "onclick",
+                    EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                        this, () => HandleClick(cdi, ci)));
+                b.AddAttribute(9, "onmouseover",
+                    EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                        this, () => ShowTip(cdi, ci, tipX, y)));
+                b.AddAttribute(10, "onmouseout",
+                    EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, HideTip));
+                b.CloseElement();
+
+                if (ShowValues)
+                    SvgText(b, "tm-chart__value", x, y - 10, F(ds.Values[i]), "middle");
+            }
         }
     }
 
