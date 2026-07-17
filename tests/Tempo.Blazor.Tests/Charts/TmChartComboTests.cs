@@ -262,7 +262,9 @@ public class TmChartComboTests : LocalizationTestBase
 
         var polyline = cut.Find("polyline.tm-chart__line");
         polyline.GetAttribute("points")!.Split(' ').Length.Should().Be(360);
-        cut.FindAll("circle.tm-chart__point").Count.Should().BeLessThan(120);
+        // Markers are ~12 SVG units wide (r=4 + stroke); the ~24-unit spacing threshold
+        // must leave visible line segments between them (≤ CW/24 + 1 ≈ 23 markers).
+        cut.FindAll("circle.tm-chart__point").Count.Should().BeLessThan(30);
     }
 
     [Fact]

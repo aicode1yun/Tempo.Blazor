@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.8 - 2026-07-17
+
+### Fixes
+
+- Increased the dense-line marker spacing threshold from ~9 to ~24 SVG units: at ~9 units the thinned markers still touched each other (12-unit visual diameter), keeping the beaded look on very dense series (e.g. 360 monthly values). Markers now sit clearly ON the line with visible line segments between them.
+
 ## 2.3.7 - 2026-07-17
 
 ### Dense line series readability (TmChart)
