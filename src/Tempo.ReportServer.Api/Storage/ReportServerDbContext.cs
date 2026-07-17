@@ -5,6 +5,11 @@ namespace Tempo.ReportServer.Api.Storage;
 /// <summary>EF Core context for the report server catalog store.</summary>
 public sealed class ReportServerDbContext : DbContext
 {
+    private const int TenantIdMaxLength = 128;
+    private const int IdMaxLength = 128;
+    private const int NameMaxLength = 200;
+    private const int PathMaxLength = 400;
+
     private readonly ReportServerRequestContext _requestContext;
 
     /// <summary>Creates a report server EF context.</summary>
@@ -31,11 +36,19 @@ public sealed class ReportServerDbContext : DbContext
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
+        // String columns that participate in indexes MUST have an explicit maximum length:
+        // on SQL Server an unbounded nvarchar(max) column cannot be used as an index key.
+        // The composite index key sizes below stay within the SQL Server 1700-byte limit
+        // (Path 400 + TenantId 128 => ~1056 bytes for the folder unique index).
         modelBuilder.Entity<ReportFolderEntity>(entity =>
         {
             entity.HasKey(folder => folder.FolderId);
             entity.HasIndex(folder => new { folder.TenantId, folder.Path }).IsUnique();
-            entity.Property(folder => folder.Name).HasMaxLength(200);
+            entity.Property(folder => folder.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(folder => folder.FolderId).HasMaxLength(IdMaxLength);
+            entity.Property(folder => folder.ParentFolderId).HasMaxLength(IdMaxLength);
+            entity.Property(folder => folder.Name).HasMaxLength(NameMaxLength);
+            entity.Property(folder => folder.Path).HasMaxLength(PathMaxLength);
             entity.HasQueryFilter(folder => folder.TenantId == _requestContext.ExecutionContext.TenantId);
         });
 
@@ -43,7 +56,11 @@ public sealed class ReportServerDbContext : DbContext
         {
             entity.HasKey(report => report.ReportId);
             entity.HasIndex(report => new { report.TenantId, report.FolderId, report.Name });
-            entity.Property(report => report.Name).HasMaxLength(200);
+            entity.Property(report => report.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(report => report.ReportId).HasMaxLength(IdMaxLength);
+            entity.Property(report => report.FolderId).HasMaxLength(IdMaxLength);
+            entity.Property(report => report.LatestRevisionId).HasMaxLength(IdMaxLength);
+            entity.Property(report => report.Name).HasMaxLength(NameMaxLength);
             entity.HasQueryFilter(report => report.TenantId == _requestContext.ExecutionContext.TenantId);
         });
 
@@ -51,6 +68,10 @@ public sealed class ReportServerDbContext : DbContext
         {
             entity.HasKey(revision => revision.RevisionId);
             entity.HasIndex(revision => new { revision.TenantId, revision.ReportId, revision.RevisionNumber }).IsUnique();
+            entity.Property(revision => revision.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(revision => revision.RevisionId).HasMaxLength(IdMaxLength);
+            entity.Property(revision => revision.ReportId).HasMaxLength(IdMaxLength);
+            entity.Property(revision => revision.CreatedByUserId).HasMaxLength(IdMaxLength);
             entity.HasQueryFilter(revision => revision.TenantId == _requestContext.ExecutionContext.TenantId);
         });
 
@@ -58,7 +79,9 @@ public sealed class ReportServerDbContext : DbContext
         {
             entity.HasKey(dataSource => dataSource.DataSourceId);
             entity.HasIndex(dataSource => new { dataSource.TenantId, dataSource.Name }).IsUnique();
-            entity.Property(dataSource => dataSource.Name).HasMaxLength(200);
+            entity.Property(dataSource => dataSource.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(dataSource => dataSource.DataSourceId).HasMaxLength(IdMaxLength);
+            entity.Property(dataSource => dataSource.Name).HasMaxLength(NameMaxLength);
             entity.Property(dataSource => dataSource.Kind).HasMaxLength(32);
             entity.HasQueryFilter(dataSource => dataSource.TenantId == _requestContext.ExecutionContext.TenantId);
         });

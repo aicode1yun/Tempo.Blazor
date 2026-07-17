@@ -84,13 +84,24 @@ public static class ReportServerApiExtensions
         };
     }
 
-    /// <summary>Ensures the development database exists.</summary>
+    /// <summary>
+    /// Ensures the report server database is ready.
+    /// On SQL Server (production/MSSQL tests) the schema is applied through the authored EF Core
+    /// migrations; on other providers (SQLite development/tests) the schema is created directly.
+    /// </summary>
     public static async Task EnsureTempoReportServerDatabaseAsync(this IServiceProvider services, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(services);
         using var scope = services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ReportServerDbContext>();
-        await dbContext.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
+        if (dbContext.Database.IsSqlServer())
+        {
+            await dbContext.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            await dbContext.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     private static void MapFolders(RouteGroupBuilder group)

@@ -66,7 +66,17 @@ public sealed class Program
             return null;
         }
 
-        return options => options.UseSqlite(connectionString);
+        // Decision O1 / ADR-0001: SQL Server is the production catalog store. SQLite remains a
+        // zero-setup development fallback selectable through "Database:Provider".
+        var provider = configuration["Database:Provider"];
+        if (string.Equals(provider, "Sqlite", StringComparison.OrdinalIgnoreCase))
+        {
+            return options => options.UseSqlite(connectionString);
+        }
+
+        return options => options.UseSqlServer(
+            connectionString,
+            sql => sql.MigrationsAssembly(typeof(Storage.ReportServerDbContext).Assembly.GetName().Name));
     }
 
     private static void AddCors(WebApplicationBuilder builder)

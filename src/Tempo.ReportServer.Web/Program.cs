@@ -1,6 +1,7 @@
 using Tempo.Blazor.EmailTemplates.Abstractions;
 using Tempo.Blazor.EmailTemplates.Abstractions.Contracts;
 using Tempo.Blazor.Reporting.Configuration;
+using Tempo.ReportServer.Api;
 using Tempo.ReportServer.Api.Security;
 using Tempo.ReportServer.Web;
 using Tempo.ReportServer.Web.Services;
@@ -9,6 +10,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Typed client for the persistent report server API host (base URL from configuration,
+// same "ReportServer:BaseUrl" key used on the API side). Registered when configured so the
+// self-contained demo keeps working without a running API host; catalog pages are migrated
+// off the in-memory ReportServerCatalogStore onto this client as the API host is deployed.
+if (!string.IsNullOrWhiteSpace(builder.Configuration[ReportServerClientExtensions.BaseUrlConfigurationKey]))
+{
+    builder.Services.AddTempoReportServerClient(builder.Configuration);
+}
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
