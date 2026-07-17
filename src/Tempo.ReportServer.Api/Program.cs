@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Tempo.ReportServer.Api.Scheduling;
 using Tempo.ReportServer.Api.Security;
 
 namespace Tempo.ReportServer.Api.Host;
@@ -28,6 +29,10 @@ public sealed class Program
 
         builder.Services.AddTempoReportServerApi(ConfigureDatabase(builder.Configuration));
         builder.Services.AddReportServerAuthentication(builder.Configuration);
+
+        // Fáze 6: the scheduling worker (background service), delivery channels and persistent
+        // schedule store live in the API/worker tier.
+        builder.Services.AddTempoReportServerScheduling(builder.Configuration);
 
         // Decision O1 / ADR-0001: persist API keys and audit events in the report server database.
         // In-memory stores remain the default so lightweight hosts and tests keep working.

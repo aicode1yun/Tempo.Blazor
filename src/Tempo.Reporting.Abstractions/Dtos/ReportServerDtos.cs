@@ -559,6 +559,24 @@ public interface ITempoReportServerClient
 
     /// <summary>Gets a top-N data source preview.</summary>
     Task<ReportDataSourcePreviewDto> PreviewDataSourceAsync(string dataSourceId, string tenantId, int top = 5, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists report schedules for a tenant.</summary>
+    Task<IReadOnlyList<ReportScheduleDto>> GetSchedulesAsync(string tenantId, CancellationToken cancellationToken = default);
+
+    /// <summary>Gets a single report schedule.</summary>
+    Task<ReportScheduleDto?> GetScheduleAsync(string tenantId, string scheduleId, CancellationToken cancellationToken = default);
+
+    /// <summary>Creates or updates a report schedule.</summary>
+    Task<ReportScheduleDto> UpsertScheduleAsync(UpsertReportScheduleRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Enables or disables a report schedule.</summary>
+    Task SetScheduleEnabledAsync(string scheduleId, SetReportScheduleEnabledRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Deletes a report schedule.</summary>
+    Task DeleteScheduleAsync(string scheduleId, string tenantId, CancellationToken cancellationToken = default);
+
+    /// <summary>Gets the most recent run history for a report schedule.</summary>
+    Task<IReadOnlyList<ReportScheduleRunDto>> GetScheduleRunsAsync(string tenantId, string scheduleId, int max = 20, CancellationToken cancellationToken = default);
 }
 
 #pragma warning restore MA0016, MA0048

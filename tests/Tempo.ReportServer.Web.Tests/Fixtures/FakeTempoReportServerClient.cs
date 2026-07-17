@@ -231,4 +231,22 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
 
     public Task<ReportDataSourcePreviewDto> PreviewDataSourceAsync(string dataSourceId, string tenantId, int top = 5, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
+
+    public Task<IReadOnlyList<ReportScheduleDto>> GetSchedulesAsync(string tenantId, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException();
+
+    public Task<ReportScheduleDto?> GetScheduleAsync(string tenantId, string scheduleId, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException();
+
+    public Task<ReportScheduleDto> UpsertScheduleAsync(UpsertReportScheduleRequestDto request, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException();
+
+    public Task SetScheduleEnabledAsync(string scheduleId, SetReportScheduleEnabledRequestDto request, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException();
+
+    public Task DeleteScheduleAsync(string scheduleId, string tenantId, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException();
+
+    public Task<IReadOnlyList<ReportScheduleRunDto>> GetScheduleRunsAsync(string tenantId, string scheduleId, int max = 20, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException();
 }

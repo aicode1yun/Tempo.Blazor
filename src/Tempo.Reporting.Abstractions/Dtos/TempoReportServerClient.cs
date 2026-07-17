@@ -242,6 +242,63 @@ public sealed class TempoReportServerClient : ApiClientBase, ITempoReportServerC
             $"{_basePath}/datasources/{Uri.EscapeDataString(dataSourceId)}/preview?tenantId={Uri.EscapeDataString(tenantId)}&top={top}",
             cancellationToken).ConfigureAwait(false) ?? new ReportDataSourcePreviewDto();
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportScheduleDto>> GetSchedulesAsync(
+        string tenantId,
+        CancellationToken cancellationToken = default)
+        => await GetAsync<List<ReportScheduleDto>>(
+            $"{_basePath}/schedules?tenantId={Uri.EscapeDataString(tenantId)}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+
+    /// <inheritdoc />
+    public async Task<ReportScheduleDto?> GetScheduleAsync(
+        string tenantId,
+        string scheduleId,
+        CancellationToken cancellationToken = default)
+        => await GetAsync<ReportScheduleDto>(
+            $"{_basePath}/schedules/{Uri.EscapeDataString(scheduleId)}?tenantId={Uri.EscapeDataString(tenantId)}",
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<ReportScheduleDto> UpsertScheduleAsync(
+        UpsertReportScheduleRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostAsync<UpsertReportScheduleRequestDto, ReportScheduleDto>(
+            $"{_basePath}/schedules",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task SetScheduleEnabledAsync(
+        string scheduleId,
+        SetReportScheduleEnabledRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Post, $"{_basePath}/schedules/{Uri.EscapeDataString(scheduleId)}/enabled")
+            {
+                Content = JsonContent.Create(request),
+            },
+            cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteScheduleAsync(string scheduleId, string tenantId, CancellationToken cancellationToken = default)
+        => await DeleteAsync(
+            $"{_basePath}/schedules/{Uri.EscapeDataString(scheduleId)}?tenantId={Uri.EscapeDataString(tenantId)}",
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportScheduleRunDto>> GetScheduleRunsAsync(
+        string tenantId,
+        string scheduleId,
+        int max = 20,
+        CancellationToken cancellationToken = default)
+        => await GetAsync<List<ReportScheduleRunDto>>(
+            $"{_basePath}/schedules/{Uri.EscapeDataString(scheduleId)}/runs?tenantId={Uri.EscapeDataString(tenantId)}&max={max}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+
     private async Task<TResponse> PostAsync<TRequest, TResponse>(
         string uri,
         TRequest request,

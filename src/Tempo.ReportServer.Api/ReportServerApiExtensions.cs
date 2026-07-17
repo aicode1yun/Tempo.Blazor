@@ -30,6 +30,12 @@ public static class ReportServerApiExtensions
         services.TryAddScoped<IReportServerRenderer, ReportServerRenderer>();
         services.TryAddScoped<IReportDataProvider, EmptyReportDataProvider>();
         services.TryAddSingleton<IReportRenderJobQueue, InMemoryReportRenderJobQueue>();
+
+        // The persistent schedule store and a system clock are always available so the scheduling
+        // endpoints work in any host. The background worker and delivery channels are opt-in through
+        // AddTempoReportServerScheduling so lightweight hosts and contract tests do not start a poller.
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddScoped<Scheduling.IReportScheduleStore, Storage.EfReportScheduleStore>();
         services.Configure<ReportServerQuotaOptions>(_ => { });
         services.AddReportServerSecurity();
         services.AddHealthChecks();
@@ -88,6 +94,7 @@ public static class ReportServerApiExtensions
         MapReports(group);
         MapRender(group);
         MapDataSources(group);
+        MapSchedules(group);
         return group;
     }
 
@@ -465,6 +472,88 @@ public static class ReportServerApiExtensions
                     })
                     .ToList(),
             });
+        });
+    }
+
+    private static void MapSchedules(RouteGroupBuilder group)
+    {
+        group.MapGet("/schedules", async (
+            string tenantId,
+            Scheduling.IReportScheduleStore store,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            SetTenant(context, tenantId);
+            return Results.Ok(await store.ListAsync(tenantId, cancellationToken).ConfigureAwait(false));
+        });
+
+        group.MapGet("/schedules/{scheduleId}", async (
+            string scheduleId,
+            string tenantId,
+            Scheduling.IReportScheduleStore store,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            SetTenant(context, tenantId);
+            var schedule = await store.GetAsync(tenantId, scheduleId, cancellationToken).ConfigureAwait(false);
+            return schedule is null ? Results.NotFound() : Results.Ok(schedule);
+        });
+
+        group.MapPost("/schedules", async (
+            UpsertReportScheduleRequestDto request,
+            Scheduling.IReportScheduleStore store,
+            TimeProvider timeProvider,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            SetTenant(context, request.TenantId);
+            try
+            {
+                var schedule = await store.UpsertAsync(request, timeProvider.GetUtcNow(), cancellationToken).ConfigureAwait(false);
+                return Results.Ok(schedule);
+            }
+            catch (FormatException ex)
+            {
+                return Results.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest);
+            }
+        });
+
+        group.MapPost("/schedules/{scheduleId}/enabled", async (
+            string scheduleId,
+            SetReportScheduleEnabledRequestDto request,
+            Scheduling.IReportScheduleStore store,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            SetTenant(context, request.TenantId);
+            return await store.SetEnabledAsync(request.TenantId, scheduleId, request.IsEnabled, cancellationToken).ConfigureAwait(false)
+                ? Results.NoContent()
+                : Results.NotFound();
+        });
+
+        group.MapDelete("/schedules/{scheduleId}", async (
+            string scheduleId,
+            string tenantId,
+            Scheduling.IReportScheduleStore store,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            SetTenant(context, tenantId);
+            return await store.DeleteAsync(tenantId, scheduleId, cancellationToken).ConfigureAwait(false)
+                ? Results.NoContent()
+                : Results.NotFound();
+        });
+
+        group.MapGet("/schedules/{scheduleId}/runs", async (
+            string scheduleId,
+            string tenantId,
+            int? max,
+            Scheduling.IReportScheduleStore store,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            SetTenant(context, tenantId);
+            return Results.Ok(await store.GetRunsAsync(tenantId, scheduleId, max ?? 20, cancellationToken).ConfigureAwait(false));
         });
     }
 

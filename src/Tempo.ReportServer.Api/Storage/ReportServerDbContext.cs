@@ -46,6 +46,12 @@ public sealed class ReportServerDbContext : DbContext
     /// <summary>Per-folder permission grant table.</summary>
     public DbSet<ReportFolderPermissionEntity> FolderPermissions => Set<ReportFolderPermissionEntity>();
 
+    /// <summary>Persistent report schedule table.</summary>
+    public DbSet<ReportScheduleEntity> Schedules => Set<ReportScheduleEntity>();
+
+    /// <summary>Scheduled report run history table.</summary>
+    public DbSet<ReportScheduleRunEntity> ScheduleRuns => Set<ReportScheduleRunEntity>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -150,6 +156,46 @@ public sealed class ReportServerDbContext : DbContext
             entity.Property(permission => permission.Role).HasMaxLength(32);
             entity.HasIndex(permission => new { permission.TenantId, permission.FolderId });
             entity.HasIndex(permission => new { permission.TenantId, permission.SubjectId, permission.FolderId }).IsUnique();
+        });
+
+        // Schedules and runs are not tenant-query-filtered: the scheduling worker sweeps every
+        // tenant's due schedules in one background pass, so it queries across tenants; the
+        // tenant-scoped store methods constrain by TenantId explicitly.
+        modelBuilder.Entity<ReportScheduleEntity>(entity =>
+        {
+            entity.HasKey(schedule => schedule.ScheduleId);
+            entity.Property(schedule => schedule.ScheduleId).HasMaxLength(IdMaxLength);
+            entity.Property(schedule => schedule.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(schedule => schedule.OwnerUserId).HasMaxLength(ActorIdMaxLength);
+            entity.Property(schedule => schedule.Name).HasMaxLength(NameMaxLength);
+            entity.Property(schedule => schedule.ReportId).HasMaxLength(IdMaxLength);
+            entity.Property(schedule => schedule.CronExpression).HasMaxLength(120);
+            entity.Property(schedule => schedule.Format).HasMaxLength(16);
+            entity.Property(schedule => schedule.CultureName).HasMaxLength(32);
+            entity.Property(schedule => schedule.DeliveryKind).HasMaxLength(16);
+            entity.Property(schedule => schedule.DeliveryTarget).HasMaxLength(1024);
+            entity.Property(schedule => schedule.MissedRunPolicy).HasMaxLength(16);
+            entity.Property(schedule => schedule.LastStatus).HasMaxLength(32);
+            entity.Property(schedule => schedule.LastStatusMessage).HasMaxLength(400);
+            entity.Property(schedule => schedule.PendingOccurrencesJson).HasMaxLength(4000);
+            entity.Property(schedule => schedule.RowVersion).IsRowVersion();
+            entity.HasIndex(schedule => new { schedule.TenantId, schedule.ScheduleId }).IsUnique();
+            entity.HasIndex(schedule => new { schedule.IsEnabled, schedule.NextRunUtc });
+        });
+
+        modelBuilder.Entity<ReportScheduleRunEntity>(entity =>
+        {
+            entity.HasKey(run => run.RunId);
+            entity.Property(run => run.RunId).HasMaxLength(IdMaxLength);
+            entity.Property(run => run.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(run => run.ScheduleId).HasMaxLength(IdMaxLength);
+            entity.Property(run => run.Status).HasMaxLength(32);
+            entity.Property(run => run.DeliveryKind).HasMaxLength(16);
+            entity.Property(run => run.DeliveryTarget).HasMaxLength(1024);
+            entity.Property(run => run.ArtifactFileName).HasMaxLength(NameMaxLength);
+            entity.Property(run => run.ArtifactContentType).HasMaxLength(128);
+            entity.Property(run => run.ErrorMessage).HasMaxLength(1024);
+            entity.HasIndex(run => new { run.TenantId, run.ScheduleId, run.OccurrenceUtc });
         });
     }
 }
