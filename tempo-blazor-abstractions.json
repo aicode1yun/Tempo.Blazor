@@ -11873,6 +11873,106 @@
       ]
     },
     {
+      "itemName": "AuditLogActorOption",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Actor available in the audit log filter (id and display name).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogEntry",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Single immutable audit event: timestamp, actor (id/name/role), action key, entity, description, severity, property-level changes (TmChangeInfo), metadata, IP address, and optional hash-chain fields.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogFilterOptions",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Distinct actors, actions, and entity types available for the audit log filters.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogHashChain",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Tamper-evident SHA-256 hash chain over audit log entries: Seal fills Hash/PreviousHash in timestamp order, Verify names the first entry that breaks the chain.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogIntegrityResult",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Outcome of an audit log integrity verification: status, checked count, and the first entry that broke the chain.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogIntegrityStatus",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Result status of a hash-chain integrity verification: Unknown, Verified, or Failed.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogPage",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One page of audit log results plus the total count of the filtered set.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogQuery",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Filtered, paged audit log query: skip/take, actor, action, entity type/id, period (from/to), full-text search, and sort direction.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogSeverity",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Severity of an audit log entry: Info, Warning, or Critical.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "AuditLogTimelineBucket",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Event count aggregated over one slice of the queried period, used by the timeline histogram.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "BreadcrumbItem",
       "kind": "Record",
       "category": "Models",
@@ -12343,6 +12443,46 @@
       ]
     },
     {
+      "itemName": "DataImportBatchResult",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Result of importing one batch: the number of rows the target accepted and the rejected rows with reasons (the import continues past them).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DataImportResult",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Summary of one finished import run reported by TmDataImport: session id (usable for rollback), imported count, rows skipped by dry-run validation, and rows rejected by the target.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DataImportRow",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One row prepared for import: the 1-based source row number and the mapped target-field values keyed by field key. Supports deep cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DataImportRowError",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One row-level problem found while validating or importing: source row number, optional offending field key, and a human-readable reason supplied by the target or validator (data, not component chrome).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DataTableExportData",
       "kind": "Class",
       "category": "Models",
@@ -12561,6 +12701,106 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DeadlineCalculator",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Pure deadline rule engine: applies a chained rule to a base date over a business-day calendar and records a step-by-step protocol. Calendar-based DateOnly arithmetic, so DST transitions cannot skew results; end-of-month and leap-day additions clamp.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineCalendar",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Materialized business-day context for the pure deadline engine: weekend definition plus holiday lookup; LoadAsync materializes a year range from an IHolidayProvider.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineHoliday",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Holiday entry of a holiday calendar: date plus display name.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineNonBusinessShift",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "How a deadline landing on a weekend or holiday is shifted: None, NextBusinessDay, or PreviousBusinessDay.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineProtocolEntry",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One entry of the step-by-step deadline protocol: kind, rule step index, resulting date, added amount/unit, and the holiday shifted from.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineResult",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Result of a deadline calculation: base date, computed deadline, and the step protocol.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineRule",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Deadline computation rule: an ordered chain of steps, with a Single(...) factory for one-step rules.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineRuleStep",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One step of a deadline rule: amount (negative counts backwards), unit, weekend/holiday shift, and an optional label. Steps chain sequentially.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineStepKind",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Kind of a deadline protocol entry: Start, AddUnits, ShiftedFromWeekend, ShiftedFromHoliday, or Final.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DeadlineUnit",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Unit of a deadline rule step: Days, BusinessDays, Weeks, Months, or Years.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DeleteContext<TMetadata>",
       "kind": "Class",
       "category": "Models",
@@ -12720,6 +12960,16 @@
       "description": "Defines where a dock pane is anchored inside a dock manager.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DockPosition.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentAnnotationKind",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Kind of a PDF annotation thread created by TmPdfAnnotator: Comment (default, keeps existing threads working), Highlight, Stamp, or Drawing.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
       "documentationStatus": "merged"
     },
     {
@@ -13004,6 +13254,26 @@
       "description": "User available for document comment mentions.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentComments.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentInkPoint",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Normalized point on a document page (fractions of the page size) used by freehand drawing annotations.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentInkStroke",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Single freehand stroke of a drawing annotation: ordered normalized points plus a thickness expressed as a fraction of the page width.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
       "documentationStatus": "merged"
     },
     {
@@ -14590,6 +14860,36 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IAuditLogIntegrityProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Marker capability interface for providers that can verify a tamper-evident hash chain; TmAuditLogViewer shows the integrity widget only when its provider implements it.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IAuditLogProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Data source contract of TmAuditLogViewer: filtered paged queries with count aggregation, filter facets, and timeline bucketing.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IDataImportTarget",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Destination of a data import: declares the target schema (ImportTargetField list), validates batches without importing (dry-run), imports batches under a session id with continue-past-invalid-rows semantics, and rolls back everything imported under one session.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IDataTableExporter",
       "kind": "Interface",
       "category": "Models",
@@ -14610,6 +14910,56 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IHolidayProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Supplies holiday calendars (typically per country) to deadline calculations, one calendar year at a time.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IKycProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Persistence backend of the compliance wizard: LoadDraftAsync/SaveDraftAsync for resumable drafts and SubmitAsync for the final submission.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IKycStepValidator",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Validates one wizard step of a KycDraft and returns localization-key based errors. Implementations live outside the UI package (e.g. KycStepFluentValidator in Tempo.Blazor.FluentValidation) so the core component stays validation-framework agnostic.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ILedgerDataProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Data source contract of TmLedgerGrid: filtered paged queries with server-side aggregation and opening balances, plus the distinct currency list.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ILedgerMatchingProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Marker capability interface for providers that can pair entries into match groups; TmLedgerGrid shows the matching UI only when its provider implements it.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ImageUrlResolvers",
       "kind": "Class",
       "category": "Models",
@@ -14617,6 +14967,68 @@
       "description": "Factory methods and built-in implementations of IImageUrlResolver.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ImageUrlResolvers.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "InMemoryAuditLogProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IAuditLogProvider over a fixed entry list: filtered paged queries with count aggregation, filter facets, timeline bucketing, and hash-chain integrity verification. Suitable for demos, tests, and small logs.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryAuditLogProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetFilterOptionsAsync",
+          "kind": "Method",
+          "type": "Task<AuditLogFilterOptions>",
+          "parameters": [
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "QueryAsync",
+          "kind": "Method",
+          "type": "Task<AuditLogPage>",
+          "parameters": [
+            {
+              "name": "query",
+              "type": "AuditLogQuery"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "VerifyIntegrityAsync",
+          "kind": "Method",
+          "type": "Task<AuditLogIntegrityResult>",
+          "parameters": [
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "InMemoryDataImportTarget",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IDataImportTarget for demos and tests: a pluggable per-row validator delegate, per-session storage with rollback, and clone-on-read ImportedRows snapshots.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
       "documentationStatus": "merged"
     },
     {
@@ -14678,6 +15090,86 @@
       ]
     },
     {
+      "itemName": "InMemoryHolidayProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IHolidayProvider over a fixed holiday list.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "InMemoryKycProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IKycProvider for demos and tests. Stores deep clones and returns fresh instances on every read; exposes the Submissions snapshot list.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/InMemoryKycProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "LoadDraftAsync",
+          "kind": "Method",
+          "type": "Task<KycDraft?>",
+          "parameters": [
+            {
+              "name": "draftId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "SaveDraftAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "draft",
+              "type": "KycDraft"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "SubmitAsync",
+          "kind": "Method",
+          "type": "Task<KycSubmissionResult>",
+          "parameters": [
+            {
+              "name": "draft",
+              "type": "KycDraft"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "InMemoryLedgerDataProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory ILedgerDataProvider and ILedgerMatchingProvider over a fixed entry list. Aggregates sum exact decimals first and round once per currency. Suitable for demos, tests, and small ledgers.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "InMemoryPdfAnnotationProvider",
       "kind": "Class",
       "category": "Models",
@@ -14688,6 +15180,26 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "InMemoryRedactionProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IRedactionProvider for demos and tests with clone-on-read/write semantics.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "InMemoryScreeningProvider",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "In-memory IScreeningProvider for demos and tests. Returns clones on every read and applies resolutions with an UTC timestamp; rejects Pending as a resolution status.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IPdfAnnotationProvider",
       "kind": "Interface",
       "category": "Models",
@@ -14695,6 +15207,216 @@
       "description": "Persistence contract for PDF viewer annotations (comment threads anchored to page points, areas, or text ranges). Implementations load, create, reply to, edit, delete, resolve, and reopen threads for a document.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/IPdfAnnotationProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IRedactionProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Persistence of redaction definitions per document: LoadAsync returns the saved areas (empty when none), SaveAsync replaces them.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IScreeningProvider",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Data source of screening results: GetFindingsAsync per subject and ResolveAsync applying a reviewer decision.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycAddress",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One address on the draft: kind, street, city, postal code, country. Supports deep cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycAddressKind",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Kind of collected address: Permanent, Mailing, Registered (company seat), Business.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycCompanyIdentity",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Identity fields of a company subject: registered name, registration number, optional legal form, country of incorporation. Supports deep cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycDeclarations",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Declarations and consents: politically-exposed-person answer (nullable so an explicit answer is required), source of funds, processing consent, optional note.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycDocument",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One identification document on the draft: kind, number, issuing authority, optional issue and expiry dates. Supports deep cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycDocumentKind",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Kind of identification document: NationalId, Passport, DrivingLicense, ResidencePermit, RegisterExtract, Other.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycDraft",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Full state of one compliance-wizard identification draft: subject kind, person/company identity, documents, addresses, ownership tree root, declarations, and last-save timestamp. Clone() creates a deep copy.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycOwnershipNode",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "A node of the ownership structure tree. The root represents the subject itself; children are direct owners with share percent and a beneficial-owner flag, recursively. Clone() copies the whole subtree.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycPersonIdentity",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Identity fields of a natural-person subject: first/last name, date of birth, nationality, optional personal ID number. Supports deep cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycSubjectKind",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Kind of subject identified by the compliance wizard: Person or Company.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycSubmissionResult",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Result of submitting a completed identification draft: success flag, assigned submission id, and rejection errors.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycValidationError",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One validation failure produced by an IKycStepValidator: an indexed field path (e.g. \"Documents[0].Number\") and a localization message KEY (never display text) that the rendering component localizes.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "KycWizardStep",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Logical steps of the compliance wizard: Subject, Documents, Addresses, Ownership (company only), Declarations, Review.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LedgerAggregates",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Server-side aggregates of the whole filtered set: debit total, credit total, balance, and count.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LedgerEntry",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Single ledger movement: date, document number, description, counterparty, exact-decimal debit/credit, ISO currency, match state and group, and metadata.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LedgerMatchResult",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Result of matching entries into one group: group id, resulting state (Matched when balanced, otherwise PartiallyMatched), and the included entry ids.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LedgerMatchState",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Match state of a ledger entry: Unmatched, Matched, PartiallyMatched, or Disputed.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LedgerPage",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One page of ledger results with filter-wide aggregates and the opening balance (signed sum of all filtered rows before the page) for running-balance rendering.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LedgerQuery",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Filtered, paged ledger query (search, match state, currency, period). Results are ordered ascending by date then id so running balances are well-defined.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
       "documentationStatus": "merged"
     },
     {
@@ -14743,6 +15465,16 @@
       "description": "The visible area of a TmMap: the map center and the current zoom level. Reported by viewport-changing events (zoom, pan) and accepted by SetViewAsync.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/Maps/MapViewport.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "MoneyMath",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Exact money arithmetic helpers: ISO 4217 minor-unit decimals per currency and midpoint rounding (banker's rounding by default).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
       "documentationStatus": "merged"
     },
     {
@@ -14839,6 +15571,26 @@
       ],
       "packageId": "Tempo.Blazor.Abstractions",
       "documentationStatus": "manual"
+    },
+    {
+      "itemName": "PdfAnnotationColorHelper",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Resolves the display color of a PDF annotation thread: an explicit thread color wins, then a per-author color, then a per-role color, and finally a deterministic palette color derived from the author id.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "PdfAnnotationExportPayloadBuilder",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Builds the culture-invariant JSON payload consumed by the TmPdfAnnotator JavaScript export and print functions: one entry per annotation thread with page, kind, geometry, color, quote, ink strokes, stamp text, and comments.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "RecurrenceParser",
@@ -14952,6 +15704,36 @@
       ]
     },
     {
+      "itemName": "RedactionArea",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One rectangle marked for redaction in page-relative normalized coordinates (0-1, origin top-left): 1-based page number, position/size, PII category, and an optional note. Supports cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RedactionCategory",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "PII category of a redacted area: PersonalId, Name, Address, Contact, BankAccount, Date, Other.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RedactionExportPayloadBuilder",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Builds the culture-invariant JSON payload driving the destructive JS export (rasterize pages, burn black rectangles, rebuild the file without the original content streams). Rects are clamped to the page and degenerate rects dropped.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "SchedulerEventContext",
       "kind": "Class",
       "category": "Models",
@@ -14969,6 +15751,46 @@
       "description": "Context data for scheduler slot context menu events.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SchedulerContextModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ScreeningFinding",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "One finding produced by a screening/check run: category, title, description, source, time, confidence (0-1), severity, review status, and resolution metadata (note, reviewer, timestamp). Supports cloning.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ScreeningFindingStatus",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Review status of a screening finding: Pending, Confirmed (true hit), Dismissed (false positive).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ScreeningResolutionRequest",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Request to resolve a screening finding: finding id, target status (Confirmed or Dismissed), optional note and reviewer identity.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ScreeningSeverity",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Abstractions.Models",
+      "description": "Severity of a screening finding: Info, Low, Medium, High, Critical.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
       "documentationStatus": "merged"
     },
     {
@@ -34290,11 +35112,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1334,
-    "manualItemCount": 1334,
-    "generatedItemCount": 1317,
+    "itemCount": 1407,
+    "manualItemCount": 1407,
+    "generatedItemCount": 1390,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1317
+    "publicApiTypeCount": 1390
   }
 }

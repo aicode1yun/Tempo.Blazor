@@ -1,0 +1,127 @@
+@page "/redaction"
+@using Tempo.Blazor.Components.Files
+@using Tempo.Blazor.Abstractions.Models
+@inject IJSRuntime JS
+<PageTitle>Redaction – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Redaction Layer</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        <code>TmRedactionLayer</code> marks rectangles over a PDF (<code>TmPdfViewer</code>) or an image,
+        categorizes them by PII type, previews before/after, and exports <strong>destructively</strong>:
+        the pipeline rasterizes the pages, burns the black boxes in, and rebuilds a brand-new file from
+        the pixels only — the original text layer is never copied, so redacted content is not extractable
+        from the export. Definitions persist through <code>IRedactionProvider</code>.
+    </p>
+</div>
+
+<!-- PDF redaction -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">PDF: Redact a Personal ID Number</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-full">Destructive export</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            A generated sample contract with a real, extractable text layer. The saved redaction already
+            covers the personal ID number (rodné číslo) — draw more rectangles, toggle the result preview,
+            and export. The exported PDF contains no text layer at all: try copying text out of it.
+        </p>
+        @if (_pdfUrl is not null)
+        {
+            <div data-testid="redaction-demo-pdf">
+                <TmRedactionLayer Url="@_pdfUrl"
+                                  DocumentId="sample-contract"
+                                  Provider="_provider"
+                                  DefaultCategory="RedactionCategory.PersonalId"
+                                  ExportFileName="contract-redacted.pdf"
+                                  Height="560px" />
+            </div>
+        }
+        else
+        {
+            <p class="text-sm text-slate-500" data-testid="redaction-demo-pdf-loading">Preparing the sample document…</p>
+        }
+    </div>
+</section>
+
+<!-- Image redaction -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Image: Redact an ID-Card Preview</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full">Edge case</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            The same layer over a bitmap preview: drag a rectangle over the number line and export — the
+            downloaded PNG is repainted from a canvas, so the original pixels under the box are gone.
+        </p>
+        @if (_imageUrl is not null)
+        {
+            <div data-testid="redaction-demo-image">
+                <TmRedactionLayer ImageUrl="@_imageUrl"
+                                  DocumentId="sample-id-card"
+                                  ExportFileName="id-card-redacted.png" />
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    /// <summary>The value the E2E asserts is NOT extractable from the export.</summary>
+    private const string PersonalIdValue = "760512/1234";
+
+    private readonly InMemoryRedactionProvider _provider = new();
+    private string? _pdfUrl;
+    private string? _imageUrl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // The saved area covers the "Rodne cislo" line of the generated document (line 4 of 6).
+        await _provider.SaveAsync("sample-contract",
+        [
+            new RedactionArea
+            {
+                PageNumber = 1,
+                X = 0.08,
+                Y = 0.14,
+                Width = 0.42,
+                Height = 0.055,
+                Category = RedactionCategory.PersonalId,
+                Note = "rodné číslo"
+            }
+        ]);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var lines = System.Text.Json.JsonSerializer.Serialize(new[]
+        {
+            "SMLOUVA O POSKYTOVANI SLUZEB",
+            "Klient: Bedrich Novak",
+            "Adresa: Dlouha 12, Praha 1",
+            $"Rodne cislo: {PersonalIdValue}",
+            "Bankovni ucet: 123456789/0800",
+            "Datum podpisu: 12. 5. 2026"
+        });
+        _pdfUrl = await JS.InvokeAsync<string>("tmRedaction.createSampleDocument", lines);
+
+        var imageLines = System.Text.Json.JsonSerializer.Serialize(new[]
+        {
+            "OBCANSKY PRUKAZ (nahled)",
+            "Jmeno: Bedrich Novak",
+            $"Rodne cislo: {PersonalIdValue}",
+            "Platnost do: 12. 5. 2032"
+        });
+        _imageUrl = await JS.InvokeAsync<string>("tmRedaction.createSampleImage", imageLines);
+        StateHasChanged();
+    }
+}

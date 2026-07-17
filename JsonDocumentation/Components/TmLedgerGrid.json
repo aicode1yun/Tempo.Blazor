@@ -1,0 +1,63 @@
+{
+  "itemName": "TmLedgerGrid",
+  "kind": "Component",
+  "category": "Ledger",
+  "description": "Accounting ledger grid: debit/credit/running-balance columns with exact decimal money rendering via TmMoneyDisplay, server-side paging and aggregation through ILedgerDataProvider, filter-wide footer totals, search plus match-state and currency filters, and a row-matching workflow (pair/unpair with Matched/PartiallyMatched states) when the provider implements ILedgerMatchingProvider.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Ledger"
+  ],
+  "parameters": [
+    {
+      "name": "Provider",
+      "type": "ILedgerDataProvider",
+      "isRequired": true,
+      "description": "Data source of the grid. Use InMemoryLedgerDataProvider for demos and tests; implement ILedgerMatchingProvider to enable the matching UI."
+    },
+    {
+      "name": "PageSize",
+      "type": "int",
+      "isRequired": false,
+      "default": "50",
+      "description": "Rows per page (server-side paging)."
+    },
+    {
+      "name": "ShowFilters",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the search and filter controls are shown."
+    },
+    {
+      "name": "ShowFooter",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the footer with filter-wide debit/credit/balance totals is shown."
+    },
+    {
+      "name": "ShowRunningBalance",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the running balance column (opening balance + cumulative page movements) is shown."
+    },
+    {
+      "name": "OnEntrySelected",
+      "type": "EventCallback<LedgerEntry>",
+      "isRequired": false,
+      "description": "Raised when a row is clicked."
+    },
+    {
+      "name": "OnMatchingChanged",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised after entries were matched or unmatched."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes for the root element."
+    }
+  ]
+}

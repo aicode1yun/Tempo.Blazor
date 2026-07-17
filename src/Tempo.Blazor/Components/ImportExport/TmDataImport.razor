@@ -1,0 +1,266 @@
+@namespace Tempo.Blazor.Components.ImportExport
+@inherits Tempo.Blazor.Components.TmComponentBase
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Forms
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Interfaces
+
+<div class="tm-data-import @Class" data-testid="@TestId("data-import")">
+    <TmImportWizard ActiveStep="_activeStep"
+                    ActiveStepChanged="HandleActiveStepChangedAsync"
+                    OnCancel="Reset"
+                    OnComplete="Reset"
+                    CompleteText="@Loc["TmDataImport_Finish"]">
+
+        @if (_gateMessage is not null)
+        {
+            <div class="tm-data-import__gate" role="alert" data-testid="@TestId("di-gate-message")">
+                @_gateMessage
+            </div>
+        }
+
+        <TmImportWizardStep Title="@Loc["TmDataImport_StepUpload"]" Icon="upload">
+            <section class="tm-data-import__step" data-testid="@TestId("di-step-upload")">
+                <label class="tm-data-import__upload">
+                    <span class="tm-data-import__label">@Loc["TmDataImport_UploadPrompt"]</span>
+                    <InputFile accept=".csv,.txt,.xlsx"
+                               data-testid="@TestId("di-file")"
+                               OnChange="OnFileSelectedAsync" />
+                    <span class="tm-data-import__hint">@Loc["TmDataImport_UploadHint"]</span>
+                </label>
+
+                <div class="tm-data-import__dialects">
+                    <label class="tm-data-import__field">
+                        <span class="tm-data-import__label">@Loc["TmDataImport_Delimiter"]</span>
+                        <select data-testid="@TestId("di-delimiter")" @onchange="OnDelimiterChangedAsync">
+                            <option value="auto" selected="@(_delimiterChoice == "auto")">@Loc["TmDataImport_DelimiterAuto"]</option>
+                            <option value="," selected="@(_delimiterChoice == ",")">@Loc["TmDataImport_DelimiterComma"]</option>
+                            <option value=";" selected="@(_delimiterChoice == ";")">@Loc["TmDataImport_DelimiterSemicolon"]</option>
+                            <option value="tab" selected="@(_delimiterChoice == "tab")">@Loc["TmDataImport_DelimiterTab"]</option>
+                            <option value="|" selected="@(_delimiterChoice == "|")">@Loc["TmDataImport_DelimiterPipe"]</option>
+                        </select>
+                    </label>
+                    <label class="tm-data-import__field">
+                        <span class="tm-data-import__label">@Loc["TmDataImport_Encoding"]</span>
+                        <select data-testid="@TestId("di-encoding")" @onchange="OnEncodingChangedAsync">
+                            <option value="utf-8" selected="@(_encodingChoice == "utf-8")">UTF-8</option>
+                            <option value="windows-1250" selected="@(_encodingChoice == "windows-1250")">Windows-1250</option>
+                            <option value="windows-1252" selected="@(_encodingChoice == "windows-1252")">Windows-1252</option>
+                        </select>
+                    </label>
+                </div>
+
+                @if (_parseResult is not null)
+                {
+                    <p class="tm-data-import__summary" data-testid="@TestId("di-parse-summary")">
+                        @string.Format(Loc["TmDataImport_ParseSummary"], _fileName, _parseResult.Columns.Count, _parseResult.Rows.Count)
+                    </p>
+                    <div class="tm-data-import__table-wrap" data-testid="@TestId("di-preview")">
+                        <table class="tm-data-import__table">
+                            <thead>
+                                <tr>
+                                    @foreach (var column in _parseResult.Columns)
+                                    {
+                                        <th>@column.Name</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in _parseResult.Rows.Take(PreviewRowCount))
+                                {
+                                    <tr data-testid="@TestId("di-preview-row")">
+                                        @foreach (var cell in row)
+                                        {
+                                            <td>@cell</td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (_parseResult.Rows.Count > PreviewRowCount)
+                        {
+                            <p class="tm-data-import__hint">
+                                @string.Format(Loc["TmDataImport_PreviewTruncated"], PreviewRowCount, _parseResult.Rows.Count)
+                            </p>
+                        }
+                    </div>
+                }
+            </section>
+        </TmImportWizardStep>
+
+        <TmImportWizardStep Title="@Loc["TmDataImport_StepMapping"]" Icon="columns">
+            <section class="tm-data-import__step" data-testid="@TestId("di-step-mapping")">
+                <p class="tm-data-import__hint">@Loc["TmDataImport_MappingHint"]</p>
+                <table class="tm-data-import__table tm-data-import__mapping">
+                    <thead>
+                        <tr>
+                            <th>@Loc["TmDataImport_SourceColumn"]</th>
+                            <th>@Loc["TmDataImport_TargetField"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var column in _parseResult?.Columns ?? [])
+                        {
+                            <tr data-testid="@TestId($"di-map-row-{column.Index}")">
+                                <td>@column.Name</td>
+                                <td>
+                                    <select data-testid="@TestId($"di-map-select-{column.Index}")"
+                                            value="@(_mappings.GetValueOrDefault(column.Index) ?? string.Empty)"
+                                            @onchange="e => OnMappingChanged(column.Index, e)">
+                                        <option value="" selected="@(_mappings.GetValueOrDefault(column.Index) is null)">
+                                            @Loc["TmDataImport_Ignore"]
+                                        </option>
+                                        @foreach (var field in Target.Fields)
+                                        {
+                                            <option value="@field.Key"
+                                                    selected="@(string.Equals(_mappings.GetValueOrDefault(column.Index), field.Key, StringComparison.Ordinal))">
+                                                @FieldOptionLabel(field)
+                                            </option>
+                                        }
+                                    </select>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </section>
+        </TmImportWizardStep>
+
+        <TmImportWizardStep Title="@Loc["TmDataImport_StepValidation"]" Icon="check-circle">
+            <section class="tm-data-import__step" data-testid="@TestId("di-step-validation")">
+                @if (_validating)
+                {
+                    <p class="tm-data-import__hint" data-testid="@TestId("di-validating")">@Loc["TmDataImport_Validating"]</p>
+                }
+                else if (_validationRan)
+                {
+                    <p class="tm-data-import__summary @(InvalidRowCount > 0 ? "tm-data-import__summary--errors" : "tm-data-import__summary--clean")"
+                       data-testid="@TestId("di-validation-summary")">
+                        @string.Format(Loc["TmDataImport_ValidationSummary"], ValidRowCount, InvalidRowCount, _rows.Count)
+                    </p>
+
+                    @if (_validationErrors.Count > 0)
+                    {
+                        <div class="tm-data-import__table-wrap">
+                            <table class="tm-data-import__table">
+                                <thead>
+                                    <tr>
+                                        <th>@Loc["TmDataImport_ErrorRow"]</th>
+                                        <th>@Loc["TmDataImport_ErrorField"]</th>
+                                        <th>@Loc["TmDataImport_ErrorReason"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var error in _validationErrors.Take(MaxDisplayedErrors))
+                                    {
+                                        <tr data-testid="@TestId("di-error-row")">
+                                            <td>@error.RowNumber</td>
+                                            <td>@FieldLabel(error.FieldKey)</td>
+                                            <td>@error.Message</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @if (_validationErrors.Count > MaxDisplayedErrors)
+                            {
+                                <p class="tm-data-import__hint">
+                                    @string.Format(Loc["TmDataImport_MoreErrors"], _validationErrors.Count - MaxDisplayedErrors)
+                                </p>
+                            }
+                        </div>
+
+                        <div class="tm-data-import__row-actions">
+                            <button type="button"
+                                    class="tm-data-import__btn"
+                                    data-testid="@TestId("di-download-errors")"
+                                    @onclick="DownloadErrorReportAsync">
+                                @Loc["TmDataImport_DownloadErrors"]
+                            </button>
+                            <label class="tm-data-import__check">
+                                <input type="checkbox"
+                                       checked="@_skipInvalid"
+                                       data-testid="@TestId("di-skip-invalid")"
+                                       @onchange="e => _skipInvalid = e.Value is bool b && b" />
+                                @Loc["TmDataImport_SkipInvalid"]
+                            </label>
+                        </div>
+                    }
+                }
+            </section>
+        </TmImportWizardStep>
+
+        <TmImportWizardStep Title="@Loc["TmDataImport_StepImport"]" Icon="database">
+            <section class="tm-data-import__step" data-testid="@TestId("di-step-import")">
+                <p class="tm-data-import__summary">
+                    @string.Format(Loc["TmDataImport_ImportPlan"], RowsToImportCount, SkippedByValidationCount)
+                </p>
+
+                <button type="button"
+                        class="tm-data-import__btn tm-data-import__btn--primary"
+                        disabled="@(_importing || _result is not null || RowsToImportCount == 0)"
+                        data-testid="@TestId("di-start-import")"
+                        @onclick="StartImport">
+                    @Loc["TmDataImport_StartImport"]
+                </button>
+
+                @if (_importing || _result is not null)
+                {
+                    <div class="tm-data-import__progress"
+                         role="progressbar"
+                         aria-valuemin="0"
+                         aria-valuemax="100"
+                         aria-valuenow="@_progressPercent"
+                         aria-label="@Loc["TmDataImport_ProgressLabel"]"
+                         data-percent="@_progressPercent"
+                         data-testid="@TestId("di-progress")">
+                        <span class="tm-data-import__progress-fill" style="width: @_progressPercent%"></span>
+                    </div>
+                }
+
+                @if (_result is not null)
+                {
+                    <div class="tm-data-import__result" data-testid="@TestId("di-import-result")">
+                        <p>@string.Format(Loc["TmDataImport_ImportResult"], _result.ImportedCount, _result.SkippedCount, _result.FailedCount)</p>
+
+                        @if (_importErrors.Count > 0)
+                        {
+                            <ul class="tm-data-import__result-errors">
+                                @foreach (var error in _importErrors.Take(MaxDisplayedErrors))
+                                {
+                                    <li>@error.RowNumber: @error.Message</li>
+                                }
+                            </ul>
+                        }
+
+                        <div class="tm-data-import__row-actions">
+                            @if (FailedRowNumbers.Count > 0)
+                            {
+                                <button type="button"
+                                        class="tm-data-import__btn"
+                                        data-testid="@TestId("di-download-failed")"
+                                        @onclick="DownloadFailedRowsAsync">
+                                    @Loc["TmDataImport_DownloadFailed"]
+                                </button>
+                            }
+                            @if (_result.ImportedCount > 0 && !_rolledBack)
+                            {
+                                <button type="button"
+                                        class="tm-data-import__btn tm-data-import__btn--danger"
+                                        data-testid="@TestId("di-rollback")"
+                                        @onclick="RollbackAsync">
+                                    @Loc["TmDataImport_Rollback"]
+                                </button>
+                            }
+                            @if (_rolledBack)
+                            {
+                                <span class="tm-data-import__rolled-back" data-testid="@TestId("di-rolled-back")">
+                                    @Loc["TmDataImport_RolledBack"]
+                                </span>
+                            }
+                        </div>
+                    </div>
+                }
+            </section>
+        </TmImportWizardStep>
+    </TmImportWizard>
+</div>

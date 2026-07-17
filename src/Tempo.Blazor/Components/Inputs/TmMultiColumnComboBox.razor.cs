@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Helpers;
 using Tempo.Blazor.Interfaces;
 
 namespace Tempo.Blazor.Components.Inputs;
@@ -41,6 +42,13 @@ public partial class TmMultiColumnComboBox<TItem, TValue>
 
     /// <summary>Placeholder for the filter input.</summary>
     [Parameter] public string? FilterPlaceholder { get; set; }
+
+    /// <summary>
+    /// When true (default), filtering ignores diacritics via FormD normalization —
+    /// e.g. "usti" matches "Ústí" and "práha" matches "Praha". Set to false for
+    /// accent-sensitive (but still case-insensitive) filtering.
+    /// </summary>
+    [Parameter] public bool AccentInsensitiveFilter { get; set; } = true;
 
     /// <summary>Whether to show a clear button. Default is <c>true</c>.</summary>
     [Parameter] public bool ShowClearButton { get; set; } = true;
@@ -199,7 +207,10 @@ public partial class TmMultiColumnComboBox<TItem, TValue>
         return data.Where(item => _columns.Any(col =>
         {
             var val = col.Field(item)?.ToString();
-            return val is not null && val.Contains(term, StringComparison.OrdinalIgnoreCase);
+            if (val is null) return false;
+            return AccentInsensitiveFilter
+                ? AccentInsensitiveText.Contains(val, term)
+                : val.Contains(term, StringComparison.OrdinalIgnoreCase);
         })).ToList();
     }
 

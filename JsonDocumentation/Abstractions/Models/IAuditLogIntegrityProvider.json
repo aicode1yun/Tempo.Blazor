@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Marker capability interface for providers that can verify a tamper-evident hash chain; TmAuditLogViewer shows the integrity widget only when its provider implements it.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "IAuditLogIntegrityProvider"
+}

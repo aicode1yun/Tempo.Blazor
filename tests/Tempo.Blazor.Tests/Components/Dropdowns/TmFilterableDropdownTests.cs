@@ -131,6 +131,88 @@ public class TmFilterableDropdownTests : LocalizationTestBase
         captured.Should().BeNull();
     }
 
+    // ── Accent-insensitive filtering (FormD normalization) ──────────────────
+
+    private static List<SelectOption<string>> CityOptions =>
+    [
+        SelectOption<string>.From("usti",    "Ústí nad Labem"),
+        SelectOption<string>.From("praha",   "Praha"),
+        SelectOption<string>.From("krumlov", "Český Krumlov")
+    ];
+
+    private IRenderedComponent<TmFilterableDropdown<SelectOption<string>, string>> RenderCityDropdown(bool? accentInsensitive = null)
+        => RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p =>
+        {
+            p.Add(c => c.Items, CityOptions)
+             .Add(c => c.DisplayField, o => o.Label);
+            if (accentInsensitive is not null)
+                p.Add(c => c.AccentInsensitiveFilter, accentInsensitive.Value);
+        });
+
+    [Fact]
+    public void TmFilterableDropdown_Filter_Without_Diacritics_Matches_Accented_Items()
+    {
+        var cut = RenderCityDropdown();
+
+        cut.Find(".tm-filterable-dropdown-trigger").Click();
+        cut.Find(".tm-filterable-dropdown-filter input").Input("usti");
+
+        var items = cut.FindAll(".tm-filterable-dropdown-item");
+        items.Count.Should().Be(1);
+        items[0].TextContent.Should().Contain("Ústí nad Labem");
+    }
+
+    [Fact]
+    public void TmFilterableDropdown_Filter_With_Diacritics_Matches_Accented_Items()
+    {
+        var cut = RenderCityDropdown();
+
+        cut.Find(".tm-filterable-dropdown-trigger").Click();
+        cut.Find(".tm-filterable-dropdown-filter input").Input("Ústí");
+
+        var items = cut.FindAll(".tm-filterable-dropdown-item");
+        items.Count.Should().Be(1);
+        items[0].TextContent.Should().Contain("Ústí nad Labem");
+    }
+
+    [Fact]
+    public void TmFilterableDropdown_Accented_Filter_Matches_Unaccented_Items()
+    {
+        var cut = RenderCityDropdown();
+
+        cut.Find(".tm-filterable-dropdown-trigger").Click();
+        cut.Find(".tm-filterable-dropdown-filter input").Input("práha");
+
+        var items = cut.FindAll(".tm-filterable-dropdown-item");
+        items.Count.Should().Be(1);
+        items[0].TextContent.Should().Contain("Praha");
+    }
+
+    [Fact]
+    public void TmFilterableDropdown_AccentInsensitiveFilter_Disabled_Requires_Exact_Accents()
+    {
+        var cut = RenderCityDropdown(accentInsensitive: false);
+
+        cut.Find(".tm-filterable-dropdown-trigger").Click();
+        cut.Find(".tm-filterable-dropdown-filter input").Input("usti");
+
+        cut.FindAll(".tm-filterable-dropdown-item").Should().BeEmpty();
+        cut.Find(".tm-filterable-dropdown-empty").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void TmFilterableDropdown_AccentInsensitiveFilter_Disabled_Still_Ignores_Case()
+    {
+        var cut = RenderCityDropdown(accentInsensitive: false);
+
+        cut.Find(".tm-filterable-dropdown-trigger").Click();
+        cut.Find(".tm-filterable-dropdown-filter input").Input("praha");
+
+        var items = cut.FindAll(".tm-filterable-dropdown-item");
+        items.Count.Should().Be(1);
+        items[0].TextContent.Should().Contain("Praha");
+    }
+
     [Fact]
     public void TmFilterableDropdown_Disabled_Does_Not_Render_The_Clear_Button()
     {

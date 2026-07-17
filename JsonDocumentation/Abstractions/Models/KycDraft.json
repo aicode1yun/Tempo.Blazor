@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Full state of one compliance-wizard identification draft: subject kind, person/company identity, documents, addresses, ownership tree root, declarations, and last-save timestamp. Clone() creates a deep copy.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "KycDraft"
+}

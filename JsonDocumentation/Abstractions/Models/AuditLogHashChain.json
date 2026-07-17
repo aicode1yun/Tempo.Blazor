@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Tamper-evident SHA-256 hash chain over audit log entries: Seal fills Hash/PreviousHash in timestamp order, Verify names the first entry that breaks the chain.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "AuditLogHashChain"
+}

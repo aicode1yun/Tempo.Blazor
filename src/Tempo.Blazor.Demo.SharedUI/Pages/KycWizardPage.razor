@@ -1,0 +1,217 @@
+@page "/kyc-wizard"
+@using Tempo.Blazor.Components.Compliance
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.FluentValidation.Kyc
+<PageTitle>KYC Wizard – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">KYC Wizard &amp; Screening Results</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        A domain-neutral compliance wizard (<code>TmKycWizard</code>) that identifies a person or a company
+        step by step — documents, addresses, ownership structure tree, declarations — with per-step
+        FluentValidation (<code>KycStepFluentValidator</code>), draft persistence and submission through
+        <code>IKycProvider</code>. Screening check results render in <code>TmScreeningResultPanel</code>
+        with a confirm/dismiss reviewer workflow through <code>IScreeningProvider</code>.
+    </p>
+</div>
+
+<!-- Person wizard -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Person Identification (FO)</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Interactive</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Walk the wizard for a natural person: subject → documents → addresses → declarations → review.
+            Press <em>Next</em> with empty fields to see the per-step validation, save a draft at any point,
+            and submit from the review step.
+        </p>
+        <div data-testid="kyc-demo-person">
+            <TmKycWizard Provider="_personProvider" StepValidator="_validator" />
+        </div>
+    </div>
+</section>
+
+<!-- Company wizard -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Company Identification (PO) with Ownership Tree</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">Interactive</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            The company path adds the ownership structure step: add direct owners, nest owners of owners,
+            mark beneficial owners, and let the validator guard shares (0–100&nbsp;% each, ≤&nbsp;100&nbsp;%
+            per node). This instance resumes a pre-seeded draft.
+        </p>
+        <div data-testid="kyc-demo-company">
+            <TmKycWizard Provider="_companyProvider"
+                         StepValidator="_validator"
+                         DraftId="company-draft"
+                         InitialSubjectKind="KycSubjectKind.Company" />
+        </div>
+    </div>
+</section>
+
+<!-- Screening panel -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Screening Results with Reviewer Decisions</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full">Workflow</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Mock findings from sanctions, PEP and adverse-media checks. Confirm a finding as a true hit or
+            dismiss it as a false positive — optionally with a note; the decision, reviewer and timestamp
+            are recorded by the provider.
+        </p>
+        <div data-testid="kyc-demo-screening">
+            <TmScreeningResultPanel Provider="_screeningProvider" SubjectId="subj-demo" CurrentUserName="demo.reviewer" />
+        </div>
+    </div>
+</section>
+
+<!-- Edge cases -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Read-Only &amp; Empty States</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full">Edge cases</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            The same panel in read-only mode (no reviewer actions) and for a subject with no findings.
+        </p>
+        <div class="grid md:grid-cols-2 gap-4">
+            <div data-testid="kyc-demo-screening-readonly">
+                <TmScreeningResultPanel Provider="_screeningProvider" SubjectId="subj-demo" ReadOnly="true" />
+            </div>
+            <div data-testid="kyc-demo-screening-empty">
+                <TmScreeningResultPanel Provider="_screeningProvider" SubjectId="subj-clean" />
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private readonly InMemoryKycProvider _personProvider = new();
+    private readonly InMemoryKycProvider _companyProvider = new();
+    private readonly KycStepFluentValidator _validator = new();
+    private InMemoryScreeningProvider _screeningProvider = CreateScreeningProvider();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await _companyProvider.SaveDraftAsync(new KycDraft
+        {
+            Id = "company-draft",
+            SubjectKind = KycSubjectKind.Company,
+            Company = new KycCompanyIdentity
+            {
+                Name = "Řehoř a syn s.r.o.",
+                RegistrationNumber = "12345678",
+                LegalForm = "s.r.o.",
+                Country = "CZ"
+            },
+            Documents =
+            [
+                new KycDocument
+                {
+                    Kind = KycDocumentKind.RegisterExtract,
+                    Number = "OR-2026-0042",
+                    IssuedBy = "Městský soud v Praze",
+                    ValidUntil = new DateOnly(2027, 1, 31)
+                }
+            ],
+            Addresses =
+            [
+                new KycAddress
+                {
+                    Kind = KycAddressKind.Registered,
+                    Street = "Dlouhá 12",
+                    City = "Praha",
+                    PostalCode = "110 00",
+                    Country = "CZ"
+                }
+            ],
+            OwnershipRoot = new KycOwnershipNode
+            {
+                Name = "Řehoř a syn s.r.o.",
+                Children =
+                [
+                    new KycOwnershipNode { Name = "Jan Řehoř", SharePercent = 60m, IsBeneficialOwner = true },
+                    new KycOwnershipNode
+                    {
+                        Name = "Bedřich Holding a.s.",
+                        SharePercent = 40m,
+                        Children = [new KycOwnershipNode { Name = "Petr Král", SharePercent = 100m, IsBeneficialOwner = true }]
+                    }
+                ]
+            }
+        });
+    }
+
+    private static InMemoryScreeningProvider CreateScreeningProvider()
+    {
+        var now = new DateTimeOffset(2026, 7, 10, 9, 30, 0, TimeSpan.FromHours(2));
+        return new InMemoryScreeningProvider(
+        [
+            new ScreeningFinding
+            {
+                Id = "find-sanctions-1",
+                SubjectId = "subj-demo",
+                Category = "sanctions",
+                Title = "Řehoř a syn s.r.o. — possible list match",
+                Description = "Name similarity 92 % with an entity on the EU consolidated sanctions list.",
+                Source = "EU consolidated list",
+                OccurredAt = now,
+                Confidence = 0.92,
+                Severity = ScreeningSeverity.Critical
+            },
+            new ScreeningFinding
+            {
+                Id = "find-pep-1",
+                SubjectId = "subj-demo",
+                Category = "pep",
+                Title = "Jan Řehoř — regional politician namesake",
+                Description = "A politically exposed person with the same name and birth year was found.",
+                Source = "PEP register CZ",
+                OccurredAt = now.AddDays(-1),
+                Confidence = 0.55,
+                Severity = ScreeningSeverity.High
+            },
+            new ScreeningFinding
+            {
+                Id = "find-media-1",
+                SubjectId = "subj-demo",
+                Category = "adverse-media",
+                Title = "Bedřich Holding a.s. — insolvency article",
+                Description = "A 2019 article mentions insolvency proceedings of a similarly named company.",
+                Source = "Adverse media scan",
+                OccurredAt = now.AddDays(-3),
+                Confidence = 0.31,
+                Severity = ScreeningSeverity.Medium
+            },
+            new ScreeningFinding
+            {
+                Id = "find-registry-1",
+                SubjectId = "subj-demo",
+                Category = "registry",
+                Title = "Registered address verified",
+                Description = "The registered address matches the commercial register extract.",
+                Source = "Commercial register",
+                OccurredAt = now.AddDays(-3),
+                Confidence = 0.99,
+                Severity = ScreeningSeverity.Info,
+                Status = ScreeningFindingStatus.Dismissed,
+                ResolutionNote = "Informational check, no action needed.",
+                ResolvedBy = "system",
+                ResolvedAt = now.AddDays(-2)
+            }
+        ]);
+    }
+}

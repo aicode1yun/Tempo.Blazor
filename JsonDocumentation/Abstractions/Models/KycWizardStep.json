@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Logical steps of the compliance wizard: Subject, Documents, Addresses, Ownership (company only), Declarations, Review.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "KycWizardStep"
+}

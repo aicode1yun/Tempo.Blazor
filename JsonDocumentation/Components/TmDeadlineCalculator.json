@@ -1,0 +1,73 @@
+{
+  "itemName": "TmDeadlineCalculator",
+  "kind": "Component",
+  "category": "Deadline",
+  "description": "Rule-based deadline calculator widget. Computes a deadline from a base date and a chained rule (calendar days, business days, weeks, months, years — each with configurable weekend/holiday shifting) through the pure DeadlineCalculator engine, showing a live result and a step-by-step protocol. Holiday calendars are pluggable via IHolidayProvider; ShowForm=\"false\" gives an embed mode that renders only the result and protocol.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Deadline"
+  ],
+  "parameters": [
+    {
+      "name": "BaseDate",
+      "type": "DateOnly?",
+      "isRequired": false,
+      "description": "Base date the periods count from. Defaults to today."
+    },
+    {
+      "name": "BaseDateChanged",
+      "type": "EventCallback<DateOnly>",
+      "isRequired": false,
+      "description": "Raised when the base date changes in the form."
+    },
+    {
+      "name": "Rule",
+      "type": "DeadlineRule?",
+      "isRequired": false,
+      "description": "Initial deadline rule. The component edits its own copy; use RuleChanged to observe edits."
+    },
+    {
+      "name": "RuleChanged",
+      "type": "EventCallback<DeadlineRule>",
+      "isRequired": false,
+      "description": "Raised with a snapshot of the edited rule after every form change."
+    },
+    {
+      "name": "HolidayProvider",
+      "type": "IHolidayProvider?",
+      "isRequired": false,
+      "description": "Holiday calendar source. The component loads exactly the year span the calculation can touch."
+    },
+    {
+      "name": "Weekend",
+      "type": "IReadOnlyList<DayOfWeek>?",
+      "isRequired": false,
+      "description": "Weekend days. Default is Saturday and Sunday."
+    },
+    {
+      "name": "ShowForm",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the rule form is rendered. False gives the embed mode (result + protocol only)."
+    },
+    {
+      "name": "ShowProtocol",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the step-by-step protocol is rendered."
+    },
+    {
+      "name": "OnCalculated",
+      "type": "EventCallback<DeadlineResult>",
+      "isRequired": false,
+      "description": "Raised with every recalculated result."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes for the root element."
+    }
+  ]
+}

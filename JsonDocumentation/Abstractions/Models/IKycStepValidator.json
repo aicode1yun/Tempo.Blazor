@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Validates one wizard step of a KycDraft and returns localization-key based errors. Implementations live outside the UI package (e.g. KycStepFluentValidator in Tempo.Blazor.FluentValidation) so the core component stays validation-framework agnostic.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "IKycStepValidator"
+}

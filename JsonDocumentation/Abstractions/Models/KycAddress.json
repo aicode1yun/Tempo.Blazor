@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "One address on the draft: kind, street, city, postal code, country. Supports deep cloning.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "KycAddress"
+}

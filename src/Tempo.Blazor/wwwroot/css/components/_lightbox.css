@@ -116,7 +116,9 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .tm-lightbox {
-  position: fixed; inset: 0; z-index: 1000;
+  /* Overlay tier: must paint above sticky chrome (--tm-z-sticky 1020) and modals (--tm-z-modal 1040),
+     matching .tm-lightbox-overlay. A hardcoded 1000 left the close/nav buttons under TmTopBar. */
+  position: fixed; inset: 0; z-index: var(--tm-z-overlay, 1060);
   display: flex; align-items: center; justify-content: center; outline: none;
 }
 .tm-lightbox-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.85); }

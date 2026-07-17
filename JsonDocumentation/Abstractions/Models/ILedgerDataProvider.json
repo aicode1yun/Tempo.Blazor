@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Data source contract of TmLedgerGrid: filtered paged queries with server-side aggregation and opening balances, plus the distinct currency list.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ILedgerDataProvider"
+}

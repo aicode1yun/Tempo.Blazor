@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "One finding produced by a screening/check run: category, title, description, source, time, confidence (0-1), severity, review status, and resolution metadata (note, reviewer, timestamp). Supports cloning.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ScreeningFinding"
+}

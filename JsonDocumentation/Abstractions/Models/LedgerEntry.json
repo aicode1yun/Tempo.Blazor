@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Single ledger movement: date, document number, description, counterparty, exact-decimal debit/credit, ISO currency, match state and group, and metadata.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "LedgerEntry"
+}

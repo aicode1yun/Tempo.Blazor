@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Summary of one finished import run reported by TmDataImport: session id (usable for rollback), imported count, rows skipped by dry-run validation, and rows rejected by the target.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DataImportResult"
+}

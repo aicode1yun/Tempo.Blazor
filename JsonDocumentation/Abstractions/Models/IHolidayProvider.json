@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Supplies holiday calendars (typically per country) to deadline calculations, one calendar year at a time.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "IHolidayProvider"
+}

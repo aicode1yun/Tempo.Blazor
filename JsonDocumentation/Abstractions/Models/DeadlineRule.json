@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Deadline computation rule: an ordered chain of steps, with a Single(...) factory for one-step rules.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DeadlineRule"
+}

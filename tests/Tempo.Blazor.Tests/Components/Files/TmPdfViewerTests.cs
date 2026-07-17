@@ -630,4 +630,34 @@ public class TmPdfViewerTests : LocalizationTestBase
         // After toggle click, search bar should be hidden
         cut.FindAll(".tm-pdf-viewer__search-bar").Should().BeEmpty();
     }
+
+    // ── N1: additive extension points used by TmPdfAnnotator ────────────────
+
+    [Fact]
+    public void OverlayContent_RendersInsideCanvasWrap()
+    {
+        var cut = RenderComponent<TmPdfViewer>(parameters =>
+            parameters.Add(p => p.Url, "https://example.com/test.pdf")
+                      .Add(p => p.OverlayContent, builder =>
+                      {
+                          builder.OpenElement(0, "div");
+                          builder.AddAttribute(1, "data-testid", "custom-overlay-content");
+                          builder.CloseElement();
+                      }));
+
+        cut.Find(".tm-pdf-viewer__canvas-wrap [data-testid='custom-overlay-content']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void OnDocumentLoaded_FiresWithTotalPages()
+    {
+        var total = 0;
+        var cut = RenderComponent<TmPdfViewer>(parameters =>
+            parameters.Add(p => p.Url, "https://example.com/test.pdf")
+                      .Add(p => p.OnDocumentLoaded, EventCallback.Factory.Create<int>(this, t => total = t)));
+
+        cut.InvokeAsync(() => cut.Instance.OnPdfLoaded(7));
+
+        total.Should().Be(7);
+    }
 }

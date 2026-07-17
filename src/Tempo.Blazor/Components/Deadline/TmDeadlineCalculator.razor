@@ -1,0 +1,112 @@
+@namespace Tempo.Blazor.Components.Deadline
+@inherits Tempo.Blazor.Components.TmComponentBase
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Components.Icons
+
+<div class="tm-deadline @Class" data-testid="@TestId("deadline-calculator")">
+
+    @if (ShowForm)
+    {
+        <div class="tm-deadline__form" role="group" aria-label="@Loc["TmDeadlineCalculator_FormLabel"]">
+            <label class="tm-deadline__field">
+                <span class="tm-deadline__field-label">@Loc["TmDeadlineCalculator_BaseDate"]</span>
+                <input type="date"
+                       value="@BaseDateInputValue"
+                       aria-label="@Loc["TmDeadlineCalculator_BaseDate"]"
+                       data-testid="@TestId("deadline-base")"
+                       @onchange="HandleBaseDateChangedAsync" />
+            </label>
+
+            <div class="tm-deadline__steps">
+                @for (var i = 0; i < _steps.Count; i++)
+                {
+                    var step = _steps[i];
+                    var stepNumber = i + 1;
+                    <div class="tm-deadline__step" data-testid="@TestId("deadline-step")">
+                        <span class="tm-deadline__step-number" aria-hidden="true">@stepNumber</span>
+                        <input type="number"
+                               class="tm-deadline__amount"
+                               value="@step.Amount"
+                               aria-label="@(string.Format(Loc["TmDeadlineCalculator_AmountLabel"], stepNumber))"
+                               data-testid="@TestId("deadline-amount")"
+                               @onchange="e => HandleAmountChangedAsync(step, e)" />
+                        <select class="tm-deadline__select"
+                                aria-label="@(string.Format(Loc["TmDeadlineCalculator_UnitSelectLabel"], stepNumber))"
+                                data-testid="@TestId("deadline-unit")"
+                                @onchange="e => HandleUnitChangedAsync(step, e)">
+                            @foreach (var unit in Enum.GetValues<DeadlineUnit>())
+                            {
+                                <option value="@unit" selected="@(unit == step.Unit)">@UnitLabel(unit)</option>
+                            }
+                        </select>
+                        <select class="tm-deadline__select"
+                                aria-label="@(string.Format(Loc["TmDeadlineCalculator_ShiftSelectLabel"], stepNumber))"
+                                data-testid="@TestId("deadline-shift")"
+                                @onchange="e => HandleShiftChangedAsync(step, e)">
+                            @foreach (var shift in Enum.GetValues<DeadlineNonBusinessShift>())
+                            {
+                                <option value="@shift" selected="@(shift == step.NonBusinessShift)">@ShiftLabel(shift)</option>
+                            }
+                        </select>
+                        <button type="button"
+                                class="tm-deadline__icon-btn"
+                                disabled="@(_steps.Count <= 1)"
+                                title="@Loc["TmDeadlineCalculator_RemoveStep"]"
+                                aria-label="@Loc["TmDeadlineCalculator_RemoveStep"]"
+                                data-testid="@TestId("deadline-remove-step")"
+                                @onclick="() => RemoveStepAsync(step)">
+                            <TmIcon Name="x" Size="IconSize.Xs" />
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <button type="button"
+                    class="tm-deadline__btn"
+                    data-testid="@TestId("deadline-add-step")"
+                    @onclick="AddStepAsync">
+                <TmIcon Name="plus" Size="IconSize.Xs" />
+                @Loc["TmDeadlineCalculator_AddStep"]
+            </button>
+
+            @if (_errorKey is not null)
+            {
+                <div class="tm-deadline__error" role="alert" data-testid="@TestId("deadline-error")">
+                    @Loc[_errorKey]
+                </div>
+            }
+        </div>
+    }
+
+    @if (_result is not null)
+    {
+        <div class="tm-deadline__result" data-testid="@TestId("deadline-result")">
+            <span class="tm-deadline__result-label">@Loc["TmDeadlineCalculator_Result"]</span>
+            <strong class="tm-deadline__result-date"
+                    data-date="@IsoDate(_result.Deadline)"
+                    data-testid="@TestId("deadline-result-date")">
+                @FormatDate(_result.Deadline)
+            </strong>
+            <span class="tm-deadline__result-day">@FormatDayOfWeek(_result.Deadline)</span>
+        </div>
+
+        @if (ShowProtocol)
+        {
+            <ol class="tm-deadline__protocol"
+                aria-label="@Loc["TmDeadlineCalculator_ProtocolLabel"]"
+                data-testid="@TestId("deadline-protocol")">
+                @foreach (var entry in _result.Protocol)
+                {
+                    <li class="tm-deadline__protocol-entry tm-deadline__protocol-entry--@entry.Kind.ToString().ToLowerInvariant()"
+                        data-testid="@TestId("deadline-protocol-entry")">
+                        @ProtocolText(entry)
+                        @if (!string.IsNullOrEmpty(entry.StepLabel))
+                        {
+                            <span class="tm-deadline__protocol-step-label">(@entry.StepLabel)</span>
+                        }
+                    </li>
+                }
+            </ol>
+        }
+    }
+</div>

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Identity fields of a natural-person subject: first/last name, date of birth, nationality, optional personal ID number. Supports deep cloning.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "KycPersonIdentity"
+}

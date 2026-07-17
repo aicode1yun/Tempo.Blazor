@@ -27,6 +27,10 @@
         "version": "8.0.1"
       },
       {
+        "name": "System.Text.Encoding.CodePages",
+        "version": "8.0.0"
+      },
+      {
         "name": "Microsoft.Extensions.Localization",
         "version": "8.0.12"
       },
@@ -40,6 +44,10 @@
       },
       {
         "name": "Microsoft.Extensions.Http",
+        "version": "9.0.3"
+      },
+      {
+        "name": "System.Text.Encoding.CodePages",
         "version": "9.0.3"
       },
       {
@@ -74,13 +82,16 @@
       "Tempo.Blazor.Components",
       "Tempo.Blazor.Components.Activity",
       "Tempo.Blazor.Components.AITools",
+      "Tempo.Blazor.Components.AuditLog",
       "Tempo.Blazor.Components.Avatars",
       "Tempo.Blazor.Components.Buttons",
       "Tempo.Blazor.Components.Charts",
       "Tempo.Blazor.Components.Chat",
+      "Tempo.Blazor.Components.Compliance",
       "Tempo.Blazor.Components.Dashboard",
       "Tempo.Blazor.Components.DataDisplay",
       "Tempo.Blazor.Components.DataTable",
+      "Tempo.Blazor.Components.Deadline",
       "Tempo.Blazor.Components.Dropdowns",
       "Tempo.Blazor.Components.Feedback",
       "Tempo.Blazor.Components.Files",
@@ -91,6 +102,7 @@
       "Tempo.Blazor.Components.ImportExport",
       "Tempo.Blazor.Components.Inputs",
       "Tempo.Blazor.Components.Layout",
+      "Tempo.Blazor.Components.Ledger",
       "Tempo.Blazor.Components.Navigation",
       "Tempo.Blazor.Components.Notifications",
       "Tempo.Blazor.Components.Pickers",
@@ -2234,6 +2246,124 @@
       ]
     },
     {
+      "itemName": "TmAuditLogViewer",
+      "kind": "Component",
+      "category": "Audit Log",
+      "namespace": "Tempo.Blazor.Components.AuditLog",
+      "description": "Virtualized audit log viewer for large event stores (millions of rows). Rows load on demand through the pluggable IAuditLogProvider (paged queries with count aggregation). Includes a clickable timeline histogram, actor/action/entity/period filters, full-text search, an inline detail with property-level change diffs (TmChangeDiff), CSV export of the filtered set, and an optional tamper-evident hash-chain integrity indicator shown when the provider implements IAuditLogIntegrityProvider.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/AuditLog/TmAuditLogViewer.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.AuditLog"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "ExportFileName",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"audit-log.csv\"",
+          "description": "File name of the CSV export."
+        },
+        {
+          "name": "ExportMaxRows",
+          "type": "int",
+          "isRequired": false,
+          "default": "100_000",
+          "description": "Maximum number of rows included in the CSV export."
+        },
+        {
+          "name": "Height",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Height of the entry list (CSS value).",
+          "default": "\"480px\""
+        },
+        {
+          "name": "ItemSize",
+          "type": "float",
+          "isRequired": false,
+          "default": "44f",
+          "description": "Pixel height of one row used by virtualization."
+        },
+        {
+          "name": "NonVirtualizedMaxItems",
+          "type": "int",
+          "isRequired": false,
+          "default": "500",
+          "description": "Maximum rows rendered when Virtualized is false."
+        },
+        {
+          "name": "OnEntrySelected",
+          "type": "EventCallback<AuditLogEntry>",
+          "isRequired": false,
+          "description": "Raised when an entry is selected (its detail expands)."
+        },
+        {
+          "name": "Provider",
+          "type": "IAuditLogProvider",
+          "isRequired": true,
+          "description": "Data source of the viewer: filtered paged queries, filter facets, and timeline bucketing. Use InMemoryAuditLogProvider for demos and tests.",
+          "editorRequired": true
+        },
+        {
+          "name": "ShowExport",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the CSV export action is offered."
+        },
+        {
+          "name": "ShowFilters",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the actor/action/entity/period filter controls are shown."
+        },
+        {
+          "name": "ShowIntegrity",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the hash-chain integrity indicator is shown when the provider implements IAuditLogIntegrityProvider."
+        },
+        {
+          "name": "ShowSearch",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the full-text search input is shown."
+        },
+        {
+          "name": "ShowTimeline",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the timeline histogram is shown. Clicking a bar narrows the period filter to that bucket."
+        },
+        {
+          "name": "TimelineBucketCount",
+          "type": "int",
+          "isRequired": false,
+          "default": "40",
+          "description": "Number of timeline buckets."
+        },
+        {
+          "name": "Virtualized",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether rows are virtualized via the Blazor Virtualize component. Recommended for large logs."
+        }
+      ]
+    },
+    {
       "itemName": "TmAvatar",
       "kind": "Component",
       "category": "Avatars",
@@ -2754,7 +2884,7 @@
       "kind": "Component",
       "category": "Charts",
       "namespace": "Tempo.Blazor.Components.Charts",
-      "description": "Pure SVG chart component supporting Bar, Line, Area, Pie, Donut, and HorizontalBar chart types with optional legend, grid, value labels, animation, gradient area fills, a proportional DateTime X axis for time series, and click events on segments.",
+      "description": "Pure SVG chart component supporting Bar, Line, Area, Pie, Donut, and HorizontalBar chart types with optional legend, grid, value labels, animation, gradient area fills, a proportional DateTime X axis for time series, combo charts (per-dataset ChartDataset.RenderAs = ChartDatasetRenderAs.Line renders that dataset as a line overlay over the bars of a Bar chart on a shared Y scale — bars for periodic flows, lines for cumulative values), dense-axis label thinning on Bar charts (over 24 categories only every n-th label renders), negative values on Bar/Line charts (signed domain with an emphasized zero axis; bars grow down from the zero baseline), point-marker thinning on dense line series (markers closer than ~9 units thin to ~24-unit spacing while the polyline stays complete), and click events on segments. Chart types additionally include Funnel (conversion trapezoids with per-stage conversion percentages), Heatmap (dataset-rows × label-columns intensity matrix with a global scale), and Treemap (squarified shares, flat or hierarchical via ChartTreeNode).",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Charts/TmChart.razor",
       "documentationStatus": "merged",
@@ -2816,6 +2946,12 @@
           "type": "RenderFragment<ChartTooltipContext>?",
           "isRequired": false,
           "description": "Optional custom tooltip content; when null a rich default tooltip is used."
+        },
+        {
+          "name": "TreeNodes",
+          "type": "IReadOnlyList<ChartTreeNode>?",
+          "isRequired": false,
+          "description": "Hierarchical data for ChartType.Treemap: top-level nodes render as groups with header strips, their children as tiles sized by value. When null, a treemap renders flat from Data (one tile per label/value)."
         },
         {
           "name": "Width",
@@ -2903,6 +3039,10 @@
         {
           "title": "Time series with a DateTime axis",
           "code": "<TmChart Type=\"ChartType.Line\"\n         Data=\"@(new ChartData { Labels = [], TimePoints = dates, Datasets = new[] { new ChartDataset { Label = \"Price\", Values = prices, Color = \"#3b82f6\" } } })\"\n         TimeLabelFormat=\"MMM yyyy\"\n         Height=\"320px\" />"
+        },
+        {
+          "title": "Combo chart: bars with a line overlay (RenderAs)",
+          "code": "<TmChart Type=\"ChartType.Bar\"\n         Data=\"@(new ChartData { Labels = months, Datasets = new[] {\n             new ChartDataset { Label = \"Rent\", Values = rent, Color = \"#22c55e\" },\n             new ChartDataset { Label = \"Costs\", Values = costs, Color = \"#ef4444\" },\n             new ChartDataset { Label = \"Cashflow\", Values = cashflow, Color = \"#3b82f6\", RenderAs = ChartDatasetRenderAs.Line }\n         } })\"\n         Height=\"320px\" />"
         }
       ]
     },
@@ -3118,6 +3258,135 @@
           "isRequired": false,
           "default": "[]",
           "description": "Users currently typing."
+        }
+      ]
+    },
+    {
+      "itemName": "TmKycWizard",
+      "kind": "Component",
+      "category": "Compliance",
+      "namespace": "Tempo.Blazor.Components.Compliance",
+      "description": "Step-by-step compliance/identification wizard (KYC/AML style, domain neutral): subject identity (person or company), identification documents, addresses, ownership structure tree (company subjects), declarations and a final review with submission. Per-step validation is pluggable through IKycStepValidator (use KycStepFluentValidator from Tempo.Blazor.FluentValidation); drafts persist and submit through IKycProvider. Errors render as a localized summary plus inline field messages.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Compliance/TmKycWizard.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Abstractions.Models",
+        "@using Tempo.Blazor.Components.Compliance"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "DraftId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Identifier of an existing draft to resume. Null starts a new draft."
+        },
+        {
+          "name": "InitialSubjectKind",
+          "type": "KycSubjectKind",
+          "isRequired": false,
+          "default": "KycSubjectKind.Person",
+          "description": "Subject kind preselected for new drafts. The company path adds the ownership structure step."
+        },
+        {
+          "name": "OnDraftSaved",
+          "type": "EventCallback<KycDraft>",
+          "isRequired": false,
+          "description": "Callback invoked after the draft was saved, with a snapshot of the draft."
+        },
+        {
+          "name": "OnStepChanged",
+          "type": "EventCallback<KycWizardStep>",
+          "isRequired": false,
+          "description": "Callback invoked when the active step changes."
+        },
+        {
+          "name": "OnSubmitted",
+          "type": "EventCallback<KycSubmissionResult>",
+          "isRequired": false,
+          "description": "Callback invoked after a successful submission."
+        },
+        {
+          "name": "Provider",
+          "type": "IKycProvider",
+          "isRequired": true,
+          "description": "Persistence backend for drafts and the final submission.",
+          "editorRequired": true
+        },
+        {
+          "name": "StepValidator",
+          "type": "IKycStepValidator?",
+          "isRequired": false,
+          "description": "Per-step validator gating Next/Submit. When null, navigation is not gated. Use e.g. KycStepFluentValidator from Tempo.Blazor.FluentValidation."
+        }
+      ]
+    },
+    {
+      "itemName": "TmScreeningResultPanel",
+      "kind": "Component",
+      "category": "Compliance",
+      "namespace": "Tempo.Blazor.Components.Compliance",
+      "description": "Panel listing compliance screening findings for one subject — category, severity badge, source, time and a confidence meter — ordered pending-first, then by severity and recency. Reviewers confirm a finding as a true hit or dismiss it as a false positive (optionally with a note) through IScreeningProvider; the resolution note, reviewer and timestamp render on resolved findings. Supports a read-only mode and an empty state.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Compliance/TmScreeningResultPanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Abstractions.Models",
+        "@using Tempo.Blazor.Components.Compliance"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "CurrentUserName",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Reviewer identity recorded with resolutions."
+        },
+        {
+          "name": "OnFindingResolved",
+          "type": "EventCallback<ScreeningFinding>",
+          "isRequired": false,
+          "description": "Callback invoked after a finding was confirmed or dismissed."
+        },
+        {
+          "name": "Provider",
+          "type": "IScreeningProvider",
+          "isRequired": true,
+          "description": "Data source of the findings and the resolution workflow.",
+          "editorRequired": true
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Hides the confirm/dismiss actions when true.",
+          "default": "false"
+        },
+        {
+          "name": "ShowConfidence",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the confidence indicator is shown."
+        },
+        {
+          "name": "SubjectId",
+          "type": "string",
+          "isRequired": true,
+          "default": "\"\"",
+          "description": "Identifier of the screened subject.",
+          "editorRequired": true
         }
       ]
     },
@@ -3392,6 +3661,16 @@
       ]
     },
     {
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Charts",
+      "description": "Per-dataset render override for combo charts. On a chart, datasets marked render as a line overlay on top of the bars (shared Y scale) — bars for periodic flows, lines for cumulative values in one plot.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+      "documentationStatus": "generated",
+      "itemName": "ChartDatasetRenderAs"
+    },
+    {
       "itemName": "ChartSegment",
       "kind": "Record",
       "category": "Components",
@@ -3478,6 +3757,16 @@
           "description": "Resolved color of the hovered point or series."
         }
       ]
+    },
+    {
+      "itemName": "ChartTreeNode",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Charts",
+      "description": "One node of a hierarchical treemap for TmChart: display label, leaf value (a parent's size is the sum of its children), optional fill color (defaults to the chart palette by top-level index), and optional child nodes rendered as tiles inside the group.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "ChartType",
@@ -6467,6 +6756,60 @@
       ]
     },
     {
+      "itemName": "TmMoneyDisplay",
+      "kind": "Component",
+      "category": "Data Display",
+      "namespace": "Tempo.Blazor.Components.DataDisplay",
+      "description": "Atomic monetary amount: currency-aware decimals (ISO 4217 minor units via MoneyMath), locale number formatting with tabular numerals, semantic positive/negative/zero colors, an optional explicit plus sign, and an em-dash placeholder for null amounts. Exposes invariant data-amount/data-currency attributes for testing and scraping.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/TmMoneyDisplay.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.DataDisplay"
+      ],
+      "parameters": [
+        {
+          "name": "Amount",
+          "type": "decimal?",
+          "isRequired": false,
+          "description": "Amount to display. Null renders an em-dash placeholder."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes."
+        },
+        {
+          "name": "Colored",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether positive/negative amounts are tinted with the semantic success/danger colors."
+        },
+        {
+          "name": "Currency",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"\"",
+          "description": "ISO 4217 currency code appended after the number. Empty renders a plain number."
+        },
+        {
+          "name": "Decimals",
+          "type": "int?",
+          "isRequired": false,
+          "description": "Decimal places override. Defaults to the currency's ISO 4217 minor units."
+        },
+        {
+          "name": "ShowSign",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether positive amounts carry an explicit plus sign.",
+          "default": "false"
+        }
+      ]
+    },
+    {
       "itemName": "TmMultiViewList",
       "kind": "Component",
       "category": "Data Display",
@@ -8147,6 +8490,83 @@
       ]
     },
     {
+      "itemName": "TmDeadlineCalculator",
+      "kind": "Component",
+      "category": "Deadline",
+      "namespace": "Tempo.Blazor.Components.Deadline",
+      "description": "Rule-based deadline calculator widget. Computes a deadline from a base date and a chained rule (calendar days, business days, weeks, months, years — each with configurable weekend/holiday shifting) through the pure DeadlineCalculator engine, showing a live result and a step-by-step protocol. Holiday calendars are pluggable via IHolidayProvider; ShowForm=\"false\" gives an embed mode that renders only the result and protocol.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Deadline/TmDeadlineCalculator.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Deadline"
+      ],
+      "parameters": [
+        {
+          "name": "BaseDate",
+          "type": "DateOnly?",
+          "isRequired": false,
+          "description": "Base date the periods count from. Defaults to today."
+        },
+        {
+          "name": "BaseDateChanged",
+          "type": "EventCallback<DateOnly>",
+          "isRequired": false,
+          "description": "Raised when the base date changes in the form."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "HolidayProvider",
+          "type": "IHolidayProvider?",
+          "isRequired": false,
+          "description": "Holiday calendar source. The component loads exactly the year span the calculation can touch."
+        },
+        {
+          "name": "OnCalculated",
+          "type": "EventCallback<DeadlineResult>",
+          "isRequired": false,
+          "description": "Raised with every recalculated result."
+        },
+        {
+          "name": "Rule",
+          "type": "DeadlineRule?",
+          "isRequired": false,
+          "description": "Initial deadline rule. The component edits its own copy; use RuleChanged to observe edits."
+        },
+        {
+          "name": "RuleChanged",
+          "type": "EventCallback<DeadlineRule>",
+          "isRequired": false,
+          "description": "Raised with a snapshot of the edited rule after every form change."
+        },
+        {
+          "name": "ShowForm",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the rule form is rendered. False gives the embed mode (result + protocol only)."
+        },
+        {
+          "name": "ShowProtocol",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the step-by-step protocol is rendered."
+        },
+        {
+          "name": "Weekend",
+          "type": "IReadOnlyList<DayOfWeek>?",
+          "isRequired": false,
+          "description": "Weekend days. Default is Saturday and Sunday."
+        }
+      ]
+    },
+    {
       "itemName": "TmDropdown",
       "kind": "Component",
       "category": "Dropdowns",
@@ -8280,7 +8700,7 @@
       "kind": "Component",
       "category": "Dropdowns",
       "namespace": "Tempo.Blazor.Components.Dropdowns",
-      "description": "Generic searchable dropdown with client-side or server-side data loading, keyboard navigation, custom item templates, and a clear button. Supports two-way binding via Value/ValueChanged.",
+      "description": "Generic searchable dropdown with client-side or server-side data loading, keyboard navigation, custom item templates, and a clear button. Client-side filtering is contains-based and accent-insensitive by default (FormD normalization — \"usti\" matches \"Ústí\"). Supports two-way binding via Value/ValueChanged.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Dropdowns/TmFilterableDropdown.razor",
       "documentationStatus": "merged",
@@ -8298,6 +8718,13 @@
         }
       ],
       "parameters": [
+        {
+          "name": "AccentInsensitiveFilter",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true (default), filtering ignores diacritics via FormD normalization — e.g. \"usti\" matches \"Ústí\" and \"práha\" matches \"Praha\". Set to false for accent-sensitive (but still case-insensitive) filtering."
+        },
         {
           "name": "Class",
           "type": "string?",
@@ -11385,6 +11812,67 @@
       ]
     },
     {
+      "itemName": "TmDataImport",
+      "kind": "Component",
+      "category": "Import / Export",
+      "namespace": "Tempo.Blazor.Components.ImportExport",
+      "description": "Full data-import flow over the TmImportWizard shell: upload CSV/XLSX (dialect + encoding selectors, auto-detected delimiter, pluggable parsers by file extension), preview, column-to-schema mapping with auto-mapping and required/duplicate gating, batched dry-run validation with a downloadable error report (rows + reasons), and a batched import with progress, partial import (skip invalid rows), failed-rows CSV download for a corrected follow-up import, and per-session rollback — all through IDataImportTarget.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/ImportExport/TmDataImport.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Abstractions.Models",
+        "@using Tempo.Blazor.Components.ImportExport"
+      ],
+      "parameters": [
+        {
+          "name": "BatchSize",
+          "type": "int",
+          "isRequired": false,
+          "default": "500",
+          "description": "Rows per provider batch for validation and import."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "OnCompleted",
+          "type": "EventCallback<DataImportResult>",
+          "isRequired": false,
+          "description": "Callback invoked when an import run finishes, with the run summary."
+        },
+        {
+          "name": "ParseOptions",
+          "type": "ImportParseOptions?",
+          "isRequired": false,
+          "description": "Parse options override. Null uses the upload step's dialect and encoding selectors."
+        },
+        {
+          "name": "Parsers",
+          "type": "IReadOnlyDictionary<string, IImportFileParser>?",
+          "isRequired": false,
+          "description": "Parsers by lower-case file extension (e.g. \".xlsx\" → XlsxImportFileParser from Tempo.Blazor.DataTableXlsx). \".csv\"/\".txt\" fall back to the built-in CSV parser."
+        },
+        {
+          "name": "PreviewRowCount",
+          "type": "int",
+          "isRequired": false,
+          "default": "10",
+          "description": "Rows shown in the upload preview."
+        },
+        {
+          "name": "Target",
+          "type": "IDataImportTarget",
+          "isRequired": true,
+          "description": "Destination of the import: target schema, validation, batches, rollback.",
+          "editorRequired": true
+        }
+      ]
+    },
+    {
       "itemName": "TmExportOptions",
       "kind": "Component",
       "category": "Import / Export",
@@ -13129,6 +13617,13 @@
         }
       ],
       "parameters": [
+        {
+          "name": "AccentInsensitiveFilter",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When true (default), filtering ignores diacritics via FormD normalization — e.g. \"usti\" matches \"Ústí\" and \"práha\" matches \"Praha\". Set to false for accent-sensitive (but still case-insensitive) filtering."
+        },
         {
           "name": "AllowCreateNew",
           "type": "bool",
@@ -16577,6 +17072,74 @@
         {
           "title": "Top bar with custom center content",
           "code": "<TmTopBar BrandTitle=\"Admin\">\n    <CenterContent>\n        <TmBreadcrumbs Items=\"breadcrumbs\" />\n    </CenterContent>\n    <ActionsContent>\n        <TmNotificationBell CurrentUserId=\"current-user\" />\n    </ActionsContent>\n</TmTopBar>"
+        }
+      ]
+    },
+    {
+      "itemName": "TmLedgerGrid",
+      "kind": "Component",
+      "category": "Ledger",
+      "namespace": "Tempo.Blazor.Components.Ledger",
+      "description": "Accounting ledger grid: debit/credit/running-balance columns with exact decimal money rendering via TmMoneyDisplay, server-side paging and aggregation through ILedgerDataProvider, filter-wide footer totals, search plus match-state and currency filters, and a row-matching workflow (pair/unpair with Matched/PartiallyMatched states) when the provider implements ILedgerMatchingProvider.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Ledger/TmLedgerGrid.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Ledger"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "OnEntrySelected",
+          "type": "EventCallback<LedgerEntry>",
+          "isRequired": false,
+          "description": "Raised when a row is clicked."
+        },
+        {
+          "name": "OnMatchingChanged",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised after entries were matched or unmatched."
+        },
+        {
+          "name": "PageSize",
+          "type": "int",
+          "isRequired": false,
+          "default": "50",
+          "description": "Rows per page (server-side paging)."
+        },
+        {
+          "name": "Provider",
+          "type": "ILedgerDataProvider",
+          "isRequired": true,
+          "description": "Data source of the grid. Use InMemoryLedgerDataProvider for demos and tests; implement ILedgerMatchingProvider to enable the matching UI.",
+          "editorRequired": true
+        },
+        {
+          "name": "ShowFilters",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the search and filter controls are shown."
+        },
+        {
+          "name": "ShowFooter",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the footer with filter-wide debit/credit/balance totals is shown."
+        },
+        {
+          "name": "ShowRunningBalance",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the running balance column (opening balance + cumulative page movements) is shown."
         }
       ]
     },
@@ -22612,6 +23175,10 @@
       "kind": "Css"
     },
     {
+      "path": "src/Tempo.Blazor/wwwroot/css/components/_audit-log-viewer.css",
+      "kind": "Css"
+    },
+    {
       "path": "src/Tempo.Blazor/wwwroot/css/components/_avatar.css",
       "kind": "Css"
     },
@@ -22704,6 +23271,10 @@
       "kind": "Css"
     },
     {
+      "path": "src/Tempo.Blazor/wwwroot/css/components/_data-import.css",
+      "kind": "Css"
+    },
+    {
       "path": "src/Tempo.Blazor/wwwroot/css/components/_data-table.css",
       "kind": "Css"
     },
@@ -22721,6 +23292,10 @@
     },
     {
       "path": "src/Tempo.Blazor/wwwroot/css/components/_datetime-range-picker.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor/wwwroot/css/components/_deadline-calculator.css",
       "kind": "Css"
     },
     {
@@ -22845,6 +23420,14 @@
     },
     {
       "path": "src/Tempo.Blazor/wwwroot/css/components/_keyboard-shortcuts.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor/wwwroot/css/components/_kyc-wizard.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor/wwwroot/css/components/_ledger-grid.css",
       "kind": "Css"
     },
     {
@@ -22973,6 +23556,10 @@
     },
     {
       "path": "src/Tempo.Blazor/wwwroot/css/components/_scheduler.css",
+      "kind": "Css"
+    },
+    {
+      "path": "src/Tempo.Blazor/wwwroot/css/components/_screening-result-panel.css",
       "kind": "Css"
     },
     {
@@ -23205,11 +23792,11 @@
     }
   ],
   "summary": {
-    "itemCount": 322,
-    "manualItemCount": 322,
-    "generatedItemCount": 314,
-    "generatedOnlyItemCount": 0,
-    "componentCount": 185,
-    "publicApiTypeCount": 129
+    "itemCount": 331,
+    "manualItemCount": 330,
+    "generatedItemCount": 323,
+    "generatedOnlyItemCount": 1,
+    "componentCount": 192,
+    "publicApiTypeCount": 131
   }
 }

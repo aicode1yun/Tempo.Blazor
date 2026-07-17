@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Match state of a ledger entry: Unmatched, Matched, PartiallyMatched, or Disputed.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "LedgerMatchState"
+}

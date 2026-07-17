@@ -1,0 +1,193 @@
+@namespace Tempo.Blazor.Components.Ledger
+@inherits Tempo.Blazor.Components.TmComponentBase
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Components.DataDisplay
+@using Tempo.Blazor.Components.Icons
+
+<div class="tm-ledger @Class" data-testid="@TestId("ledger-grid")">
+
+    @if (ShowFilters)
+    {
+        <div class="tm-ledger__toolbar" role="toolbar" aria-label="@Loc["TmLedgerGrid_ToolbarLabel"]">
+            <input type="search"
+                   class="tm-ledger__search"
+                   value="@_search"
+                   placeholder="@Loc["TmLedgerGrid_SearchPlaceholder"]"
+                   aria-label="@Loc["TmLedgerGrid_SearchPlaceholder"]"
+                   data-testid="@TestId("ledger-search")"
+                   @onchange="HandleSearchChangedAsync" />
+
+            <select class="tm-ledger__filter"
+                    aria-label="@Loc["TmLedgerGrid_FilterState"]"
+                    data-testid="@TestId("ledger-filter-state")"
+                    @onchange="HandleStateFilterChangedAsync">
+                <option value="" selected="@(_stateFilter is null)">@Loc["TmLedgerGrid_AllStates"]</option>
+                @foreach (var state in Enum.GetValues<LedgerMatchState>())
+                {
+                    <option value="@state" selected="@(_stateFilter == state)">@StateLabel(state)</option>
+                }
+            </select>
+
+            @if (_currencies.Count > 1)
+            {
+                <select class="tm-ledger__filter"
+                        aria-label="@Loc["TmLedgerGrid_FilterCurrency"]"
+                        data-testid="@TestId("ledger-filter-currency")"
+                        @onchange="HandleCurrencyFilterChangedAsync">
+                    <option value="" selected="@(string.IsNullOrEmpty(_currencyFilter))">@Loc["TmLedgerGrid_AllCurrencies"]</option>
+                    @foreach (var currency in _currencies)
+                    {
+                        <option value="@currency" selected="@(currency == _currencyFilter)">@currency</option>
+                    }
+                </select>
+            }
+
+            <div class="tm-ledger__spacer"></div>
+
+            @if (SupportsMatching)
+            {
+                <button type="button"
+                        class="tm-ledger__btn tm-ledger__btn--primary"
+                        disabled="@(!CanMatch)"
+                        data-testid="@TestId("ledger-match")"
+                        @onclick="MatchSelectedAsync">
+                    <TmIcon Name="link" Size="IconSize.Xs" />
+                    @Loc["TmLedgerGrid_Match"]
+                </button>
+                <button type="button"
+                        class="tm-ledger__btn"
+                        disabled="@(!CanUnmatch)"
+                        data-testid="@TestId("ledger-unmatch")"
+                        @onclick="UnmatchSelectedAsync">
+                    <TmIcon Name="x" Size="IconSize.Xs" />
+                    @Loc["TmLedgerGrid_Unmatch"]
+                </button>
+            }
+        </div>
+    }
+
+    @if (_totalCount == 0 && !_loading)
+    {
+        <div class="tm-ledger__empty" data-testid="@TestId("ledger-empty")">
+            <TmEmptyState Icon="search" Title="@Loc["TmLedgerGrid_NoEntries"]" />
+        </div>
+    }
+    else
+    {
+        <div class="tm-ledger__table-wrap">
+            <table class="tm-ledger__table" aria-label="@Loc["TmLedgerGrid_GridLabel"]">
+                <thead>
+                    <tr>
+                        @if (SupportsMatching)
+                        {
+                            <th class="tm-ledger__th tm-ledger__th--select"></th>
+                        }
+                        <th class="tm-ledger__th">@Loc["TmLedgerGrid_ColumnDate"]</th>
+                        <th class="tm-ledger__th">@Loc["TmLedgerGrid_ColumnDocument"]</th>
+                        <th class="tm-ledger__th tm-ledger__th--wide">@Loc["TmLedgerGrid_ColumnDescription"]</th>
+                        <th class="tm-ledger__th tm-ledger__th--amount">@Loc["TmLedgerGrid_ColumnDebit"]</th>
+                        <th class="tm-ledger__th tm-ledger__th--amount">@Loc["TmLedgerGrid_ColumnCredit"]</th>
+                        @if (ShowRunningBalance)
+                        {
+                            <th class="tm-ledger__th tm-ledger__th--amount">@Loc["TmLedgerGrid_ColumnBalance"]</th>
+                        }
+                        <th class="tm-ledger__th">@Loc["TmLedgerGrid_ColumnState"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in RowsWithBalances)
+                    {
+                        var entry = row.Entry;
+                        <tr class="tm-ledger__row"
+                            data-entry-id="@entry.Id"
+                            data-testid="@TestId("ledger-row")"
+                            @onclick="() => HandleRowClickedAsync(entry)">
+                            @if (SupportsMatching)
+                            {
+                                <td class="tm-ledger__td tm-ledger__td--select" @onclick:stopPropagation="true">
+                                    <input type="checkbox"
+                                           checked="@IsSelected(entry)"
+                                           aria-label="@(string.Format(Loc["TmLedgerGrid_SelectRow"], entry.DocumentNumber ?? entry.Id))"
+                                           data-testid="@TestId("ledger-select")"
+                                           @onchange="e => ToggleSelection(entry, e)" />
+                                </td>
+                            }
+                            <td class="tm-ledger__td tm-ledger__td--date">@FormatDate(entry.Date)</td>
+                            <td class="tm-ledger__td tm-ledger__td--doc">@entry.DocumentNumber</td>
+                            <td class="tm-ledger__td tm-ledger__td--desc">
+                                @entry.Description
+                                @if (!string.IsNullOrEmpty(entry.Counterparty))
+                                {
+                                    <span class="tm-ledger__counterparty">@entry.Counterparty</span>
+                                }
+                            </td>
+                            <td class="tm-ledger__td tm-ledger__td--amount" data-testid="@TestId("ledger-debit")">
+                                <TmMoneyDisplay Amount="entry.Debit" Currency="@entry.Currency" Colored="false" />
+                            </td>
+                            <td class="tm-ledger__td tm-ledger__td--amount" data-testid="@TestId("ledger-credit")">
+                                <TmMoneyDisplay Amount="entry.Credit" Currency="@entry.Currency" Colored="false" />
+                            </td>
+                            @if (ShowRunningBalance)
+                            {
+                                <td class="tm-ledger__td tm-ledger__td--amount" data-testid="@TestId("ledger-balance")">
+                                    <TmMoneyDisplay Amount="row.Balance" Currency="@entry.Currency" />
+                                </td>
+                            }
+                            <td class="tm-ledger__td">
+                                <span class="@StateClass(entry.MatchState)"
+                                      title="@(entry.MatchGroupId ?? StateLabel(entry.MatchState))"
+                                      data-testid="@TestId("ledger-match-badge")">
+                                    @StateLabel(entry.MatchState)
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                @if (ShowFooter)
+                {
+                    <tfoot>
+                        <tr class="tm-ledger__footer" data-testid="@TestId("ledger-footer")">
+                            <td class="tm-ledger__td tm-ledger__td--footer-label"
+                                colspan="@(SupportsMatching ? 4 : 3)">
+                                @(string.Format(System.Globalization.CultureInfo.CurrentCulture, Loc["TmLedgerGrid_FooterTotals"], _aggregates.Count))
+                            </td>
+                            <td class="tm-ledger__td tm-ledger__td--amount" data-testid="@TestId("ledger-footer-debit")">
+                                <TmMoneyDisplay Amount="_aggregates.DebitTotal" Currency="@FooterCurrency" Colored="false" />
+                            </td>
+                            <td class="tm-ledger__td tm-ledger__td--amount" data-testid="@TestId("ledger-footer-credit")">
+                                <TmMoneyDisplay Amount="_aggregates.CreditTotal" Currency="@FooterCurrency" Colored="false" />
+                            </td>
+                            <td class="tm-ledger__td tm-ledger__td--amount"
+                                colspan="@(ShowRunningBalance ? 2 : 1)"
+                                data-testid="@TestId("ledger-footer-balance")">
+                                <TmMoneyDisplay Amount="_aggregates.Balance" Currency="@FooterCurrency" ShowSign="true" />
+                            </td>
+                        </tr>
+                    </tfoot>
+                }
+            </table>
+        </div>
+
+        <div class="tm-ledger__pager">
+            <button type="button"
+                    class="tm-ledger__btn"
+                    disabled="@(_pageIndex <= 0)"
+                    aria-label="@Loc["TmLedgerGrid_Previous"]"
+                    data-testid="@TestId("ledger-prev")"
+                    @onclick="PreviousPageAsync">
+                <TmIcon Name="chevron-left" Size="IconSize.Xs" />
+            </button>
+            <span class="tm-ledger__page-info" data-testid="@TestId("ledger-page-info")">
+                @(string.Format(System.Globalization.CultureInfo.CurrentCulture, Loc["TmLedgerGrid_PageInfo"], _pageIndex + 1, TotalPages))
+            </span>
+            <button type="button"
+                    class="tm-ledger__btn"
+                    disabled="@((_pageIndex + 1L) * PageSize >= _totalCount)"
+                    aria-label="@Loc["TmLedgerGrid_Next"]"
+                    data-testid="@TestId("ledger-next")"
+                    @onclick="NextPageAsync">
+                <TmIcon Name="chevron-right" Size="IconSize.Xs" />
+            </button>
+        </div>
+    }
+</div>

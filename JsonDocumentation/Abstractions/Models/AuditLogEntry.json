@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Single immutable audit event: timestamp, actor (id/name/role), action key, entity, description, severity, property-level changes (TmChangeInfo), metadata, IP address, and optional hash-chain fields.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "AuditLogEntry"
+}

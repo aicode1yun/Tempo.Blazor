@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Filtered, paged audit log query: skip/take, actor, action, entity type/id, period (from/to), full-text search, and sort direction.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "AuditLogQuery"
+}

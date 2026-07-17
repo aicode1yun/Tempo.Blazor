@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Import",
+  "namespace": "Tempo.Blazor.FluentValidation.Import",
+  "description": "Adapts a FluentValidation IValidator<T> to data-import row validation: each DataImportRow is bound to the model and validated; every failure becomes a DataImportRowError carrying the source row number and the target field key (default mapping lower-cases the first letter of the property name, overridable). Binder exceptions become whole-row errors instead of crashing the batch.",
+  "packageId": "Tempo.Blazor.FluentValidation",
+  "sourcePath": "src/Tempo.Blazor.FluentValidation/Import/FluentValidationDataImportValidator.cs",
+  "documentationStatus": "generated",
+  "itemName": "FluentValidationDataImportValidator<TModel>"
+}

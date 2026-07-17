@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Server-side aggregates of the whole filtered set: debit total, credit total, balance, and count.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "LedgerAggregates"
+}

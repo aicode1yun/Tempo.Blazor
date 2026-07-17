@@ -1,0 +1,241 @@
+@page "/pdf-annotator"
+@using Microsoft.JSInterop
+@using Tempo.Blazor.Components.Files
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Demo.SharedUI.Services
+@inject IJSRuntime JS
+@implements IDisposable
+<PageTitle>PDF Annotator – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">PDF Annotator</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        A standalone annotation workbench built on top of <code>TmPdfViewer</code>. Highlight text, drop comment pins,
+        place stamps, and draw freehand — every annotation opens a comment thread that can be replied to, resolved,
+        and reopened. Colors are assigned per author or per role, persistence is pluggable through
+        <code>IPdfAnnotationProvider</code>, and annotations can be exported into the PDF (as real PDF annotations
+        or flattened into the page) or printed with a comment summary.
+    </p>
+</div>
+
+<!-- Two-user collaboration -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Two Users, One Document</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Collaboration</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Alena (role <em>reviewer</em>, amber) and Bedřich (role <em>author</em>, cyan) annotate the same document.
+            Both panes share one <code>LocalStoragePdfAnnotationProvider</code>, so annotations appear in the other
+            pane immediately and survive a page reload. Try: pick the comment tool, click into the page, write a note —
+            then resolve it from the other pane.
+        </p>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <div data-testid="pdf-annotator-pane-alice">
+                <div class="text-sm font-semibold mb-2 text-amber-700 dark:text-amber-300">Alena — reviewer</div>
+                <TmPdfAnnotator @ref="_aliceAnnotator"
+                                Url="@_demoPdfUrl"
+                                DocumentId="demo-annotator-shared"
+                                AnnotationProvider="_sharedProvider"
+                                CurrentUser="_alice"
+                                Users="_users"
+                                RoleColors="_roleColors"
+                                Height="520px" />
+            </div>
+            <div data-testid="pdf-annotator-pane-bob">
+                <div class="text-sm font-semibold mb-2 text-cyan-700 dark:text-cyan-300">Bedřich — author</div>
+                <TmPdfAnnotator @ref="_bobAnnotator"
+                                Url="@_demoPdfUrl"
+                                DocumentId="demo-annotator-shared"
+                                AnnotationProvider="_sharedProvider"
+                                CurrentUser="_bob"
+                                Users="_users"
+                                RoleColors="_roleColors"
+                                Height="520px" />
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Seeded showcase -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Annotation Kinds &amp; Author Colors</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Showcase</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            A document seeded with all four annotation kinds — a text highlight, a comment pin, an APPROVED stamp,
+            and a freehand drawing — from two different authors with explicit <code>AuthorColors</code>.
+            Use the toolbar to export the annotated PDF (real PDF annotations), export a flattened copy
+            (annotations drawn into the page content plus a comment summary page), or print with annotations.
+        </p>
+        <div data-testid="pdf-annotator-showcase">
+            <TmPdfAnnotator Url="@_demoPdfUrl"
+                            DocumentId="demo-annotator-seeded"
+                            AnnotationProvider="_seededProvider"
+                            CurrentUser="_alice"
+                            Users="_users"
+                            AuthorColors="_authorColors"
+                            ExportFileName="tempo-annotated.pdf"
+                            Height="560px" />
+        </div>
+    </div>
+</section>
+
+@code {
+    private const string _demoPdfUrl = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
+
+    private TmPdfAnnotator? _aliceAnnotator;
+    private TmPdfAnnotator? _bobAnnotator;
+    private LocalStoragePdfAnnotationProvider? _sharedProvider;
+    private InMemoryPdfAnnotationProvider? _seededProvider;
+
+    private readonly DocumentCommentUser _alice = new()
+    {
+        UserId = "alice",
+        DisplayName = "Alena",
+        Role = "reviewer"
+    };
+
+    private readonly DocumentCommentUser _bob = new()
+    {
+        UserId = "bob",
+        DisplayName = "Bedřich",
+        Role = "author"
+    };
+
+    private IReadOnlyList<DocumentCommentUser> _users = [];
+
+    private readonly Dictionary<string, string> _roleColors = new()
+    {
+        ["reviewer"] = "#b45309",
+        ["author"] = "#0e7490"
+    };
+
+    private readonly Dictionary<string, string> _authorColors = new()
+    {
+        ["alice"] = "#b45309",
+        ["bob"] = "#7c3aed"
+    };
+
+    protected override void OnInitialized()
+    {
+        _users = [_alice, _bob];
+
+        _sharedProvider = new LocalStoragePdfAnnotationProvider(JS);
+        _sharedProvider.Changed += HandleSharedProviderChanged;
+
+        _seededProvider = new InMemoryPdfAnnotationProvider(
+            new Dictionary<string, IReadOnlyList<DocumentCommentThread>>
+            {
+                ["demo-annotator-seeded"] =
+                [
+                    new DocumentCommentThread
+                    {
+                        Id = "seed-highlight",
+                        Kind = DocumentAnnotationKind.Highlight,
+                        Anchor = DocumentCommentAnchor.TextRange(1,
+                            [DocumentCommentRect.Create(0.18, 0.30, 0.30, 0.018)],
+                            "trace-based just-in-time"),
+                        Comments =
+                        [
+                            new DocumentComment
+                            {
+                                Id = "seed-highlight-c",
+                                AuthorId = "alice",
+                                AuthorName = "Alena",
+                                Body = "Key claim of the paper — verify the benchmark section supports it."
+                            }
+                        ]
+                    },
+                    new DocumentCommentThread
+                    {
+                        Id = "seed-comment",
+                        Kind = DocumentAnnotationKind.Comment,
+                        Anchor = DocumentCommentAnchor.Point(1, 0.82, 0.18),
+                        Comments =
+                        [
+                            new DocumentComment
+                            {
+                                Id = "seed-comment-c",
+                                AuthorId = "bob",
+                                AuthorName = "Bedřich",
+                                Body = "Header formatting looks off in the two-column layout."
+                            }
+                        ]
+                    },
+                    new DocumentCommentThread
+                    {
+                        Id = "seed-stamp",
+                        Kind = DocumentAnnotationKind.Stamp,
+                        StampText = "APPROVED",
+                        Anchor = DocumentCommentAnchor.Area(1, 0.66, 0.055, 0.18, 0.05),
+                        Comments =
+                        [
+                            new DocumentComment
+                            {
+                                Id = "seed-stamp-c",
+                                AuthorId = "alice",
+                                AuthorName = "Alena",
+                                Body = "APPROVED"
+                            }
+                        ]
+                    },
+                    new DocumentCommentThread
+                    {
+                        Id = "seed-drawing",
+                        Kind = DocumentAnnotationKind.Drawing,
+                        Anchor = DocumentCommentAnchor.Point(1, 0.12, 0.62),
+                        InkStrokes =
+                        [
+                            DocumentInkStroke.Create(
+                            [
+                                (0.12, 0.66), (0.16, 0.62), (0.20, 0.66), (0.24, 0.62), (0.28, 0.66)
+                            ])
+                        ],
+                        Comments =
+                        [
+                            new DocumentComment
+                            {
+                                Id = "seed-drawing-c",
+                                AuthorId = "bob",
+                                AuthorName = "Bedřich",
+                                Body = "This paragraph needs a rewrite."
+                            }
+                        ]
+                    }
+                ]
+            });
+    }
+
+    private void HandleSharedProviderChanged()
+    {
+        _ = RefreshBothAsync();
+    }
+
+    private async Task RefreshBothAsync()
+    {
+        if (_aliceAnnotator is not null)
+        {
+            await _aliceAnnotator.RefreshAsync();
+        }
+
+        if (_bobAnnotator is not null)
+        {
+            await _bobAnnotator.RefreshAsync();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_sharedProvider is not null)
+        {
+            _sharedProvider.Changed -= HandleSharedProviderChanged;
+        }
+    }
+}

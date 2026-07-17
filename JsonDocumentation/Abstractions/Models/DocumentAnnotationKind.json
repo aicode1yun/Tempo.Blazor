@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Kind of a PDF annotation thread created by TmPdfAnnotator: Comment (default, keeps existing threads working), Highlight, Stamp, or Drawing.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentAnnotationKind"
+}

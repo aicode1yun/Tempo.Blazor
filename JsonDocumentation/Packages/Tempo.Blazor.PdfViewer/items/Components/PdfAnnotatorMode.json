@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "description": "Active tool of the PDF annotator: Browse, Highlight, Comment, Stamp, or Draw.",
+  "packageId": "Tempo.Blazor.PdfViewer",
+  "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotator.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "PdfAnnotatorMode"
+}

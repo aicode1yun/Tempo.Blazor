@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "One row prepared for import: the 1-based source row number and the mapped target-field values keyed by field key. Supports deep cloning.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataImportModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DataImportRow"
+}

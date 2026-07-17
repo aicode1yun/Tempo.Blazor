@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Data source of screening results: GetFindingsAsync per subject and ResolveAsync applying a reviewer decision.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ScreeningModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "IScreeningProvider"
+}

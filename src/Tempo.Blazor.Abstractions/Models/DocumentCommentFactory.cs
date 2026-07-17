@@ -21,7 +21,11 @@ public static class DocumentCommentFactory
             Id = Guid.NewGuid().ToString("N"),
             Anchor = request.Anchor,
             Status = DocumentCommentThreadStatus.Open,
-            Comments = [CreateComment(request.Body, request.Mentions, author, timestamp)]
+            Comments = [CreateComment(request.Body, request.Mentions, author, timestamp)],
+            Kind = request.Kind,
+            Color = request.Color,
+            StampText = request.StampText,
+            InkStrokes = request.InkStrokes is null ? [] : [.. request.InkStrokes]
         };
     }
 

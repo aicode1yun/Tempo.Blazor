@@ -1,0 +1,13 @@
+{
+  "itemName": "TmPdfAnnotatorLayer",
+  "kind": "Component",
+  "category": "Files",
+  "namespace": "Tempo.Blazor.Components.Files",
+  "description": "Overlay that renders TmPdfAnnotator annotations over the current page: colored text highlights, stamps, freehand ink strokes (SVG), numbered comment markers, and the pending draft. Used internally by TmPdfAnnotator.",
+  "packageId": "Tempo.Blazor.PdfViewer",
+  "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotatorLayer.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Files"
+  ]
+}

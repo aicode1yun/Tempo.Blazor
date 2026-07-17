@@ -281,3 +281,43 @@
         stroke-dashoffset: 0;
     }
 }
+
+/* ── Funnel / Heatmap / Treemap (Plán 4/N8) ─────────────────────────────── */
+
+.tm-chart__funnel-segment,
+.tm-chart__heatmap-cell,
+.tm-chart__treemap-tile {
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.tm-chart__funnel-segment:hover,
+.tm-chart__treemap-tile:hover {
+    opacity: 0.85;
+}
+
+.tm-chart__heatmap-cell:hover {
+    stroke: var(--tm-color-primary);
+    stroke-width: 2;
+}
+
+.tm-chart__treemap-group {
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tm-chart__funnel-segment,
+    .tm-chart__heatmap-cell,
+    .tm-chart__treemap-tile {
+        transition: none;
+    }
+}
+
+.tm-chart__heatmap-value,
+.tm-chart__funnel-label,
+.tm-chart__funnel-value,
+.tm-chart__treemap-label,
+.tm-chart__treemap-value,
+.tm-chart__treemap-group-label {
+    pointer-events: none;
+}

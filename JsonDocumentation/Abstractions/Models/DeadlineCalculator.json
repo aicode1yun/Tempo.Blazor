@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Pure deadline rule engine: applies a chained rule to a base date over a business-day calendar and records a step-by-step protocol. Calendar-based DateOnly arithmetic, so DST transitions cannot skew results; end-of-month and leap-day additions clamp.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DeadlineModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DeadlineCalculator"
+}

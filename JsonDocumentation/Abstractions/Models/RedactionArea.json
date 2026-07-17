@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "One rectangle marked for redaction in page-relative normalized coordinates (0-1, origin top-left): 1-based page number, position/size, PII category, and an optional note. Supports cloning.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "RedactionArea"
+}

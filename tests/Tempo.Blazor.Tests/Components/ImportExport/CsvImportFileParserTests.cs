@@ -178,4 +178,69 @@ public class CsvImportFileParserTests
 
         result.Rows[0].Should().Equal("1", "", "3");
     }
+
+    // ── Dialects (Fáze N6): explicit delimiters, auto-detection, encodings ───
+
+    [Fact]
+    public async Task SemicolonDialect_ParsesWithExplicitDelimiter()
+    {
+        var result = await ParseAsync("Name;Email\nAlice;a@x.com", new ImportParseOptions(Delimiter: ';'));
+
+        result.Columns.Select(c => c.Name).Should().Equal("Name", "Email");
+        result.Rows[0].Should().Equal("Alice", "a@x.com");
+    }
+
+    [Fact]
+    public async Task TabDialect_ParsesWithExplicitDelimiter()
+    {
+        var result = await ParseAsync("Name\tEmail\nAlice\ta@x.com", new ImportParseOptions(Delimiter: '\t'));
+
+        result.Rows[0].Should().Equal("Alice", "a@x.com");
+    }
+
+    [Theory]
+    [InlineData("Name;Email\nAlice;a@x.com")]
+    [InlineData("Name\tEmail\nAlice\ta@x.com")]
+    [InlineData("Name|Email\nAlice|a@x.com")]
+    [InlineData("Name,Email\nAlice,a@x.com")]
+    public async Task AutoDetectDelimiter_PicksTheDominantSeparator(string csv)
+    {
+        var result = await ParseAsync(csv, new ImportParseOptions(AutoDetectDelimiter: true));
+
+        result.Columns.Select(c => c.Name).Should().Equal("Name", "Email");
+        result.Rows[0].Should().Equal("Alice", "a@x.com");
+    }
+
+    [Fact]
+    public async Task AutoDetectDelimiter_IgnoresSeparatorsInsideQuotes()
+    {
+        // The quoted field contains more semicolons than there are real comma separators.
+        var result = await ParseAsync("\"a;b;c;d\",second\n\"x;y;z;w\",2", new ImportParseOptions(HasHeaderRow: false, AutoDetectDelimiter: true));
+
+        result.Rows[0].Should().Equal("a;b;c;d", "second");
+    }
+
+    [Fact]
+    public async Task Windows1250Encoding_DecodesCzechDiacritics()
+    {
+        var parser = new CsvImportFileParser();
+        var win1250 = Encoding.GetEncoding(1250);
+        using var stream = new MemoryStream(win1250.GetBytes("Jméno,Město\nBedřich,Řež"));
+
+        var result = await parser.ParseAsync(stream, new ImportParseOptions(EncodingName: "windows-1250"));
+
+        result.Columns.Select(c => c.Name).Should().Equal("Jméno", "Město");
+        result.Rows[0].Should().Equal("Bedřich", "Řež");
+    }
+
+    [Fact]
+    public async Task UnknownEncodingName_FallsBackToUtf8()
+    {
+        var parser = new CsvImportFileParser();
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("Name\nBedřich"));
+
+        var result = await parser.ParseAsync(stream, new ImportParseOptions(EncodingName: "no-such-encoding"));
+
+        result.Rows[0].Should().Equal("Bedřich");
+    }
 }

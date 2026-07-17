@@ -6,8 +6,7 @@
      style="width: @Width; height: @Height;"
      data-testid="@RootTestId("tm-chart")">
 
-    @if (Data is null || Data.Datasets.Length == 0
-        || (Data.Labels.Length == 0 && Data.TimePoints is not { Length: > 0 }))
+    @if (!HasRenderableData)
     {
         <div class="tm-chart__empty">@Loc["TmChart_NoData"]</div>
     }
@@ -23,7 +22,7 @@
             @TooltipContent
         </svg>
 
-        @if (ShowLegend && Data.Datasets.Length > 0)
+        @if (ShowLegend && LegendItemList.Count > 0)
         {
             <div class="tm-chart__legend">
                 @for (var li = 0; li < LegendItemList.Count; li++)
@@ -115,6 +114,18 @@
 
     /// <summary>Optional custom tooltip content; when null a rich default tooltip is used.</summary>
     [Parameter] public RenderFragment<ChartTooltipContext>? TooltipTemplate { get; set; }
+
+    /// <summary>
+    /// Hierarchical data for <see cref="ChartType.Treemap"/>: top-level nodes render as
+    /// groups with header strips, their children as tiles. When null, a treemap renders
+    /// flat from <see cref="Data"/> (one tile per label/value).
+    /// </summary>
+    [Parameter] public IReadOnlyList<ChartTreeNode>? TreeNodes { get; set; }
+
+    private bool HasRenderableData
+        => Type == ChartType.Treemap && TreeNodes is { Count: > 0 }
+           || Data is not null && Data.Datasets.Length > 0
+              && (Data.Labels.Length > 0 || Data.TimePoints is { Length: > 0 });
 
     private string ChartAriaLabel => $"{Type} chart";
     private record LegendItem(string Label, string Color);
@@ -242,6 +253,20 @@
         get
         {
             var list = new List<LegendItem>();
+            if (Type == ChartType.Treemap && TreeNodes is { Count: > 0 })
+            {
+                for (int i = 0; i < TreeNodes.Count; i++)
+                {
+                    list.Add(new LegendItem(TreeNodes[i].Label, TreeNodes[i].Color ?? Palette[i % Palette.Length]));
+                }
+                return list;
+            }
+
+            if (Data is null)
+            {
+                return list;
+            }
+
             if (UsesPerValueLegend())
             {
                 var dataset = Data.Datasets[0];
@@ -279,6 +304,7 @@
             case ChartType.Bar:
                 BuildGrid(builder);
                 BuildBarChart(builder);
+                BuildComboLineOverlay(builder);
                 break;
             case ChartType.Line:
                 BuildGrid(builder);
@@ -298,18 +324,81 @@
                 BuildAreaGrid(builder);
                 BuildAreaChart(builder);
                 break;
+            case ChartType.Funnel:
+                BuildFunnel(builder);
+                break;
+            case ChartType.Heatmap:
+                BuildHeatmap(builder);
+                break;
+            case ChartType.Treemap:
+                BuildTreemap(builder);
+                break;
         }
     };
+
+    // ── Signed value domain for vertical Bar (incl. combo overlays) ──
+    // 0-based when every visible value is non-negative (existing behavior); extends below
+    // zero when any value is negative (e.g. cashflow), with an emphasized zero axis.
+
+    private (double Min, double Max) BarValueDomain()
+    {
+        double min = 0, max = 0;
+        if (PerValue)
+        {
+            var ds = Data.Datasets[0];
+            for (int i = 0; i < ds.Values.Length; i++)
+            {
+                if (IsSegmentHidden(0, i) || double.IsNaN(ds.Values[i])) continue;
+                if (ds.Values[i] < min) min = ds.Values[i];
+                if (ds.Values[i] > max) max = ds.Values[i];
+            }
+        }
+        else
+        {
+            for (int di = 0; di < Data.Datasets.Length; di++)
+            {
+                if (IsSegmentHidden(di, -1)) continue;
+                foreach (var v in Data.Datasets[di].Values)
+                {
+                    if (double.IsNaN(v)) continue;
+                    if (v < min) min = v;
+                    if (v > max) max = v;
+                }
+            }
+        }
+
+        if (max == min) max = min + 1; // flat/empty — avoid a zero-height domain
+        return (min, max);
+    }
+
+    private double BarDomainY(double value, double min, double max)
+        => PT + CH - ((value - min) / (max - min)) * CH;
 
     private void BuildGrid(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
     {
         if (!ShowGrid) return;
-        var max = MaxVal;
+        var (min, max) = BarValueDomain();
         for (int i = 0; i <= 5; i++)
         {
-            var y = PT + CH - (CH * i / 5.0);
+            var value = min + (max - min) * i / 5.0;
+            var y = BarDomainY(value, min, max);
             SvgLine(b, "tm-chart__grid-line", PL, y, PL + CW, y);
-            SvgText(b, "tm-chart__axis-label", PL - 8, y + 4, F(max * i / 5.0), "end");
+            SvgText(b, "tm-chart__axis-label", PL - 8, y + 4, F(value), "end");
+        }
+
+        // Emphasized zero axis when the domain crosses zero (parity with Area charts).
+        if (min < 0)
+        {
+            var zeroY = BarDomainY(0, min, max);
+            b.OpenElement(0, "line");
+            b.AddAttribute(1, "class", "tm-chart__axis-zero");
+            b.AddAttribute(2, "x1", F(PL));
+            b.AddAttribute(3, "y1", F(zeroY));
+            b.AddAttribute(4, "x2", F(PL + CW));
+            b.AddAttribute(5, "y2", F(zeroY));
+            b.AddAttribute(6, "stroke", "#9ca3af");
+            b.AddAttribute(7, "stroke-width", "1");
+            b.CloseElement();
         }
     }
 
@@ -323,35 +412,133 @@
         }
     }
 
+    // Original dataset indices that render as bars (RenderAs != Line) — combo charts keep
+    // click/tooltip payloads on the ORIGINAL index while bar slots are packed positionally.
+    private int[] BarDatasetIndices()
+    {
+        var result = new List<int>(Data.Datasets.Length);
+        for (int di = 0; di < Data.Datasets.Length; di++)
+        {
+            if (Data.Datasets[di].RenderAs != ChartDatasetRenderAs.Line)
+                result.Add(di);
+        }
+        return result.ToArray();
+    }
+
     private void BuildBarChart(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
     {
-        var max = MaxVal;
+        var (min, max) = BarValueDomain();
+        var zeroY = BarDomainY(0, min, max);
         var lc = Data.Labels.Length;
-        var dc = Data.Datasets.Length;
+        var barIndices = BarDatasetIndices();
+        var dc = barIndices.Length;
         var gw = CW / (double)lc;
-        var bw = (gw * 0.7) / dc;
         var gp = gw * 0.15;
 
-        for (int di = 0; di < dc; di++)
+        if (dc > 0)
         {
-            var ds = Data.Datasets[di];
-            for (int i = 0; i < ds.Values.Length && i < lc; i++)
+            var bw = (gw * 0.7) / dc;
+            for (int slot = 0; slot < dc; slot++)
             {
-                if (IsSegmentHidden(di, i)) continue;
-                var val = ds.Values[i];
-                var bh = (val / max) * CH;
-                var x = PL + i * gw + gp + di * bw;
-                var y = PT + CH - bh;
-                var fill = ResolveFillColor(ds, i, ds.BackgroundColor ?? ds.Color);
-                SvgRect(b, x, y, bw, bh, fill, ds.Color, di, i, x + bw / 2, y);
-                if (ShowValues)
-                    SvgText(b, "tm-chart__value", x + bw / 2, y - 4, F(val), "middle");
+                var di = barIndices[slot];
+                var ds = Data.Datasets[di];
+                for (int i = 0; i < ds.Values.Length && i < lc; i++)
+                {
+                    if (IsSegmentHidden(di, i)) continue;
+                    var val = ds.Values[i];
+                    // Bars grow from the ZERO baseline: up for positive, down for negative values.
+                    var valY = BarDomainY(val, min, max);
+                    var y = Math.Min(valY, zeroY);
+                    var bh = Math.Abs(zeroY - valY);
+                    var x = PL + i * gw + gp + slot * bw;
+                    var fill = ResolveFillColor(ds, i, ds.BackgroundColor ?? ds.Color);
+                    SvgRect(b, x, y, bw, bh, fill, ds.Color, di, i, x + bw / 2, y);
+                    if (ShowValues)
+                        SvgText(b, "tm-chart__value", x + bw / 2, val < 0 ? y + bh + 12 : y - 4, F(val), "middle");
+                }
             }
         }
-        for (int i = 0; i < lc; i++)
+
+        // Dense categorical axes thin their labels (every n-th) so they never overlap;
+        // charts with up to 24 categories keep every label (existing behavior).
+        var labelStep = lc > 24 ? (int)Math.Ceiling(lc / 12.0) : 1;
+        for (int i = 0; i < lc; i += labelStep)
         {
             var cx = PL + i * gw + gw / 2.0;
             SvgText(b, "tm-chart__label", cx, PT + CH + 24, Data.Labels[i], "middle");
+        }
+    }
+
+    /// <summary>
+    /// Combo chart: datasets with <see cref="ChartDatasetRenderAs.Line"/> render as a line
+    /// overlay (polyline + clickable points) over the bars, centered on each category and
+    /// sharing the bars' Y scale.
+    /// </summary>
+    private void BuildComboLineOverlay(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
+    {
+        var lc = Data.Labels.Length;
+        if (lc == 0) return;
+        var (min, max) = BarValueDomain();
+        var gw = CW / (double)lc;
+
+        for (int di = 0; di < Data.Datasets.Length; di++)
+        {
+            var ds = Data.Datasets[di];
+            if (ds.RenderAs != ChartDatasetRenderAs.Line) continue;
+            if (IsSegmentHidden(di, -1)) continue;
+
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < ds.Values.Length && i < lc; i++)
+            {
+                if (double.IsNaN(ds.Values[i])) continue;
+                var x = PL + i * gw + gw / 2.0;
+                var y = BarDomainY(ds.Values[i], min, max);
+                if (sb.Length > 0) sb.Append(' ');
+                sb.Append(F(x)).Append(',').Append(F(y));
+            }
+
+            b.OpenElement(0, "polyline");
+            b.AddAttribute(1, "class", "tm-chart__line");
+            b.AddAttribute(2, "points", sb.ToString());
+            b.AddAttribute(3, "fill", "none");
+            b.AddAttribute(4, "stroke", ds.Color);
+            b.AddAttribute(5, "stroke-width", "2");
+            b.AddAttribute(6, "stroke-linejoin", "round");
+            b.CloseElement();
+
+            // Dense series thin their point markers (overlapping white-stroked circles would
+            // make the line look dotted); the polyline itself always stays complete.
+            var markerStep = Math.Max(1, (int)Math.Ceiling(24.0 / gw));
+            for (int i = 0; i < ds.Values.Length && i < lc; i++)
+            {
+                if (double.IsNaN(ds.Values[i]) || i % markerStep != 0) continue;
+                var x = PL + i * gw + gw / 2.0;
+                var y = BarDomainY(ds.Values[i], min, max);
+                var cdi = di;
+                var ci = i;
+                var tipX = x;
+
+                b.OpenElement(0, "circle");
+                b.AddAttribute(1, "class", "tm-chart__point");
+                b.AddAttribute(2, "cx", F(x));
+                b.AddAttribute(3, "cy", F(y));
+                b.AddAttribute(4, "r", "4");
+                b.AddAttribute(5, "fill", ds.Color);
+                b.AddAttribute(6, "stroke", "white");
+                b.AddAttribute(7, "stroke-width", "2");
+                b.AddAttribute(8, "onclick",
+                    EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                        this, () => HandleClick(cdi, ci)));
+                b.AddAttribute(9, "onmouseover",
+                    EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                        this, () => ShowTip(cdi, ci, tipX, y)));
+                b.AddAttribute(10, "onmouseout",
+                    EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, HideTip));
+                b.CloseElement();
+
+                if (ShowValues)
+                    SvgText(b, "tm-chart__value", x, y - 10, F(ds.Values[i]), "middle");
+            }
         }
     }
 
@@ -388,7 +575,7 @@
 
     private void BuildLineChart(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
     {
-        var max = MaxVal;
+        var (min, max) = BarValueDomain();
         var plan = XPlan();
 
         for (int di = 0; di < Data.Datasets.Length; di++)
@@ -399,7 +586,7 @@
             foreach (var (i, x) in plan)
             {
                 if (i >= ds.Values.Length || double.IsNaN(ds.Values[i])) continue;
-                var y = PT + CH - (ds.Values[i] / max) * CH;
+                var y = BarDomainY(ds.Values[i], min, max);
                 if (sb.Length > 0) sb.Append(' ');
                 sb.Append(F(x)).Append(',').Append(F(y));
             }
@@ -414,11 +601,14 @@
             b.AddAttribute(6, "stroke-linejoin", "round");
             b.CloseElement();
 
-            // Data points
+            // Data points (dense series thin the markers; the polyline stays complete)
+            var lineMarkerStep = Math.Max(1, (int)Math.Ceiling(plan.Length * 24.0 / CW));
+            var planOrdinal = -1;
             foreach (var (i, x) in plan)
             {
-                if (i >= ds.Values.Length || double.IsNaN(ds.Values[i])) continue;
-                var y = PT + CH - (ds.Values[i] / max) * CH;
+                planOrdinal++;
+                if (i >= ds.Values.Length || double.IsNaN(ds.Values[i]) || planOrdinal % lineMarkerStep != 0) continue;
+                var y = BarDomainY(ds.Values[i], min, max);
                 var cdi = di;
                 var ci = i;
                 var tipX = x;
@@ -888,7 +1078,7 @@
             builder.AddAttribute(18, "class", "tm-chart__tooltip-dot");
             builder.AddAttribute(19, "style", $"background-color:{_tip.Color};");
             builder.CloseElement();
-            var text = Data.Datasets.Length > 1 ? $"{_tip.DatasetLabel}: {F(_tip.Value)}" : F(_tip.Value);
+            var text = Data is { Datasets.Length: > 1 } ? $"{_tip.DatasetLabel}: {F(_tip.Value)}" : F(_tip.Value);
             builder.AddContent(20, text);
             builder.CloseElement();
         }
@@ -901,17 +1091,18 @@
 
     private bool UsesPerValueLegend()
     {
-        if (Data.Datasets.Length != 1 || Data.Datasets[0].BackgroundColors is null)
+        if (Data is null || Data.Datasets.Length != 1 || Data.Datasets[0].BackgroundColors is null)
         {
             return false;
         }
 
-        return Type is ChartType.Bar or ChartType.HorizontalBar or ChartType.Pie or ChartType.Donut;
+        return Type is ChartType.Bar or ChartType.HorizontalBar or ChartType.Pie or ChartType.Donut
+            or ChartType.Funnel or ChartType.Treemap;
     }
 
     private string ResolveLegendFillColor(ChartDataset dataset, int index)
     {
-        return Type is ChartType.Pie or ChartType.Donut
+        return Type is ChartType.Pie or ChartType.Donut or ChartType.Funnel or ChartType.Treemap
             ? ResolveFillColor(dataset, index, Palette[index % Palette.Length])
             : ResolveFillColor(dataset, index, dataset.BackgroundColor ?? dataset.Color);
     }
@@ -975,6 +1166,414 @@
                 this, () => ShowTip(cdi, ci, tipX, tipY)));
         b.AddAttribute(11, "onmouseout",
             EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, HideTip));
+        b.CloseElement();
+    }
+
+    // ── Funnel ──
+
+    private void BuildFunnel(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
+    {
+        var ds = Data.Datasets[0];
+        var stages = new List<int>();
+        var count = Math.Min(Data.Labels.Length, ds.Values.Length);
+        for (int i = 0; i < count; i++)
+        {
+            if (!IsSegmentHidden(0, i)) stages.Add(i);
+        }
+        if (stages.Count == 0) return;
+
+        var max = stages.Max(i => ds.Values[i]);
+        if (max <= 0) max = 1;
+        var first = ds.Values[stages[0]];
+        var sh = CH / (double)stages.Count;
+        var cx = PL + CW / 2.0;
+
+        for (int s = 0; s < stages.Count; s++)
+        {
+            var i = stages[s];
+            var val = ds.Values[i];
+            var topW = CW * (Math.Max(val, 0) / max);
+            var nextVal = s + 1 < stages.Count ? ds.Values[stages[s + 1]] : val;
+            var botW = CW * (Math.Max(nextVal, 0) / max);
+            var yTop = PT + s * sh;
+            var yBot = yTop + sh - 3;
+            var fill = ResolveFillColor(ds, i, Palette[i % Palette.Length]);
+            var ci = i;
+
+            b.OpenElement(0, "path");
+            b.AddAttribute(1, "class", "tm-chart__funnel-segment");
+            b.AddAttribute(2, "d",
+                $"M {F(cx - topW / 2)} {F(yTop)} L {F(cx + topW / 2)} {F(yTop)} " +
+                $"L {F(cx + botW / 2)} {F(yBot)} L {F(cx - botW / 2)} {F(yBot)} Z");
+            b.AddAttribute(3, "fill", fill);
+            b.AddAttribute(4, "data-index", ci.ToString(CultureInfo.InvariantCulture));
+            b.AddAttribute(5, "data-value", F(val));
+            b.AddAttribute(6, "data-width", F(topW));
+            b.AddAttribute(7, "onclick",
+                EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                    this, () => HandleClick(0, ci)));
+            b.AddAttribute(8, "onmouseover",
+                EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                    this, () => ShowTip(0, ci, cx, yTop)));
+            b.AddAttribute(9, "onmouseout",
+                EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, HideTip));
+            b.CloseElement();
+
+            // Narrow stages can't fit their text — render it beside the funnel instead of inside.
+            var label = i < Data.Labels.Length ? Data.Labels[i] : "";
+            var inside = topW >= 150;
+            var textX = inside ? cx : cx + Math.Max(topW, botW) / 2 + 10;
+            var anchor = inside ? "middle" : "start";
+            var textFill = inside ? "#ffffff" : "#6b7280";
+            if (ShowValues)
+            {
+                var pct = first > 0 ? val / first * 100 : 0;
+                SvgTextColored(b, "tm-chart__funnel-label", textX, yTop + sh / 2 - 3, label, anchor, textFill, 12);
+                SvgTextColored(b, "tm-chart__funnel-value", textX, yTop + sh / 2 + 12,
+                    $"{F(val)} ({F(pct)} %)", anchor, textFill, 10);
+            }
+            else
+            {
+                SvgTextColored(b, "tm-chart__funnel-label", textX, yTop + sh / 2 + 4, label, anchor, textFill, 12);
+            }
+        }
+    }
+
+    // ── Heatmap ──
+
+    private void BuildHeatmap(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
+    {
+        var cols = Data.Labels.Length;
+        var rows = new List<int>();
+        for (int di = 0; di < Data.Datasets.Length; di++)
+        {
+            if (!_hidden.Contains(di)) rows.Add(di);
+        }
+        if (rows.Count == 0 || cols == 0) return;
+
+        double min = double.MaxValue, max = double.MinValue;
+        foreach (var di in rows)
+        {
+            var values = Data.Datasets[di].Values;
+            for (int c = 0; c < cols && c < values.Length; c++)
+            {
+                if (values[c] < min) min = values[c];
+                if (values[c] > max) max = values[c];
+            }
+        }
+        if (min > max) return;
+        var range = max - min;
+
+        var cw2 = CW / (double)cols;
+        var ch2 = CH / (double)rows.Count;
+
+        for (int r = 0; r < rows.Count; r++)
+        {
+            var di = rows[r];
+            var ds = Data.Datasets[di];
+            var y = PT + r * ch2;
+            SvgText(b, "tm-chart__axis-label", PL - 8, y + ch2 / 2 + 4, ds.Label, "end");
+
+            for (int c = 0; c < cols && c < ds.Values.Length; c++)
+            {
+                var val = ds.Values[c];
+                var norm = range > 0 ? (val - min) / range : 1;
+                var x = PL + c * cw2;
+                var cdi = di;
+                var cc = c;
+
+                b.OpenElement(0, "rect");
+                b.AddAttribute(1, "class", "tm-chart__heatmap-cell");
+                b.AddAttribute(2, "x", F(x + 1));
+                b.AddAttribute(3, "y", F(y + 1));
+                b.AddAttribute(4, "width", F(Math.Max(cw2 - 2, 0)));
+                b.AddAttribute(5, "height", F(Math.Max(ch2 - 2, 0)));
+                b.AddAttribute(6, "rx", "2");
+                b.AddAttribute(7, "fill", ResolveFillColor(ds, c, ds.BackgroundColor ?? ds.Color));
+                b.AddAttribute(8, "fill-opacity", F(0.08 + 0.92 * norm));
+                b.AddAttribute(9, "data-row", cdi.ToString(CultureInfo.InvariantCulture));
+                b.AddAttribute(10, "data-col", cc.ToString(CultureInfo.InvariantCulture));
+                b.AddAttribute(11, "data-value", F(val));
+                b.AddAttribute(12, "onclick",
+                    EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                        this, () => HandleClick(cdi, cc)));
+                b.AddAttribute(13, "onmouseover",
+                    EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                        this, () => ShowTip(cdi, cc, x + cw2 / 2, y)));
+                b.AddAttribute(14, "onmouseout",
+                    EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, HideTip));
+                b.CloseElement();
+
+                if (ShowValues && cw2 > 26 && ch2 > 16)
+                {
+                    // SvgTextColored sets pointer-events:none so the label never steals the cell's
+                    // hover; dark cells get white text for contrast.
+                    SvgTextColored(b, "tm-chart__heatmap-value", x + cw2 / 2, y + ch2 / 2 + 4, F(val),
+                        "middle", norm > 0.55 ? "#ffffff" : "#4b5563", 11);
+                }
+            }
+        }
+
+        for (int c = 0; c < cols; c++)
+        {
+            SvgText(b, "tm-chart__axis-label", PL + c * cw2 + cw2 / 2, PT + CH + 16, Data.Labels[c], "middle");
+        }
+    }
+
+    // ── Treemap (squarified; flat from Data or hierarchical from TreeNodes) ──
+
+    private sealed record TreeLeaf(string Path, string TopLabel, double Value, string Fill);
+
+    private readonly List<TreeLeaf> _treeLeaves = [];
+
+    private static double NodeWeight(ChartTreeNode node)
+        => node.Children is { Count: > 0 } ? node.Children.Sum(NodeWeight) : Math.Max(node.Value, 0);
+
+    private void BuildTreemap(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
+    {
+        _treeLeaves.Clear();
+
+        if (TreeNodes is { Count: > 0 })
+        {
+            var visible = new List<(int Index, ChartTreeNode Node)>();
+            for (int i = 0; i < TreeNodes.Count; i++)
+            {
+                if (!_hidden.Contains(i) && NodeWeight(TreeNodes[i]) > 0) visible.Add((i, TreeNodes[i]));
+            }
+            if (visible.Count == 0) return;
+
+            var rects = Squarify(visible.Select(v => NodeWeight(v.Node)).ToList(), PL, PT, CW, CH);
+            for (int g = 0; g < visible.Count; g++)
+            {
+                var (topIndex, node) = visible[g];
+                var (gx, gy, gw, gh) = rects[g];
+                if (gw <= 0 || gh <= 0) continue;
+                var color = node.Color ?? Palette[topIndex % Palette.Length];
+
+                b.OpenElement(0, "rect");
+                b.AddAttribute(1, "class", "tm-chart__treemap-group");
+                b.AddAttribute(2, "x", F(gx));
+                b.AddAttribute(3, "y", F(gy));
+                b.AddAttribute(4, "width", F(gw));
+                b.AddAttribute(5, "height", F(gh));
+                b.AddAttribute(6, "fill", color);
+                b.AddAttribute(7, "fill-opacity", "0.16");
+                b.AddAttribute(8, "stroke", color);
+                b.CloseElement();
+
+                var header = Math.Min(16d, gh);
+                if (gw > 40)
+                {
+                    SvgTextColored(b, "tm-chart__treemap-group-label", gx + 4, gy + 12, node.Label, "start", color, 10);
+                }
+
+                var children = node.Children is { Count: > 0 }
+                    ? node.Children
+                    : [new ChartTreeNode { Label = node.Label, Value = node.Value }];
+                var inner = (X: gx + 2, Y: gy + header, W: gw - 4, H: gh - header - 2);
+                if (inner.W <= 0 || inner.H <= 0) continue;
+
+                var childRects = Squarify(children.Select(NodeWeight).ToList(), inner.X, inner.Y, inner.W, inner.H);
+                var maxChild = children.Max(NodeWeight);
+                for (int c = 0; c < children.Count; c++)
+                {
+                    var child = children[c];
+                    var path = node.Children is { Count: > 0 } ? $"{node.Label} / {child.Label}" : node.Label;
+                    var opacity = maxChild > 0 ? 0.5 + 0.45 * (NodeWeight(child) / maxChild) : 0.95;
+                    EmitTreemapTile(b, childRects[c], path, node.Label, NodeWeight(child), color, opacity, child.Label);
+                }
+            }
+            return;
+        }
+
+        // Flat treemap from ChartData: one tile per label/value.
+        var ds = Data.Datasets[0];
+        var items = new List<(int Index, double Value)>();
+        var count = Math.Min(Data.Labels.Length, ds.Values.Length);
+        for (int i = 0; i < count; i++)
+        {
+            if (!IsSegmentHidden(0, i) && ds.Values[i] > 0) items.Add((i, ds.Values[i]));
+        }
+        if (items.Count == 0) return;
+
+        var flatRects = Squarify(items.Select(t => t.Value).ToList(), PL, PT, CW, CH);
+        for (int t = 0; t < items.Count; t++)
+        {
+            var (index, value) = items[t];
+            var fill = ResolveFillColor(ds, index, Palette[index % Palette.Length]);
+            EmitTreemapTile(b, flatRects[t], Data.Labels[index], ds.Label, value, fill, 1, Data.Labels[index], index);
+        }
+    }
+
+    private void EmitTreemapTile(
+        Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b,
+        (double X, double Y, double W, double H) rect,
+        string path, string topLabel, double value, string fill, double opacity, string shortLabel,
+        int? dataIndex = null)
+    {
+        if (rect.W <= 0 || rect.H <= 0) return;
+        var leafIndex = _treeLeaves.Count;
+        _treeLeaves.Add(new TreeLeaf(path, topLabel, value, fill));
+        var anchorX = rect.X + rect.W / 2;
+        var anchorY = rect.Y;
+
+        b.OpenElement(0, "rect");
+        b.AddAttribute(1, "class", "tm-chart__treemap-tile");
+        b.AddAttribute(2, "x", F(rect.X));
+        b.AddAttribute(3, "y", F(rect.Y));
+        b.AddAttribute(4, "width", F(rect.W));
+        b.AddAttribute(5, "height", F(rect.H));
+        b.AddAttribute(6, "fill", fill);
+        b.AddAttribute(7, "fill-opacity", F(opacity));
+        b.AddAttribute(8, "stroke", "#ffffff");
+        b.AddAttribute(9, "data-path", path);
+        b.AddAttribute(10, "data-value", F(value));
+        if (dataIndex is { } di)
+        {
+            b.AddAttribute(11, "data-index", di.ToString(CultureInfo.InvariantCulture));
+        }
+        b.AddAttribute(12, "onclick",
+            EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                this, () => HandleTreeClickAsync(leafIndex)));
+        b.AddAttribute(13, "onmouseover",
+            EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                this, () => ShowTreeTip(leafIndex, anchorX, anchorY)));
+        b.AddAttribute(14, "onmouseout",
+            EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, HideTip));
+        b.CloseElement();
+
+        if (rect.W > 56 && rect.H > 20)
+        {
+            SvgTextColored(b, "tm-chart__treemap-label", rect.X + rect.W / 2, rect.Y + rect.H / 2 + 4,
+                shortLabel, "middle", "#ffffff", 10);
+            if (ShowValues && rect.H > 36)
+            {
+                SvgTextColored(b, "tm-chart__treemap-value", rect.X + rect.W / 2, rect.Y + rect.H / 2 + 18,
+                    F(value), "middle", "#ffffff", 9);
+            }
+        }
+    }
+
+    private async Task HandleTreeClickAsync(int leafIndex)
+    {
+        if (!OnSegmentClick.HasDelegate || leafIndex >= _treeLeaves.Count) return;
+        var leaf = _treeLeaves[leafIndex];
+        await OnSegmentClick.InvokeAsync(new ChartSegment(0, leafIndex, leaf.Path, leaf.Value));
+    }
+
+    private void ShowTreeTip(int leafIndex, double anchorX, double anchorY)
+    {
+        if (!ShowTooltip || leafIndex >= _treeLeaves.Count) return;
+        var leaf = _treeLeaves[leafIndex];
+        _tip = new ChartTooltipContext(0, leafIndex, leaf.Path, leaf.Value, leaf.TopLabel, leaf.Fill);
+        _tipX = anchorX;
+        _tipY = anchorY;
+    }
+
+    /// <summary>
+    /// Squarified treemap layout (Bruls et al.): lays the weights into the rect keeping
+    /// tiles close to square. Result rects are returned in the input order; areas are
+    /// exactly proportional to the weights.
+    /// </summary>
+    private static (double X, double Y, double W, double H)[] Squarify(
+        IReadOnlyList<double> weights, double x, double y, double w, double h)
+    {
+        var result = new (double X, double Y, double W, double H)[weights.Count];
+        var total = weights.Sum();
+        if (total <= 0 || w <= 0 || h <= 0) return result;
+
+        var scale = w * h / total;
+        var items = new List<(int Index, double Area)>();
+        for (int i = 0; i < weights.Count; i++)
+        {
+            if (weights[i] > 0) items.Add((i, weights[i] * scale));
+        }
+        items.Sort((a, bb) => bb.Area.CompareTo(a.Area));
+
+        var row = new List<(int Index, double Area)>();
+        var rx = x; var ry = y; var rw = w; var rh = h;
+
+        static double Worst(List<(int Index, double Area)> currentRow, double side)
+        {
+            var sum = currentRow.Sum(r => r.Area);
+            if (sum <= 0) return double.MaxValue;
+            var maxA = currentRow.Max(r => r.Area);
+            var minA = currentRow.Min(r => r.Area);
+            var s2 = sum * sum;
+            var side2 = side * side;
+            return Math.Max(side2 * maxA / s2, s2 / (side2 * minA));
+        }
+
+        void LayoutRow(List<(int Index, double Area)> currentRow)
+        {
+            var sum = currentRow.Sum(r => r.Area);
+            if (sum <= 0) return;
+            if (rw >= rh)
+            {
+                var colW = sum / rh;
+                var cy = ry;
+                foreach (var (index, area) in currentRow)
+                {
+                    var tileH = area / colW;
+                    result[index] = (rx, cy, colW, tileH);
+                    cy += tileH;
+                }
+                rx += colW;
+                rw -= colW;
+            }
+            else
+            {
+                var rowH = sum / rw;
+                var cx2 = rx;
+                foreach (var (index, area) in currentRow)
+                {
+                    var tileW = area / rowH;
+                    result[index] = (cx2, ry, tileW, rowH);
+                    cx2 += tileW;
+                }
+                ry += rowH;
+                rh -= rowH;
+            }
+        }
+
+        foreach (var item in items)
+        {
+            var side = Math.Min(rw, rh);
+            if (row.Count == 0)
+            {
+                row.Add(item);
+                continue;
+            }
+
+            var withItem = new List<(int Index, double Area)>(row) { item };
+            if (Worst(withItem, side) <= Worst(row, side))
+            {
+                row.Add(item);
+            }
+            else
+            {
+                LayoutRow(row);
+                row.Clear();
+                row.Add(item);
+            }
+        }
+
+        if (row.Count > 0) LayoutRow(row);
+        return result;
+    }
+
+    private void SvgTextColored(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b,
+        string cls, double x, double y, string content, string anchor, string fill, int fontSize)
+    {
+        b.OpenElement(0, "text");
+        b.AddAttribute(1, "class", cls);
+        b.AddAttribute(2, "x", F(x));
+        b.AddAttribute(3, "y", F(y));
+        b.AddAttribute(4, "text-anchor", anchor);
+        b.AddAttribute(5, "font-size", fontSize.ToString(CultureInfo.InvariantCulture));
+        b.AddAttribute(6, "fill", fill);
+        b.AddAttribute(7, "style", "pointer-events:none;");
+        b.AddContent(8, content);
         b.CloseElement();
     }
 }

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "PII category of a redacted area: PersonalId, Name, Address, Contact, BankAccount, Date, Other.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RedactionModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "RedactionCategory"
+}

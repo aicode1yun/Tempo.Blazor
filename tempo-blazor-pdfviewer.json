@@ -65,6 +65,26 @@
   },
   "items": [
     {
+      "itemName": "PdfAnnotatorDraft",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Pending, not-yet-saved annotation created by an annotator tool: kind, anchor, and completed ink strokes.",
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotator.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "PdfAnnotatorMode",
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Active tool of the PDF annotator: Browse, Highlight, Comment, Stamp, or Draw.",
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotator.razor.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "PdfTextSelection",
       "kind": "Record",
       "category": "Components",
@@ -294,6 +314,330 @@
       ]
     },
     {
+      "itemName": "TmPdfAnnotator",
+      "kind": "Component",
+      "category": "Files",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Standalone PDF annotation workbench built on top of TmPdfViewer. Offers highlight, comment, stamp, and freehand drawing tools, a comment thread panel with resolve/reopen, per-author or per-role annotation colors, export of annotations into the PDF (as real PDF annotations or flattened into the page content), and a print variant with a comment summary. Persistence is pluggable through IPdfAnnotationProvider.",
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotator.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Files"
+      ],
+      "parameters": [
+        {
+          "name": "AllowExport",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether export and print actions are offered. Default is true."
+        },
+        {
+          "name": "AnnotationColor",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Explicit color (CSS value) stored with annotations created in this annotator. When null (default) colors resolve per author/role at display time."
+        },
+        {
+          "name": "AnnotationProvider",
+          "type": "IPdfAnnotationProvider?",
+          "isRequired": false,
+          "description": "Provider used to load and persist annotation threads. When omitted, an in-memory provider keeps annotations for the lifetime of the component."
+        },
+        {
+          "name": "AnnotationsChanged",
+          "type": "EventCallback<IReadOnlyList<DocumentCommentThread>>",
+          "isRequired": false,
+          "description": "Callback invoked when the loaded annotation set changes."
+        },
+        {
+          "name": "AuthorColors",
+          "type": "IReadOnlyDictionary<string, string>?",
+          "isRequired": false,
+          "description": "Annotation colors per author, keyed by user id."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "CurrentUser",
+          "type": "DocumentCommentUser?",
+          "isRequired": false,
+          "description": "Author applied to annotations created in this annotator."
+        },
+        {
+          "name": "DocumentId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Stable document identifier used by the annotation provider. Falls back to ."
+        },
+        {
+          "name": "ExportFileName",
+          "type": "string?",
+          "isRequired": false,
+          "description": "File name used for the exported PDF. Defaults to the source name with an \"-annotated\" suffix."
+        },
+        {
+          "name": "Height",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Height of the annotator (CSS value). Default is \"600px\"."
+        },
+        {
+          "name": "Mode",
+          "type": "PdfAnnotatorMode",
+          "isRequired": false,
+          "default": "PdfAnnotatorMode.Browse",
+          "description": "Active tool. Supports two-way binding. Default is ."
+        },
+        {
+          "name": "ModeChanged",
+          "type": "EventCallback<PdfAnnotatorMode>",
+          "isRequired": false,
+          "description": "Callback invoked when the active tool changes."
+        },
+        {
+          "name": "RoleColors",
+          "type": "IReadOnlyDictionary<string, string>?",
+          "isRequired": false,
+          "description": "Annotation colors per role, keyed by role."
+        },
+        {
+          "name": "ShowPanel",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the thread panel is rendered. Default is true."
+        },
+        {
+          "name": "ShowResolved",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether resolved annotation threads are shown by default. Default is false."
+        },
+        {
+          "name": "ShowResolvedChanged",
+          "type": "EventCallback<bool>",
+          "isRequired": false,
+          "description": "Callback invoked when the resolved filter toggles."
+        },
+        {
+          "name": "ShowViewerToolbar",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the underlying viewer toolbar (pagination, zoom) is shown. Default is true."
+        },
+        {
+          "name": "StampOptions",
+          "type": "IReadOnlyList<string>?",
+          "isRequired": false,
+          "description": "Stamp texts offered in stamp mode. Defaults to localized Approved/Rejected/Draft/Confidential."
+        },
+        {
+          "name": "Url",
+          "type": "string?",
+          "isRequired": false,
+          "description": "URL of the PDF document to annotate."
+        },
+        {
+          "name": "Users",
+          "type": "IReadOnlyList<DocumentCommentUser>?",
+          "isRequired": false,
+          "description": "Known users, used to resolve author roles for role-based colors."
+        }
+      ]
+    },
+    {
+      "itemName": "TmPdfAnnotatorLayer",
+      "kind": "Component",
+      "category": "Files",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Overlay that renders TmPdfAnnotator annotations over the current page: colored text highlights, stamps, freehand ink strokes (SVG), numbered comment markers, and the pending draft. Used internally by TmPdfAnnotator.",
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotatorLayer.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Files"
+      ],
+      "parameters": [
+        {
+          "name": "ActiveStroke",
+          "type": "IReadOnlyList<DocumentInkPoint>?",
+          "isRequired": false,
+          "description": "Stroke currently being drawn, when any."
+        },
+        {
+          "name": "ColorResolver",
+          "type": "Func<DocumentCommentThread, string>?",
+          "isRequired": false,
+          "description": "Resolves the display color of a thread. Falls back to the default palette."
+        },
+        {
+          "name": "Disabled",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether interaction is disabled."
+        },
+        {
+          "name": "Draft",
+          "type": "PdfAnnotatorDraft?",
+          "isRequired": false,
+          "description": "Current pending draft, when any."
+        },
+        {
+          "name": "DraftColor",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"#2563eb\"",
+          "description": "Color used for the draft and the active stroke."
+        },
+        {
+          "name": "OnThreadSelected",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Callback invoked when an annotation is selected."
+        },
+        {
+          "name": "PageNumber",
+          "type": "int",
+          "isRequired": false,
+          "default": "1",
+          "description": "One-based current page number."
+        },
+        {
+          "name": "SelectedThreadId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Selected thread id."
+        },
+        {
+          "name": "ShowResolved",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether resolved threads should be rendered."
+        },
+        {
+          "name": "Threads",
+          "type": "IReadOnlyList<DocumentCommentThread>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Annotation threads available to render."
+        }
+      ]
+    },
+    {
+      "itemName": "TmPdfAnnotatorPanel",
+      "kind": "Component",
+      "category": "Files",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Side panel of TmPdfAnnotator listing annotation threads with kind badges and author colors. Hosts the draft composer and supports reply, resolve, reopen, delete, and a resolved-threads filter. Used internally by TmPdfAnnotator.",
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmPdfAnnotatorPanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Files"
+      ],
+      "parameters": [
+        {
+          "name": "ColorResolver",
+          "type": "Func<DocumentCommentThread, string>?",
+          "isRequired": false,
+          "description": "Resolves the display color of a thread."
+        },
+        {
+          "name": "Disabled",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether panel interaction is disabled."
+        },
+        {
+          "name": "Draft",
+          "type": "PdfAnnotatorDraft?",
+          "isRequired": false,
+          "description": "Pending annotation draft awaiting a note, when present."
+        },
+        {
+          "name": "DraftColor",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"#2563eb\"",
+          "description": "Color used for the draft indicator."
+        },
+        {
+          "name": "OnCreateRequested",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Callback invoked with the note body when creating the draft annotation."
+        },
+        {
+          "name": "OnDeleteRequested",
+          "type": "EventCallback<DocumentCommentDeleteRequest>",
+          "isRequired": false,
+          "description": "Callback invoked when deleting a comment is requested."
+        },
+        {
+          "name": "OnDraftDismissed",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Callback invoked when the draft is dismissed."
+        },
+        {
+          "name": "OnReopenRequested",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Callback invoked when reopening a thread is requested."
+        },
+        {
+          "name": "OnReplyRequested",
+          "type": "EventCallback<DocumentCommentReplyRequest>",
+          "isRequired": false,
+          "description": "Callback invoked when a reply is requested."
+        },
+        {
+          "name": "OnResolveRequested",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Callback invoked when resolving a thread is requested."
+        },
+        {
+          "name": "SelectedThreadId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Selected thread id."
+        },
+        {
+          "name": "SelectedThreadIdChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Callback invoked when the selected thread id changes."
+        },
+        {
+          "name": "ShowResolved",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Whether resolved threads are shown."
+        },
+        {
+          "name": "ShowResolvedChanged",
+          "type": "EventCallback<bool>",
+          "isRequired": false,
+          "description": "Callback invoked when the resolved filter toggles."
+        },
+        {
+          "name": "Threads",
+          "type": "IReadOnlyList<DocumentCommentThread>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Annotation threads to render."
+        }
+      ]
+    },
+    {
       "itemName": "TmPdfViewer",
       "kind": "Component",
       "category": "Files",
@@ -362,16 +706,34 @@
           "description": "Whether the annotation layer and comments panel are enabled. Default is false."
         },
         {
+          "name": "EnableTextSelectionEvents",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Enables text selection events () without turning on the built-in annotation layer and panel. Default is false."
+        },
+        {
           "name": "Height",
           "type": "string?",
           "isRequired": false,
           "description": "Additional CSS classes for the root element."
         },
         {
+          "name": "OnDocumentLoaded",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Callback invoked with the total page count once the document is loaded."
+        },
+        {
           "name": "OnTextSelected",
           "type": "EventCallback<PdfTextSelection>",
           "isRequired": false,
           "description": "Callback invoked when text is selected in the viewer text layer."
+        },
+        {
+          "name": "OverlayContent",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Optional content rendered in an overlay that is kept aligned with the current page canvas (used by TmPdfAnnotator to draw its own annotation layer)."
         },
         {
           "name": "Page",
@@ -456,10 +818,105 @@
           "description": "Current view mode. Default is SinglePage."
         }
       ]
+    },
+    {
+      "itemName": "TmRedactionLayer",
+      "kind": "Component",
+      "category": "Files",
+      "namespace": "Tempo.Blazor.Components.Files",
+      "description": "Redaction layer for PDF documents (over TmPdfViewer) and image previews: drag rectangles over sensitive content, categorize them by PII type, preview before/after, persist through IRedactionProvider, and export DESTRUCTIVELY - the JS pipeline rasterizes the pages, burns the black rectangles in, and rebuilds a brand-new file from the pixels only, so the original text/image content is not extractable from the export (this is not a visual overlay).",
+      "packageId": "Tempo.Blazor.PdfViewer",
+      "sourcePath": "src/Tempo.Blazor.PdfViewer/Components/Files/TmRedactionLayer.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Files"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS classes for the root element."
+        },
+        {
+          "name": "DefaultCategory",
+          "type": "RedactionCategory",
+          "isRequired": false,
+          "default": "RedactionCategory.Other",
+          "description": "Category assigned to newly drawn areas."
+        },
+        {
+          "name": "DocumentId",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Document identifier used with the provider."
+        },
+        {
+          "name": "ExportFileName",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Export file name. Defaults to redacted.pdf / redacted.png by mode."
+        },
+        {
+          "name": "Height",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Viewer height for the PDF mode."
+        },
+        {
+          "name": "ImageUrl",
+          "type": "string?",
+          "isRequired": false,
+          "description": "URL of the image to redact, when no PDF is set."
+        },
+        {
+          "name": "OnAreasChanged",
+          "type": "EventCallback<IReadOnlyList<RedactionArea>>",
+          "isRequired": false,
+          "description": "Callback invoked whenever the set of areas changes, with a snapshot."
+        },
+        {
+          "name": "OnExported",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Callback invoked after a successful export, with the file name."
+        },
+        {
+          "name": "Provider",
+          "type": "IRedactionProvider?",
+          "isRequired": false,
+          "description": "Optional persistence of the redaction definitions."
+        },
+        {
+          "name": "ShowPanel",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the area panel is shown."
+        },
+        {
+          "name": "Url",
+          "type": "string?",
+          "isRequired": false,
+          "description": "URL of the PDF document to redact. Mutually exclusive with ImageUrl (PDF wins)."
+        }
+      ]
     }
   ],
   "libraryExamples": [],
   "assets": [
+    {
+      "path": "src/Tempo.Blazor.PdfViewer/wwwroot/js/pdf-annotator.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.PdfViewer/wwwroot/js/pdf-lib.min.js",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.PdfViewer/wwwroot/js/pdf-redaction.js",
+      "kind": "JavaScript"
+    },
     {
       "path": "src/Tempo.Blazor.PdfViewer/wwwroot/js/pdf-viewer.js",
       "kind": "JavaScript"
@@ -474,11 +931,11 @@
     }
   ],
   "summary": {
-    "itemCount": 6,
-    "manualItemCount": 6,
-    "generatedItemCount": 6,
+    "itemCount": 12,
+    "manualItemCount": 12,
+    "generatedItemCount": 12,
     "generatedOnlyItemCount": 0,
-    "componentCount": 3,
-    "publicApiTypeCount": 3
+    "componentCount": 7,
+    "publicApiTypeCount": 5
   }
 }

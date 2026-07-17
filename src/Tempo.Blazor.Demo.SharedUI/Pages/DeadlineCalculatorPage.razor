@@ -1,0 +1,95 @@
+@page "/deadline-calculator"
+@using Tempo.Blazor.Components.Deadline
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Demo.SharedUI.Services
+<PageTitle>Deadline Calculator – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Deadline Calculator</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        A rule-based deadline widget: base date plus a chain of steps (calendar days, business days, weeks,
+        months, years) with configurable weekend/holiday shifting. The pure <code>DeadlineCalculator</code>
+        engine works on calendar dates (DST-proof), holiday calendars are pluggable through
+        <code>IHolidayProvider</code>, and every calculation produces a step-by-step protocol.
+        An embed mode renders just the result.
+    </p>
+</div>
+
+<!-- Flagship rule -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">15 Days, Saturday → Monday</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Interactive</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            The classic rule: 15 calendar days from Friday 3 July 2026 land on Saturday 18 July, so the
+            deadline shifts to Monday 20 July. The protocol below the result explains every step. Change the
+            base date, amount, unit, or shift behaviour and watch the result update live — the Czech holiday
+            calendar (including computed Easter) is plugged in, so a deadline landing on a holiday keeps moving.
+        </p>
+        <div data-testid="deadline-demo-main">
+            <TmDeadlineCalculator BaseDate="new DateOnly(2026, 7, 3)"
+                                  Rule="DeadlineRule.Single(15)"
+                                  HolidayProvider="_czechHolidays" />
+        </div>
+    </div>
+</section>
+
+<!-- Chained rule, embed mode -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Chained Rule in Embed Mode</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Embed</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            <code>ShowForm="false"</code> renders only the computed result and protocol — ideal for showing
+            a deadline inside a case detail. This rule chains two steps: <em>+1 month</em>, then
+            <em>+5 business days</em>, both shifting off weekends and Czech holidays.
+        </p>
+        <div data-testid="deadline-demo-embed">
+            <TmDeadlineCalculator BaseDate="new DateOnly(2026, 6, 30)"
+                                  Rule="_chainedRule"
+                                  HolidayProvider="_czechHolidays"
+                                  ShowForm="false" />
+        </div>
+    </div>
+</section>
+
+<!-- Edge cases -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Leap Year &amp; End of Month</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-full">Edge Case</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Calendar-unit arithmetic clamps correctly: 31 January 2028 + 1 month is 29 February (2028 is a
+            leap year) — and because that Tuesday is a business day, no shift is needed. Try changing the
+            base date to 31 January 2027 to see the non-leap clamp to 28 February.
+        </p>
+        <div data-testid="deadline-demo-leap">
+            <TmDeadlineCalculator BaseDate="new DateOnly(2028, 1, 31)"
+                                  Rule="DeadlineRule.Single(1, DeadlineUnit.Months)"
+                                  HolidayProvider="_czechHolidays" />
+        </div>
+    </div>
+</section>
+
+@code {
+    private readonly CzechHolidayProvider _czechHolidays = new();
+
+    private readonly DeadlineRule _chainedRule = new()
+    {
+        Steps =
+        [
+            new DeadlineRuleStep { Amount = 1, Unit = DeadlineUnit.Months, Label = "response period" },
+            new DeadlineRuleStep { Amount = 5, Unit = DeadlineUnit.BusinessDays, Label = "processing" }
+        ]
+    };
+}

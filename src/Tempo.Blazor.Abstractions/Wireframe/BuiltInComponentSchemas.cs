@@ -106,6 +106,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmImportPreview"] = ["data-table"],
             ["TmTreeView"] = ["list-view"],
             ["TmPdfViewer"] = ["pdf-viewer"],
+            ["TmPdfAnnotator"] = ["pdf-annotator"],
             ["TmMap"] = ["map"],
             ["TmCommentComposer"] = ["text-area", "avatar"],
             ["TmCommentReactions"] = ["chip"],
@@ -113,6 +114,14 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             ["TmShareLinkPanel"] = ["copy-button", "link"],
             ["TmSubmissionStatusTimeline"] = ["timeline", "stepper"],
             ["TmAuditTrailViewer"] = ["timeline", "list-view"],
+            ["TmAuditLogViewer"] = ["audit-log"],
+            ["TmDeadlineCalculator"] = ["deadline-calculator"],
+            ["TmLedgerGrid"] = ["ledger-grid"],
+            ["TmMoneyDisplay"] = ["money-display"],
+            ["TmKycWizard"] = ["kyc-wizard"],
+            ["TmScreeningResultPanel"] = ["screening-result-panel"],
+            ["TmDataImport"] = ["data-import"],
+            ["TmRedactionLayer"] = ["redaction-layer"],
             ["TmAIPrompt"] = ["text-area", "button"],
             ["TmWidgetSelector"] = ["dashboard", "card"],
             ["__group__"] = ["section"],
@@ -1750,7 +1759,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             [
                 P("title",      "Title",       PropType.String, "Chart Title", cat: "Content"),
                 P("type",       "Type",        PropType.Enum,   "bar",         cat: "Appearance",
-                    opts: ["bar","line","area","pie","donut"]),
+                    opts: ["bar","line","area","pie","donut","funnel","heatmap","treemap"]),
                 P("dataPoints", "Data Points", PropType.Int,    6,             cat: "Appearance"),
             ]
         };
@@ -2042,6 +2051,21 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
 
         yield return new WireframeComponentSchema
         {
+            Type = "TmPdfAnnotator", Category = "Complex", DisplayName = "PDF Annotator",
+            DefaultWidth = 520, DefaultHeight = 460,
+            Props =
+            [
+                P("fileName",        "File Name",        PropType.String, "document.pdf", cat: "Content"),
+                P("annotationCount", "Annotation Count", PropType.Int,    3,              cat: "Content"),
+                P("mode",            "Mode",             PropType.Enum,   "browse",
+                    opts: ["browse", "highlight", "comment", "stamp", "draw"], cat: "State"),
+                P("showPanel",       "Show Panel",       PropType.Bool,   true,           cat: "Appearance"),
+                P("allowExport",     "Allow Export",     PropType.Bool,   true,           cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
             Type = "TmMap", Category = "Complex", DisplayName = "Map",
             DefaultWidth = 420, DefaultHeight = 280,
             Props =
@@ -2112,6 +2136,110 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             Props =
             [
                 P("rowCount", "Row Count", PropType.Int, 5, cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmLedgerGrid", Category = "Complex", DisplayName = "Ledger Grid",
+            DefaultWidth = 680, DefaultHeight = 380,
+            Props =
+            [
+                P("rowCount",   "Row Count",   PropType.Int,    6,     cat: "Content"),
+                P("currency",   "Currency",    PropType.String, "CZK", cat: "Content"),
+                P("showFooter", "Show Footer", PropType.Bool,   true,  cat: "Appearance"),
+                P("matching",   "Matching",    PropType.Bool,   true,  cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmMoneyDisplay", Category = "Basic", DisplayName = "Money Display",
+            DefaultWidth = 140, DefaultHeight = 28,
+            Props =
+            [
+                P("amount",   "Amount",   PropType.String, "1 234,56", cat: "Content"),
+                P("currency", "Currency", PropType.String, "CZK",      cat: "Content"),
+                P("negative", "Negative", PropType.Bool,   false,      cat: "State"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmKycWizard", Category = "Complex", DisplayName = "KYC Wizard",
+            DefaultWidth = 560, DefaultHeight = 420,
+            Props =
+            [
+                P("stepCount",   "Step Count",   PropType.Int,  5,    cat: "Content"),
+                P("activeStep",  "Active Step",  PropType.Int,  1,    cat: "State"),
+                P("subjectKind", "Subject Kind", PropType.Enum, "person",
+                    opts: ["person", "company"], cat: "Content"),
+                P("showErrors",  "Show Errors",  PropType.Bool, false, cat: "State"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmDataImport", Category = "Complex", DisplayName = "Data Import",
+            DefaultWidth = 620, DefaultHeight = 400,
+            Props =
+            [
+                P("activeStep", "Active Step", PropType.Int, 0, cat: "State"),
+                P("rowCount",   "Row Count",   PropType.Int, 6, cat: "Content"),
+                P("errorCount", "Error Count", PropType.Int, 0, cat: "State"),
+                P("progress",   "Progress",    PropType.Int, 0, cat: "State"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmRedactionLayer", Category = "Complex", DisplayName = "Redaction Layer",
+            DefaultWidth = 520, DefaultHeight = 380,
+            Props =
+            [
+                P("areaCount", "Area Count", PropType.Int,  2,     cat: "Content"),
+                P("applied",   "Applied",    PropType.Bool, false, cat: "State"),
+                P("showPanel", "Show Panel", PropType.Bool, true,  cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmScreeningResultPanel", Category = "Complex", DisplayName = "Screening Results",
+            DefaultWidth = 420, DefaultHeight = 320,
+            Props =
+            [
+                P("findingCount", "Finding Count", PropType.Int,  3,    cat: "Content"),
+                P("pendingCount", "Pending Count", PropType.Int,  2,    cat: "State"),
+                P("readOnly",     "Read Only",     PropType.Bool, false, cat: "State"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmDeadlineCalculator", Category = "Complex", DisplayName = "Deadline Calculator",
+            DefaultWidth = 420, DefaultHeight = 260,
+            Props =
+            [
+                P("baseDate",     "Base Date",     PropType.String, "2026-07-03", cat: "Content"),
+                P("resultDate",   "Result Date",   PropType.String, "2026-07-20", cat: "Content"),
+                P("showForm",     "Show Form",     PropType.Bool,   true,         cat: "Appearance"),
+                P("showProtocol", "Show Protocol", PropType.Bool,   true,         cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmAuditLogViewer", Category = "Complex", DisplayName = "Audit Log Viewer",
+            DefaultWidth = 640, DefaultHeight = 420,
+            Props =
+            [
+                P("eventCount",   "Event Count",   PropType.Int,  100, cat: "Content"),
+                P("showTimeline", "Show Timeline", PropType.Bool, true, cat: "Appearance"),
+                P("showFilters",  "Show Filters",  PropType.Bool, true, cat: "Appearance"),
+                P("showExport",   "Show Export",   PropType.Bool, true, cat: "Appearance"),
+                P("integrity",    "Integrity",     PropType.Enum, "verified",
+                    opts: ["verified", "failed", "none"], cat: "State"),
             ]
         };
 

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Single freehand stroke of a drawing annotation: ordered normalized points plus a thickness expressed as a fraction of the page width.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentInkStroke"
+}

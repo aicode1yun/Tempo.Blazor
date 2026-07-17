@@ -1,0 +1,149 @@
+@namespace Tempo.Blazor.Components.Files
+@inherits Tempo.Blazor.Components.TmComponentBase
+@using System.Globalization
+@using Tempo.Blazor.Abstractions.Models
+
+<div class="tm-redaction @Class" data-testid="@TestId("redaction-layer")">
+
+    <div class="tm-redaction__toolbar">
+        <span class="tm-redaction__count" data-testid="@TestId("redaction-count")">
+            @string.Format(Loc["TmRedactionLayer_AreasCount"], _areas.Count)
+        </span>
+        <button type="button"
+                class="tm-redaction__btn"
+                data-testid="@TestId("redaction-preview-toggle")"
+                @onclick="() => _applied = !_applied">
+            @(_applied ? Loc["TmRedactionLayer_ShowMarked"] : Loc["TmRedactionLayer_ShowApplied"])
+        </button>
+        @if (Provider is not null)
+        {
+            <button type="button"
+                    class="tm-redaction__btn"
+                    disabled="@_busy"
+                    data-testid="@TestId("redaction-save")"
+                    @onclick="SaveAsync">
+                @Loc["TmRedactionLayer_Save"]
+            </button>
+        }
+        <button type="button"
+                class="tm-redaction__btn tm-redaction__btn--primary"
+                disabled="@(_areas.Count == 0 || _busy)"
+                data-testid="@TestId("redaction-export")"
+                @onclick="ExportAsync">
+            @(_busy ? Loc["TmRedactionLayer_Exporting"] : Loc["TmRedactionLayer_Export"])
+        </button>
+        @if (_savedAt is not null)
+        {
+            <span class="tm-redaction__saved" role="status" data-testid="@TestId("redaction-saved")">
+                @Loc["TmRedactionLayer_Saved"]
+            </span>
+        }
+        @if (_errorKey is not null)
+        {
+            <span class="tm-redaction__error" role="alert" data-testid="@TestId("redaction-error")">
+                @Loc[_errorKey]
+            </span>
+        }
+    </div>
+
+    <div class="tm-redaction__body">
+        <div class="tm-redaction__stage">
+            @if (IsPdfMode)
+            {
+                <TmPdfViewer Url="@Url"
+                             DocumentId="@DocumentId"
+                             Height="@(string.IsNullOrEmpty(Height) ? "600px" : Height)"
+                             ShowToolbar="true"
+                             AllowDownload="false"
+                             Page="_currentPage"
+                             PageChanged="HandlePageChanged">
+                    <OverlayContent>
+                        @RectsLayer
+                    </OverlayContent>
+                </TmPdfViewer>
+            }
+            else
+            {
+                <div class="tm-redaction__image-wrap">
+                    <img class="tm-redaction__image" src="@ImageUrl" alt="@Loc["TmRedactionLayer_ImageAlt"]" />
+                    <div class="tm-redaction__overlay">
+                        @RectsLayer
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (ShowPanel)
+        {
+            <aside class="tm-redaction__panel" aria-label="@Loc["TmRedactionLayer_PanelLabel"]">
+                @if (_areas.Count == 0)
+                {
+                    <p class="tm-redaction__hint" data-testid="@TestId("redaction-empty")">
+                        @Loc["TmRedactionLayer_Empty"]
+                    </p>
+                }
+                @foreach (var area in _areas)
+                {
+                    <div class="tm-redaction__item" data-area-id="@area.Id" data-testid="@TestId("redaction-item")">
+                        <span class="tm-redaction__item-page">@string.Format(Loc["TmRedactionLayer_PageLabel"], area.PageNumber)</span>
+                        <select class="tm-redaction__select"
+                                value="@area.Category"
+                                aria-label="@Loc["TmRedactionLayer_CategoryLabel"]"
+                                data-testid="@TestId("redaction-category")"
+                                @onchange="e => ChangeCategoryAsync(area, e)">
+                            @foreach (var category in Enum.GetValues<RedactionCategory>())
+                            {
+                                <option value="@category" selected="@(category == area.Category)">@CategoryLabel(category)</option>
+                            }
+                        </select>
+                        <input type="text"
+                               class="tm-redaction__note"
+                               value="@area.Note"
+                               placeholder="@Loc["TmRedactionLayer_NotePlaceholder"]"
+                               aria-label="@Loc["TmRedactionLayer_NotePlaceholder"]"
+                               data-testid="@TestId("redaction-note")"
+                               @onchange="e => ChangeNoteAsync(area, e)" />
+                        <button type="button"
+                                class="tm-redaction__icon-btn"
+                                title="@Loc["TmRedactionLayer_Remove"]"
+                                aria-label="@Loc["TmRedactionLayer_Remove"]"
+                                data-testid="@TestId("redaction-remove")"
+                                @onclick="() => RemoveAreaAsync(area)">
+                            ✕
+                        </button>
+                    </div>
+                }
+            </aside>
+        }
+    </div>
+</div>
+
+@code {
+    private RenderFragment RectsLayer => __builder =>
+    {
+        @foreach (var area in VisibleAreas)
+        {
+            <div class="tm-redaction__rect @(_applied ? "tm-redaction__rect--applied" : "tm-redaction__rect--marked")"
+                 style="@RectStyle(area)"
+                 data-area-id="@area.Id"
+                 data-testid="@TestId("redaction-rect")"
+                 aria-hidden="true"></div>
+        }
+        @if (_activeRect is { } active)
+        {
+            <div class="tm-redaction__rect tm-redaction__rect--active"
+                 style="@RectStyle(active)"
+                 aria-hidden="true"></div>
+        }
+        <div @ref="_surfaceRef"
+             class="tm-redaction__surface"
+             role="application"
+             aria-label="@Loc["TmRedactionLayer_SurfaceLabel"]"
+             data-testid="@TestId("redaction-surface")"
+             @onpointerdown="HandlePointerDownAsync"
+             @onpointerdown:preventDefault="true"
+             @onpointermove="HandlePointerMove"
+             @onpointerup="HandlePointerUpAsync"
+             @onpointerleave="HandlePointerLeave"></div>
+    };
+}

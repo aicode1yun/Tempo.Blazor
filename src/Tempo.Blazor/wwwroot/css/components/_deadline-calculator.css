@@ -1,0 +1,188 @@
+/* ── TmDeadlineCalculator ────────────────────────────────────────────────── */
+
+.tm-deadline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-3);
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+    font-size: var(--tm-font-size-sm);
+    padding: var(--tm-space-4);
+}
+
+/* ── Form ────────────────────────────────────────────────────────────────── */
+
+.tm-deadline__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2);
+}
+
+.tm-deadline__field {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tm-space-2);
+}
+
+.tm-deadline__field-label {
+    font-weight: var(--tm-font-weight-medium);
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-xs);
+}
+
+.tm-deadline__field input,
+.tm-deadline__amount,
+.tm-deadline__select {
+    padding: var(--tm-space-1) var(--tm-space-2);
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-md);
+    font: inherit;
+    font-size: var(--tm-font-size-xs);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+}
+
+.tm-deadline__steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-1-5);
+}
+
+.tm-deadline__step {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2);
+}
+
+.tm-deadline__step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border-radius: var(--tm-radius-full);
+    background: var(--tm-color-primary-subtle);
+    color: var(--tm-color-primary-text);
+    font-size: var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-deadline__amount {
+    width: 90px;
+}
+
+.tm-deadline__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-secondary);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.tm-deadline__icon-btn:hover:not(:disabled) {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-deadline__icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.tm-deadline__btn {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: var(--tm-space-1);
+    padding: var(--tm-space-1) var(--tm-space-2-5);
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+    font: inherit;
+    font-size: var(--tm-font-size-xs);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.tm-deadline__btn:hover {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-deadline__error {
+    padding: var(--tm-space-1-5) var(--tm-space-2-5);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-color-danger-subtle);
+    color: var(--tm-color-danger-text);
+    font-size: var(--tm-font-size-xs);
+}
+
+/* ── Result ──────────────────────────────────────────────────────────────── */
+
+.tm-deadline__result {
+    display: flex;
+    align-items: baseline;
+    gap: var(--tm-space-2);
+    padding: var(--tm-space-2-5) var(--tm-space-3);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-color-primary-subtle);
+}
+
+.tm-deadline__result-label {
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-xs);
+}
+
+.tm-deadline__result-date {
+    font-size: var(--tm-font-size-lg);
+    color: var(--tm-color-primary-text);
+}
+
+.tm-deadline__result-day {
+    color: var(--tm-text-secondary);
+}
+
+/* ── Protocol ────────────────────────────────────────────────────────────── */
+
+.tm-deadline__protocol {
+    margin: 0;
+    padding-left: var(--tm-space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-0-5);
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-xs);
+}
+
+.tm-deadline__protocol-entry--final {
+    color: var(--tm-text-primary);
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-deadline__protocol-entry--shiftedfromweekend,
+.tm-deadline__protocol-entry--shiftedfromholiday {
+    color: var(--tm-color-warning-text);
+}
+
+.tm-deadline__protocol-step-label {
+    margin-left: var(--tm-space-1);
+    font-style: italic;
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    .tm-deadline__btn,
+    .tm-deadline__icon-btn {
+        transition: none;
+    }
+}

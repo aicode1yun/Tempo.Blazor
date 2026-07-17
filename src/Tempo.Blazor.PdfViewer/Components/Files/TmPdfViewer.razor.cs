@@ -107,6 +107,21 @@ public partial class TmPdfViewer : TmComponentBase, IAsyncDisposable
     /// <summary>Callback invoked when text is selected in the viewer text layer.</summary>
     [Parameter] public EventCallback<PdfTextSelection> OnTextSelected { get; set; }
 
+    /// <summary>
+    /// Optional content rendered in an overlay that is kept aligned with the current page
+    /// canvas (used by TmPdfAnnotator to draw its own annotation layer).
+    /// </summary>
+    [Parameter] public RenderFragment? OverlayContent { get; set; }
+
+    /// <summary>Callback invoked with the total page count once the document is loaded.</summary>
+    [Parameter] public EventCallback<int> OnDocumentLoaded { get; set; }
+
+    /// <summary>
+    /// Enables text selection events (<see cref="OnTextSelected"/>) without turning on the
+    /// built-in annotation layer and panel. Default is false.
+    /// </summary>
+    [Parameter] public bool EnableTextSelectionEvents { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private ElementReference _canvasRef;
@@ -115,6 +130,8 @@ public partial class TmPdfViewer : TmComponentBase, IAsyncDisposable
     private ElementReference _continuousRef;
     private ElementReference _searchLayerRef;
     private ElementReference _annotationOverlayRef;
+    private ElementReference _customOverlayRef;
+    private bool _customOverlaySynced;
     private DotNetObjectReference<TmPdfViewer>? _dotNetRef;
     private bool _pdfInitialized;
     private bool _useFallback;
@@ -292,6 +309,20 @@ public partial class TmPdfViewer : TmComponentBase, IAsyncDisposable
             await SetupSelectionAsync();
             await RefreshAnnotationOverlayAsync();
         }
+
+        if (!EnableAnnotations && EnableTextSelectionEvents && !_useFallback && !_selectionEnabled)
+        {
+            await SetupSelectionAsync();
+            await RefreshAnnotationOverlayAsync();
+        }
+
+        // A custom overlay must be sized even when annotations/text selection are off —
+        // the ResizeObserver attached by syncOverlay keeps it aligned afterwards.
+        if (OverlayContent is not null && !_useFallback && !_customOverlaySynced && _customOverlayRef.Context is not null)
+        {
+            _customOverlaySynced = true;
+            await RefreshAnnotationOverlayAsync();
+        }
     }
 
     // ── JS invokable ─────────────────────────────────────────────────────────
@@ -303,6 +334,11 @@ public partial class TmPdfViewer : TmComponentBase, IAsyncDisposable
         _totalPages = totalPages;
         _isLoading = false;
         _loadError = null;
+        if (OnDocumentLoaded.HasDelegate)
+        {
+            _ = InvokeAsync(() => OnDocumentLoaded.InvokeAsync(totalPages));
+        }
+
         InvokeAsync(StateHasChanged);
     }
 
@@ -346,7 +382,7 @@ public partial class TmPdfViewer : TmComponentBase, IAsyncDisposable
         {
             _currentPage = pageNumber;
             await PageChanged.InvokeAsync(_currentPage);
-            if (ShowTextLayer || EnableAnnotations)
+            if (ShowTextLayer || EnableAnnotations || EnableTextSelectionEvents)
             {
                 try { await JS.InvokeVoidAsync("tmPdfViewer.renderTextLayer", _canvasRef, _textLayerRef, _currentPage, _scale, Rotation); }
                 catch { }
@@ -425,7 +461,7 @@ public partial class TmPdfViewer : TmComponentBase, IAsyncDisposable
         try
         {
             await JS.InvokeVoidAsync("tmPdfViewer.renderPage", _canvasRef, _currentPage, _scale, Rotation);
-            if (ShowTextLayer || EnableAnnotations)
+            if (ShowTextLayer || EnableAnnotations || EnableTextSelectionEvents)
             {
                 await JS.InvokeVoidAsync("tmPdfViewer.renderTextLayer", _canvasRef, _textLayerRef, _currentPage, _scale, Rotation);
             }
@@ -466,7 +502,7 @@ public partial class TmPdfViewer : TmComponentBase, IAsyncDisposable
             else
             {
                 await JS.InvokeVoidAsync("tmPdfViewer.setScale", _canvasRef, _scale);
-                if (ShowTextLayer || EnableAnnotations)
+                if (ShowTextLayer || EnableAnnotations || EnableTextSelectionEvents)
                 {
                     await JS.InvokeVoidAsync("tmPdfViewer.renderTextLayer", _canvasRef, _textLayerRef, _currentPage, _scale, Rotation);
                 }
@@ -635,12 +671,23 @@ public partial class TmPdfViewer : TmComponentBase, IAsyncDisposable
 
     private async Task RefreshAnnotationOverlayAsync()
     {
-        if (!EnableAnnotations || _useFallback || _annotationOverlayRef.Context is null)
+        if (_useFallback)
         {
             return;
         }
 
-        try { await JS.InvokeVoidAsync("tmPdfViewer.syncOverlay", _canvasRef, _annotationOverlayRef); }
+        try
+        {
+            if (EnableAnnotations && _annotationOverlayRef.Context is not null)
+            {
+                await JS.InvokeVoidAsync("tmPdfViewer.syncOverlay", _canvasRef, _annotationOverlayRef);
+            }
+
+            if (OverlayContent is not null && _customOverlayRef.Context is not null)
+            {
+                await JS.InvokeVoidAsync("tmPdfViewer.syncOverlay", _canvasRef, _customOverlayRef);
+            }
+        }
         catch { }
     }
 

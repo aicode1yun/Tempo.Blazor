@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "A node of the ownership structure tree. The root represents the subject itself; children are direct owners with share percent and a beneficial-owner flag, recursively. Clone() copies the whole subtree.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/KycModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "KycOwnershipNode"
+}

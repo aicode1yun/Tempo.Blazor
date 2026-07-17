@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Builds the culture-invariant JSON payload consumed by the TmPdfAnnotator JavaScript export and print functions: one entry per annotation thread with page, kind, geometry, color, quote, ink strokes, stamp text, and comments.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PdfAnnotatorModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "PdfAnnotationExportPayloadBuilder"
+}

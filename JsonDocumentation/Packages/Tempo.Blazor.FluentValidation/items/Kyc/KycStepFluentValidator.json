@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Kyc",
+  "namespace": "Tempo.Blazor.FluentValidation.Kyc",
+  "description": "FluentValidation-based IKycStepValidator for TmKycWizard. Each wizard step has its own rule set (person/company identity, documents with expiry, addresses, recursive ownership shares, declarations); failures carry indexed field paths and localization keys instead of display text. The optional constructor delegate supplies the reference date for expiry/birth-date rules.",
+  "packageId": "Tempo.Blazor.FluentValidation",
+  "sourcePath": "src/Tempo.Blazor.FluentValidation/Kyc/KycStepFluentValidator.cs",
+  "documentationStatus": "generated",
+  "itemName": "KycStepFluentValidator"
+}

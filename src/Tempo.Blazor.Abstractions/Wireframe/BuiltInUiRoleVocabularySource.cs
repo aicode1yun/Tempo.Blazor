@@ -109,6 +109,15 @@ public sealed class BuiltInUiRoleVocabularySource : IUiRoleVocabularySource
         R("image-gallery", "Image gallery", "Displays images in a browsable gallery.", "gallery", "galerie", "TmImageGallery", "TmLightbox"),
         R("filter-builder", "Filter builder", "Builds complex filter conditions.", "query builder", "tvorba filtru", "TmFilterBuilder"),
         R("pdf-viewer", "PDF viewer", "Displays a PDF document.", "document viewer", "prohlizec pdf", "TmPdfViewer"),
+        R("pdf-annotator", "PDF annotator", "Annotates a PDF document with highlights, comments, stamps, and drawings.", "document markup", "anotace pdf", "TmPdfAnnotator"),
+        R("audit-log", "Audit log", "Displays a filterable, virtualized log of audit events with detail diffs.", "activity log", "auditni zaznam", "TmAuditLogViewer"),
+        R("deadline-calculator", "Deadline calculator", "Computes a deadline from a base date and a rule with business-day and holiday handling.", "date calculator", "vypocet terminu", "TmDeadlineCalculator"),
+        R("ledger-grid", "Ledger grid", "Displays accounting movements with debit/credit/balance columns, totals, and matching.", "accounting table", "kniha pohybu", "TmLedgerGrid"),
+        R("money-display", "Money display", "Displays a monetary amount with currency, sign, and locale formatting.", "amount", "castka", "TmMoneyDisplay"),
+        R("kyc-wizard", "KYC wizard", "Guides identification of a person or company through steps: documents, addresses, ownership, declarations.", "compliance wizard", "identifikacni pruvodce", "TmKycWizard"),
+        R("screening-result-panel", "Screening results", "Lists compliance screening findings with severity and confidence, and confirm/dismiss resolution.", "screening findings", "vysledky kontrol", "TmScreeningResultPanel"),
+        R("data-import", "Data import", "Guides a file import: upload CSV/XLSX, map columns to a schema, dry-run validation, batched import with progress.", "import wizard", "import dat", "TmDataImport"),
+        R("redaction-layer", "Redaction layer", "Marks rectangles over a document or image and exports a copy with the content destructively removed.", "blackout", "zacerneni", "TmRedactionLayer"),
         R("map", "Map", "Displays an interactive geographic map with markers or clusters.", "geographic map", "mapa", "TmMap")
     ];
 

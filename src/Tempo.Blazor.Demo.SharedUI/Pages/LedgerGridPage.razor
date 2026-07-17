@@ -1,0 +1,158 @@
+@page "/ledger-grid"
+@using Tempo.Blazor.Components.Ledger
+@using Tempo.Blazor.Components.DataDisplay
+@using Tempo.Blazor.Abstractions.Models
+<PageTitle>Ledger Grid – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Ledger Grid &amp; Money Display</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        An accounting movement book: debit/credit/running-balance columns with exact <code>decimal</code>
+        money rendering, server-side paging and aggregation through <code>ILedgerDataProvider</code>,
+        filter-wide footer totals, and a row-matching workflow (pairing invoices with payments) when the
+        provider implements <code>ILedgerMatchingProvider</code>. Amounts everywhere render through the
+        atomic <code>TmMoneyDisplay</code>.
+    </p>
+</div>
+
+<!-- Movement book -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Movement Book with Matching</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Interactive</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            A quarter of invoices and payments. Tick an invoice and its payment, then press
+            <em>Match selected</em> — a balanced pair turns <em>Matched</em>, an unbalanced one
+            <em>Partially matched</em>. The footer totals always cover the whole filtered set, not just
+            the visible page. Try the match-state filter, the currency filter, and the search box.
+        </p>
+        <div data-testid="ledger-demo-main">
+            <TmLedgerGrid Provider="_provider" PageSize="12" />
+        </div>
+    </div>
+</section>
+
+<!-- Money display -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">TmMoneyDisplay</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Atomic</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            The atomic amount component used by the grid — currency-aware decimals (ISO 4217 minor units),
+            locale number formatting, semantic sign colors, an optional explicit plus sign, and an em-dash
+            placeholder for missing amounts.
+        </p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm" data-testid="ledger-demo-money">
+            <div><TmMoneyDisplay Amount="1234567.89m" Currency="CZK" /></div>
+            <div><TmMoneyDisplay Amount="-980.50m" Currency="EUR" /></div>
+            <div><TmMoneyDisplay Amount="125000m" Currency="JPY" /></div>
+            <div><TmMoneyDisplay Amount="12.345m" Currency="KWD" /></div>
+            <div><TmMoneyDisplay Amount="42m" Currency="CZK" ShowSign="true" /></div>
+            <div><TmMoneyDisplay Amount="0m" Currency="CZK" /></div>
+            <div><TmMoneyDisplay Amount="-3.14m" Currency="EUR" Colored="false" /></div>
+            <div><TmMoneyDisplay Amount="null" Currency="CZK" /></div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private InMemoryLedgerDataProvider _provider = default!;
+
+    private static readonly (string Name, string Doc)[] _counterparties =
+    [
+        ("Advokátní kancelář Dvořák", "INV"),
+        ("Městský soud v Praze", "FEE"),
+        ("Novák a partneři s.r.o.", "INV"),
+        ("Krajský úřad Brno", "FEE"),
+        ("Translations Zelenková", "INV"),
+        ("IT služby Wagner", "INV")
+    ];
+
+    protected override void OnInitialized()
+    {
+        var random = new Random(2026);
+        var entries = new List<LedgerEntry>();
+        var start = new DateOnly(2026, 4, 1);
+        var id = 1;
+
+        // Two deterministic pairs used by the E2E matching flow: one balanced, one partial.
+        entries.Add(new LedgerEntry
+        {
+            Id = "FIX-1A", Date = new DateOnly(2026, 3, 2), DocumentNumber = "INV-FIXED-1",
+            Description = "Invoice INV-FIXED-1", Counterparty = "Fixture s.r.o.", Debit = 5000m, Currency = "CZK"
+        });
+        entries.Add(new LedgerEntry
+        {
+            Id = "FIX-1B", Date = new DateOnly(2026, 3, 9), DocumentNumber = "PAY-FIXED-1",
+            Description = "Payment for INV-FIXED-1", Counterparty = "Fixture s.r.o.", Credit = 5000m, Currency = "CZK"
+        });
+        entries.Add(new LedgerEntry
+        {
+            Id = "FIX-2A", Date = new DateOnly(2026, 3, 3), DocumentNumber = "INV-FIXED-2",
+            Description = "Invoice INV-FIXED-2", Counterparty = "Fixture s.r.o.", Debit = 8000m, Currency = "CZK"
+        });
+        entries.Add(new LedgerEntry
+        {
+            Id = "FIX-2B", Date = new DateOnly(2026, 3, 12), DocumentNumber = "PAY-FIXED-2",
+            Description = "Payment for INV-FIXED-2", Counterparty = "Fixture s.r.o.", Credit = 4800m, Currency = "CZK"
+        });
+
+        for (var i = 0; i < 28; i++)
+        {
+            var cp = _counterparties[random.Next(_counterparties.Length)];
+            var currency = random.Next(5) == 0 ? "EUR" : "CZK";
+            var amount = Math.Round((decimal)(random.NextDouble() * 48000 + 2000), 2);
+            var invoiceDate = start.AddDays(random.Next(0, 80));
+            var invoiceId = $"L{id++:D3}";
+
+            entries.Add(new LedgerEntry
+            {
+                Id = invoiceId,
+                Date = invoiceDate,
+                DocumentNumber = $"{cp.Doc}-2026-{i + 101}",
+                Description = $"Invoice {cp.Doc}-2026-{i + 101}",
+                Counterparty = cp.Name,
+                Debit = amount,
+                Currency = currency
+            });
+
+            // Most invoices get a payment; some paid exactly, some partially, some unpaid.
+            var paymentKind = random.Next(4);
+            if (paymentKind > 0)
+            {
+                var paid = paymentKind == 1 ? Math.Round(amount * 0.6m, 2) : amount;
+                var paymentId = $"L{id++:D3}";
+                var payment = new LedgerEntry
+                {
+                    Id = paymentId,
+                    Date = invoiceDate.AddDays(random.Next(3, 21)),
+                    DocumentNumber = $"PAY-2026-{i + 501}",
+                    Description = $"Payment for {cp.Doc}-2026-{i + 101}",
+                    Counterparty = cp.Name,
+                    Credit = paid,
+                    Currency = currency
+                };
+                entries.Add(payment);
+
+                // Pre-match a third of the pairs so the book opens with mixed states.
+                if (paymentKind == 3)
+                {
+                    var group = Guid.NewGuid().ToString("N");
+                    var invoice = entries.First(e => e.Id == invoiceId);
+                    invoice.MatchGroupId = group;
+                    payment.MatchGroupId = group;
+                    invoice.MatchState = payment.MatchState = LedgerMatchState.Matched;
+                }
+            }
+        }
+
+        _provider = new InMemoryLedgerDataProvider(entries);
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "One page of audit log results plus the total count of the filtered set.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "AuditLogPage"
+}

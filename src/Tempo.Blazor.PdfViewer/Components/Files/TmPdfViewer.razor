@@ -201,7 +201,7 @@
                     <div class="tm-pdf-viewer__canvas-wrap">
                         <canvas @ref="_canvasRef" class="tm-pdf-viewer__canvas"></canvas>
 
-                        @if (ShowTextLayer || EnableAnnotations)
+                        @if (ShowTextLayer || EnableAnnotations || EnableTextSelectionEvents)
                         {
                             <div @ref="_textLayerRef" class="tm-pdf-viewer__text-layer"></div>
                         }
@@ -221,6 +221,13 @@
                                                       ShowResolved="_showResolvedAnnotations"
                                                       DraftAnchor="_pendingSelection?.ToAnchor()"
                                                       OnThreadSelected="SelectThreadAsync" />
+                            </div>
+                        }
+
+                        @if (OverlayContent is not null)
+                        {
+                            <div @ref="_customOverlayRef" class="tm-pdf-viewer__annotation-overlay tm-pdf-viewer__custom-overlay">
+                                @OverlayContent
                             </div>
                         }
                     </div>

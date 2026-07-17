@@ -1,0 +1,228 @@
+@namespace Tempo.Blazor.Components.AuditLog
+@inherits Tempo.Blazor.Components.TmComponentBase
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Components.DataDisplay
+@using Tempo.Blazor.Components.Icons
+
+<div class="tm-audit-log @Class" data-testid="@TestId("audit-log")">
+
+    <div class="tm-audit-log__toolbar" role="toolbar" aria-label="@Loc["TmAuditLogViewer_ToolbarLabel"]">
+        @if (ShowSearch)
+        {
+            <input type="search"
+                   class="tm-audit-log__search"
+                   value="@_search"
+                   placeholder="@Loc["TmAuditLogViewer_SearchPlaceholder"]"
+                   aria-label="@Loc["TmAuditLogViewer_SearchPlaceholder"]"
+                   data-testid="@TestId("audit-log-search")"
+                   @onchange="HandleSearchChangedAsync" />
+        }
+
+        @if (ShowFilters)
+        {
+            <select class="tm-audit-log__filter"
+                    aria-label="@Loc["TmAuditLogViewer_FilterActor"]"
+                    data-testid="@TestId("audit-log-filter-actor")"
+                    @onchange="HandleActorChangedAsync">
+                <option value="" selected="@(string.IsNullOrEmpty(_actorFilter))">@Loc["TmAuditLogViewer_AllActors"]</option>
+                @foreach (var actor in _filterOptions.Actors)
+                {
+                    <option value="@actor.ActorId" selected="@(actor.ActorId == _actorFilter)">@actor.DisplayName</option>
+                }
+            </select>
+
+            <select class="tm-audit-log__filter"
+                    aria-label="@Loc["TmAuditLogViewer_FilterAction"]"
+                    data-testid="@TestId("audit-log-filter-action")"
+                    @onchange="HandleActionChangedAsync">
+                <option value="" selected="@(string.IsNullOrEmpty(_actionFilter))">@Loc["TmAuditLogViewer_AllActions"]</option>
+                @foreach (var action in _filterOptions.Actions)
+                {
+                    <option value="@action" selected="@(action == _actionFilter)">@action</option>
+                }
+            </select>
+
+            <select class="tm-audit-log__filter"
+                    aria-label="@Loc["TmAuditLogViewer_FilterEntityType"]"
+                    data-testid="@TestId("audit-log-filter-entity")"
+                    @onchange="HandleEntityTypeChangedAsync">
+                <option value="" selected="@(string.IsNullOrEmpty(_entityTypeFilter))">@Loc["TmAuditLogViewer_AllEntityTypes"]</option>
+                @foreach (var entityType in _filterOptions.EntityTypes)
+                {
+                    <option value="@entityType" selected="@(entityType == _entityTypeFilter)">@entityType</option>
+                }
+            </select>
+
+            <label class="tm-audit-log__date">
+                <span class="tm-audit-log__date-label">@Loc["TmAuditLogViewer_From"]</span>
+                <input type="date"
+                       value="@FromInputValue"
+                       aria-label="@Loc["TmAuditLogViewer_From"]"
+                       data-testid="@TestId("audit-log-from")"
+                       @onchange="HandleFromChangedAsync" />
+            </label>
+            <label class="tm-audit-log__date">
+                <span class="tm-audit-log__date-label">@Loc["TmAuditLogViewer_To"]</span>
+                <input type="date"
+                       value="@ToInputValue"
+                       aria-label="@Loc["TmAuditLogViewer_To"]"
+                       data-testid="@TestId("audit-log-to")"
+                       @onchange="HandleToChangedAsync" />
+            </label>
+
+            @if (HasActiveFilter)
+            {
+                <button type="button"
+                        class="tm-audit-log__btn tm-audit-log__btn--ghost"
+                        data-testid="@TestId("audit-log-clear-filters")"
+                        @onclick="ClearFiltersAsync">
+                    <TmIcon Name="x" Size="IconSize.Xs" />
+                    @Loc["TmAuditLogViewer_ClearFilters"]
+                </button>
+            }
+        }
+
+        <div class="tm-audit-log__spacer"></div>
+
+        @if (SupportsIntegrity && (_integrity is not null || _integrityLoading))
+        {
+            <span class="@IntegrityClass()"
+                  title="@IntegrityTitle()"
+                  data-testid="@TestId("audit-log-integrity")">
+                <TmIcon Name="shield" Size="IconSize.Xs" />
+                @IntegrityText()
+            </span>
+        }
+
+        @if (ShowExport)
+        {
+            <button type="button"
+                    class="tm-audit-log__btn"
+                    disabled="@_exporting"
+                    title="@Loc["TmAuditLogViewer_Export"]"
+                    data-testid="@TestId("audit-log-export")"
+                    @onclick="ExportCsvAsync">
+                <TmIcon Name="file-down" Size="IconSize.Xs" />
+                @Loc["TmAuditLogViewer_Export"]
+            </button>
+        }
+    </div>
+
+    @if (ShowTimeline && _timeline.Count > 0)
+    {
+        <div class="tm-audit-log__timeline"
+             role="group"
+             aria-label="@Loc["TmAuditLogViewer_TimelineLabel"]"
+             data-testid="@TestId("audit-log-timeline")">
+            @foreach (var bucket in _timeline)
+            {
+                <button type="button"
+                        class="tm-audit-log__timeline-bucket"
+                        title="@BucketTitle(bucket)"
+                        aria-label="@BucketTitle(bucket)"
+                        data-testid="@TestId("audit-log-timeline-bucket")"
+                        @onclick="() => HandleBucketClickedAsync(bucket)">
+                    <span class="tm-audit-log__timeline-bar" style="height:@(BucketHeightPercent(bucket).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></span>
+                </button>
+            }
+        </div>
+    }
+
+    <div class="tm-audit-log__meta">
+        <span class="tm-audit-log__count" data-testid="@TestId("audit-log-count")">
+            @(string.Format(System.Globalization.CultureInfo.CurrentCulture, Loc["TmAuditLogViewer_EventsCount"], _totalCount))
+        </span>
+        @if (_loading)
+        {
+            <span class="tm-audit-log__loading">@Loc["TmAuditLogViewer_Loading"]</span>
+        }
+    </div>
+
+    <div class="tm-audit-log__list" style="height:@EffectiveHeight" role="list" aria-label="@Loc["TmAuditLogViewer_ListLabel"]">
+        @if (_totalCount == 0 && !_loading)
+        {
+            <div class="tm-audit-log__empty" data-testid="@TestId("audit-log-empty")">
+                <TmEmptyState Icon="search" Title="@Loc["TmAuditLogViewer_NoEvents"]" />
+            </div>
+        }
+        else if (Virtualized)
+        {
+            <Virtualize @ref="_virtualize" TItem="AuditLogEntry" ItemsProvider="ProvideItemsAsync" ItemSize="ItemSize">
+                <ItemContent>
+                    @RenderEntry(context)
+                </ItemContent>
+                <Placeholder>
+                    <div class="tm-audit-log__row tm-audit-log__row--placeholder" aria-hidden="true">
+                        <span class="tm-audit-log__skeleton"></span>
+                    </div>
+                </Placeholder>
+            </Virtualize>
+        }
+        else
+        {
+            @foreach (var entry in _plainItems)
+            {
+                @RenderEntry(entry)
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private RenderFragment RenderEntry(AuditLogEntry entry) => __builder =>
+    {
+        <div class="tm-audit-log__item" role="listitem">
+            <button type="button"
+                    class="tm-audit-log__row @(IsExpanded(entry) ? "tm-audit-log__row--expanded" : "")"
+                    aria-expanded="@(IsExpanded(entry) ? "true" : "false")"
+                    data-entry-id="@entry.Id"
+                    data-testid="@TestId("audit-log-row")"
+                    @onclick="() => ToggleDetailAsync(entry)">
+                <span class="@SeverityClass(entry)" title="@SeverityLabel(entry)" aria-label="@SeverityLabel(entry)"></span>
+                <span class="tm-audit-log__time">@FormatTimestamp(entry.Timestamp)</span>
+                <span class="tm-audit-log__actor">@entry.ActorName</span>
+                <span class="tm-audit-log__action">@ActionDisplay(entry)</span>
+                <span class="tm-audit-log__entity">@EntityDisplay(entry)</span>
+                <span class="tm-audit-log__description">@entry.Description</span>
+            </button>
+
+            @if (IsExpanded(entry))
+            {
+                <div class="tm-audit-log__detail" data-testid="@TestId("audit-log-detail")">
+                    <dl class="tm-audit-log__detail-grid">
+                        <dt>@Loc["TmAuditLogViewer_DetailActor"]</dt>
+                        <dd>@entry.ActorName@(string.IsNullOrEmpty(entry.ActorRole) ? "" : $" ({entry.ActorRole})") · @entry.ActorId</dd>
+                        <dt>@Loc["TmAuditLogViewer_DetailAction"]</dt>
+                        <dd>@entry.Action</dd>
+                        <dt>@Loc["TmAuditLogViewer_DetailEntity"]</dt>
+                        <dd>@EntityDisplay(entry)</dd>
+                        @if (!string.IsNullOrEmpty(entry.IpAddress))
+                        {
+                            <dt>@Loc["TmAuditLogViewer_DetailIp"]</dt>
+                            <dd>@entry.IpAddress</dd>
+                        }
+                        @foreach (var pair in entry.Metadata)
+                        {
+                            <dt>@pair.Key</dt>
+                            <dd>@pair.Value</dd>
+                        }
+                        @if (!string.IsNullOrEmpty(entry.Hash))
+                        {
+                            <dt>@Loc["TmAuditLogViewer_DetailHash"]</dt>
+                            <dd class="tm-audit-log__hash">@entry.Hash</dd>
+                        }
+                    </dl>
+
+                    @if (entry.Changes.Count > 0)
+                    {
+                        <div class="tm-audit-log__detail-changes">
+                            <span class="tm-audit-log__detail-title">@Loc["TmAuditLogViewer_DetailChanges"]</span>
+                            <TmChangeDiff Changes="entry.Changes" />
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    };
+}

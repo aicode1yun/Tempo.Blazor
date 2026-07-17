@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Filtered, paged ledger query (search, match state, currency, period). Results are ordered ascending by date then id so running balances are well-defined.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/LedgerModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "LedgerQuery"
+}

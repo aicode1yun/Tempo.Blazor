@@ -232,6 +232,9 @@ public sealed class DocumentCommentUser
 
     /// <summary>Optional avatar image URL.</summary>
     public string? AvatarUrl { get; set; }
+
+    /// <summary>Optional role (e.g. reviewer, approver) used for role-based annotation colors.</summary>
+    public string? Role { get; set; }
 }
 
 /// <summary>Mention metadata stored with a document comment.</summary>
@@ -314,6 +317,18 @@ public sealed class DocumentCommentThread
 
     /// <summary>Timestamp when the thread was resolved.</summary>
     public DateTimeOffset? ResolvedAt { get; set; }
+
+    /// <summary>Annotation kind. Default is <see cref="DocumentAnnotationKind.Comment"/> for existing threads.</summary>
+    public DocumentAnnotationKind Kind { get; set; } = DocumentAnnotationKind.Comment;
+
+    /// <summary>Explicit display color (CSS value). When null the color is resolved per author/role.</summary>
+    public string? Color { get; set; }
+
+    /// <summary>Stamp text for <see cref="DocumentAnnotationKind.Stamp"/> annotations.</summary>
+    public string? StampText { get; set; }
+
+    /// <summary>Freehand strokes for <see cref="DocumentAnnotationKind.Drawing"/> annotations.</summary>
+    public List<DocumentInkStroke> InkStrokes { get; set; } = [];
 }
 
 /// <summary>Maps document-viewer comment models to the shared comment contract.</summary>
@@ -339,11 +354,14 @@ public static class DocumentViewerCommentBridge
             .Select(comment => ToTmCommentEntry(comment, threadId))
             .ToList();
 
+        var anchor = ToTmCommentAnchor(thread.Anchor);
+        ApplyAnnotationMetadata(anchor, thread);
+
         return new TmCommentThread
         {
             Id = threadId,
             EntityRef = Entity(documentId),
-            Anchor = ToTmCommentAnchor(thread.Anchor),
+            Anchor = anchor,
             Status = ToTmStatus(thread.Status),
             CreatedAt = entries.Count == 0 ? DateTimeOffset.UtcNow : entries.Min(entry => entry.CreatedAt),
             UpdatedAt = GetUpdatedAt(entries, thread.ResolvedAt),
@@ -359,7 +377,7 @@ public static class DocumentViewerCommentBridge
     {
         ArgumentNullException.ThrowIfNull(thread);
 
-        return new DocumentCommentThread
+        var result = new DocumentCommentThread
         {
             Id = thread.Id,
             Anchor = ToDocumentCommentAnchor(thread.Anchor),
@@ -369,6 +387,9 @@ public static class DocumentViewerCommentBridge
             ResolvedByName = thread.ResolvedBy?.DisplayName,
             ResolvedAt = thread.ResolvedAt
         };
+
+        ReadAnnotationMetadata(thread.Anchor, result);
+        return result;
     }
 
     /// <summary>Converts a document-viewer comment entry to a shared comment entry.</summary>
@@ -423,6 +444,132 @@ public static class DocumentViewerCommentBridge
     private const string TextRangeMetadataRects = "pdfTextRangeRects";
 
     private const string TextRangeKindValue = "TextRange";
+
+    /// <summary>Metadata key holding the annotation kind of an annotator thread.</summary>
+    private const string AnnotationKindMetadata = "pdfAnnotationKind";
+
+    /// <summary>Metadata key holding the explicit annotation color.</summary>
+    private const string AnnotationColorMetadata = "pdfAnnotationColor";
+
+    /// <summary>Metadata key holding the stamp text of a stamp annotation.</summary>
+    private const string AnnotationStampTextMetadata = "pdfStampText";
+
+    /// <summary>Metadata key holding the encoded ink strokes of a drawing annotation.</summary>
+    private const string AnnotationInkStrokesMetadata = "pdfInkStrokes";
+
+    private static void ApplyAnnotationMetadata(TmCommentAnchor anchor, DocumentCommentThread thread)
+    {
+        var hasAnnotationData = thread.Kind != DocumentAnnotationKind.Comment
+            || !string.IsNullOrEmpty(thread.Color)
+            || !string.IsNullOrEmpty(thread.StampText)
+            || thread.InkStrokes.Count > 0;
+        if (!hasAnnotationData)
+        {
+            return;
+        }
+
+        anchor.Metadata ??= new Dictionary<string, object>();
+        if (thread.Kind != DocumentAnnotationKind.Comment)
+        {
+            anchor.Metadata[AnnotationKindMetadata] = thread.Kind.ToString();
+        }
+
+        if (!string.IsNullOrEmpty(thread.Color))
+        {
+            anchor.Metadata[AnnotationColorMetadata] = thread.Color!;
+        }
+
+        if (!string.IsNullOrEmpty(thread.StampText))
+        {
+            anchor.Metadata[AnnotationStampTextMetadata] = thread.StampText!;
+        }
+
+        if (thread.InkStrokes.Count > 0)
+        {
+            anchor.Metadata[AnnotationInkStrokesMetadata] = EncodeInkStrokes(thread.InkStrokes);
+        }
+    }
+
+    private static void ReadAnnotationMetadata(TmCommentAnchor? anchor, DocumentCommentThread thread)
+    {
+        if (anchor?.Metadata is null)
+        {
+            return;
+        }
+
+        var kindText = ConvertToString(anchor.Metadata.GetValueOrDefault(AnnotationKindMetadata));
+        if (!string.IsNullOrEmpty(kindText) && Enum.TryParse<DocumentAnnotationKind>(kindText, out var kind))
+        {
+            thread.Kind = kind;
+        }
+
+        var color = ConvertToString(anchor.Metadata.GetValueOrDefault(AnnotationColorMetadata));
+        if (!string.IsNullOrEmpty(color))
+        {
+            thread.Color = color;
+        }
+
+        var stampText = ConvertToString(anchor.Metadata.GetValueOrDefault(AnnotationStampTextMetadata));
+        if (!string.IsNullOrEmpty(stampText))
+        {
+            thread.StampText = stampText;
+        }
+
+        var strokes = DecodeInkStrokes(anchor.Metadata.GetValueOrDefault(AnnotationInkStrokesMetadata));
+        if (strokes.Count > 0)
+        {
+            thread.InkStrokes = strokes;
+        }
+    }
+
+    /// <summary>Encodes ink strokes into a culture-invariant, JSON-round-trip-safe string.
+    /// Format: one stroke per ';'-separated segment as "thickness|x,y x,y …".</summary>
+    /// <param name="strokes">Strokes to encode.</param>
+    public static string EncodeInkStrokes(IEnumerable<DocumentInkStroke> strokes)
+        => string.Join(";", strokes.Select(stroke => string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"{stroke.Thickness:0.######}|{string.Join(" ", stroke.Points.Select(point => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{point.X:0.######},{point.Y:0.######}")))}")));
+
+    /// <summary>Decodes ink strokes previously produced by <see cref="EncodeInkStrokes"/>.</summary>
+    /// <param name="encoded">Encoded stroke string.</param>
+    public static List<DocumentInkStroke> DecodeInkStrokes(object? encoded)
+    {
+        var text = ConvertToString(encoded);
+        var result = new List<DocumentInkStroke>();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return result;
+        }
+
+        foreach (var segment in text.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = segment.Split('|');
+            if (parts.Length != 2
+                || !double.TryParse(parts[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var thickness))
+            {
+                continue;
+            }
+
+            var points = new List<DocumentInkPoint>();
+            foreach (var pair in parts[1].Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var xy = pair.Split(',');
+                if (xy.Length == 2
+                    && double.TryParse(xy[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var x)
+                    && double.TryParse(xy[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var y))
+                {
+                    points.Add(DocumentInkPoint.Create(x, y));
+                }
+            }
+
+            if (points.Count >= 2)
+            {
+                result.Add(new DocumentInkStroke { Points = points, Thickness = thickness > 0 ? thickness : 0.004 });
+            }
+        }
+
+        return result;
+    }
 
     private static TmCommentAnchor ToTmCommentAnchor(DocumentCommentAnchor anchor)
     {
@@ -624,6 +771,18 @@ public sealed class DocumentCommentThreadCreateRequest
 
     /// <summary>Mentions detected in the body.</summary>
     public List<DocumentCommentMention> Mentions { get; set; } = [];
+
+    /// <summary>Annotation kind for the new thread. Default is <see cref="DocumentAnnotationKind.Comment"/>.</summary>
+    public DocumentAnnotationKind Kind { get; set; } = DocumentAnnotationKind.Comment;
+
+    /// <summary>Explicit display color (CSS value) for the new thread, when any.</summary>
+    public string? Color { get; set; }
+
+    /// <summary>Stamp text for <see cref="DocumentAnnotationKind.Stamp"/> annotations.</summary>
+    public string? StampText { get; set; }
+
+    /// <summary>Freehand strokes for <see cref="DocumentAnnotationKind.Drawing"/> annotations.</summary>
+    public List<DocumentInkStroke> InkStrokes { get; set; } = [];
 }
 
 /// <summary>Payload emitted when a reply is requested.</summary>
