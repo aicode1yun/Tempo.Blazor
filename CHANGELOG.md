@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.7 - 2026-07-17
+
+### Dense line series readability (TmChart)
+
+- Line series (both `Line` charts and combo overlays on `Bar` charts) now thin their point markers when values are packed tighter than ~9 SVG units apart — overlapping white-stroked circles previously made a dense line (e.g. 360 monthly values) look dotted. The polyline itself always renders complete; sparse series keep a marker on every value.
+
 ## 2.3.6 - 2026-07-17
 
 ### Negative values on Bar and Line charts (TmChart)

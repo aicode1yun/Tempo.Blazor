@@ -241,6 +241,41 @@ public class TmChartComboTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Dense_Line_Series_Thins_Point_Markers_But_Keeps_Full_Polyline()
+    {
+        // 360 monthly values: drawing a white-stroked circle per value makes the line look
+        // dotted (circles overlap). Markers must thin out while the polyline stays complete.
+        var n = 360;
+        var data = new ChartData
+        {
+            Labels = Enumerable.Range(0, n).Select(i => $"M{i}").ToArray(),
+            Datasets =
+            [
+                new ChartDataset { Label = "Bars", Values = Enumerable.Range(0, n).Select(_ => 10.0).ToArray(), Color = "#ef4444" },
+                new ChartDataset { Label = "Line", Values = Enumerable.Range(0, n).Select(i => (double)i).ToArray(), Color = "#3b82f6", RenderAs = ChartDatasetRenderAs.Line },
+            ]
+        };
+
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, data));
+
+        var polyline = cut.Find("polyline.tm-chart__line");
+        polyline.GetAttribute("points")!.Split(' ').Length.Should().Be(360);
+        cut.FindAll("circle.tm-chart__point").Count.Should().BeLessThan(120);
+    }
+
+    [Fact]
+    public void Sparse_Line_Series_Keeps_All_Point_Markers()
+    {
+        var cut = RenderComponent<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Bar)
+            .Add(x => x.Data, ComboData));
+
+        cut.FindAll("circle.tm-chart__point").Count.Should().Be(4);
+    }
+
+    [Fact]
     public void LineChart_Ignores_RenderAs_Line()
     {
         // RenderAs=Line on a Line chart is a no-op: the dataset renders as a normal line.

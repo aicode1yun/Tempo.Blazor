@@ -506,9 +506,12 @@
             b.AddAttribute(6, "stroke-linejoin", "round");
             b.CloseElement();
 
+            // Dense series thin their point markers (overlapping white-stroked circles would
+            // make the line look dotted); the polyline itself always stays complete.
+            var markerStep = Math.Max(1, (int)Math.Ceiling(9.0 / gw));
             for (int i = 0; i < ds.Values.Length && i < lc; i++)
             {
-                if (double.IsNaN(ds.Values[i])) continue;
+                if (double.IsNaN(ds.Values[i]) || i % markerStep != 0) continue;
                 var x = PL + i * gw + gw / 2.0;
                 var y = BarDomainY(ds.Values[i], min, max);
                 var cdi = di;
@@ -598,10 +601,13 @@
             b.AddAttribute(6, "stroke-linejoin", "round");
             b.CloseElement();
 
-            // Data points
+            // Data points (dense series thin the markers; the polyline stays complete)
+            var lineMarkerStep = Math.Max(1, (int)Math.Ceiling(plan.Length * 9.0 / CW));
+            var planOrdinal = -1;
             foreach (var (i, x) in plan)
             {
-                if (i >= ds.Values.Length || double.IsNaN(ds.Values[i])) continue;
+                planOrdinal++;
+                if (i >= ds.Values.Length || double.IsNaN(ds.Values[i]) || planOrdinal % lineMarkerStep != 0) continue;
                 var y = BarDomainY(ds.Values[i], min, max);
                 var cdi = di;
                 var ci = i;
