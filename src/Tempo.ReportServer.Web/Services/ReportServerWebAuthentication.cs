@@ -1,10 +1,10 @@
-using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Tempo.Reporting.Abstractions.Auth;
 
 namespace Tempo.ReportServer.Web.Services;
 
@@ -67,45 +67,41 @@ public sealed class MemoryCacheReportServerTokenStore : IReportServerTokenStore
     }
 }
 
-/// <summary>Resolves a valid access token for the current server-rendered user, refreshing as needed.</summary>
-public interface IServerAccessTokenProvider
-{
-    /// <summary>Returns a non-expired access token for the current user, or null when unavailable.</summary>
-    Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default);
-}
-
 /// <summary>
-/// <see cref="IServerAccessTokenProvider"/> for the InteractiveServer host: reads the current user's
-/// token set from the store and, when it is within the refresh window, exchanges the refresh token at
-/// the Keycloak token endpoint (plain HTTP form post — no Keycloak-specific SDK).
+/// Resolves a valid access token for a known subject, refreshing it at the Keycloak token endpoint
+/// (plain HTTP form post — no Keycloak-specific SDK) when it is within the refresh window or a
+/// refresh is forced. Singleton and keyed only by subject, so it is safe to share between the
+/// circuit-scoped <see cref="ServerAccessTokenProvider"/> and the <c>/auth/token</c> hand-out
+/// endpoint without any per-request/per-circuit state.
 /// </summary>
-public sealed class ServerAccessTokenProvider : IServerAccessTokenProvider
+public sealed class ReportServerTokenIssuer
 {
     private static readonly TimeSpan RefreshWindow = TimeSpan.FromSeconds(60);
 
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IReportServerTokenStore _tokenStore;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ReportServerOidcOptions _options;
 
-    /// <summary>Creates the provider.</summary>
-    public ServerAccessTokenProvider(
-        IHttpContextAccessor httpContextAccessor,
+    /// <summary>Creates the issuer.</summary>
+    public ReportServerTokenIssuer(
         IReportServerTokenStore tokenStore,
         IHttpClientFactory httpClientFactory,
         ReportServerOidcOptions options)
     {
-        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
         _tokenStore = tokenStore ?? throw new ArgumentNullException(nameof(tokenStore));
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
-    /// <inheritdoc />
-    public async Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Returns the current (refreshed if needed) token set for <paramref name="subject"/>, or
+    /// <see langword="null"/> when the subject has no stored tokens.
+    /// </summary>
+    public async Task<ReportServerTokenSet?> GetValidTokensAsync(
+        string subject,
+        bool forceRefresh = false,
+        CancellationToken cancellationToken = default)
     {
-        var subject = _httpContextAccessor.HttpContext?.User.FindFirstValue("sub")
-            ?? _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(subject))
         {
             return null;
@@ -117,20 +113,20 @@ public sealed class ServerAccessTokenProvider : IServerAccessTokenProvider
             return null;
         }
 
-        if (tokens.ExpiresUtc - DateTimeOffset.UtcNow > RefreshWindow ||
-            string.IsNullOrWhiteSpace(tokens.RefreshToken))
+        var needsRefresh = forceRefresh || tokens.ExpiresUtc - DateTimeOffset.UtcNow <= RefreshWindow;
+        if (!needsRefresh || string.IsNullOrWhiteSpace(tokens.RefreshToken))
         {
-            return tokens.AccessToken;
+            return tokens;
         }
 
         var refreshed = await RefreshAsync(tokens.RefreshToken, cancellationToken).ConfigureAwait(false);
         if (refreshed is null)
         {
-            return tokens.AccessToken;
+            return tokens;
         }
 
         _tokenStore.Set(subject, refreshed);
-        return refreshed.AccessToken;
+        return refreshed;
     }
 
     private async Task<ReportServerTokenSet?> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
@@ -175,31 +171,39 @@ public sealed class ServerAccessTokenProvider : IServerAccessTokenProvider
     }
 }
 
-/// <summary>Attaches the current user's access token (from <see cref="IServerAccessTokenProvider"/>) to outgoing API calls.</summary>
-public sealed class ReportServerAccessTokenHandler : DelegatingHandler
+/// <summary>
+/// The InteractiveServer (circuit) leg of <see cref="IAccessTokenProvider"/>. Resolves the subject
+/// from the circuit's <see cref="AuthenticationStateProvider"/> — never <see cref="IHttpContextAccessor"/>,
+/// which is not reliably available on a live circuit — and pulls a valid token from the server-side
+/// store via <see cref="ReportServerTokenIssuer"/>. Scoped, so it always reads the current circuit's
+/// user and can never leak another user's token.
+/// </summary>
+public sealed class ServerAccessTokenProvider : IAccessTokenProvider
 {
-    private readonly IServerAccessTokenProvider _accessTokenProvider;
+    private readonly AuthenticationStateProvider _authenticationStateProvider;
+    private readonly ReportServerTokenIssuer _tokenIssuer;
 
-    /// <summary>Creates the handler.</summary>
-    public ReportServerAccessTokenHandler(IServerAccessTokenProvider accessTokenProvider)
-        => _accessTokenProvider = accessTokenProvider ?? throw new ArgumentNullException(nameof(accessTokenProvider));
+    /// <summary>Creates the provider.</summary>
+    public ServerAccessTokenProvider(
+        AuthenticationStateProvider authenticationStateProvider,
+        ReportServerTokenIssuer tokenIssuer)
+    {
+        _authenticationStateProvider = authenticationStateProvider ?? throw new ArgumentNullException(nameof(authenticationStateProvider));
+        _tokenIssuer = tokenIssuer ?? throw new ArgumentNullException(nameof(tokenIssuer));
+    }
 
     /// <inheritdoc />
-    protected override async Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
+    public async ValueTask<string?> GetAccessTokenAsync(bool forceRefresh = false, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(request);
-        if (request.Headers.Authorization is null)
+        var state = await _authenticationStateProvider.GetAuthenticationStateAsync().ConfigureAwait(false);
+        var subject = state.User.FindFirstValue("sub") ?? state.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(subject))
         {
-            var token = await _accessTokenProvider.GetAccessTokenAsync(cancellationToken).ConfigureAwait(false);
-            if (!string.IsNullOrWhiteSpace(token))
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            }
+            return null;
         }
 
-        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        var tokens = await _tokenIssuer.GetValidTokensAsync(subject, forceRefresh, cancellationToken).ConfigureAwait(false);
+        return tokens?.AccessToken;
     }
 }
 
@@ -238,10 +242,11 @@ public static class ReportServerWebAuthenticationExtensions
 {
     /// <summary>
     /// Adds cookie + OpenID Connect (Keycloak) authentication and the server-side token plumbing
-    /// (<see cref="IReportServerTokenStore"/>, <see cref="IServerAccessTokenProvider"/>) when
-    /// <c>Authentication:Oidc</c> is configured. Returns the bound options so the caller can decide
-    /// whether to attach the bearer handler to the API client. No-op (returns a not-configured
-    /// options instance) when the section is empty, so the self-contained demo keeps running.
+    /// (<see cref="IReportServerTokenStore"/>, <see cref="ReportServerTokenIssuer"/>, and the
+    /// InteractiveServer leg of <see cref="IAccessTokenProvider"/>) when <c>Authentication:Oidc</c>
+    /// is configured. Returns the bound options so the caller can decide how to wire the API client.
+    /// No-op (returns a not-configured options instance) when the section is empty, so the
+    /// self-contained demo keeps running.
     /// </summary>
     public static ReportServerOidcOptions AddReportServerWebAuthentication(this WebApplicationBuilder builder)
     {
@@ -254,11 +259,12 @@ public static class ReportServerWebAuthenticationExtensions
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddHttpClient();
         builder.Services.AddSingleton<IReportServerTokenStore, MemoryCacheReportServerTokenStore>();
-        builder.Services.AddScoped<IServerAccessTokenProvider, ServerAccessTokenProvider>();
-        builder.Services.AddTransient<ReportServerAccessTokenHandler>();
+        builder.Services.AddSingleton<ReportServerTokenIssuer>();
 
         if (!options.IsConfigured)
         {
+            // Demo mode: no auth wiring (and thus no AuthenticationStateProvider). The typed API
+            // client resolves IAccessTokenProvider as null and calls anonymously.
             return options;
         }
 
@@ -330,6 +336,11 @@ public static class ReportServerWebAuthenticationExtensions
 
         builder.Services.AddAuthorization();
         builder.Services.AddCascadingAuthenticationState();
+        // Circuit-scoped: the InteractiveServer leg of IAccessTokenProvider. Registered only here,
+        // where AuthenticationStateProvider (its dependency) exists. The typed API client attaches
+        // this token per request (see ApiClientBase); never via a server-side DelegatingHandler,
+        // whose cached factory scope can leak tokens across users.
+        builder.Services.AddScoped<IAccessTokenProvider, ServerAccessTokenProvider>();
         return options;
     }
 }

@@ -1,38 +1,30 @@
-using Tempo.ReportServer.Api;
 using Tempo.ReportServer.Api.Security;
 using Tempo.ReportServer.Web;
 using Tempo.ReportServer.Web.Client;
 using Tempo.ReportServer.Web.Services;
-using Tempo.Reporting.Abstractions.Dtos;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorComponents()
+var razorComponents = builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
 // Cookie + OpenID Connect (Keycloak) BFF authentication with a server-side token store.
 // No-op when "Authentication:Oidc" is unconfigured, so the self-contained demo keeps running.
-// NOTE (Fáze 5 carry-forward): the WASM leg (/auth/token minimal endpoint,
-// WasmAccessTokenProvider, AddAuthenticationStateSerialization) is intentionally NOT wired here —
-// this host is InteractiveServer, so the server-side ServerAccessTokenProvider is sufficient.
 var oidcOptions = builder.AddReportServerWebAuthentication();
 
-// Typed client for the persistent report server API host (base URL from configuration,
-// same "ReportServer:BaseUrl" key used on the API side). Registered when configured so the
-// self-contained demo keeps working without a running API host; catalog pages are migrated
-// off the in-memory ReportServerCatalogStore onto this client as the API host is deployed.
-if (!string.IsNullOrWhiteSpace(builder.Configuration[ReportServerClientExtensions.BaseUrlConfigurationKey]))
+// Serialize the host's authentication state into the WASM runtime so [Authorize]/AuthorizeView
+// resolve identically in both legs of InteractiveAuto (claims only — never tokens). Only when auth
+// is configured, since demo mode has no AuthenticationStateProvider to serialize.
+if (oidcOptions.IsConfigured)
 {
-    var apiBaseUrl = new Uri(builder.Configuration[ReportServerClientExtensions.BaseUrlConfigurationKey]!, UriKind.Absolute);
-    var clientBuilder = builder.Services.AddHttpClient<ITempoReportServerClient, TempoReportServerClient>(
-        client => client.BaseAddress = apiBaseUrl);
-    if (oidcOptions.IsConfigured)
-    {
-        // Forward the signed-in user's access token to the API host (BFF pattern).
-        clientBuilder.AddHttpMessageHandler<ReportServerAccessTokenHandler>();
-    }
+    razorComponents.AddAuthenticationStateSerialization();
 }
+
+// The typed ITempoReportServerClient is registered symmetrically for both runtimes in
+// AddCommonServices (base URL from "Api:BaseUrl"). It attaches the bearer token per request from
+// the scoped IAccessTokenProvider (ServerAccessTokenProvider here) via ApiClientBase — never through
+// a server-side DelegatingHandler, whose cached factory scope could leak tokens across users.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
@@ -70,6 +62,11 @@ app.UseAntiforgery();
 app.MapReportServerDemoApi();
 if (oidcOptions.IsConfigured)
 {
+    // Same-origin, cookie-authenticated token hand-out for the WASM leg (WasmAccessTokenProvider).
+    // NOT a data proxy and NOT CORS-enabled: a cross-site script cannot read the response. The
+    // refresh token never leaves the server — only a short-lived access token + its expiry.
+    app.MapReportServerAuthTokenEndpoint();
+
     app.MapGet("/account/login", (string? returnUrl) => Results.Challenge(
         new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = returnUrl ?? "/" },
         [Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme]));

@@ -1,25 +1,27 @@
 #pragma warning disable MA0048
 
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Tempo.Reporting.Abstractions.Auth;
 
 namespace Tempo.Reporting.Abstractions.Dtos;
 
-/// <summary>Default HTTP implementation of <see cref="ITempoReportServerClient"/>.</summary>
-public sealed class TempoReportServerClient : ITempoReportServerClient
+/// <summary>
+/// Default HTTP implementation of <see cref="ITempoReportServerClient"/>. Derives from
+/// <see cref="ApiClientBase"/> so every call attaches the current user's bearer token per request
+/// (from the scoped <see cref="IAccessTokenProvider"/>) and retries once after a 401 with a forced
+/// token refresh.
+/// </summary>
+public sealed class TempoReportServerClient : ApiClientBase, ITempoReportServerClient
 {
-    private readonly HttpClient _httpClient;
-    private readonly IReportServerTokenProvider? _tokenProvider;
     private readonly string _basePath;
 
     /// <summary>Creates a typed report server client.</summary>
     public TempoReportServerClient(
         HttpClient httpClient,
-        IReportServerTokenProvider? tokenProvider = null,
+        IAccessTokenProvider? accessTokenProvider = null,
         string basePath = "api")
+        : base(httpClient, accessTokenProvider)
     {
-        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        _tokenProvider = tokenProvider;
         _basePath = string.IsNullOrWhiteSpace(basePath) ? "api" : basePath.Trim('/');
     }
 
@@ -245,11 +247,9 @@ public sealed class TempoReportServerClient : ITempoReportServerClient
         TRequest request,
         CancellationToken cancellationToken)
     {
-        using var message = new HttpRequestMessage(HttpMethod.Post, uri)
-        {
-            Content = JsonContent.Create(request),
-        };
-        using var response = await SendAsync(message, cancellationToken).ConfigureAwait(false);
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Post, uri) { Content = JsonContent.Create(request) },
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken).ConfigureAwait(false) ??
             throw new InvalidOperationException("Report server response was empty.");
@@ -260,11 +260,9 @@ public sealed class TempoReportServerClient : ITempoReportServerClient
         TRequest request,
         CancellationToken cancellationToken)
     {
-        using var message = new HttpRequestMessage(HttpMethod.Put, uri)
-        {
-            Content = JsonContent.Create(request),
-        };
-        using var response = await SendAsync(message, cancellationToken).ConfigureAwait(false);
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Put, uri) { Content = JsonContent.Create(request) },
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken).ConfigureAwait(false) ??
             throw new InvalidOperationException("Report server response was empty.");
@@ -272,30 +270,19 @@ public sealed class TempoReportServerClient : ITempoReportServerClient
 
     private async Task DeleteAsync(string uri, CancellationToken cancellationToken)
     {
-        using var message = new HttpRequestMessage(HttpMethod.Delete, uri);
-        using var response = await SendAsync(message, cancellationToken).ConfigureAwait(false);
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Delete, uri),
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
     }
 
     private async Task<TResponse?> GetAsync<TResponse>(string uri, CancellationToken cancellationToken)
     {
-        using var message = new HttpRequestMessage(HttpMethod.Get, uri);
-        using var response = await SendAsync(message, cancellationToken).ConfigureAwait(false);
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Get, uri),
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage message, CancellationToken cancellationToken)
-    {
-        var token = _tokenProvider is null
-            ? null
-            : await _tokenProvider.GetTokenAsync(cancellationToken).ConfigureAwait(false);
-        if (!string.IsNullOrWhiteSpace(token))
-        {
-            message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
-
-        return await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
     }
 }
 

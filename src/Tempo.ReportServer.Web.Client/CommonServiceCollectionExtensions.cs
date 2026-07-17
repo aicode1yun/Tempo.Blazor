@@ -4,6 +4,7 @@ using Tempo.Blazor.EmailTemplates.Abstractions;
 using Tempo.Blazor.EmailTemplates.Abstractions.Contracts;
 using Tempo.Blazor.Reporting.Configuration;
 using Tempo.ReportServer.Web.Services;
+using Tempo.Reporting.Abstractions.Dtos;
 
 namespace Tempo.ReportServer.Web.Client;
 
@@ -42,6 +43,19 @@ public static class CommonServiceCollectionExtensions
 
         // Per-circuit / per-client demo session.
         services.AddScoped<ReportServerSessionState>();
+
+        // Typed Report Server API client, registered symmetrically for both runtimes. The base URL
+        // comes from "Api:BaseUrl" (present in both hosts' appsettings) — the API is a different
+        // origin by definition. The client is constructed in the *consuming* scope, so it safely
+        // resolves that scope's IAccessTokenProvider (ServerAccessTokenProvider on the host,
+        // WasmAccessTokenProvider in the browser) and attaches the bearer per request via
+        // ApiClientBase. Registered only when configured so the self-contained demo keeps running.
+        var apiBaseUrl = configuration["Api:BaseUrl"];
+        if (!string.IsNullOrWhiteSpace(apiBaseUrl))
+        {
+            services.AddHttpClient<ITempoReportServerClient, TempoReportServerClient>(
+                client => client.BaseAddress = new Uri(apiBaseUrl, UriKind.Absolute));
+        }
 
         return services;
     }
