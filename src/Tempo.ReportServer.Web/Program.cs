@@ -5,11 +5,19 @@ using Tempo.ReportServer.Api;
 using Tempo.ReportServer.Api.Security;
 using Tempo.ReportServer.Web;
 using Tempo.ReportServer.Web.Services;
+using Tempo.Reporting.Abstractions.Dtos;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Cookie + OpenID Connect (Keycloak) BFF authentication with a server-side token store.
+// No-op when "Authentication:Oidc" is unconfigured, so the self-contained demo keeps running.
+// NOTE (Fáze 5 carry-forward): the WASM leg (/auth/token minimal endpoint,
+// WasmAccessTokenProvider, AddAuthenticationStateSerialization) is intentionally NOT wired here —
+// this host is InteractiveServer, so the server-side ServerAccessTokenProvider is sufficient.
+var oidcOptions = builder.AddReportServerWebAuthentication();
 
 // Typed client for the persistent report server API host (base URL from configuration,
 // same "ReportServer:BaseUrl" key used on the API side). Registered when configured so the
@@ -17,7 +25,14 @@ builder.Services.AddRazorComponents()
 // off the in-memory ReportServerCatalogStore onto this client as the API host is deployed.
 if (!string.IsNullOrWhiteSpace(builder.Configuration[ReportServerClientExtensions.BaseUrlConfigurationKey]))
 {
-    builder.Services.AddTempoReportServerClient(builder.Configuration);
+    var apiBaseUrl = new Uri(builder.Configuration[ReportServerClientExtensions.BaseUrlConfigurationKey]!, UriKind.Absolute);
+    var clientBuilder = builder.Services.AddHttpClient<ITempoReportServerClient, TempoReportServerClient>(
+        client => client.BaseAddress = apiBaseUrl);
+    if (oidcOptions.IsConfigured)
+    {
+        // Forward the signed-in user's access token to the API host (BFF pattern).
+        clientBuilder.AddHttpMessageHandler<ReportServerAccessTokenHandler>();
+    }
 }
 builder.Services.AddCors(options =>
 {
@@ -56,9 +71,26 @@ UseProjectStaticAssets(app, "Tempo.Blazor.Reporting");
 UseProjectStaticAssets(app, "Tempo.Blazor");
 app.UseStaticFiles();
 app.UseCors("ReportServerEmbeddingDemo");
+if (oidcOptions.IsConfigured)
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
 app.UseAntiforgery();
 
 app.MapReportServerDemoApi();
+if (oidcOptions.IsConfigured)
+{
+    app.MapGet("/account/login", (string? returnUrl) => Results.Challenge(
+        new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = returnUrl ?? "/" },
+        [Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme]));
+    app.MapPost("/account/logout", () => Results.SignOut(
+        new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = "/" },
+        [
+            Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme,
+            Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme,
+        ]));
+}
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

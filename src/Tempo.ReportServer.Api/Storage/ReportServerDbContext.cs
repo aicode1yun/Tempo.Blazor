@@ -40,6 +40,12 @@ public sealed class ReportServerDbContext : DbContext
     /// <summary>Audit event table.</summary>
     public DbSet<ReportAuditEventEntity> AuditEvents => Set<ReportAuditEventEntity>();
 
+    /// <summary>JIT-provisioned user table.</summary>
+    public DbSet<ReportServerUserEntity> Users => Set<ReportServerUserEntity>();
+
+    /// <summary>Per-folder permission grant table.</summary>
+    public DbSet<ReportFolderPermissionEntity> FolderPermissions => Set<ReportFolderPermissionEntity>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -118,6 +124,32 @@ public sealed class ReportServerDbContext : DbContext
             entity.Property(auditEvent => auditEvent.ActorId).HasMaxLength(ActorIdMaxLength);
             entity.Property(auditEvent => auditEvent.ResourceId).HasMaxLength(NameMaxLength);
             entity.HasIndex(auditEvent => new { auditEvent.TenantId, auditEvent.Timestamp });
+        });
+
+        // JIT users and folder permissions are not tenant-query-filtered: provisioning resolves a
+        // user by subject before the ambient tenant is established, and the stores constrain by
+        // tenant explicitly where a tenant scope applies.
+        modelBuilder.Entity<ReportServerUserEntity>(entity =>
+        {
+            entity.HasKey(user => user.Subject);
+            entity.Property(user => user.Subject).HasMaxLength(ActorIdMaxLength);
+            entity.Property(user => user.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(user => user.Email).HasMaxLength(NameMaxLength);
+            entity.Property(user => user.DisplayName).HasMaxLength(NameMaxLength);
+            entity.HasIndex(user => user.TenantId);
+        });
+
+        modelBuilder.Entity<ReportFolderPermissionEntity>(entity =>
+        {
+            entity.HasKey(permission => permission.Id);
+            entity.Property(permission => permission.Id).ValueGeneratedOnAdd();
+            entity.Property(permission => permission.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(permission => permission.FolderId).HasMaxLength(IdMaxLength);
+            entity.Property(permission => permission.Path).HasMaxLength(PathMaxLength);
+            entity.Property(permission => permission.SubjectId).HasMaxLength(ActorIdMaxLength);
+            entity.Property(permission => permission.Role).HasMaxLength(32);
+            entity.HasIndex(permission => new { permission.TenantId, permission.FolderId });
+            entity.HasIndex(permission => new { permission.TenantId, permission.SubjectId, permission.FolderId }).IsUnique();
         });
     }
 }

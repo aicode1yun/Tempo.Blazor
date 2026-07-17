@@ -47,8 +47,19 @@ public static class ReportServerApiExtensions
         ArgumentNullException.ThrowIfNull(services);
         services.RemoveAll<IReportApiKeyStore>();
         services.RemoveAll<IReportAuditLog>();
+        services.RemoveAll<IReportPermissionStore>();
+        services.RemoveAll<IReportServerUserProvisioner>();
         services.AddScoped<IReportApiKeyStore, EfReportApiKeyStore>();
         services.AddScoped<IReportAuditLog, EfReportAuditLog>();
+        services.AddScoped<IReportPermissionStore, EfReportFolderPermissionStore>();
+        services.AddScoped<EfReportFolderPermissionStore>();
+        services.AddScoped<IReportServerUserProvisioner, EfReportServerUserProvisioner>();
+        // The permission resolver is a singleton by default; re-register it as scoped so it can
+        // depend on the scoped EF permission store.
+        services.RemoveAll<IReportPermissionResolver>();
+        services.AddScoped<IReportPermissionResolver, ReportPermissionResolver>();
+        services.RemoveAll<IReportHttpSecurityContextFactory>();
+        services.AddScoped<IReportHttpSecurityContextFactory, ReportHttpSecurityContextFactory>();
         return services;
     }
 

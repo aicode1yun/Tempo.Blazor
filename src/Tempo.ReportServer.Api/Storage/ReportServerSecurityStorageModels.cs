@@ -64,3 +64,55 @@ public sealed class ReportAuditEventEntity
     /// <summary>JSON serialized detail dictionary (parameters and additional metadata).</summary>
     public string DetailsJson { get; set; } = "{}";
 }
+
+/// <summary>
+/// EF entity for a just-in-time provisioned report server user. The row is upserted the first time
+/// a subject authenticates with a valid OIDC token: identity always lives in Keycloak, this record
+/// is a local projection used for ACL subjects and auditing.
+/// </summary>
+public sealed class ReportServerUserEntity
+{
+    /// <summary>OIDC subject identifier (<c>sub</c>); primary key.</summary>
+    public string Subject { get; set; } = string.Empty;
+
+    /// <summary>Tenant identifier the subject was first seen under.</summary>
+    public string TenantId { get; set; } = string.Empty;
+
+    /// <summary>Email address (from the token, may be empty).</summary>
+    public string? Email { get; set; }
+
+    /// <summary>Display name (preferred_username / name).</summary>
+    public string? DisplayName { get; set; }
+
+    /// <summary>Timestamp of the first authentication.</summary>
+    public DateTimeOffset FirstSeenAt { get; set; }
+
+    /// <summary>Timestamp of the most recent authentication.</summary>
+    public DateTimeOffset LastSeenAt { get; set; }
+}
+
+/// <summary>
+/// EF entity for a per-folder permission grant. A grant maps an ACL subject (a user <c>sub</c>) to a
+/// folder and a role (Admin/Author/Viewer); the resolver expands it into permission flags and
+/// inherits it down the folder tree. Keycloak realm roles remain the capability ceiling.
+/// </summary>
+public sealed class ReportFolderPermissionEntity
+{
+    /// <summary>Surrogate identity key.</summary>
+    public long Id { get; set; }
+
+    /// <summary>Tenant identifier.</summary>
+    public string TenantId { get; set; } = string.Empty;
+
+    /// <summary>Folder identifier the grant is defined on.</summary>
+    public string FolderId { get; set; } = string.Empty;
+
+    /// <summary>Canonical folder path (denormalized for auditing/reporting).</summary>
+    public string Path { get; set; } = string.Empty;
+
+    /// <summary>ACL subject identifier (OIDC <c>sub</c>).</summary>
+    public string SubjectId { get; set; } = string.Empty;
+
+    /// <summary>Granted role name: <c>Admin</c>, <c>Author</c> or <c>Viewer</c>.</summary>
+    public string Role { get; set; } = string.Empty;
+}

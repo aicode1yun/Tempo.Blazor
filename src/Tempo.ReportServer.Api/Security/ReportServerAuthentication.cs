@@ -130,6 +130,36 @@ public static class ReportServerAuthenticationExtensions
                 {
                     options.Audience = audience;
                 }
+
+                // JIT provisioning: upsert the local user projection on every validated token.
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        var principal = context.Principal;
+                        if (principal?.Identity?.IsAuthenticated != true)
+                        {
+                            return;
+                        }
+
+                        var subject = principal.FindFirst("sub")?.Value
+                            ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                        if (string.IsNullOrWhiteSpace(subject))
+                        {
+                            return;
+                        }
+
+                        var securityContext = ReportPrincipalMapper.FromClaimsPrincipal(principal);
+                        var provisioner = context.HttpContext.RequestServices
+                            .GetRequiredService<IReportServerUserProvisioner>();
+                        await provisioner.UpsertAsync(
+                            subject,
+                            securityContext.TenantId,
+                            principal.FindFirst("email")?.Value,
+                            principal.FindFirst("preferred_username")?.Value ?? principal.FindFirst("name")?.Value,
+                            context.HttpContext.RequestAborted).ConfigureAwait(false);
+                    },
+                };
             });
 
         services.AddAuthorization(options =>
