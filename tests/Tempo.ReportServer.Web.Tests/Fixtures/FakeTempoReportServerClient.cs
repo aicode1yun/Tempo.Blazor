@@ -57,6 +57,77 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
         new() { TenantId = Tenant, DataSourceId = "ds-crm", Name = "CRM REST", Kind = "REST JSON", Connection = "" },
     ];
 
+    // The demo store seeds a deterministic, active embedding key so the API-keys page has a stable
+    // row to rotate/revoke against (mirrors the retired DemoReportApiKeyStore seed).
+    private readonly List<ReportApiKeyDto> _apiKeys =
+    [
+        new()
+        {
+            KeyId = "rk_demo_embed",
+            TenantId = Tenant,
+            ApplicationId = "embedded-app",
+            Permissions = ReportPermissionsDto.View | ReportPermissionsDto.Render,
+            CreatedAt = DateTimeOffset.Parse("2026-06-01T08:00:00Z", System.Globalization.CultureInfo.InvariantCulture),
+            IsActive = true,
+        },
+    ];
+
+    private readonly List<ReportAuditEventDto> _audit = [];
+
+    private readonly List<ReportFolderAclEntryDto> _acls =
+    [
+        new()
+        {
+            TenantId = Tenant,
+            FolderId = "folder-finance",
+            SubjectKind = ReportAclSubjectKindDto.Role,
+            SubjectId = "finance-admins",
+            Effect = ReportAclEffectDto.Allow,
+            Permissions = ReportPermissionsDto.All,
+        },
+    ];
+
+    private readonly List<ReportScheduleDto> _schedules =
+    [
+        new()
+        {
+            TenantId = Tenant,
+            ScheduleId = "weekly-sales",
+            OwnerUserId = "Pavel Author",
+            Name = "Weekly sales digest",
+            ReportId = "sales-register",
+            CronExpression = "0 8 * * 1",
+            Format = ReportScheduleFormat.Pdf,
+            DeliveryKind = ReportScheduleDeliveryKind.Email,
+            DeliveryTarget = "finance@example.test",
+            IsEnabled = true,
+            NextRunUtc = DateTimeOffset.Parse("2026-07-20T08:00:00Z", System.Globalization.CultureInfo.InvariantCulture),
+            LastDeliveredUtc = DateTimeOffset.Parse("2026-07-13T08:00:00Z", System.Globalization.CultureInfo.InvariantCulture),
+            LastStatus = ReportScheduleRunStatus.Delivered,
+            LastStatusMessage = "Delivered sales-register.pdf",
+        },
+    ];
+
+    private readonly List<ReportScheduleRunDto> _runs =
+    [
+        new()
+        {
+            RunId = "run-weekly-1",
+            TenantId = Tenant,
+            ScheduleId = "weekly-sales",
+            OccurrenceUtc = DateTimeOffset.Parse("2026-07-13T08:00:00Z", System.Globalization.CultureInfo.InvariantCulture),
+            StartedUtc = DateTimeOffset.Parse("2026-07-13T08:00:01Z", System.Globalization.CultureInfo.InvariantCulture),
+            CompletedUtc = DateTimeOffset.Parse("2026-07-13T08:00:04Z", System.Globalization.CultureInfo.InvariantCulture),
+            Status = ReportScheduleRunStatus.Delivered,
+            Attempt = 1,
+            DeliveryKind = ReportScheduleDeliveryKind.Email,
+            DeliveryTarget = "finance@example.test",
+            ArtifactFileName = "sales-register.pdf",
+            ArtifactContentType = "application/pdf",
+            ArtifactByteCount = 2048,
+        },
+    ];
+
     private int _idCounter;
 
     /// <inheritdoc />
@@ -233,34 +304,138 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
         => throw new NotSupportedException();
 
     public Task<IReadOnlyList<ReportScheduleDto>> GetSchedulesAsync(string tenantId, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+        => Task.FromResult<IReadOnlyList<ReportScheduleDto>>(
+            [.. _schedules.Where(schedule => schedule.TenantId == tenantId).OrderBy(schedule => schedule.Name, StringComparer.Ordinal)]);
 
     public Task<ReportScheduleDto?> GetScheduleAsync(string tenantId, string scheduleId, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+        => Task.FromResult(_schedules.FirstOrDefault(schedule => schedule.TenantId == tenantId && schedule.ScheduleId == scheduleId));
 
     public Task<ReportScheduleDto> UpsertScheduleAsync(UpsertReportScheduleRequestDto request, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        var scheduleId = string.IsNullOrWhiteSpace(request.ScheduleId) ? Slug(request.Name) : request.ScheduleId;
+        var schedule = new ReportScheduleDto
+        {
+            TenantId = request.TenantId,
+            ScheduleId = scheduleId,
+            OwnerUserId = request.OwnerUserId,
+            Name = request.Name,
+            ReportId = request.ReportId,
+            CronExpression = request.CronExpression,
+            Format = request.Format,
+            CultureName = request.CultureName,
+            Parameters = request.Parameters,
+            DeliveryKind = request.DeliveryKind,
+            DeliveryTarget = request.DeliveryTarget,
+            MissedRunPolicy = request.MissedRunPolicy,
+            MaxAttempts = request.MaxAttempts,
+            IsEnabled = request.IsEnabled,
+            NextRunUtc = DateTimeOffset.Parse("2026-07-20T08:00:00Z", System.Globalization.CultureInfo.InvariantCulture),
+            LastStatus = ReportScheduleRunStatus.NeverRun,
+            LastStatusMessage = "Never run",
+        };
+        var index = _schedules.FindIndex(item => item.TenantId == request.TenantId && item.ScheduleId == scheduleId);
+        if (index >= 0)
+        {
+            _schedules[index] = schedule;
+        }
+        else
+        {
+            _schedules.Add(schedule);
+        }
+
+        return Task.FromResult(schedule);
+    }
 
     public Task SetScheduleEnabledAsync(string scheduleId, SetReportScheduleEnabledRequestDto request, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        var index = _schedules.FindIndex(item => item.TenantId == request.TenantId && item.ScheduleId == scheduleId);
+        if (index >= 0)
+        {
+            _schedules[index] = _schedules[index] with { IsEnabled = request.IsEnabled };
+        }
+
+        return Task.CompletedTask;
+    }
 
     public Task DeleteScheduleAsync(string scheduleId, string tenantId, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        _schedules.RemoveAll(item => item.TenantId == tenantId && item.ScheduleId == scheduleId);
+        return Task.CompletedTask;
+    }
 
     public Task<IReadOnlyList<ReportScheduleRunDto>> GetScheduleRunsAsync(string tenantId, string scheduleId, int max = 20, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+        => Task.FromResult<IReadOnlyList<ReportScheduleRunDto>>(
+            [.. _runs.Where(run => run.TenantId == tenantId && run.ScheduleId == scheduleId).OrderByDescending(run => run.StartedUtc).Take(max)]);
 
     public Task<CreateReportApiKeyResultDto> CreateApiKeyAsync(CreateReportApiKeyRequestDto request, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        var keyId = $"rk_{++_idCounter}";
+        var key = new ReportApiKeyDto
+        {
+            KeyId = keyId,
+            TenantId = request.TenantId,
+            ApplicationId = request.ApplicationId,
+            Permissions = request.Permissions,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = request.ExpiresAt,
+            IsActive = true,
+        };
+        _apiKeys.Add(key);
+        RecordKeyAudit(request.TenantId, keyId, "create-api-key");
+        return Task.FromResult(new CreateReportApiKeyResultDto
+        {
+            KeyId = keyId,
+            PlainTextKey = $"tmr_{Guid.NewGuid():N}",
+            Key = key,
+        });
+    }
 
     public Task<IReadOnlyList<ReportApiKeyDto>> GetApiKeysAsync(string tenantId, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+        => Task.FromResult<IReadOnlyList<ReportApiKeyDto>>(
+            [.. _apiKeys.Where(key => key.TenantId == tenantId).OrderBy(key => key.CreatedAt)]);
 
     public Task<CreateReportApiKeyResultDto> RotateApiKeyAsync(string keyId, RotateReportApiKeyRequestDto request, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        var index = _apiKeys.FindIndex(key => key.KeyId == keyId && key.TenantId == request.TenantId);
+        if (index < 0)
+        {
+            throw new KeyNotFoundException($"Unknown key {keyId}.");
+        }
+
+        var previous = _apiKeys[index];
+        _apiKeys[index] = previous with { RevokedAt = DateTimeOffset.UtcNow, RevokedByUserId = "Pavel Author", IsActive = false };
+        var newKeyId = $"rk_{++_idCounter}";
+        var replacement = new ReportApiKeyDto
+        {
+            KeyId = newKeyId,
+            TenantId = previous.TenantId,
+            ApplicationId = previous.ApplicationId,
+            Permissions = previous.Permissions,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = request.ExpiresAt,
+            IsActive = true,
+        };
+        _apiKeys.Add(replacement);
+        RecordKeyAudit(request.TenantId, newKeyId, "rotate-api-key");
+        return Task.FromResult(new CreateReportApiKeyResultDto
+        {
+            KeyId = newKeyId,
+            PlainTextKey = $"tmr_{Guid.NewGuid():N}",
+            Key = replacement,
+        });
+    }
 
     public Task RevokeApiKeyAsync(string keyId, RevokeReportApiKeyRequestDto request, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        var index = _apiKeys.FindIndex(key => key.KeyId == keyId && key.TenantId == request.TenantId);
+        if (index >= 0)
+        {
+            _apiKeys[index] = _apiKeys[index] with { RevokedAt = DateTimeOffset.UtcNow, RevokedByUserId = "Pavel Author", IsActive = false };
+            RecordKeyAudit(request.TenantId, keyId, "revoke-api-key");
+        }
+
+        return Task.CompletedTask;
+    }
 
     public Task<IReadOnlyList<ReportAuditEventDto>> QueryAuditAsync(
         string tenantId,
@@ -272,17 +447,115 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
         DateTimeOffset? to = null,
         int? take = null,
         CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        var events = _audit.Where(item => item.TenantId == tenantId);
+        if (action is { } a)
+        {
+            events = events.Where(item => item.Action == a);
+        }
+
+        if (outcome is { } o)
+        {
+            events = events.Where(item => item.Outcome == o);
+        }
+
+        if (!string.IsNullOrWhiteSpace(actorId))
+        {
+            events = events.Where(item => item.ActorId == actorId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(resourceId))
+        {
+            events = events.Where(item => item.ResourceId == resourceId);
+        }
+
+        var ordered = events.OrderByDescending(item => item.Timestamp).AsEnumerable();
+        if (take is { } limit)
+        {
+            ordered = ordered.Take(limit);
+        }
+
+        return Task.FromResult<IReadOnlyList<ReportAuditEventDto>>([.. ordered]);
+    }
 
     public Task<ReportFolderAclEntryDto> GrantPermissionAsync(GrantReportPermissionRequestDto request, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        var entry = new ReportFolderAclEntryDto
+        {
+            TenantId = request.TenantId,
+            FolderId = request.FolderId,
+            SubjectKind = request.SubjectKind,
+            SubjectId = request.SubjectId,
+            Effect = request.Effect,
+            Permissions = request.Permissions,
+        };
+        _acls.RemoveAll(item => item.TenantId == request.TenantId && item.FolderId == request.FolderId
+            && item.SubjectKind == request.SubjectKind && item.SubjectId == request.SubjectId);
+        _acls.Add(entry);
+        return Task.FromResult(entry);
+    }
 
     public Task<IReadOnlyList<ReportFolderAclEntryDto>> GetFolderPermissionsAsync(string tenantId, string folderId, string? subjectId = null, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        var entries = _acls.Where(item => item.TenantId == tenantId && item.FolderId == folderId);
+        if (!string.IsNullOrWhiteSpace(subjectId))
+        {
+            entries = entries.Where(item => item.SubjectId == subjectId);
+        }
+
+        return Task.FromResult<IReadOnlyList<ReportFolderAclEntryDto>>([.. entries.OrderBy(item => item.SubjectId, StringComparer.Ordinal)]);
+    }
 
     public Task RevokePermissionAsync(RevokeReportPermissionRequestDto request, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        _acls.RemoveAll(item => item.TenantId == request.TenantId && item.FolderId == request.FolderId
+            && item.SubjectKind == request.SubjectKind && item.SubjectId == request.SubjectId);
+        return Task.CompletedTask;
+    }
 
     public Task<ReportResolveResultDto> ResolveReportAsync(string tenantId, string? reportId = null, string? path = null, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        var id = reportId;
+        if (string.IsNullOrWhiteSpace(id) && !string.IsNullOrWhiteSpace(path))
+        {
+            var segments = path.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            id = segments.Length > 0 ? segments[^1] : null;
+        }
+
+        var report = _reports.FirstOrDefault(item => item.ReportId == id)
+            ?? throw new KeyNotFoundException($"Unknown report {id}.");
+        return Task.FromResult(new ReportResolveResultDto
+        {
+            TenantId = tenantId,
+            ReportId = report.ReportId,
+            FolderId = report.FolderId,
+            Name = report.Name,
+            Description = report.Description,
+            LatestRevisionId = report.LatestRevisionId,
+            PublishedRevisionId = report.LatestRevisionId,
+            RevisionNumber = 1,
+            DefinitionJson = "{}",
+            RenderPath = "api/render",
+        });
+    }
+
+    private void RecordKeyAudit(string tenantId, string keyId, string operation)
+        => _audit.Add(new ReportAuditEventDto
+        {
+            TenantId = tenantId,
+            ActorId = "Pavel Author",
+            Action = ReportAuditActionDto.ChangeAcl,
+            ResourceKind = ReportResourceKindDto.Acl,
+            ResourceId = keyId,
+            Outcome = ReportAuditOutcomeDto.Allowed,
+            Timestamp = DateTimeOffset.UtcNow,
+            Details = new Dictionary<string, string>(StringComparer.Ordinal) { ["operation"] = operation },
+        });
+
+    private static string Slug(string value)
+    {
+        var text = string.IsNullOrWhiteSpace(value) ? Guid.NewGuid().ToString("N") : value.Trim().ToLowerInvariant();
+        var chars = text.Select(ch => char.IsLetterOrDigit(ch) ? ch : '-').ToArray();
+        return string.Join('-', new string(chars).Split('-', StringSplitOptions.RemoveEmptyEntries));
+    }
 }

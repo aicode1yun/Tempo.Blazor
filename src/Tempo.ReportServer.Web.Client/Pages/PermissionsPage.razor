@@ -1,10 +1,7 @@
 @namespace Tempo.ReportServer.Web.Pages
 @page "/admin/permissions"
-@* [TODO] Not yet cut over to ITempoReportServerClient: the Report Server API exposes no folder-permission
-   HTTP endpoints (IReportPermissionStore is server-internal). This page stays on the in-memory catalog
-   store until the permission endpoints are added in a later step. *@
 @inject ReportServerSessionState Session
-@inject ReportServerCatalogStore Catalog
+@inject ITempoReportServerClient Client
 
 <ReportServerShell Title="Permissions" ActiveSection="permissions">
     <div class="rs-page" data-testid="f12-permissions-page">
@@ -16,14 +13,23 @@
         </div>
 
         <section class="rs-admin-grid">
-            <form class="rs-panel" @onsubmit="AddPermission" @onsubmit:preventDefault>
+            <form class="rs-panel" @onsubmit="GrantAsync" @onsubmit:preventDefault>
                 <h3>Add ACL entry</h3>
                 <label class="rs-field">
                     <span>Folder</span>
-                    <select data-testid="permission-folder" value="@_folderPath" @onchange="HandleFolderChange">
-                        @foreach (var folder in Folders)
+                    <select data-testid="permission-folder" value="@_folderId" @onchange="HandleFolderChange">
+                        @foreach (var folder in _folders)
                         {
-                            <option value="@folder.Path">@folder.Name (@folder.Path)</option>
+                            <option value="@folder.FolderId">@folder.Name (@folder.Path)</option>
+                        }
+                    </select>
+                </label>
+                <label class="rs-field">
+                    <span>Subject kind</span>
+                    <select data-testid="permission-subject-kind" value="@_subjectKind" @onchange="HandleSubjectKindChange">
+                        @foreach (var kind in Enum.GetValues<ReportAclSubjectKindDto>())
+                        {
+                            <option value="@kind">@kind</option>
                         }
                     </select>
                 </label>
@@ -31,38 +37,55 @@
                     <span>Subject</span>
                     <input data-testid="permission-subject" value="@_subject" @oninput="HandleSubjectInput" />
                 </label>
-                <label class="rs-field">
-                    <span>Role</span>
-                    <select data-testid="permission-role" value="@_role" @onchange="HandleRoleChange">
-                        <option>Viewer</option>
-                        <option>Author</option>
-                        <option>TenantAdmin</option>
-                    </select>
-                </label>
+                <fieldset class="rs-field">
+                    <legend>Permissions</legend>
+                    @foreach (var permission in SelectablePermissions)
+                    {
+                        <label class="rs-check">
+                            <input type="checkbox"
+                                   data-testid="@($"permission-scope-{permission}")"
+                                   checked="@_scopes.Contains(permission)"
+                                   @onchange="args => ToggleScope(permission, args)" />
+                            <span>@permission</span>
+                        </label>
+                    }
+                </fieldset>
                 <label class="rs-check">
                     <input data-testid="permission-deny" type="checkbox" checked="@_isDeny" @onchange="HandleDenyChange" />
                     <span>Explicit deny</span>
                 </label>
-                <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Shield" data-testid="permission-add" OnClick="AddPermission">
+                <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Shield" data-testid="permission-add" OnClick="GrantAsync">
                     Add ACL entry
                 </TmButton>
             </form>
 
             <section class="rs-panel rs-table-panel">
-                <h3>Effective ACL</h3>
+                <h3>ACL entries on this folder</h3>
                 <div class="rs-table" data-testid="permissions-table">
-                    @foreach (var entry in TenantCatalog.Permissions)
+                    @if (_entries.Count == 0)
                     {
-                        <article class="rs-table__row">
+                        <p class="rs-hint" data-testid="permissions-empty">No ACL entries are defined directly on this folder.</p>
+                    }
+                    @foreach (var entry in _entries)
+                    {
+                        <article class="rs-table__row" data-testid="@($"permission-row-{entry.SubjectId}")">
                             <div>
-                                <strong>@entry.Subject</strong>
-                                <span>@entry.FolderPath</span>
+                                <strong>@entry.SubjectId</strong>
+                                <span>@entry.SubjectKind</span>
                             </div>
-                            <span>@entry.Role</span>
-                            <span class="@(entry.IsDeny ? "rs-status rs-status--deny" : "rs-status rs-status--ok")">
-                                @(entry.IsDeny ? "Deny" : "Allow")
+                            <span>@FormatPermissions(entry.Permissions)</span>
+                            <span class="@(entry.Effect == ReportAclEffectDto.Deny ? "rs-status rs-status--deny" : "rs-status rs-status--ok")">
+                                @(entry.Effect == ReportAclEffectDto.Deny ? "Deny" : "Allow")
                             </span>
-                            <span>Inherited by child folders</span>
+                            <div class="rs-row-actions">
+                                <TmButton Variant="ButtonVariant.Danger"
+                                          Size="ButtonSize.Sm"
+                                          Icon="@IconNames.Trash2"
+                                          data-testid="@($"permission-revoke-{entry.SubjectId}")"
+                                          OnClick="() => RevokeAsync(entry)">
+                                    Revoke
+                                </TmButton>
+                            </div>
                         </article>
                     }
                 </div>
@@ -72,39 +95,102 @@
 </ReportServerShell>
 
 @code {
-    private string _folderPath = "/finance";
+    private static readonly ReportPermissionsDto[] SelectablePermissions =
+    [
+        ReportPermissionsDto.View,
+        ReportPermissionsDto.Render,
+        ReportPermissionsDto.Export,
+        ReportPermissionsDto.EditDefinition,
+        ReportPermissionsDto.ManageDataSources,
+        ReportPermissionsDto.ManagePermissions,
+    ];
+
+    private IReadOnlyList<ReportFolderDto> _folders = [];
+    private IReadOnlyList<ReportFolderAclEntryDto> _entries = [];
+
+    private string _folderId = string.Empty;
+    private ReportAclSubjectKindDto _subjectKind = ReportAclSubjectKindDto.Role;
     private string _subject = "embedded-apps";
-    private string _role = "Viewer";
     private bool _isDeny;
+    private readonly HashSet<ReportPermissionsDto> _scopes = [ReportPermissionsDto.View, ReportPermissionsDto.Render];
 
-    private ReportServerTenantCatalog TenantCatalog => Catalog.GetCatalog(Session.CurrentTenantId);
-
-    private IReadOnlyList<ReportExplorerFolder> Folders => Flatten(TenantCatalog.RootFolder).ToArray();
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        _folders = await Client.GetFoldersAsync(Session.CurrentTenantId);
+        _folderId = _folders.Count > 0 ? _folders[0].FolderId : string.Empty;
+        await ReloadEntriesAsync();
+    }
 
     private void HandleFolderChange(ChangeEventArgs args)
-        => _folderPath = args.Value?.ToString() ?? "/";
+    {
+        _folderId = args.Value?.ToString() ?? string.Empty;
+        _ = ReloadEntriesAsync();
+    }
+
+    private void HandleSubjectKindChange(ChangeEventArgs args)
+        => _subjectKind = Enum.TryParse<ReportAclSubjectKindDto>(args.Value?.ToString(), out var kind) ? kind : ReportAclSubjectKindDto.User;
 
     private void HandleSubjectInput(ChangeEventArgs args)
         => _subject = args.Value?.ToString() ?? string.Empty;
 
-    private void HandleRoleChange(ChangeEventArgs args)
-        => _role = args.Value?.ToString() ?? "Viewer";
-
     private void HandleDenyChange(ChangeEventArgs args)
-        => _isDeny = bool.TryParse(args.Value?.ToString(), out var value) && value;
+        => _isDeny = args.Value is bool value && value;
 
-    private void AddPermission()
-        => Catalog.AddPermission(Session.CurrentTenantId, _folderPath, _subject, _role, _isDeny);
-
-    private static IEnumerable<ReportExplorerFolder> Flatten(ReportExplorerFolder folder)
+    private void ToggleScope(ReportPermissionsDto permission, ChangeEventArgs args)
     {
-        yield return folder;
-        foreach (var child in folder.Children)
+        if (args.Value is bool isChecked && isChecked)
         {
-            foreach (var nested in Flatten(child))
-            {
-                yield return nested;
-            }
+            _scopes.Add(permission);
+        }
+        else
+        {
+            _scopes.Remove(permission);
         }
     }
+
+    private async Task GrantAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_folderId) || string.IsNullOrWhiteSpace(_subject))
+        {
+            return;
+        }
+
+        var permissions = _scopes.Aggregate(ReportPermissionsDto.None, (current, scope) => current | scope);
+        await Client.GrantPermissionAsync(new GrantReportPermissionRequestDto
+        {
+            TenantId = Session.CurrentTenantId,
+            FolderId = _folderId,
+            SubjectKind = _subjectKind,
+            SubjectId = _subject.Trim(),
+            Effect = _isDeny ? ReportAclEffectDto.Deny : ReportAclEffectDto.Allow,
+            Permissions = permissions,
+        });
+
+        await ReloadEntriesAsync();
+    }
+
+    private async Task RevokeAsync(ReportFolderAclEntryDto entry)
+    {
+        await Client.RevokePermissionAsync(new RevokeReportPermissionRequestDto
+        {
+            TenantId = Session.CurrentTenantId,
+            FolderId = entry.FolderId,
+            SubjectKind = entry.SubjectKind,
+            SubjectId = entry.SubjectId,
+        });
+
+        await ReloadEntriesAsync();
+    }
+
+    private async Task ReloadEntriesAsync()
+    {
+        _entries = string.IsNullOrWhiteSpace(_folderId)
+            ? []
+            : await Client.GetFolderPermissionsAsync(Session.CurrentTenantId, _folderId);
+        StateHasChanged();
+    }
+
+    private static string FormatPermissions(ReportPermissionsDto permissions)
+        => permissions == ReportPermissionsDto.None ? "None" : permissions.ToString();
 }

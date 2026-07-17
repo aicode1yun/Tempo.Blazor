@@ -2,19 +2,19 @@
 @page "/designer/{ReportId?}"
 @using Tempo.Reporting.Abstractions.Definitions
 @inject ReportServerSessionState Session
-@inject ReportServerCatalogStore Catalog
+@inject ITempoReportServerClient Client
 @inject DemoReportSourceFactory SourceFactory
 
 <ReportServerShell Title="Report designer" ActiveSection="designer">
     <div class="rs-page rs-designer-page" data-testid="f13-designer-page">
         <div class="rs-page__heading">
             <div>
-                <p class="rs-kicker">@(_report?.FolderPath ?? "/finance")</p>
+                <p class="rs-kicker">@(_resolved?.FolderId ?? "/finance")</p>
                 <h2>@(_definition?.Name ?? "Report designer")</h2>
             </div>
             <div class="rs-page__stats">
                 <span>@(_definition?.DataSets.Count ?? 0) datasets</span>
-                <span>@(_report is null ? "Draft report" : $"Revision {_report.Revision}")</span>
+                <span>@(_resolved is null ? "Draft report" : $"Revision {_resolved.RevisionNumber}")</span>
             </div>
         </div>
 
@@ -47,13 +47,13 @@
     /// <summary>Catalog report id to open in the designer.</summary>
     [Parameter] public string? ReportId { get; set; }
 
-    private ReportExplorerReportItem? _report;
+    private ReportResolveResultDto? _resolved;
     private ReportDefinition? _definition;
     private ReportDesignerSaveEventArgs? _lastSave;
     private string? _loadedReportId;
 
     /// <inheritdoc />
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         var reportId = string.IsNullOrWhiteSpace(ReportId) ? "sales-register" : ReportId;
         if (string.Equals(_loadedReportId, reportId, StringComparison.Ordinal))
@@ -61,12 +61,20 @@
             return;
         }
 
-        _report = Catalog.GetCatalog(Session.CurrentTenantId)
-            .Reports
-            .FirstOrDefault(report => string.Equals(report.Id, reportId, StringComparison.Ordinal));
-        _definition = _report is null ? null : SourceFactory.CreateReportDefinition(reportId);
         _loadedReportId = reportId;
         _lastSave = null;
+        try
+        {
+            // Resolution goes through the typed client (/resolve); the editable definition is still
+            // materialized in-process by the demo source factory for the self-contained demo.
+            _resolved = await Client.ResolveReportAsync(Session.CurrentTenantId, reportId: reportId);
+            _definition = SourceFactory.CreateReportDefinition(_resolved.ReportId);
+        }
+        catch (KeyNotFoundException)
+        {
+            _resolved = null;
+            _definition = null;
+        }
     }
 
     private void HandleDefinitionChanged(ReportDefinition definition)

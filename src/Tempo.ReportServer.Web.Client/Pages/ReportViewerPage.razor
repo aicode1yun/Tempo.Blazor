@@ -3,12 +3,12 @@
 @using Microsoft.AspNetCore.WebUtilities
 @inject NavigationManager Navigation
 @inject ReportServerSessionState Session
-@inject ReportServerCatalogStore Catalog
+@inject ITempoReportServerClient Client
 @inject DemoReportSourceFactory SourceFactory
 
-<ReportServerShell Title="@(_report?.Name ?? "Report viewer")" ActiveSection="reports">
+<ReportServerShell Title="@(_resolved?.Name ?? "Report viewer")" ActiveSection="reports">
     <div class="rs-page rs-viewer-page" data-testid="f12-viewer-page">
-        @if (_report is null)
+        @if (_resolved is null)
         {
             <div class="rs-empty" data-testid="report-not-found">
                 <TmIcon Name="@IconNames.AlertTriangle" Size="IconSize.Md" />
@@ -20,9 +20,9 @@
         {
             <div class="rs-viewer-page__heading">
                 <div>
-                    <p class="rs-kicker">@_report.FolderPath</p>
-                    <h2>@_report.Name</h2>
-                    <p>@_report.Description</p>
+                    <p class="rs-kicker">@_resolved.FolderId</p>
+                    <h2>@_resolved.Name</h2>
+                    <p>@_resolved.Description</p>
                 </div>
                 <div class="rs-param-chips" data-testid="viewer-deep-link-params">
                     @foreach (var parameter in _parameterValues)
@@ -57,18 +57,35 @@
     /// <summary>Catch-all report path after <c>/reports/</c>.</summary>
     [Parameter] public string? Path { get; set; }
 
-    private ReportExplorerReportItem? _report;
+    private ReportResolveResultDto? _resolved;
     private IReportSource? _source;
+    private string? _loadedPath;
     private IReadOnlyDictionary<string, ReportParameterValue> _parameterValues =
         new Dictionary<string, ReportParameterValue>(StringComparer.Ordinal);
     private ReportViewerExportResult? _lastExport;
 
     /// <inheritdoc />
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        _report = Catalog.GetReportByPath(Session.CurrentTenantId, Path ?? string.Empty);
-        _source = _report is null ? null : SourceFactory.CreateReportSource(_report.Id);
         _parameterValues = ParseParameterValues();
+        if (string.Equals(_loadedPath, Path, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _loadedPath = Path;
+        try
+        {
+            // Resolution goes through the typed client (/resolve) instead of the retired in-memory
+            // catalog; rendering stays in-process via the demo report source for the self-contained demo.
+            _resolved = await Client.ResolveReportAsync(Session.CurrentTenantId, path: Path);
+            _source = SourceFactory.CreateReportSource(_resolved.ReportId);
+        }
+        catch (KeyNotFoundException)
+        {
+            _resolved = null;
+            _source = null;
+        }
     }
 
     private IReadOnlyDictionary<string, ReportParameterValue> ParseParameterValues()
