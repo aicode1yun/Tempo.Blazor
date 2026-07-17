@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fixed `TmLightbox` stacking: the root `.tm-lightbox` used a hardcoded `z-index: 1000`, which painted the close/prev/next buttons underneath sticky chrome such as `TmTopBar` (`--tm-z-sticky` 1020). It now uses the overlay tier (`var(--tm-z-overlay, 1060)`), consistent with `.tm-lightbox-overlay`.
+
 ## 2.3.4 - 2026-07-17
 
 ### Accent-insensitive filtering (TmFilterableDropdown / TmMultiColumnComboBox)
