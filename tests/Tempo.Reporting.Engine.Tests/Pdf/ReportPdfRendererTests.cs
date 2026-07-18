@@ -65,6 +65,13 @@ public sealed class ReportPdfRendererTests
     [Fact]
     public void Render_EmbedsSuppliedFontSubsetInsteadOfBuiltinPdfFont()
     {
+        if (!OperatingSystem.IsLinux())
+        {
+            // Environment gate: the DejaVu fixture fonts (and the subset-name assertion below)
+            // ship with the Linux CI image only. On Linux the File.Exists asserts stay loud.
+            return;
+        }
+
         var regularFontPath = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
         var boldFontPath = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf";
         File.Exists(regularFontPath).Should().BeTrue($"{regularFontPath} is available in the Linux test image");

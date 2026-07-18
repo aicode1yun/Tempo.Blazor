@@ -18,7 +18,9 @@ public sealed class DocumentMarkdownExporter
             AppendBlock(markdown, block);
         }
 
-        return markdown.ToString().TrimEnd();
+        // Markdown output must be platform-stable: AppendLine emits Environment.NewLine
+        // (CRLF on Windows), which breaks byte-level round-trips and cross-platform diffs.
+        return markdown.ToString().Replace("\r\n", "\n").TrimEnd();
     }
 
     private static void AppendBlock(StringBuilder markdown, DocumentBlock block)

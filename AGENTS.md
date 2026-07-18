@@ -95,6 +95,14 @@ dotnet test --verbosity normal
 # Run specific test project
 dotnet test tests/Tempo.Blazor.Tests/
 dotnet test tests/Tempo.Blazor.E2E/
+
+# E2E lanes (see docs/e2e-test-lanes.md)
+scripts/run-e2e-smoke.ps1   # PR gate: TestCategory=Smoke, < 20 min
+scripts/run-e2e-full.ps1    # nightly: entire suite (~1700 tests, hours)
+
+# JS engine unit tests (explicit file enumeration, no globs)
+npm run test:document-editor
+npm run test:reporting-modules
 ```
 
 ### Package Creation

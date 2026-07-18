@@ -10,10 +10,18 @@ namespace Tempo.Blazor.E2E;
 [TestClass]
 [TestCategory("DocumentEditor")]
 [TestCategory("DocumentEditor:CanvasEngine")]
+[TestCategory("Smoke")]
 [DoNotParallelize]
 public sealed class DocumentEditorCanvasHistorySaveE2ETests : WasmTestBase
 {
     private const string Phase12DocumentId = "phase-12-canvas-history-save";
+
+    // State isolation: every test starts from the server-side seeded demo state so
+    // markers typed (and saved) by earlier tests/runs cannot accumulate in the
+    // persisted phase-12 document and drift its layout over time.
+    [TestInitialize]
+    public Task ResetDocumentEditorDemoAsync()
+        => DocumentEditorE2EReset.ResetAsync();
 
     [TestMethod]
     public async Task Phase12_HistoryManualSaveReloadAndCategorySmoke_PersistsCanvasModel()

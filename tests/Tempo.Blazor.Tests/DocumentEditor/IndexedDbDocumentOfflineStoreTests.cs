@@ -42,7 +42,10 @@ public class IndexedDbDocumentOfflineStoreTests
 
         loaded.Should().BeEquivalentTo(draft);
         pending.Should().ContainSingle(item => item.Id == "draft-1");
+        // The window.tmDocumentEditor global is installed by the browser-globals ES module,
+        // so the store must import it (once) before the first offlineStore call.
         js.Invocations.Should().Equal(
+            "import",
             "tmDocumentEditor.offlineStore.saveDraft",
             "tmDocumentEditor.offlineStore.loadDraft",
             "tmDocumentEditor.offlineStore.listPendingDrafts",

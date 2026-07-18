@@ -323,8 +323,15 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
             TimeSpan.FromSeconds(3));
         cut.FindAll("[data-testid='document-find-result']")[1].Click();
 
-        active.Should().NotBeNull();
-        active!.Index.Should().Be(1);
+        // Load-sensitive: under full-suite CPU contention the click's callback can land a beat after
+        // Click() returns — wait for the final state instead of asserting the instantaneous one.
+        cut.WaitForAssertion(
+            () =>
+            {
+                active.Should().NotBeNull();
+                active!.Index.Should().Be(1);
+            },
+            TimeSpan.FromSeconds(3));
     }
 
     [Fact]

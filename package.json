@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "build:reporting": "node scripts/build-reporting.mjs",
-    "test:reporting-modules": "node --test src/Tempo.Blazor.Reporting/wwwroot/js/reporting/*.test.mjs",
-    "test:document-editor-modules": "node --test \"src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/**/*.test.mjs\" \"src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/**/*.test.mjs\""
+    "test:reporting-modules": "node scripts/run-node-tests.mjs src/Tempo.Blazor.Reporting/wwwroot/js/reporting",
+    "test:document-editor": "node scripts/run-node-tests.mjs src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas",
+    "test:document-editor-modules": "npm run test:document-editor"
   },
   "devDependencies": {
     "esbuild": "^0.21.0"

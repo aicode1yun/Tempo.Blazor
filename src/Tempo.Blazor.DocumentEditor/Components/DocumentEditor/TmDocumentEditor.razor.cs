@@ -37,6 +37,10 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     // Last before-unload guard state pushed to JS; lets UpdateBeforeUnloadGuardAsync skip a redundant interop
     // call when the desired state is unchanged, so it is safe to invoke from the debounced toolbar-sync.
     private bool? _beforeUnloadGuardActive;
+    // Importing this module installs window.tmDocumentEditor (before-unload guard + downloadFile). The global
+    // used to come from a host script tag; the component must install it itself so consumers need no markup.
+    private const string BrowserGlobalsModulePath = "./_content/Tempo.Blazor.DocumentEditor/js/document-editor/interop/browser-globals.mjs";
+    private Task<IJSObjectReference>? _browserGlobalsModule;
     // Toolbar/formatting readback is cheap + gated, so it can fire shortly after a pause; it must NOT run on
     // every keystroke (the re-render it drives is not cheap). Per-keystroke painting is pure canvas (~5 ms).
     private static readonly TimeSpan CanvasToolbarSyncDebounce = TimeSpan.FromMilliseconds(200);
@@ -408,9 +412,32 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         return true;
     }
 
+    /// <summary>
+    /// Installs the window.tmDocumentEditor browser global by importing the interop module.
+    /// Safe to await from any interop call site; the import happens once and is cached.
+    /// </summary>
+    private async Task EnsureBrowserGlobalsAsync()
+    {
+        _browserGlobalsModule ??= JSRuntime.InvokeAsync<IJSObjectReference>("import", BrowserGlobalsModulePath).AsTask();
+        await _browserGlobalsModule;
+    }
+
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender)
+        {
+            try
+            {
+                await EnsureBrowserGlobalsAsync();
+            }
+            catch
+            {
+                // Prerender/static rendering has no JS runtime; the guard/download call sites retry the import.
+                _browserGlobalsModule = null;
+            }
+        }
+
         if (_focusSidePanelOnRender && _sidePanelOpen && _sidePanel is not null)
         {
             _focusSidePanelOnRender = false;
@@ -1749,11 +1776,28 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
             return Task.CompletedTask;
         }
 
-        return JSRuntime.InvokeVoidAsync(
-            "tmDocumentEditor.downloadFile",
-            fileName,
-            string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType,
-            Convert.ToBase64String(content)).AsTask();
+        return DownloadCoreAsync();
+
+        async Task DownloadCoreAsync()
+        {
+            try
+            {
+                await EnsureBrowserGlobalsAsync();
+            }
+            catch
+            {
+                // Reset the cached import so a transient failure cannot poison later downloads,
+                // then surface the failure exactly like the direct interop call used to.
+                _browserGlobalsModule = null;
+                throw;
+            }
+
+            await JSRuntime.InvokeVoidAsync(
+                "tmDocumentEditor.downloadFile",
+                fileName,
+                string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType,
+                Convert.ToBase64String(content));
+        }
     }
 
     private static DocumentPdfExportOptions CreatePdfExportOptions(
@@ -4528,6 +4572,7 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
 
         try
         {
+            await EnsureBrowserGlobalsAsync();
             if (shouldGuard)
                 await JSRuntime.InvokeVoidAsync("tmDocumentEditor.enableBeforeUnloadGuard");
             else
@@ -4536,7 +4581,9 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         }
         catch
         {
-            // JS interop may fail during prerender or dispose — ignore silently.
+            // JS interop may fail during prerender or dispose — ignore silently. The cached state stays
+            // unset so the next dirty-state change (or toolbar sync pass) retries the interop.
+            _browserGlobalsModule = null;
         }
     }
 
@@ -11348,6 +11395,20 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         {
             await collaborationSync.LeaveAsync();
         }
+
+        if (_browserGlobalsModule is { IsCompletedSuccessfully: true } moduleTask)
+        {
+            try
+            {
+                await moduleTask.Result.DisposeAsync();
+            }
+            catch
+            {
+                // The JS runtime may already be disconnected during teardown.
+            }
+        }
+
+        _browserGlobalsModule = null;
     }
 
     private bool BeginDispose(out DocumentCollaborationSync? collaborationSync)
@@ -11372,6 +11433,13 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     {
         try
         {
+            if (_browserGlobalsModule is not null)
+            {
+                // The guard can only be active when the interop module was imported; if it never was,
+                // there is nothing to disable and importing during disposal would be wasted work.
+                await _browserGlobalsModule;
+            }
+
             await JSRuntime.InvokeVoidAsync("tmDocumentEditor.disableBeforeUnloadGuard");
         }
         catch

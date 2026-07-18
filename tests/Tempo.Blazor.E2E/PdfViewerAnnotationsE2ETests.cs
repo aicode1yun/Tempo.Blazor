@@ -81,7 +81,9 @@ public class PdfViewerAnnotationsE2ETests : WasmTestBase
         await highlight.WaitForAsync(new LocatorWaitForOptions { Timeout = 15000 });
 
         await section.Locator("[data-testid='pdf-search-next']").First.ClickAsync();
-        await page.WaitForTimeoutAsync(600);
+        // Deterministic wait: the counter renders "current of total", so advancing
+        // to the next match must change its text (searching "the" yields many matches).
+        await Assertions.Expect(count).Not.ToHaveTextAsync(firstCount, new LocatorAssertionsToHaveTextOptions { Timeout = 15000 });
         await SaveScreenshotAsync(page, "search-next-match");
     }
 
