@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentAssemblyContext",
+  "kind": "Class",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Evaluation context for document-assembly expressions: resolved token values, an optional repeating-row scope (row columns shadow token keys), and an injected clock for deterministic date functions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAssemblyExpression.cs",
+  "documentationStatus": "generated"
+}

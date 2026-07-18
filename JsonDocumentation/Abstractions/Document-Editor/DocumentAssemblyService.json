@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentAssemblyService",
+  "kind": "Class",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Assembles a template document with token values: evaluates IF/ELSEIF/ELSE conditional block chains (keeping the winning branch unwrapped), expands repeating sections bound to collection rows, and replaces token runs — plain keys and computed TokenRun.Expression — with resolved text. Invalid condition expressions fail closed.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAssemblyService.cs",
+  "documentationStatus": "generated"
+}

@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentAssemblyValue",
+  "kind": "Struct",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Result of a document-assembly expression: a string, number, boolean, or date, with culture-invariant conversions (ToInvariantString, ToBoolean, AsNumber, AsDate).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAssemblyExpression.cs",
+  "documentationStatus": "generated"
+}

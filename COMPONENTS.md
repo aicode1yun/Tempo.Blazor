@@ -6452,6 +6452,35 @@ doplnit na serveru (viz POST export endpoint v Demo.Api — klient je nemůže p
 Renderer vystavuje `TempoDocumentPdfRenderer.BuildReportSnapshot(request)` pro inspekci
 přesně toho, co se vykreslí.
 
+### Document assembly (`DocumentAssemblyService` — podmínky, opakování, výpočty)
+
+Šablony umí podmíněné bloky, opakující se sekce a výpočtové tokeny; vše jede na existujících
+modelech (block-scope content control + `Metadata`, `TokenRun`), takže **DOCX round-trip
+je bezeztrátový** (SDT JSON payload) a canvas je zobrazuje existujícím chrome (alias
+„IF …" / „REPEAT …" v design módu = vizuální označení).
+
+| API | Popis |
+|---|---|
+| `DocumentAssemblyMetadata.CreateConditionalBlock(branch, expression, groupId)` | Vytvoří větev IF/ELSEIF/ELSE řetězce (`branch` = "if"/"elseif"/"else"; řetězec spojuje `groupId`; po sobě jdoucí bloky). |
+| `DocumentAssemblyMetadata.CreateRepeatingSection(bindTokenKey)` | Opakující se sekce nad kolekcí (`DocumentTokenValue.Rows` — list slovníků sloupec→hodnota). |
+| `TokenRun.Expression` | Výpočtový token — místo lookupu podle `Key` se vyhodnotí výraz. |
+| `DocumentAssemblyExpression.Evaluate(expr, ctx)` | Čistý evaluátor: aritmetika, porovnání, `&&`/`||`/`!`, `SUM(rows,'col')`, `COUNT(rows)`, `CURRENCY(x,'cs-CZ','CZK')`, `FORMAT(x,'N2')`, `DATEADD(date,days)`, `TODAY()`/`NOW()` (hodiny injektované přes `DocumentAssemblyContext.Now`). Culture-invariant, `FormatException` na chybný výraz. |
+| `DocumentAssemblyService.Assemble(template, values, options?)` | Sestaví dokument: vyhodnotí podmíněné řetězce (vítězná větev se rozbalí, wrappery zmizí), expanduje opakování (sloupce řádku stíní tokeny), nahradí tokeny/výrazy textem. Neplatný výraz **fail-closed** (větev se nezobrazí). |
+| `DocumentTemplatePreviewService` | Náhled šablony nyní pouští plné assembly — toolbar toggle „Náhled šablony" (View tab) tedy ukazuje sestavený výsledek s testovacími daty. |
+
+```csharp
+var doc = ...; // šablona s DocumentAssemblyMetadata bloky + TokenRun.Expression
+var values = new Dictionary<string, DocumentTokenValue>
+{
+    ["contract.amount"] = new() { Key = "contract.amount", Value = "25000" },
+    ["items"] = new() { Key = "items", Rows = [ new() { ["name"] = "Licence", ["price"] = "20000" } ] },
+};
+var assembled = new DocumentAssemblyService().Assemble(doc, values);
+```
+
+Demo: `/canvas-engine-host?documentId=assembly-contract-demo&showToolbar=true&assemblyData=a|b`
+(dvě testovací sady dat → dva různé správné výstupy).
+
 **Redline v PDF:** dokument s revizemi otevřený v editoru se v AllMarkup režimu exportuje
 do PDF s redline stylingem — vložení modře podtržené, smazání červeně přeškrtnuté,
 u levého okraje change bar a u pravého okraje poznámka `+/−/± autor` (print snapshot

@@ -36,6 +36,12 @@ public sealed class DocumentTokenValue
     /// <summary>Optional token type metadata.</summary>
     public string? TokenType { get; set; }
 
+    /// <summary>
+    /// Optional collection value: one dictionary per row (column name → cell value). Used by
+    /// document assembly for repeating sections and aggregate functions (SUM/COUNT).
+    /// </summary>
+    public List<Dictionary<string, string?>>? Rows { get; set; }
+
     /// <summary>Optional short type label.</summary>
     public string? TypeLabel { get; set; }
 

@@ -23,6 +23,48 @@ public sealed class DemoDocumentTokenProvider : ITokenDataProvider, IDocumentTok
 
     public bool SupportsCreation => false;
 
+    /// <summary>
+    /// Selected assembly test-data set ("a" or "b") used by the document-assembly demo template;
+    /// the host page sets it from the <c>assemblyData</c> query parameter.
+    /// </summary>
+    public string AssemblyDataset { get; set; } = "a";
+
+    private Dictionary<string, DocumentTokenValue> CreateAssemblyValues()
+    {
+        var isSetA = !string.Equals(AssemblyDataset, "b", StringComparison.OrdinalIgnoreCase);
+        var values = new Dictionary<string, DocumentTokenValue>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["contract.amount"] = new()
+            {
+                Key = "contract.amount",
+                Value = isSetA ? "25000" : "500",
+                DisplayValue = isSetA ? "25000" : "500",
+            },
+            ["contract.client"] = new()
+            {
+                Key = "contract.client",
+                Value = isSetA ? "ACME Ltd." : "Malý odběratel s.r.o.",
+                DisplayValue = isSetA ? "ACME Ltd." : "Malý odběratel s.r.o.",
+            },
+            ["items"] = new()
+            {
+                Key = "items",
+                Rows = isSetA
+                    ?
+                    [
+                        new Dictionary<string, string?> { ["name"] = "Licence", ["price"] = "20000" },
+                        new Dictionary<string, string?> { ["name"] = "Implementace", ["price"] = "4000" },
+                        new Dictionary<string, string?> { ["name"] = "Podpora", ["price"] = "1000" },
+                    ]
+                    :
+                    [
+                        new Dictionary<string, string?> { ["name"] = "Konzultace", ["price"] = "500" },
+                    ],
+            },
+        };
+        return values;
+    }
+
     public Task<IEnumerable<IToken>> SearchTokensAsync(string query, CancellationToken ct = default)
     {
         IEnumerable<IToken> result = Tokens;
@@ -42,11 +84,14 @@ public sealed class DemoDocumentTokenProvider : ITokenDataProvider, IDocumentTok
         IReadOnlyList<TokenRun> tokens,
         CancellationToken cancellationToken = default)
     {
-        var result = new Dictionary<string, DocumentTokenValue>(StringComparer.OrdinalIgnoreCase);
+        // Assembly demo values (conditions, repeating rows, computed totals) are always available —
+        // expressions and conditional blocks reference them without a matching token run.
+        var result = CreateAssemblyValues();
         foreach (var token in tokens)
         {
-            result[token.Key] = Values.TryGetValue(token.Key, out var value)
-                ? new DocumentTokenValue
+            if (Values.TryGetValue(token.Key, out var value))
+            {
+                result[token.Key] = new DocumentTokenValue
                 {
                     Key = token.Key,
                     Value = value,
@@ -54,8 +99,12 @@ public sealed class DemoDocumentTokenProvider : ITokenDataProvider, IDocumentTok
                     HasValue = true,
                     TokenType = token.TokenType,
                     TypeLabel = token.TypeLabel
-                }
-                : DocumentTokenValue.Missing(token.Key);
+                };
+            }
+            else if (!result.ContainsKey(token.Key))
+            {
+                result[token.Key] = DocumentTokenValue.Missing(token.Key);
+            }
         }
 
         return Task.FromResult<IReadOnlyDictionary<string, DocumentTokenValue>>(result);

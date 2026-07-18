@@ -12,6 +12,7 @@
 @inject DemoDocumentSuggestionProvider SuggestionProviderInstance
 @inject SignalRDocumentCollaborationProvider CollaborationProvider
 @inject NavigationManager Navigation
+@inject DemoDocumentTokenProvider TokenProvider
 
 <PageTitle>Canvas Engine Host - Tempo.Blazor</PageTitle>
 
@@ -39,6 +40,8 @@
                           SuggestionsEnabled="@SuggestionMode"
 	                      ShowToolbar="@ShowToolbar"
                           PdfForensicWatermark="@(ForensicPdf ? new DocumentPdfForensicWatermarkOptions() : null)"
+                          TokenProvider="@TokenProvider"
+                          TokenValueProvider="@TokenProvider"
                       ShowDebugTools="true"
                       ShowComments="true"
                       CanDeleteOwnComments="true"
@@ -81,6 +84,11 @@
     [Parameter]
     [SupplyParameterFromQuery(Name = "forensicPdf")]
     public bool ForensicPdf { get; set; }
+
+    /// <summary>Selects the assembly demo test-data set ("a" or "b") for template preview.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "assemblyData")]
+    public string? AssemblyData { get; set; }
 
     /// <summary>Whether the demo provider should fail document loads through the editor error boundary.</summary>
     [Parameter]
@@ -154,6 +162,7 @@
     protected override void OnParametersSet()
     {
         DocumentId = ResolveDocumentId();
+        TokenProvider.AssemblyDataset = string.IsNullOrWhiteSpace(AssemblyData) ? "a" : AssemblyData;
         DocumentProvider.FailDemoSaves = FailSaves;
         DocumentProvider.FailDemoLoads = FailLoads;
         DocumentProvider.DemoLoadDelay = DemoLoadDelay;
@@ -163,6 +172,12 @@
         }
 
         _seededDocumentId = DocumentId;
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.AssemblyContractDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedAssemblyContractDocument(DocumentId);
+            return;
+        }
+
         if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasRenderDocumentId, StringComparison.Ordinal))
         {
             DocumentProvider.SeedCanvasRenderDocument(DocumentId);

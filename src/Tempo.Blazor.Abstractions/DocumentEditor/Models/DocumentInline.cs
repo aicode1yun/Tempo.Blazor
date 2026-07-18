@@ -509,6 +509,13 @@ public class TokenRun : InlineContent
 
     /// <summary>Optional fallback text used when the token has no value.</summary>
     public string? FallbackText { get; set; }
+
+    /// <summary>
+    /// Optional assembly expression. When set, document assembly computes this expression
+    /// (arithmetic, SUM/COUNT over collection rows, CURRENCY/FORMAT, date arithmetic) instead of
+    /// looking the token up by <see cref="Key"/>.
+    /// </summary>
+    public string? Expression { get; set; }
 }
 
 /// <summary>Inline structured document tag or form control run.</summary>

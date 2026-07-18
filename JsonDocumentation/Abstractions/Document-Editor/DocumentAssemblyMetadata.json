@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentAssemblyMetadata",
+  "kind": "Class",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Metadata contract for document-assembly constructs: branch/expression/group/bind keys riding DocumentContentControl.Metadata (preserved across DOCX round-trips via the SDT JSON payload) plus factories for conditional blocks and repeating sections.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAssemblyService.cs",
+  "documentationStatus": "generated"
+}

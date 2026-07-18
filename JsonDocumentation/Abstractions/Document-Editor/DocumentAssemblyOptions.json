@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentAssemblyOptions",
+  "kind": "Class",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Options for DocumentAssemblyService: the clock injected for deterministic date functions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAssemblyService.cs",
+  "documentationStatus": "generated"
+}

@@ -3065,6 +3065,66 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentAssemblyContext",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Evaluation context for document-assembly expressions: resolved token values, an optional repeating-row scope (row columns shadow token keys), and an injected clock for deterministic date functions.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAssemblyExpression.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentAssemblyExpression",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Pure, deterministic expression evaluator for document assembly: conditions over token values (comparisons, boolean logic), arithmetic, SUM/COUNT over collection rows, CURRENCY/FORMAT formatting, and date arithmetic (DATEADD, TODAY from the injected clock). Culture-invariant; throws FormatException on malformed expressions.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAssemblyExpression.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentAssemblyMetadata",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Metadata contract for document-assembly constructs: branch/expression/group/bind keys riding DocumentContentControl.Metadata (preserved across DOCX round-trips via the SDT JSON payload) plus factories for conditional blocks and repeating sections.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAssemblyService.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentAssemblyOptions",
+      "kind": "Record",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Options for DocumentAssemblyService: the clock injected for deterministic date functions.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAssemblyService.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentAssemblyService",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Assembles a template document with token values: evaluates IF/ELSEIF/ELSE conditional block chains (keeping the winning branch unwrapped), expands repeating sections bound to collection rows, and replaces token runs — plain keys and computed TokenRun.Expression — with resolved text. Invalid condition expressions fail closed.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAssemblyService.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentAssemblyValue",
+      "kind": "Struct",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Result of a document-assembly expression: a string, number, boolean, or date, with culture-invariant conversions (ToInvariantString, ToBoolean, AsNumber, AsDate).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAssemblyExpression.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentAutocompleteKind",
       "kind": "Enum",
       "category": "Document Editor",
@@ -35142,11 +35202,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1410,
-    "manualItemCount": 1410,
-    "generatedItemCount": 1393,
+    "itemCount": 1416,
+    "manualItemCount": 1416,
+    "generatedItemCount": 1399,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1393
+    "publicApiTypeCount": 1399
   }
 }

@@ -14,78 +14,58 @@ public sealed class DocumentTemplatePreviewService
         _tokenValueProvider = tokenValueProvider;
     }
 
-    /// <summary>Creates a cloned preview document with token runs replaced by text values.</summary>
+    /// <summary>
+    /// Creates a cloned preview document with full document assembly applied: token runs are
+    /// replaced by resolved values, conditional block chains are evaluated, repeating sections are
+    /// expanded, and computed token expressions are calculated against the resolved values.
+    /// </summary>
     public async Task<DocumentEditorDocument> CreatePreviewAsync(
         DocumentEditorDocument document,
         DocumentTokenResolutionContext context,
         CancellationToken cancellationToken = default)
     {
         var preview = Clone(document);
-        var tokens = DocumentTokenHelper.ExtractTokens(preview);
-        if (tokens.Count == 0)
-        {
-            return preview;
-        }
-
+        var tokens = ExtractTokensRecursive(preview);
+        // The provider is always consulted: assembly expressions and conditional blocks may
+        // reference values that never appear as token runs in the template body.
         var values = await _tokenValueProvider.ResolveTokenValuesAsync(context, tokens, cancellationToken);
-        ReplaceTokens(preview, values);
-        return preview;
+        return new DocumentAssemblyService().Assemble(preview, values);
     }
 
-    private static void ReplaceTokens(
-        DocumentEditorDocument document,
-        IReadOnlyDictionary<string, DocumentTokenValue> values)
+    private static IReadOnlyList<TokenRun> ExtractTokensRecursive(DocumentEditorDocument document)
     {
-        foreach (var block in document.Blocks)
+        var tokens = new List<TokenRun>();
+        void Walk(DocumentBlock block)
         {
-            var inlines = GetInlineList(block.Content);
-            if (inlines is null)
+            switch (block.Content)
             {
-                continue;
+                case ParagraphBlockContent paragraph:
+                    tokens.AddRange(paragraph.Inlines.OfType<TokenRun>());
+                    break;
+                case HeadingBlockContent heading:
+                    tokens.AddRange(heading.Inlines.OfType<TokenRun>());
+                    break;
+                case ListBlockContent list:
+                    tokens.AddRange(list.Inlines.OfType<TokenRun>());
+                    break;
+                case QuoteBlockContent quote:
+                    tokens.AddRange(quote.Inlines.OfType<TokenRun>());
+                    break;
+                case ContentControlBlockContent control:
+                    control.Blocks.ForEach(Walk);
+                    break;
+                case TableBlockContent table:
+                    foreach (var cellBlock in table.Rows.SelectMany(row => row.Cells).SelectMany(cell => cell.Blocks))
+                    {
+                        Walk(cellBlock);
+                    }
+
+                    break;
             }
-
-            for (var i = 0; i < inlines.Count; i++)
-            {
-                if (inlines[i] is not TokenRun token)
-                {
-                    continue;
-                }
-
-                values.TryGetValue(token.Key, out var value);
-                inlines[i] = new TextRun
-                {
-                    Text = GetPreviewText(token, value),
-                    Marks = token.Marks.Select(mark => Clone(mark)).ToList()
-                };
-            }
-        }
-    }
-
-    private static string GetPreviewText(TokenRun token, DocumentTokenValue? value)
-    {
-        if (value?.HasValue == true)
-        {
-            return value.DisplayValue ?? value.Value ?? string.Empty;
         }
 
-        if (!string.IsNullOrWhiteSpace(token.FallbackText))
-        {
-            return token.FallbackText!;
-        }
-
-        return $"{{{{{token.Key}}}}}";
-    }
-
-    private static List<InlineContent>? GetInlineList(DocumentBlockContent content)
-    {
-        return content switch
-        {
-            ParagraphBlockContent paragraph => paragraph.Inlines,
-            HeadingBlockContent heading => heading.Inlines,
-            ListBlockContent list => list.Inlines,
-            QuoteBlockContent quote => quote.Inlines,
-            _ => null
-        };
+        document.Blocks.ForEach(Walk);
+        return tokens;
     }
 
     private static T Clone<T>(T value)

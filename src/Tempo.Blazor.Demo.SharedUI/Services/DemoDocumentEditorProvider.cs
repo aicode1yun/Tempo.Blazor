@@ -11,6 +11,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
     /// <summary>Stable document id used by the canvas render pipeline E2E gate.</summary>
     public const string CanvasRenderDocumentId = "phase-5-canvas-render";
 
+    /// <summary>Document id of the document-assembly demo template (conditions, repeating items, computed total).</summary>
+    public const string AssemblyContractDocumentId = "assembly-contract-demo";
+
     /// <summary>Stable document id for the large (1000-paragraph) performance-budget E2E gate.</summary>
     public const string LargePerfDocumentId = "large-perf-1000";
 
@@ -182,6 +185,129 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
 
     /// <summary>Additional demo load latency used to keep the editor loading state observable in visual gates.</summary>
     public TimeSpan DemoLoadDelay { get; set; }
+
+    /// <summary>
+    /// Seeds the document-assembly demo template: a contract with an IF/ELSE conditional chain over
+    /// contract.amount, a repeating items section, and a computed currency total.
+    /// </summary>
+    public DocumentEditorDocument SeedAssemblyContractDocument(string documentId = AssemblyContractDocumentId)
+    {
+        var document = DocumentEditorDocument.Empty(documentId);
+        var sectionId = "assembly-contract-section-main";
+        document.Metadata.Title = "Šablona smlouvy s logikou";
+        document.Metadata.CreatedAt = CanonicalDemoTimestamp;
+        document.Metadata.ModifiedAt = CanonicalDemoTimestamp;
+        document.Sections[0].Id = sectionId;
+
+        DocumentBlock Paragraph(string id, params InlineContent[] inlines) => new()
+        {
+            Id = id,
+            SectionId = sectionId,
+            Type = DocumentBlockType.Paragraph,
+            Content = new ParagraphBlockContent { Inlines = inlines.ToList() },
+        };
+
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "assembly-heading",
+            SectionId = sectionId,
+            Type = DocumentBlockType.Heading,
+            Order = 1,
+            Content = new HeadingBlockContent
+            {
+                Level = 1,
+                Inlines = [new TextRun { Text = "Smlouva o dílo" }],
+            },
+        });
+        document.Blocks.Add(Paragraph(
+            "assembly-client",
+            new TextRun { Text = "Objednatel: " },
+            new TokenRun { Key = "contract.client", DisplayName = "Objednatel" }));
+
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "assembly-if",
+            SectionId = sectionId,
+            Type = DocumentBlockType.ContentControl,
+            Order = 3,
+            Content = new ContentControlBlockContent
+            {
+                Control = DocumentAssemblyMetadata.CreateConditionalBlock("if", "contract.amount > 10000", "assembly-approval"),
+                Blocks =
+                [
+                    Paragraph(
+                        "assembly-if-clause",
+                        new TextRun { Text = "Smlouva podléhá schválení ředitele — hodnota plnění přesahuje 10 000 Kč." }),
+                ],
+            },
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "assembly-else",
+            SectionId = sectionId,
+            Type = DocumentBlockType.ContentControl,
+            Order = 4,
+            Content = new ContentControlBlockContent
+            {
+                Control = DocumentAssemblyMetadata.CreateConditionalBlock("else", null, "assembly-approval"),
+                Blocks =
+                [
+                    Paragraph(
+                        "assembly-else-clause",
+                        new TextRun { Text = "Smlouvu schvaluje vedoucí oddělení v běžném režimu." }),
+                ],
+            },
+        });
+
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "assembly-items",
+            SectionId = sectionId,
+            Type = DocumentBlockType.ContentControl,
+            Order = 5,
+            Content = new ContentControlBlockContent
+            {
+                Control = DocumentAssemblyMetadata.CreateRepeatingSection("items"),
+                Blocks =
+                [
+                    Paragraph(
+                        "assembly-item-row",
+                        new TextRun { Text = "• " },
+                        new TokenRun { Key = "name", DisplayName = "Položka" },
+                        new TextRun { Text = " — " },
+                        new TokenRun { Key = "price", DisplayName = "Cena" },
+                        new TextRun { Text = " Kč" }),
+                ],
+            },
+        });
+
+        document.Blocks.Add(Paragraph(
+            "assembly-total",
+            new TextRun { Text = "Cena celkem: " },
+            new TokenRun
+            {
+                Key = "contract.total",
+                DisplayName = "Celkem",
+                Expression = "CURRENCY(SUM(items, 'price'), 'cs-CZ', 'CZK')",
+            }));
+        document.Blocks.Add(Paragraph(
+            "assembly-due",
+            new TextRun { Text = "Splatnost: " },
+            new TokenRun
+            {
+                Key = "contract.due",
+                DisplayName = "Splatnost",
+                Expression = "DATEADD(TODAY(), 14)",
+            }));
+
+        for (var i = 0; i < document.Blocks.Count; i++)
+        {
+            document.Blocks[i].Order = i + 1;
+        }
+
+        StoreDocument(document);
+        return document;
+    }
 
     /// <summary>Seeds a compact document that exercises the canvas render pipeline.</summary>
     public DocumentEditorDocument SeedCanvasRenderDocument(string documentId = CanvasRenderDocumentId)
