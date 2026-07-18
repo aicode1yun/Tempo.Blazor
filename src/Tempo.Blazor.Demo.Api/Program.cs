@@ -111,6 +111,7 @@ builder.Services.AddSingleton<MockNotionDatabaseStore>();
 builder.Services.AddSingleton<DemoDocumentEditorStore>();
 builder.Services.AddSingleton<DemoDocumentFormatProvider>();
 builder.Services.AddSingleton<DemoDocumentPdfExportProvider>();
+builder.Services.AddSingleton<DemoDocumentPdfExportCache>();
 builder.Services.AddSingleton<DemoDocumentComparisonProvider>();
 builder.Services.AddSingleton<InMemoryDocumentCollaborationProvider>();
 builder.Services.AddSingleton<InMemoryDocumentSuggestionProvider>();

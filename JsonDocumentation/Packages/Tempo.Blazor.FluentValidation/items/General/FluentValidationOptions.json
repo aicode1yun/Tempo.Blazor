@@ -1,0 +1,10 @@
+{
+  "itemName": "FluentValidationOptions",
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.FluentValidation",
+  "description": "Programmatic options for the FluentValidation integration: controls field-changed validation behaviour, async validation, and severity mapping without attribute markup.",
+  "packageId": "Tempo.Blazor.FluentValidation",
+  "sourcePath": "src/Tempo.Blazor.FluentValidation/FluentValidationOptions.cs",
+  "documentationStatus": "generated"
+}

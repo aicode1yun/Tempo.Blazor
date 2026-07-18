@@ -22,7 +22,8 @@
       }
     ],
     "projectReferences": [
-      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
+      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj",
+      "../Tempo.Reporting.Engine/Tempo.Reporting.Engine.csproj"
     ],
     "namespaces": [
       "Tempo.Blazor.DocumentFormats",
@@ -30,7 +31,8 @@
       "Tempo.Blazor.DocumentFormats.Html",
       "Tempo.Blazor.DocumentFormats.Markdown",
       "Tempo.Blazor.DocumentFormats.Notion",
-      "Tempo.Blazor.DocumentFormats.Odt"
+      "Tempo.Blazor.DocumentFormats.Odt",
+      "Tempo.Blazor.DocumentFormats.Pdf"
     ]
   },
   "gettingStarted": {
@@ -722,6 +724,26 @@
       "packageId": "Tempo.Blazor.DocumentFormats",
       "sourcePath": "src/Tempo.Blazor.DocumentFormats/Odt/DocumentOdtExporter.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentPdfRenderer",
+      "kind": "Class",
+      "category": "PDF",
+      "namespace": "Tempo.Blazor.DocumentFormats.Pdf",
+      "description": "Production PDF renderer for TmDocumentEditor exports. Consumes the canonical document plus the canvas layout snapshot (DocumentPdfExportRequest.LayoutSnapshotJson, schema v1) captured by the editor, translates the exact painted primitives into the Skia PDF backend, and emits a vector PDF with a searchable text layer and embedded, subset fonts — inheriting the editor's line and page breaking for WYSIWYG parity.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Pdf/TempoDocumentPdfRenderer.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentPdfRendererOptions",
+      "kind": "Record",
+      "category": "PDF",
+      "namespace": "Tempo.Blazor.DocumentFormats.Pdf",
+      "description": "Options for TempoDocumentPdfRenderer: font faces (family, weight, style, bytes) available for deterministic embedded rendering with subsetting, and the fallback font family used when a text command carries none.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Pdf/TempoDocumentPdfRenderer.cs",
+      "documentationStatus": "merged"
     }
   ],
   "libraryExamples": [
@@ -732,11 +754,11 @@
     }
   ],
   "summary": {
-    "itemCount": 40,
-    "manualItemCount": 40,
-    "generatedItemCount": 40,
+    "itemCount": 42,
+    "manualItemCount": 42,
+    "generatedItemCount": 42,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 40
+    "publicApiTypeCount": 42
   }
 }

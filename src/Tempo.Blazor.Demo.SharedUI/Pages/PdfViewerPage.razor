@@ -18,11 +18,13 @@
         <span class="px-2 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">Core</span>
     </div>
 
-    <div class="showcase-card">
+    <div class="showcase-card" data-testid="pdf-basic-usage-card">
         <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
             Standard single-page viewer with toolbar, page navigation, and zoom controls.
+            Append <code>?url=…</code> to open a different document — e.g. a PDF exported from the
+            document editor demo (<code>/api/document-editor/&lt;id&gt;/export/pdf/last</code>).
         </p>
-        <TmPdfViewer Url="@_demoPdfUrl"
+        <TmPdfViewer Url="@EffectiveBasicPdfUrl"
                      ShowToolbar="true"
                      AllowDownload="true"
                      Height="500px" />
@@ -182,6 +184,13 @@
 
 @code {
     private const string _demoPdfUrl = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
+
+    /// <summary>Optional PDF URL override for the Basic Usage viewer (e.g. a document-editor export).</summary>
+    [Microsoft.AspNetCore.Components.SupplyParameterFromQuery(Name = "url")]
+    public string? UrlOverride { get; set; }
+
+    private string EffectiveBasicPdfUrl
+        => string.IsNullOrWhiteSpace(UrlOverride) ? _demoPdfUrl : UrlOverride;
 
     private readonly DocumentCommentUser _currentUser = new()
     {

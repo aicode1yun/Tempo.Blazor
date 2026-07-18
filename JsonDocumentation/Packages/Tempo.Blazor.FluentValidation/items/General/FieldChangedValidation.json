@@ -1,0 +1,10 @@
+{
+  "itemName": "FieldChangedValidation",
+  "kind": "Enum",
+  "category": "General",
+  "namespace": "Tempo.Blazor.FluentValidation",
+  "description": "How field-changed events trigger validation in the FluentValidation integration: validate the changed member, the full model, or nothing until submit.",
+  "packageId": "Tempo.Blazor.FluentValidation",
+  "sourcePath": "src/Tempo.Blazor.FluentValidation/FluentValidationOptions.cs",
+  "documentationStatus": "generated"
+}

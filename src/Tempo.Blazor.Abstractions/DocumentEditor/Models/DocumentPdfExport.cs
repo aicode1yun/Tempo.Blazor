@@ -17,6 +17,14 @@ public sealed class DocumentPdfExportRequest
 
     /// <summary>Options that control PDF generation.</summary>
     public DocumentPdfExportOptions Options { get; set; } = new();
+
+    /// <summary>
+    /// Optional canvas layout snapshot (schema v1) captured from the editor at export time:
+    /// a page-indexed list of print primitives (text / rect / line / image / path) produced by the
+    /// canvas engine's <c>getLayoutSnapshotJson</c> interop. When present, WYSIWYG-parity renderers
+    /// reuse the editor's exact line and page breaking instead of re-laying the document out.
+    /// </summary>
+    public string? LayoutSnapshotJson { get; set; }
 }
 
 /// <summary>Options that control PDF export behavior.</summary>

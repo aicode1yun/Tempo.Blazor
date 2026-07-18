@@ -1,12 +1,15 @@
 using System.Text;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
+using Tempo.Blazor.DocumentFormats.Pdf;
 
 namespace Tempo.Blazor.Demo.Api.Services;
 
 /// <summary>Server-side demo implementation of the document PDF export provider boundary.</summary>
 public sealed class DemoDocumentPdfExportProvider : IDocumentPdfExportProvider
 {
+    private readonly TempoDocumentPdfRenderer _renderer = new();
+
     /// <inheritdoc />
     public Task<DocumentPdfExportResult> ExportPdfAsync(
         DocumentPdfExportRequest request,
@@ -15,7 +18,12 @@ public sealed class DemoDocumentPdfExportProvider : IDocumentPdfExportProvider
         cancellationToken.ThrowIfCancellationRequested();
 
         var fileName = EnsurePdfFileName(request.FileName, request.DocumentId);
-        var content = RenderPdf(request);
+        // Production path: the editor ships its live canvas layout snapshot, so the vector renderer
+        // reproduces the exact editor pagination (WYSIWYG parity). The legacy text-only writer stays
+        // as the fallback for snapshot-less callers (e.g. headless API clients).
+        var content = string.IsNullOrWhiteSpace(request.LayoutSnapshotJson)
+            ? RenderPdf(request)
+            : _renderer.Render(request);
         return Task.FromResult(new DocumentPdfExportResult
         {
             Content = content,

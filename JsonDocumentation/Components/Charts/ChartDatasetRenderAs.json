@@ -1,0 +1,10 @@
+{
+  "itemName": "ChartDatasetRenderAs",
+  "kind": "Enum",
+  "category": "Charts",
+  "description": "Per-dataset render override for combo charts: keep the chart's default mark or force the dataset to draw as Line, Bar, or Area within the same TmChart.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+  "documentationStatus": "generated"
+}

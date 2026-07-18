@@ -8347,6 +8347,10 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/render/layout-snapshot-export.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/render/page-background.mjs",
       "kind": "JavaScript"
     },
@@ -8388,6 +8392,10 @@
     },
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/render/__tests__/image-cache-lru.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/render/__tests__/layout-snapshot-export.test.mjs",
       "kind": "JavaScript"
     },
     {
@@ -9080,6 +9088,14 @@
     },
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/input/typing-coalescer.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/interop/browser-globals.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/interop/__tests__/browser-globals.test.mjs",
       "kind": "JavaScript"
     },
     {

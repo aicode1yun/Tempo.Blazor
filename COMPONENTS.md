@@ -6382,6 +6382,50 @@ var fields = await _editor.GetSigningFieldsAsync("export");
 @* pages + fields → TmSigningFormRunner / TmPdfTemplateDesigner *@
 ```
 
+### PDF export (`IDocumentPdfExportProvider` + `TempoDocumentPdfRenderer`)
+
+Editor exportuje do PDF přes provider boundary `IDocumentPdfExportProvider` (Abstractions).
+Od v2.4 nese `DocumentPdfExportRequest` navíc **`LayoutSnapshotJson`** (string?, aditivní):
+canvas layout snapshot (schema v1) zachycený interopem `getLayoutSnapshotJson` v okamžiku
+exportu — page-indexovaný seznam print primitiv (`text` / `rect` / `line` / `image` / `path`),
+přesně těch, které editor vykreslil. Starší provideři pole ignorují a fungují beze změn.
+
+Produkční renderer **`Tempo.Blazor.DocumentFormats.Pdf.TempoDocumentPdfRenderer`** snapshot
+překládá 1:1 do Skia PDF backendu (`Tempo.Reporting.Engine`): výstupem je vektorové PDF
+s prohledávatelnou textovou vrstvou, embedovanými a subsetovanými fonty, obrázky, tabulkami
+a hlavičkami/patičkami — **lámání řádků i stránek je identické s editorem (WYSIWYG parita
+konstrukcí)**. Bez snapshotu vyhazuje `ArgumentException` (kontrakt); fallback bez parity je
+věcí hostitele.
+
+| API | Popis |
+|---|---|
+| `DocumentPdfExportRequest.LayoutSnapshotJson` | Canvas layout snapshot (schema v1); `null` = starý kontrakt. |
+| `TmDocumentCanvasEngineHost.RequestLayoutSnapshotJsonAsync()` | Vrátí snapshot živého display listu (null před mountem). |
+| `CanvasExportBridge.ExportPdfAsync(..., layoutSnapshotProvider, ct)` | Overload — připojí snapshot do requestu (starý overload zachován). |
+| `TempoDocumentPdfRenderer.Render(DocumentPdfExportRequest)` | Snapshot → vektorové PDF (bytes). |
+| `TempoDocumentPdfRenderer.TranslateLayoutSnapshot(json)` | Snapshot → `ReportSnapshot` (testovatelný mezikrok parity). |
+| `TempoDocumentPdfRendererOptions` | `Fonts` (`ReportPdfFontFace` — family/weight/style/bytes pro deterministický embedding), `DefaultFontFamily`. |
+
+```csharp
+// server-side provider (viz DemoDocumentPdfExportProvider v Demo.Api):
+public sealed class MyPdfExportProvider : IDocumentPdfExportProvider
+{
+    private readonly TempoDocumentPdfRenderer _renderer = new();
+
+    public Task<DocumentPdfExportResult> ExportPdfAsync(DocumentPdfExportRequest request, CancellationToken ct = default)
+        => Task.FromResult(new DocumentPdfExportResult
+        {
+            Content = _renderer.Render(request),   // request.LayoutSnapshotJson dodá TmDocumentEditor sám
+            FileName = $"{request.DocumentId}.pdf"
+        });
+}
+```
+
+Omezení v1: matematické rovnice se tisknou jako linearizovaný text na správné pozici
+(vizuální math layout zatím jen na canvasu); watermarky, tab leadery a tvary se překládají
+na nejbližší print primitivum. Demo: export v `/document-editor`, prohlížení exportu
+`/pdf-viewer?url=…/api/document-editor/{id}/export/pdf/last`.
+
 ## Chat
 
 ### TmChat

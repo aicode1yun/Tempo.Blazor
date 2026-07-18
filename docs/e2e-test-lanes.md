@@ -8,9 +8,11 @@ exhaustive coverage still runs every night.
 
 - **What runs:** every test marked `[TestCategory("Smoke")]`. The core of the
   lane is `SmokeLaneE2ETests` (boot probes across the major demo surfaces with
-  unhandled-exception capture, including edge cases such as an unknown route)
-  plus `DocumentEditorCanvasHistorySaveE2ETests` (document-editor history,
-  dirty state, save, autosave, and reload persistence).
+  unhandled-exception capture, including edge cases such as an unknown route),
+  `DocumentEditorCanvasHistorySaveE2ETests` (document-editor history,
+  dirty state, save, autosave, and reload persistence), and
+  `DocumentEditorPdfExportE2ETests` (the PDF gate: toolbar export must produce
+  a text-layer PDF with editor-parity pagination and open in TmPdfViewer).
 - **How to run:** `scripts/run-e2e-smoke.ps1`
   (or `dotnet test tests/Tempo.Blazor.E2E/Tempo.Blazor.E2E.csproj --filter TestCategory=Smoke`).
 - **Growing the lane:** add `[TestCategory("Smoke")]` at class or method level.

@@ -53,6 +53,30 @@ test('export scale is clamped to the supported range and JPEG is opt-in', () => 
     interop.dispose(handle);
 });
 
+test('getLayoutSnapshotJson exports the live display list as a print snapshot', () => {
+    const { handle } = mountEngine(createContractModel(200));
+
+    const metrics = JSON.parse(interop.getPageMetricsJson(handle));
+    const snapshot = JSON.parse(interop.getLayoutSnapshotJson(handle));
+
+    assert.equal(snapshot.schemaVersion, 1);
+    assert.equal(snapshot.pageCount, metrics.totalPages, 'snapshot page count matches the editor pagination');
+    assert.ok(snapshot.pages[0].width > 0 && snapshot.pages[0].height > 0, 'pages carry CSS-pixel dimensions');
+    const pageTexts = snapshot.pages[0].commands
+        .filter(command => command.type === 'text')
+        .map(command => command.text)
+        .join(' ');
+    assert.ok(
+        pageTexts.includes('Service'),
+        `body text prints as text commands (got: ${pageTexts.slice(0, 200) || '<none>'})`);
+    assert.ok(
+        snapshot.pages.every(page => page.commands.every(command =>
+            command.sourceType !== 'marginGuide' && command.sourceType !== 'bodyArea' && command.sourceType !== 'pageFill')),
+        'screen chrome never reaches the print snapshot');
+
+    interop.dispose(handle);
+});
+
 // ── fake DOM + engine harness ────────────────────────────────────────────────────────────────────
 
 function mountEngine(model) {

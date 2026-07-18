@@ -3661,14 +3661,14 @@
       ]
     },
     {
+      "itemName": "ChartDatasetRenderAs",
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Charts",
-      "description": "Per-dataset render override for combo charts. On a chart, datasets marked render as a line overlay on top of the bars (shared Y scale) — bars for periodic flows, lines for cumulative values in one plot.",
+      "description": "Per-dataset render override for combo charts: keep the chart's default mark or force the dataset to draw as Line, Bar, or Area within the same TmChart.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
-      "documentationStatus": "generated",
-      "itemName": "ChartDatasetRenderAs"
+      "documentationStatus": "merged"
     },
     {
       "itemName": "ChartSegment",
@@ -23793,9 +23793,9 @@
   ],
   "summary": {
     "itemCount": 331,
-    "manualItemCount": 330,
+    "manualItemCount": 331,
     "generatedItemCount": 323,
-    "generatedOnlyItemCount": 1,
+    "generatedOnlyItemCount": 0,
     "componentCount": 192,
     "publicApiTypeCount": 131
   }

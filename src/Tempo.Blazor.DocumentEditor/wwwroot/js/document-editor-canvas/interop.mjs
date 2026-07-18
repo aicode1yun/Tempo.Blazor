@@ -3,6 +3,7 @@ import { isDeliberateSelectionNotification } from './selection-cadence.mjs';
 import { buildFormattingState } from './format-state.mjs';
 import { extractAnnotations, countModelWords } from './annotations-state.mjs';
 import { clampExportScale, renderDisplayListPageToCanvas } from './render/page-image-export.mjs';
+import { translateDisplayListToLayoutSnapshot } from './render/layout-snapshot-export.mjs';
 import { findSigningFieldAtSelection } from './controls/signing-field-selection.mjs';
 import { findContentControlAtSelection } from './controls/content-control-selection.mjs';
 import { extractSigningFields } from './controls/signing-field-areas.mjs';
@@ -589,6 +590,15 @@ export function exportPageImages(handle, optionsJson) {
     const pages = Array.isArray(displayList?.pages) ? displayList.pages : [];
     const images = pages.map((_, index) => exportPageDescriptor(state, displayList, index, options));
     return JSON.stringify(images);
+}
+
+// Print/PDF export (schema v1): translate the engine's CURRENT display list — the exact commands
+// the editor painted, laid out with the browser's real font metrics — into the page-indexed print
+// snapshot the server PDF renderer consumes. WYSIWYG parity comes from reusing the live layout.
+export function getLayoutSnapshotJson(handle) {
+    const state = getInstance(handle);
+    const displayList = state.engine.getSnapshot().render?.displayList;
+    return JSON.stringify(translateDisplayListToLayoutSnapshot(displayList || {}));
 }
 
 // Single-page variant so the host can paginate the export and avoid very large interop strings.

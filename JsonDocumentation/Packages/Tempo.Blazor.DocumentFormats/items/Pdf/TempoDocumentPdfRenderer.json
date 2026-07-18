@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentPdfRenderer",
+  "kind": "Class",
+  "category": "Pdf",
+  "namespace": "Tempo.Blazor.DocumentFormats.Pdf",
+  "description": "Production PDF renderer for TmDocumentEditor exports. Consumes the canonical document plus the canvas layout snapshot (DocumentPdfExportRequest.LayoutSnapshotJson, schema v1) captured by the editor, translates the exact painted primitives into the Skia PDF backend, and emits a vector PDF with a searchable text layer and embedded, subset fonts — inheriting the editor's line and page breaking for WYSIWYG parity.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Pdf/TempoDocumentPdfRenderer.cs",
+  "documentationStatus": "generated"
+}

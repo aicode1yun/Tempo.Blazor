@@ -102,6 +102,81 @@
       ]
     },
     {
+      "itemName": "FieldChangedValidation",
+      "kind": "Enum",
+      "category": "General",
+      "namespace": "Tempo.Blazor.FluentValidation",
+      "description": "How field-changed events trigger validation in the FluentValidation integration: validate the changed member, the full model, or nothing until submit.",
+      "packageId": "Tempo.Blazor.FluentValidation",
+      "sourcePath": "src/Tempo.Blazor.FluentValidation/FluentValidationOptions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "FluentValidationOptions",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.FluentValidation",
+      "description": "Programmatic options for the FluentValidation integration: controls field-changed validation behaviour, async validation, and severity mapping without attribute markup.",
+      "packageId": "Tempo.Blazor.FluentValidation",
+      "sourcePath": "src/Tempo.Blazor.FluentValidation/FluentValidationOptions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "FluentValidationSubscription",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.FluentValidation",
+      "description": "Disposable subscription returned by the FluentValidation integration's subscription API; detaches the validator's edit-context handlers when disposed.",
+      "packageId": "Tempo.Blazor.FluentValidation",
+      "sourcePath": "src/Tempo.Blazor.FluentValidation/FluentValidationSubscription.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CanExecute",
+          "kind": "Method",
+          "type": "bool",
+          "parameters": [
+            {
+              "name": "rule",
+              "type": "IValidationRule"
+            },
+            {
+              "name": "propertyPath",
+              "type": "string"
+            },
+            {
+              "name": "context",
+              "type": "IValidationContext"
+            }
+          ]
+        },
+        {
+          "name": "Clear",
+          "kind": "Method",
+          "type": "void",
+          "description": "Clears both layers and notifies the EditContext."
+        },
+        {
+          "name": "Dispose",
+          "kind": "Method",
+          "type": "void",
+          "description": "Unsubscribes from the EditContext and clears all messages this subscription owns."
+        },
+        {
+          "name": "SetExternalFailures",
+          "kind": "Method",
+          "type": "void",
+          "description": "Replaces the external failure layer (server-side / out-of-band failures) and re-renders the store. Null or empty clears the layer. Local messages are untouched.",
+          "parameters": [
+            {
+              "name": "failures",
+              "type": "IEnumerable<ValidationFailure>?"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "itemName": "FluentValidationValidator",
       "kind": "Class",
       "category": "General",
@@ -116,6 +191,12 @@
           "kind": "Method",
           "type": "void",
           "description": "Unsubscribes from EditContext validation events and releases resources."
+        },
+        {
+          "name": "Subscription",
+          "kind": "Property",
+          "type": "FluentValidationSubscription?",
+          "description": "The options-driven subscription handle; null unless was supplied."
         }
       ]
     },
@@ -169,11 +250,11 @@
     }
   ],
   "summary": {
-    "itemCount": 5,
-    "manualItemCount": 5,
-    "generatedItemCount": 5,
+    "itemCount": 8,
+    "manualItemCount": 8,
+    "generatedItemCount": 8,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 5
+    "publicApiTypeCount": 8
   }
 }

@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Tempo.Blazor.Abstractions\Tempo.Blazor.Abstractions.csproj" />
+    <ProjectReference Include="..\Tempo.Reporting.Engine\Tempo.Reporting.Engine.csproj" />
   </ItemGroup>
 
   <ItemGroup>

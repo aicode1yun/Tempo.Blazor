@@ -70,6 +70,7 @@ public abstract class LocalizationTestBase : TestContext
         _documentCanvasGetRuntimeDebugSnapshotJson = module.Setup<string>("getRuntimeDebugSnapshotJson", _ => true);
         _documentCanvasGetRuntimeDebugSnapshotJson.SetResult("{}");
         module.Setup<string?>("getOfflineStateJson", _ => true).SetResult(null);
+        module.Setup<string?>("getLayoutSnapshotJson", _ => true).SetResult(null);
         module.Setup<string?>("getCollaborationStateJson", _ => true).SetResult(null);
         module.Setup<bool>("isDirty", _ => true).SetResult(false);
         module.Setup<string?>("takeLocalOperationBatchesJson", _ => true).SetResult("[]");

@@ -119,7 +119,10 @@ export function installDocumentEditorBrowserGlobals(win = globalThis.window ?? g
     win.document.body.appendChild(anchor);
     anchor.click();
     win.document.body.removeChild(anchor);
-    win.URL.revokeObjectURL(url);
+    // Defer the revoke: the browser needs the blob URL to complete the download, and E2E tests
+    // assert the exported content by fetching it. 60 s is safely past both.
+    const scheduleTimeout = typeof win.setTimeout === 'function' ? win.setTimeout.bind(win) : setTimeout;
+    scheduleTimeout(() => win.URL.revokeObjectURL(url), 60_000);
   };
 
   return target;

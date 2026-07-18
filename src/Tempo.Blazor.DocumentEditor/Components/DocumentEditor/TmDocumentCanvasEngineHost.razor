@@ -342,6 +342,21 @@
         return await _module.InvokeAsync<string>("getRuntimeDebugSnapshotJson", _handle);
     }
 
+    /// <summary>
+    /// Returns the print/PDF layout snapshot (schema v1) translated from the engine's current
+    /// display list — the exact primitives the canvas painted, so exports inherit the editor's
+    /// line and page breaking. Null before the engine is mounted.
+    /// </summary>
+    public async Task<string?> RequestLayoutSnapshotJsonAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return null;
+        }
+
+        return await _module.InvokeAsync<string?>("getLayoutSnapshotJson", _handle);
+    }
+
     /// <summary>Returns the canvas offline runtime state as JSON.</summary>
     public async Task<string?> RequestOfflineStateJsonAsync()
     {

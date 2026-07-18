@@ -43,23 +43,39 @@ public sealed class CanvasExportBridge
     }
 
     /// <summary>Exports the current snapshot through a PDF provider.</summary>
+    public Task<DocumentPdfExportResult> ExportPdfAsync(
+        IDocumentPdfExportProvider provider,
+        DocumentEditorAuthor? author,
+        Func<DocumentEditorDocument, DocumentPdfExportOptions> optionsFactory,
+        CancellationToken cancellationToken = default)
+        => ExportPdfAsync(provider, author, optionsFactory, layoutSnapshotProvider: null, cancellationToken);
+
+    /// <summary>
+    /// Exports the current snapshot through a PDF provider, optionally attaching the editor's live
+    /// canvas layout snapshot so WYSIWYG-parity renderers can reuse the exact page layout.
+    /// </summary>
     public async Task<DocumentPdfExportResult> ExportPdfAsync(
         IDocumentPdfExportProvider provider,
         DocumentEditorAuthor? author,
         Func<DocumentEditorDocument, DocumentPdfExportOptions> optionsFactory,
+        Func<CancellationToken, Task<string?>>? layoutSnapshotProvider,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(provider);
         ArgumentNullException.ThrowIfNull(optionsFactory);
 
         var document = await RequestSnapshotAsync(cancellationToken);
+        var layoutSnapshotJson = layoutSnapshotProvider is null
+            ? null
+            : await layoutSnapshotProvider(cancellationToken);
         return await provider.ExportPdfAsync(new DocumentPdfExportRequest
         {
             DocumentId = document.DocumentId,
             Document = Clone(document),
             FileName = ResolveFileName(document),
             Author = author,
-            Options = optionsFactory(document)
+            Options = optionsFactory(document),
+            LayoutSnapshotJson = string.IsNullOrWhiteSpace(layoutSnapshotJson) ? null : layoutSnapshotJson
         }, cancellationToken);
     }
 

@@ -41,7 +41,8 @@ function createFakeWindow() {
         removeChild() {}
       }
     },
-    setTimeout(fn) { fn(); return 0; }
+    scheduledDelays: [],
+    setTimeout(fn, delay) { win.scheduledDelays.push(delay); fn(); return 0; }
   };
   return { win, listeners, anchors, revoked };
 }
@@ -139,5 +140,9 @@ test('downloadFile decodes base64, clicks a temporary anchor and revokes the blo
   assert.equal(anchors[0].download, 'hello.txt');
   assert.equal(anchors[0].clicked, true, 'anchor must be clicked');
   assert.ok(anchors[0].href.startsWith('blob:fake/'), 'anchor must point at the blob URL');
-  assert.deepEqual(revoked, [anchors[0].href], 'blob URL must be revoked after the click');
+  assert.deepEqual(revoked, [anchors[0].href], 'blob URL must eventually be revoked');
+  // The revoke must be DEFERRED (≥ 60 s): the browser download and E2E content assertions read
+  // the blob URL after the click; an immediate revoke breaks both.
+  assert.equal(win.scheduledDelays.length, 1, 'revoke must be scheduled, not synchronous');
+  assert.ok(win.scheduledDelays[0] >= 60_000, `revoke delay must be >= 60s (got ${win.scheduledDelays[0]})`);
 });

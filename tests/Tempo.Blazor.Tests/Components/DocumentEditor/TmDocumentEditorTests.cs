@@ -1542,6 +1542,34 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task PdfExport_CapturesCanvasLayoutSnapshotIntoRequest()
+    {
+        const string layoutSnapshotJson = """{"schemaVersion":1,"pageCount":1,"pages":[{"index":0,"width":794,"height":1123,"commands":[]}]}""";
+        var module = SetupDocumentCanvasModule();
+        module.Setup<string?>("getLayoutSnapshotJson", _ => true).SetResult(layoutSnapshotJson);
+
+        var provider = new InMemoryDocumentEditorProvider();
+        var document = CreatePhase17ProviderDocument();
+        await SeedDocumentAsync(provider, document);
+        SetCanvasRuntimeDocument(Clone(document));
+
+        var pdfProvider = new CapturingPdfExportProvider();
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-phase17")
+                      .Add(p => p.Provider, provider)
+                      .Add(p => p.PdfExportProvider, pdfProvider));
+
+        await MarkCanvasReadyAsync(cut);
+        cut.Find("[data-testid='document-ribbon-tab-references']").Click();
+        cut.Find("[data-testid='document-export-pdf']").Click();
+
+        cut.WaitForAssertion(() => pdfProvider.LastRequest.Should().NotBeNull());
+        pdfProvider.LastRequest!.LayoutSnapshotJson.Should().Be(
+            layoutSnapshotJson,
+            "the editor must ship its live canvas layout snapshot so WYSIWYG-parity PDF renderers can reuse the exact page layout");
+    }
+
+    [Fact]
     public async Task ExportRequests_UseJsRuntimeDocumentAfterLocalRuntimeEdit()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;

@@ -1,0 +1,10 @@
+{
+  "itemName": "FluentValidationSubscription",
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.FluentValidation",
+  "description": "Disposable subscription returned by the FluentValidation integration's subscription API; detaches the validator's edit-context handlers when disposed.",
+  "packageId": "Tempo.Blazor.FluentValidation",
+  "sourcePath": "src/Tempo.Blazor.FluentValidation/FluentValidationSubscription.cs",
+  "documentationStatus": "generated"
+}

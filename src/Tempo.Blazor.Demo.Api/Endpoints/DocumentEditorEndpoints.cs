@@ -325,11 +325,25 @@ public static class DocumentEditorEndpoints
             string documentId,
             DocumentPdfExportRequest request,
             DemoDocumentPdfExportProvider pdfProvider,
+            DemoDocumentPdfExportCache exportCache,
             CancellationToken cancellationToken) =>
         {
             request.DocumentId = documentId;
             var exported = await pdfProvider.ExportPdfAsync(request, cancellationToken);
+            exportCache.Store(documentId, exported);
             return Results.Ok(exported);
+        });
+
+        // Serves the PDF produced by the latest POST export so demo pages (TmPdfViewer) and E2E can
+        // open the real production-rendered file by URL.
+        group.MapGet("/{documentId}/export/pdf/last", (
+            string documentId,
+            DemoDocumentPdfExportCache exportCache) =>
+        {
+            var last = exportCache.Get(documentId);
+            return last is null
+                ? Results.NotFound()
+                : Results.File(last.Content, last.ContentType, last.FileName);
         });
 
         group.MapPost("/import/odt", async (

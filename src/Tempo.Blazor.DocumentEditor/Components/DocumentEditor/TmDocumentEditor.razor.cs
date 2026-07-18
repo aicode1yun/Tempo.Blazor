@@ -1458,7 +1458,8 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
             var result = await CreateCanvasExportBridge().ExportPdfAsync(
                 PdfExportProvider,
                 Author,
-                documentToExport => CreatePdfExportOptions(documentToExport, _reviewDisplayMode));
+                documentToExport => CreatePdfExportOptions(documentToExport, _reviewDisplayMode),
+                layoutSnapshotProvider: async _ => _canvasHost is null ? null : await _canvasHost.RequestLayoutSnapshotJsonAsync());
 
             if (result.Content.Length == 0)
             {

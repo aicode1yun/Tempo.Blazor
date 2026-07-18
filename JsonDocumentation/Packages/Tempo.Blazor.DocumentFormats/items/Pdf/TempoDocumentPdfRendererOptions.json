@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentPdfRendererOptions",
+  "kind": "Class",
+  "category": "Pdf",
+  "namespace": "Tempo.Blazor.DocumentFormats.Pdf",
+  "description": "Options for TempoDocumentPdfRenderer: font faces (family, weight, style, bytes) available for deterministic embedded rendering with subsetting, and the fallback font family used when a text command carries none.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Pdf/TempoDocumentPdfRenderer.cs",
+  "documentationStatus": "generated"
+}
