@@ -99,7 +99,18 @@ public sealed class OidcPortalIdentity : IPortalIdentity, IDisposable
 
     private async Task RefreshAsync(Task<AuthenticationState> stateTask)
     {
-        var state = await stateTask.ConfigureAwait(false);
+        AuthenticationState state;
+        try
+        {
+            state = await stateTask.ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // A faulted auth-state task leaves the identity anonymous (nav hidden, redirect to sign-in)
+            // rather than crashing the circuit on an unobserved exception. Nothing to notify.
+            return;
+        }
+
         Apply(state);
         Changed?.Invoke();
     }

@@ -41,11 +41,18 @@ public static class CommonServiceCollectionExtensions
         services.AddSingleton<IReportScheduledDeliveryService, ReportEmailDeliveryService>();
         services.AddSingleton<ReportScheduleWorker>();
 
-        // Per-circuit / per-client portal identity. When OIDC is configured (Authority + ClientId set,
-        // matching the host's ReportServerOidcOptions.IsConfigured gate) the portal reflects the signed-in
-        // Keycloak principal — identity, tenant and role-gated UI — via OidcPortalIdentity. Otherwise the
-        // self-contained demo session (tenant switcher, full role access) keeps the original behaviour.
-        // ReportServerSessionState stays registered as its own type so the demo login page/tests resolve it.
+        // Per-circuit / per-client portal identity. When OIDC is configured (Authority + ClientId set)
+        // the portal reflects the signed-in Keycloak principal — identity, tenant and role-gated UI — via
+        // OidcPortalIdentity. Otherwise the self-contained demo session (tenant switcher, full role access)
+        // keeps the original behaviour. ReportServerSessionState stays registered as its own type so the
+        // demo login page/tests resolve it.
+        //
+        // This runs in BOTH legs of InteractiveAuto, so the non-secret gate values (Authority + ClientId)
+        // must be present in BOTH configs: the host's appsettings.json AND the WASM wwwroot/appsettings.json
+        // (same pattern as Api:BaseUrl). If only the host carried them, the WASM leg would silently fall
+        // back to the demo session and break auth mode once rendering moves to the browser. The secret
+        // (ClientSecret) stays host-only — the WASM leg never needs it (it reuses the host's serialized auth
+        // state and fetches short-lived tokens from /auth/token).
         services.AddScoped<ReportServerSessionState>();
         var oidcAuthority = configuration["Authentication:Oidc:Authority"];
         var oidcClientId = configuration["Authentication:Oidc:ClientId"];

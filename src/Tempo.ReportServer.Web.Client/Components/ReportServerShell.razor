@@ -119,6 +119,11 @@
     protected override void OnInitialized()
     {
         Session.Changed += HandleSessionChanged;
+        RedirectIfSignedOut();
+    }
+
+    private void RedirectIfSignedOut()
+    {
         if (!Session.IsAuthenticated)
         {
             Navigation.NavigateTo(Session.SignInPath, forceLoad: Session.UsesExternalAuthNavigation);
@@ -140,7 +145,17 @@
     }
 
     private void HandleSessionChanged()
-        => InvokeAsync(StateHasChanged);
+    {
+        // Auth state may resolve asynchronously after the first render (async AuthenticationStateProvider):
+        // when it settles to "not signed in", honour the redirect that OnInitialized could not yet make.
+        if (!Session.IsAuthenticated)
+        {
+            RedirectIfSignedOut();
+            return;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
 
     /// <inheritdoc />
     public void Dispose()

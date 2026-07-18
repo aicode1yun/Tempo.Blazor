@@ -79,12 +79,25 @@ if (oidcOptions.IsConfigured)
             Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme,
             Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme,
         ]));
-    app.MapGet("/account/logout", () => Results.SignOut(
-        new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = "/" },
-        [
-            Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme,
-            Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme,
-        ]));
+    app.MapGet("/account/logout", (HttpContext httpContext) =>
+    {
+        // Reject cross-site GET triggers (logout CSRF, link prefetch, URL scanners). Browsers send
+        // Sec-Fetch-Site: same-origin for same-site navigations and "none" for user-typed/bookmarked
+        // ones; a cross-site <img>/prefetch sends "cross-site" (or "same-site" from a sibling origin).
+        var fetchSite = httpContext.Request.Headers["Sec-Fetch-Site"].ToString();
+        if (string.Equals(fetchSite, "cross-site", StringComparison.Ordinal) ||
+            string.Equals(fetchSite, "same-site", StringComparison.Ordinal))
+        {
+            return Results.Redirect("/");
+        }
+
+        return Results.SignOut(
+            new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = "/" },
+            [
+                Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme,
+                Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme,
+            ]);
+    });
 }
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
