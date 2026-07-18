@@ -32,6 +32,9 @@ public abstract class ReportServerWebTestBase : TestContext
         Services.AddSingleton<IReportScheduledDeliveryService, ReportEmailDeliveryService>();
         Services.AddSingleton<ReportScheduleWorker>();
         Services.AddScoped<ReportServerSessionState>();
+        // Portal consumers depend on IPortalIdentity; the default test mode is the demo session
+        // (same instance as SignIn()). Auth-mode tests register OidcPortalIdentity + test authorization.
+        Services.AddScoped<IPortalIdentity>(sp => sp.GetRequiredService<ReportServerSessionState>());
         JSInterop.Mode = JSRuntimeMode.Loose;
     }
 

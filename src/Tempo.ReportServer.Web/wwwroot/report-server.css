@@ -166,6 +166,19 @@ body {
     font-size: var(--tm-font-size-xs);
 }
 
+.rs-tenant--fixed strong {
+    align-items: center;
+    background: var(--tm-bg-surface-secondary);
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-md);
+    color: var(--tm-text-primary);
+    display: inline-flex;
+    font: inherit;
+    font-weight: var(--tm-font-weight-semibold);
+    min-block-size: var(--tm-input-height-md);
+    padding: 0 var(--tm-space-3);
+}
+
 .rs-user {
     background: var(--tm-bg-surface-secondary);
     border: 1px solid var(--tm-border-color);

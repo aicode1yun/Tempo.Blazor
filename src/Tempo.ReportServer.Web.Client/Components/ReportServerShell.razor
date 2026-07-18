@@ -1,7 +1,8 @@
 @namespace Tempo.ReportServer.Web.Components
+@using Tempo.ReportServer.Web.Services
 @implements IDisposable
 @inject NavigationManager Navigation
-@inject ReportServerSessionState Session
+@inject IPortalIdentity Session
 
 <div class="rs-shell" data-testid="report-server-shell">
     <aside class="rs-sidebar">
@@ -10,34 +11,55 @@
             <span>Tempo Report Server</span>
         </a>
         <nav class="rs-nav" aria-label="Report server">
-            <a class="@NavClass("reports")" href="/reports" data-testid="nav-reports">
-                <TmIcon Name="@IconNames.FolderOpen" Size="IconSize.Sm" />
-                <span>Reports</span>
-            </a>
-            <a class="@NavClass("designer")" href="/designer/sales-register" data-testid="nav-designer">
-                <TmIcon Name="@IconNames.Pencil" Size="IconSize.Sm" />
-                <span>Designer</span>
-            </a>
-            <a class="@NavClass("datasources")" href="/admin/datasources" data-testid="nav-datasources">
-                <TmIcon Name="@IconNames.Database" Size="IconSize.Sm" />
-                <span>Data sources</span>
-            </a>
-            <a class="@NavClass("schedules")" href="/admin/schedules" data-testid="nav-schedules">
-                <TmIcon Name="@IconNames.Calendar" Size="IconSize.Sm" />
-                <span>Schedules</span>
-            </a>
-            <a class="@NavClass("permissions")" href="/admin/permissions" data-testid="nav-permissions">
-                <TmIcon Name="@IconNames.Shield" Size="IconSize.Sm" />
-                <span>Permissions</span>
-            </a>
-            <a class="@NavClass("revisions")" href="/admin/revisions" data-testid="nav-revisions">
-                <TmIcon Name="@IconNames.FileDiff" Size="IconSize.Sm" />
-                <span>Revisions</span>
-            </a>
-            <a class="@NavClass("apikeys")" href="/admin/api-keys" data-testid="nav-apikeys">
-                <TmIcon Name="@IconNames.Key" Size="IconSize.Sm" />
-                <span>API keys</span>
-            </a>
+            @if (Session.CanAccess(PortalRole.Viewer))
+            {
+                <a class="@NavClass("reports")" href="/reports" data-testid="nav-reports">
+                    <TmIcon Name="@IconNames.FolderOpen" Size="IconSize.Sm" />
+                    <span>Reports</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Author))
+            {
+                <a class="@NavClass("designer")" href="/designer/sales-register" data-testid="nav-designer">
+                    <TmIcon Name="@IconNames.Pencil" Size="IconSize.Sm" />
+                    <span>Designer</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Admin))
+            {
+                <a class="@NavClass("datasources")" href="/admin/datasources" data-testid="nav-datasources">
+                    <TmIcon Name="@IconNames.Database" Size="IconSize.Sm" />
+                    <span>Data sources</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Author))
+            {
+                <a class="@NavClass("schedules")" href="/admin/schedules" data-testid="nav-schedules">
+                    <TmIcon Name="@IconNames.Calendar" Size="IconSize.Sm" />
+                    <span>Schedules</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Admin))
+            {
+                <a class="@NavClass("permissions")" href="/admin/permissions" data-testid="nav-permissions">
+                    <TmIcon Name="@IconNames.Shield" Size="IconSize.Sm" />
+                    <span>Permissions</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Author))
+            {
+                <a class="@NavClass("revisions")" href="/admin/revisions" data-testid="nav-revisions">
+                    <TmIcon Name="@IconNames.FileDiff" Size="IconSize.Sm" />
+                    <span>Revisions</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Admin))
+            {
+                <a class="@NavClass("apikeys")" href="/admin/api-keys" data-testid="nav-apikeys">
+                    <TmIcon Name="@IconNames.Key" Size="IconSize.Sm" />
+                    <span>API keys</span>
+                </a>
+            }
         </nav>
     </aside>
 
@@ -48,15 +70,25 @@
                 <h1>@Title</h1>
             </div>
             <div class="rs-topbar__actions">
-                <label class="rs-tenant">
-                    <span>Tenant</span>
-                    <select data-testid="tenant-switcher" value="@Session.CurrentTenantId" @onchange="SwitchTenant">
-                        @foreach (var tenant in Session.Tenants)
-                        {
-                            <option value="@tenant.Id">@tenant.Name</option>
-                        }
-                    </select>
-                </label>
+                @if (Session.CanSwitchTenant)
+                {
+                    <label class="rs-tenant">
+                        <span>Tenant</span>
+                        <select data-testid="tenant-switcher" value="@Session.CurrentTenantId" @onchange="SwitchTenant">
+                            @foreach (var tenant in Session.Tenants)
+                            {
+                                <option value="@tenant.Id">@tenant.Name</option>
+                            }
+                        </select>
+                    </label>
+                }
+                else
+                {
+                    <div class="rs-tenant rs-tenant--fixed" data-testid="tenant-display">
+                        <span>Tenant</span>
+                        <strong>@Session.CurrentTenantName</strong>
+                    </div>
+                }
                 <div class="rs-user" data-testid="signed-in-user">
                     <TmIcon Name="@IconNames.UserCheck" Size="IconSize.Sm" />
                     <span>@Session.UserName</span>
@@ -89,7 +121,7 @@
         Session.Changed += HandleSessionChanged;
         if (!Session.IsAuthenticated)
         {
-            Navigation.NavigateTo("/login");
+            Navigation.NavigateTo(Session.SignInPath, forceLoad: Session.UsesExternalAuthNavigation);
         }
     }
 
@@ -104,7 +136,7 @@
     private void SignOut()
     {
         Session.SignOut();
-        Navigation.NavigateTo("/login");
+        Navigation.NavigateTo(Session.SignOutPath, forceLoad: Session.UsesExternalAuthNavigation);
     }
 
     private void HandleSessionChanged()

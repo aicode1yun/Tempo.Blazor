@@ -2,36 +2,66 @@
 
 namespace Tempo.ReportServer.Web.Services;
 
-/// <summary>Small in-memory session used by the F12 demo shell.</summary>
-public sealed class ReportServerSessionState
+/// <summary>
+/// In-memory demo session backing <see cref="IPortalIdentity"/> when OIDC is not configured.
+/// Keeps the original self-contained portal behaviour: a user-chosen display name, a tenant
+/// switcher across the seeded demo tenants and full role access (nothing is hidden).
+/// </summary>
+public sealed class ReportServerSessionState : IPortalIdentity
 {
+    // Demo mode is the self-contained showcase: the seeded identity sees every page/action.
+    private static readonly IReadOnlyList<PortalRole> DemoRoles =
+    [
+        PortalRole.Viewer,
+        PortalRole.Author,
+        PortalRole.Admin,
+    ];
+
     private readonly List<ReportServerTenant> _tenants =
     [
         new("northwind", "Northwind Finance"),
         new("contoso", "Contoso Operations"),
     ];
 
-    /// <summary>Raised when authentication or tenant selection changes.</summary>
+    /// <inheritdoc />
     public event Action? Changed;
 
-    /// <summary>Whether the current browser session is signed in.</summary>
+    /// <inheritdoc />
     public bool IsAuthenticated { get; private set; }
 
-    /// <summary>Display name of the signed-in user.</summary>
+    /// <inheritdoc />
     public string UserName { get; private set; } = "Report Author";
 
-    /// <summary>Tenants available to the user.</summary>
+    /// <inheritdoc />
     public IReadOnlyList<ReportServerTenant> Tenants => _tenants;
 
-    /// <summary>Current tenant id.</summary>
+    /// <inheritdoc />
     public string CurrentTenantId { get; private set; } = "northwind";
 
-    /// <summary>Current tenant display name.</summary>
+    /// <inheritdoc />
     public string CurrentTenantName
         => _tenants.FirstOrDefault(tenant => string.Equals(tenant.Id, CurrentTenantId, StringComparison.Ordinal))?.Name
             ?? CurrentTenantId;
 
-    /// <summary>Signs the demo user in.</summary>
+    /// <inheritdoc />
+    public bool CanSwitchTenant => true;
+
+    /// <inheritdoc />
+    public string SignInPath => "/login";
+
+    /// <inheritdoc />
+    public string SignOutPath => "/login";
+
+    /// <inheritdoc />
+    public bool UsesExternalAuthNavigation => false;
+
+    /// <inheritdoc />
+    public IReadOnlyList<PortalRole> Roles => DemoRoles;
+
+    /// <inheritdoc />
+    public bool CanAccess(PortalRole minimumRole) => true;
+
+    /// <inheritdoc />
     public void SignIn(string userName)
     {
         if (!string.IsNullOrWhiteSpace(userName))
@@ -43,14 +73,14 @@ public sealed class ReportServerSessionState
         Changed?.Invoke();
     }
 
-    /// <summary>Signs the demo user out.</summary>
+    /// <inheritdoc />
     public void SignOut()
     {
         IsAuthenticated = false;
         Changed?.Invoke();
     }
 
-    /// <summary>Switches the current tenant.</summary>
+    /// <inheritdoc />
     public void SwitchTenant(string tenantId)
     {
         if (_tenants.Any(tenant => string.Equals(tenant.Id, tenantId, StringComparison.Ordinal)))

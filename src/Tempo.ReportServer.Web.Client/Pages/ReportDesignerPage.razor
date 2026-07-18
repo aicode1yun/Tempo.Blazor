@@ -1,7 +1,7 @@
 @namespace Tempo.ReportServer.Web.Pages
 @page "/designer/{ReportId?}"
 @using Tempo.Reporting.Abstractions.Definitions
-@inject ReportServerSessionState Session
+@inject IPortalIdentity Session
 @inject ITempoReportServerClient Client
 @inject DemoReportSourceFactory SourceFactory
 

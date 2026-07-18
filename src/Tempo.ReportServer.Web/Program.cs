@@ -70,7 +70,16 @@ if (oidcOptions.IsConfigured)
     app.MapGet("/account/login", (string? returnUrl) => Results.Challenge(
         new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = returnUrl ?? "/" },
         [Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme]));
+    // Sign-out clears the BFF cookie and redirects to the Keycloak end-session endpoint. Exposed as
+    // both POST (form submit) and GET (the shell's sign-out link uses a full browser navigation from an
+    // interactive component, where an antiforgery-token form is not available in the WASM leg).
     app.MapPost("/account/logout", () => Results.SignOut(
+        new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = "/" },
+        [
+            Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme,
+            Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme,
+        ]));
+    app.MapGet("/account/logout", () => Results.SignOut(
         new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = "/" },
         [
             Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme,

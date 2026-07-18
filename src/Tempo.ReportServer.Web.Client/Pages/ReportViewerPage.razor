@@ -2,7 +2,7 @@
 @page "/reports/{*Path}"
 @using Microsoft.AspNetCore.WebUtilities
 @inject NavigationManager Navigation
-@inject ReportServerSessionState Session
+@inject IPortalIdentity Session
 @inject ITempoReportServerClient Client
 @inject DemoReportSourceFactory SourceFactory
 

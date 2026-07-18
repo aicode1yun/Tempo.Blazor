@@ -2,7 +2,7 @@
 @page "/"
 @page "/login"
 @inject NavigationManager Navigation
-@inject ReportServerSessionState Session
+@inject IPortalIdentity Session
 
 <main class="rs-login" data-testid="f12-login-page">
     <section class="rs-login__panel">
@@ -46,6 +46,24 @@
 @code {
     private string _userName = "Pavel Author";
     private bool _interactiveReady;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        // Auth mode: the seeded demo login page is not used. Authenticated users go to the catalog;
+        // anonymous users are sent to the OIDC challenge. Demo mode keeps the seeded sign-in form.
+        if (Session.UsesExternalAuthNavigation)
+        {
+            if (Session.IsAuthenticated)
+            {
+                Navigation.NavigateTo("/reports");
+            }
+            else
+            {
+                Navigation.NavigateTo(Session.SignInPath, forceLoad: true);
+            }
+        }
+    }
 
     /// <inheritdoc />
     protected override void OnAfterRender(bool firstRender)

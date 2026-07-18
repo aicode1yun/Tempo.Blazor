@@ -1,7 +1,7 @@
 @namespace Tempo.ReportServer.Web.Pages
 @page "/reports"
 @inject NavigationManager Navigation
-@inject ReportServerSessionState Session
+@inject IPortalIdentity Session
 @inject ITempoReportServerClient Client
 
 <ReportServerShell Title="Reports" ActiveSection="reports">
