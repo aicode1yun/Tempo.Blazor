@@ -1,0 +1,10 @@
+{
+  "itemName": "RedisDocumentCollaborationBackplane",
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Collaboration",
+  "description": "Redis pub/sub implementation of IDocumentCollaborationBackplane for multi-server collaboration: each document fans out on its own channel (tm:doc-collab:{documentId}) using the shared JSON envelope; wire it into BackplaneDocumentCollaborationProvider on every server instance. Create over an existing IConnectionMultiplexer or via ConnectAsync(configuration).",
+  "packageId": "Tempo.Blazor.Collaboration",
+  "sourcePath": "src/Tempo.Blazor.Collaboration/RedisDocumentCollaborationBackplane.cs",
+  "documentationStatus": "generated"
+}

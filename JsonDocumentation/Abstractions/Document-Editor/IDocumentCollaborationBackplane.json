@@ -1,0 +1,10 @@
+{
+  "itemName": "IDocumentCollaborationBackplane",
+  "kind": "Interface",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Cross-instance fan-out boundary for document collaboration",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/ server instances publish operation batches and cursors per document and subscribe to receive other instances' traffic. Implementations: InMemoryDocumentCollaborationBackplane (tests/single-process) and RedisDocumentCollaborationBackplane (multi-server).:DocumentCollaborationBackplane.cs",
+  "documentationStatus": "generated"
+}

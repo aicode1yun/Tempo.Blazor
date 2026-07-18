@@ -19,12 +19,17 @@
       {
         "name": "Microsoft.AspNetCore.SignalR.Client",
         "version": "10.0.5"
+      },
+      {
+        "name": "StackExchange.Redis",
+        "version": "2.8.31"
       }
     ],
     "projectReferences": [
       "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
     ],
     "namespaces": [
+      "Tempo.Blazor.Collaboration",
       "Tempo.Blazor.DocumentEditor.Services",
       "Tempo.Blazor.DocumentLibrary.Collaboration",
       "Tempo.Blazor.Notifications"
@@ -43,10 +48,59 @@
       {
         "name": "Microsoft.AspNetCore.SignalR.Client",
         "version": "10.0.5"
+      },
+      {
+        "name": "StackExchange.Redis",
+        "version": "2.8.31"
       }
     ]
   },
   "items": [
+    {
+      "itemName": "RedisDocumentCollaborationBackplane",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Collaboration",
+      "description": "Redis pub/sub implementation of IDocumentCollaborationBackplane for multi-server collaboration: each document fans out on its own channel (tm:doc-collab:{documentId}) using the shared JSON envelope; wire it into BackplaneDocumentCollaborationProvider on every server instance. Create over an existing IConnectionMultiplexer or via ConnectAsync(configuration).",
+      "packageId": "Tempo.Blazor.Collaboration",
+      "sourcePath": "src/Tempo.Blazor.Collaboration/RedisDocumentCollaborationBackplane.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "DisposeAsync",
+          "kind": "Method",
+          "type": "ValueTask"
+        },
+        {
+          "name": "GetChannelName",
+          "kind": "Method",
+          "type": "string",
+          "description": "Builds the Redis channel name for a document.",
+          "parameters": [
+            {
+              "name": "documentId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "PublishAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "message",
+              "type": "DocumentCollaborationBackplaneMessage"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
+    },
     {
       "itemName": "SignalRDocumentCollaborationProvider",
       "kind": "Class",
@@ -440,11 +494,11 @@
     }
   ],
   "summary": {
-    "itemCount": 6,
-    "manualItemCount": 6,
-    "generatedItemCount": 6,
+    "itemCount": 7,
+    "manualItemCount": 7,
+    "generatedItemCount": 7,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 6
+    "publicApiTypeCount": 7
   }
 }

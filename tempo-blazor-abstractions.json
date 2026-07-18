@@ -2621,6 +2621,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "BackplaneDocumentCollaborationProvider",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Collaboration provider for multi-server deployments",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentCollaborationBackplane.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "CanvasBlockContent",
       "kind": "Class",
       "category": "Document Editor",
@@ -3747,6 +3757,16 @@
       "description": "Clipboard image captured before upload.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentOfflineImagesRenditions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentCollaborationBackplaneMessage",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Envelope fanned out between server instances by a collaboration backplane",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentCollaborationBackplane.cs",
       "documentationStatus": "merged"
     },
     {
@@ -7756,6 +7776,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IDocumentCollaborationBackplane",
+      "kind": "Interface",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Cross-instance fan-out boundary for document collaboration",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentCollaborationBackplane.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IDocumentCollaborationProvider",
       "kind": "Interface",
       "category": "Document Editor",
@@ -7953,6 +7983,16 @@
       "description": "Inline mark types supported by the document editor JSON model.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentInline.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "InMemoryDocumentCollaborationBackplane",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "In-process implementation of IDocumentCollaborationBackplane",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentCollaborationBackplane.cs",
       "documentationStatus": "merged"
     },
     {
@@ -35202,11 +35242,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1416,
-    "manualItemCount": 1416,
-    "generatedItemCount": 1399,
+    "itemCount": 1420,
+    "manualItemCount": 1420,
+    "generatedItemCount": 1403,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1399
+    "publicApiTypeCount": 1403
   }
 }

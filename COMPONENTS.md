@@ -6452,6 +6452,25 @@ doplnit na serveru (viz POST export endpoint v Demo.Api — klient je nemůže p
 Renderer vystavuje `TempoDocumentPdfRenderer.BuildReportSnapshot(request)` pro inspekci
 přesně toho, co se vykreslí.
 
+### Kolaborace ve větším nasazení (`IDocumentCollaborationBackplane`)
+
+Pro multi-server nasazení fan-outuje backplane operační dávky a kurzory mezi instancemi:
+
+| API | Popis |
+|---|---|
+| `IDocumentCollaborationBackplane` | `PublishAsync(message)` + `SubscribeAsync(documentId, handler)`; zpráva = `DocumentCollaborationBackplaneMessage` (documentId, sourceInstanceId pro potlačení echa, batch/cursor payload). |
+| `InMemoryDocumentCollaborationBackplane` | In-process implementace (testy, single-process multi-instance). |
+| `RedisDocumentCollaborationBackplane` (Tempo.Blazor.Collaboration) | Redis pub/sub, kanál `tm:doc-collab:{documentId}`; `ConnectAsync("localhost:6379")` nebo nad existujícím `IConnectionMultiplexer`. |
+| `BackplaneDocumentCollaborationProvider` | Nadstavba `InMemoryDocumentCollaborationProvider`: broadcast publikuje do backplane, remote dávky/kurzory ingestuje pod lokální sekvencí. Konzistence napříč replikami = pořadí `DocumentOperationConflictResolver` dle logických timestampů, ne serverové sekvence. |
+
+Konfliktní rezoluce nově pokrývá i formátovací a objektové operace: rozsahy inline marků se
+transformují proti souběžným insert/delete (posun/oříznutí/zahození), `MoveDrawingObject`
+a `UpdateBlock` řeší last-write-wins per objekt/blok, rozhodnutí o revizích
+(Accept/Reject) first-decision-wins. Vlastnosti ověřeny property testy (permutační
+invariance + konvergence po aplikaci) a zátěžovým testem: 20 souběžných editorů,
+1000 operací přes 2 instance → identický dokument na obou replikách. In-memory provider
+je nyní thread-safe (souběžné broadcasty dřív korumpovaly interní slovníky).
+
 ### Document assembly (`DocumentAssemblyService` — podmínky, opakování, výpočty)
 
 Šablony umí podmíněné bloky, opakující se sekce a výpočtové tokeny; vše jede na existujících
