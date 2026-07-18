@@ -751,7 +751,17 @@ public static class ReportServerApiExtensions
                 Effect = (ReportAclEffect)request.Effect,
                 Permissions = (ReportPermission)request.Permissions,
             };
-            await permissionStore.GrantAclEntryAsync(request.FolderId, entry, executionContext).ConfigureAwait(false);
+            try
+            {
+                await permissionStore.GrantAclEntryAsync(request.FolderId, entry, executionContext).ConfigureAwait(false);
+            }
+            catch (Storage.ReportPermissionUnsupportedException ex)
+            {
+                // The store rejected the subject/effect combination (EF backend is allow-only,
+                // user-subject-only). Nothing was written, so do NOT emit an "Allowed" audit event.
+                return Results.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest);
+            }
+
             await auditLog.WriteAsync(
                 ReportAuditEvent.Allowed(request.TenantId, principal.ActorId, ReportAuditAction.ChangeAcl, ReportResourceKind.Acl, request.FolderId),
                 cancellationToken).ConfigureAwait(false);
@@ -806,11 +816,20 @@ public static class ReportServerApiExtensions
 
             SetTenant(context, request.TenantId);
             var executionContext = new ReportExecutionContext(request.TenantId, principal.ActorId, "en-US", CancellationToken: cancellationToken);
-            await permissionStore.RevokeAclEntryAsync(
-                request.FolderId,
-                (ReportAclSubjectKind)request.SubjectKind,
-                request.SubjectId,
-                executionContext).ConfigureAwait(false);
+            try
+            {
+                await permissionStore.RevokeAclEntryAsync(
+                    request.FolderId,
+                    (ReportAclSubjectKind)request.SubjectKind,
+                    request.SubjectId,
+                    executionContext).ConfigureAwait(false);
+            }
+            catch (Storage.ReportPermissionUnsupportedException ex)
+            {
+                // Nothing was removed; do NOT emit an audit event for an operation that did not run.
+                return Results.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest);
+            }
+
             await auditLog.WriteAsync(
                 ReportAuditEvent.Allowed(request.TenantId, principal.ActorId, ReportAuditAction.ChangeAcl, ReportResourceKind.Acl, request.FolderId),
                 cancellationToken).ConfigureAwait(false);

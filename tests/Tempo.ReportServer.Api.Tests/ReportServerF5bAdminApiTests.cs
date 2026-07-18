@@ -90,6 +90,54 @@ public sealed class ReportServerF5bAdminApiTests
     }
 
     [Fact]
+    public async Task Permissions_GrantDenyOnEfBackend_Returns400_AndWritesNoAclAudit()
+    {
+        await using var host = await AdminTestApp.CreateAsync(useEfSecurityStores: true);
+        var api = new TempoReportServerClient(host.CreateApiKeyClient());
+        var folder = await api.CreateFolderAsync(new CreateReportFolderRequestDto { TenantId = TenantId, Name = "Finance" });
+
+        using var raw = host.CreateApiKeyClient();
+        var response = await raw.PostAsJsonAsync("/api/permissions", new GrantReportPermissionRequestDto
+        {
+            TenantId = TenantId,
+            FolderId = folder.FolderId,
+            SubjectKind = ReportAclSubjectKindDto.User,
+            SubjectId = "user-1",
+            Effect = ReportAclEffectDto.Deny,
+            Permissions = ReportPermissionsDto.View,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, "the EF store cannot represent Deny entries");
+
+        // Nothing was persisted and no lying "Allowed ChangeAcl" audit must have been written.
+        var entries = await api.GetFolderPermissionsAsync(TenantId, folder.FolderId);
+        entries.Should().NotContain(entry => entry.SubjectId == "user-1");
+        (await host.CountChangeAclAuditEventsAsync(TenantId)).Should().Be(0, "a failed grant must not emit an 'Allowed' audit event");
+    }
+
+    [Fact]
+    public async Task Permissions_GrantRoleAllowOnInMemoryBackend_StillSucceeds()
+    {
+        await using var host = await AdminTestApp.CreateAsync();
+        var api = new TempoReportServerClient(host.CreateApiKeyClient());
+        var folder = await api.CreateFolderAsync(new CreateReportFolderRequestDto { TenantId = TenantId, Name = "Finance" });
+
+        var granted = await api.GrantPermissionAsync(new GrantReportPermissionRequestDto
+        {
+            TenantId = TenantId,
+            FolderId = folder.FolderId,
+            SubjectKind = ReportAclSubjectKindDto.Role,
+            SubjectId = "Author",
+            Effect = ReportAclEffectDto.Allow,
+            Permissions = ReportPermissionsDto.View,
+        });
+
+        granted.SubjectKind.Should().Be(ReportAclSubjectKindDto.Role);
+        var entries = await api.GetFolderPermissionsAsync(TenantId, folder.FolderId);
+        entries.Should().Contain(entry => entry.SubjectKind == ReportAclSubjectKindDto.Role && entry.SubjectId == "Author");
+    }
+
+    [Fact]
     public async Task Resolve_ByIdAndByPath_ReturnsReportWithCurrentRevision()
     {
         await using var host = await AdminTestApp.CreateAsync();
@@ -188,7 +236,7 @@ public sealed class ReportServerF5bAdminApiTests
             _apiKey = apiKey;
         }
 
-        public static async Task<AdminTestApp> CreateAsync()
+        public static async Task<AdminTestApp> CreateAsync(bool useEfSecurityStores = false)
         {
             var connection = new SqliteConnection("Data Source=:memory:");
             await connection.OpenAsync().ConfigureAwait(false);
@@ -197,6 +245,11 @@ public sealed class ReportServerF5bAdminApiTests
             builder.WebHost.UseTestServer();
             builder.Services.AddRouting();
             builder.Services.AddTempoReportServerApi(options => options.UseSqlite(connection));
+            if (useEfSecurityStores)
+            {
+                builder.Services.UseEfReportServerSecurityStores();
+            }
+
             builder.Services.AddReportServerAuthentication(builder.Configuration);
 
             var app = builder.Build();
@@ -220,6 +273,20 @@ public sealed class ReportServerF5bAdminApiTests
             var keyStore = _app.Services.GetRequiredService<IReportApiKeyStore>();
             var created = await keyStore.CreateAsync(TenantId, "scoped-app", permissions).ConfigureAwait(false);
             return created.PlainTextKey;
+        }
+
+        public async Task<int> CountChangeAclAuditEventsAsync(string tenantId)
+        {
+            // Read the audit table directly: the EF audit query endpoint orders by DateTimeOffset,
+            // which SQLite cannot translate (that path is covered by the MsSql suite). A plain count
+            // avoids the ORDER BY while still proving no ChangeAcl event was persisted.
+            using var scope = _app.Services.CreateScope();
+            var requestContext = scope.ServiceProvider.GetRequiredService<ReportServerRequestContext>();
+            requestContext.Set(new Reporting.Abstractions.ReportExecutionContext(tenantId, "audit-probe", "en-US"));
+            var dbContext = scope.ServiceProvider.GetRequiredService<Storage.ReportServerDbContext>();
+            return await dbContext.AuditEvents
+                .CountAsync(auditEvent => auditEvent.Action == (int)ReportAuditAction.ChangeAcl)
+                .ConfigureAwait(false);
         }
 
         public HttpClient CreateApiKeyClient() => CreateClientWithKey(_apiKey);

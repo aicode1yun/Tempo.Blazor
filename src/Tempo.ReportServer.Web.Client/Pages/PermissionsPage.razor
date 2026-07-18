@@ -54,6 +54,10 @@
                     <input data-testid="permission-deny" type="checkbox" checked="@_isDeny" @onchange="HandleDenyChange" />
                     <span>Explicit deny</span>
                 </label>
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <p class="rs-status rs-status--deny" data-testid="permission-error" role="alert">@_errorMessage</p>
+                }
                 <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Shield" data-testid="permission-add" OnClick="GrantAsync">
                     Add ACL entry
                 </TmButton>
@@ -109,9 +113,10 @@
     private IReadOnlyList<ReportFolderAclEntryDto> _entries = [];
 
     private string _folderId = string.Empty;
-    private ReportAclSubjectKindDto _subjectKind = ReportAclSubjectKindDto.Role;
+    private ReportAclSubjectKindDto _subjectKind = ReportAclSubjectKindDto.User;
     private string _subject = "embedded-apps";
     private bool _isDeny;
+    private string? _errorMessage;
     private readonly HashSet<ReportPermissionsDto> _scopes = [ReportPermissionsDto.View, ReportPermissionsDto.Render];
 
     /// <inheritdoc />
@@ -151,21 +156,34 @@
 
     private async Task GrantAsync()
     {
+        _errorMessage = null;
         if (string.IsNullOrWhiteSpace(_folderId) || string.IsNullOrWhiteSpace(_subject))
         {
             return;
         }
 
         var permissions = _scopes.Aggregate(ReportPermissionsDto.None, (current, scope) => current | scope);
-        await Client.GrantPermissionAsync(new GrantReportPermissionRequestDto
+        try
         {
-            TenantId = Session.CurrentTenantId,
-            FolderId = _folderId,
-            SubjectKind = _subjectKind,
-            SubjectId = _subject.Trim(),
-            Effect = _isDeny ? ReportAclEffectDto.Deny : ReportAclEffectDto.Allow,
-            Permissions = permissions,
-        });
+            await Client.GrantPermissionAsync(new GrantReportPermissionRequestDto
+            {
+                TenantId = Session.CurrentTenantId,
+                FolderId = _folderId,
+                SubjectKind = _subjectKind,
+                SubjectId = _subject.Trim(),
+                Effect = _isDeny ? ReportAclEffectDto.Deny : ReportAclEffectDto.Allow,
+                Permissions = permissions,
+            });
+        }
+        catch (HttpRequestException ex)
+        {
+            // The configured backend may reject the subject/effect combination (the EF persistence
+            // store is allow-only, user-subject-only). Surface it instead of failing silently.
+            _errorMessage = ex.StatusCode == System.Net.HttpStatusCode.BadRequest
+                ? "This grant was rejected by the server. The configured permission store may support only User-subject Allow grants (Role/Application subjects and Deny effects are not persisted)."
+                : $"The grant could not be saved: {ex.Message}";
+            return;
+        }
 
         await ReloadEntriesAsync();
     }

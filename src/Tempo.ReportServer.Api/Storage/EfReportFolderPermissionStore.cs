@@ -108,7 +108,9 @@ public sealed class EfReportFolderPermissionStore : IReportPermissionStore
         ArgumentNullException.ThrowIfNull(entry);
         if (entry.SubjectKind != ReportAclSubjectKind.User || entry.Effect != ReportAclEffect.Allow)
         {
-            return;
+            throw new ReportPermissionUnsupportedException(
+                "EF permission store supports only User-subject Allow grants; " +
+                $"'{entry.SubjectKind}' subjects and '{entry.Effect}' effects are not supported.");
         }
 
         await GrantAsync(folderId, entry.SubjectId, RoleForPermissions(entry.Permissions), context).ConfigureAwait(false);
@@ -143,7 +145,8 @@ public sealed class EfReportFolderPermissionStore : IReportPermissionStore
     {
         if (subjectKind != ReportAclSubjectKind.User)
         {
-            return;
+            throw new ReportPermissionUnsupportedException(
+                $"EF permission store supports only User-subject grants; '{subjectKind}' subjects are not supported.");
         }
 
         var tenantId = context.TenantId;
