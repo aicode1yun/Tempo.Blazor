@@ -326,9 +326,17 @@ public static class DocumentEditorEndpoints
             DocumentPdfExportRequest request,
             DemoDocumentPdfExportProvider pdfProvider,
             DemoDocumentPdfExportCache exportCache,
+            HttpContext httpContext,
             CancellationToken cancellationToken) =>
         {
             request.DocumentId = documentId;
+            if (request.Options?.ForensicWatermark is { } forensic)
+            {
+                // Server-known facts win: the client cannot spoof the export IP or timestamp.
+                forensic.IpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? forensic.IpAddress;
+                forensic.Timestamp = DateTimeOffset.UtcNow;
+            }
+
             var exported = await pdfProvider.ExportPdfAsync(request, cancellationToken);
             exportCache.Store(documentId, exported);
             return Results.Ok(exported);

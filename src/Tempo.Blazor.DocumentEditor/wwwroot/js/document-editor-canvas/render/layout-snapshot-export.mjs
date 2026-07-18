@@ -27,7 +27,7 @@ const EXCLUDED_TYPES = new Set([
 
 const TEXT_TYPES = new Set([
     'textRun', 'field', 'listLabel', 'lineNumber', 'noteMarker', 'imageCaption',
-    'drawingText', 'watermarkText',
+    'drawingText',
 ]);
 
 const RECT_TYPES = new Set(['tableBox', 'tableCell', 'drawingRun', 'noteSeparator']);
@@ -184,6 +184,10 @@ function translateCommand(command) {
         return textCommand(command);
     }
 
+    if (type === 'watermarkText') {
+        return watermarkTextCommand(command);
+    }
+
     if (type === 'mathEquation') {
         return mathCommand(command);
     }
@@ -247,6 +251,82 @@ function textCommand(command) {
         highlight: style.backgroundColor ? String(style.backgroundColor) : null,
         rotation: Number(command.rotation) || 0,
     })];
+}
+
+// The canvas paints watermarks centred at the page middle (textAlign center + baseline middle,
+// globalAlpha = opacity) and rotates about the centre. The PDF backend draws left-aligned from
+// (x, baseline) and rotates about that point — so the start point is the page centre moved by
+// R(rotation)·(−estWidth/2, +0.35·fontSize), and the opacity folds into the fill colour's alpha.
+function watermarkTextCommand(command) {
+    const text = String(command.text || '');
+    if (text.length === 0) {
+        return [];
+    }
+
+    const style = command.style || {};
+    const fontSize = Number(style.fontSize) || 84;
+    const rotation = Number(command.rotation) || 0;
+    const opacity = Math.max(0, Math.min(1, Number(command.opacity ?? 0.16) || 0.16));
+    const cx = Number(command.x) || 0;
+    const cy = Number(command.y) || 0;
+    const maxWidth = Number(command.width) || Infinity;
+    const estimatedWidth = Math.min(maxWidth, text.length * fontSize * 0.6);
+    const theta = rotation * Math.PI / 180;
+    const localX = -estimatedWidth / 2;
+    const localY = fontSize * 0.35;
+    const startX = cx + localX * Math.cos(theta) - localY * Math.sin(theta);
+    const startBaseline = cy + localX * Math.sin(theta) + localY * Math.cos(theta);
+
+    return [compact({
+        id: String(command.id || ''),
+        type: 'text',
+        sourceType: 'watermarkText',
+        x: round(startX),
+        y: round(startBaseline - fontSize),
+        width: 0,
+        height: round(fontSize * 1.2),
+        baseline: round(startBaseline),
+        text,
+        fontFamily: String(style.fontFamily || ''),
+        fontSize: round(fontSize),
+        fontWeight: String(style.fontWeight || '700'),
+        fontStyle: String(style.fontStyle || 'normal'),
+        fill: colorWithOpacity(String(style.textColor || style.color || 'rgba(71, 85, 105, 0.52)'), opacity),
+        rotation,
+    })];
+}
+
+// Combines a CSS colour with an extra opacity factor into an rgba() string.
+function colorWithOpacity(color, opacity) {
+    const value = color.trim();
+    const rgbaMatch = value.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([0-9.]+)\s*)?\)$/i);
+    if (rgbaMatch) {
+        const alpha = (rgbaMatch[4] !== undefined ? Number(rgbaMatch[4]) : 1) * opacity;
+        return `rgba(${rgbaMatch[1]}, ${rgbaMatch[2]}, ${rgbaMatch[3]}, ${round4(alpha)})`;
+    }
+
+    const hexMatch = value.match(/^#([0-9a-f]{6})([0-9a-f]{2})?$/i);
+    if (hexMatch) {
+        const r = parseInt(hexMatch[1].slice(0, 2), 16);
+        const g = parseInt(hexMatch[1].slice(2, 4), 16);
+        const b = parseInt(hexMatch[1].slice(4, 6), 16);
+        const baseAlpha = hexMatch[2] ? parseInt(hexMatch[2], 16) / 255 : 1;
+        return `rgba(${r}, ${g}, ${b}, ${round4(baseAlpha * opacity)})`;
+    }
+
+    const shortHexMatch = value.match(/^#([0-9a-f]{3})$/i);
+    if (shortHexMatch) {
+        const r = parseInt(shortHexMatch[1][0] + shortHexMatch[1][0], 16);
+        const g = parseInt(shortHexMatch[1][1] + shortHexMatch[1][1], 16);
+        const b = parseInt(shortHexMatch[1][2] + shortHexMatch[1][2], 16);
+        return `rgba(${r}, ${g}, ${b}, ${round4(opacity)})`;
+    }
+
+    return value;
+}
+
+function round4(value) {
+    return Math.round(value * 10000) / 10000;
 }
 
 function mathCommand(command) {
@@ -317,7 +397,7 @@ function tabLeaderCommand(command) {
 }
 
 function imageCommand(command) {
-    const url = String(command.url || command.src || command.source || '');
+    const url = String(command.imageUrl || command.url || command.src || command.source || '');
     const base = {
         id: String(command.id || ''),
         x: round(Number(command.x) || 0),

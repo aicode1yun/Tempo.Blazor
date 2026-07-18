@@ -6492,6 +6492,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentPdfForensicWatermarkOptions",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Models",
+      "description": "Forensic watermark options for PDF export (DocumentPdfExportOptions.ForensicWatermark and the TmDocumentEditor.PdfForensicWatermark parameter): stamps every exported page diagonally with the exporting user's name, the export timestamp and the client IP. Hosts should fill IpAddress and Timestamp server-side so the stamp cannot be spoofed by the client; Opacity and Rotation control the stamp appearance.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentPdfExport.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentPdfPageOrientation",
       "kind": "Enum",
       "category": "Document Editor",
@@ -35132,11 +35142,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1409,
-    "manualItemCount": 1409,
-    "generatedItemCount": 1392,
+    "itemCount": 1410,
+    "manualItemCount": 1410,
+    "generatedItemCount": 1393,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1392
+    "publicApiTypeCount": 1393
   }
 }

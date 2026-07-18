@@ -132,6 +132,13 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     /// <summary>Optional host provider used to export the current document as PDF.</summary>
     [Parameter] public IDocumentPdfExportProvider? PdfExportProvider { get; set; }
 
+    /// <summary>
+    /// Optional forensic watermark stamped on every page of PDF exports (user name, export time,
+    /// IP). The user name defaults to <see cref="Author"/>; hosts should fill the IP address and
+    /// timestamp server-side so the stamp cannot be spoofed by the client.
+    /// </summary>
+    [Parameter] public DocumentPdfForensicWatermarkOptions? PdfForensicWatermark { get; set; }
+
     /// <summary>Optional host provider used to import and export external document formats.</summary>
     [Parameter] public IDocumentFormatProvider? FormatProvider { get; set; }
 
@@ -1513,7 +1520,12 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
             var result = await CreateCanvasExportBridge().ExportPdfAsync(
                 PdfExportProvider,
                 Author,
-                documentToExport => CreatePdfExportOptions(documentToExport, _reviewDisplayMode),
+                documentToExport =>
+                {
+                    var options = CreatePdfExportOptions(documentToExport, _reviewDisplayMode);
+                    options.ForensicWatermark = CreateForensicWatermarkOptions();
+                    return options;
+                },
                 layoutSnapshotProvider: async _ => _canvasHost is null ? null : await _canvasHost.RequestLayoutSnapshotJsonAsync());
 
             if (result.Content.Length == 0)
@@ -1855,6 +1867,22 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
                 Convert.ToBase64String(content));
         }
     }
+
+    // Clones the host-supplied forensic options and fills the user name from the editor author, so
+    // the host only has to opt in — identity defaults come from the editor context.
+    private DocumentPdfForensicWatermarkOptions? CreateForensicWatermarkOptions()
+        => PdfForensicWatermark is null
+            ? null
+            : new DocumentPdfForensicWatermarkOptions
+            {
+                UserName = string.IsNullOrWhiteSpace(PdfForensicWatermark.UserName)
+                    ? Author?.DisplayName
+                    : PdfForensicWatermark.UserName,
+                IpAddress = PdfForensicWatermark.IpAddress,
+                Timestamp = PdfForensicWatermark.Timestamp,
+                Opacity = PdfForensicWatermark.Opacity,
+                Rotation = PdfForensicWatermark.Rotation,
+            };
 
     private static DocumentPdfExportOptions CreatePdfExportOptions(
         DocumentEditorDocument document,

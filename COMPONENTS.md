@@ -6440,6 +6440,18 @@ s reálnými `w:ins`/`w:del` (autor + datum), který Word i zpětný import čto
 | `DocumentRedlineDocxExporter.ExportAsync(result, options?, ct)` | Builder + standardní DOCX exportér → bytes s w:ins/w:del. (DocumentFormats, server.) |
 | `TmDocumentCompareDialog.OnExportRedline` | `EventCallback<DocumentCompareResult>` — zobrazí exportní tlačítko a předá výsledek hostu. |
 
+**Vodoznak v PDF:** `DocumentWatermarkOptions` (PageBackground.Watermark — text/obrázek,
+diagonála, opacita, barva) se tiskne na každou stránku exportu shodně s canvasem: print
+snapshot překládá `watermarkText` na rotovaný text vycentrovaný na střed stránky s alfou
+kombinovanou z barvy × opacity (bez roztažení glyfů) a `watermarkImage` přes `imageUrl`.
+**Forenzní varianta:** `DocumentPdfExportOptions.ForensicWatermark`
+(`DocumentPdfForensicWatermarkOptions` — jméno + čas + IP, opacita, rotace) orazítkuje
+každou stránku diagonálním údajem `jméno • čas UTC • IP`; editor má aditivní parametr
+`TmDocumentEditor.PdfForensicWatermark` (jméno defaultuje z `Author`) a host má IP + čas
+doplnit na serveru (viz POST export endpoint v Demo.Api — klient je nemůže podvrhnout).
+Renderer vystavuje `TempoDocumentPdfRenderer.BuildReportSnapshot(request)` pro inspekci
+přesně toho, co se vykreslí.
+
 **Redline v PDF:** dokument s revizemi otevřený v editoru se v AllMarkup režimu exportuje
 do PDF s redline stylingem — vložení modře podtržené, smazání červeně přeškrtnuté,
 u levého okraje change bar a u pravého okraje poznámka `+/−/± autor` (print snapshot

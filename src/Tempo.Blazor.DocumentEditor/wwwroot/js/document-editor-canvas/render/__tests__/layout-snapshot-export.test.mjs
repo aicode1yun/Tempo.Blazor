@@ -125,6 +125,88 @@ test('text commands without an explicit font size derive it from the line height
         `font size must derive from the 14px line height (~11.2px), got ${caption.fontSize}`);
 });
 
+// ── Watermark print translation ──────────────────────────────────────────────────────────────────
+
+test('watermarkText prints centered under rotation with opacity-combined color and no stretch', () => {
+    const snapshot = translateDisplayListToLayoutSnapshot({
+        pages: [{ index: 0, width: 794, height: 1123 }],
+        commands: [{
+            id: 'page-0-watermark',
+            type: 'watermarkText',
+            pageIndex: 0,
+            text: 'CONFIDENTIAL',
+            x: 397,
+            y: 561.5,
+            width: 619,
+            height: 96,
+            baseline: 0,
+            rotation: -32,
+            opacity: 0.5,
+            style: { fontFamily: 'Aptos, Arial, sans-serif', fontSize: 84, fontWeight: 700, textColor: '#475569', textAlign: 'center' },
+        }],
+    });
+
+    const watermark = snapshot.pages[0].commands.find(command => command.sourceType === 'watermarkText');
+    assert.ok(watermark, 'watermark must print');
+    assert.equal(watermark.type, 'text');
+    assert.equal(watermark.text, 'CONFIDENTIAL');
+    assert.equal(watermark.rotation, -32);
+    assert.ok(!watermark.width, 'no width → the PDF backend must not stretch the glyphs');
+    // #475569 at opacity 0.5 → rgba with combined alpha.
+    assert.equal(watermark.fill, 'rgba(71, 85, 105, 0.5)');
+    // Centered under rotation: the left-baseline start point sits left of and below the page centre
+    // for a negative rotation (x < cx, baseline > cy).
+    assert.ok(watermark.x < 397, `start x must sit left of centre (got ${watermark.x})`);
+    assert.ok(watermark.baseline > 561.5, `baseline must sit below centre for −32° (got ${watermark.baseline})`);
+    assert.equal(watermark.fontSize, 84);
+    assert.equal(watermark.fontWeight, '700');
+});
+
+test('watermarkText combines rgba colors with the command opacity', () => {
+    const snapshot = translateDisplayListToLayoutSnapshot({
+        pages: [{ index: 0, width: 794, height: 1123 }],
+        commands: [{
+            id: 'page-0-watermark',
+            type: 'watermarkText',
+            pageIndex: 0,
+            text: 'E12',
+            x: 397,
+            y: 561.5,
+            width: 619,
+            height: 96,
+            rotation: -32,
+            opacity: 0.18,
+            style: { fontSize: 84, textColor: 'rgba(37, 99, 235, 0.46)' },
+        }],
+    });
+
+    const watermark = snapshot.pages[0].commands.find(command => command.sourceType === 'watermarkText');
+    // 0.46 × 0.18 ≈ 0.083 — both alphas multiply.
+    const alpha = Number(watermark.fill.match(/rgba\(37, 99, 235, ([0-9.]+)\)/)[1]);
+    assert.ok(Math.abs(alpha - 0.0828) < 0.001, `combined alpha must be ≈0.0828 (got ${watermark.fill})`);
+});
+
+test('watermarkImage prints as image via its imageUrl', () => {
+    const snapshot = translateDisplayListToLayoutSnapshot({
+        pages: [{ index: 0, width: 794, height: 1123 }],
+        commands: [{
+            id: 'page-0-watermark-image',
+            type: 'watermarkImage',
+            pageIndex: 0,
+            imageUrl: 'data:image/png;base64,AAA=',
+            x: 200,
+            y: 300,
+            width: 300,
+            height: 200,
+            opacity: 0.2,
+        }],
+    });
+
+    const image = snapshot.pages[0].commands.find(command => command.type === 'image');
+    assert.ok(image, 'image watermark must print');
+    assert.equal(image.source, 'data:image/png;base64,AAA=');
+});
+
 // ── Redline (tracked changes) print styling ──────────────────────────────────────────────────────
 
 function createRedlineDisplayList() {

@@ -38,6 +38,7 @@
                           SuggestionProvider="@(SuggestionMode ? SuggestionProviderInstance : null)"
                           SuggestionsEnabled="@SuggestionMode"
 	                      ShowToolbar="@ShowToolbar"
+                          PdfForensicWatermark="@(ForensicPdf ? new DocumentPdfForensicWatermarkOptions() : null)"
                       ShowDebugTools="true"
                       ShowComments="true"
                       CanDeleteOwnComments="true"
@@ -75,6 +76,11 @@
     [Parameter]
     [SupplyParameterFromQuery(Name = "failSaves")]
     public bool FailSaves { get; set; }
+
+    /// <summary>Opts PDF exports into the forensic watermark (name + time + IP filled server-side).</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "forensicPdf")]
+    public bool ForensicPdf { get; set; }
 
     /// <summary>Whether the demo provider should fail document loads through the editor error boundary.</summary>
     [Parameter]

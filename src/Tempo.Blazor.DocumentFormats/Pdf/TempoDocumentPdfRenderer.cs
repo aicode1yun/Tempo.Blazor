@@ -41,12 +41,82 @@ public sealed class TempoDocumentPdfRenderer
                 nameof(request));
         }
 
-        var snapshot = TranslateLayoutSnapshot(request.LayoutSnapshotJson);
-        return _pdfRenderer.Render(snapshot, new ReportPdfRendererOptions
+        return _pdfRenderer.Render(BuildReportSnapshot(request), new ReportPdfRendererOptions
         {
             Fonts = Options.Fonts,
             DefaultFontFamily = Options.DefaultFontFamily,
         });
+    }
+
+    /// <summary>
+    /// Builds the report snapshot the PDF backend will render: the translated layout snapshot plus
+    /// the per-page forensic watermark stamp when the request opts in. Exposed so hosts and tests
+    /// can inspect exactly what will be drawn.
+    /// </summary>
+    public ReportSnapshot BuildReportSnapshot(DocumentPdfExportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (string.IsNullOrWhiteSpace(request.LayoutSnapshotJson))
+        {
+            throw new ArgumentException(
+                "DocumentPdfExportRequest.LayoutSnapshotJson is required: the production renderer reuses the canvas layout snapshot for WYSIWYG parity.",
+                nameof(request));
+        }
+
+        var snapshot = TranslateLayoutSnapshot(request.LayoutSnapshotJson);
+        var forensic = request.Options?.ForensicWatermark;
+        if (forensic is not null)
+        {
+            ApplyForensicWatermark(snapshot, forensic);
+        }
+
+        return snapshot;
+    }
+
+    private static void ApplyForensicWatermark(ReportSnapshot snapshot, DocumentPdfForensicWatermarkOptions forensic)
+    {
+        var timestamp = forensic.Timestamp ?? DateTimeOffset.UtcNow;
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(forensic.UserName))
+        {
+            parts.Add(forensic.UserName.Trim());
+        }
+
+        parts.Add(timestamp.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'", System.Globalization.CultureInfo.InvariantCulture));
+        if (!string.IsNullOrWhiteSpace(forensic.IpAddress))
+        {
+            parts.Add(forensic.IpAddress.Trim());
+        }
+
+        var text = string.Join(" • ", parts);
+        var opacity = Math.Clamp(forensic.Opacity, 0, 1);
+        var fill = string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"rgba(71, 85, 105, {opacity})");
+
+        foreach (var page in snapshot.Pages)
+        {
+            // Same centring math the watermark translation uses: the backend rotates about the
+            // left-baseline start point, so shift the page centre by R(θ)·(−width/2, +0.35·size).
+            var fontSize = Math.Max(14, Math.Min(28, page.Width / 34));
+            var estimatedWidth = text.Length * fontSize * 0.6;
+            var theta = forensic.Rotation * Math.PI / 180;
+            var startX = page.Width / 2 + (-estimatedWidth / 2) * Math.Cos(theta) - fontSize * 0.35 * Math.Sin(theta);
+            var startBaseline = page.Height / 2 + (-estimatedWidth / 2) * Math.Sin(theta) + fontSize * 0.35 * Math.Cos(theta);
+
+            page.Commands.Add(ReportSnapshotCommand.TextRun(
+                $"forensic-watermark-{page.PageNumber}",
+                text,
+                startX,
+                startBaseline,
+                width: 0,
+                height: fontSize * 1.2,
+                fontFamily: "Arial",
+                fontSize: fontSize,
+                fill: fill,
+                fontWeight: "600",
+                rotation: forensic.Rotation));
+        }
     }
 
     /// <summary>

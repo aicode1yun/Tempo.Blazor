@@ -131,6 +131,65 @@ public class TempoDocumentPdfRendererTests
         textRun.FontFamily.Should().Be("Aptos", "the first family of the CSS stack is used");
     }
 
+    // ── Forensic watermark ──────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void BuildReportSnapshot_WithForensicWatermark_StampsEveryPageWithUserTimeAndIp()
+    {
+        var request = CreateRequest(TwoPageSnapshotJson());
+        request.Options.ForensicWatermark = new DocumentPdfForensicWatermarkOptions
+        {
+            UserName = "Jan Novák",
+            IpAddress = "10.0.0.7",
+            Timestamp = new DateTimeOffset(2026, 7, 18, 12, 0, 0, TimeSpan.Zero),
+            Opacity = 0.2,
+        };
+
+        var snapshot = new TempoDocumentPdfRenderer().BuildReportSnapshot(request);
+
+        snapshot.Pages.Should().HaveCount(2);
+        foreach (var page in snapshot.Pages)
+        {
+            var stamp = page.Commands.LastOrDefault(command =>
+                command.Type == Tempo.Reporting.Engine.Snapshot.ReportSnapshotCommandType.TextRun
+                && command.Text != null
+                && command.Text.Contains("Jan Novák"));
+            stamp.Should().NotBeNull("every page must carry the forensic stamp");
+            stamp!.Text.Should().Contain("10.0.0.7", "the stamp carries the client IP");
+            stamp.Text.Should().Contain("2026-07-18 12:00", "the stamp carries the timestamp");
+            stamp.Rotation.Should().NotBe(0, "the stamp prints diagonally");
+            stamp.Fill.Should().StartWith("rgba(", "the stamp is semi-transparent");
+            stamp.Fill.Should().Contain("0.2");
+        }
+    }
+
+    [Fact]
+    public void BuildReportSnapshot_WithoutForensicWatermark_AddsNoStamp()
+    {
+        var snapshot = new TempoDocumentPdfRenderer().BuildReportSnapshot(CreateRequest(TwoPageSnapshotJson()));
+
+        snapshot.Pages.SelectMany(page => page.Commands)
+            .Should().NotContain(command => command.Text != null && command.Text.Contains("•"),
+                "no forensic stamp without explicit opt-in");
+    }
+
+    [Fact]
+    public void Render_WithForensicWatermark_StillProducesValidPdf()
+    {
+        var request = CreateRequest(TwoPageSnapshotJson());
+        request.Options.ForensicWatermark = new DocumentPdfForensicWatermarkOptions
+        {
+            UserName = "Bedřich Šťastný",
+            IpAddress = "192.168.1.20",
+            Timestamp = new DateTimeOffset(2026, 7, 18, 12, 0, 0, TimeSpan.Zero),
+        };
+
+        var pdf = new TempoDocumentPdfRenderer().Render(request);
+
+        Encoding.ASCII.GetString(pdf, 0, 5).Should().Be("%PDF-");
+        ExtractMediaBoxes(Encoding.Latin1.GetString(pdf)).Should().HaveCount(2);
+    }
+
     // ── Parity against a snapshot produced by the real canvas engine exporter ──────────────────
 
     [Fact]

@@ -4788,6 +4788,12 @@
           "description": "Optional host provider used to export the current document as PDF."
         },
         {
+          "name": "PdfForensicWatermark",
+          "type": "DocumentPdfForensicWatermarkOptions?",
+          "isRequired": false,
+          "description": "Optional forensic watermark stamped on every page of PDF exports (user name, export time, IP). The user name defaults to ; hosts should fill the IP address and timestamp server-side so the stamp cannot be spoofed by the client."
+        },
+        {
           "name": "Permissions",
           "type": "DocumentEditorPermissions",
           "isRequired": true,

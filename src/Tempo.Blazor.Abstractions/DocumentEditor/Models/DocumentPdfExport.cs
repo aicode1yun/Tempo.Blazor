@@ -41,6 +41,32 @@ public sealed class DocumentPdfExportOptions
 
     /// <summary>Page setup used by the PDF renderer.</summary>
     public DocumentPdfPageSetupOptions PageSetup { get; set; } = new();
+
+    /// <summary>
+    /// Optional forensic watermark stamped on every exported page (reader name, export time, IP).
+    /// Null (the default) exports without a forensic stamp; hosts should fill server-known fields
+    /// (IP address, timestamp) server-side so the stamp cannot be spoofed by the client.
+    /// </summary>
+    public DocumentPdfForensicWatermarkOptions? ForensicWatermark { get; set; }
+}
+
+/// <summary>Forensic watermark options for PDF export: identifies who exported the document and when.</summary>
+public sealed class DocumentPdfForensicWatermarkOptions
+{
+    /// <summary>Display name of the exporting user.</summary>
+    public string? UserName { get; set; }
+
+    /// <summary>Client IP address (fill server-side).</summary>
+    public string? IpAddress { get; set; }
+
+    /// <summary>Export timestamp; null lets the renderer stamp the current UTC time.</summary>
+    public DateTimeOffset? Timestamp { get; set; }
+
+    /// <summary>Stamp opacity from 0 to 1.</summary>
+    public double Opacity { get; set; } = 0.14;
+
+    /// <summary>Stamp rotation in degrees.</summary>
+    public double Rotation { get; set; } = -36;
 }
 
 /// <summary>Page setup options for PDF export.</summary>
