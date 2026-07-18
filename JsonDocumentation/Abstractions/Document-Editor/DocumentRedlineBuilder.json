@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentRedlineBuilder",
+  "kind": "Class",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Turns a view-only DocumentCompareResult into a tracked-changes 'redline' document: word-level diff segments become insertion/deletion revision runs, added/removed blocks become whole-block insertions/deletions (removed blocks are woven back at their base position), and formatting-only changes are recorded as formatting revisions. Output is an ordinary document, so the DOCX exporter (w:ins/w:del), the canvas track-changes UI and the PDF pipeline consume it without new model concepts. Deterministic for identical inputs when a fixed DocumentRedlineOptions.Timestamp is supplied.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentRedlineBuilder.cs",
+  "documentationStatus": "generated"
+}

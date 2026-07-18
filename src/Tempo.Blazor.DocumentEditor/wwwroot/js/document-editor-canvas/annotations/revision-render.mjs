@@ -317,7 +317,7 @@ function normalizeRange(range = {}) {
     };
 }
 
-function normalizeRevisionType(value) {
+export function normalizeRevisionType(value) {
     const normalized = String(value || 'insertion').toLowerCase();
     if (normalized === 'deletion' || normalized === '1') {
         return 'deletion';

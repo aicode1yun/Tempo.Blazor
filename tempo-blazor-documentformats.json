@@ -32,7 +32,8 @@
       "Tempo.Blazor.DocumentFormats.Markdown",
       "Tempo.Blazor.DocumentFormats.Notion",
       "Tempo.Blazor.DocumentFormats.Odt",
-      "Tempo.Blazor.DocumentFormats.Pdf"
+      "Tempo.Blazor.DocumentFormats.Pdf",
+      "Tempo.Blazor.DocumentFormats.Redline"
     ]
   },
   "gettingStarted": {
@@ -744,6 +745,16 @@
       "packageId": "Tempo.Blazor.DocumentFormats",
       "sourcePath": "src/Tempo.Blazor.DocumentFormats/Pdf/TempoDocumentPdfRenderer.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentRedlineDocxExporter",
+      "kind": "Class",
+      "category": "Redline",
+      "namespace": "Tempo.Blazor.DocumentFormats.Redline",
+      "description": "Exports a DocumentCompareResult as a redline DOCX: builds the tracked-changes document via DocumentRedlineBuilder and writes it with the standard DOCX exporter, whose revision support emits real w:ins/w:del elements with author and date — Word and the DOCX importer see reviewable tracked changes.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Redline/DocumentRedlineDocxExporter.cs",
+      "documentationStatus": "merged"
     }
   ],
   "libraryExamples": [
@@ -754,11 +765,11 @@
     }
   ],
   "summary": {
-    "itemCount": 42,
-    "manualItemCount": 42,
-    "generatedItemCount": 42,
+    "itemCount": 43,
+    "manualItemCount": 43,
+    "generatedItemCount": 43,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 42
+    "publicApiTypeCount": 43
   }
 }

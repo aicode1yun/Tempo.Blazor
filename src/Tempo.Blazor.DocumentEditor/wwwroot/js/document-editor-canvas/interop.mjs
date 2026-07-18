@@ -597,8 +597,13 @@ export function exportPageImages(handle, optionsJson) {
 // snapshot the server PDF renderer consumes. WYSIWYG parity comes from reusing the live layout.
 export function getLayoutSnapshotJson(handle) {
     const state = getInstance(handle);
-    const displayList = state.engine.getSnapshot().render?.displayList;
-    return JSON.stringify(translateDisplayListToLayoutSnapshot(displayList || {}));
+    const snapshot = state.engine.getSnapshot();
+    const displayList = snapshot.render?.displayList;
+    return JSON.stringify(translateDisplayListToLayoutSnapshot(displayList || {}, {
+        // Redline printing: tracked changes style the PDF exactly like the canvas markup view.
+        revisions: snapshot.model?.revisions,
+        reviewDisplayMode: state.engine.reviewDisplayMode,
+    }));
 }
 
 // Single-page variant so the host can paginate the export and avoid very large interop strings.

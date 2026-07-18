@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentRedlineDocxExporter",
+  "kind": "Class",
+  "category": "Redline",
+  "namespace": "Tempo.Blazor.DocumentFormats.Redline",
+  "description": "Exports a DocumentCompareResult as a redline DOCX: builds the tracked-changes document via DocumentRedlineBuilder and writes it with the standard DOCX exporter, whose revision support emits real w:ins/w:del elements with author and date — Word and the DOCX importer see reviewable tracked changes.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Redline/DocumentRedlineDocxExporter.cs",
+  "documentationStatus": "generated"
+}

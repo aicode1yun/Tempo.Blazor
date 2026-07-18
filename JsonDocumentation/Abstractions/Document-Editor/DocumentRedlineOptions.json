@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentRedlineOptions",
+  "kind": "Class",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Options for DocumentRedlineBuilder: the author attributed to generated revisions and the timestamp stamped on them (inject a fixed value for deterministic output).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentRedlineBuilder.cs",
+  "documentationStatus": "generated"
+}

@@ -4442,6 +4442,12 @@
           "description": "Raised when comparison succeeds."
         },
         {
+          "name": "OnExportRedline",
+          "type": "EventCallback<DocumentCompareResult>",
+          "isRequired": false,
+          "description": "Raised when the user asks to export the current comparison as a redline (tracked-changes) document. The button renders only when the callback is wired and the result has changes."
+        },
+        {
           "name": "UseLocalComparisonFallback",
           "type": "bool",
           "isRequired": false,

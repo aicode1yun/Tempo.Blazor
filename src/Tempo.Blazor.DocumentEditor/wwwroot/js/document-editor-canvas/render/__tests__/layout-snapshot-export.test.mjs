@@ -125,6 +125,93 @@ test('text commands without an explicit font size derive it from the line height
         `font size must derive from the 14px line height (~11.2px), got ${caption.fontSize}`);
 });
 
+// ── Redline (tracked changes) print styling ──────────────────────────────────────────────────────
+
+function createRedlineDisplayList() {
+    return {
+        pages: [{ index: 0, width: 794, height: 1123 }],
+        commands: [
+            textRunCommand('run-del', 'r1', 'smazaný text', 96, 120),
+            { id: 'run-del-revision', type: 'revisionAnchor', pageIndex: 0, runId: 'r1', revisionId: 'rev-del', x: 96, width: 90, height: 16 },
+            textRunCommand('run-ins', 'r2', 'vložený text', 200, 120),
+            { id: 'run-ins-revision', type: 'revisionAnchor', pageIndex: 0, runId: 'r2', revisionId: 'rev-ins', x: 200, width: 90, height: 16 },
+            textRunCommand('run-plain', 'r3', 'beze změny', 300, 160),
+        ],
+    };
+}
+
+function textRunCommand(id, runId, text, x, baseline) {
+    return {
+        id,
+        type: 'textRun',
+        pageIndex: 0,
+        runId,
+        text,
+        x,
+        baseline,
+        width: 90,
+        height: 16,
+        style: { fontFamily: 'Arial', fontSize: 12, color: '#111827' },
+    };
+}
+
+const REDLINE_OPTIONS = {
+    reviewDisplayMode: 'allMarkup',
+    revisions: [
+        { id: 'rev-del', type: 1, author: { displayName: 'Jana' } },
+        { id: 'rev-ins', type: 'insertion', author: { displayName: 'Jana' } },
+    ],
+};
+
+test('revision-marked runs print as redline: deletions struck through red, insertions underlined blue', () => {
+    const snapshot = translateDisplayListToLayoutSnapshot(createRedlineDisplayList(), REDLINE_OPTIONS);
+    const commands = snapshot.pages[0].commands;
+
+    const deleted = commands.find(command => command.id === 'run-del');
+    assert.equal(deleted.strikeThrough, true, 'deletion must be struck through');
+    assert.equal(deleted.fill, '#dc2626', 'deletion prints red');
+
+    const inserted = commands.find(command => command.id === 'run-ins');
+    assert.equal(inserted.underline, true, 'insertion must be underlined');
+    assert.equal(inserted.fill, '#1d4ed8', 'insertion prints blue');
+
+    const plain = commands.find(command => command.id === 'run-plain');
+    assert.ok(!plain.underline && !plain.strikeThrough, 'unmarked text keeps its style');
+    assert.equal(plain.fill, '#111827');
+});
+
+test('redline pages carry margin change bars and author notes for each revision', () => {
+    const snapshot = translateDisplayListToLayoutSnapshotWithLayout();
+
+    function translateDisplayListToLayoutSnapshotWithLayout() {
+        return translateDisplayListToLayoutSnapshot(createRedlineDisplayList(), REDLINE_OPTIONS);
+    }
+
+    const commands = snapshot.pages[0].commands;
+    const bars = commands.filter(command => command.sourceType === 'revisionBar');
+    assert.equal(bars.length, 2, 'one change bar per revised run');
+    assert.ok(bars.every(bar => bar.type === 'line' && bar.x < 96), 'bars sit in the left margin');
+    assert.ok(bars.some(bar => bar.stroke === '#dc2626') && bars.some(bar => bar.stroke === '#1d4ed8'));
+
+    const notes = commands.filter(command => command.sourceType === 'revisionNote');
+    assert.equal(notes.length, 2, 'one margin note per revision');
+    assert.ok(notes.some(note => note.text === '− Jana'), 'deletion note carries minus + author');
+    assert.ok(notes.some(note => note.text === '+ Jana'), 'insertion note carries plus + author');
+    assert.ok(notes.every(note => note.x > 700), 'notes sit in the right margin');
+});
+
+test('redline styling is applied only in markup review modes', () => {
+    const snapshot = translateDisplayListToLayoutSnapshot(createRedlineDisplayList(), {
+        ...REDLINE_OPTIONS,
+        reviewDisplayMode: 'noMarkup',
+    });
+    const commands = snapshot.pages[0].commands;
+
+    const deleted = commands.find(command => command.id === 'run-del');
+    assert.ok(!deleted.strikeThrough, 'noMarkup prints final text without redline decoration');
+    assert.equal(commands.filter(command => command.sourceType === 'revisionBar').length, 0);
+});
+
 function createLayout() {
     return {
         pages: [

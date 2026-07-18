@@ -1,4 +1,13 @@
 import { buildDisplayList } from './display-list.mjs';
+import { normalizeReviewDisplayMode, normalizeRevisionType, REVIEW_DISPLAY_MODES } from '../annotations/revision-render.mjs';
+
+const REDLINE_COLORS = Object.freeze({
+    insertion: '#1d4ed8',
+    deletion: '#dc2626',
+    formatting: '#7c3aed',
+});
+const REDLINE_NOTE_WIDTH = 84;
+const REDLINE_BAR_X = 18;
 
 // Print/PDF layout snapshot export (schema v1).
 //
@@ -24,12 +33,18 @@ const TEXT_TYPES = new Set([
 const RECT_TYPES = new Set(['tableBox', 'tableCell', 'drawingRun', 'noteSeparator']);
 
 export function buildLayoutSnapshotExport(model, layout, options = {}) {
-    return translateDisplayListToLayoutSnapshot(buildDisplayList(model, layout, options));
+    return translateDisplayListToLayoutSnapshot(buildDisplayList(model, layout, options), {
+        revisions: model?.revisions,
+        reviewDisplayMode: options.reviewDisplayMode,
+    });
 }
 
 // Translate an already-built display list (typically the engine's LIVE one, laid out with the
 // browser's real font metrics) into the print snapshot. This is the interop entry's core.
-export function translateDisplayListToLayoutSnapshot(displayList) {
+// options.revisions + options.reviewDisplayMode enable redline printing: revision-marked runs get
+// tracked-changes styling (deletions struck through red, insertions underlined blue) plus margin
+// change bars and author notes — in markup review modes only.
+export function translateDisplayListToLayoutSnapshot(displayList, options = {}) {
     const pages = (displayList?.pages || []).map((page, index) => ({
         index: Number(page.index ?? index) || index,
         width: Number(page.width) || 0,
@@ -37,6 +52,7 @@ export function translateDisplayListToLayoutSnapshot(displayList) {
         commands: [],
     }));
     const pagesByIndex = new Map(pages.map(page => [page.index, page]));
+    const redline = createRedlineContext(displayList, options);
 
     for (const command of displayList?.commands || []) {
         if (!command || EXCLUDED_TYPES.has(command.type)) {
@@ -48,8 +64,16 @@ export function translateDisplayListToLayoutSnapshot(displayList) {
             continue;
         }
 
+        const revision = redline?.byRunId.get(String(command.runId || ''));
         for (const exported of translateCommand(command)) {
+            if (revision && exported.type === 'text') {
+                applyRedlineStyle(exported, revision);
+            }
+
             page.commands.push(exported);
+            if (revision && exported.type === 'text') {
+                pushRedlineMarginMarkers(page, exported, revision, redline);
+            }
         }
     }
 
@@ -58,6 +82,99 @@ export function translateDisplayListToLayoutSnapshot(displayList) {
         pageCount: pages.length,
         pages,
     };
+}
+
+function createRedlineContext(displayList, options) {
+    const revisions = Array.isArray(options?.revisions) ? options.revisions : [];
+    if (revisions.length === 0) {
+        return null;
+    }
+
+    const mode = normalizeReviewDisplayMode(options.reviewDisplayMode);
+    if (mode !== REVIEW_DISPLAY_MODES.allMarkup && mode !== REVIEW_DISPLAY_MODES.simpleMarkup) {
+        return null;
+    }
+
+    const byRevisionId = new Map();
+    for (const revision of revisions) {
+        const id = String(revision?.id || revision?.Id || '');
+        if (!id) {
+            continue;
+        }
+
+        byRevisionId.set(id, {
+            id,
+            type: normalizeRevisionType(revision?.type ?? revision?.Type),
+            author: String(revision?.author?.displayName || revision?.Author?.DisplayName || ''),
+        });
+    }
+
+    // revisionAnchor commands pair each revision-marked text run (by runId) with its revision.
+    const byRunId = new Map();
+    for (const command of displayList?.commands || []) {
+        if (command?.type !== 'revisionAnchor') {
+            continue;
+        }
+
+        const revision = byRevisionId.get(String(command.revisionId || ''));
+        const runId = String(command.runId || '');
+        if (revision && runId && !byRunId.has(runId)) {
+            byRunId.set(runId, revision);
+        }
+    }
+
+    return byRunId.size > 0 ? { byRunId, notedRevisions: new Set() } : null;
+}
+
+function applyRedlineStyle(exported, revision) {
+    const color = REDLINE_COLORS[revision.type] || REDLINE_COLORS.insertion;
+    if (revision.type === 'deletion') {
+        exported.strikeThrough = true;
+        exported.fill = color;
+    } else if (revision.type === 'insertion') {
+        exported.underline = true;
+        exported.fill = color;
+    }
+    // formatting revisions keep the text style — the margin bar + note carry the signal.
+}
+
+function pushRedlineMarginMarkers(page, exported, revision, redline) {
+    const color = REDLINE_COLORS[revision.type] || REDLINE_COLORS.insertion;
+    page.commands.push({
+        id: `${exported.id}-redline-bar`,
+        type: 'line',
+        sourceType: 'revisionBar',
+        x: REDLINE_BAR_X,
+        y: exported.y,
+        width: 0,
+        height: exported.height,
+        stroke: color,
+        strokeWidth: 2,
+    });
+
+    const noteKey = `${revision.id}@${page.index}`;
+    if (redline.notedRevisions.has(noteKey) || !revision.author) {
+        return;
+    }
+
+    redline.notedRevisions.add(noteKey);
+    const sign = revision.type === 'deletion' ? '−' : revision.type === 'formatting' ? '±' : '+';
+    page.commands.push({
+        id: `${revision.id}-redline-note-${page.index}`,
+        type: 'text',
+        sourceType: 'revisionNote',
+        x: Math.max(0, page.width - REDLINE_NOTE_WIDTH - 6),
+        y: exported.y,
+        width: REDLINE_NOTE_WIDTH,
+        height: 10,
+        baseline: exported.baseline ?? exported.y + 8,
+        text: `${sign} ${revision.author}`,
+        fontFamily: 'Arial',
+        fontSize: 8,
+        fontWeight: '400',
+        fontStyle: 'italic',
+        fill: color,
+    });
 }
 
 function translateCommand(command) {

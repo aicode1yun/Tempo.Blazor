@@ -6426,6 +6426,26 @@ Omezení v1: matematické rovnice se tisknou jako linearizovaný text na správn
 na nejbližší print primitivum. Demo: export v `/document-editor`, prohlížení exportu
 `/pdf-viewer?url=…/api/document-editor/{id}/export/pdf/last`.
 
+### Redline export porovnání (`DocumentRedlineBuilder` + `DocumentRedlineDocxExporter`)
+
+Dialog porovnání (`TmDocumentCompareDialog`) nabídne u výsledku se změnami tlačítko
+**„Exportovat redline (DOCX)"** (`OnExportRedline` — nový aditivní parametr; bez napojení
+se tlačítko nerenderuje). Editor výsledek převede builderem na běžný dokument se
+sledovanými změnami a odešle ho přes `IDocumentFormatProvider` — výstupem je DOCX
+s reálnými `w:ins`/`w:del` (autor + datum), který Word i zpětný import čtou jako revize.
+
+| API | Popis |
+|---|---|
+| `DocumentRedlineBuilder.Build(DocumentCompareResult, DocumentRedlineOptions?)` | Diff → dokument s revizemi: word-level segmenty jako insertion/deletion runy, přidané/odebrané bloky celoblokové (odebrané vpletené zpět na původní pozici), formátovací změny jako Formatting revize. Deterministické při fixním `Timestamp`. (Abstractions — běží i ve WASM.) |
+| `DocumentRedlineDocxExporter.ExportAsync(result, options?, ct)` | Builder + standardní DOCX exportér → bytes s w:ins/w:del. (DocumentFormats, server.) |
+| `TmDocumentCompareDialog.OnExportRedline` | `EventCallback<DocumentCompareResult>` — zobrazí exportní tlačítko a předá výsledek hostu. |
+
+**Redline v PDF:** dokument s revizemi otevřený v editoru se v AllMarkup režimu exportuje
+do PDF s redline stylingem — vložení modře podtržené, smazání červeně přeškrtnuté,
+u levého okraje change bar a u pravého okraje poznámka `+/−/± autor` (print snapshot
+překládá revision anchory; viz `layout-snapshot-export.mjs`). Typický tok: redline DOCX
+→ import do editoru → Export PDF.
+
 ## Chat
 
 ### TmChat

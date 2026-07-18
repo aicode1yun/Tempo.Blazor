@@ -64,6 +64,16 @@
                 data-testid="@TestId("document-compare-run")">
             @Loc["TmDocumentEditor_CompareRun"]
         </button>
+        @if (_result is not null && _result.Summary.HasChanges && OnExportRedline.HasDelegate)
+        {
+            <button type="button"
+                    disabled="@_isComparing"
+                    aria-label="@Loc["TmDocumentEditor_CompareExportRedlineAria"]"
+                    @onclick="() => OnExportRedline.InvokeAsync(_result)"
+                    data-testid="@TestId("document-compare-export-redline")">
+                @Loc["TmDocumentEditor_CompareExportRedline"]
+            </button>
+        }
         <button type="button" @onclick="OnClose">@Loc["TmDocumentEditor_Cancel"]</button>
     </footer>
 </section>
@@ -113,6 +123,12 @@
 
     /// <summary>Raised when the dialog should close.</summary>
     [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>
+    /// Raised when the user asks to export the current comparison as a redline (tracked-changes)
+    /// document. The button renders only when the callback is wired and the result has changes.
+    /// </summary>
+    [Parameter] public EventCallback<DocumentCompareResult> OnExportRedline { get; set; }
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)

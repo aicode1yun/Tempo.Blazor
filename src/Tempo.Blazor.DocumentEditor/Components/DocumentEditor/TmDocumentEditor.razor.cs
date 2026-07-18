@@ -1443,6 +1443,61 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     private Task HandleDocumentCompareFailedAsync(string message)
         => RecordCompareAuditAsync(null, DocumentEditorAuditResult.Failure, message);
 
+    /// <summary>
+    /// Compare dialog redline export: turns the comparison into a tracked-changes document
+    /// (insertions/deletions as revisions) and ships it through the format provider as DOCX, so
+    /// Word and the DOCX importer both see reviewable w:ins/w:del changes.
+    /// </summary>
+    private async Task ExportRedlineDocxAsync(DocumentCompareResult result)
+    {
+        if (FormatProvider is null || result.CompareDocument is null)
+        {
+            return;
+        }
+
+        _pendingActions.Add(PendingActionId.ExportDocx, Loc["TmDocumentEditor_RedlineExporting"]);
+        try
+        {
+            var redline = new DocumentRedlineBuilder().Build(result, new DocumentRedlineOptions
+            {
+                Author = Author ?? new DocumentEditorAuthor { Id = "comparison", DisplayName = Loc["TmDocumentEditor_CompareDocuments"] },
+            });
+            var export = await FormatProvider.ExportAsync(new DocumentFormatExportProviderRequest
+            {
+                DocumentId = redline.DocumentId,
+                Format = DocumentFormatProviderKind.Docx,
+                Document = redline,
+                FileName = $"{redline.DocumentId}-redline",
+                Author = Author
+            });
+
+            if (export.Content.Length == 0)
+            {
+                _formatMessage = Loc["TmDocumentEditor_RedlineExportFailed"];
+                return;
+            }
+
+            _formatMessage = Loc["TmDocumentEditor_RedlineExportComplete"];
+            await DownloadFileAsync(
+                string.IsNullOrWhiteSpace(export.FileName) ? $"{redline.DocumentId}-redline.docx" : export.FileName,
+                export.ContentType,
+                export.Content);
+        }
+        catch (Exception ex)
+        {
+            _formatMessage = Loc["TmDocumentEditor_RedlineExportFailed"];
+            await RecordCompareAuditAsync(result, DocumentEditorAuditResult.Failure, ex.Message);
+        }
+        finally
+        {
+            _pendingActions.Remove(PendingActionId.ExportDocx);
+            if (!_disposed)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
     private async Task ExportPdfAsync()
     {
         if (_document is null || PdfExportProvider is null || _isExportingPdf || IsVersionPreview || !EffectivePermissions.CanExport)

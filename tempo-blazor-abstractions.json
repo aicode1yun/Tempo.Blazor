@@ -6650,6 +6650,26 @@
       ]
     },
     {
+      "itemName": "DocumentRedlineBuilder",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Turns a view-only DocumentCompareResult into a tracked-changes 'redline' document: word-level diff segments become insertion/deletion revision runs, added/removed blocks become whole-block insertions/deletions (removed blocks are woven back at their base position), and formatting-only changes are recorded as formatting revisions. Output is an ordinary document, so the DOCX exporter (w:ins/w:del), the canvas track-changes UI and the PDF pipeline consume it without new model concepts. Deterministic for identical inputs when a fixed DocumentRedlineOptions.Timestamp is supplied.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentRedlineBuilder.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentRedlineOptions",
+      "kind": "Record",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Options for DocumentRedlineBuilder: the author attributed to generated revisions and the timestamp stamped on them (inject a fixed value for deterministic output).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentRedlineBuilder.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentRelativePosition",
       "kind": "Enum",
       "category": "Document Editor",
@@ -35112,11 +35132,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1407,
-    "manualItemCount": 1407,
-    "generatedItemCount": 1390,
+    "itemCount": 1409,
+    "manualItemCount": 1409,
+    "generatedItemCount": 1392,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1390
+    "publicApiTypeCount": 1392
   }
 }
