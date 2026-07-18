@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentProofingService",
+  "kind": "Class",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Materializes asynchronous ITempoProofingProvider results into the word-list based DocumentProofingOptions consumed by the canvas proofing runtime: provider findings become flagged words with suggestion lists, deduplicated case-insensitively and merged over host-supplied base options (custom flagged words and suggestions are preserved).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentProofingService.cs",
+  "documentationStatus": "generated"
+}

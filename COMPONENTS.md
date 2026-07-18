@@ -6506,6 +6506,24 @@ u levého okraje change bar a u pravého okraje poznámka `+/−/± autor` (prin
 překládá revision anchory; viz `layout-snapshot-export.mjs`). Typický tok: redline DOCX
 → import do editoru → Export PDF.
 
+### Proofing out-of-the-box (`ITempoProofingProvider` + LanguageTool)
+
+Slovníkový proofing runtime (červené podtržení + oprava z kontextového menu) nově umí brát
+data z asynchronního provideru — hotová referenční integrace LanguageTool je v balíčku
+**Tempo.Blazor.Proofing.LanguageTool** (čeština funguje out-of-the-box, LT ji má v sobě).
+
+| API | Popis |
+|---|---|
+| `ITempoProofingProvider` (Abstractions) | `CheckAsync(DocumentProofingCheckRequest) → DocumentProofingCheckResult` — text + jazyk dovnitř, `DocumentProofingIssue[]` (slovo, offset/length, návrhy, rule/kategorie) ven. |
+| `DocumentProofingService.BuildOptions(result, baseOptions?)` | Materializuje nálezy do word-list `DocumentProofingOptions` (merge nad host base options, dedup case-insensitive). |
+| `TmDocumentEditor.ProofingProvider` | Nový aditivní parametr. Editor extrahuje plain text (`DocumentTextDiffHelper.ExtractPlainText`), checkne po loadu a po editech (`ProofingCheckDebounce`, default 1,2 s, proti živému canvas modelu) a pushne word listy do enginu za běhu (`setOptions` → okamžitá re-analýza). Chyby provideru = **fail-open**. |
+| `LanguageToolProofingProvider` | LT v2 protokol (`POST {base}/v2/check`, form-encoded); `LanguageToolProofingOptions` (BaseAddress s fallbackem na `HttpClient.BaseAddress` → `http://localhost:8010`, `Language` vč. `CreateCzech()`, DisabledRules/Categories, client-side `CustomDictionary` + `AddToDictionary`). |
+
+Self-host compose + rozšíření českého slovníku: `docs/proofing-languagetool.md`. Demo:
+`/canvas-engine-host?documentId=phase-7-proofing-czech&proofing=languagetool` (demo API hostí
+LT-kompatibilní endpoint `/languagetool/v2/check` s malým českým slovníkem, takže referenční
+provider běží end-to-end i bez kontejneru); `proofing=languagetool-down` = fail-open ukázka.
+
 ## Chat
 
 ### TmChat

@@ -4,6 +4,9 @@
 @using Tempo.Blazor.DocumentEditor.Interfaces
 @using Tempo.Blazor.DocumentEditor.Models
 @using Tempo.Blazor.DocumentEditor.Services
+@using Tempo.Blazor.Proofing.LanguageTool
+@using Microsoft.Extensions.DependencyInjection
+@inject IServiceProvider PageServices
 @inject DemoDocumentEditorProvider DocumentProvider
 @inject DemoDocumentImageUrlResolver ImageResolver
 @inject DemoDocumentFormatProvider FormatProvider
@@ -30,6 +33,7 @@
 	                      ImageAssetOptions="@DemoImageAssets"
                           ContentControlRenderMode="@ContentControlMode"
 	                      ProofingOptions="@CanvasProofingOptions"
+	                      ProofingProvider="@EffectiveProofingProvider"
 	                      AutoSaveInterval="@DemoAutoSaveInterval"
 	                      OfflineMode="DocumentEditorOfflineMode.Enabled"
 	                      OfflineStore="@_offlineStore"
@@ -120,6 +124,15 @@
     [SupplyParameterFromQuery(Name = "contentControlMode")]
     public string? ContentControlMode { get; set; }
 
+    /// <summary>
+    /// Async proofing mode: "languagetool" wires the reference LanguageTool provider against the
+    /// demo API's protocol-compatible endpoint; "languagetool-down" points it at an unreachable
+    /// server to demonstrate the fail-open behavior.
+    /// </summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "proofing")]
+    public string? ProofingMode { get; set; }
+
     private TimeSpan? DemoAutoSaveInterval => AutosaveMs is { } value
         ? TimeSpan.FromMilliseconds(Math.Clamp(value, 250, 30000))
         : null;
@@ -131,6 +144,42 @@
     private IDocumentCollaborationProvider? EffectiveCollaborationProvider => DisableCollaboration
         ? null
         : CollaborationProvider;
+
+    private ITempoProofingProvider? _proofingProvider;
+    private string? _proofingProviderMode;
+
+    private ITempoProofingProvider? EffectiveProofingProvider
+    {
+        get
+        {
+            if (ProofingMode is not ("languagetool" or "languagetool-down"))
+            {
+                return null;
+            }
+
+            if (_proofingProvider is null || !string.Equals(_proofingProviderMode, ProofingMode, StringComparison.Ordinal))
+            {
+                _proofingProviderMode = ProofingMode;
+                _proofingProvider = CreateLanguageToolProvider(healthy: ProofingMode == "languagetool");
+            }
+
+            return _proofingProvider;
+        }
+    }
+
+    private LanguageToolProofingProvider CreateLanguageToolProvider(bool healthy)
+    {
+        var client = PageServices.GetService<IHttpClientFactory>()?.CreateClient("DemoApi") ?? new HttpClient();
+        var apiBase = client.BaseAddress ?? new Uri("https://localhost:5100");
+        var baseAddress = healthy
+            ? new Uri(apiBase.AbsoluteUri.TrimEnd('/') + "/languagetool")
+            : new Uri("https://localhost:59999/languagetool");
+        return new LanguageToolProofingProvider(client, new LanguageToolProofingOptions
+        {
+            BaseAddress = baseAddress,
+            Language = "cs-CZ"
+        });
+    }
 
     private DocumentProofingOptions? CanvasProofingOptions => string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasToolbarSpellcheckDocumentId, StringComparison.Ordinal)
         ? new DocumentProofingOptions
@@ -175,6 +224,12 @@
         if (string.Equals(DocumentId, DemoDocumentEditorProvider.AssemblyContractDocumentId, StringComparison.Ordinal))
         {
             DocumentProvider.SeedAssemblyContractDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.ProofingCzechDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedProofingCzechDocument(DocumentId, ResetSeed);
             return;
         }
 

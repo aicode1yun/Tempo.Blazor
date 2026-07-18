@@ -6704,6 +6704,36 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentProofingCheckRequest",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Models",
+      "description": "Request handed to an ITempoProofingProvider: the plain text to proof (required), an optional BCP-47 language tag (falls back to the provider's configured language) and the optional source document id for providers that scope caches per document.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProofingCheck.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentProofingCheckResult",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Models",
+      "description": "Result of an ITempoProofingProvider pass over a text snapshot: the findings in document order, plus a shared Empty instance for providers with nothing to report.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProofingCheck.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentProofingIssue",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Models",
+      "description": "A single proofing finding reported by an ITempoProofingProvider: the flagged word as it appears in the checked text, its offset/length, replacement suggestions ordered by provider confidence, and optional message/rule/category metadata (e.g. a LanguageTool rule id and the TYPOS category).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProofingCheck.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentProofingOptions",
       "kind": "Class",
       "category": "Document Editor",
@@ -6738,6 +6768,16 @@
           "description": "Host-supplied spelling suggestions keyed by the original misspelled word."
         }
       ]
+    },
+    {
+      "itemName": "DocumentProofingService",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Materializes asynchronous ITempoProofingProvider results into the word-list based DocumentProofingOptions consumed by the canvas proofing runtime: provider findings become flagged words with suggestion lists, deduplicated case-insensitively and merged over host-supplied base options (custom flagged words and suggestions are preserved).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentProofingService.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "DocumentRedlineBuilder",
@@ -8233,6 +8273,16 @@
       "description": "Simple synchronizer that saves offline snapshots through an editor provider.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/InMemoryDocumentSupportProviders.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ITempoProofingProvider",
+      "kind": "Interface",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Asynchronous proofing (spell/grammar) provider consumed by TmDocumentEditor.ProofingProvider: the editor extracts the document plain text, calls CheckAsync after load and after edits (debounced), and materializes the returned issues into the word-list based DocumentProofingOptions that drive the canvas squiggle overlay and spelling context menu. A reference LanguageTool implementation ships in Tempo.Blazor.Proofing.LanguageTool.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/ITempoProofingProvider.cs",
       "documentationStatus": "merged"
     },
     {
@@ -35242,11 +35292,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1420,
-    "manualItemCount": 1420,
-    "generatedItemCount": 1403,
+    "itemCount": 1425,
+    "manualItemCount": 1425,
+    "generatedItemCount": 1408,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1403
+    "publicApiTypeCount": 1408
   }
 }

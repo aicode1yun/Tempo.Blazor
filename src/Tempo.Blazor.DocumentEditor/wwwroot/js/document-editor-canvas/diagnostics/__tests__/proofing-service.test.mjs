@@ -38,6 +38,36 @@ test('proofing service finds host-flagged words without mutating the model', () 
     assert.equal(JSON.stringify(model), before);
 });
 
+test('setOptions replaces word lists at runtime (async provider push) and survives re-merge of the normalized config', () => {
+    const model = createProofingModel('Tato smlouvva byla uzavřena s chybbou.');
+    const service = createCanvasProofingService({
+        flaggedWords: ['wrngg'],
+        suggestions: { wrngg: ['wrong'] },
+        defaultLanguage: 'en-US',
+    });
+    service.analyze(model, { incremental: { dirtyBlockIds: [] } });
+
+    // setOptions internally spreads the already-normalized config (Sets/Maps) under the incoming
+    // plain-JSON options — the normalizer must tolerate both shapes.
+    const snapshot = service.setOptions({
+        defaultLanguage: 'cs-CZ',
+        flaggedWords: ['smlouvva', 'chybbou'],
+        suggestions: { smlouvva: ['smlouva'], chybbou: ['chybou'] },
+    });
+    assert.equal(snapshot.defaultLanguage, 'cs-CZ');
+
+    const analyzed = service.analyze(model, { incremental: { dirtyBlockIds: [] } });
+    assert.equal(analyzed.diagnosticCount, 2);
+    assert.equal(analyzed.diagnostics[0].word, 'smlouvva');
+    assert.deepEqual(analyzed.diagnostics[0].suggestions, ['smlouva']);
+    assert.equal(analyzed.diagnostics[1].word, 'chybbou');
+
+    // A partial update that omits the word lists keeps the previous ones (merge semantics).
+    service.setOptions({ defaultLanguage: 'cs' });
+    const remerged = service.analyze(model, { incremental: { dirtyBlockIds: [] } });
+    assert.equal(remerged.diagnosticCount, 2, 'word lists survive a partial setOptions merge');
+});
+
 test('proofing service reuses word-list checker and suggestion provider boundary', () => {
     const model = createProofingModel('Known wrngg word.', {
         language: 'cs-CZ',

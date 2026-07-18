@@ -50,6 +50,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
     /// <summary>Stable document id used by the canvas table layout and editing E2E gate.</summary>
     public const string CanvasTablesDocumentId = "phase-14-canvas-tables";
 
+    /// <summary>Stable document id used by the Czech LanguageTool proofing E2E gate.</summary>
+    public const string ProofingCzechDocumentId = "phase-7-proofing-czech";
+
     /// <summary>Stable document id used by the canvas image and drawing object E2E gate.</summary>
     public const string CanvasImagesDocumentId = "phase-15-canvas-images";
 
@@ -1379,6 +1382,48 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             Action = DocumentRevisionAction.Pending,
             PayloadJson = payload
         };
+
+    /// <summary>
+    /// Seeds a Czech contract document containing known misspellings from the demo LanguageTool
+    /// dictionary (smlouvva, chybbou) plus correct Czech text, for the async proofing provider E2E.
+    /// </summary>
+    public DocumentEditorDocument SeedProofingCzechDocument(string documentId = ProofingCzechDocumentId, bool reset = false)
+    {
+        if (!reset)
+        {
+            var existing = base.LoadAsync(documentId).GetAwaiter().GetResult();
+            if (existing.Found && existing.Document is not null)
+            {
+                return existing.Document;
+            }
+        }
+
+        var document = DocumentEditorDocument.Empty(documentId);
+        var sectionId = "proofing-czech-section-main";
+        document.Metadata.Title = "Česká smlouva s překlepy";
+        document.Metadata.CreatedAt = CanonicalDemoTimestamp;
+        document.Metadata.ModifiedAt = CanonicalDemoTimestamp;
+        document.Sections[0].Id = sectionId;
+
+        document.Blocks.Add(TextParagraph(
+            sectionId,
+            "proofing-czech-target",
+            10,
+            DocumentTextAlignment.Left,
+            "Tato smlouvva byla uzavřena s chybbou.",
+            spacingAfter: 12));
+
+        document.Blocks.Add(TextParagraph(
+            sectionId,
+            "proofing-czech-correct",
+            20,
+            DocumentTextAlignment.Left,
+            "Dodavatel dodá zboží v dohodnutém termínu a kupující zaplatí kupní cenu.",
+            spacingAfter: 12));
+
+        StoreDocument(document);
+        return document;
+    }
 
     /// <summary>Seeds a document that exercises canvas toolbar focus, context menu actions, and spellcheck diagnostics.</summary>
     public DocumentEditorDocument SeedCanvasToolbarSpellcheckDocument(string documentId = CanvasToolbarSpellcheckDocumentId)

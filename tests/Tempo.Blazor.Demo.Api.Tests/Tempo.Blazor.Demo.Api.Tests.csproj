@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\src\Tempo.Blazor.Demo.Api\Tempo.Blazor.Demo.Api.csproj" />
     <ProjectReference Include="..\..\src\Tempo.Blazor.Demo.Shared\Tempo.Blazor.Demo.Shared.csproj" />
     <ProjectReference Include="..\..\src\Tempo.Blazor.DocumentFormats\Tempo.Blazor.DocumentFormats.csproj" />
+    <ProjectReference Include="..\..\src\Tempo.Blazor.Proofing.LanguageTool\Tempo.Blazor.Proofing.LanguageTool.csproj" />
     <ProjectReference Include="..\..\src\Tempo.Blazor.EmailTemplates.Abstractions\Tempo.Blazor.EmailTemplates.Abstractions.csproj" />
   </ItemGroup>
 </Project>

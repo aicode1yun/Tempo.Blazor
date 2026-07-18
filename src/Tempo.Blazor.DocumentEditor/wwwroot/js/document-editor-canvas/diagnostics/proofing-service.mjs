@@ -245,9 +245,11 @@ export function diagnosticKey(diagnostic) {
 }
 
 function normalizeProofingOptions(options = {}) {
+    // setOptions merges the ALREADY-normalized config (Sets/Maps) under incoming plain-JSON
+    // options, so every list/map input here must tolerate both shapes.
     const suggestions = new Map();
-    const rawSuggestions = options.suggestions || options.Suggestions || {};
-    for (const [word, values] of Object.entries(rawSuggestions)) {
+    const rawSuggestions = toSuggestionEntries(options.suggestions || options.Suggestions);
+    for (const [word, values] of rawSuggestions) {
         const key = normalizeWord(word);
         const list = Array.isArray(values)
             ? values.map(value => String(value || '').trim()).filter(Boolean)
@@ -257,15 +259,15 @@ function normalizeProofingOptions(options = {}) {
         }
     }
 
-    const flaggedWords = (options.flaggedWords || options.FlaggedWords || [])
+    const flaggedWords = toWordArray(options.flaggedWords || options.FlaggedWords)
         .map(normalizeWord)
         .filter(Boolean);
-    const knownWords = (options.knownWords || options.KnownWords || options.known || options.Known || [])
+    const knownWords = toWordArray(options.knownWords || options.KnownWords || options.known || options.Known)
         .map(normalizeWord)
         .filter(Boolean);
-    const checker = normalizeChecker(options, flaggedWords, knownWords, rawSuggestions);
+    const checker = normalizeChecker(options, flaggedWords, knownWords, Object.fromEntries(rawSuggestions));
     const suggestionProvider = normalizeSuggestionProvider(options, checker);
-    const languages = new Set((options.languages || options.Languages || options.enabledLanguages || options.EnabledLanguages || [])
+    const languages = new Set(toWordArray(options.languages || options.Languages || options.enabledLanguages || options.EnabledLanguages)
         .map(value => String(value || '').trim())
         .filter(Boolean));
 
@@ -277,16 +279,56 @@ function normalizeProofingOptions(options = {}) {
         suggestions,
         checker,
         suggestionProvider,
-        addToDictionary: typeof options.addToDictionary === 'function'
-            ? options.addToDictionary
-            : typeof checker?.addToDictionary === 'function'
-                ? word => checker.addToDictionary(word)
-                : typeof suggestionProvider?.addToDictionary === 'function'
-                    ? word => suggestionProvider.addToDictionary(word)
-                    : null,
+        addToDictionary: normalizeAddToDictionary(options, checker, suggestionProvider),
         languages,
         incremental: options.incremental !== false && options.Incremental !== false,
     };
+}
+
+function toWordArray(value) {
+    if (Array.isArray(value)) {
+        return value;
+    }
+
+    if (value instanceof Set) {
+        return [...value];
+    }
+
+    return [];
+}
+
+function toSuggestionEntries(value) {
+    if (value instanceof Map) {
+        return [...value.entries()];
+    }
+
+    if (value && typeof value === 'object') {
+        return Object.entries(value);
+    }
+
+    return [];
+}
+
+// A wrapper the service derived from an auto-built checker must be rebuilt (not kept) on a
+// setOptions re-merge, otherwise "add to dictionary" would keep feeding the stale checker.
+function normalizeAddToDictionary(options, checker, suggestionProvider) {
+    if (typeof options.addToDictionary === 'function' && options.addToDictionary.__tmDerived !== true) {
+        return options.addToDictionary;
+    }
+
+    if (typeof checker?.addToDictionary === 'function') {
+        const derived = word => checker.addToDictionary(word);
+        derived.__tmDerived = true;
+        return derived;
+    }
+
+    if (typeof suggestionProvider?.addToDictionary === 'function') {
+        const derived = word => suggestionProvider.addToDictionary(word);
+        derived.__tmDerived = true;
+        return derived;
+    }
+
+    return null;
 }
 
 function isProofableBlock(block) {
@@ -323,16 +365,20 @@ function cloneDiagnostic(diagnostic) {
 
 function normalizeChecker(options, flaggedWords, knownWords, rawSuggestions) {
     const explicit = options.checker || options.Checker || options.wordChecker || options.WordChecker || options.provider || options.Provider;
-    if (explicit && typeof explicit === 'object') {
+    // A checker the service itself built from word lists must NOT survive a setOptions re-merge —
+    // it would shadow the refreshed word lists. Host-supplied checkers are kept.
+    if (explicit && typeof explicit === 'object' && explicit.__tmWordListChecker !== true) {
         return explicit;
     }
 
     if (flaggedWords.length > 0 || knownWords.length > 0 || Object.keys(rawSuggestions || {}).length > 0) {
-        return buildWordListChecker({
+        const checker = buildWordListChecker({
             flagged: flaggedWords,
             known: knownWords.length > 0 ? knownWords : undefined,
             suggestions: rawSuggestions,
         });
+        checker.__tmWordListChecker = true;
+        return checker;
     }
 
     return null;
@@ -340,7 +386,9 @@ function normalizeChecker(options, flaggedWords, knownWords, rawSuggestions) {
 
 function normalizeSuggestionProvider(options, checker) {
     const provider = options.suggestionProvider || options.SuggestionProvider || options.suggestionsProvider || options.SuggestionsProvider;
-    if (provider && typeof provider === 'object') {
+    // Same rule as normalizeChecker: an auto-built word-list checker acting as the suggestion
+    // provider must be rebuilt on a setOptions re-merge, not carried over.
+    if (provider && typeof provider === 'object' && provider.__tmWordListChecker !== true) {
         return provider;
     }
 

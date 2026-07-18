@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentProofingIssue",
+  "kind": "Class",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "A single proofing finding reported by an ITempoProofingProvider: the flagged word as it appears in the checked text, its offset/length, replacement suggestions ordered by provider confidence, and optional message/rule/category metadata (e.g. a LanguageTool rule id and the TYPOS category).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProofingCheck.cs",
+  "documentationStatus": "generated"
+}

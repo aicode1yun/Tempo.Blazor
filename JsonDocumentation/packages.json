@@ -255,6 +255,17 @@
       "includePublicTypes": true
     },
     {
+      "packageId": "Tempo.Blazor.Proofing.LanguageTool",
+      "sourceProject": "src/Tempo.Blazor.Proofing.LanguageTool/Tempo.Blazor.Proofing.LanguageTool.csproj",
+      "outputFile": "tempo-blazor-proofing-languagetool.json",
+      "documentationRoots": [
+        "Packages/Tempo.Blazor.Proofing.LanguageTool/items"
+      ],
+      "includePatterns": [],
+      "excludePatterns": [],
+      "includePublicTypes": true
+    },
+    {
       "packageId": "Tempo.Blazor.DocumentFormats",
       "sourceProject": "src/Tempo.Blazor.DocumentFormats/Tempo.Blazor.DocumentFormats.csproj",
       "outputFile": "tempo-blazor-documentformats.json",

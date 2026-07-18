@@ -1,0 +1,10 @@
+{
+  "itemName": "LanguageToolProofingOptions",
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Proofing.LanguageTool",
+  "description": "Configuration for LanguageToolProofingProvider: server base address (falls back to HttpClient.BaseAddress, then the self-host default http://localhost:8010), default language (\"auto\" for detection; CreateCzech() preconfigures cs-CZ), mother tongue hint, disabled rules/categories, the client-side CustomDictionary word set, max text length per check and the per-issue suggestion cap.",
+  "packageId": "Tempo.Blazor.Proofing.LanguageTool",
+  "sourcePath": "src/Tempo.Blazor.Proofing.LanguageTool/LanguageToolProofingOptions.cs",
+  "documentationStatus": "generated"
+}

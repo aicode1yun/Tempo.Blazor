@@ -4806,10 +4806,23 @@
           "description": "Whether a newer local draft should replace the server snapshot during load."
         },
         {
+          "name": "ProofingCheckDebounce",
+          "type": "TimeSpan",
+          "isRequired": false,
+          "default": "TimeSpan.FromMilliseconds(1200)",
+          "description": "Debounce between an edit and the follow-up pass."
+        },
+        {
           "name": "ProofingOptions",
           "type": "DocumentProofingOptions?",
           "isRequired": false,
           "description": "Optional proofing options used by the canvas engine spelling overlay."
+        },
+        {
+          "name": "ProofingProvider",
+          "type": "ITempoProofingProvider?",
+          "isRequired": false,
+          "description": "Optional asynchronous proofing provider (e.g. the LanguageTool reference implementation from Tempo.Blazor.Proofing.LanguageTool). The editor extracts the document plain text, calls the provider after load and after edits (debounced by ), and merges the findings over for the canvas squiggle overlay and spelling context menu. Provider failures are fail-open: the last known proofing state stays."
         },
         {
           "name": "Provider",

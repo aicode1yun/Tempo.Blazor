@@ -1,0 +1,10 @@
+{
+  "itemName": "LanguageToolProofingProvider",
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Proofing.LanguageTool",
+  "description": "Reference ITempoProofingProvider speaking the LanguageTool v2 HTTP protocol (POST {base}/v2/check with form-encoded text + language, JSON matches response). Works against a self-hosted LanguageTool container (see docs/proofing-languagetool.md for the compose file) or any protocol-compatible endpoint; supports Czech via Language=\"cs-CZ\". Findings whose word is in the client-side CustomDictionary are suppressed, and AddToDictionary(word) suppresses a word for subsequent checks.",
+  "packageId": "Tempo.Blazor.Proofing.LanguageTool",
+  "sourcePath": "src/Tempo.Blazor.Proofing.LanguageTool/LanguageToolProofingProvider.cs",
+  "documentationStatus": "generated"
+}

@@ -144,6 +144,10 @@
         "description": "SignalR collaboration providers for Tempo.Blazor document editor abstractions."
       },
       {
+        "name": "Tempo.Blazor.Proofing.LanguageTool",
+        "description": "Reference LanguageTool proofing provider (ITempoProofingProvider) for the Tempo.Blazor document editor, including Czech spellcheck support against a self-hosted LanguageTool server."
+      },
+      {
         "name": "Tempo.Blazor.DocumentFormats",
         "description": "Optional server-side DOCX and ODT import/export support for TmDocumentEditor."
       },

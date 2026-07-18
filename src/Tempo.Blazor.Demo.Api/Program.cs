@@ -186,6 +186,7 @@ app.MapDocumentLibraryEndpoints();
 app.Services.GetRequiredService<DocumentLibrarySeeder>().EnsureSeeded();
 app.MapDatabaseEndpoints();
 app.MapDocumentEditorEndpoints();
+app.MapLanguageToolEndpoints();
 app.MapEmailTemplateEndpoints();
 app.MapHub<DocumentEditorCollaborationHub>("/hubs/document-editor-collaboration");
 app.MapHub<NotionCollaborationHub>("/hubs/notion-collaboration");

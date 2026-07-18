@@ -154,6 +154,18 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     /// <summary>Optional proofing options used by the canvas engine spelling overlay.</summary>
     [Parameter] public DocumentProofingOptions? ProofingOptions { get; set; }
 
+    /// <summary>
+    /// Optional asynchronous proofing provider (e.g. the LanguageTool reference implementation from
+    /// Tempo.Blazor.Proofing.LanguageTool). The editor extracts the document plain text, calls the
+    /// provider after load and after edits (debounced by <see cref="ProofingCheckDebounce"/>), and
+    /// merges the findings over <see cref="ProofingOptions"/> for the canvas squiggle overlay and
+    /// spelling context menu. Provider failures are fail-open: the last known proofing state stays.
+    /// </summary>
+    [Parameter] public ITempoProofingProvider? ProofingProvider { get; set; }
+
+    /// <summary>Debounce between an edit and the follow-up <see cref="ProofingProvider"/> pass.</summary>
+    [Parameter] public TimeSpan ProofingCheckDebounce { get; set; } = TimeSpan.FromMilliseconds(1200);
+
     /// <summary>Optional provider used to synchronize realtime collaborative edits.</summary>
     [Parameter] public IDocumentCollaborationProvider? CollaborationProvider { get; set; }
 
@@ -222,6 +234,8 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
     private DocumentEditorDocument? _document;
+    private DocumentProofingOptions? _providerProofingOptions;
+    private CancellationTokenSource? _proofingCts;
     private TmDocumentEditorToolbar? _toolbar;
     private TmDocumentCanvasEngineHost? _canvasHost;
     private TmDocumentSidePanel? _sidePanel;
@@ -1126,6 +1140,9 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
             _canvasRevisions = null;
             _canvasPushedWordCount = null;
             _canvasPushedPageCount = null;
+            // Provider proofing results belong to the PREVIOUS document — a stale word list must
+            // not survive a document switch (the load-time check below repopulates it).
+            _providerProofingOptions = null;
             _draftCommentAnchor = null;
             _versionDialogOpen = false;
             _compareDialogOpen = false;
@@ -1157,6 +1174,7 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
             await EnsureCollaborationStartedAsync();
             await RefreshCommandRegistryAsync();
             await RecordOpenAuditAsync(_document.DocumentId, DocumentEditorAuditResult.Success, null);
+            QueueProofingCheck(immediate: true);
             await OnDocumentLoaded.InvokeAsync(_document);
         }
         catch (Exception ex)
@@ -2416,6 +2434,7 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         _isDirty = true;
         _autosave.RegisterLocalChange();
         SyncAutosavePendingAction();
+        QueueProofingCheck(immediate: false);
         await UpdateBeforeUnloadGuardAsync();
         await InvokeAsync(StateHasChanged);
 
@@ -2423,6 +2442,85 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         {
             // The JS side already debounced; persist now (SaveCoreAsync pulls the live model).
             await SaveAsync(DocumentEditorSaveTrigger.AutoSave);
+        }
+    }
+
+    /// <summary>
+    /// Effective proofing options handed to the canvas engine: the latest provider materialization
+    /// (already merged over <see cref="ProofingOptions"/>) when a <see cref="ProofingProvider"/> is
+    /// active, otherwise the host-supplied options.
+    /// </summary>
+    internal DocumentProofingOptions? EffectiveProofingOptions => ProofingProvider is null
+        ? ProofingOptions
+        : _providerProofingOptions ?? ProofingOptions;
+
+    private void QueueProofingCheck(bool immediate)
+    {
+        if (ProofingProvider is null || _disposed)
+        {
+            return;
+        }
+
+        // The superseded source is only cancelled, not disposed: the still-running check may hold
+        // its token inside Task.Delay/CheckAsync and disposal would race those registrations. A
+        // plain CTS holds no timer, so leaving it to the GC is safe; final cleanup disposes the
+        // last one in BeginDispose.
+        _proofingCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _proofingCts = cts;
+        _ = RunProofingCheckAsync(immediate, cts.Token);
+    }
+
+    private async Task RunProofingCheckAsync(bool immediate, CancellationToken token)
+    {
+        var provider = ProofingProvider;
+        if (provider is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!immediate && ProofingCheckDebounce > TimeSpan.Zero)
+            {
+                await Task.Delay(ProofingCheckDebounce, token);
+            }
+
+            // Debounced re-checks pull the LIVE canvas model (the C# Document reference does not
+            // track per-keystroke edits); the load-time check uses the freshly loaded document.
+            var document = _document;
+            if (!immediate && UsingCanvasEngine && _canvasHost is not null)
+            {
+                document = await _canvasHost.RequestDocumentAsync() ?? document;
+            }
+
+            if (document is null || token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            var result = await provider.CheckAsync(new DocumentProofingCheckRequest
+            {
+                Text = DocumentTextDiffHelper.ExtractPlainText(document),
+                Language = ProofingOptions?.DefaultLanguage,
+                DocumentId = document.DocumentId
+            }, token);
+            if (token.IsCancellationRequested || _disposed)
+            {
+                return;
+            }
+
+            _providerProofingOptions = DocumentProofingService.BuildOptions(result, ProofingOptions);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer check or disposal.
+        }
+        catch
+        {
+            // Fail-open: an unreachable proofing service must never break editing — the canvas
+            // keeps the last successfully materialized proofing state.
         }
     }
 
@@ -11506,6 +11604,9 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         _disposed = true;
         _commandStack.OnStackChanged -= HandleCommandStackChanged;
         _autoSaveTimer?.Dispose();
+        _proofingCts?.Cancel();
+        _proofingCts?.Dispose();
+        _proofingCts = null;
         _canvasToolbarSyncSeq++;
         _collaborationTimer?.Dispose();
         collaborationSync = _collaborationSync;

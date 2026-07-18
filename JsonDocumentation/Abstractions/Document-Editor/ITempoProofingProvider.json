@@ -1,0 +1,10 @@
+{
+  "itemName": "ITempoProofingProvider",
+  "kind": "Interface",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Asynchronous proofing (spell/grammar) provider consumed by TmDocumentEditor.ProofingProvider: the editor extracts the document plain text, calls CheckAsync after load and after edits (debounced), and materializes the returned issues into the word-list based DocumentProofingOptions that drive the canvas squiggle overlay and spelling context menu. A reference LanguageTool implementation ships in Tempo.Blazor.Proofing.LanguageTool.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/ITempoProofingProvider.cs",
+  "documentationStatus": "generated"
+}

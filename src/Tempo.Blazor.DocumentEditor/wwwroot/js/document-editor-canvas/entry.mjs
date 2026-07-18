@@ -479,6 +479,13 @@ export class CanvasDocumentEngine {
             contentControlRenderMode: options.contentControlRenderMode || this.engineOptions.contentControlRenderMode,
             signingRoles: Array.isArray(options.signingRoles) ? options.signingRoles : this.engineOptions.signingRoles,
         };
+        // Async proofing providers (ITempoProofingProvider) push refreshed word lists through this
+        // path long after mount — swap the proofing config and re-analyze immediately instead of
+        // waiting for the next typing debounce.
+        if (options.proofing && typeof options.proofing === 'object') {
+            this.proofingService.setOptions(options.proofing);
+            this.forceImmediateAnalysis = true;
+        }
         return this.render({ forceRepaint: true, structural: true });
     }
 

@@ -10,6 +10,7 @@
     <Project Path="src/Tempo.Blazor.DataTableXlsx/Tempo.Blazor.DataTableXlsx.csproj" />
     <Project Path="src/Tempo.Blazor.Demo.Api/Tempo.Blazor.Demo.Api.csproj" />
     <Project Path="src/Tempo.Blazor.Collaboration/Tempo.Blazor.Collaboration.csproj" />
+    <Project Path="src/Tempo.Blazor.Proofing.LanguageTool/Tempo.Blazor.Proofing.LanguageTool.csproj" />
     <Project Path="src/Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj" />
     <Project Path="src/Tempo.Blazor.DocumentFormats/Tempo.Blazor.DocumentFormats.csproj" />
     <Project Path="src/Tempo.Blazor/Tempo.Blazor.csproj" />

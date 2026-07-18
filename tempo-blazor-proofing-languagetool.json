@@ -1,0 +1,138 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.Proofing.LanguageTool",
+    "title": "Tempo.Blazor.Proofing.LanguageTool",
+    "description": "Reference LanguageTool proofing provider (ITempoProofingProvider) for the Tempo.Blazor document editor, including Czech spellcheck support against a self-hosted LanguageTool server.",
+    "authors": "Tempo",
+    "targetFrameworks": [
+      "net10.0"
+    ],
+    "tags": "blazor;documents;proofing;spellcheck;languagetool;document-editor",
+    "repositoryUrl": "https://github.com/tempo/tempo-blazor",
+    "projectUrl": null,
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Proofing.LanguageTool"
+      ]
+    },
+    "dependencies": [],
+    "projectReferences": [
+      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Proofing.LanguageTool"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.Proofing.LanguageTool",
+    "overview": "Reference LanguageTool proofing provider (ITempoProofingProvider) for the Tempo.Blazor document editor, including Czech spellcheck support against a self-hosted LanguageTool server.",
+    "targetFramework": "net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Proofing.LanguageTool"
+      ]
+    },
+    "dependencies": []
+  },
+  "items": [
+    {
+      "itemName": "LanguageToolProofingOptions",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Proofing.LanguageTool",
+      "description": "Configuration for LanguageToolProofingProvider: server base address (falls back to HttpClient.BaseAddress, then the self-host default http://localhost:8010), default language (\"auto\" for detection; CreateCzech() preconfigures cs-CZ), mother tongue hint, disabled rules/categories, the client-side CustomDictionary word set, max text length per check and the per-issue suggestion cap.",
+      "packageId": "Tempo.Blazor.Proofing.LanguageTool",
+      "sourcePath": "src/Tempo.Blazor.Proofing.LanguageTool/LanguageToolProofingOptions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CreateCzech",
+          "kind": "Method",
+          "type": "LanguageToolProofingOptions",
+          "description": "Creates options preconfigured for Czech proofing (cs-CZ)."
+        },
+        {
+          "name": "BaseAddress",
+          "kind": "Property",
+          "type": "Uri?",
+          "description": "Base address of the LanguageTool server (self-hosted or hosted). The provider posts to {BaseAddress}/v2/check. When null, the of the injected client is used, falling back to the self-host default http://localhost:8010."
+        },
+        {
+          "name": "CustomDictionary",
+          "kind": "Property",
+          "type": "ISet<string>",
+          "description": "Client-side custom dictionary: findings whose flagged word is contained here are suppressed without a server round-trip. Case-insensitive. Use this for app-specific terminology (brand names, Czech legal terms) that a stock LanguageTool dictionary flags."
+        },
+        {
+          "name": "DisabledCategories",
+          "kind": "Property",
+          "type": "IReadOnlyList<string>",
+          "description": "LanguageTool category ids disabled for every check (e.g. STYLE)."
+        },
+        {
+          "name": "DisabledRules",
+          "kind": "Property",
+          "type": "IReadOnlyList<string>",
+          "description": "LanguageTool rule ids disabled for every check (e.g. WHITESPACE_RULE)."
+        },
+        {
+          "name": "Language",
+          "kind": "Property",
+          "type": "string",
+          "description": "Default BCP-47 language sent to the server when the check request does not carry its own language. Use \"auto\" for server-side language detection."
+        },
+        {
+          "name": "MaxSuggestionsPerIssue",
+          "kind": "Property",
+          "type": "int",
+          "description": "Maximum number of replacement suggestions kept per finding."
+        },
+        {
+          "name": "MaxTextLength",
+          "kind": "Property",
+          "type": "int",
+          "description": "Maximum number of characters sent per check; longer text is truncated."
+        },
+        {
+          "name": "MotherTongue",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional mother tongue hint for false-friend detection."
+        }
+      ]
+    },
+    {
+      "itemName": "LanguageToolProofingProvider",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Proofing.LanguageTool",
+      "description": "Reference ITempoProofingProvider speaking the LanguageTool v2 HTTP protocol (POST {base}/v2/check with form-encoded text + language, JSON matches response). Works against a self-hosted LanguageTool container (see docs/proofing-languagetool.md for the compose file) or any protocol-compatible endpoint; supports Czech via Language=\"cs-CZ\". Findings whose word is in the client-side CustomDictionary are suppressed, and AddToDictionary(word) suppresses a word for subsequent checks.",
+      "packageId": "Tempo.Blazor.Proofing.LanguageTool",
+      "sourcePath": "src/Tempo.Blazor.Proofing.LanguageTool/LanguageToolProofingProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AddToDictionary",
+          "kind": "Method",
+          "type": "void",
+          "description": "Adds a word to the client-side custom dictionary so it is no longer reported.",
+          "parameters": [
+            {
+              "name": "word",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [],
+  "summary": {
+    "itemCount": 2,
+    "manualItemCount": 2,
+    "generatedItemCount": 2,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 0,
+    "publicApiTypeCount": 2
+  }
+}

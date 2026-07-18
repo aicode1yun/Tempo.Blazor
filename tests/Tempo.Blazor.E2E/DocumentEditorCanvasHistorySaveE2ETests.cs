@@ -205,15 +205,39 @@ public sealed class DocumentEditorCanvasHistorySaveE2ETests : WasmTestBase
 
     private static async Task ClickCanvasBlockAsync(IPage page, string blockId, int offset)
     {
-        var point = await ReadCanvasPointAsync(page, blockId, offset);
-        await page.Mouse.ClickAsync((float)point.X, (float)point.Y);
-        await page.WaitForFunctionAsync(
-            """
-            blockId => document.querySelector('[data-testid="document-canvas-engine-root"]')
-                ?.getAttribute('data-canvas-selection-focus-block-id') === blockId
-            """,
-            blockId,
-            new PageWaitForFunctionOptions { Timeout = 10_000 });
+        // A click landing inside the short window after a post-mount replaceModel push resolves
+        // against a freshly reset (progressive) selection layout and maps to offset 0 instead of
+        // the requested offset. Deterministic hardening: verify the caret offset actually taken
+        // and re-click until the engine resolves the intended position.
+        for (var attempt = 0; ; attempt++)
+        {
+            var point = await ReadCanvasPointAsync(page, blockId, offset);
+            await page.Mouse.ClickAsync((float)point.X, (float)point.Y);
+            await page.WaitForFunctionAsync(
+                """
+                blockId => document.querySelector('[data-testid="document-canvas-engine-root"]')
+                    ?.getAttribute('data-canvas-selection-focus-block-id') === blockId
+                """,
+                blockId,
+                new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+            var focusOffset = await page.EvaluateAsync<int>(
+                """
+                () => Number(document.querySelector('[data-testid="document-canvas-engine-root"]')
+                    ?.getAttribute('data-canvas-selection-focus-offset') || '-1')
+                """);
+            if (focusOffset == offset)
+            {
+                return;
+            }
+
+            if (attempt >= 9)
+            {
+                Assert.Fail($"Canvas click on block '{blockId}' kept resolving to offset {focusOffset} instead of {offset}.");
+            }
+
+            await page.WaitForTimeoutAsync(250);
+        }
     }
 
     private static async Task<CanvasTextRange> SelectCanvasTextRangeAsync(IPage page, string blockId, int startOffset, int endOffset)

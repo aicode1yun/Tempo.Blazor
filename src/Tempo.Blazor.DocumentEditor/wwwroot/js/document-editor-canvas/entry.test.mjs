@@ -38,6 +38,52 @@ test('createCanvasDocumentEngine mounts a canvas-per-visible-page stack without 
     assert.equal(findAll(host, node => node.getAttribute('contenteditable') === 'true').length, 0);
 });
 
+test('updateOptions applies proofing word lists at runtime and re-analyzes immediately', () => {
+    const doc = createFakeDocument();
+    const host = doc.createElement('div');
+    const engine = createCanvasDocumentEngine({
+        host,
+        document: doc,
+        model: {
+            documentId: 'phase-7-proofing',
+            body: {
+                blocks: [
+                    {
+                        id: 'p1',
+                        type: 'paragraph',
+                        content: { runs: [{ text: 'Tato smlouvva byla uzavřena s chybbou.' }] },
+                    },
+                ],
+            },
+        },
+    });
+    engine.render();
+    assert.equal(engine.getSnapshot().proofing.diagnosticCount, 0,
+        'no proofing options yet — no diagnostics');
+
+    // The async ITempoProofingProvider path pushes refreshed word lists through setOptions at
+    // runtime (options.proofing), long after mount. The engine must re-analyze immediately.
+    engine.updateOptions({
+        proofing: {
+            enabled: true,
+            defaultLanguage: 'cs-CZ',
+            flaggedWords: ['smlouvva', 'chybbou'],
+            suggestions: { smlouvva: ['smlouva'], chybbou: ['chybou'] },
+        },
+    });
+
+    const snapshot = engine.getSnapshot();
+    assert.equal(snapshot.proofing.diagnosticCount, 2);
+    assert.equal(snapshot.proofing.diagnostics[0].word, 'smlouvva');
+    assert.deepEqual(snapshot.proofing.diagnostics[0].suggestions, ['smlouva']);
+    assert.equal(snapshot.proofing.diagnostics[1].word, 'chybbou');
+    assert.ok(snapshot.proofingOverlay.squiggleCount >= 1, 'squiggles must repaint after the update');
+
+    // Turning proofing back off clears the diagnostics on the same runtime path.
+    engine.updateOptions({ proofing: { enabled: false, flaggedWords: [], suggestions: {} } });
+    assert.equal(engine.getSnapshot().proofing.diagnosticCount, 0);
+});
+
 test('phase 1 canvas stack applies high-DPI backing store and paints an intentional empty page', () => {
     const doc = createFakeDocument();
     const host = doc.createElement('div');

@@ -22,6 +22,7 @@
     <ProjectReference Include="..\Tempo.Blazor\Tempo.Blazor.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.Codes\Tempo.Blazor.Codes.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.Collaboration\Tempo.Blazor.Collaboration.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.Proofing.LanguageTool\Tempo.Blazor.Proofing.LanguageTool.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.DiagramEditor\Tempo.Blazor.DiagramEditor.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.DocumentEditor\Tempo.Blazor.DocumentEditor.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.FluentValidation\Tempo.Blazor.FluentValidation.csproj" />
