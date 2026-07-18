@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentCommentParticipants",
+  "kind": "Class",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Derives the distinct participant list from comment threads for per-participant coloring and the panel legend: first-appearance order, stable color index into the fixed 8-color CSS palette (wraps modulo PaletteSize), IsExternal when any entry by the author is flagged IsExternalAuthor. ColorIndexFor resolves an author's index (0 for unknown authors).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentCommentParticipants.cs",
+  "documentationStatus": "generated"
+}

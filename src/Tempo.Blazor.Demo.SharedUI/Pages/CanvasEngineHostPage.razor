@@ -34,6 +34,7 @@
                           ContentControlRenderMode="@ContentControlMode"
 	                      ProofingOptions="@CanvasProofingOptions"
 	                      ProofingProvider="@EffectiveProofingProvider"
+	                      Permissions="@EffectiveEditorPermissions"
 	                      AutoSaveInterval="@DemoAutoSaveInterval"
 	                      OfflineMode="DocumentEditorOfflineMode.Enabled"
 	                      OfflineStore="@_offlineStore"
@@ -57,7 +58,14 @@
     private const string DefaultDocumentId = "phase-3-canvas-empty";
     private readonly InMemoryDocumentOfflineStore _offlineStore = new();
     private string? _seededDocumentId;
-    private static DocumentEditorAuthor DemoAuthor => new() { Id = "canvas-demo-user", DisplayName = "Canvas Demo User" };
+    private DocumentEditorAuthor DemoAuthor => string.Equals(Persona, "client", StringComparison.OrdinalIgnoreCase)
+        ? new DocumentEditorAuthor { Id = "client-novak", DisplayName = "Klient Novák" }
+        : new DocumentEditorAuthor { Id = "canvas-demo-user", DisplayName = "Canvas Demo User" };
+
+    private DocumentEditorPermissions EffectiveEditorPermissions =>
+        DocumentEditorPermissions.TryParseRole(Role, out var role)
+            ? DocumentEditorPermissions.ForRole(role)
+            : new DocumentEditorPermissions();
 
     /// <summary>Document id loaded into the canvas host page.</summary>
     [Parameter]
@@ -132,6 +140,16 @@
     [Parameter]
     [SupplyParameterFromQuery(Name = "proofing")]
     public string? ProofingMode { get; set; }
+
+    /// <summary>Editor role for the permissions matrix demo (viewer/commenter/suggestonly/editor/owner).</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "role")]
+    public string? Role { get; set; }
+
+    /// <summary>Demo persona: "client" switches the current author to the external client.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "persona")]
+    public string? Persona { get; set; }
 
     private TimeSpan? DemoAutoSaveInterval => AutosaveMs is { } value
         ? TimeSpan.FromMilliseconds(Math.Clamp(value, 250, 30000))
@@ -230,6 +248,12 @@
         if (string.Equals(DocumentId, DemoDocumentEditorProvider.ProofingCzechDocumentId, StringComparison.Ordinal))
         {
             DocumentProvider.SeedProofingCzechDocument(DocumentId, ResetSeed);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.RoleCommentsDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedRoleCommentsDocument(DocumentId, ResetSeed);
             return;
         }
 

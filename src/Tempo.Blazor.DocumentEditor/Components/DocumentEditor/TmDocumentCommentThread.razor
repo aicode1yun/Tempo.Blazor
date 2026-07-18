@@ -2,6 +2,7 @@
 @inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.DocumentEditor.Models
+@using Tempo.Blazor.DocumentEditor.Services
 
 @if (Comment is not null)
 {
@@ -59,7 +60,7 @@
                                 </time>
                                 @if (entry.IsExternalAuthor)
                                 {
-                                    <span class="tm-document-comment-entry__external">@Loc["TmDocumentEditor_ExternalAuthor"]</span>
+                                    <span class="tm-document-comment-entry__external">@Loc["TmDocumentEditor_CommentClientBadge"]</span>
                                 }
                                 @if (CanEditEntry(entry))
                                 {
@@ -146,6 +147,9 @@
 @code {
     /// <summary>Comment thread to render.</summary>
     [Parameter] public DocumentComment? Comment { get; set; }
+
+    /// <summary>Optional participant palette used to color this thread and its entries by author.</summary>
+    [Parameter] public IReadOnlyList<DocumentCommentParticipant>? Participants { get; set; }
 
     /// <summary>Whether this thread is selected.</summary>
     [Parameter] public bool IsSelected { get; set; }
@@ -243,6 +247,12 @@
             if (Comment?.Visibility is DocumentCommentVisibility.External or DocumentCommentVisibility.Client or DocumentCommentVisibility.Public)
             {
                 classes.Add("tm-document-comment-thread--external");
+            }
+
+            if (Participants is { Count: > 0 })
+            {
+                var authorId = Comment?.Entries.FirstOrDefault()?.Author?.Id;
+                classes.Add($"tm-document-comment-thread--participant-{DocumentCommentParticipants.ColorIndexFor(Participants, authorId)}");
             }
 
             return string.Join(" ", classes);

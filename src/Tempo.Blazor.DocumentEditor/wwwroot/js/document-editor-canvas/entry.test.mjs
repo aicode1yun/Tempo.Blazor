@@ -84,6 +84,29 @@ test('updateOptions applies proofing word lists at runtime and re-analyzes immed
     assert.equal(engine.getSnapshot().proofing.diagnosticCount, 0);
 });
 
+test('canEdit:false makes the hidden input read-only so typing cannot bypass permission gates', () => {
+    const doc = createFakeDocument();
+    const host = doc.createElement('div');
+    const engine = createCanvasDocumentEngine({
+        host,
+        document: doc,
+        canEdit: false,
+        model: { body: { blocks: [{ id: 'p1', type: 'paragraph', content: { runs: [{ text: 'Locked' }] } }] } },
+    });
+    engine.render();
+
+    const input = findOne(host, node => node.getAttribute('data-testid') === 'document-canvas-hidden-input');
+    assert.equal(input.readOnly, true, 'commenter/viewer permission (canEdit:false) must lock the input');
+
+    // Runtime permission change unlocks it…
+    engine.updateOptions({ canEdit: true });
+    assert.equal(input.readOnly, false);
+
+    // …and readOnly:true locks it regardless of canEdit.
+    engine.updateOptions({ canEdit: true, readOnly: true });
+    assert.equal(input.readOnly, true);
+});
+
 test('phase 1 canvas stack applies high-DPI backing store and paints an intentional empty page', () => {
     const doc = createFakeDocument();
     const host = doc.createElement('div');

@@ -115,6 +115,10 @@ export class CanvasDocumentEngine {
             controlsId: 'document-canvas-a11y-mirror',
             describedById: 'document-canvas-live-region',
         });
+        // Permission enforcement at the input source: viewers/commenters (canEdit:false) and
+        // read-only hosts must not be able to type — the bridge textarea is the only way keystrokes
+        // enter the engine, so locking it here closes every keyboard path at once.
+        this.applyEditability(options);
         this.selectionController = createCanvasSelectionController({
             document: doc,
             canvasStack: this.canvasStack,
@@ -336,6 +340,9 @@ export class CanvasDocumentEngine {
             this.printPreviewStale = true;
         }
         this.host.setAttribute?.('data-canvas-engine-ready', 'true');
+        // Keep the track-changes DOM contract honest from the very first render — hosts that force
+        // tracked editing (SuggestOnly role) set it via mount options, not via the runtime toggle.
+        this.canvasStack.root?.setAttribute?.('data-canvas-track-changes-enabled', String(this.trackChangesEnabled));
         this.publishPerformanceDiagnostics(this.performanceMetrics.recordRender(now() - startedAt, render), render);
         // The formatting diagnostics run the FULL command-state query (whole-document walks) and
         // write ~50 root attributes — diagnostics only, no runtime consumer. The per-keystroke input
@@ -473,12 +480,22 @@ export class CanvasDocumentEngine {
         return this;
     }
 
+    applyEditability(options = {}) {
+        if (options.readOnly !== undefined || options.canEdit !== undefined) {
+            const input = this.inputBridge?.input;
+            if (input) {
+                input.readOnly = options.readOnly === true || options.canEdit === false;
+            }
+        }
+    }
+
     updateOptions(options = {}) {
         this.engineOptions = {
             ...this.engineOptions,
             contentControlRenderMode: options.contentControlRenderMode || this.engineOptions.contentControlRenderMode,
             signingRoles: Array.isArray(options.signingRoles) ? options.signingRoles : this.engineOptions.signingRoles,
         };
+        this.applyEditability(options);
         // Async proofing providers (ITempoProofingProvider) push refreshed word lists through this
         // path long after mount — swap the proofing config and re-analyze immediately instead of
         // waiting for the next typing debounce.

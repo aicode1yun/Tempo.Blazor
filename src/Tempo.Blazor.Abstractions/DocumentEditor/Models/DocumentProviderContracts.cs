@@ -210,9 +210,115 @@ public static class DocumentEditorRenderEngineFlag
         => DocumentEditorRenderEngine.CanvasEnginePreview;
 }
 
+/// <summary>Editor participant role materialized into <see cref="DocumentEditorPermissions"/> via <see cref="DocumentEditorPermissions.ForRole"/>.</summary>
+public enum DocumentEditorRole
+{
+    /// <summary>Read-only access.</summary>
+    Viewer,
+
+    /// <summary>Read access plus commenting (typical external client).</summary>
+    Commenter,
+
+    /// <summary>May propose changes: comments, suggestions and tracked edits only — never direct edits and never accept/reject decisions.</summary>
+    SuggestOnly,
+
+    /// <summary>Full editing including reviewing suggestions, versions and import/export.</summary>
+    Editor,
+
+    /// <summary>Everything, including host audit information.</summary>
+    Owner
+}
+
 /// <summary>Host-controlled permissions for <c>TmDocumentEditor</c>.</summary>
 public class DocumentEditorPermissions
 {
+    /// <summary>
+    /// Optional role this permission set was materialized from (<see cref="ForRole"/>). Null for
+    /// legacy consumers that configure the booleans directly.
+    /// </summary>
+    public DocumentEditorRole? Role { get; set; }
+
+    /// <summary>
+    /// When true, every content edit must be a tracked change: the editor forces track changes on
+    /// and locks the toggle, so the user can propose but never directly edit (SuggestOnly role).
+    /// </summary>
+    public bool RequiresTrackedEditing { get; set; }
+
+    /// <summary>Materializes a role into the boolean capability matrix.</summary>
+    public static DocumentEditorPermissions ForRole(DocumentEditorRole role) => role switch
+    {
+        DocumentEditorRole.Viewer => new DocumentEditorPermissions
+        {
+            Role = role,
+            CanRead = true,
+            CanEdit = false,
+            CanComment = false,
+            CanSuggest = false,
+            CanReviewSuggestions = false,
+            CanCreateVersion = false,
+            CanImport = false,
+            CanExport = false,
+            CanViewAudit = false
+        },
+        DocumentEditorRole.Commenter => new DocumentEditorPermissions
+        {
+            Role = role,
+            CanRead = true,
+            CanEdit = false,
+            CanComment = true,
+            CanSuggest = false,
+            CanReviewSuggestions = false,
+            CanCreateVersion = false,
+            CanImport = false,
+            CanExport = false,
+            CanViewAudit = false
+        },
+        DocumentEditorRole.SuggestOnly => new DocumentEditorPermissions
+        {
+            Role = role,
+            CanRead = true,
+            CanEdit = true,
+            RequiresTrackedEditing = true,
+            CanComment = true,
+            CanSuggest = true,
+            CanReviewSuggestions = false,
+            CanCreateVersion = false,
+            CanImport = false,
+            CanExport = false,
+            CanViewAudit = false
+        },
+        DocumentEditorRole.Editor => new DocumentEditorPermissions
+        {
+            Role = role,
+            CanRead = true,
+            CanEdit = true,
+            CanComment = true,
+            CanSuggest = true,
+            CanReviewSuggestions = true,
+            CanCreateVersion = true,
+            CanImport = true,
+            CanExport = true,
+            CanViewAudit = false
+        },
+        _ => new DocumentEditorPermissions
+        {
+            Role = DocumentEditorRole.Owner,
+            CanRead = true,
+            CanEdit = true,
+            CanComment = true,
+            CanSuggest = true,
+            CanReviewSuggestions = true,
+            CanCreateVersion = true,
+            CanImport = true,
+            CanExport = true,
+            CanViewAudit = true
+        }
+    };
+
+    /// <summary>Parses a role name case-insensitively (e.g. from a query string).</summary>
+    public static bool TryParseRole(string? value, out DocumentEditorRole role)
+        => Enum.TryParse(value, ignoreCase: true, out role) && Enum.IsDefined(role);
+
     /// <summary>Whether the current user can read the document.</summary>
     public bool CanRead { get; set; } = true;
 

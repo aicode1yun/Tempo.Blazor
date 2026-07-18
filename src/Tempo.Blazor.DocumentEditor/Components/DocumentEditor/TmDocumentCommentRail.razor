@@ -2,6 +2,7 @@
 @inherits Tempo.Blazor.Components.TmComponentBase
 @using Tempo.Blazor.Abstractions.Shared
 @using Tempo.Blazor.DocumentEditor.Models
+@using Tempo.Blazor.DocumentEditor.Services
 
 <aside class="tm-document-editor__comment-rail"
        data-testid="@TestId("document-comment-rail")"
@@ -54,6 +55,30 @@
         </div>
     }
 
+    @if (Participants.Count > 0)
+    {
+        <section class="tm-document-comment-legend"
+                 data-testid="@TestId("document-comment-legend")"
+                 aria-label="@Loc["TmDocumentEditor_CommentLegendTitle"]">
+            <h4 class="tm-document-comment-legend__title">@Loc["TmDocumentEditor_CommentLegendTitle"]</h4>
+            <ul class="tm-document-comment-legend__list">
+                @foreach (var participant in Participants)
+                {
+                    <li class="tm-document-comment-legend__item" data-testid="@TestId("document-comment-legend-item")">
+                        <span class="tm-document-comment-legend__chip tm-document-comment-legend__chip--participant-@participant.ColorIndex"
+                              aria-hidden="true"></span>
+                        <span class="tm-document-comment-legend__name">@participant.DisplayName</span>
+                        @if (participant.IsExternal)
+                        {
+                            <span class="tm-document-comment-legend__badge"
+                                  data-testid="@TestId("document-comment-client-badge")">@Loc["TmDocumentEditor_CommentClientBadge"]</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+
     @if (IsLoading)
     {
         <div class="tm-document-comment-rail__loading" data-testid="@TestId("document-comment-loading")">
@@ -88,6 +113,7 @@
                 @foreach (var comment in VisibleComments)
                 {
                     <TmDocumentCommentThread Comment="@comment"
+                                             Participants="@Participants"
                                              IsSelected="@(comment.Id == SelectedCommentId)"
                                              CanComment="@CanComment"
                                              CanResolve="@CanResolve"
@@ -140,6 +166,23 @@
 
     /// <summary>Whether the current user can add comments or replies.</summary>
     [Parameter] public bool CanComment { get; set; } = true;
+
+    private IReadOnlyList<DocumentCommentParticipant> Participants
+    {
+        get
+        {
+            if (!ReferenceEquals(_participantsSource, Comments))
+            {
+                _participantsSource = Comments;
+                _participants = DocumentCommentParticipants.FromComments(Comments);
+            }
+
+            return _participants;
+        }
+    }
+
+    private IReadOnlyList<DocumentComment>? _participantsSource;
+    private IReadOnlyList<DocumentCommentParticipant> _participants = [];
 
     /// <summary>Whether the current user can resolve or reopen comments.</summary>
     [Parameter] public bool CanResolve { get; set; } = true;

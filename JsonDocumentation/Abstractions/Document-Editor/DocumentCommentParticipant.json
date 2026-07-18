@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentCommentParticipant",
+  "kind": "Class",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "A distinct comment participant derived from comment threads: stable author id, display name, external (client) flag driving the KLIENT badge, and the assigned palette color index used by the comment rail legend and per-thread coloring.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentCommentParticipants.cs",
+  "documentationStatus": "generated"
+}

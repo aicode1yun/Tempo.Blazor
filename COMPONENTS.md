@@ -6524,6 +6524,24 @@ Self-host compose + rozšíření českého slovníku: `docs/proofing-languageto
 LT-kompatibilní endpoint `/languagetool/v2/check` s malým českým slovníkem, takže referenční
 provider běží end-to-end i bez kontejneru); `proofing=languagetool-down` = fail-open ukázka.
 
+### Role a externí komentáře (`DocumentEditorRole` + paleta účastníků)
+
+Hrubé booleany `DocumentEditorPermissions` doplňuje role matice (aditivně — přímá konfigurace
+booleanů dál funguje):
+
+| API | Popis |
+|---|---|
+| `DocumentEditorRole` | Viewer / Commenter / SuggestOnly / Editor / Owner. |
+| `DocumentEditorPermissions.ForRole(role)` | Materializuje roli do boolean matice; `Role` a `RequiresTrackedEditing` se zaznamenají. |
+| `RequiresTrackedEditing` (SuggestOnly) | Návrhář smí psát, ale **každý edit je vynuceně tracked change**: editor drží track changes zapnuté, toggle je zamčený a `CanReviewSuggestions=false` blokuje accept/reject vlastních návrhů. |
+| Vynucení u vstupu | `canEdit:false` (Viewer/Commenter) zamyká hidden input přímo v canvas enginu — psaní nejde obejít mimo C# gaty (dřív to hlídal jen `ReadOnly` parametr). |
+| `DocumentCommentParticipants.FromComments(comments)` | Odvodí účastníky (pořadí prvního výskytu) se stabilním indexem do 8barevné palety (`--tm-comment-participant-0..7`, přebarvitelné theme); `IsExternal` z `DocumentCommentEntry.IsExternalAuthor`. |
+| Panel komentářů | Legenda „Účastníci" (chip + jméno + badge KLIENT pro externí), vlákna barevně odlišená levým okrajem per autor, externí příspěvky s badge `TmDocumentEditor_CommentClientBadge` (cs „KLIENT"). |
+
+Demo: `/canvas-engine-host?documentId=phase-8-canvas-role-comments&role=commenter&persona=client`
+(role=viewer|commenter|suggestonly|editor|owner; persona=client přepne autora na externího
+klienta — jeho komentáře demo provider označuje jako externí).
+
 ## Chat
 
 ### TmChat

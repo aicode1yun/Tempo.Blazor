@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentEditorRole",
+  "kind": "Enum",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Editor participant role (Viewer, Commenter, SuggestOnly, Editor, Owner) materialized into the DocumentEditorPermissions boolean capability matrix via DocumentEditorPermissions.ForRole. SuggestOnly may propose (comments, suggestions, tracked edits with track changes forced on) but never edits directly and never accepts/rejects suggestions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProviderContracts.cs",
+  "documentationStatus": "generated"
+}

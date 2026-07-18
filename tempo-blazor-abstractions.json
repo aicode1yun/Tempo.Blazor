@@ -4005,6 +4005,26 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentCommentParticipant",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "A distinct comment participant derived from comment threads: stable author id, display name, external (client) flag driving the KLIENT badge, and the assigned palette color index used by the comment rail legend and per-thread coloring.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentCommentParticipants.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentCommentParticipants",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Derives the distinct participant list from comment threads for per-participant coloring and the panel legend: first-appearance order, stable color index into the fixed 8-color CSS palette (wraps modulo PaletteSize), IsExternal when any entry by the author is flagged IsExternalAuthor. ColorIndexFor resolves an author's index (0 for unknown authors).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentCommentParticipants.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentCommentSortMode",
       "kind": "Enum",
       "category": "Document Editor",
@@ -4706,6 +4726,16 @@
       "category": "Document Editor",
       "namespace": "Tempo.Blazor.DocumentEditor.Models",
       "description": "Resolves the requested to the engine that may actually run. The guard keeps fail-safe until hosted interop is available; other explicit engine selections run as requested.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProviderContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentEditorRole",
+      "kind": "Enum",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Models",
+      "description": "Editor participant role (Viewer, Commenter, SuggestOnly, Editor, Owner) materialized into the DocumentEditorPermissions boolean capability matrix via DocumentEditorPermissions.ForRole. SuggestOnly may propose (comments, suggestions, tracked edits with track changes forced on) but never edits directly and never accepts/rejects suggestions.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProviderContracts.cs",
       "documentationStatus": "merged"
@@ -35292,11 +35322,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1425,
-    "manualItemCount": 1425,
-    "generatedItemCount": 1408,
+    "itemCount": 1428,
+    "manualItemCount": 1428,
+    "generatedItemCount": 1411,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1408
+    "publicApiTypeCount": 1411
   }
 }

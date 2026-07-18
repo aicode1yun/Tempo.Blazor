@@ -62,6 +62,8 @@ export function mount(hostElement, mountElement, modelJson, optionsJson, dotNetR
         uploadImage: file => uploadClipboardImage(dotNetRef, model.documentId, file),
         proofing: options.proofing,
         author: options.author,
+        readOnly: options.readOnly,
+        canEdit: options.canEdit,
         trackChanges: options.trackChanges,
         reviewDisplayMode: options.trackChanges?.reviewDisplayMode || options.reviewDisplayMode,
         onContextMenu: payload => notifyDotNet(dotNetRef, 'OnCanvasContextMenuRequested', payload),

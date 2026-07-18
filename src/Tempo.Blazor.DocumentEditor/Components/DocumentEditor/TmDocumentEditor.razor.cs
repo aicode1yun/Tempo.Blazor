@@ -682,9 +682,16 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     private bool CanUseSuggestions => CanCreateSuggestions;
 
     private bool CanReviewRevisions => CanEditDocument
+        && EffectivePermissions.CanReviewSuggestions
         && _document is not null
         && !IsVersionPreview
         && !IsTemplatePreview;
+
+    /// <summary>Test seam: whether the current permission set allows accepting/rejecting revisions.</summary>
+    internal bool CanReviewRevisionsGate => CanReviewRevisions;
+
+    /// <summary>Test seam: whether the current permission set allows commenting.</summary>
+    internal bool CanCommentGate => EffectivePermissions.CanComment && !IsVersionPreview && !IsTemplatePreview;
 
     // Revision badge / count read the engine-sourced list (B3) when available, falling back to the mirror.
     private IReadOnlyList<DocumentRevision> DisplayedRevisions => _canvasRevisions ?? _document?.Revisions ?? [];
@@ -703,14 +710,18 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
 
     private string ActiveSidePanelDataValue => ActiveSidePanelTab.ToString().ToLowerInvariant();
 
-    private bool EffectiveTrackChangesEnabled => _trackChangesEnabled;
+    // Phase 8 role matrix: SuggestOnly may propose but never edit directly — every edit is forced
+    // through track changes and the toggle is locked on.
+    private bool RequiresTrackedEditing => EffectivePermissions.RequiresTrackedEditing;
+
+    private bool EffectiveTrackChangesEnabled => _trackChangesEnabled || RequiresTrackedEditing;
 
     // B4: the canvas engine has no separate provider-backed suggestion mode; its native "propose + review an
     // edit" mechanism IS track-changes (revisions: inline overlay + accept/reject, built in B3). So when the
     // host enables suggestion mode on the canvas engine, drive the engine's track-changes — every edit then
     // becomes a reviewable revision (a suggestion), with no continuous C# mirror. No-op (== _trackChangesEnabled)
     // when suggestions are not enabled, so the explicit track-changes toggle and existing tests are unaffected.
-    private bool CanvasEngineTracksChanges => _trackChangesEnabled || (UsingCanvasEngine && _suggestionsEnabled);
+    private bool CanvasEngineTracksChanges => _trackChangesEnabled || RequiresTrackedEditing || (UsingCanvasEngine && _suggestionsEnabled);
 
     // B4 Slice 2: in canvas suggestion mode the proposed edits ARE the engine's revisions (Slice 1). Surface
     // them in the suggestion panel by mapping the live revision list to suggestions, and review them through
@@ -902,7 +913,7 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        _trackChangesEnabled = TrackChangesEnabled || _trackChangesEnabled;
+        _trackChangesEnabled = TrackChangesEnabled || _trackChangesEnabled || RequiresTrackedEditing;
         _suggestionsEnabled = SuggestionProvider is not null && (SuggestionsEnabled || _suggestionsEnabled);
         if (SuggestionProvider is null)
         {
@@ -6358,6 +6369,12 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     {
         if (EffectiveReadOnly || !IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges))
         {
+            return;
+        }
+
+        if (RequiresTrackedEditing)
+        {
+            // SuggestOnly: tracked editing is mandatory — the toggle is locked on.
             return;
         }
 

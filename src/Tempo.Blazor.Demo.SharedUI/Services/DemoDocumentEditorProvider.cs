@@ -53,6 +53,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
     /// <summary>Stable document id used by the Czech LanguageTool proofing E2E gate.</summary>
     public const string ProofingCzechDocumentId = "phase-7-proofing-czech";
 
+    /// <summary>Stable document id used by the role-permissions and external-comment E2E gate.</summary>
+    public const string RoleCommentsDocumentId = "phase-8-canvas-role-comments";
+
     /// <summary>Stable document id used by the canvas image and drawing object E2E gate.</summary>
     public const string CanvasImagesDocumentId = "phase-15-canvas-images";
 
@@ -1420,6 +1423,132 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             DocumentTextAlignment.Left,
             "Dodavatel dodá zboží v dohodnutém termínu a kupující zaplatí kupní cenu.",
             spacingAfter: 12));
+
+        StoreDocument(document);
+        return document;
+    }
+
+    /// <summary>
+    /// Seeds a contract document with comment threads from two participants — an internal author
+    /// and an external client (IsExternalAuthor) — for the role-permissions / comment-colors E2E.
+    /// </summary>
+    public DocumentEditorDocument SeedRoleCommentsDocument(string documentId = RoleCommentsDocumentId, bool reset = false)
+    {
+        if (!reset)
+        {
+            var existing = base.LoadAsync(documentId).GetAwaiter().GetResult();
+            if (existing.Found && existing.Document is not null)
+            {
+                return existing.Document;
+            }
+        }
+
+        var document = DocumentEditorDocument.Empty(documentId);
+        var sectionId = "role-comments-section-main";
+        document.Metadata.Title = "Smlouva ke klientské revizi";
+        document.Metadata.CreatedAt = CanonicalDemoTimestamp;
+        document.Metadata.ModifiedAt = CanonicalDemoTimestamp;
+        document.Sections[0].Id = sectionId;
+
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "role-comments-clause",
+            SectionId = sectionId,
+            Type = DocumentBlockType.Paragraph,
+            Order = 10,
+            ParagraphProperties = new DocumentParagraphProperties { LineSpacing = 1.16, SpacingAfter = 12 },
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun
+                    {
+                        Id = "role-comments-internal-run",
+                        Text = "Smluvní strany se dohodly na ceně díla ",
+                        Marks =
+                        [
+                            new InlineMark
+                            {
+                                Type = InlineMarkType.CommentAnchor,
+                                CommentAnchor = new CommentAnchorMarkData { CommentId = "role-comments-internal-thread" }
+                            }
+                        ]
+                    },
+                    new TextRun
+                    {
+                        Id = "role-comments-client-run",
+                        Text = "ve výši 250 000 Kč bez DPH.",
+                        Marks =
+                        [
+                            new InlineMark
+                            {
+                                Type = InlineMarkType.CommentAnchor,
+                                CommentAnchor = new CommentAnchorMarkData { CommentId = "role-comments-client-thread" }
+                            }
+                        ]
+                    }
+                ]
+            }
+        });
+
+        document.Blocks.Add(TextParagraph(
+            sectionId,
+            "role-comments-terms",
+            20,
+            DocumentTextAlignment.Left,
+            "Dílo bude předáno do třiceti dnů od podpisu této smlouvy.",
+            spacingAfter: 12));
+
+        document.Comments.Add(new DocumentComment
+        {
+            Id = "role-comments-internal-thread",
+            Anchor = new DocumentCommentAnchor
+            {
+                Type = DocumentCommentAnchorType.TextRange,
+                BlockId = "role-comments-clause",
+                StartInlineIndex = 0,
+                EndInlineIndex = 0,
+                StartOffset = 0,
+                EndOffset = 38
+            },
+            Visibility = DocumentCommentVisibility.Internal,
+            Entries =
+            [
+                new DocumentCommentEntry
+                {
+                    Id = "role-comments-internal-entry",
+                    Author = new DocumentEditorAuthor { Id = "author-anna", DisplayName = "Anna Právník" },
+                    Text = "Cena odpovídá schválenému rozpočtu.",
+                    CreatedAt = CanonicalDemoTimestamp.AddMinutes(5)
+                }
+            ]
+        });
+
+        document.Comments.Add(new DocumentComment
+        {
+            Id = "role-comments-client-thread",
+            Anchor = new DocumentCommentAnchor
+            {
+                Type = DocumentCommentAnchorType.TextRange,
+                BlockId = "role-comments-clause",
+                StartInlineIndex = 1,
+                EndInlineIndex = 1,
+                StartOffset = 0,
+                EndOffset = 27
+            },
+            Visibility = DocumentCommentVisibility.Client,
+            Entries =
+            [
+                new DocumentCommentEntry
+                {
+                    Id = "role-comments-client-entry",
+                    Author = new DocumentEditorAuthor { Id = "client-novak", DisplayName = "Klient Novák" },
+                    IsExternalAuthor = true,
+                    Text = "Prosíme o rozpad ceny na etapy.",
+                    CreatedAt = CanonicalDemoTimestamp.AddMinutes(12)
+                }
+            ]
+        });
 
         StoreDocument(document);
         return document;
@@ -3576,11 +3705,24 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
     }
 
     /// <inheritdoc />
+    /// <summary>Demo rule: entries authored by the client persona (id "client-*") are external.</summary>
+    private static void MarkClientEntriesExternal(IEnumerable<DocumentCommentEntry> entries)
+    {
+        foreach (var entry in entries)
+        {
+            if (entry.Author?.Id?.StartsWith("client-", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                entry.IsExternalAuthor = true;
+            }
+        }
+    }
+
     public override async Task<DocumentComment> CreateCommentAsync(
         string documentId,
         DocumentComment comment,
         CancellationToken cancellationToken = default)
     {
+        MarkClientEntriesExternal(comment.Entries);
         if (_http is not null)
         {
             try
@@ -3615,6 +3757,7 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         DocumentCommentEntry entry,
         CancellationToken cancellationToken = default)
     {
+        MarkClientEntriesExternal([entry]);
         if (_http is not null)
         {
             try

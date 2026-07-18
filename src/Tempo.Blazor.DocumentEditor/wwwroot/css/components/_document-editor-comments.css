@@ -151,3 +151,95 @@
     color: var(--tm-color-text);
     background: var(--tm-color-warning-subtle);
 }
+
+/* Phase 8: per-participant comment colors + panel legend. The palette tokens are declared here
+   (component scope) so hosts can override them via theming; indexes wrap modulo 8. */
+.tm-document-editor__comment-rail {
+    --tm-comment-participant-0: #2563eb;
+    --tm-comment-participant-1: #d97706;
+    --tm-comment-participant-2: #059669;
+    --tm-comment-participant-3: #dc2626;
+    --tm-comment-participant-4: #7c3aed;
+    --tm-comment-participant-5: #0891b2;
+    --tm-comment-participant-6: #db2777;
+    --tm-comment-participant-7: #65a30d;
+}
+
+.tm-document-comment-thread--participant-0 { border-left: 3px solid var(--tm-comment-participant-0); }
+.tm-document-comment-thread--participant-1 { border-left: 3px solid var(--tm-comment-participant-1); }
+.tm-document-comment-thread--participant-2 { border-left: 3px solid var(--tm-comment-participant-2); }
+.tm-document-comment-thread--participant-3 { border-left: 3px solid var(--tm-comment-participant-3); }
+.tm-document-comment-thread--participant-4 { border-left: 3px solid var(--tm-comment-participant-4); }
+.tm-document-comment-thread--participant-5 { border-left: 3px solid var(--tm-comment-participant-5); }
+.tm-document-comment-thread--participant-6 { border-left: 3px solid var(--tm-comment-participant-6); }
+.tm-document-comment-thread--participant-7 { border-left: 3px solid var(--tm-comment-participant-7); }
+
+.tm-document-comment-legend {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--tm-color-border-subtle);
+}
+
+.tm-document-comment-legend__title {
+    margin: 0 0 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--tm-color-text-muted);
+}
+
+.tm-document-comment-legend__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tm-document-comment-legend__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8125rem;
+    color: var(--tm-color-text);
+}
+
+.tm-document-comment-legend__chip {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.tm-document-comment-legend__chip--participant-0 { background: var(--tm-comment-participant-0); }
+.tm-document-comment-legend__chip--participant-1 { background: var(--tm-comment-participant-1); }
+.tm-document-comment-legend__chip--participant-2 { background: var(--tm-comment-participant-2); }
+.tm-document-comment-legend__chip--participant-3 { background: var(--tm-comment-participant-3); }
+.tm-document-comment-legend__chip--participant-4 { background: var(--tm-comment-participant-4); }
+.tm-document-comment-legend__chip--participant-5 { background: var(--tm-comment-participant-5); }
+.tm-document-comment-legend__chip--participant-6 { background: var(--tm-comment-participant-6); }
+.tm-document-comment-legend__chip--participant-7 { background: var(--tm-comment-participant-7); }
+
+.tm-document-comment-legend__badge,
+.tm-document-comment-entry__external {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--tm-color-warning-text, #92400e);
+    background: var(--tm-color-warning-subtle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tm-document-comment-legend__chip {
+        transition: none;
+    }
+}
+
+[data-theme="dark"] .tm-document-comment-legend,
+.tm-dark .tm-document-comment-legend {
+    border-color: var(--tm-color-border-subtle);
+}

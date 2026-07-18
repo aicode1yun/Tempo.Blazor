@@ -4377,6 +4377,12 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Optional mention provider reused by the reply composer."
+        },
+        {
+          "name": "Participants",
+          "type": "IReadOnlyList<DocumentCommentParticipant>?",
+          "isRequired": false,
+          "description": "Optional participant palette used to color this thread and its entries by author."
         }
       ]
     },
