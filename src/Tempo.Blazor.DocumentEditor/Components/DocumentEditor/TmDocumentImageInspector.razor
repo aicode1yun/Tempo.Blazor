@@ -25,7 +25,7 @@
                 <label class="tm-document-image-inspector__field">
                     <span>@Loc["TmDocumentEditor_ImageUrl"]</span>
                     <input value="@_linkInput"
-                           placeholder="https://"
+                           placeholder="@Loc["TmDocumentEditor_ImageUrlPlaceholder"]"
                            data-testid="@TestId("document-image-inspector-link")"
                            @oninput="HandleLinkInputAsync"
                            @onchange="HandleLinkChangedAsync" />
