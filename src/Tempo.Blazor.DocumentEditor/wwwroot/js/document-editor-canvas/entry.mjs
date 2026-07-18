@@ -126,6 +126,7 @@ export class CanvasDocumentEngine {
             openLinkAtPosition: position => this.commandRuntime?.openLinkAtPosition(position) === true,
             executeCommand: (commandId, argument) => this.execCommand(commandId, argument),
             onSelectionChanged: state => this.notifySelectionChanged(state),
+            ensureHitTestLayout: () => this.ensurePointerHitLayout(),
         });
         this.history = createCanvasHistoryController();
         this.commandRuntime = createCanvasCommandRuntime({
@@ -478,6 +479,17 @@ export class CanvasDocumentEngine {
         // Perf plan N11: a wholesale model replacement restarts the progressive first layout.
         this.progressiveLayout = { complete: false, model: null, resume: null, laidPages: 0 };
         return this;
+    }
+
+    // Caret race fix (root-caused in Phase 7): a click landing right after a replaceModel push
+    // used to hit-test against a freshly reset (partial) progressive layout and resolve to offset
+    // 0 in the hit block. The selection controller calls this seam on pointer-down so the layout
+    // is synchronously completed BEFORE the hit-test — the same pattern getPrintPreviewSnapshot
+    // uses for full-document reads.
+    ensurePointerHitLayout() {
+        if (this.engineOptions.progressiveFirstLayout === true && this.progressiveLayout.complete !== true) {
+            this.render({ fullLayout: true });
+        }
     }
 
     applyEditability(options = {}) {

@@ -102,6 +102,7 @@
     private DotNetObjectReference<TmDocumentCanvasEngineHost>? _selfRef;
     private bool _ready;
     private bool _disposed;
+    private bool _mountInProgress;
 
     /// <summary>The document accepted by the canvas engine host.</summary>
     [Parameter] public DocumentEditorDocument? Document { get; set; }
@@ -253,6 +254,30 @@
             return;
         }
 
+        // Mount reentrancy guard (caret race root cause): OnAfterRenderAsync fires per render and
+        // _handle is only assigned AFTER the awaited mount completes — during startup several
+        // quick renders used to interleave here and mount the engine 2-3x into the same host.
+        // Each remount replaceChildren()-ed the previous engine root, so clicks landing in that
+        // window hit a discarded root (listeners gone) and the final engine started with the
+        // default caret at the document start.
+        if (_mountInProgress)
+        {
+            return;
+        }
+
+        _mountInProgress = true;
+        try
+        {
+            await MountAsync();
+        }
+        finally
+        {
+            _mountInProgress = false;
+        }
+    }
+
+    private async Task MountAsync()
+    {
         _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", InteropModulePath);
         _selfRef = DotNetObjectReference.Create(this);
         await EnsureAssetUrlsResolvedAsync();

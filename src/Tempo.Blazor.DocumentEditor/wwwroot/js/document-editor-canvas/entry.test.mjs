@@ -84,6 +84,53 @@ test('updateOptions applies proofing word lists at runtime and re-analyzes immed
     assert.equal(engine.getSnapshot().proofing.diagnosticCount, 0);
 });
 
+test('pointer hit-testing completes a just-reset progressive layout synchronously (caret race fix)', () => {
+    const bigModel = version => ({
+        documentId: 'caret-race-fix',
+        version,
+        body: {
+            blocks: Array.from({ length: 80 }, (_, index) => ({
+                id: `p${index}`,
+                type: 'paragraph',
+                order: index + 1,
+                paragraphProperties: {},
+                content: {
+                    type: 'paragraph',
+                    runs: [{ id: `p${index}-run`, type: 'text', text: `Paragraph ${index + 1} ${'caret race filler text '.repeat(8)}`, marks: [] }],
+                },
+            })),
+        },
+    });
+
+    const idleCallbacks = [];
+    const doc = createFakeDocument();
+    const host = doc.createElement('div');
+    const engine = createCanvasDocumentEngine({
+        host,
+        document: doc,
+        model: bigModel(0),
+        scheduleProgressiveIdle: callback => idleCallbacks.push(callback),
+    });
+    engine.render();
+
+    // A post-mount replaceModel push resets the progressive layout — the window in which a click
+    // used to hit-test against a partial selection layout and land at offset 0.
+    engine.setModel(bigModel(1));
+    engine.render();
+    const root = findOne(host, node => node.getAttribute('data-testid') === 'document-canvas-engine-root');
+    assert.equal(root.getAttribute('data-canvas-layout-complete'), 'false', 'the reset layout must be partial again');
+
+    // The selection controller calls this seam on pointer-down: the layout must finish
+    // synchronously so the hit-test resolves against the FULL geometry.
+    engine.ensurePointerHitLayout();
+    assert.equal(root.getAttribute('data-canvas-layout-complete'), 'true',
+        'pointer-down must not hit-test against a partial layout');
+
+    // No-op when the layout is already complete.
+    engine.ensurePointerHitLayout();
+    assert.equal(root.getAttribute('data-canvas-layout-complete'), 'true');
+});
+
 test('canEdit:false makes the hidden input read-only so typing cannot bypass permission gates', () => {
     const doc = createFakeDocument();
     const host = doc.createElement('div');

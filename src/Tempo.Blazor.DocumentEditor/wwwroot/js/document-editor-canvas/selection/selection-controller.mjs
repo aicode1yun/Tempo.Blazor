@@ -45,6 +45,7 @@ export function createCanvasSelectionController(options = {}) {
     const inputBridge = options.inputBridge;
     const openLinkAtPosition = typeof options.openLinkAtPosition === 'function' ? options.openLinkAtPosition : null;
     const executeCommand = typeof options.executeCommand === 'function' ? options.executeCommand : null;
+    const ensureHitTestLayout = typeof options.ensureHitTestLayout === 'function' ? options.ensureHitTestLayout : null;
     const onSelectionChanged = typeof options.onSelectionChanged === 'function' ? options.onSelectionChanged : null;
     if (!doc || typeof doc.createElement !== 'function') {
         throw new Error('Canvas selection controller requires a DOM-like document.');
@@ -98,6 +99,11 @@ export function createCanvasSelectionController(options = {}) {
         if (event?.button === 2) {
             return;
         }
+
+        // Caret race fix: a just-reset progressive layout (post-mount replaceModel push) must be
+        // completed synchronously before hit-testing, or the click resolves to offset 0. The
+        // callback re-enters update() with the finished selection layout.
+        ensureHitTestLayout?.();
 
         if (!layout) {
             return;
