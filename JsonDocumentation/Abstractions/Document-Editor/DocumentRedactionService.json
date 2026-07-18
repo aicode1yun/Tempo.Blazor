@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentRedactionService",
+  "kind": "Class",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Applies redaction marks with REAL content removal: Apply returns an export copy where every run carrying InlineMarkType.Redaction has its text replaced with block characters (█) — the original characters no longer exist in the canonical model, so no export format (DOCX XML, PDF text layer, HTML) can leak them. Covers body blocks, table cells, content controls and headers/footers; HasRedactions detects marks. The source document is never mutated (the live editor keeps the original until the mark is removed).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentRedactionService.cs",
+  "documentationStatus": "generated"
+}

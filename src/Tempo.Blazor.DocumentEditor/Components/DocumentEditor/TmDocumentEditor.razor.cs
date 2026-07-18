@@ -1755,7 +1755,18 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     }
 
     private CanvasExportBridge CreateCanvasExportBridge()
-        => new(_ => GetCurrentDocumentForProviderExportAsync());
+        => new(async _ => PrepareDocumentForExport(await GetCurrentDocumentForProviderExportAsync()));
+
+    /// <summary>
+    /// Export gate: documents carrying redaction marks leave the editor with the redacted content
+    /// REALLY removed (block characters), never just visually covered. Runs on a copy — the live
+    /// editing model keeps the original text until the user removes the redaction mark. Internal
+    /// for tests.
+    /// </summary>
+    internal static DocumentEditorDocument PrepareDocumentForExport(DocumentEditorDocument document)
+        => DocumentRedactionService.HasRedactions(document)
+            ? DocumentRedactionService.Apply(document)
+            : document;
 
     private async Task<DocumentEditorDocument> EnrichProviderBoundarySnapshotAsync(DocumentEditorDocument snapshot)
     {
@@ -11435,9 +11446,20 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         {
             await activityProvider.AppendAsync(DocumentEditorActivityBridge.ToTmActivityEntry(auditEvent));
         }
-        catch when (AuditFailureMode == DocumentEditorAuditFailureMode.NonBlocking)
+        catch when (AuditFailureMode == DocumentEditorAuditFailureMode.NonBlocking
+                    || auditEvent.Result == DocumentEditorAuditResult.Failure)
         {
-            // Host applications may prefer the editor workflow to continue even if audit persistence is unavailable.
+            // NonBlocking hosts prefer the workflow to continue even if audit persistence is
+            // unavailable. Failure audits are ALWAYS best-effort — they run inside catch blocks
+            // and rethrowing there would crash the component instead of failing the workflow.
+        }
+        catch (Exception ex)
+        {
+            // Compliance (Blocking) mode: a successful operation whose audit trail cannot be
+            // persisted must fail its workflow. The typed exception lands in the workflow's own
+            // catch (load error, failed save message), never as an unhandled component crash.
+            throw new DocumentEditorAuditException(
+                $"Audit persistence failed for '{auditEvent.Action}' and AuditFailureMode is Blocking.", ex);
         }
     }
 

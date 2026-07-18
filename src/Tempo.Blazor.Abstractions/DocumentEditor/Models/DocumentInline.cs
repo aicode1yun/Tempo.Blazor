@@ -835,7 +835,14 @@ public enum InlineMarkType
     FontSize,
 
     /// <summary>Named bookmark anchor (R.5.5). The bookmark name is carried in the mark value.</summary>
-    Bookmark
+    Bookmark,
+
+    /// <summary>
+    /// Redaction range: rendered as a black bar in the editor and REMOVED from the canonical model
+    /// on export by <c>DocumentRedactionService.Apply</c> (text replaced with block characters, so
+    /// no export format can leak the original content).
+    /// </summary>
+    Redaction
 }
 
 /// <summary>Hyperlink metadata.</summary>

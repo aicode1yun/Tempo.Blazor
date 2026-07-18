@@ -3,7 +3,7 @@ import { isDeliberateSelectionNotification } from './selection-cadence.mjs';
 import { buildFormattingState } from './format-state.mjs';
 import { extractAnnotations, countModelWords } from './annotations-state.mjs';
 import { clampExportScale, renderDisplayListPageToCanvas } from './render/page-image-export.mjs';
-import { translateDisplayListToLayoutSnapshot } from './render/layout-snapshot-export.mjs';
+import { collectRedactedRunIds, translateDisplayListToLayoutSnapshot } from './render/layout-snapshot-export.mjs';
 import { findSigningFieldAtSelection } from './controls/signing-field-selection.mjs';
 import { findContentControlAtSelection } from './controls/content-control-selection.mjs';
 import { extractSigningFields } from './controls/signing-field-areas.mjs';
@@ -605,6 +605,8 @@ export function getLayoutSnapshotJson(handle) {
         // Redline printing: tracked changes style the PDF exactly like the canvas markup view.
         revisions: snapshot.model?.revisions,
         reviewDisplayMode: state.engine.reviewDisplayMode,
+        // Redaction: destroy redacted characters in the print snapshot (never just overlay them).
+        redactedRunIds: [...collectRedactedRunIds(snapshot.model)],
     }));
 }
 

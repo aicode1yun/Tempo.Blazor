@@ -6557,6 +6557,40 @@ Continuous|Page|Section) se renderuje v levém okraji (`layout/line-numbering.mj
 `/canvas-engine-host?documentId=phase-9-canvas-legal-filing` (č.l. marginálie v hlavičce,
 justifikované body I./II., čísla řádků per stránka).
 
+### Redakce a bezpečnost dokumentu (`InlineMarkType.Redaction` + audit)
+
+Redakce = **skutečné odstranění obsahu při exportu**, nikdy jen vizuální překrytí:
+
+| API | Popis |
+|---|---|
+| `InlineMarkType.Redaction` | Redakční mark na runu: v editoru černý pruh (černé pozadí + černé glyfy), obsah v živém modelu zůstává (autor může mark odebrat). |
+| `DocumentRedactionService.Apply(document)` | Exportní kopie s redigovaným textem nahrazeným znaky █ (tělo, tabulky, content controls, hlavičky/patičky); `HasRedactions` detekce. Zdrojový dokument se nemutuje. |
+| Exportní brána | `TmDocumentEditor.PrepareDocumentForExport` — každý dokument opouštějící editor přes export bridge (DOCX/formáty/PDF) projde redakcí. Print snapshot navíc ničí redigované znaky u zdroje (`collectRedactedRunIds` → `options.redactedRunIds` v `layout-snapshot-export.mjs`), takže ani textová vrstva WYSIWYG PDF originál neobsahuje. |
+| `DocumentEditorAuditFailureMode.Blocking` | Compliance režim: audit, který se nepodaří persistovat u ÚSPĚŠNÉ operace, shodí její workflow typovanou `DocumentEditorAuditException` (load ukáže chybu, save hlásí neúspěch — nikdy tichý průchod bez audit trail). Failure-audity jsou vždy best-effort (běží v catch blocích); default `NonBlocking` chování beze změn. |
+
+Demo: `/canvas-engine-host?documentId=phase-10-canvas-redaction` (redigované číslo účtu).
+
+### Provider kontrakty TmDocumentEditor (přehled)
+
+Všechny integrační body editoru jsou volitelné parametry; bez nich editor běží v in-memory režimu.
+
+| Parametr / kontrakt | Účel |
+|---|---|
+| `Provider` (`IDocumentEditorProvider`) | Autoritativní load/save/verze/komentáře (`LoadAsync`, `SaveAsync`, `GetVersionsAsync`, `GetCommentsAsync`, `CreateCommentAsync`…). Referenční `InMemoryDocumentEditorProvider`. |
+| `CollaborationProvider` (`IDocumentCollaborationProvider`) | Realtime relay operačních dávek a kurzorů (Join/Broadcast/Poll); `SignalRDocumentCollaborationProvider`, multi-server přes `IDocumentCollaborationBackplane` (`BackplaneDocumentCollaborationProvider`, Redis v Tempo.Blazor.Collaboration). |
+| `SuggestionProvider` (`IDocumentSuggestionProvider`) | Ukládání a review návrhů; v canvas režimu jsou návrhy nativně engine revize (track changes). |
+| `ComparisonProvider` (`IDocumentComparisonProvider`) | Porovnání dokumentů (base→compare = old→new); lokální fallback `DocumentComparisonService` (`UseLocalComparisonFallback`). |
+| `TokenProvider` (`ITokenDataProvider`) / `TokenValueProvider` (`IDocumentTokenValueProvider`) | Autocomplete tokenů a hodnoty pro náhled šablony / assembly (`DocumentTokenValue` vč. `Rows` pro opakování). |
+| `ActivityProvider` (`ITmActivityProvider`) | Audit trail editoru (`DocumentEditorAuditEvent` → `TmActivityEntry`); `AuditFailureMode` NonBlocking (default) / Blocking (compliance, viz výše). |
+| `PdfExportProvider` (`IDocumentPdfExportProvider`) | WYSIWYG PDF export (`DocumentPdfExportRequest.LayoutSnapshotJson` + `TempoDocumentPdfRenderer`); `PdfForensicWatermark` doplňuje forenzní razítko. |
+| `FormatProvider` (`IDocumentFormatProvider`) | Import/export DOCX/ODT/HTML/MD (`DocumentDocx*`, redline export z porovnání). |
+| `OfflineStore` (`IDocumentOfflineStore`) + `SyncProvider` (`IDocumentSyncProvider`) | Offline drafty (IndexedDB reference `IndexedDbDocumentOfflineStore`) a jejich synchronizace; `OfflineMode`, `PreferLocalDraft`. |
+| `ProofingProvider` (`ITempoProofingProvider`) | Async spell/grammar check (LanguageTool reference v Tempo.Blazor.Proofing.LanguageTool); materializace do word-list `ProofingOptions`, fail-open. |
+| `Permissions` (`DocumentEditorPermissions`) | Boolean capability matice + role (`DocumentEditorRole`, `ForRole`); SuggestOnly = vynucené tracked edits. |
+| `SigningRoles` (`SigningSubmitterRole[]`) | Role podpisových polí pro signing bridge (barvy/uuid v canvas chrome). |
+| `ImageProvider` / `ImageUrlResolver` (`IDocumentImageProvider`, `IDocumentImageUrlResolver`) | Upload obrázků z clipboardu a resolvování asset URL. |
+| `MentionProvider` (`ITmPeopleProvider`) | Zmínky v komentářích. |
+
 ## Chat
 
 ### TmChat

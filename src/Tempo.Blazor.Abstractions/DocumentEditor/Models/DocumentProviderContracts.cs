@@ -347,6 +347,20 @@ public class DocumentEditorPermissions
     public bool CanViewAudit { get; set; } = false;
 }
 
+/// <summary>
+/// Thrown by the editor when <see cref="DocumentEditorAuditFailureMode.Blocking"/> is active and an
+/// audit entry for a successful operation could not be persisted — the triggering workflow (load,
+/// save, export…) fails with this exception instead of silently continuing without an audit trail.
+/// </summary>
+public class DocumentEditorAuditException : Exception
+{
+    /// <summary>Creates the exception with a message and the underlying provider failure.</summary>
+    public DocumentEditorAuditException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+}
+
 /// <summary>Behavior used when an activity provider fails while recording an editor event.</summary>
 public enum DocumentEditorAuditFailureMode
 {

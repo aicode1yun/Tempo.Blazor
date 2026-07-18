@@ -59,6 +59,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
     /// <summary>Stable document id used by the legal-filing (line numbering + č.l. header) E2E gate.</summary>
     public const string LegalFilingDocumentId = "phase-9-canvas-legal-filing";
 
+    /// <summary>Stable document id used by the redaction (real content removal) E2E gate.</summary>
+    public const string RedactionDocumentId = "phase-10-canvas-redaction";
+
     /// <summary>Stable document id used by the canvas image and drawing object E2E gate.</summary>
     public const string CanvasImagesDocumentId = "phase-15-canvas-images";
 
@@ -1425,6 +1428,59 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             20,
             DocumentTextAlignment.Left,
             "Dodavatel dodá zboží v dohodnutém termínu a kupující zaplatí kupní cenu.",
+            spacingAfter: 12));
+
+        StoreDocument(document);
+        return document;
+    }
+
+    /// <summary>
+    /// Seeds a document with a redaction-marked bank account: rendered as a black bar in the
+    /// editor and destroyed (block characters) in every export — the redaction E2E gate.
+    /// </summary>
+    public DocumentEditorDocument SeedRedactionDocument(string documentId = RedactionDocumentId, bool reset = false)
+    {
+        if (!reset)
+        {
+            var existing = base.LoadAsync(documentId).GetAwaiter().GetResult();
+            if (existing.Found && existing.Document is not null)
+            {
+                return existing.Document;
+            }
+        }
+
+        var document = DocumentEditorDocument.Empty(documentId);
+        var sectionId = "redaction-section-main";
+        document.Metadata.Title = "Smlouva s redigovanými údaji";
+        document.Metadata.CreatedAt = CanonicalDemoTimestamp;
+        document.Metadata.ModifiedAt = CanonicalDemoTimestamp;
+        document.Sections[0].Id = sectionId;
+
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "redaction-account",
+            SectionId = sectionId,
+            Type = DocumentBlockType.Paragraph,
+            Order = 10,
+            ParagraphProperties = new DocumentParagraphProperties { LineSpacing = 1.16, SpacingAfter = 12 },
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun { Id = "redaction-account-label", Text = "Kupní cena bude uhrazena na účet " },
+                    new TextRun
+                    {
+                        Id = "redaction-account-secret",
+                        Text = "123456789/0100",
+                        Marks = [new InlineMark { Type = InlineMarkType.Redaction }]
+                    },
+                    new TextRun { Id = "redaction-account-tail", Text = " vedený u Komerční banky." }
+                ]
+            }
+        });
+
+        document.Blocks.Add(TextParagraph(sectionId, "redaction-public", 20, DocumentTextAlignment.Left,
+            "Ostatní ujednání smlouvy zůstávají veřejná a exportují se beze změny.",
             spacingAfter: 12));
 
         StoreDocument(document);

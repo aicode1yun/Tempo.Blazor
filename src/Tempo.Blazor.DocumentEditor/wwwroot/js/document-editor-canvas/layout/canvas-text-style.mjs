@@ -83,6 +83,11 @@ export function createCanvasRunStyle(model, block, run) {
             base.color = String(mark.value);
         } else if (type === 'highlight' && mark.value) {
             base.backgroundColor = String(mark.value);
+        } else if (type === 'redaction') {
+            // Redaction bar: black background + black glyphs hides the content on screen; exports
+            // additionally DESTROY the text (DocumentRedactionService / snapshot redactedRunIds).
+            base.backgroundColor = '#000000';
+            base.color = '#000000';
         } else if (type === 'fontfamily' && mark.value) {
             base.fontFamily = String(mark.value);
         } else if (type === 'fontsize' && mark.value) {

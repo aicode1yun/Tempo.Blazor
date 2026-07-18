@@ -8150,6 +8150,10 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/layout/__tests__/line-numbering.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/layout/__tests__/notes.test.mjs",
       "kind": "JavaScript"
     },

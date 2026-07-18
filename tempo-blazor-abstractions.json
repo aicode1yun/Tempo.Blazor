@@ -4463,6 +4463,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentEditorAuditException",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Models",
+      "description": "Thrown by TmDocumentEditor when DocumentEditorAuditFailureMode.Blocking is active and the audit entry for a successful operation could not be persisted — the triggering workflow (load, save, export) fails with this exception instead of continuing without an audit trail. Failure audits stay best-effort so error reporting can never crash the component.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProviderContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentEditorAuditFailureMode",
       "kind": "Enum",
       "category": "Document Editor",
@@ -6808,6 +6818,42 @@
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentProofingService.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentRedactionService",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Applies redaction marks with REAL content removal: Apply returns an export copy where every run carrying InlineMarkType.Redaction has its text replaced with block characters (█) — the original characters no longer exist in the canonical model, so no export format (DOCX XML, PDF text layer, HTML) can leak them. Covers body blocks, table cells, content controls and headers/footers; HasRedactions detects marks. The source document is never mutated (the live editor keeps the original until the mark is removed).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentRedactionService.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Apply",
+          "kind": "Method",
+          "type": "DocumentEditorDocument",
+          "description": "Returns an export copy with all redacted run text destructively replaced.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "DocumentEditorDocument"
+            }
+          ]
+        },
+        {
+          "name": "HasRedactions",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Whether the document contains any redaction mark (body, tables, headers/footers).",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "DocumentEditorDocument?"
+            }
+          ]
+        }
+      ]
     },
     {
       "itemName": "DocumentRedlineBuilder",
@@ -35322,11 +35368,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1428,
-    "manualItemCount": 1428,
-    "generatedItemCount": 1411,
+    "itemCount": 1430,
+    "manualItemCount": 1430,
+    "generatedItemCount": 1413,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1411
+    "publicApiTypeCount": 1413
   }
 }

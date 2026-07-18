@@ -389,3 +389,67 @@ function createDeterministicMetrics() {
         },
     };
 }
+
+// ── Redaction (real content removal in the print snapshot) ──────────────────────────────────────
+
+import { collectRedactedRunIds } from '../layout-snapshot-export.mjs';
+
+test('collectRedactedRunIds finds redaction-marked runs in body, tables and content controls', () => {
+    const model = {
+        body: {
+            blocks: [
+                {
+                    id: 'p1',
+                    type: 'paragraph',
+                    content: {
+                        runs: [
+                            { id: 'r-plain', text: 'viditelný' },
+                            { id: 'r-secret', text: 'tajný', marks: [{ type: 'redaction' }] },
+                        ],
+                    },
+                },
+                {
+                    id: 't1',
+                    type: 'table',
+                    content: {
+                        table: {
+                            rows: [{
+                                cells: [{
+                                    blocks: [{
+                                        id: 'cell-p',
+                                        type: 'paragraph',
+                                        content: { runs: [{ id: 'r-cell-secret', text: 'buňka', marks: [{ type: 'Redaction' }] }] },
+                                    }],
+                                }],
+                            }],
+                        },
+                    },
+                },
+            ],
+        },
+    };
+
+    const ids = collectRedactedRunIds(model);
+    assert.deepEqual([...ids].sort(), ['r-cell-secret', 'r-secret']);
+});
+
+test('redacted runs print as block characters — the original text never reaches the snapshot', () => {
+    const displayList = {
+        pages: [{ index: 0, width: 794, height: 1123 }],
+        commands: [
+            textRunCommand('run-open', 'r1', 'Číslo účtu: ', 96, 120),
+            textRunCommand('run-secret', 'r2', '123456789/0100', 200, 120),
+            textRunCommand('run-close', 'r3', ' je tajné.', 330, 120),
+        ],
+    };
+
+    const snapshot = translateDisplayListToLayoutSnapshot(displayList, {
+        redactedRunIds: ['r2'],
+    });
+
+    const commands = snapshot.pages[0].commands;
+    const secret = commands.find(command => command.id === 'run-secret');
+    assert.equal(secret.text, '█'.repeat('123456789/0100'.length));
+    assert.equal(JSON.stringify(snapshot).includes('123456789'), false, 'original characters must not exist anywhere in the snapshot');
+    assert.equal(commands.find(command => command.id === 'run-open').text, 'Číslo účtu: ');
+});

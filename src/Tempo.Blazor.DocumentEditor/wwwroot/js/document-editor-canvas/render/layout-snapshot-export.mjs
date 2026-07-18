@@ -1,5 +1,33 @@
 import { buildDisplayList } from './display-list.mjs';
 import { normalizeReviewDisplayMode, normalizeRevisionType, REVIEW_DISPLAY_MODES } from '../annotations/revision-render.mjs';
+import { normalizeMarkType } from '../layout/canvas-text-style.mjs';
+
+// Collects ids of runs carrying a redaction mark anywhere in the canvas model (body paragraphs,
+// table cells, nested content controls). The interop layer feeds the result into
+// translateDisplayListToLayoutSnapshot as options.redactedRunIds so print/PDF exports destroy the
+// redacted characters instead of merely covering them.
+export function collectRedactedRunIds(model) {
+    const ids = new Set();
+    const stack = [...(model?.body?.blocks || [])];
+    while (stack.length > 0) {
+        const block = stack.shift();
+        for (const run of block?.content?.runs || []) {
+            if ((run?.marks || []).some(mark => normalizeMarkType(mark?.type) === 'redaction') && run?.id) {
+                ids.add(String(run.id));
+            }
+        }
+
+        for (const row of block?.content?.table?.rows || []) {
+            for (const cell of row?.cells || []) {
+                stack.push(...(cell?.blocks || []));
+            }
+        }
+
+        stack.push(...(block?.content?.contentControl?.blocks || []));
+    }
+
+    return ids;
+}
 
 const REDLINE_COLORS = Object.freeze({
     insertion: '#1d4ed8',
@@ -53,6 +81,9 @@ export function translateDisplayListToLayoutSnapshot(displayList, options = {}) 
     }));
     const pagesByIndex = new Map(pages.map(page => [page.index, page]));
     const redline = createRedlineContext(displayList, options);
+    // Redaction: real content removal — runs listed in options.redactedRunIds print as block
+    // characters, so the original text never exists in the snapshot (nor in the PDF text layer).
+    const redactedRunIds = new Set((options?.redactedRunIds || []).map(value => String(value || '')).filter(Boolean));
 
     for (const command of displayList?.commands || []) {
         if (!command || EXCLUDED_TYPES.has(command.type)) {
@@ -66,6 +97,10 @@ export function translateDisplayListToLayoutSnapshot(displayList, options = {}) 
 
         const revision = redline?.byRunId.get(String(command.runId || ''));
         for (const exported of translateCommand(command)) {
+            if (exported.type === 'text' && redactedRunIds.has(String(command.runId || ''))) {
+                exported.text = '█'.repeat(String(exported.text || '').length);
+            }
+
             if (revision && exported.type === 'text') {
                 applyRedlineStyle(exported, revision);
             }

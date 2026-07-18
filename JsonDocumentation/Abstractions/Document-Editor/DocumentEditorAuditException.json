@@ -1,0 +1,10 @@
+{
+  "itemName": "DocumentEditorAuditException",
+  "kind": "Class",
+  "category": "Document-Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Thrown by TmDocumentEditor when DocumentEditorAuditFailureMode.Blocking is active and the audit entry for a successful operation could not be persisted — the triggering workflow (load, save, export) fails with this exception instead of continuing without an audit trail. Failure audits stay best-effort so error reporting can never crash the component.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProviderContracts.cs",
+  "documentationStatus": "generated"
+}
