@@ -7321,6 +7321,15 @@ Detaily, kontrakt výsledků a optimistický concurrency model viz `src/Tempo.Bl
 Reporting komponenty jsou v samostatném balíčku `Tempo.Blazor.Reporting`. Používají definice z
 `Tempo.Reporting.Abstractions` a lokální nebo vzdálený zdroj implementující `IReportSource`.
 
+> **Report Server (BE server).** Níže popsané `Tm*` komponenty (`TmReportViewer`,
+> `TmReportParameterPanel`, `TmReportExplorer`, `TmReportDesigner`) jsou knihovní komponenty
+> pro embedding. Samostatný **Tempo Report Server** (katalog, render API, API klíče, plánování
+> e-mailem, oprávnění, audit) a jeho aplikační stránky (`ReportsPage`, `ReportDesignerPage`,
+> `DataSourcesPage`, `SchedulesPage`, `PermissionsPage`, `RevisionsPage`, `ApiKeysPage`) +
+> diagnostický `RenderModeMarker` jsou popsané v [docs/report-server.md](docs/report-server.md).
+> Krok-za-krokem workflow (report → nahrání přes API → PDF → API klíč → plán e-mailem) je v
+> [docs/report-server-tutorial.md](docs/report-server-tutorial.md).
+
 ### Instalace
 
 ```csharp

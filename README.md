@@ -271,6 +271,22 @@ Přidejte také reporting stylesheet:
 <link href="_content/Tempo.Blazor.Reporting/css/tempo-blazor-reporting.css" rel="stylesheet" />
 ```
 
+### Tempo Report Server (self-hosted BE server)
+
+`RemoteReportSource` výše cílí na **Tempo Report Server** — samostatný on-premises reportovací
+server postavený nad hotovým Tempo rendering enginem, jako otevřená alternativa k Telerik Report
+Serveru: katalog reportů s revizemi, render do PDF/XLSX/CSV/PNG přes REST, per-folder oprávnění,
+API klíče, audit a plánované doručování e-mailem/do úložiště/webhookem. Běží jako dva procesy
+(REST **Api** host + InteractiveAuto **Web** portál) s autentizací přes Keycloak OIDC a perzistencí
+v MSSQL.
+
+- Přehled, architektura, quickstart a stránky/komponenty: [docs/report-server.md](docs/report-server.md)
+- End-to-end tutoriál (report → nahrání přes Api → PDF → API klíč → plán e-mailem → smtp4dev):
+  [docs/report-server-tutorial.md](docs/report-server-tutorial.md)
+- Nasazení a konfigurace: [docs/report-server-deployment.md](docs/report-server-deployment.md)
+- Rozhodnutí: [ADR-0001 MSSQL](docs/adr/0001-databaze-mssql.md), [ADR-0002 OIDC/Keycloak](docs/adr/0002-oidc-keycloak.md)
+- Živé E2E důkazy: [docs/report-server-e2e-results.md](docs/report-server-e2e-results.md)
+
 ### Toast Notifications
 
 ```csharp
