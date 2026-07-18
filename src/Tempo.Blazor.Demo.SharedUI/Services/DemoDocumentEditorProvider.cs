@@ -56,6 +56,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
     /// <summary>Stable document id used by the role-permissions and external-comment E2E gate.</summary>
     public const string RoleCommentsDocumentId = "phase-8-canvas-role-comments";
 
+    /// <summary>Stable document id used by the legal-filing (line numbering + č.l. header) E2E gate.</summary>
+    public const string LegalFilingDocumentId = "phase-9-canvas-legal-filing";
+
     /// <summary>Stable document id used by the canvas image and drawing object E2E gate.</summary>
     public const string CanvasImagesDocumentId = "phase-15-canvas-images";
 
@@ -1423,6 +1426,78 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             DocumentTextAlignment.Left,
             "Dodavatel dodá zboží v dohodnutém termínu a kupující zaplatí kupní cenu.",
             spacingAfter: 12));
+
+        StoreDocument(document);
+        return document;
+    }
+
+    /// <summary>
+    /// Seeds a Czech court filing (podání): per-page line numbering in the left margin and the
+    /// case-file margin note (č.l.) in the header — the legal-format verification E2E.
+    /// </summary>
+    public DocumentEditorDocument SeedLegalFilingDocument(string documentId = LegalFilingDocumentId, bool reset = false)
+    {
+        if (!reset)
+        {
+            var existing = base.LoadAsync(documentId).GetAwaiter().GetResult();
+            if (existing.Found && existing.Document is not null)
+            {
+                return existing.Document;
+            }
+        }
+
+        var document = DocumentEditorDocument.Empty(documentId);
+        var sectionId = "legal-filing-section-main";
+        document.Metadata.Title = "Žaloba o zaplacení 250 000 Kč";
+        document.Metadata.CreatedAt = CanonicalDemoTimestamp;
+        document.Metadata.ModifiedAt = CanonicalDemoTimestamp;
+        document.PageSettings = new DocumentPageSettings
+        {
+            Size = DocumentPageSize.A4,
+            Margins = new DocumentPageMargins { Top = 72, Right = 72, Bottom = 72, Left = 100 }
+        };
+        document.Sections[0].Id = sectionId;
+        document.Sections[0].Properties.PageSettings = document.PageSettings;
+        document.Sections[0].Properties.LineNumbering = new DocumentLineNumbering
+        {
+            Enabled = true,
+            StartAt = 1,
+            Increment = 1,
+            DistanceFromText = 14,
+            Restart = DocumentLineNumberingRestart.Page
+        };
+
+        document.HeadersFooters.Add(HeaderFooter(
+            sectionId,
+            "legal-filing-header-primary",
+            DocumentHeaderFooterType.Header,
+            DocumentHeaderFooterScope.Primary,
+            "legal-filing-header-block",
+            DocumentTextAlignment.Right,
+            [new TextRun { Id = "legal-filing-header-cl", Text = "č.l. ______" }]));
+        document.Sections[0].Properties.HeaderFooterReferences =
+        [
+            new DocumentHeaderFooterReference
+            {
+                HeaderFooterId = "legal-filing-header-primary",
+                Type = DocumentHeaderFooterType.Header,
+                Scope = DocumentHeaderFooterScope.Primary
+            }
+        ];
+
+        document.Blocks.Add(TextParagraph(sectionId, "legal-filing-court", 10, DocumentTextAlignment.Left,
+            "Okresnímu soudu v Praze", spacingAfter: 6));
+        document.Blocks.Add(TextParagraph(sectionId, "legal-filing-spzn", 20, DocumentTextAlignment.Left,
+            "Sp. zn.: 12 C 34/2026", spacingAfter: 14));
+        document.Blocks.Add(TextParagraph(sectionId, "legal-filing-point-1", 30, DocumentTextAlignment.Justify,
+            "I. Žalobce se podanou žalobou domáhá zaplacení částky 250 000 Kč s příslušenstvím z titulu smlouvy o dílo uzavřené dne 1. 3. 2026, jejíž předmět žalovaný převzal bez výhrad a cenu díla přes opakované výzvy neuhradil.",
+            spacingAfter: 10));
+        document.Blocks.Add(TextParagraph(sectionId, "legal-filing-point-2", 40, DocumentTextAlignment.Justify,
+            "II. Nárok žalobce vyplývá z ustanovení § 2586 a násl. občanského zákoníku; splatnost byla sjednána do čtrnácti dnů od předání díla a marně uplynula dne 29. 3. 2026.",
+            spacingAfter: 10));
+        document.Blocks.Add(TextParagraph(sectionId, "legal-filing-petit", 50, DocumentTextAlignment.Justify,
+            "S ohledem na výše uvedené žalobce navrhuje, aby soud uložil žalovanému povinnost zaplatit žalobci částku 250 000 Kč s úrokem z prodlení a nahradit náklady řízení.",
+            spacingAfter: 10));
 
         StoreDocument(document);
         return document;

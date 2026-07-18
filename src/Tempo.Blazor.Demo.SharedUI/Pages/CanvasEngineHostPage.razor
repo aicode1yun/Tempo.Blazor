@@ -257,6 +257,12 @@
             return;
         }
 
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.LegalFilingDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedLegalFilingDocument(DocumentId, ResetSeed);
+            return;
+        }
+
         if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasRenderDocumentId, StringComparison.Ordinal))
         {
             DocumentProvider.SeedCanvasRenderDocument(DocumentId);

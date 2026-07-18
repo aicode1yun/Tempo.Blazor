@@ -452,7 +452,8 @@ public sealed class DocxPackageReader
                 SectionId = GetTempoAttribute(paragraph, "section-id"),
                 Type = blockType,
                 Order = _order++,
-                Content = content
+                Content = content,
+                ParagraphProperties = ReadParagraphFormatting(paragraph.ParagraphProperties)
             };
             NormalizeDrawingAnchors(block, inlines);
             blocks.Insert(0, block);
@@ -598,6 +599,92 @@ public sealed class DocxPackageReader
 
         var inlineText = string.Concat(inlines.OfType<TextRun>().Select(run => run.Text)).Trim();
         return string.Equals(inlineText, caption, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Imports direct paragraph formatting (w:jc, w:spacing, w:ind) — the mirror of the exporter's
+    /// AppendParagraphFormatting. Third-party producers (Word, LibreOffice) rely on these for
+    /// justified legal text; dropping them was a fidelity gap found by the Phase 9 corpus.
+    /// Returns null when the paragraph carries no direct formatting so untouched blocks stay lean.
+    /// </summary>
+    private static DocumentParagraphProperties? ReadParagraphFormatting(W.ParagraphProperties? properties)
+    {
+        if (properties is null)
+        {
+            return null;
+        }
+
+        var result = new DocumentParagraphProperties();
+        var touched = false;
+
+        if (properties.Justification?.Val is { } justification)
+        {
+            touched = true;
+            if (justification.Value == W.JustificationValues.Center)
+            {
+                result.Alignment = DocumentTextAlignment.Center;
+            }
+            else if (justification.Value == W.JustificationValues.Right)
+            {
+                result.Alignment = DocumentTextAlignment.Right;
+            }
+            else if (justification.Value == W.JustificationValues.Both || justification.Value == W.JustificationValues.Distribute)
+            {
+                result.Alignment = DocumentTextAlignment.Justify;
+            }
+        }
+
+        if (properties.SpacingBetweenLines is { } spacing)
+        {
+            if (spacing.Before?.Value is { } before)
+            {
+                result.SpacingBefore = TwipsToPointsOrZero(before);
+                touched = true;
+            }
+
+            if (spacing.After?.Value is { } after)
+            {
+                result.SpacingAfter = TwipsToPointsOrZero(after);
+                touched = true;
+            }
+
+            if (spacing.Line?.Value is { } line
+                && (spacing.LineRule is null || spacing.LineRule.Value == W.LineSpacingRuleValues.Auto)
+                && double.TryParse(line, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var lineValue)
+                && lineValue > 0)
+            {
+                result.LineSpacing = lineValue / 240d;
+                touched = true;
+            }
+        }
+
+        if (properties.Indentation is { } indentation)
+        {
+            if (indentation.Left?.Value is { } left)
+            {
+                result.LeftIndent = TwipsToPointsOrZero(left);
+                touched = true;
+            }
+
+            if (indentation.Right?.Value is { } right)
+            {
+                result.RightIndent = TwipsToPointsOrZero(right);
+                touched = true;
+            }
+
+            if (indentation.FirstLine?.Value is { } firstLine)
+            {
+                result.FirstLineIndent = TwipsToPointsOrZero(firstLine);
+                touched = true;
+            }
+            else if (indentation.Hanging?.Value is { } hanging)
+            {
+                result.FirstLineIndent = -TwipsToPointsOrZero(hanging);
+                touched = true;
+            }
+        }
+
+        return touched ? result : null;
     }
 
     private static DocumentBlockType GetParagraphType(W.Paragraph paragraph, out int headingLevel, out bool ordered, out int indent)

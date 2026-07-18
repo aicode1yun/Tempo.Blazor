@@ -6542,6 +6542,21 @@ Demo: `/canvas-engine-host?documentId=phase-8-canvas-role-comments&role=commente
 (role=viewer|commenter|suggestonly|editor|owner; persona=client přepne autora na externího
 klienta — jeho komentáře demo provider označuje jako externí).
 
+### DOCX fidelity a právní formáty (korpus třetích stran + číslování řádků)
+
+Regresní korpus DOCX balíčků stavěných **raw OpenXml** (Word-style smlouva, LibreOffice-style
+memo, české soudní podání s `w:lnNumType` a hlavičkou „č.l.") pinuje import fidelity i
+round-trip stabilitu — `docs/docx-fidelity-corpus.md`. Korpus odhalil a fáze opravila reálnou
+odchylku: **import zahazoval přímé formátování odstavce (`w:pPr`)** — `w:jc` (vč. `both` =
+do bloku), `w:spacing` i `w:ind` nyní `DocumentDocxImporter.ReadParagraphFormatting` mapuje do
+`DocumentBlock.ParagraphProperties` (zrcadlo exportérova `AppendParagraphFormatting`).
+
+Číslování řádků pro podání: `DocumentLineNumbering` (StartAt/Increment/DistanceFromText/Restart
+Continuous|Page|Section) se renderuje v levém okraji (`layout/line-numbering.mjs`,
+`data-canvas-line-number-count`), DOCX round-trip přes `w:lnNumType`. Demo: soudní podání
+`/canvas-engine-host?documentId=phase-9-canvas-legal-filing` (č.l. marginálie v hlavičce,
+justifikované body I./II., čísla řádků per stránka).
+
 ## Chat
 
 ### TmChat
