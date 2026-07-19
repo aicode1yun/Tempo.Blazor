@@ -379,6 +379,18 @@ public static class ReportServerWebAuthenticationExtensions
                     OnTokenValidated = context =>
                     {
                         var response = context.TokenEndpointResponse;
+
+                        // Keycloak carries realm/client roles and the tenant id in the ACCESS token, not the
+                        // id token, so the cookie principal (built from id token + userinfo) lacks them. Project
+                        // them into the cookie identity so the portal UI (OidcPortalIdentity) can gate on roles
+                        // and resolve the data tenant. Server-side authorization still validates the bearer
+                        // independently; this only mirrors the same claims into the UI-facing principal.
+                        if (context.Principal?.Identity is ClaimsIdentity identity &&
+                            !string.IsNullOrWhiteSpace(response?.AccessToken))
+                        {
+                            ReportServerAccessTokenClaims.Project(identity, response.AccessToken);
+                        }
+
                         var subject = context.Principal?.FindFirstValue("sub");
                         if (response is not null && !string.IsNullOrWhiteSpace(subject))
                         {
@@ -415,5 +427,84 @@ public static class ReportServerWebAuthenticationExtensions
         // whose cached factory scope can leak tokens across users.
         builder.Services.AddScoped<IAccessTokenProvider, ServerAccessTokenProvider>();
         return options;
+    }
+}
+
+/// <summary>
+/// Projects the Keycloak role/tenant claims from a validated access token into the OIDC cookie principal.
+/// Keycloak places <c>realm_access</c>/<c>resource_access</c>/<c>tenant_id</c> in the access token, not the
+/// id token, so the cookie principal (built from id token + userinfo) would otherwise lack them and the
+/// portal UI could not gate on Keycloak roles or resolve the data tenant. Server-side authorization still
+/// validates the bearer independently — this only mirrors the same claims into the UI-facing principal.
+/// </summary>
+public static class ReportServerAccessTokenClaims
+{
+    // Objects (realm_access/resource_access) are copied as their raw JSON; scalars (tenant_id/tenant) as
+    // their string value — matching how PortalClaims parses them on the client.
+    private static readonly string[] ProjectedClaimTypes = ["realm_access", "resource_access", "tenant_id", "tenant"];
+
+    /// <summary>Adds the projected access-token claims to <paramref name="identity"/> if not already present.</summary>
+    public static void Project(ClaimsIdentity identity, string accessToken)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return;
+        }
+
+        var parts = accessToken.Split('.');
+        if (parts.Length < 2)
+        {
+            return;
+        }
+
+        JsonDocument payload;
+        try
+        {
+            payload = JsonDocument.Parse(DecodeBase64Url(parts[1]));
+        }
+        catch (Exception exception) when (exception is FormatException or JsonException)
+        {
+            return;
+        }
+
+        using (payload)
+        {
+            if (payload.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return;
+            }
+
+            foreach (var claimType in ProjectedClaimTypes)
+            {
+                if (identity.HasClaim(claim => string.Equals(claim.Type, claimType, StringComparison.Ordinal)))
+                {
+                    continue;
+                }
+
+                if (!payload.RootElement.TryGetProperty(claimType, out var value))
+                {
+                    continue;
+                }
+
+                var claimValue = value.ValueKind == JsonValueKind.String ? value.GetString() : value.GetRawText();
+                if (!string.IsNullOrEmpty(claimValue))
+                {
+                    identity.AddClaim(new Claim(claimType, claimValue));
+                }
+            }
+        }
+    }
+
+    private static byte[] DecodeBase64Url(string value)
+    {
+        var normalized = value.Replace('-', '+').Replace('_', '/');
+        switch (normalized.Length % 4)
+        {
+            case 2: normalized += "=="; break;
+            case 3: normalized += "="; break;
+        }
+
+        return Convert.FromBase64String(normalized);
     }
 }
