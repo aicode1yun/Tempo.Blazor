@@ -51,3 +51,44 @@ E2E proběhlo přes lehké Node Playwright skripty (mimo repo, `C:\tmp\rs-e2e`) 
 spuštěnému stacku — verifikace, ne commitnutý test suite. **Follow-up:** převést scénáře do
 commitnutého E2E projektu (`tests/Tempo.Blazor.E2E` nebo nový ReportServer E2E) s `webServer`
 konfigurací (Api+Web+smtp4dev), aby běžely v CI.
+
+---
+
+# Fáze 10 (A1) — portál UI napojeno na OIDC principal (řeší nález #3)
+
+Nález #3 z Fáze 5b (UI se gate-uje na demo session, ne na Keycloak roli/tenant) je **vyřešen**.
+Portál je nyní dual-mode: bez konfigurace `Authentication:Oidc` běží beze změny jako demo
+(in-memory session, tenant switcher, plný nav); s nakonfigurovaným OIDC se `IPortalIdentity`
+resolvuje na `OidcPortalIdentity`, který čte roli/tenant z principalu. Gating je pouze UX
+pohodlí — autorizační autoritou zůstává chráněné Api.
+
+## Kritický nález odhalený živým E2E (a opravený)
+
+Cookie principal se staví z **id tokenu + userinfo**, ale Keycloak vkládá `realm_access` /
+`resource_access` / `tenant_id` jen do **access tokenu**. Bez projekce tedy portál skryl
+role-bearing uživateli **každou** nav položku (všechny false, tenant „default"). Opraveno v
+`OnTokenValidated` (`ReportServerAccessTokenClaims.Project`) — base64url dekóduje payload access
+tokenu a projektuje claimy do cookie identity, aniž by přepisoval existující. bUnit tuto mezeru
+zachytit nemohl (injektuje claimy přímo) → regresní guard `AccessTokenClaimsProjectionTests`.
+
+## E2E scénáře — výsledky (živý stack: Api :7001 SqlServer + Web :7150 reálné OIDC/Keycloak)
+
+| # | Scénář | Výsledek | Důkaz |
+| --- | --- | --- | --- |
+| F10-demo | OIDC off → portál běží bez loginu (demo) | **PASS** | plný nav + tenant switcher „Northwind Finance", „Pavel Author" (`f10-demo-2-reports.png`) |
+| F10-author | OIDC on → `author1` (report-author) | **PASS** | nav = reports/designer/schedules/revisions **true**, datasources/permissions/apikeys **false**; tenant-switcher **absent**, tenant-display „default"; user „author1" (`f10-author-2-reports.png`, `f10-author-result.json`) |
+| F10-viewer | OIDC on → `viewer1` (viewer) | **PASS** | nav = **jen** reports true, vše ostatní false; tenant-display „default"; user „viewer1" (`f10-viewer-2-reports.png`, `f10-viewer-result.json`) |
+
+**Role-based UI proof:** author ≠ viewer — author vidí designer/schedules/revisions navíc k reports,
+viewer vidí jen reports. Rozdíl vzniká z projektované Keycloak role (dříve oba all-false).
+
+## Ověřeno unit/bUnit testy (Web.Tests, net10.0)
+
+- `PortalIdentityTests` (8) — čtení role/tenant/display z Keycloak-shaped principalu, hierarchie rolí, `CanAccess`.
+- `ReportServerShellAuthTests` (4) — viditelnost nav testid dle role (custom `StubAuthenticationStateProvider`, ne bUnit `AddTestAuthorization`, aby prošly custom claimy).
+- `CommonServicesGateTests` (3) — DI gate: OIDC konfig → `OidcPortalIdentity`, jinak `ReportServerSessionState` (chrání WASM leg před tichým pádem do demo).
+- `AccessTokenClaimsProjectionTests` (5) — projekce `realm_access`/`tenant_id`, nepřepsání existujícího, ignorace malformed tokenu.
+
+Skripty: `scratchpad/f10-e2e.mjs` (MODE=demo|author|viewer). Poznámka: driver záměrně blokuje
+`**/*.wasm` (procvičí Server render leg), proto jsou v `errors[]` očekávané `Failed to fetch` na
+`_framework/*.wasm` — nejsou to funkční chyby.
