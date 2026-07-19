@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentHeadlessLayoutBundle",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "Access to the embedded headless document layout bundle — the canvas editor's layout chain (layout snapshot export → display list → pagination → line breaker/paragraph engine/font metrics) compiled into a single ESM artifact by scripts/build-document-editor.mjs (npm run build:document-editor). Server-side layout hosts evaluate this script to produce the exact layout snapshot the browser editor exports, giving WYSIWYG parity by construction without a C# port of the layout code. Text measurement is injectable: pass a { measureRun } partial as options.fontMetrics, or create a service via createFontMetricsService — without a canvas context it falls back to deterministic synthetic metrics.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentHeadlessLayoutBundle.cs",
+  "documentationStatus": "generated"
+}

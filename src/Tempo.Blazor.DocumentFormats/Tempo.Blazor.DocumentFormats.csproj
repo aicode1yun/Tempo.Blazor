@@ -27,4 +27,33 @@
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Headless layout bundle: the canvas layout chain compiled to one ESM file by
+         `npm run build:document-editor` (scripts/build-document-editor.mjs). -->
+    <EmbeddedResource Include="HeadlessLayout\tempo-document-headless-layout.bundle.mjs"
+                      LogicalName="Tempo.Blazor.DocumentFormats.HeadlessLayout.tempo-document-headless-layout.bundle.mjs" />
+  </ItemGroup>
+
+  <!-- Drift gate: fail the build when the embedded bundle no longer matches the .mjs sources.
+       Runs only where the Node toolchain is installed (dev/CI after `npm install`); incremental
+       via a stamp so it re-checks only after a source or artifact change. -->
+  <PropertyGroup>
+    <TempoRepoRoot>$(MSBuildThisFileDirectory)..\..\</TempoRepoRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <TempoHeadlessBundleInput Include="$(TempoRepoRoot)src\Tempo.Blazor.DocumentEditor\wwwroot\js\document-editor\**\*.mjs" />
+    <TempoHeadlessBundleInput Include="$(TempoRepoRoot)src\Tempo.Blazor.DocumentEditor\wwwroot\js\document-editor-canvas\**\*.mjs" />
+    <TempoHeadlessBundleInput Include="$(TempoRepoRoot)scripts\build-document-editor.mjs" />
+    <TempoHeadlessBundleInput Include="HeadlessLayout\tempo-document-headless-layout.bundle.mjs" />
+  </ItemGroup>
+  <Target Name="TempoVerifyHeadlessLayoutBundle"
+          BeforeTargets="CoreCompile"
+          Condition="Exists('$(TempoRepoRoot)node_modules\esbuild')"
+          Inputs="@(TempoHeadlessBundleInput)"
+          Outputs="$(IntermediateOutputPath)tempo-headless-layout-bundle.check.stamp">
+    <Exec Command="node scripts/build-document-editor.mjs --check"
+          WorkingDirectory="$(TempoRepoRoot)" />
+    <Touch Files="$(IntermediateOutputPath)tempo-headless-layout-bundle.check.stamp" AlwaysCreate="true" />
+  </Target>
 </Project>

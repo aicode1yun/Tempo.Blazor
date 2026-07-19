@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Headless document runtime — Phase 0: embedded headless layout bundle
+
+- `Tempo.Blazor.DocumentFormats` now embeds the canvas editor's layout chain
+  (`buildLayoutSnapshotExport` → `buildDisplayList` → `layoutCanvasDocument` →
+  `translateDisplayListToLayoutSnapshot`, incl. line breaker, paragraph engine and the
+  injectable font-metrics service) as a single ESM artifact
+  (`HeadlessLayout/tempo-document-headless-layout.bundle.mjs`), accessible via the new
+  `TempoDocumentHeadlessLayoutBundle` class. Server-side layout hosts evaluate this script to
+  produce the exact layout snapshot the browser editor exports — WYSIWYG parity by construction.
+- New build tooling: `npm run build:document-editor` builds the bundle
+  (`scripts/build-document-editor.mjs`); `--check` is a drift gate wired into the
+  `Tempo.Blazor.DocumentFormats` MSBuild pre-build and the Node test lane, so a stale embedded
+  artifact fails the build. Node guard tests keep browser globals (`document`/`window`/
+  `OffscreenCanvas`) out of the bundle outside the font-metrics safe fallback.
+
 ## 2.3.9 - 2026-07-19
 
 ### Document editor — canvas command layer completed (TmDocumentEditor)

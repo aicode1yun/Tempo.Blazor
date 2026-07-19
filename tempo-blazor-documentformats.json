@@ -28,6 +28,7 @@
     "namespaces": [
       "Tempo.Blazor.DocumentFormats",
       "Tempo.Blazor.DocumentFormats.Docx",
+      "Tempo.Blazor.DocumentFormats.HeadlessLayout",
       "Tempo.Blazor.DocumentFormats.Html",
       "Tempo.Blazor.DocumentFormats.Markdown",
       "Tempo.Blazor.DocumentFormats.Notion",
@@ -563,6 +564,36 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "TempoDocumentHeadlessLayoutBundle",
+      "kind": "Class",
+      "category": "Headless Layout",
+      "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+      "description": "Access to the embedded headless document layout bundle — the canvas editor's layout chain (layout snapshot export → display list → pagination → line breaker/paragraph engine/font metrics) compiled into a single ESM artifact by scripts/build-document-editor.mjs (npm run build:document-editor). Server-side layout hosts evaluate this script to produce the exact layout snapshot the browser editor exports, giving WYSIWYG parity by construction without a C# port of the layout code. Text measurement is injectable: pass a { measureRun } partial as options.fontMetrics, or create a service via createFontMetricsService — without a canvas context it falls back to deterministic synthetic metrics.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentHeadlessLayoutBundle.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ResourceName",
+          "kind": "Field",
+          "type": "string",
+          "description": "Manifest resource name of the embedded ESM bundle."
+        },
+        {
+          "name": "OpenStream",
+          "kind": "Method",
+          "type": "Stream",
+          "description": "Opens a fresh read-only stream over the embedded bundle."
+        },
+        {
+          "name": "ReadJavaScript",
+          "kind": "Method",
+          "type": "string",
+          "description": "Reads the embedded bundle as UTF-8 JavaScript text."
+        }
+      ]
+    },
+    {
       "itemName": "DocumentHtmlExporter",
       "kind": "Class",
       "category": "Html",
@@ -765,11 +796,11 @@
     }
   ],
   "summary": {
-    "itemCount": 43,
-    "manualItemCount": 43,
-    "generatedItemCount": 43,
+    "itemCount": 44,
+    "manualItemCount": 44,
+    "generatedItemCount": 44,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 43
+    "publicApiTypeCount": 44
   }
 }
