@@ -116,7 +116,129 @@ public sealed class DocumentEditorCanvasCommandRegistryE2ETests : WasmTestBase
         await ViewportScreenshotAsync(page, Path.Combine(output, "01-ruler-restored.png"));
     }
 
+    /// <summary>
+    /// Fáze 10 (command-layer plán) — properties příkazy (tableProperties/cellProperties/replaceImage/
+    /// setImageLink) NEJSOU engine příkazy: engine registruje jen mutace (setTableProperties/
+    /// setCellProperties/setImageUrl), které vydává panel. Ribbon/palette verze proto otevírají
+    /// Properties side panel — zrcadlí rozhodnutí kontextového menu tabulky.
+    /// </summary>
+    [TestMethod]
+    public async Task Phase10_PropertiesCommands_OpenPropertiesSidePanel()
+    {
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+        await page.SetViewportSizeAsync(1920, 1000);
+        await OpenDocumentAsync(page);
+
+        var output = CreateOutputDirectory("phase10-properties-commands");
+
+        // Caret into a pricing-table cell so tableProperties is enabled. Hit rects exist only for
+        // VISIBLE pages (canvas-per-visible-page), so scroll until the table's page renders.
+        var cellPoint = await ScrollToCanvasElementAsync(page, "[data-canvas-table-cell][data-cell-id='contract-pricing-table-r1-item']");
+        await page.Mouse.ClickAsync((float)cellPoint.X, (float)cellPoint.Y);
+        await page.WaitForFunctionAsync(
+            """
+            () => document.querySelector('[data-testid="document-canvas-engine-root"]')
+                ?.getAttribute('data-canvas-selection-cell-id') === 'contract-pricing-table-r1-item'
+            """,
+            null,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+        // Command palette → "Table properties" opens the Properties side panel (no engine no-op).
+        await page.GetByTestId("document-canvas-hidden-input").FocusAsync();
+        await page.Keyboard.PressAsync("Control+Shift+P");
+        await Assertions.Expect(page.GetByTestId("document-command-palette")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+        await page.GetByTestId("document-command-palette-search").FillAsync("tableProperties");
+        var tablePropertiesItem = page.Locator("[data-testid='document-command-palette-item'][data-command='tableProperties'] button");
+        await Assertions.Expect(tablePropertiesItem).ToBeEnabledAsync(new() { Timeout = 10_000 });
+        await tablePropertiesItem.ClickAsync();
+
+        await Assertions.Expect(page.GetByTestId("document-side-panel")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+        await Assertions.Expect(page.GetByTestId("document-editor-workspace"))
+            .ToHaveAttributeAsync("data-active-side-panel-tab", "properties", new() { Timeout = 10_000 });
+        await Assertions.Expect(page.GetByTestId("document-table-properties-panel")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+        await ViewportScreenshotAsync(page, Path.Combine(output, "00-table-properties-panel.png"));
+
+        // Edge case: close the panel, select the inline image and run "Replace image" — the SAME
+        // panel-opening contract must hold for the image properties commands.
+        await page.GetByTestId("document-side-panel-close").ClickAsync();
+        await Assertions.Expect(page.GetByTestId("document-side-panel")).ToBeHiddenAsync(new() { Timeout = 10_000 });
+
+        var imagePoint = await ScrollToCanvasElementAsync(page, "[data-canvas-object][data-object-id='contract-inline-image']");
+        await page.Mouse.ClickAsync((float)imagePoint.X, (float)imagePoint.Y);
+        await page.WaitForFunctionAsync(
+            """
+            () => {
+                const root = document.querySelector('[data-testid="document-canvas-engine-root"]');
+                return root?.getAttribute('data-canvas-object-selected') === 'true'
+                    && root?.getAttribute('data-canvas-object-id') === 'contract-inline-image';
+            }
+            """,
+            null,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+        // Selecting an object may auto-open the panel — close it so the palette command's own
+        // panel-opening behaviour is what the assertion proves.
+        var panelOpen = await page.GetByTestId("document-side-panel").IsVisibleAsync();
+        if (panelOpen)
+        {
+            await page.GetByTestId("document-side-panel-close").ClickAsync();
+            await Assertions.Expect(page.GetByTestId("document-side-panel")).ToBeHiddenAsync(new() { Timeout = 10_000 });
+        }
+
+        await page.GetByTestId("document-canvas-hidden-input").FocusAsync();
+        await page.Keyboard.PressAsync("Control+Shift+P");
+        await Assertions.Expect(page.GetByTestId("document-command-palette")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+        await page.GetByTestId("document-command-palette-search").FillAsync("replaceImage");
+        var replaceImageItem = page.Locator("[data-testid='document-command-palette-item'][data-command='replaceImage'] button");
+        await Assertions.Expect(replaceImageItem).ToBeEnabledAsync(new() { Timeout = 10_000 });
+        await replaceImageItem.ClickAsync();
+
+        await Assertions.Expect(page.GetByTestId("document-side-panel")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+        await Assertions.Expect(page.GetByTestId("document-editor-workspace"))
+            .ToHaveAttributeAsync("data-active-side-panel-tab", "properties", new() { Timeout = 10_000 });
+        await Assertions.Expect(page.GetByTestId("document-image-properties-panel")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+        await ViewportScreenshotAsync(page, Path.Combine(output, "01-image-properties-panel.png"));
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Scrolls until the selector's element exists (hit rects render only for VISIBLE pages),
+    /// centers it and returns its viewport-relative center point.
+    /// </summary>
+    private static async Task<CanvasPoint> ScrollToCanvasElementAsync(IPage page, string selector)
+    {
+        // scrollIntoView does not drive the canvas scroll container — wheel-scroll (like a user)
+        // until the element exists AND its center sits inside the viewport.
+        for (var attempt = 0; ; attempt++)
+        {
+            var point = await page.EvaluateAsync<CanvasPoint?>(
+                """
+                selector => {
+                    const element = document.querySelector(selector);
+                    if (!element) return null;
+                    const rect = element.getBoundingClientRect();
+                    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                }
+                """,
+                selector);
+            if (point is { Y: > 120 and < 900 })
+            {
+                return point;
+            }
+
+            if (attempt >= 60)
+            {
+                Assert.Fail($"Canvas element '{selector}' did not scroll into the viewport (last point: {point?.X},{point?.Y}).");
+            }
+
+            var delta = point is null ? 900 : Math.Clamp(point.Y - 500, -800, 800);
+            await page.Mouse.MoveAsync(700, 500);
+            await page.Mouse.WheelAsync(0, (float)delta);
+            await page.WaitForTimeoutAsync(200);
+        }
+    }
 
     private async Task OpenDocumentAsync(IPage page)
     {

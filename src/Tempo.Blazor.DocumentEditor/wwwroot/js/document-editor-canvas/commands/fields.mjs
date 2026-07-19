@@ -177,17 +177,19 @@ function insertField(model, selection, commandId, payload) {
         return unchanged(model, selection, 'insertField');
     }
 
-    insertRunAtOffset(target.block, run, target.offset);
-    model.version = Number(model.version || 0) + 1;
+    const cow = withClonedBlock(model, target.block);
+    insertRunAtOffset(cow.block, run, target.offset);
+    cow.model.version = Number(model.version || 0) + 1;
     return {
         changed: true,
-        model,
+        model: cow.model,
         selection: {
-            anchor: { blockId: target.block.id, offset: target.offset + createCanvasRunText(run).length },
-            focus: { blockId: target.block.id, offset: target.offset + createCanvasRunText(run).length },
+            anchor: { blockId: cow.block.id, offset: target.offset + createCanvasRunText(run).length },
+            focus: { blockId: cow.block.id, offset: target.offset + createCanvasRunText(run).length },
         },
         operation: 'insertField',
-        dirtyBlockIds: [target.block.id],
+        dirtyBlockIds: [cow.block.id],
+        insertedRunIds: [String(run.id)],
     };
 }
 
@@ -212,17 +214,18 @@ function insertNote(model, selection, commandId, payload) {
             displayMarker: String(marker),
         },
     };
-    insertRunAtOffset(target.block, reference, target.offset);
-    model.notes.push({
+    const cow = withClonedBlock(model, target.block);
+    insertRunAtOffset(cow.block, reference, target.offset);
+    cow.model.notes = [...(model.notes || []), {
         id: noteId,
         type: noteType,
-        sectionId: target.block.sectionId || firstSection(model)?.id || '',
+        sectionId: cow.block.sectionId || firstSection(cow.model)?.id || '',
         marker: String(marker),
         referenceIds: [referenceId],
         blocks: [
             {
                 id: `${noteId}-body`,
-                sectionId: target.block.sectionId || firstSection(model)?.id || '',
+                sectionId: cow.block.sectionId || firstSection(cow.model)?.id || '',
                 type: 'paragraph',
                 order: 10,
                 paragraphProperties: {},
@@ -239,17 +242,18 @@ function insertNote(model, selection, commandId, payload) {
                 },
             },
         ],
-    });
-    model.version = Number(model.version || 0) + 1;
+    }];
+    cow.model.version = Number(model.version || 0) + 1;
     return {
         changed: true,
-        model,
+        model: cow.model,
         selection: {
-            anchor: { blockId: target.block.id, offset: target.offset + String(marker).length },
-            focus: { blockId: target.block.id, offset: target.offset + String(marker).length },
+            anchor: { blockId: cow.block.id, offset: target.offset + String(marker).length },
+            focus: { blockId: cow.block.id, offset: target.offset + String(marker).length },
         },
         operation: noteType === 1 ? 'insertEndnote' : 'insertFootnote',
-        dirtyBlockIds: [target.block.id],
+        dirtyBlockIds: [cow.block.id],
+        insertedRunIds: [String(referenceId)],
         noteId,
     };
 }

@@ -12,21 +12,10 @@ import { fileURLToPath } from 'node:url';
 import { createCanvasCommandRuntime } from './commands/dispatcher.mjs';
 import { extractCanvasCommandIds, findRepoRoot } from '../../../../../scripts/extract-canvas-command-ids.mjs';
 
-// Commands known to be routed by C# but NOT yet implemented in the engine.
-// Phases 3–9 of the command-layer plan implement them one by one — every phase
-// MUST remove its ids here, and the allowlist ends empty. Keys are
-// dispatcher-normalized (trim + lowercase).
-const KNOWN_MISSING = new Set([
-  // Audit 2026-07-19 (plan fáze 3–9): toolbar/context-menu commands that are
-  // currently silent no-ops in the engine.
-  // Discovered by this contract test beyond the manual audit: ribbon registry
-  // commands routed through ExecuteTableRuntimeCommandAsync/ExecuteImageRuntimeCommandAsync
-  // that the engine never registered (reported to the plan as remaining work).
-  'tableproperties',
-  'cellproperties',
-  'replaceimage',
-  'setimagelink',
-]);
+// The command-layer plan (phases 3–10, completed 2026-07-19) drove the temporary
+// KNOWN_MISSING allowlist to empty and removed it: the contract is now HARD.
+// Every id C# routes into the engine must be handled — fix the engine or stop
+// routing the id; do not reintroduce an allowlist.
 
 const dispatcherNormalize = id => String(id).trim().toLowerCase();
 const entryNormalize = id => String(id).replace(/[\s_-]/g, '').toLowerCase();
@@ -72,25 +61,12 @@ test('every canvas command id routed from C# is registered in the engine', () =>
   const entryCommands = buildEntryCommandSet();
   assert.ok(entryCommands.size > 5, `Entry sanity check: expected >5 entry-level ids, got ${entryCommands.size}.`);
 
-  const missing = routedIds.filter(id =>
-    !isHandled(id, runtimeCommands, entryCommands)
-    && !KNOWN_MISSING.has(dispatcherNormalize(id)));
+  const missing = routedIds.filter(id => !isHandled(id, runtimeCommands, entryCommands));
 
   assert.deepEqual(
     missing,
     [],
     `C# routes command ids the canvas engine does not handle (silent UI no-ops):\n`
     + missing.map(id => `  ${id}`).join('\n')
-    + '\nRegister the command in the engine, or (only during the command-layer plan) add it to KNOWN_MISSING.');
-});
-
-test('KNOWN_MISSING allowlist contains only ids that are still actually missing', () => {
-  const runtimeCommands = buildRuntimeCommandSet();
-  const entryCommands = buildEntryCommandSet();
-  const stale = [...KNOWN_MISSING].filter(id => isHandled(id, runtimeCommands, entryCommands));
-  assert.deepEqual(
-    stale,
-    [],
-    `These KNOWN_MISSING entries are now handled by the engine — remove them from the allowlist:\n`
-    + stale.map(id => `  ${id}`).join('\n'));
+    + '\nRegister the command in the engine, or stop routing the id from C#.');
 });

@@ -201,10 +201,8 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
     }
 
     [Theory]
-    [InlineData("replaceImage")]
     [InlineData("setImageAltText")]
     [InlineData("toggleImageCaption")]
-    [InlineData("setImageLink")]
     [InlineData("setImageWrapMode")]
     [InlineData("setImageSize")]
     public async Task ImageCommands_DispatchToCanvasRuntime_WhenImageIsSelected(string commandName)
@@ -253,8 +251,6 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
     [InlineData("deleteTable")]
     [InlineData("mergeTableCells")]
     [InlineData("splitTableCell")]
-    [InlineData("tableProperties")]
-    [InlineData("cellProperties")]
     public async Task TableCommands_DispatchToCanvasRuntime_WhenCellIsSelected(string commandName)
     {
         var provider = new InMemoryDocumentEditorProvider();
@@ -281,6 +277,88 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
             .ExecuteAsync(context));
 
         HasCanvasCommand(commandName).Should().BeTrue($"{commandName} must dispatch to the canvas runtime");
+    }
+
+    // The engine never registered tableProperties/cellProperties/replaceImage/setImageLink — routing
+    // them was a silent no-op (KNOWN_MISSING). The ribbon versions now mirror the table context menu:
+    // they open the Properties side panel, where the panel UI issues the real engine mutations
+    // (setTableProperties/setCellProperties/setImageUrl).
+    [Theory]
+    [InlineData("tableProperties")]
+    [InlineData("cellProperties")]
+    public async Task TablePropertiesCommands_OpenPropertiesSidePanel_NotDeadEngineCommand(string commandName)
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        InitCanvasEngine(cut);
+
+        var context = new DocumentEditorCommandContext
+        {
+            HasDocument = true,
+            SelectionSnapshot = new WysiwygSelectionSnapshot
+            {
+                ActiveTableCellId = "cell-1",
+                Region = "TableCell"
+            }
+        };
+
+        await cut.InvokeAsync(() => GetEditorRegistry(cut)
+            .GetRequired(commandName)
+            .ExecuteAsync(context));
+
+        var workspace = cut.Find("[data-testid='document-editor-workspace']");
+        workspace.GetAttribute("data-side-panel-state").Should().Be("open");
+        workspace.GetAttribute("data-active-side-panel-tab").Should().Be("properties");
+        HasCanvasCommand(commandName).Should().BeFalse(
+            $"the engine never registered {commandName} — the ribbon must open the properties panel instead");
+    }
+
+    [Theory]
+    [InlineData("replaceImage")]
+    [InlineData("setImageLink")]
+    public async Task ImagePanelCommands_OpenPropertiesSidePanel_NotDeadEngineCommand(string commandName)
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        InitCanvasEngine(cut);
+
+        var context = new DocumentEditorCommandContext
+        {
+            HasDocument = true,
+            SelectionSnapshot = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "contract-inline-image",
+                ActiveObjectId = "contract-inline-image",
+                Region = "Body",
+                SelectionMode = "Object",
+                ObjectSelection = new WysiwygObjectSelectionSnapshot
+                {
+                    Kind = "image",
+                    ObjectId = "contract-inline-image",
+                    AnchorBlockId = "contract-inline-image"
+                }
+            }
+        };
+
+        await cut.InvokeAsync(() => GetEditorRegistry(cut)
+            .GetRequired(commandName)
+            .ExecuteAsync(context));
+
+        var workspace = cut.Find("[data-testid='document-editor-workspace']");
+        workspace.GetAttribute("data-side-panel-state").Should().Be("open");
+        workspace.GetAttribute("data-active-side-panel-tab").Should().Be("properties");
+        HasCanvasCommand(commandName).Should().BeFalse(
+            $"the engine never registered {commandName} — the ribbon must open the properties panel instead");
     }
 
     [Fact]

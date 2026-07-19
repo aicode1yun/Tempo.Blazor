@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.3.9 - 2026-07-19
+
+### Document editor — canvas command layer completed (TmDocumentEditor)
+
+Every command id routed from the C# UI into the canvas engine is now actually handled — the
+C#↔engine command contract test runs with no allowlist. Fixed silent no-op toolbar/ribbon actions:
+
+- **Fullscreen, header/footer toggles, insert table, delete table/page-break, table & cell
+  properties mutations, protection** (plan phases 1–8): registered as real engine commands with
+  full undo/redo semantics; document protection is enforced by the engine (restricted regions veto
+  inline/paragraph edits).
+- **Insert-ribbon token menu** (phase 9): the token button opened nothing (it routed an
+  unregistered `openTokenMenu` command). It now opens a Blazor token panel (searchable, provider
+  driven); picking a token inserts a first-class token run at the caret through the new
+  `insertToken` engine command — rendered as its display name, exposed to assistive tech through
+  the accessibility mirror, undoable as one transaction and persistent across save/reload.
+- **Table properties, cell properties, replace image, set image link** (phase 10): these ribbon/
+  command-palette entries routed engine commands that never existed. They now open the Properties
+  side panel (the panel issues the real `setTableProperties`/`setCellProperties`/`setImageUrl`
+  mutations), mirroring the table context menu. The command palette additionally syncs the live
+  canvas table/image selection before computing command availability.
+- **Engine fix:** commands that insert runs now follow the copy-on-write layout contract all the
+  way up (new model object, cloned block, section block-list swap) — previously an inserted token
+  updated the model but the canvas never repainted until reload.
+
 ## 2.3.8 - 2026-07-17
 
 ### Fixes

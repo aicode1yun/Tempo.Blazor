@@ -142,8 +142,25 @@ public partial class TmDocumentEditor
             RegisterTableRuntimeCommand("deleteTable", "TmDocumentEditor_DeleteTable", "trash-2");
             RegisterTableRuntimeCommand("mergeTableCells", "TmDocumentEditor_MergeCells", "combine");
             RegisterTableRuntimeCommand("splitTableCell", "TmDocumentEditor_SplitCell", "split-square-horizontal");
-            RegisterTableRuntimeCommand("tableProperties", "TmDocumentEditor_TableProperties", "table-properties", affectsData: false);
-            RegisterTableRuntimeCommand("cellProperties", "TmDocumentEditor_CellProperties", "square", affectsData: false);
+            // The engine has no tableProperties/cellProperties commands (mutations are
+            // setTableProperties/setCellProperties issued BY the panel) — like the table context
+            // menu, the ribbon entries open the Properties side panel.
+            _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+                "tableProperties", affectsData: false,
+                computeEnabled: ctx => ctx.HasDocument && HasActiveTable(ctx),
+                execute: (ctx, _) => OpenTablePropertiesPanelFromCommandAsync(ctx),
+                descriptionKey: "TmDocumentEditor_TableProperties",
+                tooltipKey: "TmDocumentEditor_TableProperties",
+                category: "Table",
+                icon: "table-properties"));
+            _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+                "cellProperties", affectsData: false,
+                computeEnabled: ctx => ctx.HasDocument && HasActiveTable(ctx),
+                execute: (ctx, _) => OpenTablePropertiesPanelFromCommandAsync(ctx),
+                descriptionKey: "TmDocumentEditor_CellProperties",
+                tooltipKey: "TmDocumentEditor_CellProperties",
+                category: "Table",
+                icon: "square"));
         }
 
         if (IsFeatureEnabled(DocumentEditorFeatureNames.Image))
@@ -157,10 +174,13 @@ public partial class TmDocumentEditor
                 category: "Insert",
                 icon: "image"));
 
+            // The engine has no replaceImage/setImageLink commands (the mutation is setImageUrl,
+            // issued by the image inspector's URL field) — the ribbon entries open the Properties
+            // side panel, which shows the image inspector for the active image.
             _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
-                "replaceImage", affectsData: true,
+                "replaceImage", affectsData: false,
                 computeEnabled: ctx => ctx.HasDocument && HasActiveImage(ctx),
-                execute: (_, _) => ExecuteImageRuntimeCommandAsync("replaceImage"),
+                execute: (_, _) => OpenImagePropertiesPanelFromCommandAsync(),
                 descriptionKey: "TmDocumentEditor_ReplaceImage",
                 tooltipKey: "TmDocumentEditor_ReplaceImage",
                 category: "Image",
@@ -194,9 +214,9 @@ public partial class TmDocumentEditor
                 icon: "captions"));
 
             _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
-                "setImageLink", affectsData: true,
+                "setImageLink", affectsData: false,
                 computeEnabled: ctx => ctx.HasDocument && HasActiveImage(ctx),
-                execute: (_, payload) => ExecuteImageRuntimeCommandAsync("setImageLink", payload),
+                execute: (_, _) => OpenImagePropertiesPanelFromCommandAsync(),
                 descriptionKey: "TmDocumentEditor_ImageLink",
                 tooltipKey: "TmDocumentEditor_ImageLink",
                 category: "Image",
@@ -848,6 +868,8 @@ public partial class TmDocumentEditor
             _showRuler, _zoomPageWidth, DifferentFirstPageHeaderFooter, DifferentOddAndEvenHeaderFooter,
             selection?.ActiveTableCellId, selection?.ActiveObjectId, selection?.ObjectSelection?.ObjectId,
             _selection.ActiveTableCellId, _selection.ActiveObjectId, _selection.ObjectSelection?.ObjectId,
+            // Fáze 10 (command-layer plán): HasActiveImage nově čte i canvas-side aktivní obrázek.
+            _canvasActiveImage is not null,
             CanReviewRevisions, HasPendingRevisions,
             _showBlocks, _showNonPrintingCharacters, _isFullscreen, _canvasPrintPreviewActive,
             UsingCanvasEngine,
@@ -858,7 +880,9 @@ public partial class TmDocumentEditor
         !string.IsNullOrWhiteSpace(context.SelectionSnapshot?.ObjectSelection?.ObjectId)
         || !string.IsNullOrWhiteSpace(context.SelectionSnapshot?.ActiveObjectId)
         || !string.IsNullOrWhiteSpace(_selection.ObjectSelection?.ObjectId)
-        || !string.IsNullOrWhiteSpace(_selection.ActiveObjectId);
+        || !string.IsNullOrWhiteSpace(_selection.ActiveObjectId)
+        // Canvas mode: the engine's active image is mirrored via SyncCanvasActiveImage, not _selection.
+        || _canvasActiveImage is not null;
 
     private void RegisterTableRuntimeCommand(string name, string key, string icon, bool affectsData = true)
     {

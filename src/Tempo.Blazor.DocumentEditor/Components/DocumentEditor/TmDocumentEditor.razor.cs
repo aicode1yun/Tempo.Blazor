@@ -9,6 +9,7 @@ using Tempo.Blazor.Abstractions.Shared;
 using Tempo.Blazor.Components.DocumentEditor.Clipboard;
 using Tempo.Blazor.Components.DocumentEditor.Commands;
 using Tempo.Blazor.Components.DocumentEditor.Features;
+using Tempo.Blazor.Components.DocumentEditor.Registry;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentEditor.Services;
@@ -4253,6 +4254,30 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     private Task OpenCellPropertiesFromContextAsync()
         => RunTableContextPanelCommandAsync(openTableProperties: false);
 
+    // Ribbon/palette variant of the context-menu panel commands: the properties commands are
+    // Blazor-side panel openers (the engine never registered tableProperties/cellProperties/
+    // replaceImage/setImageLink — the panel UI issues the real mutations).
+    private async Task OpenTablePropertiesPanelFromCommandAsync(DocumentEditorCommandContext context)
+    {
+        var selection = context.SelectionSnapshot ?? NormalizeTableContextSelection() ?? _lastBodySelectionSnapshot;
+        if (selection is not null)
+        {
+            _selectionContext = DocumentEditorSelectionContext.FromSnapshot(
+                await ResolveActiveTableSelectionAsync(selection),
+                _formattingState,
+                GetActiveObjectPropertiesSnapshot(selection));
+        }
+
+        OpenSidePanel(DocumentSidePanelTab.Properties);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OpenImagePropertiesPanelFromCommandAsync()
+    {
+        OpenSidePanel(DocumentSidePanelTab.Properties);
+        await InvokeAsync(StateHasChanged);
+    }
+
     private async Task RunTableContextPanelCommandAsync(bool openTableProperties)
     {
         var selection = NormalizeTableContextSelection();
@@ -5133,6 +5158,27 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
             || string.Equals(region, "Footer", StringComparison.OrdinalIgnoreCase)
                 ? region
                 : "Body";
+        ApplyCanvasTableSelection(selection);
+    }
+
+    // In canvas mode nothing else mirrors the engine's table selection into _selection, so
+    // registry enabled-state (HasActiveTable) would stay false even with a caret inside a cell.
+    private void ApplyCanvasTableSelection(TmDocumentCanvasEngineHost.CanvasEngineSelectionState selection)
+    {
+        _selection.ActiveTableCellId = string.IsNullOrWhiteSpace(selection.CellId) ? null : selection.CellId;
+        _selection.ActiveTableId = string.IsNullOrWhiteSpace(selection.TableId) ? null : selection.TableId;
+    }
+
+    /// <summary>Pulls the live canvas selection into <c>_selection</c> before a registry refresh, so
+    /// surfaces built from registry state (command palette) see the current table context.</summary>
+    private async Task SyncCanvasSelectionForRegistryAsync()
+    {
+        if (_canvasHost is null || !UsingCanvasEngine)
+        {
+            return;
+        }
+
+        ApplyCanvasTableSelection(await _canvasHost.GetSelectionStateAsync());
     }
 
     // B9: pull page metrics (total/per-page/active) from the canvas engine into the navigator + status bar.
@@ -8740,6 +8786,7 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
 
     private async Task OpenCommandPaletteAsync()
     {
+        await SyncCanvasSelectionForRegistryAsync();
         await RefreshCommandRegistryAsync();
         if (!_commandRegistry.CurrentState.Values.Any(command => command.IsVisible))
         {
