@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "MCP authoring tools (document_editor_create/import/export). Create an empty document with one addressable paragraph; import markdown/HTML (text) or DOCX/ODT (base64) into a new document or as a content replacement of an existing one (optimistic concurrency); export to markdown/html text or docx/odt base64 packages — the agent's verification channel. Reuses DocumentMarkdownImporter/DocumentHtmlImporter/DocumentDocxImporter/DocumentOdtImporter and the matching exporters from Tempo.Blazor.DocumentFormats.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorAuthoringTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorAuthoringTools"
+}

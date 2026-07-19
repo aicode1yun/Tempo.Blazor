@@ -41,6 +41,7 @@
     ],
     "projectReferences": [
       "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj",
+      "../Tempo.Blazor.DocumentFormats/Tempo.Blazor.DocumentFormats.csproj",
       "../Tempo.Reporting.Abstractions/Tempo.Reporting.Abstractions.csproj",
       "../Tempo.Reporting.Engine/Tempo.Reporting.Engine.csproj"
     ],
@@ -513,6 +514,16 @@
       "description": "MCP validation and analysis tools for DocumentEditor snapshots.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorAnalysisTools.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentEditorAuthoringTools",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "MCP authoring tools (document_editor_create/import/export). Create an empty document with one addressable paragraph; import markdown/HTML (text) or DOCX/ODT (base64) into a new document or as a content replacement of an existing one (optimistic concurrency); export to markdown/html text or docx/odt base64 packages — the agent's verification channel. Reuses DocumentMarkdownImporter/DocumentHtmlImporter/DocumentDocxImporter/DocumentOdtImporter and the matching exporters from Tempo.Blazor.DocumentFormats.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorAuthoringTools.cs",
       "documentationStatus": "merged"
     },
     {
@@ -1781,11 +1792,11 @@
     }
   ],
   "summary": {
-    "itemCount": 79,
-    "manualItemCount": 79,
-    "generatedItemCount": 79,
+    "itemCount": 80,
+    "manualItemCount": 80,
+    "generatedItemCount": 80,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 79
+    "publicApiTypeCount": 80
   }
 }

@@ -37,6 +37,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Tempo.Blazor.Abstractions\Tempo.Blazor.Abstractions.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.DocumentFormats\Tempo.Blazor.DocumentFormats.csproj" />
     <ProjectReference Include="..\Tempo.Reporting.Abstractions\Tempo.Reporting.Abstractions.csproj" />
     <ProjectReference Include="..\Tempo.Reporting.Engine\Tempo.Reporting.Engine.csproj" />
   </ItemGroup>

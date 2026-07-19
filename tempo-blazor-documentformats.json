@@ -5,6 +5,8 @@
     "description": "Optional server-side DOCX and ODT import/export support for TmDocumentEditor.",
     "authors": "Tempo",
     "targetFrameworks": [
+      "net8.0",
+      "net9.0",
       "net10.0"
     ],
     "tags": "blazor;documents;docx;odt;openxml;document-editor",
@@ -44,7 +46,7 @@
   "gettingStarted": {
     "title": "Tempo.Blazor.DocumentFormats",
     "overview": "Optional server-side DOCX and ODT import/export support for TmDocumentEditor.",
-    "targetFramework": "net10.0",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
     "installation": {
       "nuget": [
         "dotnet add package Tempo.Blazor.DocumentFormats"
