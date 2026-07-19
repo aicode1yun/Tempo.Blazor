@@ -465,6 +465,130 @@ public sealed class DocumentEditorCanvasTableE2ETests : WasmTestBase
         TestContext.AddResultFile(manifestPath);
     }
 
+    [TestMethod]
+    public async Task Phase7_TablePropertiesPanel_ApplyChangesRenderAndPersist()
+    {
+        // Command-layer plan phase 7: the properties side panel routed setTableProperties /
+        // setCellProperties — composite commands the engine never registered, so Apply was a
+        // silent no-op.
+        await DocumentEditorE2EReset.ResetAsync();
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+        await page.SetViewportSizeAsync(1440, 1000);
+        await page.GotoAsync($"{BaseUrl}/canvas-engine-host?documentId=phase-12-canvas-history-save&showToolbar=true", new PageGotoOptions
+        {
+            WaitUntil = WaitUntilState.DOMContentLoaded,
+            Timeout = 60_000
+        });
+        await page.WaitForFunctionAsync(
+            """
+            () => document.querySelector('[data-testid="document-canvas-engine-host"][data-canvas-engine-ready="true"]')
+                && document.querySelector('[data-canvas-table-cell][data-cell-id="canvas-history-table-h-category"]')
+            """,
+            new PageWaitForFunctionOptions { Timeout = 30_000 });
+
+        var output = CreateOutputDirectory("phase7-table-properties");
+        var appliedPath = Path.Combine(output, "00-properties-applied.png");
+        var reloadPath = Path.Combine(output, "01-after-reload.png");
+
+        // The phase-12 seed table is center-aligned; remember the first header cell geometry.
+        var cellBefore = await ReadCellRectAsync(page, "canvas-history-table-h-category");
+
+        // The properties panel resolves the active cell from the SELECTION — click into the cell
+        // first (verified), then open the context menu.
+        for (var attempt = 0; ; attempt++)
+        {
+            var target = await ReadCellRectAsync(page, "canvas-history-table-h-category");
+            await page.Mouse.ClickAsync((float)target.CenterX, (float)target.CenterY);
+            var selected = await page.EvaluateAsync<string>(
+                "() => document.querySelector('[data-testid=\"document-canvas-engine-root\"]')?.getAttribute('data-canvas-selection-cell-id') || ''");
+            if (selected == "canvas-history-table-h-category")
+            {
+                break;
+            }
+
+            if (attempt >= 9)
+            {
+                Assert.Fail($"Click kept resolving to cell '{selected}'.");
+            }
+
+            await page.WaitForTimeoutAsync(250);
+        }
+
+        await RightClickCellAsync(page, "canvas-history-table-h-category");
+        await page.GetByTestId("document-table-table-properties").ClickAsync();
+        await Assertions.Expect(page.GetByTestId("document-table-properties-panel")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+        // Alignment Center → Left: the table visibly shifts left.
+        await page.GetByTestId("document-table-properties-align-left").ClickAsync();
+        await page.WaitForFunctionAsync(
+            """
+            beforeX => {
+                const cell = document.querySelector('[data-canvas-table-cell][data-cell-id="canvas-history-table-h-category"]');
+                return cell && cell.getBoundingClientRect().x < Number(beforeX) - 20;
+            }
+            """,
+            cellBefore.X,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+        // Background: applies to the table layout (seed cells carry explicit colors which win by
+        // design — assert the model flag; a plain-cell visual check is covered by the phase-5 test).
+        await page.GetByTestId("document-table-properties-background").FillAsync("#ffedd5");
+        await page.GetByTestId("document-table-properties-background").DispatchEventAsync("change");
+        await page.WaitForFunctionAsync(
+            """
+            async () => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
+                const model = JSON.parse(module.getModelJson(host.getAttribute('data-canvas-engine-handle')) || '{}');
+                const table = (model.body?.blocks || []).find(block => String(block?.id || '') === 'canvas-history-table');
+                const layout = table?.content?.table?.layout || {};
+                return String(layout.alignment || '').toLowerCase() === 'left'
+                    && String(layout.backgroundColor || '').toLowerCase() === '#ffedd5';
+            }
+            """,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+        await DocumentEditorCanvasVisualAssert.AssertNoTextOverlapAsync(page);
+        await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions { Path = appliedPath, Type = ScreenshotType.Png });
+
+        await page.GetByTestId("document-save").ClickAsync();
+        await WaitForSaveBoundaryAsync(page);
+        await NavigateWithinBlazorAsync(page, "/canvas-engine-host?documentId=phase-5-canvas-render");
+        await page.WaitForFunctionAsync(
+            """
+            () => document.querySelector('[data-testid="document-canvas-page"]')?.getAttribute('data-canvas-model-document-id') === 'phase-5-canvas-render'
+            """,
+            new PageWaitForFunctionOptions { Timeout = 20_000 });
+        await NavigateWithinBlazorAsync(page, "/canvas-engine-host?documentId=phase-12-canvas-history-save&showToolbar=true");
+        await page.WaitForFunctionAsync(
+            """
+            beforeX => document.querySelector('[data-testid="document-canvas-engine-host"][data-canvas-engine-ready="true"]')
+                && (() => {
+                    const cell = document.querySelector('[data-canvas-table-cell][data-cell-id="canvas-history-table-h-category"]');
+                    return cell && cell.getBoundingClientRect().x < Number(beforeX) - 20;
+                })()
+            """,
+            cellBefore.X,
+            new PageWaitForFunctionOptions { Timeout = 30_000 });
+        await page.WaitForFunctionAsync(
+            """
+            async () => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
+                const model = JSON.parse(module.getModelJson(host.getAttribute('data-canvas-engine-handle')) || '{}');
+                const layout = (model.body?.blocks || []).find(block => String(block?.id || '') === 'canvas-history-table')?.content?.table?.layout || {};
+                return String(layout.alignment || '').toLowerCase() === 'left'
+                    && String(layout.backgroundColor || '').toLowerCase() === '#ffedd5';
+            }
+            """,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+        await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions { Path = reloadPath, Type = ScreenshotType.Png });
+
+        TestContext.AddResultFile(appliedPath);
+        TestContext.AddResultFile(reloadPath);
+    }
+
     private static async Task RightClickCellAsync(IPage page, string cellId)
     {
         var cell = await ReadCellRectAsync(page, cellId);

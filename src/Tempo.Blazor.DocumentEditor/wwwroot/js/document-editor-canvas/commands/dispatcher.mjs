@@ -233,6 +233,8 @@ export function createCanvasCommandRuntime(options = {}) {
         'resizecolumn',
         'settablecellformat',
         'setcellformat',
+        'settableproperties',
+        'setcellproperties',
         'navigatetablecell',
         'sorttable',
         'settableformula',

@@ -2644,7 +2644,8 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         });
     }
 
-    private async Task SetActiveTablePropertiesFromPanelAsync(TableLayoutContent layout) =>
+    private async Task SetActiveTablePropertiesFromPanelAsync(TableLayoutContent layout)
+    {
         await RouteToCanvasEngineAsync("setTableProperties", new
         {
             CellId = _selectionContext.ActiveTableCellId ?? _selection.ActiveTableCellId,
@@ -2655,7 +2656,15 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
             layout.Borders
         }, focus: true);
 
-    private async Task SetActiveCellPropertiesFromPanelAsync(TableCellContent cell) =>
+        // The panel binds the C# mirror's layout — without a refresh the NEXT panel edit would
+        // send the stale pre-edit values and silently revert this one (change alignment, then
+        // change background → alignment snapped back).
+        await GetCurrentDocumentForProviderExportAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetActiveCellPropertiesFromPanelAsync(TableCellContent cell)
+    {
         await RouteToCanvasEngineAsync("setCellProperties", new
         {
             CellId = _selectionContext.ActiveTableCellId ?? _selection.ActiveTableCellId,
@@ -2665,6 +2674,11 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
             cell.Padding,
             cell.Borders
         }, focus: true);
+
+        // Same stale-mirror hazard as the table panel above.
+        await GetCurrentDocumentForProviderExportAsync();
+        await InvokeAsync(StateHasChanged);
+    }
 
     private static DocumentImageHorizontalPosition ToHorizontalPosition(DocumentImageAlignment alignment) =>
         alignment switch

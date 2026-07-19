@@ -36,6 +36,8 @@ const TABLE_COMMAND_ALIASES = new Map([
     ['resizecolumn', 'resizeColumn'],
     ['settablecellformat', 'setCellFormat'],
     ['setcellformat', 'setCellFormat'],
+    ['settableproperties', 'setTableProperties'],
+    ['setcellproperties', 'setCellProperties'],
     ['navigatetablecell', 'navigateCell'],
     ['sorttable', 'sortTable'],
     ['settableformula', 'setTableFormula'],
@@ -148,6 +150,10 @@ export function applyTableCommand(model, selection, commandId, payload = null) {
         result = resizeColumn(selectedCell, payload);
     } else if (command === 'setCellFormat') {
         result = setCellFormat(selectedCell, payload, working, selection);
+    } else if (command === 'setTableProperties') {
+        result = setTableProperties(selectedCell, payload);
+    } else if (command === 'setCellProperties') {
+        result = setCellProperties(selectedCell, payload);
     } else if (command === 'navigateCell') {
         result = navigateCell(selectedCell, payload);
     } else if (command === 'sortTable') {
@@ -222,6 +228,8 @@ export function queryTableCommandState(model, selection) {
             mergecells: commandState(enabled),
             splitcell: commandState(enabled && ((Number(cell.cell.columnSpan || 1) || 1) > 1 || (Number(cell.cell.rowSpan || 1) || 1) > 1)),
             setcellformat: commandState(enabled),
+            settableproperties: commandState(enabled),
+            setcellproperties: commandState(enabled),
             sorttable: commandState(enabled),
             settableformula: commandState(enabled),
             setcellmargins: commandState(enabled),
@@ -376,6 +384,113 @@ function resizeColumn(selectedCell, payload) {
     }
 
     return { changed, selection: collapsedSelection(firstEditablePositionInCell(selectedCell.cell)) };
+}
+
+// Composite panel commands (phase 7): the properties side panel sends the WHOLE property set in
+// one payload — null/omitted fields stay unchanged, and the single executeTableCommand history
+// entry makes the apply one atomic undo step (composing the granular commands would create one
+// undo entry per property).
+
+function setTableProperties(selectedCell, payload) {
+    const tableContent = selectedCell.tableBlock.content.table;
+    tableContent.layout = tableContent.layout && typeof tableContent.layout === 'object' ? tableContent.layout : {};
+    const layout = tableContent.layout;
+    let changed = false;
+
+    const width = Number(payload?.width ?? payload?.Width);
+    if (Number.isFinite(width) && width > 0 && Number(layout.width || 0) !== width) {
+        layout.width = width;
+        changed = true;
+    }
+
+    const alignment = payload?.alignment ?? payload?.Alignment;
+    if (alignment != null && String(alignment).trim() !== '') {
+        const normalized = String(alignment).trim().toLowerCase();
+        if (String(layout.alignment || '').toLowerCase() !== normalized) {
+            layout.alignment = normalized;
+            changed = true;
+        }
+    }
+
+    const cellPadding = Number(payload?.cellPadding ?? payload?.CellPadding);
+    if (Number.isFinite(cellPadding) && cellPadding >= 0 && Number(layout.cellPadding ?? -1) !== cellPadding) {
+        layout.cellPadding = Math.min(96, cellPadding);
+        changed = true;
+    }
+
+    const backgroundColor = payload?.backgroundColor ?? payload?.BackgroundColor;
+    if (typeof backgroundColor === 'string' && backgroundColor && layout.backgroundColor !== backgroundColor) {
+        layout.backgroundColor = backgroundColor;
+        changed = true;
+    }
+
+    const borders = payload?.borders ?? payload?.Borders;
+    if (borders && typeof borders === 'object') {
+        layout.borders = layout.borders && typeof layout.borders === 'object' ? layout.borders : {};
+        for (const side of ['top', 'right', 'bottom', 'left']) {
+            const value = borders[side] ?? borders[side[0].toUpperCase() + side.slice(1)];
+            if (typeof value === 'string' && value && layout.borders[side] !== value) {
+                layout.borders[side] = value;
+                changed = true;
+            }
+        }
+    }
+
+    return { changed, selection: collapsedSelection(firstEditablePositionInCell(selectedCell.cell)) };
+}
+
+function setCellProperties(selectedCell, payload) {
+    const target = selectedCell.cell;
+    let changed = false;
+
+    // Width follows the resize-drag contract: it applies to the whole column so the grid stays
+    // consistent (a lone cell width would shear the column).
+    const width = Number(payload?.width ?? payload?.Width);
+    if (Number.isFinite(width) && width > 0) {
+        const clamped = Math.max(32, Math.min(720, width));
+        for (const row of selectedCell.rows) {
+            const columnCell = row.cells[selectedCell.cellIndex];
+            if (columnCell && Number(columnCell.width || 0) !== clamped) {
+                columnCell.width = clamped;
+                changed = true;
+            }
+        }
+    }
+
+    const backgroundColor = payload?.backgroundColor ?? payload?.BackgroundColor;
+    if (typeof backgroundColor === 'string' && backgroundColor && target.backgroundColor !== backgroundColor) {
+        target.backgroundColor = backgroundColor;
+        changed = true;
+    }
+
+    const vertical = payload?.verticalAlignment ?? payload?.VerticalAlignment;
+    if (vertical != null && String(vertical).trim() !== '') {
+        const verticalValue = verticalAlignmentValue(verticalAlignmentName(vertical));
+        if (verticalAlignmentValue(target.verticalAlignment) !== verticalValue) {
+            target.verticalAlignment = verticalValue;
+            changed = true;
+        }
+    }
+
+    const padding = Number(payload?.padding ?? payload?.Padding);
+    if (Number.isFinite(padding) && padding >= 0 && Number(target.padding ?? -1) !== padding) {
+        target.padding = Math.min(96, padding);
+        changed = true;
+    }
+
+    const borders = payload?.borders ?? payload?.Borders;
+    if (borders && typeof borders === 'object') {
+        target.borders = target.borders && typeof target.borders === 'object' ? target.borders : {};
+        for (const side of ['top', 'right', 'bottom', 'left']) {
+            const value = borders[side] ?? borders[side[0].toUpperCase() + side.slice(1)];
+            if (typeof value === 'string' && value && target.borders[side] !== value) {
+                target.borders[side] = value;
+                changed = true;
+            }
+        }
+    }
+
+    return { changed, selection: collapsedSelection(firstEditablePositionInCell(target)) };
 }
 
 function setCellFormat(selectedCell, payload, model, selection) {
