@@ -654,6 +654,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentEditorRenderTools",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Visual-feedback MCP tools (document_render_preview / document_render_pdf): render a DocumentEditor document (by id or inline JSON) to per-page base64 PNG previews (pages selection, dpi, maxPages cap) or a WYSIWYG PDF (DocumentPdfExportOptions passthrough incl. page setup, review display mode and forensic watermark) via the headless pipeline (ITempoDocumentService). Fail-closed: font-catalog gaps produce an agent-friendly diagnostic instead of synthetic metrics.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorRenderTools.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentEditorSemanticTextTools",
       "kind": "Class",
       "category": "Document Editor",
@@ -709,6 +719,46 @@
       "description": "The outcome of validating a document editor snapshot.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorValidationEngine.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ITempoDocumentMcpFontCatalog",
+      "kind": "Interface",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Resolved font catalog for the document MCP render tools — the flat ReportPdfFontFace list (explicit faces + aliases + optional system fallback) the headless layout measures and embeds with.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorRenderOptions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentEditorMcpRenderingExtensions",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "DI registration for the document MCP render tools: AddTempoDocumentEditorMcpRendering registers the headless document pipeline (AddTempoDocumentServices), the configured TempoDocumentMcpRenderOptions and the resolved ITempoDocumentMcpFontCatalog as idempotent singletons.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorRenderOptions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentMcpFontCatalog",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Default ITempoDocumentMcpFontCatalog: materializes TempoDocumentMcpRenderOptions into a flat font-face list once — explicit faces, alias duplicates, then well-known system faces (Windows Arial, Linux DejaVu Sans) registered under Arial plus the configured fallback aliases.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorRenderOptions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentMcpRenderOptions",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Render configuration for the document MCP tools: explicit ReportPdfFontFace list, font aliases (alias family mapped onto a source family's faces), optional system-font fallback (Windows Arial / Linux DejaVu registered as Arial + SystemFallbackAliases like Aptos), an ImageResolver seam for provider-backed assets and the MaxPreviewPages cap.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorRenderOptions.cs",
       "documentationStatus": "merged"
     },
     {
@@ -1792,11 +1842,11 @@
     }
   ],
   "summary": {
-    "itemCount": 80,
-    "manualItemCount": 80,
-    "generatedItemCount": 80,
+    "itemCount": 85,
+    "manualItemCount": 85,
+    "generatedItemCount": 85,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 80
+    "publicApiTypeCount": 85
   }
 }

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "Visual-feedback MCP tools (document_render_preview / document_render_pdf): render a DocumentEditor document (by id or inline JSON) to per-page base64 PNG previews (pages selection, dpi, maxPages cap) or a WYSIWYG PDF (DocumentPdfExportOptions passthrough incl. page setup, review display mode and forensic watermark) via the headless pipeline (ITempoDocumentService). Fail-closed: font-catalog gaps produce an agent-friendly diagnostic instead of synthetic metrics.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorRenderTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorRenderTools"
+}

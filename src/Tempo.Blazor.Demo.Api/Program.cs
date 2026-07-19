@@ -9,6 +9,7 @@ using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.DocumentFormats.HeadlessLayout;
 using Tempo.Blazor.EmailTemplates.Abstractions;
 using Tempo.Blazor.Mcp;
+using Tempo.Blazor.Mcp.DocumentEditor;
 using Tempo.Blazor.Models;
 using Tempo.Blazor.WebPush;
 
@@ -110,8 +111,15 @@ builder.Services.AddMcpServer()
     .WithToolsFromAssembly(typeof(Tempo.Blazor.Mcp.TempoWireframeMcp).Assembly);
 builder.Services.AddSingleton<MockNotionDatabaseStore>();
 builder.Services.AddSingleton<DemoDocumentEditorStore>();
+// The document MCP tools (document_editor_* / document_render_*) resolve the same store, so
+// agent edits and the editor demo share one document state.
+builder.Services.AddSingleton<Tempo.Blazor.DocumentEditor.Interfaces.IDocumentEditorProvider>(
+    sp => sp.GetRequiredService<DemoDocumentEditorStore>());
 builder.Services.AddSingleton<DemoDocumentFormatProvider>();
 builder.Services.AddTempoDocumentServices();
+// Font catalog + limits for document_render_preview / document_render_pdf (system Arial/DejaVu
+// fallback incl. the Aptos alias — mirrors DemoDocumentExportFontCatalog).
+builder.Services.AddTempoDocumentEditorMcpRendering();
 builder.Services.AddSingleton<DemoDocumentExportFontCatalog>();
 builder.Services.AddSingleton<DemoDocumentPdfExportProvider>();
 builder.Services.AddSingleton<DemoDocumentPdfExportCache>();

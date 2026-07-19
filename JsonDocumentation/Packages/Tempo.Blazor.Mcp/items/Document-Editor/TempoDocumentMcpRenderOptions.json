@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "Render configuration for the document MCP tools: explicit ReportPdfFontFace list, font aliases (alias family mapped onto a source family's faces), optional system-font fallback (Windows Arial / Linux DejaVu registered as Arial + SystemFallbackAliases like Aptos), an ImageResolver seam for provider-backed assets and the MaxPreviewPages cap.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorRenderOptions.cs",
+  "documentationStatus": "generated",
+  "itemName": "TempoDocumentMcpRenderOptions"
+}

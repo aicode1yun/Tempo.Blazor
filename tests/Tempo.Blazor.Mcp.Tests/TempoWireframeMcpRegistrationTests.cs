@@ -121,6 +121,8 @@ public class TempoWireframeMcpRegistrationTests
             "document_editor_set_paragraph_properties",
             "document_editor_set_table_cell_text",
             "document_editor_update_block",
+            "document_render_pdf",
+            "document_render_preview",
             "document_editor_validate_document",
             "get_report_definition",
             "list_reports",

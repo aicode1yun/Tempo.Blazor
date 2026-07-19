@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "Default ITempoDocumentMcpFontCatalog: materializes TempoDocumentMcpRenderOptions into a flat font-face list once — explicit faces, alias duplicates, then well-known system faces (Windows Arial, Linux DejaVu Sans) registered under Arial plus the configured fallback aliases.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorRenderOptions.cs",
+  "documentationStatus": "generated",
+  "itemName": "TempoDocumentMcpFontCatalog"
+}

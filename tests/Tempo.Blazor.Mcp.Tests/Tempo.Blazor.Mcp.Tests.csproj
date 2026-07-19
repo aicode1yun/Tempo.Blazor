@@ -26,4 +26,10 @@
     <Using Include="FluentAssertions" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\Tempo.Blazor.DocumentFormats.Tests\TestData\Fonts\DancingScript-VariableFont_wght.ttf"
+          Link="TestData\Fonts\DancingScript-VariableFont_wght.ttf"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

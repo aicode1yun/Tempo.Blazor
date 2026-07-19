@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "Resolved font catalog for the document MCP render tools — the flat ReportPdfFontFace list (explicit faces + aliases + optional system fallback) the headless layout measures and embeds with.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorRenderOptions.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITempoDocumentMcpFontCatalog"
+}

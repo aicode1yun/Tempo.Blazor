@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "DI registration for the document MCP render tools: AddTempoDocumentEditorMcpRendering registers the headless document pipeline (AddTempoDocumentServices), the configured TempoDocumentMcpRenderOptions and the resolved ITempoDocumentMcpFontCatalog as idempotent singletons.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorRenderOptions.cs",
+  "documentationStatus": "generated",
+  "itemName": "TempoDocumentEditorMcpRenderingExtensions"
+}
