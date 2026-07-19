@@ -3,6 +3,7 @@ using Tempo.Blazor.Reporting.Services;
 using Tempo.Reporting.Abstractions;
 using Tempo.Reporting.Abstractions.Data;
 using Tempo.Reporting.Abstractions.Definitions;
+using Tempo.Reporting.Abstractions.Serialization;
 using DataFieldType = Tempo.Reporting.Abstractions.Data.ReportDataFieldType;
 using DefinitionFieldType = Tempo.Reporting.Abstractions.Definitions.ReportDataFieldType;
 
@@ -11,13 +12,71 @@ namespace Tempo.ReportServer.Web.Services;
 /// <summary>Builds in-memory report sources for the report server demo.</summary>
 public sealed class DemoReportSourceFactory
 {
+    // The rich, hand-authored demo definitions this factory can supply sample DATA for. Any other id
+    // is a real (created/uploaded) report whose definition must come from the catalog, never from here.
+    private static readonly HashSet<string> KnownDemoReportIds = new(StringComparer.Ordinal)
+    {
+        "sales-register",
+        "sales-dashboard",
+        "invoice-aging",
+        "margin-watch",
+        "fulfillment-sla",
+    };
+
     /// <summary>Creates the sales register report source.</summary>
     public IReportSource CreateSalesRegister()
         => CreateReportSource("sales-register");
 
+    /// <summary>Whether this factory has a hand-authored demo definition (with sample data) for the id.</summary>
+    public bool IsKnownDemoReport(string reportId)
+        => KnownDemoReportIds.Contains(reportId);
+
     /// <summary>Creates a report source for a catalog report id.</summary>
     public IReportSource CreateReportSource(string reportId)
         => new EmbeddedReportSource(CreateReportDefinition(reportId), new SalesRegisterProvider());
+
+    /// <summary>
+    /// Builds an in-process preview source for an ARBITRARY report definition (a real created/uploaded
+    /// report). The self-contained portal has no live data source for such a report, so the preview shows
+    /// the report's real layout (title, bands, tables) with EMPTY data — never another report's content.
+    /// </summary>
+    public IReportSource CreateReportSourceFromDefinition(ReportDefinition definition)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        return new EmbeddedReportSource(definition, new EmptyDefinitionProvider(definition));
+    }
+
+    /// <summary>
+    /// Parses a canonical report-definition JSON into a <see cref="ReportDefinition"/> using the SAME
+    /// canonical serializer the server writes/reads it with (so custom converters like ReportPageSize.unit
+    /// round-trip), or returns <see langword="null"/> when the payload is missing/blank/unparseable or
+    /// carries no meaningful content (e.g. the <c>"{}"</c> placeholder), so callers can fall back to a demo
+    /// definition or a graceful state.
+    /// </summary>
+    public static ReportDefinition? TryParseDefinition(string? definitionJson)
+    {
+        if (string.IsNullOrWhiteSpace(definitionJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            var definition = ReportDefinitionJsonSerializer.Deserialize(definitionJson);
+            var hasContent = !string.IsNullOrWhiteSpace(definition.Name)
+                || definition.DataSets.Count > 0
+                || definition.Bands.PageHeader is not null
+                || definition.Bands.ReportHeader is not null
+                || definition.Bands.Detail is not null
+                || definition.Bands.ReportFooter is not null
+                || definition.Bands.PageFooter is not null;
+            return hasContent ? definition : null;
+        }
+        catch (ReportDefinitionJsonException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>Creates an editable report definition for a catalog report id.</summary>
     public ReportDefinition CreateReportDefinition(string reportId)
@@ -392,6 +451,47 @@ public sealed class DemoReportSourceFactory
             Bold = bold,
             Color = "#111827",
         };
+
+    // Supplies the correct SCHEMA (columns from the definition's declared dataset fields) but ZERO rows,
+    // so an arbitrary real report renders its own layout with empty data — no cross-report content.
+    private sealed class EmptyDefinitionProvider : IReportDataProvider
+    {
+        private readonly ReportDefinition _definition;
+
+        public EmptyDefinitionProvider(ReportDefinition definition)
+            => _definition = definition;
+
+        public Task<ReportDataSetResult> GetDataAsync(
+            string dataSetName,
+            ReportDataQuery query,
+            IReadOnlyDictionary<string, ReportParameterValue> parameters,
+            ReportExecutionContext context)
+        {
+            var dataSet = _definition.DataSets.FirstOrDefault(candidate =>
+                string.Equals(candidate.Name, dataSetName, StringComparison.Ordinal));
+            var schema = (dataSet?.Fields ?? [])
+                .Select(field => new ReportDataColumn(field.Name, MapFieldType(field.DataType)))
+                .ToArray();
+            return Task.FromResult(new ReportDataSetResult(schema, EmptyRows()));
+        }
+
+        private static DataFieldType MapFieldType(DefinitionFieldType type)
+            => type switch
+            {
+                DefinitionFieldType.Number => DataFieldType.Number,
+                DefinitionFieldType.Date => DataFieldType.Date,
+                DefinitionFieldType.Boolean => DataFieldType.Boolean,
+                DefinitionFieldType.Object => DataFieldType.Object,
+                _ => DataFieldType.String,
+            };
+
+#pragma warning disable CS1998 // async enumerator with no awaits is the streaming contract shape
+        private static async IAsyncEnumerable<ReportDataRow> EmptyRows()
+        {
+            yield break;
+        }
+#pragma warning restore CS1998
+    }
 
     private sealed class SalesRegisterProvider : IReportDataProvider
     {

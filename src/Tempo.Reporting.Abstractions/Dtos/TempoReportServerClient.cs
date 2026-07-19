@@ -443,9 +443,20 @@ public sealed class TempoReportServerClient : ApiClientBase, ITempoReportServerC
             query += $"&path={Uri.EscapeDataString(path)}";
         }
 
-        return await GetAsync<ReportResolveResultDto>(
-            $"{_basePath}/resolve?{query}",
-            cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException("Resolve response was empty.");
+        // A 404 (unknown report/path) is translated into KeyNotFoundException so callers (the portal
+        // viewer/designer pages) render their graceful "report not found" state instead of an unhandled
+        // HttpRequestException from EnsureSuccessStatusCode reaching the error page.
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Get, $"{_basePath}/resolve?{query}"),
+            cancellationToken).ConfigureAwait(false);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            throw new KeyNotFoundException($"No report resolved for reportId='{reportId}' path='{path}'.");
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ReportResolveResultDto>(cancellationToken).ConfigureAwait(false)
+            ?? throw new InvalidOperationException("Resolve response was empty.");
     }
 
     /// <inheritdoc />

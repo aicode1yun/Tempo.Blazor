@@ -1,0 +1,28 @@
+{
+  "user": "author1",
+  "webUrl": "https://localhost:7150",
+  "reportName": "Fix Verify Ledger 42",
+  "steps": {
+    "create": {
+      "name": "create-blank-report",
+      "designerUrl": "https://localhost:7150/designer/report_2833cd41422d41dcb5aa85ed012cbeed",
+      "reportId": "report_2833cd41422d41dcb5aa85ed012cbeed"
+    },
+    "designer": {
+      "name": "designer-real-not-demo",
+      "headingH2": "Fix Verify Ledger 42",
+      "showsRealName": true,
+      "showsSalesRegister": false,
+      "showsCustomerBand": false,
+      "showsEuropeDemo": false,
+      "pass": true
+    }
+  },
+  "errors": [
+    "TypeError: Failed to fetch",
+    "Error: download 'https://localhost:7150/_framework/dotnet.native.u31nt9bth6.wasm' for dotnet.native.u31nt9bth6.wasm failed 0 TypeError: Failed to fetch",
+    "Error: download 'https://localhost:7150/_framework/System.Runtime.InteropServices.JavaScript.a0smuvq74f.wasm' for System.Runtime.InteropServices.JavaScript.a0smuvq74f.wasm failed 0 TypeError: Failed to fetch"
+  ],
+  "failure": "TimeoutError: page.waitForSelector: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\\'f12-viewer-page\\']') to be visible\u001b[22m\n",
+  "errorCount": 241
+}

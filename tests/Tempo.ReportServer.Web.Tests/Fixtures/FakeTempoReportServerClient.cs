@@ -144,6 +144,9 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
     /// <summary>The most recent request captured by <see cref="CreateReportAsync"/>.</summary>
     public CreateReportRequestDto? LastCreateReportRequest { get; private set; }
 
+    // Per-report stored definition JSON, so /resolve returns the REAL definition (mirrors the server).
+    private readonly Dictionary<string, string> _definitionByReportId = new(StringComparer.Ordinal);
+
     private int _idCounter;
 
     /// <inheritdoc />
@@ -290,6 +293,7 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
     {
         LastCreateReportRequest = request;
         var reportId = $"{Slug(request.Name)}-{++_idCounter}";
+        _definitionByReportId[reportId] = request.DefinitionJson;
         _reports.Add(new ReportSummaryDto
         {
             TenantId = request.TenantId,
@@ -641,7 +645,7 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
             LatestRevisionId = report.LatestRevisionId,
             PublishedRevisionId = report.LatestRevisionId,
             RevisionNumber = 1,
-            DefinitionJson = "{}",
+            DefinitionJson = _definitionByReportId.TryGetValue(report.ReportId, out var definition) ? definition : "{}",
             RenderPath = "api/render",
         });
     }
@@ -649,29 +653,35 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
     private ReportSummaryDto? ResolveByPath(string path)
     {
         var trimmed = path.Trim().Trim('/');
-        var separator = trimmed.LastIndexOf('/');
-        if (separator < 0)
+        if (trimmed.Length == 0)
         {
-            // A folderless path never resolves on the real server (needs a folder segment + report name).
             return null;
         }
 
-        var folderPath = "/" + trimmed[..separator];
-        var lastSegment = trimmed[(separator + 1)..];
+        // Mirror the real server: folder-qualified path, or a single segment for a root-folder report.
+        var separator = trimmed.LastIndexOf('/');
+        var reportKey = separator < 0 ? trimmed : trimmed[(separator + 1)..];
+        var folderPath = separator < 0 ? "/" : "/" + trimmed[..separator];
         var folder = _folders.FirstOrDefault(candidate =>
             string.Equals(candidate.Path, folderPath, StringComparison.OrdinalIgnoreCase));
-        if (folder is null)
+
+        // Match the last segment against the report's ReportId OR Name (additive, same as ResolveByPathAsync),
+        // so id-based (BuildDeepLink/favorite) and name-based deep links round-trip.
+        ReportSummaryDto? summary = null;
+        if (folder is not null)
         {
-            return null;
+            summary = _reports.FirstOrDefault(candidate =>
+                candidate.FolderId == folder.FolderId
+                && (string.Equals(candidate.ReportId, reportKey, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(candidate.Name, reportKey, StringComparison.OrdinalIgnoreCase)));
         }
 
-        // Match the last segment against the report's ReportId OR Name (same additive semantics as the
-        // real server's ResolveByPathAsync), so both id-based (BuildDeepLink/favorite) and name-based
-        // deep links round-trip.
-        return _reports.FirstOrDefault(candidate =>
-            candidate.FolderId == folder.FolderId
-            && (string.Equals(candidate.ReportId, lastSegment, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(candidate.Name, lastSegment, StringComparison.OrdinalIgnoreCase)));
+        // Root-folder fallback: a single-segment link resolves tenant-wide by id-or-name.
+        return summary ?? (separator < 0
+            ? _reports.FirstOrDefault(candidate =>
+                string.Equals(candidate.ReportId, reportKey, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(candidate.Name, reportKey, StringComparison.OrdinalIgnoreCase))
+            : null);
     }
 
     // Fáze 12 pass 2 favorites / render-run history: real in-memory behavior + call capture so the

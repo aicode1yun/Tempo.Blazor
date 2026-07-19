@@ -1,0 +1,37 @@
+{
+  "user": "author1",
+  "reportName": "Fix Verify Viewer 77",
+  "steps": {
+    "create": {
+      "name": "upload-distinctive-report",
+      "reportId": "report_a576c22f2dc34269855a4dce656e9e11"
+    },
+    "viewer": {
+      "name": "viewer-own-not-demo",
+      "viewerPath": "https://localhost:7150/reports/Finance/report_a576c22f2dc34269855a4dce656e9e11",
+      "notFound": false,
+      "hasParamForm": true,
+      "previewUnavailable": false,
+      "headingH2": "Fix Verify Viewer 77",
+      "showsRealName": true,
+      "showsSalesRegister": false,
+      "showsEuropeDemo": false,
+      "showsCustomerBand": false,
+      "pass": true
+    },
+    "demoSeed": {
+      "name": "demo-seed-still-rich",
+      "headingH2": "Report designer",
+      "showsSalesRegister": false,
+      "showsCustomerField": false,
+      "pass": false
+    }
+  },
+  "errors": [
+    "TypeError: Failed to fetch",
+    "Error: download 'https://localhost:7150/_framework/dotnet.native.u31nt9bth6.wasm' for dotnet.native.u31nt9bth6.wasm failed 0 TypeError: Failed to fetch",
+    "Error: download 'https://localhost:7150/_framework/System.Runtime.InteropServices.JavaScript.a0smuvq74f.wasm' for System.Runtime.InteropServices.JavaScript.a0smuvq74f.wasm failed 0 TypeError: Failed to fetch",
+    "Error: download 'https://localhost:7150/_framework/AngleSharp.xjfp703riv.wasm' for AngleSharp.xjfp703riv.wasm failed 0 TypeError: Failed to fetch"
+  ],
+  "errorCount": 723
+}

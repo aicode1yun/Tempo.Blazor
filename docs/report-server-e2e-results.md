@@ -92,3 +92,65 @@ viewer vidí jen reports. Rozdíl vzniká z projektované Keycloak role (dříve
 Skripty: `scratchpad/f10-e2e.mjs` (MODE=demo|author|viewer). Poznámka: driver záměrně blokuje
 `**/*.wasm` (procvičí Server render leg), proto jsou v `errors[]` očekávané `Failed to fetch` na
 `_framework/*.wasm` — nejsou to funkční chyby.
+
+---
+
+# Fáze 12 (A4) — portál: upload/create reportu, favorites, historie běhů, parametrický render
+
+Full-server varianta (rozhodnutí uživatele): server-side favorites + persistované ad-hoc render
+runs. Implementováno ve 3 passech (backend `1c8d6cf6`, UI `d43bc283`, fixy+E2E tento commit).
+
+## E2E scénáře — výsledky (živý stack: Api :7001 SqlServer DB `TempoReportServer` + Web :7150 OIDC/Keycloak, login author1/viewer1)
+
+Všech 6 scénářů **PASS s přímým DB důkazem** (author1 sub `a5534aed-…`):
+
+| # | Scénář | Výsledek | DB důkaz / screenshot |
+| --- | --- | --- | --- |
+| 1 | Create blank report přes New Report form | **PASS** | `Reports` řádek (default/finance/„E2E Ledger"); redirect na `/designer/{id}` — `f12-s1-*.png` |
+| 2 | Upload edge case | **PASS** | broken `{"broken":` → inline chyba, submit blokován; validní ReportDefinition → vytvořeno — `f12-s2-*.png` |
+| 3 | Favorites (server-side per-user) | **PASS** | `Favorites` řádek (default/author1 sub/reportId); `/favorites` → klik → **resolve round-trip**; un-favorite → COUNT 0 — `f12-s3*.png` |
+| 4 | Parametrický render → historie běhů | **PASS** | `RenderRuns` řádek (author1/Pdf/Succeeded/1 str/883 B/419 ms/`ParametersJson=[{AsOfDate:2026-07-19}]`); `/history` sedí — `f12-s4-*.png` |
+| 5 | viewer1 role gating | **PASS** | `new-report-open` ABSENT; nav-favorites/history/reports přítomné — `f12-s5-viewer1-shell.png` |
+| 6 | Prázdné stavy | **PASS** | favorites/history empty — `f12-s6-*.png` |
+
+## Vady odhalené živým E2E (unit testy je nechytily — fakes) — všechny opraveny
+
+1. **Designer/viewer ukazovaly DEMO „Sales Register" content** místo reálné vytvořené definice
+   (`DemoReportSourceFactory` fallback). Opraveno: designer i viewer parsují reálný
+   `_resolved.DefinitionJson` přes kanonický `ReportDefinitionJsonSerializer`; non-demo report bez
+   dat → vlastní prázdná struktura nebo `viewer-preview-unavailable` (nikdy cizí obsah).
+   **Live re-verify PASS**: designer ukázal „Fix Verify Ledger 42", viewer „Fix Verify Viewer 77"
+   (`f12-fix-designer.png`, `f12-fix-viewer.png`).
+2. **`/resolve` 404 → `HttpRequestException`** místo `KeyNotFoundException` → dev exception page.
+   Opraveno: klient překládá 404 → `KeyNotFoundException` → graceful `report-not-found`.
+3. **Root-folder reporty nedosažitelné deep-linkem** (`BuildDeepLink` bez folder segmentu).
+   Opraveno: `ResolveByPathAsync` řeší single-segment path tenant-wide id-or-name fallbackem.
+4. **Blank report ve vieweru 500** — `GET /reports/{id}/parameters` neuměl deserializovat blank
+   definici (plain `JsonSerializer` vs kanonický reader, `ReportPageSize.unit` enum). Opraveno:
+   `NewReportForm` serializuje blank definici kanonickým `ReportDefinitionJsonSerializer`.
+5. Deep-link↔resolve round-trip byl rozbitý app-wide (`BuildDeepLink` dává ReportId, `/resolve`
+   matchoval jen Name) → reporty přes `POST /reports` (generované id ≠ name) 404. Opraveno aditivně:
+   `ResolveByPathAsync` matchuje poslední segment na **ReportId NEBO Name**.
+
+UX nits opraveny: run-history header grid zarovnání, singulár/plurál („1 run"), Create tlačítko
+disabled při file-error.
+
+## Ověřeno testy
+
+Web.Tests **84/0**, Api.Tests **136/0/1skip** (12 MSSQL testů reálně proti živému SQL Serveru).
+Klíčové regresní guardy: `DesignerPage_ShowsTheRealCreatedReport_NotADifferentDemoReport`,
+`ViewerPage_ShowsPreviewUnavailable_WhenNoUsableDefinitionForNonDemoReport`,
+`Resolve_ByFolderQualifiedIdPath_ResolvesReportCreatedViaApi`,
+`Resolve_BySingleSegmentDeepLink_ResolvesRootStyleReport`,
+`GetParameters_ForBlankReportCreatedViaCanonicalDefinition_Returns200`,
+`Submit_Blank_ProducesDefinitionJson_ThatRoundTripsThroughCanonicalSerializer`.
+
+Drivery: `f12-e2e-author.mjs`, `f12-e2e-viewer.mjs` (block `**/*.wasm` → Server leg).
+
+## Carry-forward (mimo rozsah A4)
+
+- In-process preview **s daty** pro libovolné reporty — self-contained portál nemá živý datový
+  zdroj; preview ukazuje reálnou strukturu s prázdnými daty (reálný render s daty jde přes API
+  `/render`). Data preview zůstává jen pro demo seedy.
+- Portál-wide lokalizace (portál chrome je hardcoded EN; předchází této fázi).
+- `Outcome="Failed"` RenderRun při neočekávané výjimce executoru (dnes rezervováno).

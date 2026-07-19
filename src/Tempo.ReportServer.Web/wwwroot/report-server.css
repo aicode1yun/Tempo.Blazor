@@ -472,8 +472,14 @@ body {
 
     .rs-nav,
     .rs-table__row,
+    .rs-table__head,
     .rs-schedule-row {
         grid-template-columns: 1fr;
+    }
+
+    /* The run-history column header adds no value once rows stack on narrow screens. */
+    .rs-table__head.rs-run-row {
+        display: none;
     }
 }
 
@@ -661,9 +667,12 @@ body {
 }
 
 .rs-table__head {
+    align-items: center;
     color: var(--tm-text-secondary);
+    display: grid;
     font-size: var(--tm-font-size-sm);
     font-weight: var(--tm-font-weight-semibold);
+    gap: var(--tm-space-3);
     min-block-size: 0;
     padding: var(--tm-space-2) var(--tm-space-3);
 }

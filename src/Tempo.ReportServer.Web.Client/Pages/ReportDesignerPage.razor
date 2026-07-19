@@ -65,13 +65,20 @@
         _lastSave = null;
         try
         {
-            // Resolution goes through the typed client (/resolve); the editable definition is still
-            // materialized in-process by the demo source factory for the self-contained demo.
+            // Resolution goes through the typed client (/resolve). The editable definition comes from the
+            // REAL resolved report (its DefinitionJson) so the designer always shows the actual report —
+            // its name, bands and fields. Only the hand-authored demo seeds (whose stored definition is a
+            // placeholder in the self-contained demo) fall back to the rich in-process demo definition.
             _resolved = await Client.ResolveReportAsync(Session.CurrentTenantId, reportId: reportId);
-            _definition = SourceFactory.CreateReportDefinition(_resolved.ReportId);
+            _definition = DemoReportSourceFactory.TryParseDefinition(_resolved.DefinitionJson)
+                ?? (SourceFactory.IsKnownDemoReport(_resolved.ReportId)
+                    ? SourceFactory.CreateReportDefinition(_resolved.ReportId)
+                    : new ReportDefinition { Id = _resolved.ReportId, Name = _resolved.Name });
         }
         catch (KeyNotFoundException)
         {
+            // A 404 from /resolve surfaces as KeyNotFoundException (the typed client translates it); render
+            // the graceful "not found" state instead of letting an exception reach the error page.
             _resolved = null;
             _definition = null;
         }

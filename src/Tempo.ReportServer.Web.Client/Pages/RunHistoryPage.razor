@@ -11,7 +11,7 @@
                 <h2>Run history</h2>
             </div>
             <div class="rs-page__stats">
-                <span>@_visibleRuns.Count runs</span>
+                <span>@_visibleRuns.Count @(_visibleRuns.Count == 1 ? "run" : "runs")</span>
             </div>
         </div>
 

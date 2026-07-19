@@ -1,6 +1,6 @@
 @namespace Tempo.ReportServer.Web.Components
-@using System.Text.Json
 @using Tempo.Reporting.Abstractions.Definitions
+@using Tempo.Reporting.Abstractions.Serialization
 @using Tempo.Reporting.Abstractions.Validation
 
 <div class="rs-newreport" data-testid="new-report-form" role="dialog" aria-label="New report">
@@ -75,7 +75,13 @@
     }
 
     <div class="rs-newreport__actions">
-        <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Check" data-testid="new-report-submit" OnClick="SubmitAsync">
+        @* Submit is disabled while an unresolved file-parse error is showing, so the action can't
+           silently no-op — the user must fix or clear the upload first. *@
+        <TmButton Variant="ButtonVariant.Primary"
+                  Icon="@IconNames.Check"
+                  data-testid="new-report-submit"
+                  Disabled="@(_fileError is not null)"
+                  OnClick="SubmitAsync">
             Create report
         </TmButton>
     </div>
@@ -93,8 +99,6 @@
 
     /// <summary>Raised when the user cancels.</summary>
     [Parameter] public EventCallback OnCancel { get; set; }
-
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private enum DefinitionSource
     {
@@ -146,20 +150,17 @@
             using var reader = new StreamReader(stream);
             var text = await reader.ReadToEndAsync();
 
-            // The uploaded file must parse to a ReportDefinition; a parse failure is an inline error.
-            var definition = JsonSerializer.Deserialize<ReportDefinition>(text, JsonOptions);
-            if (definition is null)
-            {
-                _fileError = "The uploaded file is not a valid report definition.";
-                return;
-            }
-
+            // Validate the upload with the CANONICAL serializer the server reads definitions with (custom
+            // converters, e.g. ReportPageSize.unit) so a valid canonical definition is accepted and an
+            // invalid one is rejected the same way the server would. The user's JSON is passed through
+            // unchanged on success (no re-normalization).
+            _ = ReportDefinitionJsonSerializer.Deserialize(text);
             _uploadedJson = text;
             _uploadedFileName = file.Name;
         }
-        catch (JsonException)
+        catch (ReportDefinitionJsonException)
         {
-            _fileError = "The uploaded file is not valid JSON for a report definition.";
+            _fileError = "The uploaded file is not a valid canonical report definition.";
         }
     }
 
@@ -183,8 +184,11 @@
         }
         else
         {
-            // A blank report is a minimal, schema-valid ReportDefinition carrying the chosen name.
-            definitionJson = JsonSerializer.Serialize(new ReportDefinition { Name = _name.Trim() }, JsonOptions);
+            // A blank report is a minimal ReportDefinition carrying the chosen name, serialized with the
+            // CANONICAL serializer the server reads definitions back with. Plain System.Text.Json does not
+            // round-trip (e.g. ReportPageSize.unit), so a blank-created report would 500 on the server's
+            // GET /reports/{id}/parameters. The canonical serializer guarantees the round-trip.
+            definitionJson = ReportDefinitionJsonSerializer.Serialize(new ReportDefinition { Name = _name.Trim() });
         }
 
         var request = new CreateReportRequestDto

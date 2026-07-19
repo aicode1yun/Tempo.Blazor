@@ -11,7 +11,7 @@
                 <h2>Favorites</h2>
             </div>
             <div class="rs-page__stats">
-                <span>@_favorites.Count favorites</span>
+                <span>@_favorites.Count @(_favorites.Count == 1 ? "favorite" : "favorites")</span>
             </div>
         </div>
 

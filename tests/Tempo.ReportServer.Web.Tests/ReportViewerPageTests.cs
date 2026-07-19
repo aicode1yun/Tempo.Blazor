@@ -58,6 +58,60 @@ public sealed class ReportViewerPageTests : ReportServerWebTestBase
     }
 
     [Fact]
+    public async Task ViewerPage_ShowsTheRealCreatedReport_NotADifferentDemoReport()
+    {
+        // F1 regression: the viewer must reflect the ACTUAL resolved report (name from the real report),
+        // never a different demo report's content (e.g. "Sales Register"/"Europe Customer").
+        SignIn();
+        var fake = (FakeTempoReportServerClient)Services.GetRequiredService<ITempoReportServerClient>();
+        await fake.CreateReportAsync(new CreateReportRequestDto
+        {
+            TenantId = "northwind",
+            FolderId = "folder-finance",
+            Name = "E2E Ledger",
+            DefinitionJson = "{\"schemaVersion\":1,\"name\":\"E2E Ledger\"}",
+        });
+
+        var cut = RenderComponent<ReportViewerPage>(parameters => parameters.Add(page => page.Path, "Finance/E2E Ledger"));
+
+        cut.Find("[data-testid='f12-viewer-page']").TextContent.Should().Contain("E2E Ledger");
+        cut.Find("[data-testid='f12-viewer-page']").TextContent.Should().NotContain("Sales Register");
+        cut.FindAll("[data-testid='report-not-found']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ViewerPage_ShowsPreviewUnavailable_WhenNoUsableDefinitionForNonDemoReport()
+    {
+        // A real report with no usable in-process definition previews a clean "unavailable" state rather
+        // than another report's content; the Run/API path stays available.
+        SignIn();
+        var fake = (FakeTempoReportServerClient)Services.GetRequiredService<ITempoReportServerClient>();
+        await fake.CreateReportAsync(new CreateReportRequestDto
+        {
+            TenantId = "northwind",
+            FolderId = "folder-finance",
+            Name = "Empty Report",
+            DefinitionJson = "{}",
+        });
+
+        var cut = RenderComponent<ReportViewerPage>(parameters => parameters.Add(page => page.Path, "Finance/Empty Report"));
+
+        cut.Find("[data-testid='viewer-preview-unavailable']").Should().NotBeNull();
+        cut.Find("[data-testid='f12-viewer-page']").TextContent.Should().NotContain("Sales Register");
+    }
+
+    [Fact]
+    public void ViewerPage_RendersGracefulNotFound_ForUnknownPath()
+    {
+        // F2b: a 404 from /resolve (KeyNotFoundException in the client) renders the graceful state.
+        SignIn();
+
+        var cut = RenderComponent<ReportViewerPage>(parameters => parameters.Add(page => page.Path, "Finance/Missing Report"));
+
+        cut.Find("[data-testid='report-not-found']").Should().NotBeNull();
+    }
+
+    [Fact]
     public void ViewerPage_ParameterForm_RendersDeclaredParameters()
     {
         SignIn();

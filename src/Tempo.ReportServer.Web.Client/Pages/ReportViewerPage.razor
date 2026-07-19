@@ -125,16 +125,27 @@
                 }
             </div>
 
-            <TmReportViewer ReportSource="@_source"
-                            ParameterValues="@_parameterValues"
-                            Height="720px"
-                            ShowParameterPanel="true"
-                            TenantId="@Session.CurrentTenantId"
-                            UserId="@Session.UserName"
-                            CultureName="en-US"
-                            PdfExported="HandleExported"
-                            CsvExported="HandleExported"
-                            XlsxExported="HandleExported" />
+            @if (_source is not null)
+            {
+                <TmReportViewer ReportSource="@_source"
+                                ParameterValues="@_parameterValues"
+                                Height="720px"
+                                ShowParameterPanel="true"
+                                TenantId="@Session.CurrentTenantId"
+                                UserId="@Session.UserName"
+                                CultureName="en-US"
+                                PdfExported="HandleExported"
+                                CsvExported="HandleExported"
+                                XlsxExported="HandleExported" />
+            }
+            else
+            {
+                <div class="rs-empty rs-empty--compact" data-testid="viewer-preview-unavailable">
+                    <TmIcon Name="@IconNames.Eye" Size="IconSize.Md" />
+                    <strong>Preview unavailable for this report</strong>
+                    <span>Use Run to render this report through the server.</span>
+                </div>
+            }
 
             @if (_lastExport is not null)
             {
@@ -180,10 +191,13 @@
         _lastRun = null;
         try
         {
-            // Resolution goes through the typed client (/resolve) instead of the retired in-memory
-            // catalog; rendering stays in-process via the demo report source for the self-contained demo.
+            // Resolution goes through the typed client (/resolve). The in-process PREVIEW source is built
+            // from the REAL resolved report so it never shows a different report's content: the rich demo
+            // seeds use their hand-authored source (with sample data), while a real created/uploaded report
+            // previews its OWN layout with empty data. If no usable definition exists, _source stays null
+            // and the page shows a clean "preview unavailable" state — the Run/API path remains authoritative.
             _resolved = await Client.ResolveReportAsync(Session.CurrentTenantId, path: Path);
-            _source = SourceFactory.CreateReportSource(_resolved.ReportId);
+            _source = BuildPreviewSource(_resolved);
 
             // Build the page-local parameter form from the report's declared parameters, seeding initial
             // values from the deep-link query (so shared links keep working) then declared defaults.
@@ -204,6 +218,24 @@
             _paramValues.Clear();
             RebuildParameterValues();
         }
+    }
+
+    private IReportSource? BuildPreviewSource(ReportResolveResultDto resolved)
+    {
+        // A real (created/uploaded) report previews its own definition with empty data; the hand-authored
+        // demo seeds keep their rich in-process source (with sample data) even though their stored
+        // definition is a placeholder in the self-contained demo.
+        var definition = DemoReportSourceFactory.TryParseDefinition(resolved.DefinitionJson);
+        if (definition is not null)
+        {
+            return SourceFactory.IsKnownDemoReport(resolved.ReportId)
+                ? SourceFactory.CreateReportSource(resolved.ReportId)
+                : SourceFactory.CreateReportSourceFromDefinition(definition);
+        }
+
+        return SourceFactory.IsKnownDemoReport(resolved.ReportId)
+            ? SourceFactory.CreateReportSource(resolved.ReportId)
+            : null;
     }
 
     private void SeedParameterValues()

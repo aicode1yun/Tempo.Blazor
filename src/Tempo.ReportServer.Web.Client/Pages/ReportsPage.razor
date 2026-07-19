@@ -12,8 +12,8 @@
                 <h2>Report explorer</h2>
             </div>
             <div class="rs-page__stats">
-                <span>@_reportItems.Count reports</span>
-                <span>@_folderCount folders</span>
+                <span>@_reportItems.Count @(_reportItems.Count == 1 ? "report" : "reports")</span>
+                <span>@_folderCount @(_folderCount == 1 ? "folder" : "folders")</span>
                 @if (Session.CanAccess(PortalRole.Author))
                 {
                     <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Plus" data-testid="new-report-open" OnClick="OpenNewReport">

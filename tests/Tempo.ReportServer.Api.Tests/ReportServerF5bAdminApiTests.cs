@@ -189,6 +189,55 @@ public sealed class ReportServerF5bAdminApiTests
     }
 
     [Fact]
+    public async Task Resolve_BySingleSegmentDeepLink_ResolvesRootStyleReport()
+    {
+        // A report at the ROOT folder gets a folderless deep link (BuildDeepLink emits /reports/{reportId},
+        // no folder segment). ResolveByPathAsync must handle a single-segment path by resolving the report
+        // id-or-name tenant-wide, so root-folder deep links round-trip instead of 404-ing.
+        await using var host = await AdminTestApp.CreateAsync();
+        var api = new TempoReportServerClient(host.CreateApiKeyClient());
+        var folder = await api.CreateFolderAsync(new CreateReportFolderRequestDto { TenantId = TenantId, Name = "Finance" });
+        var report = await api.CreateReportAsync(new CreateReportRequestDto
+        {
+            TenantId = TenantId,
+            FolderId = folder.FolderId,
+            Name = "Sales Register",
+            DefinitionJson = FixtureDefinitionJson(),
+        });
+
+        var byId = await api.ResolveReportAsync(TenantId, path: report.ReportId);
+        byId.ReportId.Should().Be(report.ReportId);
+
+        var byName = await api.ResolveReportAsync(TenantId, path: "Sales Register");
+        byName.ReportId.Should().Be(report.ReportId);
+    }
+
+    [Fact]
+    public async Task GetParameters_ForBlankReportCreatedViaCanonicalDefinition_Returns200()
+    {
+        // Regression: a BLANK report created by the portal must round-trip server-side. The portal builds
+        // the blank definition with the CANONICAL serializer (ReportDefinitionJsonSerializer), so the
+        // server can deserialize it in GET /reports/{id}/parameters. A plain System.Text.Json blob would
+        // 500 here (e.g. ReportPageSize.unit could not be converted).
+        await using var host = await AdminTestApp.CreateAsync();
+        var api = new TempoReportServerClient(host.CreateApiKeyClient());
+        var folder = await api.CreateFolderAsync(new CreateReportFolderRequestDto { TenantId = TenantId, Name = "Finance" });
+        var blankDefinitionJson = ReportDefinitionJsonSerializer.Serialize(new ReportDefinition { Name = "Blank Ledger" });
+        var report = await api.CreateReportAsync(new CreateReportRequestDto
+        {
+            TenantId = TenantId,
+            FolderId = folder.FolderId,
+            Name = "Blank Ledger",
+            DefinitionJson = blankDefinitionJson,
+        });
+
+        // Throws on a non-success status (the 500 this test guards against); an empty list is the expected
+        // 200 body for a parameterless blank report.
+        var parameters = await api.GetParametersAsync(report.ReportId, TenantId);
+        parameters.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task AdminEndpoint_WithoutCredentials_Returns401()
     {
         await using var host = await AdminTestApp.CreateAsync();
