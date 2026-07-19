@@ -594,6 +594,26 @@
       ]
     },
     {
+      "itemName": "TempoFontAdvanceFace",
+      "kind": "Record",
+      "category": "Headless Layout",
+      "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+      "description": "Precomputed glyph metrics for one font face in font design units (unhinted, linear): Unicode-keyed advance widths, ascent/descent/line gap, units-per-em and the missing-glyph advance. Produced by TempoFontAdvanceTableExtractor from the same TTF/OTF bytes the PDF renderer embeds; code points the font has no glyph for are omitted so the JS measurer can fall back to synthetic metrics with diagnostics.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoFontAdvanceTableExtractor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoFontAdvanceTableExtractor",
+      "kind": "Class",
+      "category": "Headless Layout",
+      "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+      "description": "Extracts glyph advance tables and vertical metrics from ReportPdfFontFace bytes via SkiaSharp (SKTypeface/SKFont with unhinted linear metrics at font-unit scale) and serializes them into the compact JSON the headless JS layout bundle measures with (createAdvanceFontMetricsService). Because the tables come from the SAME font bytes the PDF renderer embeds, headless measurement and PDF drawing agree by construction — no .NET↔JS callbacks per glyph. Default coverage: Basic Latin, Latin-1, Latin Extended-A/B (Czech and Central European diacritics), general punctuation and the euro sign; extendable via additionalCodePoints. Extraction is cached per face (family, weight, style, content hash) behind a thread-safe lazy cache; use the Shared instance for process-wide reuse.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoFontAdvanceTableExtractor.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentHtmlExporter",
       "kind": "Class",
       "category": "Html",
@@ -796,11 +816,11 @@
     }
   ],
   "summary": {
-    "itemCount": 44,
-    "manualItemCount": 44,
-    "generatedItemCount": 44,
+    "itemCount": 46,
+    "manualItemCount": 46,
+    "generatedItemCount": 46,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 44
+    "publicApiTypeCount": 46
   }
 }

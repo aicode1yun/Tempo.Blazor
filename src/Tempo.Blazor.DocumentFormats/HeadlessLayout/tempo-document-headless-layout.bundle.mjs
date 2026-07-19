@@ -12422,17 +12422,173 @@ function compact(object) {
   }
   return result;
 }
+
+// src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/layout/font-advance-metrics.mjs
+var GENERIC_FAMILIES = /* @__PURE__ */ new Set(["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "ui-serif", "ui-sans-serif", "ui-monospace", "ui-rounded", "math", "emoji", "fangsong"]);
+function parseFontAdvanceTable(source) {
+  const raw = typeof source === "string" ? JSON.parse(source) : source || {};
+  const faces = (Array.isArray(raw.faces) ? raw.faces : []).map((face) => {
+    const advances = /* @__PURE__ */ new Map();
+    for (const [key, value] of Object.entries(face?.advances || {})) {
+      const codePoint = Number(key);
+      const advance = Number(value);
+      if (Number.isFinite(codePoint) && Number.isFinite(advance)) {
+        advances.set(codePoint, advance);
+      }
+    }
+    return {
+      family: String(face?.family || "").trim(),
+      weight: Number(face?.weight) || 400,
+      style: String(face?.style || "normal").trim().toLowerCase() || "normal",
+      unitsPerEm: Number(face?.unitsPerEm) > 0 ? Number(face.unitsPerEm) : 1e3,
+      ascent: Number(face?.ascent) || 0,
+      descent: Number(face?.descent) || 0,
+      lineGap: Number(face?.lineGap) || 0,
+      missingGlyphAdvance: Number(face?.missingGlyphAdvance) || 0,
+      advances
+    };
+  }).filter((face) => face.family.length > 0);
+  const byFamily = /* @__PURE__ */ new Map();
+  for (const face of faces) {
+    const key = face.family.toLowerCase();
+    if (!byFamily.has(key)) {
+      byFamily.set(key, []);
+    }
+    byFamily.get(key).push(face);
+  }
+  return { schemaVersion: Number(raw.schemaVersion) || 1, faces, byFamily };
+}
+function splitFamilies(familyList) {
+  return String(familyList || "").split(",").map((entry) => entry.trim().replace(/^['"]|['"]$/g, "").trim()).filter((entry) => entry.length > 0 && !GENERIC_FAMILIES.has(entry.toLowerCase()));
+}
+function parseFontShorthand(font) {
+  const text = String(font || "");
+  const match = text.match(/(\d+(?:\.\d+)?)px\s+(.+)$/);
+  if (!match) {
+    return null;
+  }
+  let weight = 400;
+  let style = "normal";
+  for (const token of text.slice(0, match.index).trim().split(/\s+/).filter(Boolean)) {
+    const lower = token.toLowerCase();
+    if (lower === "italic" || lower === "oblique") {
+      style = "italic";
+    } else if (lower === "bold") {
+      weight = 700;
+    } else if (/^\d+$/.test(lower)) {
+      weight = Number(lower);
+    }
+  }
+  return { size: Number(match[1]), families: splitFamilies(match[2]), weight, style };
+}
+function resolveFace(table, families, weight, style) {
+  for (const family of families) {
+    const candidates = table.byFamily.get(family.toLowerCase());
+    if (!candidates || candidates.length === 0) {
+      continue;
+    }
+    const exact = candidates.find((face) => face.weight === weight && face.style === style);
+    if (exact) {
+      return exact;
+    }
+    const regular = candidates.find((face) => face.weight === 400 && face.style === style);
+    if (regular) {
+      return regular;
+    }
+    let nearest = candidates[0];
+    for (const face of candidates) {
+      if (Math.abs(face.weight - weight) < Math.abs(nearest.weight - weight)) {
+        nearest = face;
+      }
+    }
+    return nearest;
+  }
+  return null;
+}
+function createFontAdvanceMeasureContext(table, options = {}) {
+  const parsed = table && table.byFamily instanceof Map ? table : parseFontAdvanceTable(table);
+  const unknownFamilies = /* @__PURE__ */ new Set();
+  const missingGlyphs = /* @__PURE__ */ new Map();
+  const onDiagnostic = typeof options.onDiagnostic === "function" ? options.onDiagnostic : null;
+  let current = null;
+  let currentFontString = "";
+  const context = {
+    get font() {
+      return currentFontString;
+    },
+    set font(value) {
+      currentFontString = String(value || "");
+      current = parseFontShorthand(currentFontString);
+    },
+    measureText(text) {
+      const value = String(text ?? "");
+      if (!current) {
+        throw new Error(`Advance-table context received an unparseable font: "${currentFontString}"`);
+      }
+      const face = resolveFace(parsed, current.families, current.weight, current.style);
+      if (!face) {
+        const familyList = current.families.join(", ") || currentFontString;
+        if (!unknownFamilies.has(familyList)) {
+          unknownFamilies.add(familyList);
+          onDiagnostic?.({ kind: "unknownFamily", family: familyList });
+        }
+        throw new Error(`Advance table has no face for font family "${familyList}".`);
+      }
+      let units = 0;
+      for (const ch of value) {
+        const codePoint = ch.codePointAt(0);
+        const advance = face.advances.get(codePoint);
+        if (advance === void 0) {
+          const missKey = `${face.family}@${codePoint}`;
+          if (!missingGlyphs.has(missKey)) {
+            missingGlyphs.set(missKey, { family: face.family, codePoint });
+            onDiagnostic?.({ kind: "missingGlyph", family: face.family, codePoint });
+          }
+          throw new Error(
+            `Advance table for "${face.family}" has no glyph for U+${codePoint.toString(16).toUpperCase()}.`
+          );
+        }
+        units += advance;
+      }
+      return {
+        width: units * current.size / face.unitsPerEm,
+        fontBoundingBoxAscent: face.ascent * current.size / face.unitsPerEm,
+        fontBoundingBoxDescent: face.descent * current.size / face.unitsPerEm
+      };
+    },
+    getDiagnostics() {
+      return {
+        unknownFamilies: [...unknownFamilies],
+        missingGlyphs: [...missingGlyphs.values()]
+      };
+    }
+  };
+  return context;
+}
+function createAdvanceFontMetricsService(tableOrJson, options = {}) {
+  const context = createFontAdvanceMeasureContext(tableOrJson, options);
+  const service = createFontMetricsService({
+    ...options,
+    createMeasureContext: () => context
+  });
+  return Object.freeze(Object.assign(Object.create(service), {
+    getAdvanceDiagnostics: () => context.getDiagnostics()
+  }));
+}
 export {
   DEFAULT_PAGE_SETUP,
   buildDisplayList,
   buildLayoutSnapshotExport,
   collectRedactedRunIds,
   computeFontMetricKey,
+  createAdvanceFontMetricsService,
+  createFontAdvanceMeasureContext,
   createFontMetricsService,
   fontStringFromStyle,
   layoutCanvasDocument,
   normalizeFontMetricStyle,
   normalizePageSettings,
+  parseFontAdvanceTable,
   syntheticRunMetrics,
   translateDisplayListToLayoutSnapshot
 };

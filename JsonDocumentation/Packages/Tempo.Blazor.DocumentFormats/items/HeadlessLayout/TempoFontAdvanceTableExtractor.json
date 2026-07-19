@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoFontAdvanceTableExtractor",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "Extracts glyph advance tables and vertical metrics from ReportPdfFontFace bytes via SkiaSharp (SKTypeface/SKFont with unhinted linear metrics at font-unit scale) and serializes them into the compact JSON the headless JS layout bundle measures with (createAdvanceFontMetricsService). Because the tables come from the SAME font bytes the PDF renderer embeds, headless measurement and PDF drawing agree by construction — no .NET↔JS callbacks per glyph. Default coverage: Basic Latin, Latin-1, Latin Extended-A/B (Czech and Central European diacritics), general punctuation and the euro sign; extendable via additionalCodePoints. Extraction is cached per face (family, weight, style, content hash) behind a thread-safe lazy cache; use the Shared instance for process-wide reuse.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoFontAdvanceTableExtractor.cs",
+  "documentationStatus": "generated"
+}

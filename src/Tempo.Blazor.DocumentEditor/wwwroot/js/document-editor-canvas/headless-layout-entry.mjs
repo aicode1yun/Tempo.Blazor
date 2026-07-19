@@ -28,3 +28,8 @@ export {
     syntheticRunMetrics,
     computeFontMetricKey,
 } from '../document-editor/layout/font-metrics.mjs';
+export {
+    parseFontAdvanceTable,
+    createFontAdvanceMeasureContext,
+    createAdvanceFontMetricsService,
+} from '../document-editor/layout/font-advance-metrics.mjs';

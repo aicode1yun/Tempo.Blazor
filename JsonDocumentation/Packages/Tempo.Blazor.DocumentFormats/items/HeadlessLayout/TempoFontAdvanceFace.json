@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoFontAdvanceFace",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "Precomputed glyph metrics for one font face in font design units (unhinted, linear): Unicode-keyed advance widths, ascent/descent/line gap, units-per-em and the missing-glyph advance. Produced by TempoFontAdvanceTableExtractor from the same TTF/OTF bytes the PDF renderer embeds; code points the font has no glyph for are omitted so the JS measurer can fall back to synthetic metrics with diagnostics.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoFontAdvanceTableExtractor.cs",
+  "documentationStatus": "generated"
+}

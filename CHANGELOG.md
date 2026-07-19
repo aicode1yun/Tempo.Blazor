@@ -17,6 +17,25 @@
   artifact fails the build. Node guard tests keep browser globals (`document`/`window`/
   `OffscreenCanvas`) out of the bundle outside the font-metrics safe fallback.
 
+### Headless document runtime — Phase 1: font-accurate metrics from SkiaSharp
+
+- New `TempoFontAdvanceTableExtractor` (+ `TempoFontAdvanceFace`) in
+  `Tempo.Blazor.DocumentFormats.HeadlessLayout`: reads glyph advance widths and vertical metrics
+  from the SAME `ReportPdfFontFace` bytes the PDF renderer embeds (SKTypeface/SKFont, unhinted
+  linear metrics in font units) and serializes them into a compact JSON table for the JS side;
+  thread-safe lazy cache per font face, Latin + Czech/Central European coverage by default.
+- New JS module `document-editor/layout/font-advance-metrics.mjs`
+  (`createAdvanceFontMetricsService`, `parseFontAdvanceTable`, `createFontAdvanceMeasureContext`,
+  all exported from the headless bundle): measures text by summing advances (+ letter spacing,
+  character scale, zoom) through the production font-metrics service, with face resolution
+  mirroring the PDF renderer's font catalog and synthetic fallback + diagnostics for unknown
+  families/glyphs. Plugs into pagination's `ensureMeasurementService` seam as a full service or a
+  `{ measureRun }` partial.
+- JS↔C# parity is pinned by a committed fixture
+  (`font-advance-parity-fixture.json`, regenerable via `TEMPO_REGENERATE_FONT_PARITY_FIXTURE=1`):
+  the Node lane replays Czech-diacritics and letter-spacing samples through the real JS measurer
+  and asserts bit-identical widths; per-glyph advances equal `SKFont.MeasureText` exactly.
+
 ## 2.3.9 - 2026-07-19
 
 ### Document editor — canvas command layer completed (TmDocumentEditor)

@@ -98,6 +98,8 @@ test('bundle exports the headless layout chain API', () => {
         'layoutCanvasDocument',
         'createFontMetricsService',
         'normalizePageSettings',
+        'parseFontAdvanceTable',
+        'createAdvanceFontMetricsService',
     ]) {
         assert.equal(typeof bundle[name], 'function', `bundle must export ${name}`);
     }
