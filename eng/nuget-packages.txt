@@ -26,3 +26,4 @@ src/Tempo.Reporting.Engine/Tempo.Reporting.Engine.csproj
 src/Tempo.Blazor.Reporting/Tempo.Blazor.Reporting.csproj
 src/Tempo.Blazor.Mcp/Tempo.Blazor.Mcp.csproj
 src/Tempo.Blazor.WebPush/Tempo.Blazor.WebPush.csproj
+src/Tempo.Blazor.Proofing.LanguageTool/Tempo.Blazor.Proofing.LanguageTool.csproj
