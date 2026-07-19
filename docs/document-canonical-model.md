@@ -104,4 +104,5 @@ dictionaries for repeating sections/aggregates). `DocumentTokenValue.Resolved(ke
 
 - Operation semantics: `docs/document-operations-semantics.md`
 - Applier coverage & convergence: `docs/document-operation-applier-coverage.md`
+- Semantic addressing for MCP tools: `docs/document-mcp-addressing.md`
 - Headless runtime API: COMPONENTS.md → „Headless dokumentový runtime“

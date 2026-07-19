@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "MCP introspection tool (document_editor_describe_document) producing a structured, agent-friendly overview of a DocumentEditor document: blocks with stable semantic addresses (blockId, tableCellId, content-control path per docs/document-mcp-addressing.md), truncated plain text, tables with cell ids, tokens, content controls, headers/footers, plus concurrencyToken and contentDigest for optimistic concurrency.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorDescribeTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorDescribeTools"
+}

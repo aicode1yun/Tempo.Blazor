@@ -98,6 +98,7 @@ public class TempoWireframeMcpRegistrationTests
             "diagram_replace_document",
             "diagram_validate_document",
             "document_editor_apply_operations",
+            "document_editor_describe_document",
             "document_editor_get_document",
             "document_editor_get_json",
             "document_editor_get_outline",

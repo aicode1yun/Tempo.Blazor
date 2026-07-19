@@ -516,6 +516,103 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentEditorDescribeTools",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "MCP introspection tool (document_editor_describe_document) producing a structured, agent-friendly overview of a DocumentEditor document: blocks with stable semantic addresses (blockId, tableCellId, content-control path per docs/document-mcp-addressing.md), truncated plain text, tables with cell ids, tokens, content controls, headers/footers, plus concurrencyToken and contentDigest for optimistic concurrency.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorDescribeTools.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Body",
+          "kind": "Method",
+          "type": "BlockAddress",
+          "parameters": [
+            {
+              "name": "blockId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "HeaderFooter",
+          "kind": "Method",
+          "type": "BlockAddress",
+          "parameters": [
+            {
+              "name": "blockId",
+              "type": "string"
+            },
+            {
+              "name": "headerFooterId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "InContentControl",
+          "kind": "Method",
+          "type": "BlockAddress",
+          "parameters": [
+            {
+              "name": "blockId",
+              "type": "string"
+            },
+            {
+              "name": "contentControlBlockId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "InTableCell",
+          "kind": "Method",
+          "type": "BlockAddress",
+          "parameters": [
+            {
+              "name": "blockId",
+              "type": "string"
+            },
+            {
+              "name": "tableBlockId",
+              "type": "string"
+            },
+            {
+              "name": "tableCellId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "ContentControls",
+          "kind": "Property",
+          "type": "List<object>"
+        },
+        {
+          "name": "MaxTextLength",
+          "kind": "Property",
+          "type": "int"
+        },
+        {
+          "name": "TableCount",
+          "kind": "Property",
+          "type": "int"
+        },
+        {
+          "name": "TokenOccurrences",
+          "kind": "Property",
+          "type": "List<TokenOccurrence>"
+        },
+        {
+          "name": "TotalBlockCount",
+          "kind": "Property",
+          "type": "int"
+        }
+      ]
+    },
+    {
       "itemName": "DocumentEditorDocumentTools",
       "kind": "Class",
       "category": "Document Editor",
@@ -1636,11 +1733,11 @@
     }
   ],
   "summary": {
-    "itemCount": 76,
-    "manualItemCount": 76,
-    "generatedItemCount": 76,
+    "itemCount": 77,
+    "manualItemCount": 77,
+    "generatedItemCount": 77,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 76
+    "publicApiTypeCount": 77
   }
 }
