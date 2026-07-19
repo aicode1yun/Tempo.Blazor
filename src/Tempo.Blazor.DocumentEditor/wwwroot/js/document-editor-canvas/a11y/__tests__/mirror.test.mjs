@@ -111,6 +111,34 @@ test('readingOrderBlocks sorts ordered blocks without reordering unordered model
     assert.deepEqual(readingOrderBlocks(ordered).map(block => block.id), ['a', 'b']);
 });
 
+test('accessibility mirror reads token runs by display name with the key as fallback', () => {
+    const document = createFakeDocument();
+    const mirror = createAccessibilityMirror({ document, ariaLabel: 'Canvas surface' });
+    const model = {
+        body: {
+            blocks: [{
+                id: 'token-paragraph',
+                type: 'paragraph',
+                order: 1,
+                content: {
+                    runs: [
+                        { id: 'lead', type: 'text', text: 'Dear ', marks: [] },
+                        { id: 'tok', type: 'token', text: '', marks: [], token: { key: 'client.name', displayName: 'Client name', typeLabel: 'Text' } },
+                        { id: 'tok-bare', type: 'token', text: '', marks: [], token: { key: 'case.number' } },
+                    ],
+                },
+            }],
+        },
+    };
+
+    mirror.update(model);
+
+    const block = findOne(mirror.root, node => node.getAttribute('data-block-id') === 'token-paragraph');
+    assert.equal(textOf(block), 'Dear Client namecase.number');
+    const tokenSpan = findOne(block, node => node.getAttribute('data-canvas-a11y-token-key') === 'client.name');
+    assert.equal(textOf(tokenSpan), 'Client name');
+});
+
 test('accessibility mirror renders nested content control blocks in reading order', () => {
     const document = createFakeDocument();
     const mirror = createAccessibilityMirror({ document });

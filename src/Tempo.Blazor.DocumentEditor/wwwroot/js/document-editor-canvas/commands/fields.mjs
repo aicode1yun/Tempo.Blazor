@@ -29,6 +29,7 @@ const FIELD_COMMAND_ALIASES = new Map([
     ['insertendnote', 'insertNote'],
     ['insertpagebreak', 'insertPageBreak'],
     ['deletepagebreak', 'deletePageBreak'],
+    ['inserttoken', 'insertToken'],
     ['setpagesettings', 'setPageSettings'],
     ['setpagesetup', 'setPageSettings'],
     ['togglefirstpageheaderfooter', 'toggleDifferentFirstPage'],
@@ -64,6 +65,10 @@ export function applyFieldCommand(model, selection, commandId, payload = null) {
 
     if (command === 'deletePageBreak') {
         return deletePageBreak(working, selection, payload);
+    }
+
+    if (command === 'insertToken') {
+        return insertToken(working, selection, payload);
     }
 
     if (command === 'insertCrossReference') {
@@ -143,6 +148,7 @@ export function queryFieldCommandState(model, selection) {
             insertendnote: commandState(hasBodySelection),
             insertpagebreak: commandState(hasBodySelection),
             deletepagebreak: commandState(hasDocument),
+            inserttoken: commandState(hasDocument),
             setpagesettings: commandState(hasDocument),
             setpagesetup: commandState(hasDocument),
             differentfirstpage: commandState(hasDocument, firstSectionFlag(model, 'differentFirstPage')),
@@ -286,6 +292,136 @@ function insertPageBreak(model, selection, payload) {
         dirtyBlockIds,
         insertedBlockIds: [block.id],
     };
+}
+
+/// Phase 9: the Blazor-side token menu inserts the selected catalog token as a first-class
+/// token RUN (type 'token') — the model/renderer already support the pill; plain text would
+/// lose the token semantics (key, catalog metadata, DOCX round-trip).
+function insertToken(model, selection, payload) {
+    const key = String(payload?.key ?? payload?.Key ?? '').trim();
+    if (!key) {
+        return unchanged(model, selection, 'insertToken');
+    }
+
+    const displayName = String(payload?.displayName ?? payload?.DisplayName ?? key);
+    const run = {
+        id: payload?.id ?? payload?.Id ?? createId('token'),
+        type: 'token',
+        text: '',
+        marks: [],
+        token: {
+            key,
+            displayName,
+            description: payload?.description ?? payload?.Description ?? null,
+            colorClass: payload?.colorClass ?? payload?.ColorClass ?? null,
+            typeLabel: payload?.typeLabel ?? payload?.TypeLabel ?? null,
+            tokenType: payload?.tokenType ?? payload?.TokenType ?? null,
+            fallbackText: displayName,
+        },
+    };
+
+    const target = resolveInsertionTarget(model, selection, payload, true);
+    if (!target) {
+        return unchanged(model, selection, 'insertToken');
+    }
+
+    const cow = withClonedBlock(model, target.block);
+    insertRunAtOffset(cow.block, run, target.offset);
+    cow.model.version = Number(model.version || 0) + 1;
+    const caretOffset = target.offset + createCanvasRunText(run).length;
+    return {
+        changed: true,
+        model: cow.model,
+        selection: {
+            anchor: { blockId: cow.block.id, offset: caretOffset },
+            focus: { blockId: cow.block.id, offset: caretOffset },
+        },
+        operation: 'insertToken',
+        dirtyBlockIds: [cow.block.id],
+        insertedRunIds: [String(run.id)],
+    };
+}
+
+// Layout memoizes BY OBJECT REFERENCE at every level — the whole layout by model reference
+// (entry.render/progressive layout) and block signatures by block reference (pagination.mjs,
+// immutable-model-contract tests). A mutator must therefore return a new model object with a
+// cloned touched block, sharing every unchanged reference. And because buildSectionFlows lays
+// out sections[].blocks when populated (normalization keeps those as SEPARATE objects from
+// body.blocks with the same ids), the swap must reach the section lists too — the same reason
+// text-editing runs synchronizeSectionsWithBody.
+function withClonedBlock(model, targetBlock) {
+    const blocks = Array.isArray(model?.body?.blocks) ? model.body.blocks : [];
+    const bodyIndex = blocks.indexOf(targetBlock);
+    if (bodyIndex >= 0) {
+        const copy = cloneBlockShallow(targetBlock);
+        const nextBlocks = blocks.slice();
+        nextBlocks[bodyIndex] = copy;
+        return {
+            model: {
+                ...model,
+                body: { ...model.body, blocks: nextBlocks },
+                sections: sectionsWithBlockSwapped(model, targetBlock, copy),
+            },
+            block: copy,
+        };
+    }
+
+    const containers = Array.isArray(model?.headersFooters) ? model.headersFooters : [];
+    for (let index = 0; index < containers.length; index += 1) {
+        const hfBlocks = Array.isArray(containers[index]?.blocks) ? containers[index].blocks : [];
+        const hfIndex = hfBlocks.indexOf(targetBlock);
+        if (hfIndex >= 0) {
+            const copy = cloneBlockShallow(targetBlock);
+            const nextHfBlocks = hfBlocks.slice();
+            nextHfBlocks[hfIndex] = copy;
+            const nextContainers = containers.slice();
+            nextContainers[index] = { ...containers[index], blocks: nextHfBlocks };
+            return { model: { ...model, headersFooters: nextContainers }, block: copy };
+        }
+    }
+
+    // Table-cell (or deeper) nesting: clone the whole body, relocate the block by id and point
+    // the section lists at the cloned top-level blocks so the paginator sees the change.
+    const nextBody = structuredClone(model?.body ?? { blocks: [] });
+    const nextModel = { ...model, body: nextBody };
+    const relocated = findEditableBlock(nextModel, targetBlock?.id);
+    if (!relocated) {
+        return { model, block: targetBlock };
+    }
+
+    const bodyById = new Map((nextBody.blocks || []).map(block => [String(block?.id || ''), block]));
+    if (Array.isArray(model?.sections)) {
+        nextModel.sections = model.sections.map(section => ({
+            ...section,
+            blocks: (Array.isArray(section?.blocks) ? section.blocks : [])
+                .map(block => bodyById.get(String(block?.id || '')) || block),
+        }));
+    }
+
+    return { model: nextModel, block: relocated };
+}
+
+function sectionsWithBlockSwapped(model, targetBlock, copy) {
+    if (!Array.isArray(model?.sections)) {
+        return model?.sections;
+    }
+
+    const targetId = String(targetBlock?.id || '');
+    return model.sections.map(section => {
+        const sectionBlocks = Array.isArray(section?.blocks) ? section.blocks : [];
+        const index = sectionBlocks.findIndex(block => block === targetBlock || String(block?.id || '') === targetId);
+        if (index < 0) {
+            return section;
+        }
+
+        const nextBlocks = sectionBlocks.slice();
+        nextBlocks[index] = copy;
+        return { ...section, blocks: nextBlocks };
+    });
+}
+
+function cloneBlockShallow(block) {
+    return { ...block, content: structuredClone(block?.content ?? { type: 'paragraph', runs: [] }) };
 }
 
 function deletePageBreak(model, selection, payload) {

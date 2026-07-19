@@ -4,6 +4,7 @@ namespace Tempo.Blazor.Components.DocumentEditor;
 internal static class FloatingLayerId
 {
     public const string FindPanel = "find-panel";
+    public const string TokenInsertMenu = "token-insert-menu";
     public const string TextContextMenu = "text-context-menu";
     public const string TableContextMenu = "table-context-menu";
     public const string MiniToolbar = "mini-toolbar";

@@ -99,6 +99,15 @@ export function createAccessibilityMirror(options = {}) {
                 node.appendChild(renderMathRun(run, block?.id || ''));
             } else if (String(run?.type || '').toLowerCase() === 'field' && run.field) {
                 appendText(node, String(run.field.displayText ?? run.field.DisplayText ?? ''));
+            } else if (String(run?.type || '').toLowerCase() === 'token' && run.token) {
+                const span = doc.createElement('span');
+                if (run?.id) {
+                    span.setAttribute('data-run-id', run.id);
+                }
+
+                span.setAttribute('data-canvas-a11y-token-key', String(run.token.key ?? ''));
+                appendText(span, String(run.token.displayName ?? run.token.fallbackText ?? run.token.key ?? ''));
+                node.appendChild(span);
             } else {
                 const text = run && run.text != null ? String(run.text) : '';
                 const revision = findRevisionMark(run);

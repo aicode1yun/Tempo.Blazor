@@ -343,6 +343,7 @@ export function createCanvasCommandRuntime(options = {}) {
         'insertendnote',
         'insertpagebreak',
         'deletepagebreak',
+        'inserttoken',
         'setpagesettings',
         'setpagesetup',
         'differentfirstpage',
@@ -999,6 +1000,7 @@ export function createCanvasCommandRuntime(options = {}) {
             canonicalCommandId: canonicalFieldCommandId(commandId),
             operation: result.operation || canonicalFieldCommandId(commandId),
             dirtyBlockIds: result.dirtyBlockIds || [],
+            insertedRunIds: result.insertedRunIds || [],
             noteId: result.noteId || null,
         };
     }

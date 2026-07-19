@@ -2738,7 +2738,10 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
         cut.Find("[data-testid='document-insert-menu']").Click();
 
-        cut.WaitForAssertion(() => HasCanvasCommand("openTokenMenu").Should().BeTrue());
+        // Phase 9: the Insert button opens the Blazor-side token panel (decision
+        // DOC-EDITOR-TOKEN-MENU-BLAZOR-SIDE) — no engine command fires until a token is picked.
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-token-insert-panel']").Should().NotBeNull());
+        HasCanvasCommand("openTokenMenu").Should().BeFalse("the dead openTokenMenu engine route is removed");
         cut.FindAll("[data-testid='document-wysiwyg-token-popover']").Should().BeEmpty();
     }
 
@@ -3614,6 +3617,86 @@ public class TmDocumentEditorTests : LocalizationTestBase
                 && invocation.Arguments.Count > 0
                 && Equals(invocation.Arguments[0], false),
                 "exiting fullscreen must invoke the browser global with false"));
+    }
+
+    [Fact]
+    public async Task InsertMenuButton_OpensBlazorTokenPanelAndInsertsTokenThroughEngine()
+    {
+        // Phase 9 decision (DOC-EDITOR-TOKEN-MENU-BLAZOR-SIDE): the token menu is a Blazor-side
+        // floating panel fed by TokenProvider; selecting a token routes the insertToken engine
+        // command. The old openTokenMenu route (an id the engine never registered) is gone.
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+        var tokenProvider = new StaticTokenProvider(
+            new StaticToken("user.email", "User e-mail", "Recipient address", "User"),
+            new StaticToken("company.name", "Company name", null, "Company"));
+
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider)
+                      .Add(p => p.TokenProvider, tokenProvider));
+        await MarkCanvasReadyAsync(cut);
+
+        cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
+        await cut.Find("[data-testid='document-insert-menu']").ClickAsync(new MouseEventArgs());
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-token-insert-panel']").Should().NotBeNull(
+            "the Insert button must open the Blazor token panel"));
+        cut.WaitForAssertion(() =>
+        {
+            var panelMarkup = cut.Find("[data-testid='document-token-insert-panel']").InnerHtml;
+            panelMarkup.Should().Contain("{{user.email}}", "the provider tokens must be listed");
+            panelMarkup.Should().Contain("{{company.name}}");
+        });
+
+        var menu = cut.FindComponent<TmDocumentTokenMenu>();
+        await cut.InvokeAsync(() => menu.Instance.OnTokenSelected.InvokeAsync(new Tempo.Blazor.Components.Activity.TokenItem
+        {
+            Key = "user.email",
+            DisplayName = "User e-mail",
+            Description = "Recipient address",
+            TypeLabel = "User"
+        }));
+
+        var insertInvocation = SetupDocumentCanvasModule().Invocations
+            .LastOrDefault(invocation => invocation.Identifier == "execCommand"
+                && invocation.Arguments.Count > 2
+                && string.Equals(invocation.Arguments[1]?.ToString(), "insertToken", StringComparison.Ordinal));
+        insertInvocation.Should().NotBeNull("selecting a token must route the insertToken engine command");
+        var payload = insertInvocation!.Arguments[2]?.ToString() ?? string.Empty;
+        payload.Should().Contain("\"key\":\"user.email\"");
+        payload.Should().Contain("\"displayName\":\"User e-mail\"");
+
+        // The old dead command must not be routed anywhere anymore.
+        SetupDocumentCanvasModule().Invocations
+            .Any(invocation => invocation.Identifier == "execCommand"
+                && string.Equals(invocation.Arguments.ElementAtOrDefault(1)?.ToString(), "openTokenMenu", StringComparison.Ordinal))
+            .Should().BeFalse("openTokenMenu is removed in favour of the Blazor-side panel");
+
+        cut.WaitForAssertion(() => cut.FindAll("[data-testid='document-token-insert-panel']").Should().BeEmpty(
+            "the panel closes after inserting a token"));
+    }
+
+    private sealed record StaticToken(string Key, string DisplayName, string? Description, string? TypeLabel) : Tempo.Blazor.Interfaces.IToken
+    {
+        public string? Category => TypeLabel;
+        public string? Icon => null;
+        public string? ColorClass => null;
+    }
+
+    private sealed class StaticTokenProvider(params Tempo.Blazor.Interfaces.IToken[] tokens) : Tempo.Blazor.Interfaces.ITokenDataProvider
+    {
+        public bool SupportsCreation => false;
+
+        public void Refresh()
+        {
+        }
+
+        public Task<IEnumerable<Tempo.Blazor.Interfaces.IToken>> SearchTokensAsync(string query, CancellationToken ct = default)
+            => Task.FromResult<IEnumerable<Tempo.Blazor.Interfaces.IToken>>(
+                tokens.Where(token => string.IsNullOrEmpty(query)
+                    || token.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)
+                    || token.Key.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList());
     }
 
     [Fact]

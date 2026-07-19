@@ -1859,6 +1859,8 @@
   "TmDocumentEditor_InsertSigningField": "Signature field",
   "TmDocumentEditor_InsertSymbol": "Symbol",
   "TmDocumentEditor_InsertTable": "Table",
+  "TmDocumentEditor_InsertTokenFilterPlaceholder": "Search tokens…",
+  "TmDocumentEditor_InsertTokenPanelLabel": "Insert token",
   "TmDocumentEditor_Italic": "Italic",
   "TmDocumentEditor_LastSavedAt": "Last saved {0}",
   "TmDocumentEditor_LineNumbers": "Line numbers",

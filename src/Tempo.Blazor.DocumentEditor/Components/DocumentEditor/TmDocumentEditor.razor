@@ -397,6 +397,30 @@
              data-side-panel-state="@(_sidePanelOpen ? "open" : "closed")"
              data-side-panel-layout="docked-tabs"
              data-active-side-panel-tab="@ActiveSidePanelDataValue">
+            @* The workspace is the nearest positioned ancestor — the panel drops in below the
+               toolbar at the left edge, next to the ribbon Insert button that opened it. *@
+            @if (_tokenInsertMenuOpen)
+            {
+                <section class="tm-document-editor__token-insert-panel"
+                         role="dialog"
+                         aria-label="@Loc["TmDocumentEditor_InsertTokenPanelLabel"]"
+                         data-testid="@TestId("document-token-insert-panel")">
+                    <h3 class="tm-document-editor__token-insert-panel-title">@Loc["TmDocumentEditor_InsertTokenPanelLabel"]</h3>
+                    <input type="text"
+                           class="tm-document-editor__token-insert-filter"
+                           placeholder="@Loc["TmDocumentEditor_InsertTokenFilterPlaceholder"]"
+                           value="@_tokenInsertQuery"
+                           @oninput="HandleTokenInsertQueryChangedAsync"
+                           data-testid="@TestId("document-token-insert-filter")" />
+                    <TmDocumentTokenMenu IsVisible="true"
+                                         Tokens="@_tokenInsertItems"
+                                         Query="@_tokenInsertQuery"
+                                         HighlightedIndex="@_tokenInsertHighlight"
+                                         IsLoading="@_tokenInsertLoading"
+                                         OnTokenSelected="InsertTokenFromMenuAsync"
+                                         OnHighlightedIndexChanged="SetTokenInsertHighlight" />
+                </section>
+            }
             <main class="tm-document-editor__surface" aria-label="@Loc["TmDocumentEditor_DocumentSurfaceLabel"]">
                 <article class="tm-document-editor__page-surface" aria-label="@Loc["TmDocumentEditor_PageLabel"]">
                     <header class="tm-document-editor__page-header">

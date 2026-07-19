@@ -1442,13 +1442,118 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         return result.ErrorKind is DocumentEditorSaveErrorKind.None or DocumentEditorSaveErrorKind.Recoverable;
     }
 
+    // Phase 9 (decision DOC-EDITOR-TOKEN-MENU-BLAZOR-SIDE): the token menu renders Blazor-side —
+    // the engine only receives the insertToken model command when a token is picked.
+    private bool _tokenInsertMenuOpen;
+    private string _tokenInsertQuery = string.Empty;
+    private bool _tokenInsertLoading;
+    private int _tokenInsertHighlight;
+    private List<Components.Activity.TokenItem> _tokenInsertItems = [];
+
     private async Task ToggleInsertPanelAsync()
     {
-        if (UsingCanvasEngine && _canvasHost is not null)
+        if (_tokenInsertMenuOpen)
         {
-            await RouteToCanvasEngineAsync("openTokenMenu", null, focus: true);
+            CloseTokenInsertMenu();
+            await InvokeAsync(StateHasChanged);
             return;
         }
+
+        if (TokenProvider is null)
+        {
+            return;
+        }
+
+        _tokenInsertMenuOpen = true;
+        _tokenInsertQuery = string.Empty;
+        _tokenInsertHighlight = 0;
+        _floatingLayerStack.Push(new DocumentFloatingLayerState
+        {
+            LayerId = FloatingLayerId.TokenInsertMenu,
+            Kind = DocumentFloatingLayerKind.TokenMenu,
+            ZIndex = 25,
+            Priority = 25,
+            RestoreFocusTarget = "surface",
+            CloseAsync = () =>
+            {
+                CloseTokenInsertMenu();
+                return Task.CompletedTask;
+            }
+        });
+        await LoadTokenInsertItemsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseTokenInsertMenu()
+    {
+        _tokenInsertMenuOpen = false;
+        _tokenInsertItems = [];
+        _tokenInsertQuery = string.Empty;
+        _floatingLayerStack.Remove(FloatingLayerId.TokenInsertMenu);
+    }
+
+    private async Task LoadTokenInsertItemsAsync()
+    {
+        if (TokenProvider is null)
+        {
+            return;
+        }
+
+        _tokenInsertLoading = true;
+        try
+        {
+            var tokens = await TokenProvider.SearchTokensAsync(_tokenInsertQuery);
+            _tokenInsertItems = tokens.Select(token => new Components.Activity.TokenItem
+            {
+                Key = token.Key,
+                DisplayName = token.DisplayName,
+                Description = token.Description,
+                Category = token.Category,
+                Icon = token.Icon,
+                ColorClass = token.ColorClass,
+                TypeLabel = token.TypeLabel
+            }).ToList();
+        }
+        catch
+        {
+            // A failing provider must not break the editor — the panel just shows no tokens.
+            _tokenInsertItems = [];
+        }
+        finally
+        {
+            _tokenInsertLoading = false;
+        }
+    }
+
+    private async Task HandleTokenInsertQueryChangedAsync(ChangeEventArgs args)
+    {
+        _tokenInsertQuery = args.Value?.ToString() ?? string.Empty;
+        _tokenInsertHighlight = 0;
+        await LoadTokenInsertItemsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Task SetTokenInsertHighlight(int index)
+    {
+        _tokenInsertHighlight = index;
+        return Task.CompletedTask;
+    }
+
+    private async Task InsertTokenFromMenuAsync(Components.Activity.TokenItem token)
+    {
+        CloseTokenInsertMenu();
+        var caret = _lastBodySelectionSnapshot;
+        await RouteToCanvasEngineAsync("insertToken", new
+        {
+            key = token.Key,
+            displayName = token.DisplayName,
+            description = token.Description,
+            colorClass = token.ColorClass,
+            typeLabel = token.TypeLabel,
+            blockId = caret?.FocusBlockId,
+            offset = caret?.FocusOffset
+        }, focus: true);
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OpenCompareDialogAsync()

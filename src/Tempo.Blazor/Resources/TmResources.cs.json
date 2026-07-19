@@ -1864,6 +1864,8 @@
   "TmDocumentEditor_InsertSigningField": "Podpisové pole",
   "TmDocumentEditor_InsertSymbol": "Symbol",
   "TmDocumentEditor_InsertTable": "Tabulka",
+  "TmDocumentEditor_InsertTokenFilterPlaceholder": "Hledat tokeny…",
+  "TmDocumentEditor_InsertTokenPanelLabel": "Vložit token",
   "TmDocumentEditor_Italic": "Kurzíva",
   "TmDocumentEditor_LastSavedAt": "Naposledy uloženo {0}",
   "TmDocumentEditor_LineNumbers": "Čísla řádků",

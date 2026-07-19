@@ -1859,6 +1859,8 @@
   "TmDocumentEditor_InsertSigningField": "Champ de signature",
   "TmDocumentEditor_InsertSymbol": "Symbole",
   "TmDocumentEditor_InsertTable": "Tableau",
+  "TmDocumentEditor_InsertTokenFilterPlaceholder": "Rechercher des jetons…",
+  "TmDocumentEditor_InsertTokenPanelLabel": "Insérer un jeton",
   "TmDocumentEditor_Italic": "Italique",
   "TmDocumentEditor_LastSavedAt": "Dernier enregistrement {0}",
   "TmDocumentEditor_LineNumbers": "Numéros de ligne",
