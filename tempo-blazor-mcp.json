@@ -634,6 +634,16 @@
       ]
     },
     {
+      "itemName": "DocumentEditorDiffTools",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "MCP diff/redline tools: document_editor_diff_versions compares two saved versions (or a version vs. the current state) into a structured agent-friendly diff (summary counters, added/removed/changed blocks with word-level diff segments, redlineAvailable flag) via DocumentComparisonService; document_editor_export_redline exports the comparison as a DOCX with real w:ins/w:del tracked changes (DocumentRedlineDocxExporter) or a PDF rendered with review markup through the headless pipeline. Identical versions yield an empty diff and refuse redline export.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorDiffTools.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentEditorDocumentTools",
       "kind": "Class",
       "category": "Document Editor",
@@ -1869,11 +1879,11 @@
     }
   ],
   "summary": {
-    "itemCount": 86,
-    "manualItemCount": 86,
-    "generatedItemCount": 86,
+    "itemCount": 87,
+    "manualItemCount": 87,
+    "generatedItemCount": 87,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 86
+    "publicApiTypeCount": 87
   }
 }
