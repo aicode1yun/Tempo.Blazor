@@ -34,18 +34,19 @@ address
   `docs/document-operations-semantics.md`). Cells nested in cells (a table inside a cell) chain
   naturally: the innermost cell id wins.
 - **Content-control children** (`container: contentControl`) live in
-  `ContentControlBlockContent.Blocks`. They are described (with
-  `contentControlBlockId` naming the owning control block) but are **not** reachable by
-  `document_editor_apply_operations` today — `DocumentOperationApplier.FindBlockLocation`
-  descends through table cells only. `operationAddressable: false` marks this; mutate such
-  content by `updateBlock` on the owning content-control block (replacing the whole payload).
+  `ContentControlBlockContent.Blocks` (template sections: conditional chains, repeating
+  sections). They are fully operation-addressable by `blockId` — both appliers
+  (`DocumentOperationApplier.FindBlockLocation` and the JS `findBlockLocation`) descend through
+  content controls the same way they descend through table cells, keeping the enclosing cell
+  context for the `TableCellId` preference. A `moveBlock` without an explicit cell id stays in
+  its source container (list-index semantics), matching table-cell children.
 - **Header/footer blocks** (`container: headerFooter`) live in
-  `DocumentHeaderFooter.Blocks`. Same restriction: described, `operationAddressable: false`;
+  `DocumentHeaderFooter.Blocks`. These are described but `operationAddressable: false`;
   the only operation that resolves into headers/footers is `moveDrawingObject` (by `ObjectId`).
   Header/footer content is otherwise edited through full-document save.
 
-`operationAddressable` is therefore: `true` exactly for body blocks and blocks reachable from
-the body through table cells (recursively), `false` for content-control and header/footer
+`operationAddressable` is therefore: `true` for body blocks and blocks reachable from the body
+through table cells and content controls (recursively), `false` only for header/footer
 subtrees.
 
 ## Inline addresses

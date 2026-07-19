@@ -106,14 +106,14 @@ internal static class DocumentEditorSemanticCore
     public static string BlockNotFound(string blockId, string? tableCellId)
         => McpToolResults.Failure(
             McpToolResults.NotFound,
-            $"Block '{blockId}' was not found in the document body or its table cells"
+            $"Block '{blockId}' was not found in the document body, its table cells, or content controls"
             + (string.IsNullOrWhiteSpace(tableCellId) ? "" : $" (table cell '{tableCellId}')")
-            + ". Use document_editor_describe_document to list block addresses; blocks inside content controls or headers/footers are not operation-addressable.");
+            + ". Use document_editor_describe_document to list block addresses; header/footer blocks are not operation-addressable.");
 
     /// <summary>
     /// Deep block resolution mirroring DocumentOperationApplier.FindBlockLocation: body blocks
-    /// first, then recursively through table cells; tableCellId, when supplied, restricts which
-    /// container may match.
+    /// first, then recursively through table cells AND content-control children; tableCellId,
+    /// when supplied, restricts which container may match.
     /// </summary>
     public static DocumentBlock? FindBlock(DocumentEditorDocument document, string blockId, string? tableCellId)
     {
@@ -129,19 +129,24 @@ internal static class DocumentEditorSemanticCore
                     return block;
                 }
 
-                if (block.Content is not TableBlockContent table)
+                if (block.Content is TableBlockContent table)
                 {
-                    continue;
-                }
-
-                foreach (var row in table.Rows)
-                {
-                    foreach (var cell in row.Cells)
+                    foreach (var row in table.Rows)
                     {
-                        if (Visit(cell.Blocks, cell.Id ?? string.Empty) is { } nested)
+                        foreach (var cell in row.Cells)
                         {
-                            return nested;
+                            if (Visit(cell.Blocks, cell.Id ?? string.Empty) is { } nested)
+                            {
+                                return nested;
+                            }
                         }
+                    }
+                }
+                else if (block.Content is ContentControlBlockContent control)
+                {
+                    if (Visit(control.Blocks, cellId) is { } nestedInControl)
+                    {
+                        return nestedInControl;
                     }
                 }
             }

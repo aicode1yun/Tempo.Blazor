@@ -856,8 +856,9 @@ public class DocumentOperationApplier
 
     /// <summary>
     /// Deep block resolution mirroring the JS collaboration applier (transform.mjs
-    /// findBlockLocation): body blocks first, then recursively through table cells; the preferred
-    /// table cell id, when supplied, filters which container may match.
+    /// findBlockLocation): body blocks first, then recursively through table cells AND
+    /// content-control children (template sections); the preferred table cell id, when supplied,
+    /// filters which container may match.
     /// </summary>
     private static BlockLocation? FindBlockLocation(DocumentEditorDocument document, string? blockId, string? preferredCellId = null)
     {
@@ -879,19 +880,26 @@ public class DocumentOperationApplier
                     return new BlockLocation(blocks, block, index);
                 }
 
-                if (block.Content is not TableBlockContent table)
+                if (block.Content is TableBlockContent table)
                 {
-                    continue;
-                }
-
-                foreach (var row in table.Rows)
-                {
-                    foreach (var cell in row.Cells)
+                    foreach (var row in table.Rows)
                     {
-                        if (Visit(cell.Blocks, cell.Id ?? string.Empty) is { } nested)
+                        foreach (var cell in row.Cells)
                         {
-                            return nested;
+                            if (Visit(cell.Blocks, cell.Id ?? string.Empty) is { } nested)
+                            {
+                                return nested;
+                            }
                         }
+                    }
+                }
+                else if (block.Content is ContentControlBlockContent control)
+                {
+                    // Content-control children keep the enclosing cell context — a control inside
+                    // a table cell still matches that cell's preference.
+                    if (Visit(control.Blocks, cellId) is { } nestedInControl)
+                    {
+                        return nestedInControl;
                     }
                 }
             }
@@ -984,16 +992,21 @@ public class DocumentOperationApplier
         foreach (var block in blocks)
         {
             yield return block;
-            if (block.Content is not TableBlockContent table)
+            if (block.Content is TableBlockContent table)
             {
-                continue;
+                foreach (var cellBlock in table.Rows
+                             .SelectMany(row => row.Cells)
+                             .SelectMany(cell => EnumerateBlocks(cell.Blocks)))
+                {
+                    yield return cellBlock;
+                }
             }
-
-            foreach (var cellBlock in table.Rows
-                         .SelectMany(row => row.Cells)
-                         .SelectMany(cell => EnumerateBlocks(cell.Blocks)))
+            else if (block.Content is ContentControlBlockContent control)
             {
-                yield return cellBlock;
+                foreach (var controlBlock in EnumerateBlocks(control.Blocks))
+                {
+                    yield return controlBlock;
+                }
             }
         }
     }
@@ -1089,6 +1102,9 @@ public class DocumentOperationApplier
         {
             paragraph = new DocumentBlock
             {
+                // Deterministic id: replicas applying the same table.cell.text operation on an
+                // empty cell must create the SAME block (mirrored by the JS collab applier).
+                Id = $"{cell.Id}-text",
                 Type = DocumentBlockType.Paragraph,
                 Content = new ParagraphBlockContent()
             };

@@ -117,7 +117,7 @@ public static class DocumentEditorTemplateTools
     }
 
     [McpServerTool(Name = "document_editor_wrap_conditional")]
-    [Description("Wrap ranges of TOP-LEVEL body blocks into an IF/ELSEIF/ELSE conditional chain of content controls (DocumentAssemblyMetadata), or update the branch/expression of an existing conditional control (pass existingControlBlockId). branchesJson: [{\"branch\":\"if|elseif|else\",\"expression\":\"contract.amount > 10000\",\"blockIds\":[\"p1\"]}]. At assembly time the first truthy branch survives, the rest are dropped. Note: blocks inside content controls are no longer operation-addressable — finish text edits first or replace via document_editor_update_block on the control.")]
+    [Description("Wrap ranges of TOP-LEVEL body blocks into an IF/ELSEIF/ELSE conditional chain of content controls (DocumentAssemblyMetadata), or update the branch/expression of an existing conditional control (pass existingControlBlockId). branchesJson: [{\"branch\":\"if|elseif|else\",\"expression\":\"contract.amount > 10000\",\"blockIds\":[\"p1\"]}]. At assembly time the first truthy branch survives, the rest are dropped. Wrapped blocks stay operation-addressable by their blockId, so text/format edits keep working inside the chain.")]
     public static async Task<string> WrapConditional(
         IDocumentEditorProvider documents,
         [Description("DocumentEditor document id.")] string documentId,

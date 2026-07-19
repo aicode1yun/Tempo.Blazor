@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.5.1 - 2026-07-19
+
+### Applier convergence follow-up: `table.cell.text` + content-control children
+
+- **`setBlockAttribute table.cell.text` now converges across runtimes** — the JS
+  collaboration applier (`transform.mjs`) implements the cell-targeting
+  semantics (resolve the TABLE block with a fallback without the cell
+  preference, replace the first cell paragraph's runs, convert a non-paragraph
+  first block, create a paragraph in an empty cell). Both runtimes create the
+  empty-cell paragraph with the DETERMINISTIC id `{cellId}-text` — the previous
+  random C# Guid was itself a cross-replica divergence. Pinned by the
+  convergence fixture (replace + empty-cell create) and unit tests on both
+  sides; `document_editor_set_table_cell_text` edits now co-edit live.
+- **Blocks inside content controls are operation-addressable** — both appliers
+  descend `ContentControlBlockContent.Blocks` like table cells (keeping the
+  enclosing cell context for the `TableCellId` preference), so agents can
+  fine-edit conditional chains and repeating sections
+  (insert/replace/delete_text, format_range, set_heading, insert_token,
+  delete/move/update_block) without whole-control replaces. The JS `moveBlock`
+  was aligned: without an explicit cell id a nested block stays in its SOURCE
+  container (previously it was re-homed to the body).
+  `document_editor_describe_document` now reports
+  `operationAddressable: true` for content-control children; only
+  header/footer blocks remain non-addressable. Convergence fixture extended
+  with in-control text/mark edits; addressing, operation-semantics, coverage
+  and tool-catalog docs updated.
+
 ## 2.5.0 - 2026-07-19
 
 ### Document MCP tools — semantic editing compiled to operations + visual previews

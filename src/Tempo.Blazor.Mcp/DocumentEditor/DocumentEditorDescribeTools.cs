@@ -128,8 +128,8 @@ public static class DocumentEditorDescribeTools
                 BlockId = blockId,
                 TableBlockId = tableBlockId,
                 TableCellId = tableCellId,
-                // Deep body resolution descends through table cells only; header/footer and
-                // content-control subtrees stay unaddressable for operations.
+                // Deep body resolution descends through table cells and content controls;
+                // only header/footer subtrees stay unaddressable for operations.
                 OperationAddressable = OperationAddressable
             };
 
@@ -139,7 +139,7 @@ public static class DocumentEditorDescribeTools
                 Container = "contentControl",
                 BlockId = blockId,
                 ContentControlBlockId = contentControlBlockId,
-                OperationAddressable = false
+                OperationAddressable = OperationAddressable
             };
     }
 

@@ -89,6 +89,75 @@ public class DocumentEditorSemanticTextToolsTests
     }
 
     [Fact]
+    public async Task InsertText_ContentControlChild_Works()
+    {
+        var provider = new FakeDocumentEditorProvider();
+        var doc = DocumentEditorDocument.Empty("doc-ins-cc");
+        doc.Blocks.Add(new DocumentBlock
+        {
+            Id = "cc-1",
+            Type = DocumentBlockType.ContentControl,
+            Content = new ContentControlBlockContent
+            {
+                Control = Tempo.Blazor.DocumentEditor.Services.DocumentAssemblyMetadata.CreateRepeatingSection("items"),
+                Blocks =
+                [
+                    new DocumentBlock
+                    {
+                        Id = "cc-row",
+                        Type = DocumentBlockType.Paragraph,
+                        Content = new ParagraphBlockContent { Inlines = [new TextRun { Text = "Položka" }] }
+                    }
+                ]
+            }
+        });
+        provider.Add(doc);
+
+        var root = Parse(await DocumentEditorSemanticTextTools.InsertText(
+            provider, doc.DocumentId, "cc-row", 7, " faktury"));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue();
+        var control = (ContentControlBlockContent)(await Load(provider, doc.DocumentId)).Blocks[0].Content;
+        ((ParagraphBlockContent)control.Blocks[0].Content).Inlines.OfType<TextRun>()
+            .Select(run => run.Text).Should().ContainSingle().Which.Should().Be("Položka faktury");
+    }
+
+    [Fact]
+    public async Task FormatRange_ContentControlChild_Works()
+    {
+        var provider = new FakeDocumentEditorProvider();
+        var doc = DocumentEditorDocument.Empty("doc-fmt-cc");
+        doc.Blocks.Add(new DocumentBlock
+        {
+            Id = "cc-1",
+            Type = DocumentBlockType.ContentControl,
+            Content = new ContentControlBlockContent
+            {
+                Control = Tempo.Blazor.DocumentEditor.Services.DocumentAssemblyMetadata.CreateConditionalBlock("if", "x > 1", "g1"),
+                Blocks =
+                [
+                    new DocumentBlock
+                    {
+                        Id = "cc-p",
+                        Type = DocumentBlockType.Paragraph,
+                        Content = new ParagraphBlockContent { Inlines = [new TextRun { Text = "Podmíněný text" }] }
+                    }
+                ]
+            }
+        });
+        provider.Add(doc);
+
+        var root = Parse(await DocumentEditorSemanticTextTools.FormatRange(
+            provider, doc.DocumentId, "cc-p", 0, 9, "bold"));
+
+        root.GetProperty("success").GetBoolean().Should().BeTrue();
+        var control = (ContentControlBlockContent)(await Load(provider, doc.DocumentId)).Blocks[0].Content;
+        var bold = ((ParagraphBlockContent)control.Blocks[0].Content).Inlines.OfType<TextRun>()
+            .Single(run => run.Marks.Any(mark => mark.Type == InlineMarkType.Bold));
+        bold.Text.Should().Be("Podmíněný");
+    }
+
+    [Fact]
     public async Task InsertText_OffsetBeyondText_ReturnsValidationFailedWithTextLength()
     {
         var provider = new FakeDocumentEditorProvider();

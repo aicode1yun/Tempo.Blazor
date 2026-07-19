@@ -279,7 +279,8 @@ public class DocumentEditorDescribeToolsTests
         var address = child.GetProperty("address");
         address.GetProperty("container").GetString().Should().Be("contentControl");
         address.GetProperty("contentControlBlockId").GetString().Should().Be("cc-block");
-        address.GetProperty("operationAddressable").GetBoolean().Should().BeFalse();
+        // Content-control children are operation-addressable (both appliers resolve them).
+        address.GetProperty("operationAddressable").GetBoolean().Should().BeTrue();
 
         // The nested token is still aggregated.
         root.GetProperty("tokens").EnumerateArray()

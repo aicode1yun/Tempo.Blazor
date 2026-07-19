@@ -160,6 +160,13 @@ public sealed class DocumentOperationConvergenceFixtureTests
                                     },
                                 ],
                             },
+                            // Deliberately EMPTY cell: pins the deterministic paragraph creation
+                            // of `setBlockAttribute table.cell.text` on both runtimes.
+                            new TableCellContent
+                            {
+                                Id = "t1c2",
+                                Blocks = [],
+                            },
                         ],
                     },
                 ],
@@ -425,6 +432,45 @@ public sealed class DocumentOperationConvergenceFixtureTests
                     ],
                 },
             };
+        }));
+
+        // Phase 2d — table.cell.text on both paths: replace the existing cell paragraph and the
+        // deterministic paragraph creation in the EMPTY cell (plan 3 follow-up).
+        Emit(NewOperation(DocumentOperationType.SetBlockAttribute, op =>
+        {
+            op.Target.BlockId = "t1";
+            op.Target.TableCellId = "t1c1";
+            op.AttributeName = "table.cell.text";
+            op.AttributeValueJson = JsonSerializer.Serialize($"Nová hodnota buňky {seed}.");
+        }));
+        Emit(NewOperation(DocumentOperationType.SetBlockAttribute, op =>
+        {
+            op.Target.BlockId = "t1";
+            op.Target.TableCellId = "t1c2";
+            op.AttributeName = "table.cell.text";
+            op.AttributeValueJson = JsonSerializer.Serialize($"Vytvořeno v prázdné buňce {seed}.");
+        }));
+
+        // Phase 2e — fine edits INSIDE a content control (plan 3 follow-up: content-control
+        // children are operation-addressable on both runtimes).
+        Emit(NewOperation(DocumentOperationType.InsertText, op =>
+        {
+            op.Target.BlockId = $"cc-if-{seed}-p";
+            op.Target.Offset = 0;
+            op.Text = $"[{seed}] ";
+        }));
+        Emit(NewOperation(DocumentOperationType.DeleteText, op =>
+        {
+            op.Target.BlockId = $"cc-else-{seed}-p";
+            op.Target.Offset = 0;
+            op.Target.Length = 5;
+        }));
+        Emit(NewOperation(DocumentOperationType.AddInlineMark, op =>
+        {
+            op.Target.BlockId = $"cc-if-{seed}-p";
+            op.Target.Offset = 0;
+            op.Target.Length = 4;
+            op.Mark = new InlineMark { Type = InlineMarkType.Italic };
         }));
 
         // Phase 3 — mark ranges last (they split runs; both appliers converge on content).

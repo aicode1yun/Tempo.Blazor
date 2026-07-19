@@ -25,9 +25,11 @@ Batches (`DocumentOperationBatch`) apply in order; each operation returns
 where noted (re-inserting an existing block, deleting a missing block).
 
 **Target resolution invariant** — block targets resolve DEEPLY: body blocks first, then
-recursively through table cells; `Target.TableCellId`, when set, restricts which container may
-match (mirrors JS `findBlockLocation`). Nested containers (table cells) are index-ordered;
-the body is `Order`-value ordered.
+recursively through table cells AND content-control children (template sections);
+`Target.TableCellId`, when set, restricts which container may match, and content-control
+children keep the enclosing cell context (mirrors JS `findBlockLocation`). Nested containers
+(table cells, content controls) are index-ordered; the body is `Order`-value ordered. A
+`moveBlock` without an explicit cell id stays in its source container.
 
 ## Text operations
 
@@ -86,7 +88,7 @@ Attribute-addressed mutations; `AttributeValueJson` carries the payload:
 | `text` | Replaces the block's inlines with a single text run. |
 | `paragraphProperties` | Patches `ParagraphProperties` (alignment, spacing, indents, …). |
 | `clearFormatting` | Removes formatting marks in the given range. |
-| `table.cell.text` | Targets the TABLE block; `Target.TableCellId` addresses the cell whose text is replaced. |
+| `table.cell.text` | Targets the TABLE block; `Target.TableCellId` addresses the cell whose text is replaced (first paragraph wins; an empty cell gets a new paragraph with the DETERMINISTIC id `{cellId}-text` so replicas converge). |
 | `order` | Sets `Block.Order` and re-sorts the body. |
 | `metadata.title` | Document-level: sets `Metadata.Title` (no block target needed). |
 

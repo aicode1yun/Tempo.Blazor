@@ -15,8 +15,9 @@ ranges are `offset`/`length` in the block's **plain text** (text runs only — i
 `document_editor_search_text` coordinates). Every read tool returns `concurrencyToken`
 (authoritative write guard — pass as `expectedConcurrencyToken`) and `contentDigest` (SHA-256
 content fingerprint); every write returns the new token + digest, so an agent can chain edits
-without re-reading. Blocks inside content controls and headers/footers are described but not
-operation-addressable (`operationAddressable: false`).
+without re-reading. Blocks nested in table cells AND content controls (template sections) are
+fully operation-addressable; only header/footer blocks are described without being addressable
+(`operationAddressable: false`).
 
 ## The agent loop
 

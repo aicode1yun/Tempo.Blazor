@@ -347,9 +347,17 @@ function applyMoveBlock(model, operation) {
     }
 
     const [block] = location.blocks.splice(location.index, 1);
-    const cellId = asText(target.tableCellId || target.TableCellId || location.cellId);
-    const container = findContainer(model, cellId) || { blocks: location.blocks };
-    const blocks = ensureBlocks(container);
+    const explicitCellId = asText(target.tableCellId || target.TableCellId);
+    let blocks;
+    if (explicitCellId) {
+        const container = findContainer(model, explicitCellId) || { blocks: location.blocks };
+        blocks = ensureBlocks(container);
+    } else {
+        // No explicit cell target: nested blocks (table cells, content-control children) stay
+        // in their SOURCE container — mirrors the C# applier, which moves within
+        // location.Container by index.
+        blocks = location.blocks;
+    }
     const orderValue = Number(target.order ?? target.Order ?? blocks.length) || 0;
     if (blocks === model?.body?.blocks) {
         // Body container: ORDER-VALUE semantics with a deterministic tie-break — the moved block
@@ -389,13 +397,51 @@ function applyUpdateBlock(model, operation) {
 
 function applySetBlockAttribute(model, operation) {
     const target = targetOf(operation);
-    const location = findBlockLocation(model, asText(target.blockId || target.BlockId), asText(target.tableCellId || target.TableCellId));
+    const name = asText(operation.attributeName || operation.AttributeName);
+    const blockId = asText(target.blockId || target.BlockId);
+    const cellId = asText(target.tableCellId || target.TableCellId);
+    let location = findBlockLocation(model, blockId, cellId);
+    if (!location?.block && name === 'table.cell.text') {
+        // 'table.cell.text' targets the TABLE block itself and uses tableCellId to address the
+        // cell inside it — the cell id must not act as a container preference here (mirrors C#).
+        location = findBlockLocation(model, blockId);
+    }
+
     if (!location?.block) {
         return { applied: false, model, reason: 'blockNotFound' };
     }
 
-    const name = asText(operation.attributeName || operation.AttributeName);
     const value = parseAttributeValue(operation.attributeValueJson ?? operation.AttributeValueJson);
+    if (name === 'table.cell.text') {
+        const cell = asArray(location.block?.content?.table?.rows)
+            .flatMap(row => asArray(row?.cells))
+            .find(item => asText(item?.id) === cellId);
+        if (!cell) {
+            return { applied: false, model, reason: 'tableCellNotFound' };
+        }
+
+        const textRun = { id: 'run-1', type: 'text', text: asText(value), marks: [], preserve: {} };
+        let paragraph = asArray(cell.blocks).find(block => asText(block?.type) === 'paragraph')
+            ?? asArray(cell.blocks)[0];
+        if (!paragraph) {
+            // Deterministic id: replicas applying the same operation on an empty cell must
+            // create the SAME block (mirrors the C# applier's `{cellId}-text`).
+            paragraph = { id: `${asText(cell.id)}-text`, type: 'paragraph', content: { type: 'paragraph', runs: [] } };
+            cell.blocks = [...asArray(cell.blocks), paragraph];
+        }
+
+        if (asText(paragraph.type) === 'paragraph' && Array.isArray(paragraph.content?.runs)) {
+            paragraph.content.runs = [textRun];
+        } else {
+            paragraph.type = 'paragraph';
+            paragraph.content = { type: 'paragraph', runs: [textRun] };
+        }
+
+        refreshModelVersion(model);
+        syncSections(model);
+        return { applied: true, model };
+    }
+
     if (name === 'headingLevel') {
         location.block.content.headingLevel = value == null ? null : Math.max(1, Number(value) || 1);
         location.block.type = location.block.content.headingLevel ? 'heading' : 'paragraph';
@@ -593,6 +639,10 @@ function findBlockLocation(model, blockId, preferredCellId = '') {
                     visit(cell?.blocks, asText(cell?.id || ''));
                 }
             }
+
+            // Content-control children (template sections) resolve like table-cell content;
+            // they keep the enclosing cell context (mirrors the C# FindBlockLocation).
+            visit(block?.content?.contentControl?.blocks, cellId);
         });
     }
 
@@ -638,6 +688,8 @@ function walkBlocks(model, visitor) {
                     visit(cell?.blocks);
                 }
             }
+
+            visit(block?.content?.contentControl?.blocks);
         }
     }
 

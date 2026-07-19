@@ -27,8 +27,8 @@ fixture `tests/Tempo.Blazor.Tests/DocumentEditor/TestData/operation-convergence-
 | `removeInlineMark` / `removeMark` | ✅ incl. run merge-back | ✅ range-based | ✅ range transform | ✅ both (Fáze 5) | ✅ |
 | `insertBlock` | ✅ body (order-value: append + stable sort) + table cell containers (index, Fáze 5) | ✅ body (order-value, mirrors C#) + cell containers (index); persistence payloads normalized to canvas shape incl. content controls (plan 3 Fáze 5) | ✅ passthrough (id dedup by applier) | ✅ both | ✅ (incl. persistence payloads + cell containers; list/quote payloads — plan 3 Fáze 2; content-control payloads with assembly metadata + nested blocks — plan 3 Fáze 5) |
 | `deleteBlock` | ✅ body + nested (Fáze 5) | ✅ deep | ✅ suppresses later ops on deleted block | ✅ both | ✅ |
-| `moveBlock` | ✅ body (order-value, moved-block-wins-ties) / cell (index, Fáze 5) | ✅ body (order-value, moved-block-wins-ties — mirrors C#) / cell (index) | ✅ last-write-wins per block | ✅ both | ✅ (incl. body order-value moves + cell index moves — plan 3 Fáze 2) |
-| `setBlockAttribute` | ✅ `headingLevel`, `text`, `paragraphProperties`, `clearFormatting`, `table.cell.text`, `order`, `metadata.title` | ✅ `headingLevel`, `text`, `content.*` paths | ✅ last-write-wins per (block, attribute) | ✅ both (Fáze 5; `table.cell.text` keeps its table-targeting semantics) | ✅ (`headingLevel`, `text`) |
+| `moveBlock` | ✅ body (order-value, moved-block-wins-ties) / nested containers (index, source-container stays without explicit cell id) | ✅ body (order-value, moved-block-wins-ties — mirrors C#) / nested containers (index; source container stays — plan 3 follow-up fix) | ✅ last-write-wins per block | ✅ both (cells + content controls) | ✅ (body order-value + cell index + in-control moves) |
+| `setBlockAttribute` | ✅ `headingLevel`, `text`, `paragraphProperties`, `clearFormatting`, `table.cell.text`, `order`, `metadata.title` | ✅ `headingLevel`, `text`, `table.cell.text` (plan 3 follow-up — cell-targeting semantics incl. the deterministic `{cellId}-text` paragraph for empty cells), `content.*` paths | ✅ last-write-wins per (block, attribute) | ✅ both (`table.cell.text` keeps its table-targeting semantics on both runtimes) | ✅ (`headingLevel`, `text`, `table.cell.text` replace + empty-cell create) |
 | `updateBlock` | ✅ body + nested in-place (Fáze 5) | ✅ deep replace; persistence payloads normalized to canvas shape incl. content controls (plan 3 Fáze 5) | ✅ last-write-wins per block | ✅ both | ✅ (incl. persistence + content-control payloads) |
 | `moveDrawingObject` | ✅ by objectId/inlineId/index across body, headers/footers, nested blocks | ✅ | ✅ last-write-wins per object | ✅ (deep `FindDrawingRun`) | — (layout payload, no text content) |
 | `createRevision` | ✅ pending markup incl. formatting revisions | ❌ not in `applyOperation` (revisions reach the canvas via model replace / engine commands) | ✅ passthrough | n/a | — (C#-only in the collab applier) |
@@ -60,13 +60,22 @@ fixture `tests/Tempo.Blazor.Tests/DocumentEditor/TestData/operation-convergence-
    canvas blocks (`content.runs`, `headingLevel`, `content.table`) on apply; canvas-shaped
    payloads pass through untouched (free-form block props survive as before). Blocks carried by
    C#-produced operations are fully text-editable on the JS side.
-5. **`setBlockAttribute table.cell.text` is server-side only in practice** — the C# applier
-   implements the cell-targeting semantics (replace the cell's first paragraph text); the JS
-   collab applier has no special handling for the attribute (it would fall through to a generic
-   `setPath`), so the attribute is deliberately EXCLUDED from the convergence fixture. The MCP
-   tool `document_editor_set_table_cell_text` emits it for server-side application; live
-   co-editing hosts propagate the result via model replace, not via `applyOperation`.
-6. **Revision operations are C#-only in the collab applier** — the canvas receives revision state
+5. **RESOLVED — `setBlockAttribute table.cell.text` now converges** (plan 3 follow-up): the JS
+   collab applier implements the cell-targeting semantics (resolve the TABLE block with a
+   fallback WITHOUT the cell preference, replace the first cell paragraph's runs, convert a
+   non-paragraph first block, or create a paragraph in an empty cell). Both runtimes create the
+   empty-cell paragraph with the DETERMINISTIC id `{cellId}-text` — the previous random C# Guid
+   was itself a cross-replica divergence. Pinned by the convergence fixture (replace +
+   empty-cell create patterns) and unit tests on both sides.
+6. **RESOLVED — content-control children are operation-addressable** (plan 3 follow-up): both
+   `FindBlockLocation` (C#) and `findBlockLocation`/`walkBlocks` (JS) descend
+   `ContentControlBlockContent.Blocks` like table cells (keeping the enclosing cell context for
+   the `TableCellId` preference), so text/mark/attribute/update/delete/move operations reach
+   template-section content directly. The JS `moveBlock` was also aligned: without an explicit
+   cell id a nested block now stays in its SOURCE container (previously it was re-homed to the
+   body). Pinned by the convergence fixture (insertText/deleteText/mark range on a conditional
+   chain child) and `DocumentOperationApplierContentControlTests`.
+7. **Revision operations are C#-only in the collab applier** — the canvas receives revision state
    via model replacement/engine commands, not via `applyOperation`. Server-side revision
    application is fully covered by `DocumentOperationEngineTests`.
 
