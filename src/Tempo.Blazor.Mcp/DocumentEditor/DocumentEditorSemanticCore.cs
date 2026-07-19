@@ -15,6 +15,8 @@ internal static class DocumentEditorSemanticCore
     /// <summary>Applies <paramref name="operations"/> to the loaded document and saves.</summary>
     /// <param name="extraSuccessPayload">Optional extra top-level success fields derived from the
     /// saved document (camelCase keys).</param>
+    /// <param name="collaborationBridge">Optional opt-in live co-editing bridge; the applied batch
+    /// is published to the collaboration stream after a successful save (fail-open).</param>
     public static async Task<string> ApplyAsync(
         IDocumentEditorProvider documents,
         string documentId,
@@ -22,7 +24,8 @@ internal static class DocumentEditorSemanticCore
         List<DocumentOperation> operations,
         string? expectedConcurrencyToken,
         bool force,
-        Func<DocumentEditorDocument, IDictionary<string, object?>>? extraSuccessPayload = null)
+        Func<DocumentEditorDocument, IDictionary<string, object?>>? extraSuccessPayload = null,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
     {
         var batch = new DocumentOperationBatch
         {
@@ -72,12 +75,15 @@ internal static class DocumentEditorSemanticCore
         }
 
         var savedDocument = save.Document ?? working;
+        var collaborationPublished = collaborationBridge is not null
+            && await collaborationBridge.PublishAsync(documentId, batch);
         var payload = new Dictionary<string, object?>
         {
             ["id"] = documentId,
             ["applied"] = batch.Operations.Count,
             ["concurrencyToken"] = save.ConcurrencyToken,
             ["contentDigest"] = DocumentEditorDescribeTools.ComputeContentDigest(savedDocument),
+            ["collaborationPublished"] = collaborationPublished,
             ["postFixWarnings"] = DocumentEditorMcpPostFixer.ToToolWarnings(postFixWarnings)
         };
 

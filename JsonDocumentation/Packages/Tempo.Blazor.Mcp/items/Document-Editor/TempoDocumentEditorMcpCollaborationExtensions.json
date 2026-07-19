@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "DI registration for the opt-in MCP live co-editing bridge: AddTempoDocumentEditorMcpCollaboration registers TempoDocumentMcpCollaborationOptions and IDocumentEditorMcpCollaborationBridge (resolving the collaboration provider/backplane lazily). Publishing stays disabled until options.Enabled = true.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorCollaborationBridge.cs",
+  "documentationStatus": "generated",
+  "itemName": "TempoDocumentEditorMcpCollaborationExtensions"
+}

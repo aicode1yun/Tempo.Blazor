@@ -36,6 +36,7 @@ public static class DocumentEditorTemplateTools
         [Description("Validate the key against the host token provider when one is registered.")] bool validateKey = true,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
         [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null,
         IDocumentTokenValueProvider? tokenProvider = null,
         CancellationToken cancellationToken = default)
     {
@@ -111,7 +112,8 @@ public static class DocumentEditorTemplateTools
 
         return await DocumentEditorSemanticCore.ApplyAsync(
             documents, documentId, load, [operation], expectedConcurrencyToken, force,
-            _ => new Dictionary<string, object?> { ["blockId"] = blockId, ["tokenKey"] = key });
+            _ => new Dictionary<string, object?> { ["blockId"] = blockId, ["tokenKey"] = key },
+            collaborationBridge);
     }
 
     [McpServerTool(Name = "document_editor_wrap_conditional")]
@@ -125,7 +127,8 @@ public static class DocumentEditorTemplateTools
         [Description("Update mode: new condition expression.")] string? expression = null,
         [Description("Optional chain group id; generated when omitted (wrap mode).")] string? groupId = null,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
     {
         var load = await documents.LoadAsync(documentId, new DocumentEditorLoadOptions { IncludeDocument = true, IncludeJson = false });
         if (!load.Found || load.Document is null)
@@ -140,7 +143,7 @@ public static class DocumentEditorTemplateTools
 
         if (!string.IsNullOrWhiteSpace(existingControlBlockId))
         {
-            return await UpdateConditionalAsync(documents, documentId, load, existingControlBlockId, branch, expression, expectedConcurrencyToken, force);
+            return await UpdateConditionalAsync(documents, documentId, load, existingControlBlockId, branch, expression, expectedConcurrencyToken, force, collaborationBridge);
         }
 
         if (string.IsNullOrWhiteSpace(branchesJson))
@@ -218,7 +221,8 @@ public static class DocumentEditorTemplateTools
 
         return await DocumentEditorSemanticCore.ApplyAsync(
             documents, documentId, load, operations, expectedConcurrencyToken, force,
-            _ => new Dictionary<string, object?> { ["groupId"] = chainId, ["controlBlockIds"] = controlBlockIds });
+            _ => new Dictionary<string, object?> { ["groupId"] = chainId, ["controlBlockIds"] = controlBlockIds },
+            collaborationBridge);
     }
 
     [McpServerTool(Name = "document_editor_insert_repeating_section")]
@@ -231,7 +235,8 @@ public static class DocumentEditorTemplateTools
         [Description("Full row template: JSON array of persistence DocumentBlock payloads.")] string? rowBlocksJson = null,
         [Description("Body order value for the new section; omit to append at the end.")] double? order = null,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
     {
         var load = await documents.LoadAsync(documentId, new DocumentEditorLoadOptions { IncludeDocument = true, IncludeJson = false });
         if (!load.Found || load.Document is null)
@@ -298,7 +303,8 @@ public static class DocumentEditorTemplateTools
 
         return await DocumentEditorSemanticCore.ApplyAsync(
             documents, documentId, load, [operation], expectedConcurrencyToken, force,
-            _ => new Dictionary<string, object?> { ["controlBlockId"] = controlBlockId, ["bindKey"] = bindKey, ["order"] = resolvedOrder });
+            _ => new Dictionary<string, object?> { ["controlBlockId"] = controlBlockId, ["bindKey"] = bindKey, ["order"] = resolvedOrder },
+            collaborationBridge);
     }
 
     [McpServerTool(Name = "document_template_describe")]
@@ -583,7 +589,8 @@ public static class DocumentEditorTemplateTools
         string? branch,
         string? expression,
         string? expectedConcurrencyToken,
-        bool force)
+        bool force,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge)
     {
         var block = DocumentEditorSemanticCore.FindBlock(load.Document!, controlBlockId, tableCellId: null);
         if (block is null)
@@ -634,7 +641,8 @@ public static class DocumentEditorTemplateTools
 
         return await DocumentEditorSemanticCore.ApplyAsync(
             documents, documentId, load, [operation], expectedConcurrencyToken, force,
-            _ => new Dictionary<string, object?> { ["controlBlockId"] = controlBlockId, ["branch"] = newBranch, ["expression"] = newExpression });
+            _ => new Dictionary<string, object?> { ["controlBlockId"] = controlBlockId, ["branch"] = newBranch, ["expression"] = newExpression },
+            collaborationBridge);
     }
 
     private static void InsertInlineAtPlainOffset(List<InlineContent> inlines, int offset, InlineContent inline)

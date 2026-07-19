@@ -607,7 +607,8 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             Id = id,
             SectionId = "contract-section-main",
             Type = DocumentBlockType.PageBreak,
-            Order = order
+            Order = order,
+            Content = new PageBreakBlockContent()
         };
 
     private static DocumentEditorDocument CreateCanvasAdvancedCharacterDocument(string documentId)

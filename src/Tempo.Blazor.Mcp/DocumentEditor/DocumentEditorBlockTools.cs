@@ -32,7 +32,8 @@ public static class DocumentEditorBlockTools
         [Description("Table cell id to insert into a table cell instead of the body.")] string? tableCellId = null,
         [Description("Optional explicit id for the new block; generated when omitted.")] string? blockId = null,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
     {
         var load = await documents.LoadAsync(documentId, new DocumentEditorLoadOptions { IncludeDocument = true, IncludeJson = false });
         if (!load.Found || load.Document is null)
@@ -118,7 +119,8 @@ public static class DocumentEditorBlockTools
                 ["blockId"] = newBlockId,
                 ["order"] = resolvedOrder,
                 ["tableCellId"] = tableCellId
-            });
+            },
+            collaborationBridge);
     }
 
     [McpServerTool(Name = "document_editor_delete_block")]
@@ -129,7 +131,8 @@ public static class DocumentEditorBlockTools
         [Description("Block id to delete.")] string blockId,
         [Description("Table cell id when the block is nested in a table cell.")] string? tableCellId = null,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
     {
         var load = await documents.LoadAsync(documentId, new DocumentEditorLoadOptions { IncludeDocument = true, IncludeJson = false });
         if (!load.Found || load.Document is null)
@@ -155,7 +158,8 @@ public static class DocumentEditorBlockTools
 
         return await DocumentEditorSemanticCore.ApplyAsync(
             documents, documentId, load, [operation], expectedConcurrencyToken, force,
-            _ => new Dictionary<string, object?> { ["blockId"] = blockId });
+            _ => new Dictionary<string, object?> { ["blockId"] = blockId },
+            collaborationBridge);
     }
 
     [McpServerTool(Name = "document_editor_move_block")]
@@ -167,7 +171,8 @@ public static class DocumentEditorBlockTools
         [Description("Body: new order value. Table cell: target index.")] double order,
         [Description("Table cell id when the block is nested in a table cell.")] string? tableCellId = null,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
     {
         var load = await documents.LoadAsync(documentId, new DocumentEditorLoadOptions { IncludeDocument = true, IncludeJson = false });
         if (!load.Found || load.Document is null)
@@ -193,7 +198,8 @@ public static class DocumentEditorBlockTools
 
         return await DocumentEditorSemanticCore.ApplyAsync(
             documents, documentId, load, [operation], expectedConcurrencyToken, force,
-            _ => new Dictionary<string, object?> { ["blockId"] = blockId, ["order"] = order });
+            _ => new Dictionary<string, object?> { ["blockId"] = blockId, ["order"] = order },
+            collaborationBridge);
     }
 
     [McpServerTool(Name = "document_editor_update_block")]
@@ -205,7 +211,8 @@ public static class DocumentEditorBlockTools
         [Description("Full replacement DocumentBlock JSON (persistence format).")] string blockJson,
         [Description("Table cell id when the block is nested in a table cell.")] string? tableCellId = null,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
     {
         var load = await documents.LoadAsync(documentId, new DocumentEditorLoadOptions { IncludeDocument = true, IncludeJson = false });
         if (!load.Found || load.Document is null)
@@ -248,7 +255,8 @@ public static class DocumentEditorBlockTools
 
         return await DocumentEditorSemanticCore.ApplyAsync(
             documents, documentId, load, [operation], expectedConcurrencyToken, force,
-            _ => new Dictionary<string, object?> { ["blockId"] = blockId });
+            _ => new Dictionary<string, object?> { ["blockId"] = blockId },
+            collaborationBridge);
     }
 
     [McpServerTool(Name = "document_editor_set_table_cell_text")]
@@ -260,7 +268,8 @@ public static class DocumentEditorBlockTools
         [Description("Table cell id inside that table.")] string tableCellId,
         [Description("New plain text for the cell.")] string text,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
     {
         var load = await documents.LoadAsync(documentId, new DocumentEditorLoadOptions { IncludeDocument = true, IncludeJson = false });
         if (!load.Found || load.Document is null)
@@ -305,6 +314,7 @@ public static class DocumentEditorBlockTools
 
         return await DocumentEditorSemanticCore.ApplyAsync(
             documents, documentId, load, [operation], expectedConcurrencyToken, force,
-            _ => new Dictionary<string, object?> { ["blockId"] = tableBlockId, ["tableCellId"] = tableCellId });
+            _ => new Dictionary<string, object?> { ["blockId"] = tableBlockId, ["tableCellId"] = tableCellId },
+            collaborationBridge);
     }
 }

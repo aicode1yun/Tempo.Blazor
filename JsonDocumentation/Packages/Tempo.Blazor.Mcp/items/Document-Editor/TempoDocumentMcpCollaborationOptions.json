@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "Opt-in live co-editing configuration for the document MCP tools: Enabled (default false), agent identity (AgentId/AgentName/AgentColor shown in presence), SourceInstanceId stamped on backplane envelopes against echo, and host callbacks (OperationPublishedCallback/CursorPublishedCallback) e.g. for SignalR group pushes.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorCollaborationBridge.cs",
+  "documentationStatus": "generated",
+  "itemName": "TempoDocumentMcpCollaborationOptions"
+}

@@ -29,8 +29,9 @@ public static class DocumentEditorSemanticTextTools
         [Description("Text to insert.")] string text,
         [Description("Table cell id when the block is nested in a table cell.")] string? tableCellId = null,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
-        => ExecuteAsync(documents, documentId, blockId, tableCellId, expectedConcurrencyToken, force,
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
+        => ExecuteAsync(documents, documentId, blockId, tableCellId, expectedConcurrencyToken, force, collaborationBridge,
             (inlines, target) => CompileInsert(inlines, target, offset, text));
 
     [McpServerTool(Name = "document_editor_delete_text")]
@@ -43,8 +44,9 @@ public static class DocumentEditorSemanticTextTools
         [Description("Plain-text range length (must be > 0).")] int length,
         [Description("Table cell id when the block is nested in a table cell.")] string? tableCellId = null,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
-        => ExecuteAsync(documents, documentId, blockId, tableCellId, expectedConcurrencyToken, force,
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
+        => ExecuteAsync(documents, documentId, blockId, tableCellId, expectedConcurrencyToken, force, collaborationBridge,
             (inlines, target) => CompileDelete(inlines, target, offset, length, requirePositiveLength: true));
 
     [McpServerTool(Name = "document_editor_replace_text")]
@@ -58,8 +60,9 @@ public static class DocumentEditorSemanticTextTools
         [Description("Replacement text.")] string text,
         [Description("Table cell id when the block is nested in a table cell.")] string? tableCellId = null,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
-        => ExecuteAsync(documents, documentId, blockId, tableCellId, expectedConcurrencyToken, force,
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
+        => ExecuteAsync(documents, documentId, blockId, tableCellId, expectedConcurrencyToken, force, collaborationBridge,
             (inlines, target) => CompileReplace(inlines, target, offset, length, text));
 
     [McpServerTool(Name = "document_editor_format_range")]
@@ -75,8 +78,9 @@ public static class DocumentEditorSemanticTextTools
         [Description("Mark value for value-carrying marks: link URL, color, font family, font size…")] string? value = null,
         [Description("Table cell id when the block is nested in a table cell.")] string? tableCellId = null,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
-        => ExecuteAsync(documents, documentId, blockId, tableCellId, expectedConcurrencyToken, force,
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
+        => ExecuteAsync(documents, documentId, blockId, tableCellId, expectedConcurrencyToken, force, collaborationBridge,
             (inlines, target) => CompileFormatRange(inlines, target, offset, length, mark, action, value));
 
     [McpServerTool(Name = "document_editor_set_heading")]
@@ -88,8 +92,9 @@ public static class DocumentEditorSemanticTextTools
         [Description("Heading level 1-6.")] int level,
         [Description("Table cell id when the block is nested in a table cell.")] string? tableCellId = null,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
-        => ExecuteAsync(documents, documentId, blockId, tableCellId, expectedConcurrencyToken, force,
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
+        => ExecuteAsync(documents, documentId, blockId, tableCellId, expectedConcurrencyToken, force, collaborationBridge,
             (inlines, target) => CompileSetHeading(target, level));
 
     [McpServerTool(Name = "document_editor_set_paragraph_properties")]
@@ -107,8 +112,9 @@ public static class DocumentEditorSemanticTextTools
         [Description("First-line indent in points (negative = hanging indent).")] double? firstLineIndent = null,
         [Description("Table cell id when the block is nested in a table cell.")] string? tableCellId = null,
         [Description("Optional optimistic-concurrency token.")] string? expectedConcurrencyToken = null,
-        [Description("Overwrite without concurrency token validation.")] bool force = false)
-        => ExecuteAsync(documents, documentId, blockId, tableCellId, expectedConcurrencyToken, force,
+        [Description("Overwrite without concurrency token validation.")] bool force = false,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge = null)
+        => ExecuteAsync(documents, documentId, blockId, tableCellId, expectedConcurrencyToken, force, collaborationBridge,
             (inlines, target) => CompileParagraphProperties(
                 target, alignment, lineSpacing, spacingBefore, spacingAfter, leftIndent, rightIndent, firstLineIndent));
 
@@ -128,6 +134,7 @@ public static class DocumentEditorSemanticTextTools
         string? tableCellId,
         string? expectedConcurrencyToken,
         bool force,
+        IDocumentEditorMcpCollaborationBridge? collaborationBridge,
         Func<List<InlineContent>, DocumentOperationTarget, Compilation> compile)
     {
         var load = await documents.LoadAsync(documentId, new DocumentEditorLoadOptions
@@ -186,7 +193,8 @@ public static class DocumentEditorSemanticTextTools
                     ["blockPlainText"] = savedPlainText,
                     ["blockTextLength"] = savedPlainText?.Length
                 };
-            });
+            },
+            collaborationBridge);
     }
 
     // ---------------------------------------------------------------- compilers

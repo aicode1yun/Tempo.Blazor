@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "Default live co-editing bridge: joins IDocumentCollaborationProvider once per document as the named agent participant (cached session), broadcasts operation batches plus a presence cursor (agent name + color at the edited block) and publishes an envelope with SourceInstanceId to IDocumentCollaborationBackplane when registered. Fail-open with ILogger diagnostics.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorCollaborationBridge.cs",
+  "documentationStatus": "generated",
+  "itemName": "TempoDocumentMcpCollaborationBridge"
+}

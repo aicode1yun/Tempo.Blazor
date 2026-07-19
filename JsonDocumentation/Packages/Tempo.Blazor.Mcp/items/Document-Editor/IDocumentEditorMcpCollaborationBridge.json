@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "Publishes MCP-applied operation batches to the host collaboration stream so humans with the document open see agent edits live. Fail-open: publishing never throws — a broken backplane returns false and only logs.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorCollaborationBridge.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDocumentEditorMcpCollaborationBridge"
+}

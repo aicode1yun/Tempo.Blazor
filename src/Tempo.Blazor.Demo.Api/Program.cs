@@ -120,11 +120,21 @@ builder.Services.AddTempoDocumentServices();
 // Font catalog + limits for document_render_preview / document_render_pdf (system Arial/DejaVu
 // fallback incl. the Aptos alias — mirrors DemoDocumentExportFontCatalog).
 builder.Services.AddTempoDocumentEditorMcpRendering();
+// Opt-in live co-editing: MCP edits broadcast through the shared collaboration store AND are
+// pushed to the SignalR document groups, so open TmDocumentEditor sessions see agent edits live.
+builder.Services.AddTempoDocumentEditorMcpCollaboration(options =>
+{
+    options.Enabled = true;
+    options.AgentName = "MCP Agent";
+});
+builder.Services.AddSingleton<Tempo.Blazor.Demo.Api.Services.McpCollaborationSignalRForwarder>();
 builder.Services.AddSingleton<DemoDocumentExportFontCatalog>();
 builder.Services.AddSingleton<DemoDocumentPdfExportProvider>();
 builder.Services.AddSingleton<DemoDocumentPdfExportCache>();
 builder.Services.AddSingleton<DemoDocumentComparisonProvider>();
 builder.Services.AddSingleton<InMemoryDocumentCollaborationProvider>();
+builder.Services.AddSingleton<Tempo.Blazor.DocumentEditor.Interfaces.IDocumentCollaborationProvider>(
+    sp => sp.GetRequiredService<InMemoryDocumentCollaborationProvider>());
 builder.Services.AddSingleton<InMemoryDocumentSuggestionProvider>();
 builder.Services.AddSingleton<IDiagramExportService, DemoDiagramExportService>();
 builder.Services.AddSingleton<WireframeExportService>();
@@ -173,6 +183,9 @@ builder.Services.AddSingleton<TmNotificationDigestService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<TmNotificationDigestService>());
 
 var app = builder.Build();
+
+// Materialize the MCP→SignalR collaboration forwarder so agent edits reach open editors live.
+app.Services.GetRequiredService<Tempo.Blazor.Demo.Api.Services.McpCollaborationSignalRForwarder>();
 
 app.UseCors();
 

@@ -759,6 +759,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "IDocumentEditorMcpCollaborationBridge",
+      "kind": "Interface",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Publishes MCP-applied operation batches to the host collaboration stream so humans with the document open see agent edits live. Fail-open: publishing never throws — a broken backplane returns false and only logs.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorCollaborationBridge.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ITempoDocumentMcpFontCatalog",
       "kind": "Interface",
       "category": "Document Editor",
@@ -769,6 +779,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "TempoDocumentEditorMcpCollaborationExtensions",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "DI registration for the opt-in MCP live co-editing bridge: AddTempoDocumentEditorMcpCollaboration registers TempoDocumentMcpCollaborationOptions and IDocumentEditorMcpCollaborationBridge (resolving the collaboration provider/backplane lazily). Publishing stays disabled until options.Enabled = true.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorCollaborationBridge.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "TempoDocumentEditorMcpRenderingExtensions",
       "kind": "Class",
       "category": "Document Editor",
@@ -776,6 +796,26 @@
       "description": "DI registration for the document MCP render tools: AddTempoDocumentEditorMcpRendering registers the headless document pipeline (AddTempoDocumentServices), the configured TempoDocumentMcpRenderOptions and the resolved ITempoDocumentMcpFontCatalog as idempotent singletons.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorRenderOptions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentMcpCollaborationBridge",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Default live co-editing bridge: joins IDocumentCollaborationProvider once per document as the named agent participant (cached session), broadcasts operation batches plus a presence cursor (agent name + color at the edited block) and publishes an envelope with SourceInstanceId to IDocumentCollaborationBackplane when registered. Fail-open with ILogger diagnostics.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorCollaborationBridge.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentMcpCollaborationOptions",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Opt-in live co-editing configuration for the document MCP tools: Enabled (default false), agent identity (AgentId/AgentName/AgentColor shown in presence), SourceInstanceId stamped on backplane envelopes against echo, and host callbacks (OperationPublishedCallback/CursorPublishedCallback) e.g. for SignalR group pushes.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorCollaborationBridge.cs",
       "documentationStatus": "merged"
     },
     {
@@ -1879,11 +1919,11 @@
     }
   ],
   "summary": {
-    "itemCount": 87,
-    "manualItemCount": 87,
-    "generatedItemCount": 87,
+    "itemCount": 91,
+    "manualItemCount": 91,
+    "generatedItemCount": 91,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 87
+    "publicApiTypeCount": 91
   }
 }
