@@ -19,8 +19,12 @@ namespace Tempo.Blazor.DocumentFormats.Tests;
 public class JintDocumentLayoutBenchmarkTests(ITestOutputHelper output)
 {
     private const int MinimumPages = 21;
-    private static readonly TimeSpan ColdBudget = TimeSpan.FromSeconds(15);
-    private static readonly TimeSpan WarmBudget = TimeSpan.FromSeconds(6);
+
+    // Budgets are sized to catch order-of-magnitude regressions (bundle growth, measurement
+    // cache loss), not scheduler noise: constrained CI containers running the full suite in
+    // parallel have been observed to triple the dev-machine numbers.
+    private static readonly TimeSpan ColdBudget = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan WarmBudget = TimeSpan.FromSeconds(15);
 
     [Fact]
     public void TwentyOnePageDocument_LaysOutWithinBudget()
