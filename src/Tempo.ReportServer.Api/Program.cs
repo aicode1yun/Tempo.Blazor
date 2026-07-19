@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Tempo.ReportServer.Api.Rendering;
 using Tempo.ReportServer.Api.Scheduling;
 using Tempo.ReportServer.Api.Security;
 
@@ -37,6 +38,11 @@ public sealed class Program
         // Fáze 6: the scheduling worker (background service), delivery channels and persistent
         // schedule store live in the API/worker tier.
         builder.Services.AddTempoReportServerScheduling(builder.Configuration);
+
+        // Fáze 17 (C2): opt-in SQL-Server-backed distributed render job queue + worker so more than one
+        // render node can coordinate a single fair queue. No-op (keeps the in-memory default) unless
+        // "Rendering:JobQueue = SqlServer".
+        builder.Services.AddTempoReportServerRenderJobQueue(builder.Configuration);
 
         // Decision O1 / ADR-0001: persist API keys and audit events in the report server database.
         // In-memory stores remain the default so lightweight hosts and tests keep working.

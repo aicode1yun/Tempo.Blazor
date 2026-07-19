@@ -58,6 +58,9 @@ public sealed class ReportServerDbContext : DbContext
     /// <summary>Ad-hoc render run history table.</summary>
     public DbSet<RenderRunEntity> RenderRuns => Set<RenderRunEntity>();
 
+    /// <summary>Distributed (multi-node) render job queue table.</summary>
+    public DbSet<RenderJobEntity> RenderJobs => Set<RenderJobEntity>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -240,6 +243,32 @@ public sealed class ReportServerDbContext : DbContext
             entity.Property(run => run.Outcome).HasMaxLength(32);
             entity.HasIndex(run => new { run.TenantId, run.ActorId, run.CreatedAt }).IsDescending(false, false, true);
             entity.HasIndex(run => new { run.TenantId, run.ReportId });
+        });
+
+        // Render jobs are not tenant-query-filtered: the distributed render worker dequeues the oldest
+        // queued job across every tenant on a single pass, so it queries across tenants; the
+        // tenant-scoped queue methods (GetAsync) constrain by TenantId explicitly.
+        modelBuilder.Entity<RenderJobEntity>(entity =>
+        {
+            entity.HasKey(job => job.JobId);
+            entity.Property(job => job.JobId).HasMaxLength(IdMaxLength);
+            entity.Property(job => job.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(job => job.ReportId).HasMaxLength(IdMaxLength);
+            entity.Property(job => job.Format).HasMaxLength(16);
+            entity.Property(job => job.Status).HasMaxLength(16);
+            entity.Property(job => job.ErrorMessage).HasMaxLength(1024);
+            entity.Property(job => job.DownloadUrl).HasMaxLength(PathMaxLength);
+            entity.Property(job => job.SnapshotUrl).HasMaxLength(PathMaxLength);
+            entity.Property(job => job.LeaseOwner).HasMaxLength(ActorIdMaxLength);
+            // Unique job id (the primary key already guarantees this; the named unique index keeps the
+            // intent explicit and mirrors the other stores).
+            entity.HasIndex(job => job.JobId).IsUnique();
+            // Fair dequeue: the worker scans claimable jobs ordered by (TenantSequence, QueuedSequence)
+            // so tenants interleave round-robin; index Status first (the claimable filter) then the sort keys.
+            entity.HasIndex(job => new { job.Status, job.TenantSequence, job.QueuedSequence });
+            // Supports the per-tenant MAX(TenantSequence) probe done at enqueue.
+            entity.HasIndex(job => new { job.TenantId, job.TenantSequence });
+            entity.HasIndex(job => new { job.TenantId, job.JobId });
         });
     }
 }

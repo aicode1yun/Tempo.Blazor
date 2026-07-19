@@ -513,3 +513,74 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719150149_RenderJobs'
+)
+BEGIN
+    CREATE TABLE [RenderJobs] (
+        [JobId] nvarchar(128) NOT NULL,
+        [TenantId] nvarchar(128) NOT NULL,
+        [ReportId] nvarchar(128) NOT NULL,
+        [Format] nvarchar(16) NOT NULL,
+        [Status] nvarchar(16) NOT NULL,
+        [RequestJson] nvarchar(max) NOT NULL,
+        [QueuedAt] datetimeoffset NOT NULL,
+        [QueuedSequence] bigint NOT NULL,
+        [TenantSequence] bigint NOT NULL,
+        [StartedAt] datetimeoffset NULL,
+        [CompletedAt] datetimeoffset NULL,
+        [ErrorMessage] nvarchar(1024) NULL,
+        [DownloadUrl] nvarchar(400) NULL,
+        [SnapshotUrl] nvarchar(400) NULL,
+        [LeaseOwner] nvarchar(256) NULL,
+        [LeasedUntilTicks] bigint NULL,
+        CONSTRAINT [PK_RenderJobs] PRIMARY KEY ([JobId])
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719150149_RenderJobs'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_RenderJobs_JobId] ON [RenderJobs] ([JobId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719150149_RenderJobs'
+)
+BEGIN
+    CREATE INDEX [IX_RenderJobs_Status_TenantSequence_QueuedSequence] ON [RenderJobs] ([Status], [TenantSequence], [QueuedSequence]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719150149_RenderJobs'
+)
+BEGIN
+    CREATE INDEX [IX_RenderJobs_TenantId_JobId] ON [RenderJobs] ([TenantId], [JobId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719150149_RenderJobs'
+)
+BEGIN
+    CREATE INDEX [IX_RenderJobs_TenantId_TenantSequence] ON [RenderJobs] ([TenantId], [TenantSequence]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719150149_RenderJobs'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260719150149_RenderJobs', N'10.0.9');
+END;
+
+COMMIT;
+GO
+

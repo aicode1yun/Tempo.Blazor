@@ -321,9 +321,13 @@ public static class ReportServerWebAuthenticationExtensions
         builder.Services.AddHttpClient();
         if (string.Equals(options.TokenStore, "Distributed", StringComparison.OrdinalIgnoreCase))
         {
-            // Consume whatever IDistributedCache the host registered (SQL Server, Redis, ...).
-            // AddDistributedMemoryCache uses TryAdd, so a real distributed cache registered earlier wins;
-            // it only supplies a dev-only fallback so the store always resolves.
+            // Scale-out: the per-user token set lives in a shared IDistributedCache so any host instance
+            // behind the load balancer can resolve/refresh it. When "Authentication:Oidc:DistributedCache:
+            // Provider = SqlServer" is configured, register a SQL-Server-backed cache pointing at the
+            // report-server database (create the cache table once with `dotnet sql-cache create <conn>
+            // <schema> <table>`). Any other IDistributedCache the host registered (e.g. Redis) is honoured
+            // too; AddDistributedMemoryCache is a TryAdd dev-only fallback so the store always resolves.
+            AddDistributedTokenCache(builder);
             builder.Services.AddDistributedMemoryCache();
             builder.Services.AddSingleton<IReportServerTokenStore, DistributedCacheReportServerTokenStore>();
         }
@@ -427,6 +431,44 @@ public static class ReportServerWebAuthenticationExtensions
         // whose cached factory scope can leak tokens across users.
         builder.Services.AddScoped<IAccessTokenProvider, ServerAccessTokenProvider>();
         return options;
+    }
+
+    /// <summary>
+    /// Registers a SQL-Server-backed <see cref="IDistributedCache"/> for the Distributed token store when
+    /// <c>Authentication:Oidc:DistributedCache:Provider = SqlServer</c> is configured. Binds the cache
+    /// connection string (falling back to the <c>ReportServer</c> connection string), schema and table
+    /// from <c>Authentication:Oidc:DistributedCache</c>. No-op when the provider is not SqlServer or no
+    /// connection string is available, so the dev-only in-memory fallback stands.
+    /// </summary>
+    private static void AddDistributedTokenCache(WebApplicationBuilder builder)
+    {
+        var provider = builder.Configuration["Authentication:Oidc:DistributedCache:Provider"];
+        if (!string.Equals(provider, "SqlServer", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var connectionString = builder.Configuration["Authentication:Oidc:DistributedCache:ConnectionString"];
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            connectionString = builder.Configuration.GetConnectionString("ReportServer");
+        }
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            // No usable connection string: leave the memory fallback in place rather than registering a
+            // SQL cache that would throw on first use.
+            return;
+        }
+
+        var schemaName = builder.Configuration["Authentication:Oidc:DistributedCache:SchemaName"];
+        var tableName = builder.Configuration["Authentication:Oidc:DistributedCache:TableName"];
+        builder.Services.AddDistributedSqlServerCache(cache =>
+        {
+            cache.ConnectionString = connectionString;
+            cache.SchemaName = string.IsNullOrWhiteSpace(schemaName) ? "dbo" : schemaName;
+            cache.TableName = string.IsNullOrWhiteSpace(tableName) ? "TokenCache" : tableName;
+        });
     }
 }
 

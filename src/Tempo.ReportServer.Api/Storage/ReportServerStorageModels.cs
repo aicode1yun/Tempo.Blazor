@@ -128,6 +128,89 @@ public sealed class RenderRunEntity
     public DateTimeOffset CreatedAt { get; set; }
 }
 
+/// <summary>
+/// Persistent, distributed render job. Backs the SQL-Server-backed <c>IReportRenderJobQueue</c> so
+/// multiple render nodes can coordinate a single fair queue through the database instead of each
+/// holding its own in-process channel. Deliberately not covered by the ambient tenant query filter:
+/// the distributed worker dequeues across every tenant on a single pass, so it queries across tenants;
+/// the tenant-scoped queue methods constrain by <see cref="TenantId"/> explicitly.
+/// </summary>
+public sealed class RenderJobEntity
+{
+    /// <summary>Job identifier (globally unique).</summary>
+    public string JobId { get; set; } = string.Empty;
+
+    /// <summary>Tenant identifier.</summary>
+    public string TenantId { get; set; } = string.Empty;
+
+    /// <summary>Report identifier to render.</summary>
+    public string ReportId { get; set; } = string.Empty;
+
+    /// <summary>Requested output format token (Snapshot, Pdf, Csv, Xlsx, Png).</summary>
+    public string Format { get; set; } = string.Empty;
+
+    /// <summary>Job status token (Queued, Running, Completed, Failed).</summary>
+    public string Status { get; set; } = "Queued";
+
+    /// <summary>Serialized <c>RenderReportRequestDto</c> the render is executed from.</summary>
+    public string RequestJson { get; set; } = "{}";
+
+    /// <summary>When the job was enqueued.</summary>
+    public DateTimeOffset QueuedAt { get; set; }
+
+    /// <summary>
+    /// Global monotonic enqueue ordering key (<see cref="QueuedAt"/> as UTC ticks). Used as the
+    /// oldest-first tie-break within a fairness round. Kept as a <see cref="long"/> rather than ordering
+    /// on the <see cref="DateTimeOffset"/> column directly so the fair-dequeue query translates on every
+    /// provider (SQLite cannot ORDER BY or compare a <c>DateTimeOffset</c> column).
+    /// </summary>
+    public long QueuedSequence { get; set; }
+
+    /// <summary>
+    /// Per-tenant queue position: the Nth still-pending job for this tenant, computed at enqueue as one
+    /// past the current maximum among the tenant's non-terminal (Queued/Running) jobs. Claiming orders by
+    /// <c>(TenantSequence, QueuedSequence)</c> so tenants interleave round-robin — every tenant's job #1
+    /// is dequeued before any tenant's job #2 — giving real tenant fairness (a single tenant's backlog
+    /// cannot starve the others) that mirrors <see cref="InMemoryReportRenderJobQueue"/>. Because it is
+    /// derived from the tenant's pending jobs, it naturally resets to 1 once the tenant's queue drains, so
+    /// it does not grow unbounded across the job history. A concurrent same-tenant enqueue race may assign
+    /// two jobs the same value; that only perturbs fairness ordering (broken by <see cref="QueuedSequence"/>),
+    /// never correctness.
+    /// </summary>
+    public long TenantSequence { get; set; }
+
+    /// <summary>When a worker started rendering the job.</summary>
+    public DateTimeOffset? StartedAt { get; set; }
+
+    /// <summary>When the job reached a terminal (Completed/Failed) state.</summary>
+    public DateTimeOffset? CompletedAt { get; set; }
+
+    /// <summary>Failure detail, when the job failed.</summary>
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>Download result URL, when the job completed.</summary>
+    public string? DownloadUrl { get; set; }
+
+    /// <summary>Snapshot result URL, when the job produced a snapshot.</summary>
+    public string? SnapshotUrl { get; set; }
+
+    /// <summary>
+    /// Instance identifier of the worker that currently holds the processing lease on this job, or
+    /// <see langword="null"/> when unclaimed. Set by the atomic claim so that, with more than one render
+    /// node, only the claiming node renders a given queued job. Mirrors the F14 scheduling lease owner.
+    /// </summary>
+    public string? LeaseOwner { get; set; }
+
+    /// <summary>
+    /// UTC instant (as ticks) at which the current processing lease expires, or <see langword="null"/>
+    /// when unleased. A claim only succeeds when this is <see langword="null"/> or in the past, so a
+    /// crashed node's lease becomes re-claimable once it elapses. Mirrors the F14 scheduling lease
+    /// deadline, held as <see cref="long"/> ticks so the atomic-claim comparison translates on every
+    /// provider (SQLite cannot compare a <c>DateTimeOffset</c> column).
+    /// </summary>
+    public long? LeasedUntilTicks { get; set; }
+}
+
 /// <summary>Report server quota, concurrency, and timeout limits, bound from the <c>Rendering</c> section.</summary>
 public sealed record ReportServerQuotaOptions
 {

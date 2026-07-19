@@ -179,6 +179,43 @@ Zátěžový běh (in-process TestServer, `MaxConcurrentRenders=4`, tento stroj)
 300řádkového reportu — 0 selhání, wall ~1,75 s, p50 ~904 ms, p95 ~1,7 s, bez OOM. Harness:
 `RenderConcurrencyLoadHarness` (spustí se s `REPORTSERVER_LOADTEST=1`).
 
+### Render fronta scale-out (distribuovaná fronta, více render nodů)
+
+Asynchronní render (`POST /api/render/jobs`) jde přes `IReportRenderJobQueue`. Default je
+**`InMemoryReportRenderJobQueue`** — in-process, tenant-fér round-robin; funguje jen v rámci jednoho
+procesu (každý node má vlastní frontu, neškáluje na >1 render node). Pro **více render nodů** přepni na
+SQL-Server-backed distribuovanou frontu, kde nody koordinují jednu frontu přes MSSQL:
+
+```json
+"Rendering": { "JobQueue": "SqlServer", "RenderWorker": { "Enabled": true, "PollInterval": "00:00:05", "LeaseDuration": "00:05:00" } }
+```
+
+- `EfReportRenderJobQueue` persistuje každý job jako řádek `RenderJobs` (aditivní migrace `RenderJobs`;
+  idempotentní SQL `IF NOT EXISTS`). `EnqueueAsync` vloží `Queued` řádek; `ProcessNextAsync`
+  **atomicky nárokuje** nejstarší nárokovatelný job **jedním podmíněným `UPDATE`**
+  (`ExecuteUpdateAsync` nastaví `Status=Running` + `LeaseOwner` + `LeasedUntilTicks` **WHERE** job je
+  non-terminal a nenárokovaný nebo s expirovanou lease). SQL Server serializuje souběžné `UPDATE`y na
+  zámku řádku → z N nodů nárokuje **právě jeden**, ostatní dostanou 0 řádků a job přeskočí. Pořadí
+  `QueuedSequence` (UTC ticks) drží FIFO férovost.
+- Po nárokování node vyrenderuje job **stejnou render cestou** jako in-memory fronta (scope →
+  `ReportServerRequestContext` + `IReportServerStore` + `IReportServerRenderer`) a zapíše terminální
+  stav (`Completed`/`Failed`) + uvolní lease. `RenderJobDto` a download-url konvence
+  (`api/render/jobs/{jobId}/result`) jsou identické s in-memory frontou.
+- Spadlý node: jeho lease vyprší po `Rendering:RenderWorker:LeaseDuration` (default 5 min) a job je opět
+  nárokovatelný — žádné ruční odemykání. Nastav `LeaseDuration` **komfortně nad worst-case render**.
+- Hostovaný `DistributedRenderJobWorker` (opt-in, `RenderWorker:Enabled`, default `true` v SqlServer
+  módu) na každém nodu v intervalu `PollInterval` drénuje frontu voláním `ProcessNextAsync`.
+
+Default (`InMemory`) zůstává **nezměněný** — existující hosti/testy nejsou dotčeni; distribuovaná fronta
+je čistě opt-in přes konfiguraci.
+
+| Klíč | Default | Význam |
+| --- | --- | --- |
+| `Rendering:JobQueue` | `InMemory` | `SqlServer` zapne distribuovanou frontu (více render nodů). |
+| `Rendering:RenderWorker:Enabled` | `true` | Hostovaný render worker na tomto nodu (jen v SqlServer módu). |
+| `Rendering:RenderWorker:PollInterval` | `00:00:05` | Interval drénování fronty. |
+| `Rendering:RenderWorker:LeaseDuration` | `00:05:00` | Doba držení lease na nárokovaném jobu. Nastav nad worst-case render. |
+
 ### Webhook delivery — SSRF ochrana
 
 Webhook doručení scheduled reportů (`Scheduling:Webhook`) validuje cílovou URL před odesláním
@@ -237,9 +274,32 @@ idempotentní vůči `X-Tempo-Schedule-Id` + occurrence.
 
 Server-side token store BFF hostu je defaultně `IMemoryCache` (single-host). Pro více instancí za load
 balancerem přepni `Authentication:Oidc:TokenStore=Distributed` — použije se `IDistributedCache`
-(`DistributedCacheReportServerTokenStore`). Produkční host zaregistruje sdílenou cache, např.
-`AddDistributedSqlServerCache(...)` (SQL backing) nebo Redis; když žádnou nezaregistruje, použije se
-dev-only in-memory distributed cache jako fallback.
+(`DistributedCacheReportServerTokenStore`), token set se serializuje jako UTF-8 JSON do sdílené cache,
+takže libovolná instance za LB umí uživateli token resolvnout i refreshnout (a `Remove` při sign-out je
+viditelný napříč instancemi).
+
+**SQL-Server-backed cache (produkční default pro scale-out):** zapni
+`Authentication:Oidc:DistributedCache:Provider=SqlServer`. Host pak zaregistruje
+`AddDistributedSqlServerCache(...)` mířící na report-server DB. Cache tabulku vytvoř **jednou** nástrojem
+`dotnet sql-cache`:
+
+```
+dotnet tool install --global dotnet-sql-cache
+dotnet sql-cache create "Server=…;Database=TempoReportServer;Integrated Security=true;TrustServerCertificate=true;" dbo TokenCache
+```
+
+| Klíč | Default | Význam |
+| --- | --- | --- |
+| `Authentication:Oidc:TokenStore` | `Memory` | `Distributed` zapne sdílený `IDistributedCache` store. |
+| `Authentication:Oidc:DistributedCache:Provider` | – | `SqlServer` zaregistruje `AddDistributedSqlServerCache`. |
+| `Authentication:Oidc:DistributedCache:ConnectionString` | `ConnectionStrings:ReportServer` | Connection string cache DB (fallback na report-server connection). |
+| `Authentication:Oidc:DistributedCache:SchemaName` | `dbo` | Schema cache tabulky. |
+| `Authentication:Oidc:DistributedCache:TableName` | `TokenCache` | Název cache tabulky (musí odpovídat `sql-cache create`). |
+
+Když `Provider` není `SqlServer` (nebo chybí connection string), zaregistruje se dev-only in-memory
+distributed cache jako fallback (host může místo toho zaregistrovat Redis apod. — `AddDistributedMemoryCache`
+používá `TryAdd`, takže reálná sdílená cache registrovaná dřív vyhraje). Default `Memory` zůstává
+**nezměněný** — je to čistě opt-in.
 
 ## Carry-forward (mimo Fázi 7)
 
