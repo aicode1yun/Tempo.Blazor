@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.4.0 - 2026-07-19
 
 ### Headless document runtime — Phase 0: embedded headless layout bundle
 
