@@ -97,6 +97,25 @@
   their totals, with PNG preview screenshots for UX review; COMPONENTS.md gained a
   "Headless dokumentový runtime" section.
 
+### Headless document runtime — Phase 5: server-side operation applier
+
+- Coverage audit of the canonical operation model across the C# applier
+  (`DocumentOperationApplier`), the JS collaboration applier (`transform.mjs`) and the conflict
+  resolver — table + findings in `docs/document-operation-applier-coverage.md`.
+- `DocumentOperationApplier` now resolves operation targets inside table cells exactly like the
+  JS applier (deep search with `TableCellId` as the container preference): text, mark, block,
+  attribute and update operations work on nested blocks; block insert/move inside cells is
+  index-based like JS; `table.cell.text` keeps its historical table-targeting semantics.
+- Fixed the JS collab applier to split runs at mark-range boundaries (previously a
+  partial-range mark bolded whole runs) — mirrors the C# and engine semantics.
+- New cross-runtime convergence property tests: seeded operation batches applied by the C#
+  applier produce a committed content signature
+  (`operation-convergence-fixture.json`, regenerable via
+  `TEMPO_REGENERATE_OPERATION_CONVERGENCE_FIXTURE=1`) that the JS applier reproduces deeply
+  equal in the Node lane. Known divergences (body-level `moveBlock` order-vs-index semantics,
+  `insertBlock`/`updateBlock` payload shapes) are documented and carried forward to the MCP
+  tooling plan.
+
 ## 2.3.9 - 2026-07-19
 
 ### Document editor — canvas command layer completed (TmDocumentEditor)

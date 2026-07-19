@@ -401,18 +401,52 @@ function deleteTextFromRuns(runs, offset, length) {
     }
 }
 
+// Applies the mutator to EXACTLY the [offset, offset+length) character range: intersecting runs
+// are split at the range boundaries first (head/tail keep the original formatting, the middle
+// keeps the original run id), so a partial-range mark never leaks onto surrounding characters.
+// Mirrors the C# applier's ApplyMarkAbsoluteRange semantics — required for cross-runtime
+// operation convergence.
 function mutateRunsInRange(runs, offset, length, mutator) {
+    if (length <= 0) {
+        return;
+    }
+
     const endOffset = offset + length;
+    const rebuilt = [];
     let cursor = 0;
     for (const run of runs) {
         const text = asText(run.text);
         const start = cursor;
         const end = cursor + text.length;
         cursor = end;
-        if (offset < end && endOffset > start) {
-            mutator(run);
+        if (end <= offset || start >= endOffset || typeof run?.text !== 'string') {
+            rebuilt.push(run);
+            continue;
+        }
+
+        const sliceStart = Math.max(offset, start) - start;
+        const sliceEnd = Math.min(endOffset, end) - start;
+        if (sliceStart > 0) {
+            const head = clone(run);
+            head.id = `${asText(run.id) || 'run'}-h`;
+            head.text = text.slice(0, sliceStart);
+            rebuilt.push(head);
+        }
+
+        const middle = clone(run);
+        middle.text = text.slice(sliceStart, sliceEnd);
+        mutator(middle);
+        rebuilt.push(middle);
+
+        if (sliceEnd < text.length) {
+            const tail = clone(run);
+            tail.id = `${asText(run.id) || 'run'}-t`;
+            tail.text = text.slice(sliceEnd);
+            rebuilt.push(tail);
         }
     }
+
+    runs.splice(0, runs.length, ...rebuilt);
 }
 
 function locateRunOffset(runs, offset) {

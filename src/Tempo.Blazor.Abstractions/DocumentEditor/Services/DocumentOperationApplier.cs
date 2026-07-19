@@ -61,7 +61,7 @@ public class DocumentOperationApplier
 
     private static DocumentOperationValidationResult ApplyInsertText(DocumentEditorDocument document, DocumentOperation operation)
     {
-        var block = FindBlock(document, operation.Target.BlockId);
+        var block = FindBlock(document, operation.Target.BlockId, operation.Target.TableCellId);
         var inlines = GetInlineList(block?.Content);
         if (block is null || inlines is null)
         {
@@ -76,7 +76,7 @@ public class DocumentOperationApplier
 
     private static DocumentOperationValidationResult ApplyDeleteText(DocumentEditorDocument document, DocumentOperation operation)
     {
-        var block = FindBlock(document, operation.Target.BlockId);
+        var block = FindBlock(document, operation.Target.BlockId, operation.Target.TableCellId);
         var inlines = GetInlineList(block?.Content);
         if (block is null || inlines is null)
         {
@@ -98,7 +98,7 @@ public class DocumentOperationApplier
 
     private static DocumentOperationValidationResult ApplyMark(DocumentEditorDocument document, DocumentOperation operation, bool add)
     {
-        var block = FindBlock(document, operation.Target.BlockId);
+        var block = FindBlock(document, operation.Target.BlockId, operation.Target.TableCellId);
         var inlines = GetInlineList(block?.Content);
         var inlineIndex = inlines is null ? 0 : ResolveInlineIndex(inlines, operation.Target);
         if (block is null || inlines is null || operation.Mark is null || inlineIndex < 0 || inlineIndex >= inlines.Count)
@@ -305,7 +305,13 @@ public class DocumentOperationApplier
             return DocumentOperationValidationResult.Invalid("InsertBlock requires a block payload.");
         }
 
-        if (document.Blocks.Any(block => block.Id == operation.Block.Id))
+        var container = FindContainerBlocks(document, operation.Target.TableCellId);
+        if (container is null)
+        {
+            return DocumentOperationValidationResult.Invalid("InsertBlock target table cell was not found.");
+        }
+
+        if (container.Any(block => block.Id == operation.Block.Id))
         {
             return DocumentOperationValidationResult.Valid();
         }
@@ -316,14 +322,27 @@ public class DocumentOperationApplier
             block.Order = operation.Target.Order.Value;
         }
 
-        document.Blocks.Add(block);
-        document.Blocks = document.Blocks.OrderBy(item => item.Order).ToList();
+        if (ReferenceEquals(container, document.Blocks))
+        {
+            document.Blocks.Add(block);
+            document.Blocks = document.Blocks.OrderBy(item => item.Order).ToList();
+            return DocumentOperationValidationResult.Valid();
+        }
+
+        // Nested containers (table cells) keep list order — mirror the JS index-based insert.
+        var index = Math.Clamp((int)(operation.Target.Order ?? container.Count), 0, container.Count);
+        container.Insert(index, block);
         return DocumentOperationValidationResult.Valid();
     }
 
     private static DocumentOperationValidationResult ApplyDeleteBlock(DocumentEditorDocument document, DocumentOperation operation)
     {
-        document.Blocks.RemoveAll(block => block.Id == operation.Target.BlockId);
+        var removed = document.Blocks.RemoveAll(block => block.Id == operation.Target.BlockId);
+        if (removed == 0 && FindBlockLocation(document, operation.Target.BlockId, operation.Target.TableCellId) is { } nested)
+        {
+            nested.Container.RemoveAt(nested.Index);
+        }
+
         return DocumentOperationValidationResult.Valid();
     }
 
@@ -337,6 +356,12 @@ public class DocumentOperationApplier
         var index = document.Blocks.FindIndex(block => block.Id == operation.Block.Id);
         if (index < 0)
         {
+            // Nested containers (table cells): replace the payload in place, list order kept.
+            if (FindBlockLocation(document, operation.Block.Id, operation.Target.TableCellId) is { } nested)
+            {
+                nested.Container[nested.Index] = Clone(operation.Block);
+            }
+
             return DocumentOperationValidationResult.Valid();
         }
 
@@ -607,14 +632,23 @@ public class DocumentOperationApplier
 
     private static DocumentOperationValidationResult ApplyMoveBlock(DocumentEditorDocument document, DocumentOperation operation)
     {
-        var block = FindBlock(document, operation.Target.BlockId);
-        if (block is null || operation.Target.Order is null)
+        var location = FindBlockLocation(document, operation.Target.BlockId, operation.Target.TableCellId);
+        if (location is null || operation.Target.Order is null)
         {
             return DocumentOperationValidationResult.Invalid("MoveBlock requires an existing block and target order.");
         }
 
-        block.Order = operation.Target.Order.Value;
-        document.Blocks = document.Blocks.OrderBy(item => item.Order).ToList();
+        if (ReferenceEquals(location.Container, document.Blocks))
+        {
+            location.Block.Order = operation.Target.Order.Value;
+            document.Blocks = document.Blocks.OrderBy(item => item.Order).ToList();
+            return DocumentOperationValidationResult.Valid();
+        }
+
+        // Nested containers (table cells) keep list order — mirror the JS index-based move.
+        location.Container.RemoveAt(location.Index);
+        var index = Math.Clamp((int)operation.Target.Order.Value, 0, location.Container.Count);
+        location.Container.Insert(index, location.Block);
         return DocumentOperationValidationResult.Valid();
     }
 
@@ -626,7 +660,14 @@ public class DocumentOperationApplier
             return DocumentOperationValidationResult.Valid();
         }
 
-        var block = FindBlock(document, operation.Target.BlockId);
+        var block = FindBlock(document, operation.Target.BlockId, operation.Target.TableCellId);
+        if (block is null && string.Equals(operation.AttributeName, "table.cell.text", StringComparison.OrdinalIgnoreCase))
+        {
+            // 'table.cell.text' targets the TABLE block itself and uses TableCellId to address
+            // the cell inside it — the cell id must not act as a container preference here.
+            block = FindBlock(document, operation.Target.BlockId);
+        }
+
         if (block is null)
         {
             return DocumentOperationValidationResult.Invalid("SetBlockAttribute target block was not found.");
@@ -803,9 +844,77 @@ public class DocumentOperationApplier
             or InlineMarkType.Link;
     }
 
-    private static DocumentBlock? FindBlock(DocumentEditorDocument document, string? blockId)
+    private static DocumentBlock? FindBlock(DocumentEditorDocument document, string? blockId, string? preferredCellId = null)
+        => FindBlockLocation(document, blockId, preferredCellId)?.Block;
+
+    private sealed record BlockLocation(List<DocumentBlock> Container, DocumentBlock Block, int Index);
+
+    /// <summary>
+    /// Deep block resolution mirroring the JS collaboration applier (transform.mjs
+    /// findBlockLocation): body blocks first, then recursively through table cells; the preferred
+    /// table cell id, when supplied, filters which container may match.
+    /// </summary>
+    private static BlockLocation? FindBlockLocation(DocumentEditorDocument document, string? blockId, string? preferredCellId = null)
     {
-        return document.Blocks.FirstOrDefault(block => block.Id == blockId);
+        if (string.IsNullOrWhiteSpace(blockId))
+        {
+            return null;
+        }
+
+        return Visit(document.Blocks, string.Empty);
+
+        BlockLocation? Visit(List<DocumentBlock> blocks, string cellId)
+        {
+            for (var index = 0; index < blocks.Count; index++)
+            {
+                var block = blocks[index];
+                if (string.Equals(block.Id, blockId, StringComparison.Ordinal)
+                    && (string.IsNullOrWhiteSpace(preferredCellId) || string.Equals(preferredCellId, cellId, StringComparison.Ordinal)))
+                {
+                    return new BlockLocation(blocks, block, index);
+                }
+
+                if (block.Content is not TableBlockContent table)
+                {
+                    continue;
+                }
+
+                foreach (var row in table.Rows)
+                {
+                    foreach (var cell in row.Cells)
+                    {
+                        if (Visit(cell.Blocks, cell.Id ?? string.Empty) is { } nested)
+                        {
+                            return nested;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Resolves the block container an operation addresses: the body when no table cell id is
+    /// given, otherwise the blocks of that table cell (mirrors transform.mjs findContainer).
+    /// </summary>
+    private static List<DocumentBlock>? FindContainerBlocks(DocumentEditorDocument document, string? tableCellId)
+    {
+        if (string.IsNullOrWhiteSpace(tableCellId))
+        {
+            return document.Blocks;
+        }
+
+        foreach (var block in EnumerateBlocks(document))
+        {
+            if (block.Content is TableBlockContent table && FindTableCell(table, tableCellId!) is { } cell)
+            {
+                return cell.Blocks;
+            }
+        }
+
+        return null;
     }
 
     private static TableCellContent? FindTableCell(TableBlockContent table, string cellId)
